@@ -6759,6 +6759,7 @@ cmdata_format = [
 	("", "", "", "client-ca-file", "CRT"),
 	("", "", "haproxy.cfg", "haproxy.cfg", "HAProxy"),
 	("", "", "", ".ini", "INI"),
+	("", "", "", ".ndjson", "NDJSON"),
 	("", "", "", ".json", "JSON"),
 	("", "", "mosquitto.conf", "mosquitto.conf", "mosquitto"),
 	("", "", "", ".sh", "Shell Script"),
@@ -9171,6 +9172,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[ThemeString("Message first", ThemeAttr("windowwidget", "default"))]],
 					"retval": "msg_first",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Override severity", ThemeAttr("windowwidget", "default"))]],
+					"retval": "override_severity",
 				},
 				{
 					"lineattrs": WidgetLineAttrs.NORMAL,

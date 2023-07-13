@@ -1143,7 +1143,7 @@ def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Li
 			(function reference): The formatter to use
 	"""
 
-	if dataformat in {"YAML", "JSON"} or dataformat.endswith((".yml", ".yaml", ".json")):
+	if dataformat in {"YAML", "JSON", "NDJSON"} or dataformat.endswith((".yml", ".yaml", ".json", ".ndjson")):
 		formatter = format_yaml
 	elif dataformat == "TOML" or dataformat.endswith((".toml")):
 		formatter = format_toml

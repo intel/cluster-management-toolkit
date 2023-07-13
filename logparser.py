@@ -97,6 +97,8 @@ class logparser_configuration:
 	msg_linebreaks: bool = True
 	# Should "* " be replaced with real bullets?
 	msg_realbullets: bool = True
+	# Should override severity rules be applied?
+	override_severity: bool = True
 	# collector=foo => • foo
 	bullet_collectors: bool = True
 	# if msg_extract is True,
@@ -495,7 +497,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 	new_remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	old_messages: List[str] = []
-	if fold_msg == True and "\\n" in message:
+	if fold_msg and "\\n" in message:
 		old_messages = message.split("\\n")
 	else:
 		old_messages.append(message)
@@ -532,7 +534,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 		else:
 			new_remnants.append((tmp_message, severity))
 
-	if fold_msg == True and "\\n" in message:
+	if fold_msg and "\\n" in message:
 		for remnant, _severity in new_remnants:
 			new_message.append(ThemeRef("separators", "newline"))
 			new_message += remnant
@@ -940,7 +942,7 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 	message = fields[message_index]
 	remnants_index = message_index + 1
 
-	if fold_msg == False and remnants_index < len(fields) and fields[remnants_index].startswith("{") and fields[remnants_index].endswith("}"):
+	if not fold_msg and remnants_index < len(fields) and fields[remnants_index].startswith("{") and fields[remnants_index].endswith("}"):
 		try:
 			d = json.loads(fields[remnants_index])
 			json_strs = json_dumps(d)
@@ -970,6 +972,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
 	errors = deep_get(options, DictPath("errors"), ["err", "error"])
+	error_tags = deep_get(options, DictPath("error_tags"), {})
 	timestamps = deep_get(options, DictPath("timestamps"), ["ts", "time", "timestamp"])
 	severities = deep_get(options, DictPath("severities"), ["level"])
 	msg_severity_overrides = deep_get(options, DictPath("msg#severity#overrides"), [])
@@ -1056,7 +1059,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			severity = cast(LogLevel, str_to_severity(level))
 
 		# If the message is folded, append the rest
-		if fold_msg == True:
+		if fold_msg:
 			if severity is not None:
 				msgseverity = severity
 			else:
@@ -1130,8 +1133,24 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 							"key": ThemeAttr("types", "yaml_key_error"),
 							"value": ThemeAttr("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
 						}
+					tagseverity = None
+					for tag, tag_values in error_tags.items():
+						for tag_key, tag_severity in tag_values.items():
+							if tag_key in deep_get(logentry, DictPath(tag), []):
+								tagseverity = str_to_severity(tag_severity, msgseverity)
+								break
+						if tagseverity is not None:
+							break
+				if tagseverity is not None:
+					override_formatting[f"\"{_msg}\""] = {
+						"key": ThemeAttr("types", "yaml_key"),
+						"value": ThemeAttr("logview", f"severity_{loglevel_to_name(tagseverity).lower()}")
+					}
+					severity = tagseverity
+
 				dump = json_dumps(logentry)
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting)
+
 				if len(message) == 0:
 					formatted_message = tmp[0]
 					tmp.pop(0)
@@ -1323,6 +1342,9 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 	return message, severity, facility
 
 def custom_override_severity(message: Union[str, List], severity: Optional[LogLevel], overrides: Dict) -> Tuple[Union[str, List], LogLevel]:
+	if not logparser_configuration.override_severity:
+		return message, severity
+
 	if isinstance(message, list):
 		tmp_message = themearray_to_string(message)
 	else:
@@ -1430,7 +1452,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 
 def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, fold_msg: bool = True) ->\
 			Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
-	if fold_msg == True or (remnants is not None and len(remnants) > 0):
+	if fold_msg or (remnants is not None and len(remnants) > 0):
 		return severity, message, remnants
 
 	raw_message = message
@@ -1629,7 +1651,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						d.pop(__fac)
 
 		# pylint: disable-next=too-many-boolean-expressions
-		if fold_msg == False and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
+		if not fold_msg and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			message, severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
 		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and fold_msg == False:
@@ -1666,7 +1688,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						tmp.append(format_key_value(key, value, severity))
 			else:
 				if logparser_configuration.msg_first == True:
-					if fold_msg == True:
+					if fold_msg:
 						for key in messages + errors:
 							value = d.pop(key, "")
 							if len(value) > 0:
@@ -1693,7 +1715,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 								tmp.append(format_key_value(key, value, severity))
 
 			for d_key, d_value in d.items():
-				if fold_msg == False:
+				if not fold_msg:
 					if d_key == "collector" and collector_bullets == True and logparser_configuration.bullet_collectors == True:
 						tmp.append(f"• {d_value}")
 					elif d_key in versions:
@@ -1705,7 +1727,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				else:
 					tmp.append(f"{d_key}={d_value}")
 
-			if fold_msg == True:
+			if fold_msg:
 				message = " ".join(tmp)
 			else:
 				if len(tmp) > 0:
@@ -1715,7 +1737,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				if len(tmp) > 0:
 					remnants = (tmp, severity)
 
-	if logparser_configuration.msg_linebreaks == True and "\\n" in message and isinstance(message, str) and fold_msg == False:
+	if logparser_configuration.msg_linebreaks and "\\n" in message and isinstance(message, str) and not fold_msg:
 		lines = message.split("\\n")
 		message = lines[0]
 		_remnants = []
@@ -1743,7 +1765,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 	global logparser_configuration
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-	if fold_msg == True:
+	if fold_msg:
 		return facility, severity, message, remnants
 
 	# Split into substrings based on spaces
@@ -2511,118 +2533,120 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 
 	for _filter in filters:
 		if isinstance(_filter, str):
-			# Multiparsers
-			if _filter == "glog":
-				message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
-			elif _filter == "tab_separated":
-				message, severity, facility, remnants = tab_separated(message, severity = severity, facility = facility, fold_msg = fold_msg)
-			elif _filter == "spaced_severity_facility":
-				message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
-			elif _filter == "directory":
-				facility, severity, message, remnants = directory(message, fold_msg = fold_msg, severity = severity, facility = facility)
-			elif _filter == "seconds_severity_facility":
-				facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
-			elif _filter == "expand_event":
-				if message.startswith(("Event(v1.ObjectReference{")):
-					severity, message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
-				elif message.startswith(("&Event{ObjectMeta:")):
-					severity, message, remnants = expand_event_objectmeta(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
-			elif _filter == "modinfo":
-				facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
-			elif _filter == "sysctl":
-				facility, severity, message, remnants = sysctl(message, severity = severity, facility = facility, fold_msg = fold_msg)
-			# Timestamp formats
-			elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
-				message = strip_iso_timestamp(message)
-			# Facility formats
-			elif _filter == "colon_facility":
-				message, facility = split_colon_facility(message, facility)
-			elif _filter == "angle_bracketed_facility":
-				message, facility = split_angle_bracketed_facility(message, facility)
-			# Severity formats
-			elif _filter == "colon_severity":
-				message, severity = split_colon_severity(message, severity)
-			# Filters
-			elif _filter == "strip_ansicodes":
-				message = strip_ansicodes(message)
-			# Block starters
-			elif _filter == "python_traceback":
-				message, remnants = python_traceback(message, fold_msg = fold_msg)
-			else:
-				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
+			# These parsers CANNOT handle ThemeArrays
+			if isinstance(message, str):
+				# Multiparsers
+				if _filter == "glog":
+					message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
+				elif _filter == "tab_separated":
+					message, severity, facility, remnants = tab_separated(message, severity = severity, facility = facility, fold_msg = fold_msg)
+				elif _filter == "spaced_severity_facility":
+					message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
+				elif _filter == "directory":
+					facility, severity, message, remnants = directory(message, fold_msg = fold_msg, severity = severity, facility = facility)
+				elif _filter == "seconds_severity_facility":
+					facility, severity, message, remnants = seconds_severity_facility(message, fold_msg = fold_msg)
+				elif _filter == "expand_event":
+					if message.startswith(("Event(v1.ObjectReference{")):
+						severity, message, remnants = expand_event(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
+					elif message.startswith(("&Event{ObjectMeta:")):
+						severity, message, remnants = expand_event_objectmeta(message, severity = severity, remnants = remnants, fold_msg = fold_msg)
+				elif _filter == "modinfo":
+					facility, severity, message, remnants = modinfo(message, fold_msg = fold_msg)
+				elif _filter == "sysctl":
+					facility, severity, message, remnants = sysctl(message, severity = severity, facility = facility, fold_msg = fold_msg)
+				# Timestamp formats
+				elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
+					message = strip_iso_timestamp(message)
+				# Facility formats
+				elif _filter == "colon_facility":
+					message, facility = split_colon_facility(message, facility)
+				elif _filter == "angle_bracketed_facility":
+					message, facility = split_angle_bracketed_facility(message, facility)
+				# Severity formats
+				elif _filter == "colon_severity":
+					message, severity = split_colon_severity(message, severity)
+				# Filters
+				elif _filter == "strip_ansicodes":
+					message = strip_ansicodes(message)
+				# Block starters
+				elif _filter == "python_traceback":
+					message, remnants = python_traceback(message, fold_msg = fold_msg)
 		elif isinstance(_filter, tuple):
-			# Multiparsers
-			if _filter[0] == "bracketed_timestamp_severity_facility":
-				message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
-			elif _filter[0] == "raw_formatter":
-				_parser_options = _filter[1]
-				message, severity, facility = raw_formatter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "custom_splitter":
-				_parser_options = _filter[1]
-				message, severity, facility = custom_splitter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "http":
-				_parser_options = _filter[1]
-				message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "iptables":
-				_parser_options = _filter[1]
-				message, severity, facility, remnants = iptables(message, remnants, severity = severity, facility = facility, fold_msg = fold_msg)
-			elif _filter[0] == "json":
-				_parser_options = _filter[1]
-				_message = message
-				if message.startswith(("{\"", "{ \"")):
-					message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "json_with_leading_message":
-				_parser_options = _filter[1]
-				parts = message.split("{", 1)
-				if len(parts) == 2:
-					# No leading message
-					if len(parts[0]) == 0:
-						message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-					elif parts[0].rstrip() != parts[0]:
-						parts[0] = parts[0].rstrip()
-						# It isn't leading message + JSON unless there's whitespace in-between
-						_message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
-						_severity = severity
-						if _severity is None:
-							_severity = LogLevel.INFO
-						_message, remnants = merge_message(_message, remnants, severity = _severity)
-						message = [ThemeString(parts[0], ThemeAttr("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
-			elif _filter[0] == "json_event":
-				_parser_options = _filter[1]
-				# We do not extract the facility/severity from folded messages, so just skip if fold_msg == True
-				if message.startswith("EVENT ") and fold_msg == False:
-					message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
-			elif _filter[0] == "key_value":
-				_parser_options = _filter[1]
-				if "=" in message:
-					facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
-			elif _filter[0] == "key_value_with_leading_message":
-				_parser_options = _filter[1]
-				if "=" in message:
-					facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
+			# These parsers CANNOT handle ThemeArrays
+			if isinstance(message, str):
+				# Multiparsers
+				if _filter[0] == "bracketed_timestamp_severity_facility":
+					message, severity, facility = split_bracketed_timestamp_severity_facility(message, default = _filter[1])
+				elif _filter[0] == "raw_formatter":
+					_parser_options = _filter[1]
+					message, severity, facility = raw_formatter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+				elif _filter[0] == "custom_splitter":
+					_parser_options = _filter[1]
+					message, severity, facility = custom_splitter(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+				elif _filter[0] == "http":
+					_parser_options = _filter[1]
+					message, severity, facility = http(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+				elif _filter[0] == "iptables":
+					_parser_options = _filter[1]
+					message, severity, facility, remnants = iptables(message, remnants, severity = severity, facility = facility, fold_msg = fold_msg)
+				elif _filter[0] == "json" and isinstance(message, str):
+					_parser_options = _filter[1]
+					_message = message
+					if message.startswith(("{\"", "{ \"")):
+						message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+				elif _filter[0] == "json_with_leading_message" and isinstance(message, str):
+					_parser_options = _filter[1]
+					parts = message.split("{", 1)
+					if len(parts) == 2:
+						# No leading message
+						if len(parts[0]) == 0:
+							message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+						elif parts[0].rstrip() != parts[0]:
+							parts[0] = parts[0].rstrip()
+							# It isn't leading message + JSON unless there's whitespace in-between
+							_message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+							_severity = severity
+							if _severity is None:
+								_severity = LogLevel.INFO
+							_message, remnants = merge_message(_message, remnants, severity = _severity)
+							message = [ThemeString(parts[0], ThemeAttr("logview", f"severity_{loglevel_to_name(_severity).lower()}"))]
+				elif _filter[0] == "json_event":
+					_parser_options = _filter[1]
+					# We do not extract the facility/severity from folded messages, so just skip if fold_msg == True
+					if message.startswith("EVENT ") and fold_msg == False:
+						message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
+				elif _filter[0] == "key_value":
+					_parser_options = _filter[1]
+					if "=" in message:
+						facility, severity, message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
+				elif _filter[0] == "key_value_with_leading_message":
+					_parser_options = _filter[1]
+					if "=" in message:
+						facility, severity, message, remnants = key_value_with_leading_message(message, fold_msg = fold_msg, severity = severity, facility = facility, options = _parser_options)
+				# Severity formats
+				elif _filter[0] == "bracketed_severity":
+					message, severity = split_bracketed_severity(message, default = _filter[1])
+				# Filters
+				elif _filter[0] == "substitute_bullets":
+					message = substitute_bullets(message, _filter[1])
+				# Block starters; these are treated as parser loop terminators if a match is found
+				elif _filter[0] == "json_line":
+					_parser_options = {**_filter[1], **options}
+					message, remnants = json_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+				elif _filter[0] == "yaml_line":
+					_parser_options = {**_filter[1], **options}
+					message, remnants = yaml_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+				elif _filter[0] == "diff_line":
+					_parser_options = {**_filter[1], **options}
+					message, remnants = diff_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+				elif _filter[0] == "ansible_line":
+					_parser_options = {**_filter[1], **options}
+					message, remnants = ansible_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+			# These parsers CAN handle ThemeArrays
 			# Severity formats
-			elif _filter[0] == "bracketed_severity":
-				message, severity = split_bracketed_severity(message, default = _filter[1])
-			elif _filter[0] == "override_severity":
+			if _filter[0] == "override_severity":
 				message, severity = custom_override_severity(message, severity, _filter[1])
-			# Filters
-			elif _filter[0] == "substitute_bullets":
-				message = substitute_bullets(message, _filter[1])
-			# Block starters; these are treated as parser loop terminators if a match is found
-			elif _filter[0] == "json_line":
-				_parser_options = {**_filter[1], **options}
-				message, remnants = json_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
-			elif _filter[0] == "yaml_line":
-				_parser_options = {**_filter[1], **options}
-				message, remnants = yaml_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
-			elif _filter[0] == "diff_line":
-				_parser_options = {**_filter[1], **options}
-				message, remnants = diff_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
-			elif _filter[0] == "ansible_line":
-				_parser_options = {**_filter[1], **options}
-				message, remnants = ansible_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
-			else:
-				sys.exit(f"Parser rule error; {_filter} is not a supported filter type; aborting.")
 
 		if isinstance(message, tuple) and message[0] == "start_block":
 			break
