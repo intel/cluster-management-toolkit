@@ -4180,19 +4180,61 @@ class KubernetesHelper:
 		non_core_apis = {}
 		non_core_api_dict = {}
 
+		# Attempt aggregated discovery; we need custom header_params to do this.
+		# Fallback to the old method if aggregate discovery isn't supported.
+		header_params = {
+			"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
+			"Content-Type": "application/json",
+			"User-Agent": f"{self.programname} v{self.programversion}",
+		}
+		aggregated_data = {}
+
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params)
 
 		if status == 200 and raw_data is not None:
 			# Success
 			try:
-				non_core_apis = json.loads(raw_data)
+				aggregated_data = json.loads(raw_data)
 			except DecodeException:
 				# We got a response, but the data is malformed
 				pass
 		else:
 			# No non-core APIs found; this is a bit worrying, but OK...
 			pass
+
+		# We successfully got aggregated data
+		if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
+			for api_group in deep_get(aggregated_data, DictPath("items"), []):
+				api_group_name = deep_get(api_group, DictPath("metadata#name"), "")
+				versions = deep_get(api_group, DictPath("versions"), [])
+
+				# Now we need to check what kinds this api_group supports
+				# and using what version
+				for version in versions:
+					_version = deep_get(version, DictPath("version"))
+					if _version is None:
+						# This should not happen, but ignore it
+						continue
+					resources = deep_get(api_group, DictPath("resources"), [])
+					for resource in deep_get(version, DictPath("resources"), []):
+						name = deep_get(resource, DictPath("resource"), [])
+						shortnames = deep_get(resource, DictPath("shortNames"), [])
+						api_version = "/".join([api_group_name, _version])
+						namespaced = deep_get(resource, DictPath("scope"), "") == "Namespaced"
+						kind = deep_get(resource, DictPath("responseKind#kind"), "")
+						verbs = deep_get(resource, DictPath("verbs"), [])
+						kind_tuple = (kind, api_version.split("/")[0])
+						# Let's hope we get them in the right order...
+						if kind_tuple in non_core_api_dict:
+							continue
+						non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
+			api_resources += list(non_core_api_dict.values())
+
+			return status, api_resources
+
+		# Nope, this is only non-core APIs
+		non_core_apis = aggregated_data
 
 		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
 			name = deep_get(api_group, DictPath("name"), "")
@@ -4240,6 +4282,7 @@ class KubernetesHelper:
 
 		return status, api_resources
 
+	# TODO: This should ideally be modified to use get_api_resources()
 	def get_available_kinds(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
 		"""
 		Return a dict of Kinds known by both kubernetes_helper and the API-server
@@ -4265,10 +4308,11 @@ class KubernetesHelper:
 		if not force_refresh and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
 			return kubernetes_resources, 200, modified
 
+		method = "GET"
+
 		# First get all core APIs
 		core_apis = {}
 
-		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
 		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
 
@@ -4298,25 +4342,61 @@ class KubernetesHelper:
 			if (kind, "") in kubernetes_resources:
 				kubernetes_resources[(kind, "")]["available"] = True
 
-		# Now fetch non-core APIs
-		non_core_apis = {}
+		# Attempt aggregated discovery; we need custom header_params to do this.
+		# Fallback to the old method if aggregate discovery isn't supported.
+		header_params = {
+			"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
+			"Content-Type": "application/json",
+			"User-Agent": f"{self.programname} v{self.programversion}",
+		}
+		aggregated_data = {}
 
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
-
+		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params)
 		if status == 200 and raw_data is not None:
 			# Success
 			try:
-				non_core_apis = json.loads(raw_data)
+				aggregated_data = json.loads(raw_data)
 			except DecodeException:
 				# We got a response, but the data is malformed
-				pass
-		else:
-			# No non-core APIs found; this is a bit worrying, but OK...
-			pass
+				return kubernetes_resources, 42422, False
 
 		# These are all API-groups we know of
 		_api_groups = set(api_group for kind, api_group in kubernetes_resources)
+
+		# We successfully got aggregated data
+		if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
+			for api_group in deep_get(aggregated_data, DictPath("items"), []):
+				name = deep_get(api_group, DictPath("metadata#name"), "")
+				known_api_group = name in _api_groups
+				if known_api_group == False:
+					continue
+
+				versions = deep_get(api_group, DictPath("versions"), [])
+
+				# Now we need to check what kinds this api_group supports
+				# and using what version
+				for version in versions:
+					_version = deep_get(version, DictPath("version"))
+					if _version is None:
+						# This should not happen, but ignore it
+						continue
+					resources = deep_get(api_group, DictPath("resources"), [])
+					for resource in deep_get(version, DictPath("resources"), []):
+						if "list" not in deep_get(resource, DictPath("verbs"), []):
+							continue
+						kind = deep_get(resource, DictPath("responseKind#kind"), "")
+						if len(kind) == 0:
+							continue
+						if (kind, name) in kubernetes_resources and \
+								f"apis/{name}/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
+							kubernetes_resources[(kind, name)]["available"] = True
+							continue
+			modified = True
+			return kubernetes_resources, status, modified
+
+		# Nope, this is only non-core APIs
+		non_core_apis = aggregated_data
 
 		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
 			name = deep_get(api_group, DictPath("name"), "")
@@ -4352,7 +4432,6 @@ class KubernetesHelper:
 					if len(kind) == 0:
 						continue
 					if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
-						# We are special casing this since the core API is deprecated and handled transparently
 						if (kind, name) in kubernetes_resources:
 							kubernetes_resources[(kind, name)]["available"] = True
 						continue
