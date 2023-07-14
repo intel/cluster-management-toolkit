@@ -3452,8 +3452,28 @@ class KubernetesHelper:
 			connect_timeout: float = 3.0
 			# This isn't ideal; we might need different cluster proxies for different clusters
 			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
-			result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
-			if result.status == 302:
+			try:
+				result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
+				status = result.status
+			except urllib3.exceptions.MaxRetryError as e:
+				# No route to host does not have a HTTP response; make one up...
+				# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
+				# we prefix it...
+				if "CERTIFICATE_VERIFY_FAILED" in str(e):
+					# Client Handshake Failed (Cloudflare)
+					status = 525
+					if "certificate verify failed" in str(e):
+						tmp = re.match(r".*SSL: CERTIFICATE_VERIFY_FAILED.*certificate verify failed: (.*) \(_ssl.*", str(e))
+						if tmp is not None:
+							message = f"; {tmp[1]}"
+				else:
+					status = 42503
+			except urllib3.exceptions.ConnectTimeoutError:
+				# Connection timed out; the API-server might not be available, suffer from too high load, or similar
+				# 504 is Gateway Timeout; using 42504 to indicate connection timeout thus seems reasonable
+				status = 42504
+
+			if status == 302:
 				location = result.headers.get("Location", "")
 				tmp = re.match(r".*implicit#access_token=([^&]+)", location)
 				if tmp is not None:
