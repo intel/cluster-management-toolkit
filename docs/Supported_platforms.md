@@ -22,7 +22,6 @@ This rules out installer & tool support for Debian 10 (Python 3.7).
 
 On openSUSE/SLES 15 and RHEL 8 you should be able to install python38
 and python38-pip or newer to get a recent version of Python3.
-This has, however, not been tested on RHEL 8.
 
 Some attempts were made to add Kubeadm Cluster support for SLES 15, but since upstream
 Kubernetes only is available for Debian and Red Hat distributions, and since SUSE's own

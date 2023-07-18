@@ -64,7 +64,9 @@
       major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
       minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
       if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
-        sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+          sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+        fi
       fi
     changed_when: false
   - name: "Installing new versions of kubeadm, kubelet and kubectl"

@@ -599,6 +599,69 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 
 	return deb_versions
 
+def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+	"""
+	Given a list of packages, return installed, candidate, and all available versions
+
+		Parameters:
+			deb_packages (list[str]): A list of packages to get versions for
+		Returns:
+			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+	"""
+
+	try:
+		# This is for the benefit of avoiding dependency cycles
+		# pylint: disable-next=import-outside-toplevel
+		from natsort import natsorted
+	except ModuleNotFoundError:
+		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+
+	rpm_versions = []
+	rpm_versions_dict = {}
+
+	yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+	args = [yum_path, "--showduplicates", "-q", "list"] + rpm_packages
+	response = cmtio.execute_command_with_response(args)
+	split_response = response.splitlines()
+
+	package_version = re.compile(r"^([^.]+)[^\s]+[\s]+([^\s]+).*")
+
+	section = ""
+
+	for line in split_response:
+		if line == "Installed Packages":
+			section = "installed"
+			continue
+		elif line == "Available Packages":
+			section = "available"
+			continue
+		else:
+			tmp = package_version.match(line)
+			if tmp is not None:
+				package = tmp[1]
+				version = tmp[2]
+
+				if package not in rpm_versions_dict:
+					rpm_versions_dict[package] = {
+						"installed": "<none>",
+						"candidate": "<none>",
+						"available": [],
+					}
+
+				if section == "installed":
+					rpm_versions_dict[package]["installed"] = version
+				elif section == "available":
+					rpm_versions_dict[package]["available"].append(version)
+			# Now summarise
+
+	for package, data in rpm_versions_dict.items():
+		candidate = "<none>"
+		if len(data["available"]) > 0:
+			candidate = data["available"][-1]
+		rpm_versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
+
+	return rpm_versions
+
 def identify_k8s_distro() -> str:
 	"""
 	Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use

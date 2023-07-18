@@ -76,12 +76,17 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "ansible-runner",
 		"always-fallback-distros": [
 			"suse",
+			"fedora",
+			"rhel",
 		],
 	},
 	"python3-cryptography": {
 		"fallback": "cryptography",
 		"always-fallback-distros": [
 			"suse",
+			# Until RHEL 9
+			"fedora",
+			"rhel",
 		],
 		"never-fallback-distros": [
 			"debian",
@@ -91,6 +96,8 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "natsort",
 		"always-fallback-distros": [
 			"suse",
+			"fedora",
+			"rhel",
 		],
 		"never-fallback-distros": [
 			"debian",
@@ -100,8 +107,22 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "paramiko",
 		"always-fallback-distros": [
 			"suse",
+			"fedora",
+			"rhel",
 		],
 		"never-fallback-distros": [
+			"debian",
+		],
+	},
+	"python3-pyyaml": {
+		"fallback": "PyYAML",
+		"always-fallback-distros": [
+			# Until RHEL 9
+			"fedora",
+			"rhel",
+		],
+		"never-fallback-distros": [
+			"suse",
 			"debian",
 		],
 	},
@@ -109,6 +130,8 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "ujson",
 		"always-fallback-distros": [
 			"suse",
+			"fedora",
+			"rhel",
 		],
 		"never-fallback-distros": [
 			"debian",
@@ -118,6 +141,9 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "urllib3",
 		"always-fallback-distros": [
 			"suse",
+			# Until RHEL 9
+			"fedora",
+			"rhel",
 		],
 		"never-fallback-distros": [
 			"debian",
@@ -126,7 +152,11 @@ PACKAGES_WITH_PIP_FALLBACK = {
 	"python3-validators": {
 		"fallback": "validators",
 		"always-fallback-distros": [
-			"suse",
+			"fedora",
+			"rhel",
+		],
+		"never-fallback-distros": [
+			"debian",
 		],
 	},
 	"python3-yaml": {
@@ -136,15 +166,31 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		],
 		"never-fallback-distros": [
 			"debian",
+			"fedora",
+			"rhel",
 		],
 	},
 }
 
 PACKAGES_WITHOUT_FALLBACK = {
-	"ansible": {},
+	"ansible": {
+		"distros": [
+			"debian",
+			"suse",
+		],
+	},
+	"ansible-core": {
+		"distros": [
+			"fedora",
+			"rhel",
+		],
+	},
 	"python3-cryptography": {
 		"distros": [
 			"debian",
+			# Enable from RHEL 9
+			# "fedora",
+			# "rhel",
 		],
 	},
 	"python3-natsort": {
@@ -162,6 +208,13 @@ PACKAGES_WITHOUT_FALLBACK = {
 			"debian",
 		],
 	},
+	# Enable from RHEL 9
+	# "python3-pyyaml": {
+	#	"distros": [
+	#		"fedora",
+	#		"rhel",
+	#	],
+	#},
 	"python3-ujson": {
 		"distros": [
 			"debian",
@@ -172,6 +225,9 @@ PACKAGES_WITHOUT_FALLBACK = {
 		"reason": "TLSv1.1 is still enabled in older versions",
 		"distros": [
 			"debian",
+			# Enable from RHEL 9
+			#"fedora",
+			#"rhel",
 		],
 	},
 	"python3-yaml": {
@@ -279,6 +335,83 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
 			break
 		if pkg_version is not None:
 			args = [zypper_path, "versioncmp", pkg_version, recommended_minimum]
+			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+			if "older" in result.stdout.decode("utf-8").splitlines():
+				ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
+						ANSIThemeString(" The installed version of package ", "default"),
+						ANSIThemeString(f"{pkg}", "path"),
+						ANSIThemeString(" (", "default"),
+						ANSIThemeString(f"{pkg_version}", "version"),
+						ANSIThemeString(") is older than the recommended minimum version: ", "default"),
+						ANSIThemeString(f"{recommended_minimum}", "version")], stderr = True)
+				ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
+						ANSIThemeString(f" {reason}\n", "default")], stderr = True)
+
+# pylint: disable-next=unused-argument
+def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -> None:
+	"""
+	Batch install Red Hat (Fedora) packages
+
+		Parameters:
+			packages (union(dict, set)): A dict or set of packages to install
+			verbose (bool): Unused
+	"""
+
+	try:
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("sudo", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	try:
+		yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("yum", "path"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	rpmdev_vercmp_path = None
+
+	try:
+		rpmdev_vercmp_path = secure_which(FilePath("/usr/bin/rpmdev-vercmp"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+	except FileNotFoundError:
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(": Could not find ", "default"),
+				ANSIThemeString("rpmdev-vercmp", "path"),
+				ANSIThemeString("; will not be able to compare package versions.", "default")], stderr = True)
+
+	if isinstance(packages, set):
+		packages = dict.fromkeys(packages, {})
+	args = [sudo_path, yum_path, "-y", "install"] + list(packages.keys())
+
+	_retval = subprocess.run(args, check = False).returncode
+
+	# Check if the installed versions are new enough
+	for pkg, data in packages.items():
+		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
+		reason = deep_get(data, DictPath("reason"), "")
+		if len(recommended_minimum) == 0:
+			continue
+
+		args = [yum_path, "info"] + [pkg]
+		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+		pkg_version = None
+		compiled_regex = re.compile(r"^.*Version: (.+?)")
+		for line in result.stdout.decode("utf-8").splitlines():
+			tmp = compiled_regex.match(line)
+			if tmp is None:
+				continue
+
+			pkg_version = tmp[1]
+			break
+
+		if pkg_version is not None and rpmdev_vercmp_path is not None:
+			args = [yum_path, "versioncmp", pkg_version, recommended_minimum]
 			result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
 			if "older" in result.stdout.decode("utf-8").splitlines():
 				ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
@@ -415,6 +548,8 @@ def install_software(packages: Dict, verbose: bool = False, distro: str = "") ->
 		install_software_deb(packages = packages, verbose = verbose)
 	elif distro == "suse":
 		install_software_suse(packages = packages, verbose = verbose)
+	elif distro in ("fedora", "rhel"):
+		install_software_fedora(packages = packages, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def install_software_with_pip(packages: List[str], pip_proxy: str = "", verbose: bool = False) -> None:
@@ -515,6 +650,42 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 			tmp = not_found_regex.match(line)
 			if tmp is not None:
 				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+	elif distro in ("fedora", "rhel"):
+		try:
+			yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+		except FileNotFoundError:
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Could not find ", "default"),
+					ANSIThemeString("yum", "path"),
+					ANSIThemeString("; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+
+		args = [yum_path, "list", "-q"] + list(packages.keys())
+		response = execute_command_with_response(args)
+		split_response = response.splitlines()
+
+		information_for_regex = re.compile(r"^([^.]+).+$")
+		not_found_regex = re.compile(r"^Error: No matching Packages to list$")
+
+		all_packages = set(packages.keys())
+		found_packages = set()
+
+		if split_response[0] != "Error: No matching Packages to list":
+			for line in split_response:
+				if line.startswith("Installed Packages"):
+					continue
+				tmp = information_for_regex.match(line)
+
+				if tmp is not None:
+					if distro not in deep_get(packages[tmp[1]], DictPath("always-fallback-distros"), []):
+						if tmp[1] not in pkgs:
+							pkgs[tmp[1]] = packages[tmp[1]]
+						continue
+					fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+					found_packages.add(tmp[1])
+					continue
+		for missing in all_packages.difference(found_packages):
+			fallbacks.add(deep_get(packages[missing], DictPath("fallback")))
 
 	if len(pkgs) > 0 and not dryrun:
 		install_software(pkgs, verbose = verbose, distro = distro)
@@ -602,14 +773,16 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if distro == "suse opensuse":
 		distro = "suse"
 
-	if distro not in ("debian", "suse"):
+	if distro not in ("debian", "suse", "rhel", "fedora"):
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" distro “", "default"),
 				ANSIThemeString(f"{distro}", "path"),
 				ANSIThemeString("“ is not supported.", "default")])
 		ansithemeprint([ANSIThemeString("Currently only distros based on ", "default"),
 				ANSIThemeString("Debian", "programname"),
-				ANSIThemeString(" or ", "default"),
+				ANSIThemeString(", ", "default"),
+				ANSIThemeString("Red Hat", "programname"),
+				ANSIThemeString(", or ", "default"),
 				ANSIThemeString("SUSE", "programname"),
 				ANSIThemeString(" are supported.", "default")])
 		sys.exit(errno.ENOTSUP)
@@ -622,6 +795,12 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("depending on your SP-level this may be, for instance, “", "default"),
 				ANSIThemeString("python310-pip", "programname"),
 				ANSIThemeString("“.\n", "default")])
+	elif distro in ("fedora", "rhel"):
+		ansithemeprint([ANSIThemeString("Note:", "note"),
+				ANSIThemeString(" on Red Hat distros older than RHEL 9 you need to install a newer version", "default")])
+		ansithemeprint([ANSIThemeString("of python3 and set it as the default version (using ", "default"),
+				ANSIThemeString("update-alternatives", "programname"),
+				ANSIThemeString(").\n", "default")])
 
 	pkgs_without_fallback: Dict = trim_package_list(packages = PACKAGES_WITHOUT_FALLBACK, distro = distro)
 	pkgs_with_pip_fallback: Dict = trim_package_list(packages = PACKAGES_WITH_PIP_FALLBACK, distro = distro, fallback = True)

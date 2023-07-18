@@ -28,6 +28,16 @@ is currently missing on RHEL, but other than that it should be possible to insta
 
 Other distributions are not supported at this point. This also applies to Windows.
 
+# A note on firewalls
+
+`firewalld` and other firewall software prevents
+Kubernetes from working _in their default configuration_. It is possible to configure firewalls
+to allow the required ports, but such configuration is, at least currently, out of scope for
+this documentation.  `cmtadm` and `cmt` will *NOT* disable firewalls during installation.
+If you have issues you will either have to look up online how to configure the firewall to work
+with Kubernetes (recommended) or, if the setup is purely for internal use, disable the firewall
+completely (*not recommended*).
+
 # Supported hardware architectures
 
 The only supported hardware architecture at the moment is _x86-64_/_amd64_.

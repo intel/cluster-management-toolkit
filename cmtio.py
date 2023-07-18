@@ -728,13 +728,14 @@ def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy:
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PARENT_PERMISSIONS,
-		SecurityChecks.PERMISSIONS,
 		SecurityChecks.EXISTS,
 		SecurityChecks.IS_FILE,
 	]
 
 	if executable:
 		checks.append(SecurityChecks.IS_EXECUTABLE)
+	else:
+		checks.append(SecurityChecks.PERMISSIONS)
 
 	violations = check_path(path, checks = checks)
 

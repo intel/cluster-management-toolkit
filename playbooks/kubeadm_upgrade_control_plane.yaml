@@ -37,19 +37,27 @@
     shell: |
       apt-mark unhold kubeadm kubelet kubectl || true
     when: "ansible_os_family == 'Debian'"
-  - name: "Remove deprecated config flags"  # noqa fqcn-builtins risky-shell-pipe
+  - name: "Removing deprecated config flags"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       major_version=$(echo {{ requested_control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
       minor_version=$(echo {{ requested_control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
       if [ $major_version -ge 1 ] && [ $minor_version -ge 24 ]; then
-        sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
-        sed -i -e 's/--network-plugin=cni//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+          sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+        fi
+        if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
+          sed -i -e 's/--network-plugin=cni//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        fi
       fi
       if [ $major_version -ge 1 ] && [ $minor_version -ge 27 ]; then
-        sed -i -e 's/--container-runtime=\(docker\|remote\)//' /var/lib/kubelet/kubeadm-flags.env
-        sed -i -e 's/--container-runtime=\(docker\|remote\)//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-        sed -i -e 's/--pod-infra-container-image=[^ ]*//' /var/lib/kubelet/kubeadm-flags.env
-        sed -i -e 's/--pod-infra-container-image=[^ ]*//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+          sed -i -e 's/--container-runtime=\(docker\|remote\)//' /var/lib/kubelet/kubeadm-flags.env
+          sed -i -e 's/--pod-infra-container-image=[^ ]*//' /var/lib/kubelet/kubeadm-flags.env
+        fi
+        if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
+          sed -i -e 's/--container-runtime=\(docker\|remote\)//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+          sed -i -e 's/--pod-infra-container-image=[^ ]*//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        fi
       fi
     changed_when: false
   - name: "Installing new versions of kubeadm, kubelet and kubectl"

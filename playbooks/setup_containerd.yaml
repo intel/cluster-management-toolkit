@@ -13,14 +13,20 @@
         - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
         - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
         - description: "/etc/zypp/repos.d/openSUSE:Factory.repo"
+          conditions:
+          - "SUSE and derivatives"
         "Installed packages":
         - description: "containerd"
           conditions:
           - "Debian and derivatives"
           - "SUSE and derivatives"
+        - description: "containerd.io"
+          conditions:
+          - "Red Hat and derivatives"
         - description: "runc"
           conditions:
           - "Debian and derivatives"
+          - "Red Hat and derivatives"
           - "SUSE and derivatives"
         "Modified files":
         - description: "/etc/crictl.yaml (use containerd by default)"
@@ -29,6 +35,7 @@
         - description: "Updates package cache"
           conditions:
           - "Debian and derivatives"
+          - "Red Hat and derivatives"
           - "SUSE and derivatives"
         - description: "modprobe br_netfilter"
         "Restarted services":
@@ -60,6 +67,13 @@
       state: "latest"
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
+  - name: "Installing containerd.io and runc"
+    ansible.builtin.dnf:
+      name:
+      - "containerd.io"
+      - "runc"
+      state: "latest"
+    when: "ansible_os_family == 'RedHat'"
   - name: "Configuring package repository for Containerd"
     ansible.builtin.template:
       dest: "/etc/zypp/repos.d/Virtualization_containers.repo"

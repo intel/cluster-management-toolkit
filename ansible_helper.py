@@ -1601,7 +1601,7 @@ def ansible_async_get_data(async_cookie: ansible_runner.runner.Runner) -> Option
 			data (dict): The result of the run (in a format suitable for passing to ansible_print_play_results)
 	"""
 
-	if async_cookie is None or async_cookie not in finished_runs:
+	if async_cookie is None or not isinstance(async_cookie, ansible_runner.runner.Runner) or async_cookie not in finished_runs:
 		return None
 
 	finished_runs.discard(async_cookie)

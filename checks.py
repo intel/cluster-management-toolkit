@@ -1052,7 +1052,9 @@ recommended_file_permissions = [
 		"usergroup_alertmask": 0o007,
 		"executable": False,
 		"severity": "critical",
-		"justification": [ANSIThemeString("If others users can read or modify cluster credential files they can obtain cluster access", "default")]
+		"justification": [ANSIThemeString("If others users can read or modify cluster credential files they can obtain cluster access", "default")],
+		# This is not a required file, so don't warn if it doesn't exist
+		"optional": True,
 	},
 ]
 
@@ -1089,6 +1091,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 		justification = deep_get(permissions, DictPath("justification"), [ANSIThemeString("<no justification provided>", "emphasis")])
 		executable = deep_get(permissions, DictPath("executable"), False)
 		suffixes = deep_get(permissions, DictPath("suffixes"))
+		optional = deep_get(permissions, DictPath("optional"), False)
 
 		if len(usergroup) > 0:
 			alertmask = usergroup_alertmask
@@ -1202,12 +1205,13 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 							ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
 							ANSIThemeString("; this file is not an executable and should not have the executable bit set", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("  Warning", "warning"),
-					ANSIThemeString(f": the {pathtype} ", "default"),
-					ANSIThemeString(f"{path}", "path"),
-					ANSIThemeString(" does not exist; skipping.\n", "default")], stderr = True)
-			warning += 1
-			issue = True
+			if not optional:
+				ansithemeprint([ANSIThemeString("  Warning", "warning"),
+						ANSIThemeString(f": the {pathtype} ", "default"),
+						ANSIThemeString(f"{path}", "path"),
+						ANSIThemeString(" does not exist; skipping.\n", "default")], stderr = True)
+				warning += 1
+				issue = True
 			continue
 
 	return issue, critical, error, warning, note

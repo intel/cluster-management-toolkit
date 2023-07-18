@@ -19,8 +19,8 @@
   tasks:
   - name: "Checking whether the host runs an OS supported for control planes"
     ansible.builtin.fail:
-      msg: "Only Debian-derivatives are supported as control planes"
-    when: "(ansible_os_family != 'Debian') and (role == 'control-plane')"
+      msg: "Only Debian-derivatives and Red Hat-derivatives are supported as control planes"
+    when: "(ansible_os_family not in ['Debian', 'RedHat']) and (role == 'control-plane')"
   - name: "Checking whether the host runs an OS supported for nodes"
     ansible.builtin.fail:
       msg: "Only Debian-derivatives and Red Hat-derivatives are supported as nodes"

@@ -28,11 +28,15 @@
       msg: |
         ansible: {% if (ansible_facts.packages['ansible'] is defined) %}{{ ansible_facts.packages['ansible'][0].version }}{% else %}N/A{% endif %}
 
-        ansible-mitogen: {% if (ansible_facts.packages['ansible-mitogen'] is defined) %}{{ ansible_facts.packages['ansible-mitogen'][0].version }}{% else %}N/A{% endif %}
+        ansible-core: {% if (ansible_facts.packages['ansible-core'] is defined) %}{{ ansible_facts.packages['ansible-core'][0].version }}{% else %}N/A{% endif %}
 
         containerd: {% if (ansible_facts.packages['containerd'] is defined) %}{{ ansible_facts.packages['containerd'][0].version }}{% else %}N/A{% endif %}
 
         containerd.io: {% if (ansible_facts.packages['containerd.io'] is defined) %}{{ ansible_facts.packages['containerd.io'][0].version }}{% else %}N/A{% endif %}
+
+        cri-o: {% if (ansible_facts.packages['cri-o'] is defined) %}{{ ansible_facts.packages['cri-o'][0].version }}{% else %}N/A{% endif %}
+
+        cri-tools: {% if (ansible_facts.packages['cri-tools'] is defined) %}{{ ansible_facts.packages['cri-tools'][0].version }}{% else %}N/A{% endif %}
 
         docker-ce: {% if (ansible_facts.packages['docker-ce'] is defined) %}{{ ansible_facts.packages['docker-ce'][0].version }}{% else %}N/A{% endif %}
 

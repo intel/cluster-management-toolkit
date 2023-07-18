@@ -55,7 +55,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import cmtlib
-from cmtlib import check_deb_versions, identify_distro, read_cmtconfig
+from cmtlib import check_deb_versions, check_rpm_versions, identify_distro, read_cmtconfig
 
 import kubernetes_helper
 
@@ -96,6 +96,10 @@ prepare_targets: Dict = {
 		],
 		"deb_packages": [
 		],
+		"fedora_packages": [
+		],
+		"suse_packages": [
+		],
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
@@ -106,6 +110,9 @@ prepare_targets: Dict = {
 		],
 		"deb_packages": [
 			"ansible",
+		],
+		"fedora_packages": [
+			"ansible-core",
 		],
 		"suse_packages": [
 			"ansible",
@@ -119,6 +126,10 @@ prepare_targets: Dict = {
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_control_plane.yaml"))),
 		],
 		"deb_packages": [
+		],
+		"fedora_packages": [
+		],
+		"suse_packages": [
 		],
 	},
 }
@@ -142,6 +153,16 @@ setup_control_plane_targets: Dict = {
 			"kubectl",
 			"kubelet",
 		],
+		"fedora_packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		],
+		"fedora_packages_held": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		],
 		"extra_values": {
 		},
 	},
@@ -154,6 +175,12 @@ setup_control_plane_targets: Dict = {
 			"kubectl",
 		],
 		"deb_packages_held": [
+			"kubectl",
+		],
+		"fedora_packages": [
+			"kubectl",
+		],
+		"fedora_packages_held": [
 			"kubectl",
 		],
 		"suse_packages": [
@@ -192,6 +219,12 @@ upgrade_control_plane_targets: Dict = {
 			"kubectl",
 		],
 		"deb_packages_held": [
+			"kubectl",
+		],
+		"fedora_packages": [
+			"kubectl",
+		],
+		"fedora_packages_held": [
 			"kubectl",
 		],
 	},
@@ -234,6 +267,17 @@ purge_control_plane_targets: Dict = {
 			"kubernetes-cni",
 		],
 		"deb_packages_held": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+		],
+		"fedora_packages": [
+			"kubeadm",
+			"kubectl",
+			"kubelet",
+			"kubernetes-cni",
+		],
+		"fedora_packages_held": [
 			"kubeadm",
 			"kubectl",
 			"kubelet",
@@ -1020,7 +1064,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	if cni not in ("", "<none>", "<unknown>"):
+	if cni not in ("", "none", "<none>", "<unknown>"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": The cluster already has a CNI installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EEXIST)
@@ -1586,7 +1630,7 @@ def __get_theme(string: str, default: str) -> str:
 	}
 	return translation.get(string, default)
 
-def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
+def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
 	"""
 	Check versions for all relevant software
 
@@ -1597,10 +1641,14 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 			(deb_versions, other_versions): A tuple of utput from check_deb_versions(), (software, installed_version, "")
 	"""
 
+	os_distro = identify_distro()
+
 	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
-	# First check all Debian versions
-	deb_versions = check_deb_versions(deb_packages)
+	if os_distro == "debian":
+		pkg_versions = check_deb_versions(pkg_packages)
+	elif os_distro in ("fedora", "rhel"):
+		pkg_versions = check_rpm_versions(pkg_packages)
 
 	# Now check versions that need special checks
 	for version_check in version_checks:
@@ -1629,8 +1677,8 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 
 	# Finally, display the gathered version information; find the longest string of each type
 	# Create lists of header + all values belonging to that header, and get the length of the longest element
-	slen = len(max(["Software:"] + [tmp[0] for tmp in deb_versions + other_versions], key = len))
-	ilen = len(max(["Installed Version:"] + [tmp[1] for tmp in deb_versions + other_versions], key = len))
+	slen = len(max(["Software:"] + [tmp[0] for tmp in pkg_versions + other_versions], key = len))
+	ilen = len(max(["Installed Version:"] + [tmp[1] for tmp in pkg_versions + other_versions], key = len))
 
 	# Print a header
 	ansithemeprint([ANSIThemeString("Software:", "header"),
@@ -1638,7 +1686,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 			ANSIThemeString("Installed Version:", "header"),
 			ANSIThemeString(f"{''.ljust(ilen - len('Installed Version:') + 2)}", "default"),
 			ANSIThemeString("Candidate Version:", "header")])
-	for software, installed_version, candidate_version, _ in cast(Tuple[str, str, str, List[str]], natsorted(deb_versions)):
+	for software, installed_version, candidate_version, _ in cast(Tuple[str, str, str, List[str]], natsorted(pkg_versions)):
 		iformat = __get_theme(installed_version, "version")
 		cformat = __get_theme(candidate_version, "version")
 		ansithemeprint([ANSIThemeString(f"{software.ljust(slen + 2)}", "default"),
@@ -1652,7 +1700,7 @@ def check_versions(deb_packages: List[str], version_checks: List[Tuple[str, List
 				ANSIThemeString(f"{installed_version.ljust(ilen + 2)}", iformat),
 				ANSIThemeString(f"{candidate_version}", cformat)])
 
-	return deb_versions, other_versions
+	return pkg_versions, other_versions
 
 # pylint: disable-next=unused-argument
 def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False) -> Tuple[int, Dict]:
@@ -1851,6 +1899,9 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict) -> No
 	elif os_distro == "suse":
 		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages_held"), [])
 
 	extra_values = {
 		"packages": packages,
@@ -1880,6 +1931,9 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict) 
 	elif os_distro == "suse":
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
+		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
 	extra_values = {
 		"packages": packages,
@@ -1952,6 +2006,9 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict) -> None:
 	elif os_distro == "suse":
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages_held"), [])
 
 	extra_values = {
 		"cluster_name": cluster_name,
@@ -1985,6 +2042,9 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict) -> Non
 	elif os_distro == "suse":
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
+		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
 	if k8s_distro == "rke2":
 		cri_socket = cri_socket[len("unix://"):]
@@ -2285,6 +2345,9 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict) -> Non
 	elif os_distro == "suse":
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
 	extra_values = {
 		"packages": packages,
@@ -2333,6 +2396,9 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict) -> N
 	elif os_distro == "suse":
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
+		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
 	extra_values = {
 		"cluster_name": cluster_name,
@@ -2484,6 +2550,9 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict) -> Non
 	elif os_distro == "suse":
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
+	elif os_distro in ("fedora", "rhel"):
+		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
+		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
 	extra_values = {
 		"packages": packages,
@@ -2684,13 +2753,18 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 			requested_version (str): The best matching package version
 	"""
 
+	os_distro = identify_distro()
+
 	requested_version = None
 
 	if k8s_distro == "kubeadm":
 		# If version is an exact match for a package version, use it.
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
-		versions = check_deb_versions(["kubeadm"])
+		if os_distro == "debian":
+			versions = check_deb_versions(["kubeadm"])
+		elif os_distro in ("fedora", "rhel"):
+			versions = check_rpm_versions(["kubeadm"])
 
 		if len(versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -2698,8 +2772,10 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 					ANSIThemeString("kubeadm", "programname"),
 					ANSIThemeString(" available; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
-		elif version is not None:
+		elif version is not None and version != "<none>":
 			# The list is sorted in falling order, so the first match is the one we want, since that's the newest package revision.
+			# We're only checking versions for kubeadm, so that's always gonna be entry 0 in the list.
+			# field 3 is the list of available versions.
 			for package_version in versions[0][3]:
 				if package_version.split("-")[0] == version:
 					requested_version = package_version
@@ -2711,6 +2787,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 					requested_version = package_version
 					break
 		else:
+			# If no version was requested, we pick the candidate version
 			requested_version = versions[0][2]
 			if len(requested_version) == 0:
 				requested_version = versions[0][1]
@@ -3127,6 +3204,8 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
+	os_distro = identify_distro()
+
 	# default options
 	update_cache = True
 
@@ -3136,17 +3215,21 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 
-	if update_cache == True:
+	if os_distro == "debian" and update_cache == True:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
 
-	deb_packages = [
+	pkg_packages = [
 		"ansible",
+		"ansible-core",
 		"containerd",
 		"containerd.io",
 		"cri-o",
 		"cri-tools",
+		"docker-ce",
+		"docker-engine",
+		"docker.io",
 		"kubeadm",
 		"kubectl",
 		"kubelet",
@@ -3154,8 +3237,6 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"kubernetes-client",
 		"kubernetes-master",
 		"kubernetes-node",
-		"docker.io",
-		"docker-ce",
 		"python3-ansible-runner",
 		"python3-natsort",
 		"python3-openssl",
@@ -3169,7 +3250,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	version_checks: List = []
 
 	print()
-	check_versions(deb_packages, version_checks)
+	check_versions(pkg_packages, version_checks)
 	print()
 
 def show_configuration(action: str = "", tasks: Optional[List] = None) -> None:
@@ -3545,6 +3626,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	ansithemeprint([ANSIThemeString("\n[Setting up control plane]", "phase")])
 
+	# Add the package versions to the package list
 	if k8s_distro == "kubeadm":
 		setup_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 		setup_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
@@ -3554,6 +3636,15 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubeadm={requested_version}")
 		setup_control_plane_targets["kubeadm"]["deb_packages"].remove("kubelet")
 		setup_control_plane_targets["kubeadm"]["deb_packages"].append(f"kubelet={requested_version}")
+
+		setup_control_plane_targets["localhost"]["fedora_packages"].remove("kubectl")
+		setup_control_plane_targets["localhost"]["fedora_packages"].append(f"kubectl-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubectl")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubectl-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubeadm")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubeadm-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubelet")
+		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubelet-{requested_version}")
 
 	run_tasks(tasks = setup_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "installed")
 	update_installation_info(version = requested_version)
@@ -3957,9 +4048,12 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			ANSIThemeString("Running sanity checks", "action")])
 
 	if k8s_distro == "kubeadm":
-		deb_versions = check_deb_versions(["kubeadm"])
+		if os_distro == "debian":
+			pkg_versions = check_deb_versions(["kubeadm"])
+		elif os_distro in ("fedora", "rhel"):
+			pkg_versions = check_rpm_versions(["kubeadm"])
 
-		if len(deb_versions) == 0:
+		if len(pkg_versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": No candidate version for ", "default"),
 					ANSIThemeString("kubeadm", "programname"),
@@ -3967,7 +4061,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			sys.exit(errno.ENOENT)
 
 		if requested_version is not None:
-			if requested_version not in deb_versions[0][3]:
+			if requested_version not in pkg_versions[0][3]:
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": The requested version ", "default"),
 						ANSIThemeString(f"{requested_version}", "version"),
@@ -3982,7 +4076,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 							ANSIThemeString("--reinstall", "option"),
 							ANSIThemeString("“.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
-			elif deb_compare_versions(version, requested_version) == True:
+			elif os_distro == "debian" and deb_compare_versions(version, requested_version) == True:
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": The requested version ", "default"),
 						ANSIThemeString(f"{requested_version}", "version"),
@@ -3990,12 +4084,13 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 						ANSIThemeString(f"{deb_versions[0][1]}", "version"),
 						ANSIThemeString(". Downgrades are not supported; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
+			# FIXME: Implement version checking for Fedora/RHEL packages
 		else:
-			requested_version = deb_versions[0][2]
+			requested_version = pkg_versions[0][2]
 			if len(requested_version) == 0 or requested_version == "<none>":
 				ansithemeprint([ANSIThemeString("Note", "note"),
 						ANSIThemeString(": The latest version ", "default"),
-						ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+						ANSIThemeString(f"{pkg_versions[0][1]}", "version"),
 						ANSIThemeString(" is already installed.", "default")])
 				sys.exit(0)
 
@@ -4010,7 +4105,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 					ANSIThemeString(": Upgrades between ", "default"),
 					ANSIThemeString("MAJOR", "emphasis"),
 					ANSIThemeString(" versions is currently not supported (installed version: ", "default"),
-					ANSIThemeString(f"{deb_versions[0][1]}", "version"),
+					ANSIThemeString(f"{pkg_versions[0][1]}", "version"),
 					ANSIThemeString(", requested version: ", "default"),
 					ANSIThemeString(f"{requested_version}", "version"),
 					ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -4022,7 +4117,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 						ANSIThemeString("MINOR", "emphasis"),
 						ANSIThemeString(" versions is not supported, please perform the following upgrades sequentially:", "default")], stderr = True)
 				minor_versions: Dict = {}
-				for version in reversed(deb_versions[0][3]):
+				for version in reversed(pkg_versions[0][3]):
 					version_tuple = version.split(".")
 					major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
 					if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
@@ -4085,6 +4180,9 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		# Adjust package version for localhost
 		upgrade_control_plane_targets["localhost"]["deb_packages"].remove("kubectl")
 		upgrade_control_plane_targets["localhost"]["deb_packages"].append(f"kubectl={requested_version}")
+
+		upgrade_control_plane_targets["localhost"]["fedora_packages"].remove("kubectl")
+		upgrade_control_plane_targets["localhost"]["fedora_packages"].append(f"kubectl-{requested_version}")
 	elif k8s_distro == "rke2":
 		# Add requested_version to extra_values;
 		# for rke2 this is either vX.YY or latest
