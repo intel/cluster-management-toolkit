@@ -115,6 +115,9 @@ initial_container = None
 # Is cmu running in read only-mode?
 read_only_mode = False
 
+# Is Kubernetes support enabled
+kubernetes_support = True
+
 # Namespace
 selected_namespace = ""
 
@@ -129,7 +132,9 @@ def init_kubernetes_client() -> None:
 	"""
 
 	global kh # pylint: disable=global-statement
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	if kubernetes_support:
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 override_tail_lines = None
 default_tail_lines = 4000
@@ -138,6 +143,9 @@ def gather_cluster_info() -> None:
 	"""
 	Gather information about the cluster necessary for running playbooks
 	"""
+
+	if not kubernetes_support:
+		return
 
 	ansithemeprint([ANSIThemeString("[Gathering cluster information]\n", "phase")])
 
@@ -4180,12 +4188,16 @@ def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, 
 
 	control_plane_node, control_plane_name = get_control_plane()
 
-	node_vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-	for node in node_vlist:
-		roles = kh.get_node_roles(node)
-		if "control-plane" in roles:
-			continue
-		nodes.append(deep_get(node, DictPath("metadata#name")))
+	if kubernetes_support:
+		node_vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+		for node in node_vlist:
+			roles = kh.get_node_roles(node)
+			if "control-plane" in roles:
+				continue
+			nodes.append(deep_get(node, DictPath("metadata#name")))
+	else:
+		nodes = []
+		status = 200
 
 	if len(nodes) > 0:
 		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
@@ -4375,6 +4387,9 @@ def get_node_info(vlist, extra_vars) -> List[Type]:
 
 # To make the failure case easier, return both the ref and the name of the control plane
 def get_control_plane() -> Tuple[Dict, str]:
+	if not kubernetes_support:
+		return None, ""
+
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	control_planes = []
 
@@ -11102,7 +11117,11 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 		# Repopulate the list of views, on the offhand chance that a view file has been added
 		populate_views(force_refresh = refresh_apis)
 		curses.doupdate()
-	available_api_families, _status, _modified = kh.get_available_kinds()
+
+	if kubernetes_support:
+		available_api_families, _status, _modified = kh.get_available_kinds()
+	else:
+		available_api_families = {}
 
 	items = []
 	order = []
@@ -11295,15 +11314,19 @@ listviewactions = {
 infoviews = {} # type: ignore
 
 # These functions are used to check whether an API is available
+def is_kubernetes_supported() -> bool:
+	return kubernetes_support
+
 def is_cluster_reachable() -> bool:
 	reachable = False
 
-	if kh is not None:
+	if kubernetes_support and kh is not None:
 		reachable = kh.is_cluster_reachable()
 	return reachable
 
 availability_checker_allowlist = {
-	"is_cluster_reachable": is_cluster_reachable
+	"is_cluster_reachable": is_cluster_reachable,
+	"is_kubernetes_supported": is_kubernetes_supported,
 }
 
 # action calls acceptable for direct use in view files
@@ -11523,7 +11546,11 @@ def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str
 def populate_views(force_refresh: bool = False) -> None:
 	global views # pylint: disable=global-statement
 
-	tmp_available_api_families, _status, _modified = kh.get_available_kinds(force_refresh = force_refresh)
+	if kubernetes_support:
+		tmp_available_api_families, _status, _modified = kh.get_available_kinds(force_refresh = force_refresh)
+	else:
+		tmp_available_api_families = {}
+
 	available_api_families = set()
 	for kind, kind_data in tmp_available_api_families.items():
 		if deep_get(kind_data, DictPath("available"), False) == True:
@@ -11560,17 +11587,14 @@ def populate_views(force_refresh: bool = False) -> None:
 			if not filename.endswith((".yaml", ".yml")):
 				continue
 
-			if len(available_api_families) > 0:
-				match_tmp = yaml_regex.match(filename)
-				tmp = match_tmp[1]
-				if "." in tmp:
-					kind, api_family = tmp.split(".", 1)
-				else:
-					kind = tmp
-					api_family = ""
-				if (kind, api_family) in available_api_families or kind.startswith("__"):
-					view_files.append(os.path.join(view_dir, filename))
+			match_tmp = yaml_regex.match(filename)
+			tmp = match_tmp[1]
+			if "." in tmp:
+				kind, api_family = tmp.split(".", 1)
 			else:
+				kind = tmp
+				api_family = ""
+			if (kind, api_family) in available_api_families or kind.startswith("__"):
 				view_files.append(os.path.join(view_dir, filename))
 
 	for view_file in view_files:
@@ -12037,7 +12061,9 @@ def populate_views(force_refresh: bool = False) -> None:
 			# Add the new view
 			infoviews[(kind, api_family)] = infoview_entry
 			has_infoview = True
-		kh_update_api_status((kind, api_family), listview = has_listview, infoview = has_infoview)
+
+		if kubernetes_support:
+			kh_update_api_status((kind, api_family), listview = has_listview, infoview = has_infoview)
 
 def setupui(stdscr: curses.window) -> None:
 	# Hide the cursor
@@ -12057,6 +12083,15 @@ def setupui(stdscr: curses.window) -> None:
 			viewfunc = deep_get(views, DictPath(f"{defaultview}#viewfunc"))
 			if viewfunc is None:
 				viewfunc = genericlistloop
+			check_availability = deep_get(views, DictPath(f"{defaultview}#check_availability"))
+			if check_availability is not None and not check_availability():
+				curses.endwin()
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": The requested view “", "default"),
+						ANSIThemeString(defaultview, "argument"),
+						ANSIThemeString("“ is not available; ", "default"),
+						ANSIThemeString("the cluster may be offline or the API disabled.", "default")], stderr = True)
+				sys.exit(errno.ENOTSUP)
 			viewfunc(stdscr, defaultview)
 		else:
 			curses.endwin()
@@ -12295,6 +12330,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 	global read_only_mode # pylint: disable=global-statement
 	global selected_namespace # pylint: disable=global-statement
 	global defaultview # pylint: disable=global-statement
+	global kubernetes_support # pylint: disable=global-statement
 
 	tmpdefaultview = deep_get(cmtlib.cmtconfig, DictPath("Global#defaultview"), "")
 
@@ -12303,8 +12339,11 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 			selected_namespace = optarg
 		elif opt == "--read-only":
 			read_only_mode = True
+		elif opt == "--disable-kubernetes":
+			kubernetes_support = False
 
 	init_kubernetes_client()
+
 	# Customises the list views
 	ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
 
@@ -12357,7 +12396,8 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	init_kubernetes_client()
 	ansithemeprint([ANSIThemeString("Checking available Kubernetes APIs\n", "default")])
-	_available_api_families, _status, _modified = kh.get_available_kinds()
+	if kubernetes_support:
+		_available_api_families, _status, _modified = kh.get_available_kinds()
 
 	# Customises the list views if necessary
 	if len(infoviews) == 0:
@@ -12585,6 +12625,15 @@ COMMANDLINE = {
 		"options": {
 			"--read-only": {
 				"description": [ANSIThemeString("disable all commands that modify state", "description")],
+			},
+			"--disable-kubernetes": {
+				"description": [ANSIThemeString("disable Kubernetes support", "description")],
+				"extended_description": [
+					[ANSIThemeString("This option disables Kubernetes support; ", "description")],
+					[ANSIThemeString("this is typically only useful if you use", "description")],
+					[ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
+					 ANSIThemeString(" to manage an Ansible inventory", "description")],
+				],
 			},
 			"--namespace": {
 				"description": [ANSIThemeString("only show namespace ", "description"),
