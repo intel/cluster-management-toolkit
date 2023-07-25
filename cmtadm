@@ -34,7 +34,7 @@ from typing import Callable, cast, Dict, List, Optional, Set, Tuple, Union
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
@@ -4414,10 +4414,29 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 
 	usergroup = ""
+	usergroup_autodetect = True
 
 	for opt, optarg in options:
 		if opt == "--usergroup":
 			usergroup = optarg
+		elif opt == "--disable-usergroup-autodetect":
+			usergroup_autodetect = False
+
+	# Get the username and group for the user;
+	# if they match it's highly likely that the system
+	# is configured to use usergroups
+	uid = os.getuid()
+	username = pwd.getpwuid(uid).pw_name
+	gid = pwd.getpwuid(uid).pw_gid
+	groupname = grp.getgrgid(gid).gr_name
+
+	if len(usergroup) == 0 and usergroup_autodetect == True:
+		logindefs = secure_read_string(FilePath("/etc/login.defs"))
+		usergroups_regex = re.compile(r"^USERGROUPS_ENAB\s+yes")
+		for line in logindefs.splitlines():
+			tmp = usergroups_regex.match(line)
+			if tmp is not None:
+				usergroup = groupname
 
 	kwargs = {
 		"usergroup": usergroup
@@ -4433,31 +4452,24 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your installation is secure.", "default")])
 	elif len(usergroup) == 0:
-		# Get the username and group for the user;
-		# if they match it's highly likely that the system
-		# is configured to use usergroups
-		uid = os.getuid()
-		username = pwd.getpwuid(uid).pw_name
-		gid = pwd.getpwuid(uid).pw_gid
-		groupname = grp.getgrgid(gid).gr_name
-
-		ansithemeprint([ANSIThemeString("\nNote", "emphasis"),
-				ANSIThemeString(":", "default"),
-				ANSIThemeString(" the username for the current user “", "default"),
-				ANSIThemeString(f"{username}", "argument"),
-				ANSIThemeString("“ is the same", "default")])
-		ansithemeprint([ANSIThemeString("as its primary group name. This may be an indication ", "default"),
-				ANSIThemeString("that the system", "default")])
-		ansithemeprint([ANSIThemeString("is configured to use usergroups; if you're seeing warnings related", "default")])
-		ansithemeprint([ANSIThemeString("to file permissions this ", "default"),
-				ANSIThemeString("might", "emphasis"),
-				ANSIThemeString(" be the cause; if you know (or think) that", "default")])
-		ansithemeprint([ANSIThemeString("the system is configured with usergroups you can try:\n", "default")])
-		ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME} ", "programname"),
-				ANSIThemeString("audit ", "command"),
-				ANSIThemeString("--usergroup ", "option"),
-				ANSIThemeString(f"{username}", "argument")])
-		ansithemeprint([ANSIThemeString("\nto see if that resolves the warnings.", "default")])
+		if username == groupname:
+			ansithemeprint([ANSIThemeString("\nNote", "emphasis"),
+					ANSIThemeString(":", "default"),
+					ANSIThemeString(" the username for the current user “", "default"),
+					ANSIThemeString(f"{username}", "argument"),
+					ANSIThemeString("“ is the same", "default")])
+			ansithemeprint([ANSIThemeString("as its primary group name. This may be an indication ", "default"),
+					ANSIThemeString("that the system", "default")])
+			ansithemeprint([ANSIThemeString("is configured to use usergroups; if you're seeing warnings related", "default")])
+			ansithemeprint([ANSIThemeString("to file permissions this ", "default"),
+					ANSIThemeString("might", "emphasis"),
+					ANSIThemeString(" be the cause; if you know (or think) that", "default")])
+			ansithemeprint([ANSIThemeString("the system is configured with usergroups you can try:\n", "default")])
+			ansithemeprint([ANSIThemeString(f"  {about.ADMIN_PROGRAM_NAME} ", "programname"),
+					ANSIThemeString("audit ", "command"),
+					ANSIThemeString("--usergroup ", "option"),
+					ANSIThemeString(f"{username}", "argument")])
+			ansithemeprint([ANSIThemeString("\nto see if that resolves the warnings.", "default")])
 
 preflight_checks = [
 	{
@@ -5345,7 +5357,8 @@ COMMANDLINE = {
 			[ANSIThemeString("to use ", "description"),
 			 ANSIThemeString("usergroups", "emphasis"),
 			 ANSIThemeString(" (every user have their own group", "description")],
-			[ANSIThemeString("that only they belong to), be sure to specify", "description")],
+			[ANSIThemeString("that only they belong to); if the name of that", "description")],
+			[ANSIThemeString("group differs from the username be sure to specify", "description")],
 			[ANSIThemeString("that group using the ", "description"),
 			 ANSIThemeString("--usergroup ", "option"),
 			 ANSIThemeString("USERGROUP", "argument"),
@@ -5354,9 +5367,20 @@ COMMANDLINE = {
 			[ANSIThemeString("from complaining about insecure permissions", "description")],
 		],
 		"options": {
+			"--disable-usergroup-autodetect": {
+				"description": [ANSIThemeString("Disable usergroup autodetect", "description")],
+				"extended_description": [
+					[ANSIThemeString("Note", "emphasis"),
+					 ANSIThemeString(": the audit command attempts", "description")],
+					[ANSIThemeString("to autodetect whether ", "description"),
+					 ANSIThemeString("usergroups", "emphasis"),
+					 ANSIThemeString(" are in use;", "description")],
+					[ANSIThemeString("use this option to disable autodetect", "description")],
+				],
+			},
 			"--usergroup": {
 				"values": [ANSIThemeString("USERGROUP", "argument")],
-				"description": [ANSIThemeString("The usergroup", "description")],
+				"description": [ANSIThemeString("The name of the usergroup", "description")],
 				"requires_arg": True,
 				"validation": {
 					"validator": "regex",
