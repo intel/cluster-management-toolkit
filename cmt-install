@@ -116,14 +116,15 @@ PACKAGES_WITH_PIP_FALLBACK = {
 	},
 	"python3-pyyaml": {
 		"fallback": "PyYAML",
-		"always-fallback-distros": [
+		"distros": [
 			# Until RHEL 9
 			"fedora",
 			"rhel",
 		],
-		"never-fallback-distros": [
-			"suse",
-			"debian",
+		"always-fallback-distros": [
+			# Until RHEL 9
+			"fedora",
+			"rhel",
 		],
 	},
 	"python3-ujson": {
@@ -138,6 +139,8 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		],
 	},
 	"python3-urllib3": {
+		"recommended minimum": "1.26.0",
+		"reason": "TLSv1.1 is still enabled in older versions",
 		"fallback": "urllib3",
 		"always-fallback-distros": [
 			"suse",
@@ -161,13 +164,15 @@ PACKAGES_WITH_PIP_FALLBACK = {
 	},
 	"python3-yaml": {
 		"fallback": "PyYAML",
+		"distros": [
+			"debian",
+			"suse",
+		],
 		"always-fallback-distros": [
 			"suse",
 		],
 		"never-fallback-distros": [
 			"debian",
-			"fedora",
-			"rhel",
 		],
 	},
 }
@@ -185,52 +190,7 @@ PACKAGES_WITHOUT_FALLBACK = {
 			"rhel",
 		],
 	},
-	"python3-cryptography": {
-		"distros": [
-			"debian",
-			# Enable from RHEL 9
-			# "fedora",
-			# "rhel",
-		],
-	},
-	"python3-natsort": {
-		"distros": [
-			"debian",
-		],
-	},
-	"python3-paramiko": {
-		"distros": [
-			"debian",
-		],
-	},
 	"python3-pip": {
-		"distros": [
-			"debian",
-		],
-	},
-	# Enable from RHEL 9
-	# "python3-pyyaml": {
-	#	"distros": [
-	#		"fedora",
-	#		"rhel",
-	#	],
-	#},
-	"python3-ujson": {
-		"distros": [
-			"debian",
-		],
-	},
-	"python3-urllib3": {
-		"recommended minimum": "1.26.0",
-		"reason": "TLSv1.1 is still enabled in older versions",
-		"distros": [
-			"debian",
-			# Enable from RHEL 9
-			#"fedora",
-			#"rhel",
-		],
-	},
-	"python3-yaml": {
 		"distros": [
 			"debian",
 		],
@@ -511,7 +471,7 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
 
 		Parameters:
 			packages (union(dict, set)): A dict of packages to install
-			distro (str): Supported options "debian", "suse"
+			distro (str): Supported options "debian", "fedora" "rhel", "suse"
 			fallback (bool): Is a package list with fallbacks being processed
 		Returns:
 			trimmed_packages (dict): The trimmed dict of packages
@@ -527,9 +487,9 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
 
 		if len(distros) > 0 and distro not in distros:
 			continue
-		if len(never_fallback_distros) > 0 and distro in never_fallback_distros and fallback:
-			continue
 		trimmed_packages[pkg] = data
+		if len(never_fallback_distros) > 0 and distro in never_fallback_distros and fallback:
+			trimmed_packages[pkg].pop("fallback")
 
 	return trimmed_packages
 
@@ -614,6 +574,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 
 		for line in split_response:
 			_pkg = line.split(' ', 1)
+			# If we explicitly specify distros there are different names
+			# for the same package in different distros, so skip if irrelevant
+			if "distros" in deep_get(packages, DictPath(f"_pkg[0]"), {}) and distro not in deep_get(packages, DictPath(f"{_pkg[0]}#distros"), []):
+				continue
 			if distro not in deep_get(packages, DictPath(f"{_pkg[0]}#always-fallback-distros"), []):
 				if _pkg[0] in packages.keys() and _pkg[0] not in pkgs:
 					pkgs[_pkg[0]] = packages[_pkg[0]]
@@ -818,6 +782,8 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansithemeprint([ANSIThemeString("  Note", "warning"),
 					ANSIThemeString(": This requires sudo permissions", "emphasis")])
 			for pkg in pkgs_without_fallback:
+				ansithemeprint([ANSIThemeString(f"    {pkg}", "path")])
+			for pkg in pkgs:
 				ansithemeprint([ANSIThemeString(f"    {pkg}", "path")])
 			for pkg in pkgs_fallback:
 				ansithemeprint([ANSIThemeString(f"    {pkg}", "path"),
