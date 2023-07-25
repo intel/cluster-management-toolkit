@@ -31,7 +31,7 @@ from cmttypes import deep_get, DictPath, FilePath
 try:
 	import urllib3
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 	"""

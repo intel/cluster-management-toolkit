@@ -47,12 +47,12 @@ from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, T
 try:
 	import yaml
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from cmtpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR

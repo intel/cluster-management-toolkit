@@ -12,6 +12,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 try:
 	import validators # type: ignore
 except ModuleNotFoundError:
+	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
 
 import about
@@ -158,8 +159,12 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 			valid = False
 			if "/" in subarg:
 				ip, netmask = subarg.split("/")
-				valid_ipv4_address = validators.ipv4(ip)
-				valid_ipv6_address = validators.ipv6(ip)
+				if validators is not None:
+					valid_ipv4_address = validators.ipv4(ip)
+					valid_ipv6_address = validators.ipv6(ip)
+				else:
+					valid_ipv4_address = True
+					valid_ipv6_address = True
 				try:
 					if valid_ipv4_address and 0 < int(netmask) <= 32:
 						valid = True
@@ -183,8 +188,12 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				sys.exit(errno.EINVAL)
 		elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
 			valid_dns_label = cmtlib.validate_name("dns-label", subarg)
-			valid_ipv4_address = validators.ipv4(subarg)
-			valid_ipv6_address = validators.ipv6(subarg)
+			if validators is not None:
+				valid_ipv4_address = validators.ipv4(subarg)
+				valid_ipv6_address = validators.ipv6(subarg)
+			else:
+				valid_ipv4_address = True
+				valid_ipv6_address = True
 
 			if validator in ("hostname", "hostname_or_path") and not valid_dns_label:
 				# If validation failed as subname we check if it's a valid path;
@@ -286,7 +295,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				tmp_arg = f"https://{arg}"
 
 			# Workaround; it seems validators.url accepts usernames that start with "-"
-			if arg.startswith("-") or not validators.url(tmp_arg):
+			if arg.startswith("-") or validators is not None and not validators.url(tmp_arg):
 				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 						ANSIThemeString(": “", "default"),
 						ANSIThemeString(f"{subarg}", "option"),

@@ -27,7 +27,7 @@ from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Uni
 try:
 	import yaml
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -35,7 +35,7 @@ from cryptography.hazmat.primitives import serialization
 try:
 	import urllib3
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-urllib3; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib

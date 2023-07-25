@@ -176,7 +176,7 @@ def read_cmtconfig() -> Dict:
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	global cmtconfig # pylint: disable=global-statement
 
@@ -548,7 +548,7 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	deb_versions = []
 
@@ -614,7 +614,7 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
 	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	rpm_versions = []
 	rpm_versions_dict = {}

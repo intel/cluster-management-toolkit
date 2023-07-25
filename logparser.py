@@ -46,17 +46,18 @@ from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, U
 try:
 	import yaml
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-yaml; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-natsort; did you forget to run cmt-install?")
+	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
 	import validators # type: ignore
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: You probably need to install python3-validators; did you forget to run cmt-install?")
+	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
+	validators = None
 
 from cmtpaths import HOMEDIR, PARSER_DIR
 
@@ -573,7 +574,10 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 		# Safe
 		tmp = re.match(r"^([a-f0-9:][a-f0-9:.]+[a-f0-9])( - - .*)", message)
 		if tmp is not None:
-			if validators.ipv4(tmp[1]) or validators.ipv6(tmp[1]):
+			# Just pass-through if validators isn't installed;
+			# this might lead to false positives, but it's better than
+			# not working at all
+			if validators is None or validators.ipv4(tmp[1]) or validators.ipv6(tmp[1]):
 				ipaddress = tmp[1]
 				message = tmp[2]
 
