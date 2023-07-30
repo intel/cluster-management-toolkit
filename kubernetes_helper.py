@@ -3359,8 +3359,17 @@ class KubernetesHelper:
 	tmp_ca_certs_file: Any = None
 	tmp_cert_file: Any = None
 	tmp_key_file: Any = None
+	token: Optional[str] = None
+
+	pool_manager: Optional[Union[urllib3.PoolManager, urllib3.ProxyManager]] = None
+
 	programname = ""
 	programversion = ""
+
+	cluster_unreachable: bool = True
+	cluster_name: str = ""
+	coontext_name: str = ""
+
 	control_plane_ip: Optional[str] = None
 	control_plane_port: Optional[str] = None
 	control_plane_path: Optional[str] = None
@@ -3673,6 +3682,9 @@ class KubernetesHelper:
 		# This isn't ideal; we might need different cluster proxies for different clusters
 		cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
 
+		if self.pool_manager is not None:
+			self.pool_manager.clear() # type: ignore
+
 		# If we have a cert we also have a key
 		if cert is not None:
 			key = str(key)
@@ -3938,7 +3950,7 @@ class KubernetesHelper:
 				is_reachable (bool): True if cluster is reachable, False if the cluster is unreachable
 		"""
 
-		return self.cluster_unreachable == False
+		return not self.cluster_unreachable
 
 	def get_control_plane_address(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
 		"""
@@ -4160,7 +4172,7 @@ class KubernetesHelper:
 		"""
 
 		# If the list is not empty, but the cluster is unreachable, return it unchanged
-		if self.cluster_unreachable == True:
+		if self.cluster_unreachable:
 			return 42503, []
 
 		api_resources: List[Tuple] = []
@@ -4321,7 +4333,7 @@ class KubernetesHelper:
 		modified = False
 
 		# If the list is not empty, but the cluster is unreachable, return it unchanged
-		if self.cluster_unreachable == True:
+		if self.cluster_unreachable:
 			return kubernetes_resources, 42503, modified
 
 		# It is fairly easy to check if the API-list is "fresh"; just check whether Pod is available
@@ -4481,7 +4493,7 @@ class KubernetesHelper:
 		if query_params is None:
 			query_params = []
 
-		if self.cluster_unreachable == True:
+		if self.cluster_unreachable:
 			message = "Cluster Unreachable"
 			return None, "", 42503
 
@@ -4514,9 +4526,9 @@ class KubernetesHelper:
 		while reauth_retry > 0:
 			try:
 				if body is not None:
-					result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+					result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
 				else:
-					result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)
+					result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
 				status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
@@ -4787,7 +4799,7 @@ class KubernetesHelper:
 		if kind is None:
 			raise ValueError("__rest_helper_get API called with kind None; this is most likely a programming error")
 
-		if self.cluster_unreachable == True:
+		if self.cluster_unreachable:
 			# Our arbitrary return value for Cluster Unreachable
 			status = 42503
 
@@ -5064,7 +5076,7 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
-		if self.cluster_unreachable == True:
+		if self.cluster_unreachable:
 			return [], 42503
 
 		query_params: List[Optional[Tuple[str, Any]]] = []

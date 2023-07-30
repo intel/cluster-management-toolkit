@@ -273,9 +273,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 
 		if checksum_url is not None:
 			if checksum_url.startswith("http://"):
-				r1 = pm.request("GET", checksum_url)
+				r1 = pm.request("GET", checksum_url) # type: ignore
 			elif checksum_url.startswith("https://"):
-				r1 = spm.request("GET", checksum_url)
+				r1 = spm.request("GET", checksum_url) # type: ignore
 			else:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 							       ANSIThemeString(": Unknown or missing protocol; Checksum URL ", "default"),
@@ -290,9 +290,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				break
 
 		if url.startswith("http://"):
-			r1 = pm.request("GET", url)
+			r1 = pm.request("GET", url) # type: ignore
 		elif url.startswith("https://"):
-			r1 = spm.request("GET", url)
+			r1 = spm.request("GET", url) # type: ignore
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 						       ANSIThemeString(": Unknown or missing protocol; URL ", "default"),
@@ -358,7 +358,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 						       ANSIThemeString(f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue
-	pm.clear()
-	spm.clear()
+	pm.clear() # type: ignore
+	spm.clear() # type: ignore
 
 	return retval
