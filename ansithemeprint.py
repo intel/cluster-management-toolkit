@@ -10,7 +10,7 @@ from getpass import getpass
 from pathlib import PurePath
 import subprocess
 import sys
-from typing import cast, List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 import cmtio

@@ -609,13 +609,6 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
 	"""
 
-	try:
-		# This is for the benefit of avoiding dependency cycles
-		# pylint: disable-next=import-outside-toplevel
-		from natsort import natsorted
-	except ModuleNotFoundError:
-		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
-
 	rpm_versions = []
 	rpm_versions_dict = {}
 

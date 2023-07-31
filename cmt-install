@@ -576,7 +576,7 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 			_pkg = line.split(' ', 1)
 			# If we explicitly specify distros there are different names
 			# for the same package in different distros, so skip if irrelevant
-			if "distros" in deep_get(packages, DictPath(f"_pkg[0]"), {}) and distro not in deep_get(packages, DictPath(f"{_pkg[0]}#distros"), []):
+			if "distros" in deep_get(packages, DictPath(f"{_pkg[0]}"), {}) and distro not in deep_get(packages, DictPath(f"{_pkg[0]}#distros"), []):
 				continue
 			if distro not in deep_get(packages, DictPath(f"{_pkg[0]}#always-fallback-distros"), []):
 				if _pkg[0] in packages.keys() and _pkg[0] not in pkgs:
