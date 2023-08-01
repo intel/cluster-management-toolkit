@@ -611,7 +611,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			month = month_to_numerical(_month)
 			year = tmp[5]
 			hms = tmp[6]
-			if reformat_timestamps == True:
+			if reformat_timestamps:
 				ts = f"{year}-{month}-{day} {hms}"
 			else:
 				ts = f"{day}/{_month}/{year}:{hms}"
@@ -683,7 +683,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			year = tmp[5]
 			hms = tmp[6]
 			tz = tmp[7]
-			if reformat_timestamps == True:
+			if reformat_timestamps:
 				ts = f"{year}-{month}-{day} {hms}{tz}"
 			else:
 				ts = f"{day}/{_month}/{year}:{hms}{tz}"
@@ -793,7 +793,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 		date = tmp[1]
 		hmsms = tmp[2]
 
-		if reformat_timestamps == True:
+		if reformat_timestamps:
 			ts = f"{date} {hmsms} +0000"
 		else:
 			ts = f"{date}T{hmsms}Z"
@@ -1006,7 +1006,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 	if logentry is not None and isinstance(logentry, dict):
 		# If msg_first we reorder the dict
-		if logparser_configuration.msg_first == True:
+		if logparser_configuration.msg_first:
 			_d = {}
 			for key in messages + errors:
 				value = logentry.get(key, None)
@@ -1021,10 +1021,10 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 		msg = deep_get_with_fallback(logentry, messages, "")
 		level = deep_get_with_fallback(logentry, severities, None)
-		if logparser_configuration.pop_severity == True:
+		if logparser_configuration.pop_severity:
 			for _sev in severities:
 				logentry.pop(_sev, None)
-		if logparser_configuration.pop_ts == True:
+		if logparser_configuration.pop_ts:
 			for _ts in timestamps:
 				logentry.pop(_ts, None)
 
@@ -1046,7 +1046,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 						if i < len(_separators):
 							facility += _separators[i]
 
-		if logparser_configuration.pop_facility == True:
+		if logparser_configuration.pop_facility:
 			for _fac in facilities:
 				if isinstance(_fac, str):
 					logentry.pop(_fac, None)
@@ -1072,7 +1072,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			if msg == "":
 				message = str(logentry)
 			else:
-				if logparser_configuration.msg_extract == True:
+				if logparser_configuration.msg_extract:
 					# pop the first matching _msg
 					for _msg in messages:
 						if _msg in logentry:
@@ -1103,7 +1103,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			else:
 				errorseverity = LogLevel.ERR
 
-			if logparser_configuration.msg_extract == True:
+			if logparser_configuration.msg_extract:
 				message = msg
 				# Pop the first matching _msg
 				for _msg in messages:
@@ -1229,7 +1229,7 @@ def split_json_style_raw(message: str, severity: LogLevel = LogLevel.INFO, facil
 	logparser_configuration.pop_ts = tmp_pop_ts
 	logparser_configuration.pop_facility = tmp_pop_facility
 
-	if merge_msg == True:
+	if merge_msg:
 		message, remnants = merge_message(message, _remnants, severity)
 	else:
 		remnants = _remnants
@@ -1412,7 +1412,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 	tmp = ""
 
 	for i, raw_msg in enumerate(raw_message):
-		if raw_msg == "\"" and escaped == False:
+		if raw_msg == "\"" and not escaped:
 			quoted = True
 		elif raw_msg == "\\":
 			escaped = not escaped
@@ -1524,7 +1524,7 @@ def format_key_value(key: str, value: str, severity: LogLevel, force_severity: b
 		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key_error")),
 		       ThemeRef("separators", "keyvalue_log"),
 		       ThemeString(f"{value}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
-	elif force_severity == True:
+	elif force_severity:
 		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key")),
 		       ThemeRef("separators", "keyvalue_log"),
 		       ThemeString(f"{value}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -1607,11 +1607,11 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					break
 			# XXX: Instead of just giving up we should probably do something with the leftovers...
 
-		if logparser_configuration.pop_ts == True:
+		if logparser_configuration.pop_ts:
 			for _ts in timestamps:
 				d.pop(_ts, None)
 		level = deep_get_with_fallback(d, severities)
-		if logparser_configuration.pop_severity == True:
+		if logparser_configuration.pop_severity:
 			for _sev in severities:
 				d.pop(_sev, None)
 		if level is not None:
@@ -1641,7 +1641,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 							facility += str(deep_get(d, DictPath(_fac), ""))
 						if i < len(_separators):
 							facility += _separators[i]
-		if logparser_configuration.pop_facility == True:
+		if logparser_configuration.pop_facility:
 			for _fac in facilities:
 				if isinstance(_fac, str):
 					d.pop(_fac, None)
@@ -1655,10 +1655,10 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						d.pop(__fac)
 
 		# pylint: disable-next=too-many-boolean-expressions
-		if not fold_msg and len(d) == 2 and logparser_configuration.merge_starting_version == True and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
+		if not fold_msg and len(d) == 2 and logparser_configuration.merge_starting_version and "msg" in d and msg.startswith("Starting") and "version" in d and version.startswith("(version="):
 			message, severity = custom_override_severity(msg, severity, overrides = severity_overrides)
 			message = f"{msg} {version}"
-		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and fold_msg == False:
+		elif "err" in d and ("errors occurred:" in d["err"] or "error occurred:" in d["err"]) and not fold_msg:
 			err = d["err"]
 			if err.startswith("\"") and err.endswith("\""):
 				err = err[1:-1]
@@ -1671,7 +1671,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
-						if line.startswith("* ") and substitute_bullets == True and logparser_configuration.msg_realbullets == True:
+						if line.startswith("* ") and substitute_bullets and logparser_configuration.msg_realbullets:
 							remnants.append(([ThemeRef("separators", "logbullet"),
 									  ThemeString(f"{line[2:]}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
@@ -1679,7 +1679,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 		else:
 			tmp = []
 			# If we are extracting msg we always want msg first
-			if logparser_configuration.msg_extract == True and fold_msg == False and len(msg) > 0:
+			if logparser_configuration.msg_extract and not fold_msg and len(msg) > 0:
 				tmp.append(msg)
 				# Pop the first matching _msg
 				for _msg in messages:
@@ -1691,12 +1691,12 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					if len(value) > 0:
 						tmp.append(format_key_value(key, value, severity))
 			else:
-				if logparser_configuration.msg_first == True:
+				if logparser_configuration.msg_first:
 					if fold_msg:
 						for key in messages + errors:
 							value = d.pop(key, "")
 							if len(value) > 0:
-								if logparser_configuration.msg_extract == True and key in messages:
+								if logparser_configuration.msg_extract and key in messages:
 									# We already have the message extracted
 									tmp.append(msg)
 								else:
@@ -1720,7 +1720,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 
 			for d_key, d_value in d.items():
 				if not fold_msg:
-					if d_key == "collector" and collector_bullets == True and logparser_configuration.bullet_collectors == True:
+					if d_key == "collector" and collector_bullets and logparser_configuration.bullet_collectors:
 						tmp.append(f"• {d_value}")
 					elif d_key in versions:
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
@@ -2013,7 +2013,7 @@ def substitute_bullets(message: str, prefix: str) -> str:
 			message (str): The message with bullets substituted
 	"""
 
-	if message.startswith(prefix):
+	if message.startswith(prefix) and logparser_configuration.msg_realbullets:
 		# We do not want to replace all "*" in the message with bullet, just prefixes
 		message = message[0:len(prefix)].replace("*", "•", 1) + message[len(prefix):]
 	return message
@@ -2087,7 +2087,7 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	elif message.lstrip() != message or message == "{":
 		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
-	elif len(message.strip()) == 0 and allow_empty_lines == True:
+	elif len(message.strip()) == 0 and allow_empty_lines:
 		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
 	else:
@@ -2134,8 +2134,8 @@ def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 				if tmp is not None:
 					matched = True
 
-	if matched == True:
-		if format_block_start == True:
+	if matched:
+		if format_block_start:
 			remnants = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2183,12 +2183,12 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 			if tmp is not None:
 				matched = False
 
-	if matched == True:
+	if matched:
 		remnants = formatters.format_yaml_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("block", yaml_line_scanner, options)
 	else:
-		if process_block_end == True:
-			if format_block_end == True:
+		if process_block_end:
+			if format_block_end:
 				remnants = formatters.format_yaml_line(message, override_formatting = {})
 			else:
 				remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2235,8 +2235,8 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 				if tmp is not None:
 					matched = True
 
-	if matched == True:
-		if format_block_start == True:
+	if matched:
+		if format_block_start:
 			remnants = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2281,12 +2281,12 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 			if tmp is not None:
 				matched = False
 
-	if matched == True:
+	if matched:
 		remnants = formatters.format_diff_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("block", diff_line_scanner, options)
 	else:
-		if process_block_end == True:
-			if format_block_end == True:
+		if process_block_end:
+			if format_block_end:
 				remnants = formatters.format_diff_line(message, override_formatting = {})
 			else:
 				remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2333,8 +2333,8 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 				if tmp is not None:
 					matched = True
 
-	if matched == True:
-		if format_block_start == True:
+	if matched:
+		if format_block_start:
 			remnants = formatters.format_diff_line(message, override_formatting = {})
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -2618,7 +2618,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				elif _filter[0] == "json_event":
 					_parser_options = _filter[1]
 					# We do not extract the facility/severity from folded messages, so just skip if fold_msg == True
-					if message.startswith("EVENT ") and fold_msg == False:
+					if message.startswith("EVENT ") and not fold_msg:
 						message, severity, facility, remnants = json_event(message, fold_msg = fold_msg, options = _parser_options)
 				elif _filter[0] == "key_value":
 					_parser_options = _filter[1]
@@ -2844,7 +2844,7 @@ def init_parser_list():
 def get_parser_list() -> Set[Parser]:
 	_parsers = set()
 	for parser in parsers:
-		if parser.show_in_selector == False:
+		if not parser.show_in_selector:
 			continue
 		_parsers.add(parser.parser_name)
 
@@ -2974,7 +2974,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 				regex_match = tmp is not None
 
 			if pod_name.startswith(pod_prefix) and container_name.startswith(container_prefix) and \
-			   _image_name.startswith(image_prefix) and container_type  == _container_type and regex_match == True:
+			   _image_name.startswith(image_prefix) and container_type == _container_type and regex_match:
 				uparser = parser.parser_name
 				options = {
 					"__line": line,
