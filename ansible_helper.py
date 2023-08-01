@@ -75,7 +75,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 			continue
 		# We can have multiple directories with local playbooks;
 		# the first match wins
-		if Path(f"{playbook_path}/{playbook}").is_file() == True:
+		if Path(f"{playbook_path}/{playbook}").is_file():
 			path = f"{playbook_path}/{playbook}"
 			break
 	if len(path) == 0:
@@ -260,7 +260,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 	# time for further post-processing
 
 	# do we want groupvars?
-	if include_groupvars == False:
+	if not include_groupvars:
 		for group in tmp:
 			tmp[group].pop("vars", None)
 	else:
@@ -269,7 +269,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				tmp[group].pop("vars", None)
 
 	# Do we want hosts?
-	if include_hosts == False:
+	if not include_hosts:
 		for group in tmp:
 			tmp[group].pop("hosts", None)
 	else:
@@ -278,7 +278,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				tmp[group].pop("hosts", None)
 
 		# OK, but do we want hostvars?
-		if include_hostvars == False:
+		if not include_hostvars:
 			for group in tmp:
 				if tmp[group].get("hosts") is not None:
 					for host in tmp[group]["hosts"]:
@@ -286,7 +286,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 
 	dump = yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", '').replace("null", "").replace("{}", "").splitlines()
 
-	if highlight == True and len(dump) > 0:
+	if highlight and len(dump) > 0:
 		i = 0
 		# Safe
 		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
@@ -396,7 +396,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 
 	# Do not create anything if the inventory exists;
 	# unless overwrite is set
-	if Path(inventory).exists() and overwrite == False:
+	if Path(inventory).exists() and not overwrite:
 		return
 
 	# If the ansible directory does not exist, create it
@@ -457,7 +457,7 @@ def ansible_create_groups(inventory: FilePath, groups: List[str]) -> bool:
 
 		changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -502,7 +502,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 		d[group]["vars"][key] = values[key]
 		changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -548,7 +548,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			d[group]["vars"][key] = value
 			changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -592,7 +592,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 			d["all"]["hosts"][host][key] = value
 			changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -644,7 +644,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 		if len(d[group]["vars"]) == 0:
 			d[group].pop("vars", None)
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -691,7 +691,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 		if len(d["all"]["hosts"][host]) == 0:
 			d["all"]["hosts"][host] = None
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -719,7 +719,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 	# The inventory does not exist; if the user specified skip_all
 	# we do not mind, otherwise we need to create it
 	if not Path(inventory).is_file():
-		if skip_all == True and group != "all":
+		if skip_all and group != "all":
 			changed = True
 		else:
 			__ansible_create_inventory(inventory, overwrite = False)
@@ -738,7 +738,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 		#
 		# Do not add a host that already exists in all;
 		# that will wipe its vars
-		if skip_all == False and group != "all":
+		if not skip_all and group != "all":
 			if d["all"]["hosts"] is None:
 				d["all"]["hosts"] = {}
 			if host not in cast(List, d["all"]["hosts"]):
@@ -764,7 +764,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 				d[group]["hosts"][host] = ""
 				changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -805,7 +805,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 			if len(d[group]["hosts"]) == 0:
 				d[group]["hosts"] = None
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -837,13 +837,13 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 		if d.get(group) is None:
 			continue
 
-		if d[group].get("hosts") is not None and force == False:
+		if d[group].get("hosts") is not None and not force:
 			continue
 
 		d.pop(group)
 		changed = True
 
-	if changed == True:
+	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
 
 	return True
@@ -887,7 +887,7 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bo
 
 	status = ""
 
-	if unreachable == True:
+	if unreachable:
 		for line in error_msg_lines:
 			if "Name or service not known" in line:
 				status = "COULD NOT RESOLVE"
@@ -906,7 +906,7 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bo
 				break
 		if len(status) == 0:
 			status = "UNREACHABLE (unknown reason)"
-	elif skipped == True:
+	elif skipped:
 		status = "SKIPPED"
 	else:
 		if retval != 0:
@@ -962,11 +962,11 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	failed = deep_get(event, DictPath("event"), "") == "runner_on_failed"
 	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
-	if unreachable == True:
+	if unreachable:
 		__retval = -1
-	elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
+	elif skipped or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 		__retval = 0
-	elif failed == True:
+	elif failed:
 		__retval = -1
 	else:
 		__retval = deep_get(event, DictPath("event_data#res#rc"))
@@ -1015,7 +1015,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		"ansible_facts": ansible_facts,
 	}
 
-	if unreachable == False and __retval == 0:
+	if not unreachable and __retval == 0:
 		d["status"] = "SUCCESS"
 
 	if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
@@ -1088,7 +1088,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 
 	save_logs: bool = deep_get(ansible_configuration, DictPath("save_logs"), False)
 
-	if save_logs == False:
+	if not save_logs:
 		return
 
 	playbook_name = playbook
@@ -1125,9 +1125,9 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 		skipped = deep_get(event, DictPath("event"), "") == "runner_on_skipped"
 		unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
-		if unreachable == True:
+		if unreachable:
 			retval = -1
-		elif skipped == True or deep_get(event, DictPath("event"), "") == "runner_on_ok":
+		elif skipped or deep_get(event, DictPath("event"), "") == "runner_on_ok":
 			retval = 0
 		else:
 			retval = deep_get(event, DictPath("event_data#res#rc"))
@@ -1197,7 +1197,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 
 # pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: List[str], stderr_lines: List[str], retval: int,
-			       unreachable: bool = False, skipped: bool = False) -> None:
+			       unreachable: bool = False, skipped: bool = False, verbose: bool = False) -> None:
 	"""
 	Pretty-print the result of an Ansible task run
 
@@ -1209,15 +1209,17 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 			retval (int): The return value from the task
 			unreachable (bool): Was the host unreachable?
 			skipped (bool): Was the task skipped?
+			verbose (bool): Should skipped tasks be outputted?
 	"""
 
-	if unreachable == True:
+	if unreachable:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
 				ANSIThemeString(f"{task}", "error")], stderr = True)
-	elif skipped == True:
-		ansithemeprint([ANSIThemeString("• ", "separator"),
-				ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
-		ansithemeprint([ANSIThemeString("", "default")])
+	elif skipped:
+		if verbose:
+			ansithemeprint([ANSIThemeString("• ", "separator"),
+					ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
+			ansithemeprint([ANSIThemeString("", "default")])
 		return
 	elif retval != 0:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
@@ -1252,13 +1254,14 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 			ansithemeprint([ANSIThemeString("<no output>", "none")])
 		ansithemeprint([ANSIThemeString("", "default")])
 
-def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
+def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bool = False) -> None:
 	"""
 	Pretty-print the result of an Ansible play
 
 		Parameters:
 			retval (int): The return value from the play
 			__ansible_results (opaque): The data from a playbook run
+			verbose (bool): Should skipped tasks be outputted?
 	"""
 
 	if retval != 0 and len(__ansible_results) == 0:
@@ -1277,7 +1280,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 				skipped = deep_get(play, DictPath("skipped"), False)
 				retval = deep_get(play, DictPath("retval"))
 
-				if header_output == False:
+				if not header_output:
 					header_output = True
 
 					if no_hosts_matched:
@@ -1293,11 +1296,13 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict) -> None:
 					msg_lines = deep_get(play, DictPath("msg_lines"), "")
 					stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
 					stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
-					ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped)
-				print()
+					ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped, verbose)
+
+				if not skipped or verbose:
+					print()
 
 				# Only show no hosts matched and unreachable once
-				if unreachable == True:
+				if unreachable:
 					break
 
 def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
