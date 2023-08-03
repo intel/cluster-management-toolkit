@@ -686,7 +686,8 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 
 	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
 
-def secure_which(path: FilePath, fallback_allowlist: List[str], security_policy: SecurityPolicy = SecurityPolicy.STRICT, executable: bool = True) -> FilePath:
+def secure_which(path: FilePath, fallback_allowlist: List[str],
+			security_policy: SecurityPolicy = SecurityPolicy.STRICT, executable: bool = True) -> FilePath:
 	"""
 	Path is the default path where the file expected to be found,
 	or if no such default path exists, just the base name of the file.

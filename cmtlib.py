@@ -552,7 +552,8 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 
 	deb_versions = []
 
-	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"],
+					    security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [apt_cache_path, "policy"] + deb_packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
@@ -584,7 +585,8 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			else:
 				candidate_version = ""
 			# We have the current and candidate version now; get all the other versions of the same package
-			apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+			apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"],
+							    security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 			_args = [apt_cache_path, "madison", package]
 			_response = cmtio.execute_command_with_response(_args)
 			_split_response = _response.splitlines()
@@ -612,7 +614,8 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 	rpm_versions = []
 	rpm_versions_dict = {}
 
-	yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+	yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
+				      security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	args = [yum_path, "--showduplicates", "-q", "list"] + rpm_packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()

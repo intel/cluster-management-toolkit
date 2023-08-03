@@ -113,7 +113,8 @@ def clear_screen() -> int:
 	"""
 
 	try:
-		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [],
+					   security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	except FileNotFoundError:
 		return errno.ENOENT
 

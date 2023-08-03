@@ -1,5 +1,6 @@
 #! /bin/sh
 # vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
 ''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
@@ -22,7 +23,8 @@ import sys
 from typing import Dict, List, Set, Tuple, Union
 
 from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
-from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME, BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
+from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME, BINDIR, HOMEDIR, CMTDIR
+from cmtpaths import CMT_LOGS_DIR, DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, CMT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
 
@@ -252,7 +254,8 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
 	"""
 
 	try:
-		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [],
+					 security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -261,7 +264,8 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
 		sys.exit(errno.ENOENT)
 
 	try:
-		zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [],
+					   security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -318,7 +322,8 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
 	"""
 
 	try:
-		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [],
+					 security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -327,7 +332,8 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
 		sys.exit(errno.ENOENT)
 
 	try:
-		yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+		yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
+					security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -338,7 +344,8 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
 	rpmdev_vercmp_path = None
 
 	try:
-		rpmdev_vercmp_path = secure_which(FilePath("/usr/bin/rpmdev-vercmp"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		rpmdev_vercmp_path = secure_which(FilePath("/usr/bin/rpmdev-vercmp"), fallback_allowlist = [],
+						  security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -395,7 +402,8 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 	"""
 
 	try:
-		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		sudo_path = secure_which(FilePath("/usr/bin/sudo"), fallback_allowlist = [],
+					 security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -404,7 +412,8 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 		sys.exit(errno.ENOENT)
 
 	try:
-		apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		apt_get_path = secure_which(FilePath("/usr/bin/apt-get"), fallback_allowlist = [],
+					    security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -417,7 +426,8 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 	_retval = subprocess.run(args, check = False).returncode
 
 	try:
-		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [],
+					      security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -426,7 +436,8 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 		sys.exit(errno.ENOENT)
 
 	try:
-		dpkg_path = secure_which(FilePath("/usr/bin/dpkg"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+		dpkg_path = secure_which(FilePath("/usr/bin/dpkg"), fallback_allowlist = [],
+					 security_policy = SecurityPolicy.STRICT)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -523,7 +534,8 @@ def install_software_with_pip(packages: List[str], pip_proxy: str = "", verbose:
 	"""
 
 	try:
-		pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+		pip3_path = secure_which(FilePath("pip3"), fallback_allowlist = ["/bin", "/usr/bin"],
+					 security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -537,7 +549,8 @@ def install_software_with_pip(packages: List[str], pip_proxy: str = "", verbose:
 	_retval = subprocess.run(args, check = False).returncode
 
 # pylint: disable-next=unused-argument
-def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verbose: bool = False, dryrun: bool = False, distro: str = "") -> Tuple[List[str], List[str]]:
+def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
+						verbose: bool = False, dryrun: bool = False, distro: str = "") -> Tuple[List[str], List[str]]:
 	"""
 	Batch install packages with pip fallback
 	This function tries to install a Python module from a package;
@@ -560,7 +573,8 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 
 	if distro == "debian":
 		try:
-			apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+			apt_cache_path = secure_which(FilePath("/usr/bin/apt-cache"), fallback_allowlist = [],
+						      security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Could not find ", "default"),
@@ -587,7 +601,8 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 				fallbacks.add(deep_get(packages, DictPath(f"{pkg}#fallback")))
 	elif distro == "suse":
 		try:
-			zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [], security_policy = SecurityPolicy.STRICT)
+			zypper_path = secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = [],
+						   security_policy = SecurityPolicy.STRICT)
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Could not find ", "default"),
@@ -616,7 +631,8 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "", verb
 				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
 	elif distro in ("fedora", "rhel"):
 		try:
-			yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+			yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
+						security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Could not find ", "default"),
@@ -694,7 +710,8 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	# Find out what distro this is run on
 	try:
-		distro_path = secure_which(FilePath("/etc/os-release"), fallback_allowlist = ["/usr/lib", "/lib"], security_policy = SecurityPolicy.ALLOWLIST_STRICT, executable = False)
+		distro_path = secure_which(FilePath("/etc/os-release"), fallback_allowlist = ["/usr/lib", "/lib"],
+					   security_policy = SecurityPolicy.ALLOWLIST_STRICT, executable = False)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" Cannot find an “", "default"),

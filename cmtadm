@@ -1,5 +1,6 @@
 #! /bin/sh
 # vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
 ''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
@@ -292,6 +293,16 @@ purge_control_plane_targets: Dict = {
 }
 
 def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
+	"""
+	Return the Kubernetes version used by the control plane
+
+		Parameters:
+			controlplane (str): Name of the node to check the version from
+			k8s_distro (str): The Kubernetes distro used
+		Returns:
+			version (str): The Kubernetes version if discernible, None if not
+	"""
+
 	version = None
 
 	if k8s_distro == "rke2":
@@ -476,7 +487,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 	info = None
 
 	# We are OK with the file not existing
-	checks = [
+	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
@@ -486,7 +497,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 	]
 
 	try:
-		info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks = checks)
+		info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks = security_checks)
 	except FileNotFoundError:
 		pass
 
@@ -893,7 +904,8 @@ def check_version_from_executable(command: FilePath, args: List[str], version_re
 	fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
 
 	try:
-		cpath = cmtio.secure_which(command, fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+		cpath = cmtio.secure_which(command, fallback_allowlist = fallback_allowlist,
+					   security_policy = security_policy)
 	except FileNotFoundError:
 		cpath = None
 
@@ -1597,8 +1609,10 @@ def update_apt_cache() -> bool:
 			True on success, False on failure
 	"""
 
-	sudo_path = cmtio.secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	apt_get_path = cmtio.secure_which(FilePath("apt-get"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	sudo_path = cmtio.secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"],
+				       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	apt_get_path = cmtio.secure_which(FilePath("apt-get"), fallback_allowlist = ["/bin", "/usr/bin"],
+					  security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [sudo_path, apt_get_path, "update"]
 	return execute_command(args)
 
@@ -2066,6 +2080,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict, verbos
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
+# pylint: disable-next=unused-argument
 def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that merges a Kube config into ~/.kube/config
@@ -2074,7 +2089,6 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 			installation_info (dict): A dict with installation information
 	"""
 
-	control_plane_name = __selection_control_planes()[0]
 	cluster_name = installation_info["installation_target"]
 	config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
 	admin_name = f"kubernetes-admin+{cluster_name}"
@@ -2084,7 +2098,7 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 	d2 = secure_read_yaml(config_file_name)
 
 	# This file will not exist if this is the first cluster
-	checks = [
+	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
@@ -2094,7 +2108,7 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 	]
 
 	try:
-		d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks = checks)
+		d1 = secure_read_yaml(KUBE_CONFIG_FILE, checks = security_checks)
 	except FileNotFoundError:
 		d1 = dict(d2)
 		# We will be renaming things anyway, so instead of using a lot of special casing below we just empty
@@ -2181,6 +2195,7 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 
 	check_and_print_status(True)
 
+# pylint: disable-next=unused-argument
 def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that replaces localhost for the real IP-address of the API-server
@@ -2191,7 +2206,6 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 
 	control_plane_name = __selection_control_planes()[0]
 	cluster_name = installation_info["installation_target"]
-	config_file_name = FilePath(f"{HOMEDIR}/.kube/config.{cluster_name}")
 
 	try:
 		d = secure_read_yaml(KUBE_CONFIG_FILE)
@@ -2242,6 +2256,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 
 	secure_write_yaml(KUBE_CONFIG_FILE, d, permissions = 0o600, sort_keys = False)
 
+# pylint: disable-next=unused-argument
 def __task_setup_cni(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that sets up a CNI
@@ -2475,6 +2490,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict, ver
 
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {}, verbose = verbose)
 
+# pylint: disable-next=unused-argument
 def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that removes a cluster configuration from ~/.kube/config
@@ -3384,6 +3400,8 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			args (list[str]): Options to use when executing this action
 	"""
 
+	global setup_control_plane_tasks # pylint: disable=global-statement
+
 	confirm = True
 	override_cni = False
 
@@ -3401,7 +3419,6 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		__list_phases(setup_control_plane_tasks)
 		sys.exit(0)
 
-	os_distro = identify_distro()
 	requested_version = installation_info[cluster_name]["requested_version"]
 	state = installation_info[cluster_name]["state"]
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]

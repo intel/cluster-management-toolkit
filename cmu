@@ -1,5 +1,6 @@
 #! /bin/sh
 # vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
 ''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: ansible
@@ -792,8 +793,10 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 	info: List[Type] = []
 
 	# Fetch kubelet log, if available (for now only useful if run on the control plane)
-	sudo_path = secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	journalctl_path = secure_which(FilePath(os.path.join(BINDIR, "journalctl")), fallback_allowlist = ["/bin", "/usr/bin"], security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	sudo_path = secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"],
+				 security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	journalctl_path = secure_which(FilePath(os.path.join(BINDIR, "journalctl")), fallback_allowlist = ["/bin", "/usr/bin"],
+				       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [sudo_path, journalctl_path, "--no-pager", "-o", "json"]
 
 	logs = [
@@ -6945,7 +6948,8 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 		conn.close()
 	elif cni == "cilium":
 		try:
-			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist,
+					     security_policy = security_policy)
 		except FileNotFoundError:
 			cpath = None
 
@@ -6999,7 +7003,8 @@ def update_cni(stdscr: curses.window, cni, current_version, candidate_version, d
 		retval = False
 	elif cni == "cilium":
 		try:
-			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+			cpath = secure_which(FilePath(os.path.join(BINDIR, "cilium")), fallback_allowlist = fallback_allowlist,
+					     security_policy = security_policy)
 		except FileNotFoundError:
 			cpath = None
 
@@ -9469,7 +9474,8 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 		print()
 
 	try:
-		cpath = secure_which(FilePath(args[0]), fallback_allowlist = fallback_allowlist, security_policy = security_policy)
+		cpath = secure_which(FilePath(args[0]), fallback_allowlist = fallback_allowlist,
+				     security_policy = security_policy)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": “", "default"),

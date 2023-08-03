@@ -2,10 +2,14 @@ yaml_dirs = parsers themes views playbooks
 python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
 test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
 
+# Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
 # This is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
 # pylint does, so we rely on that one to handle it instead.
-FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841
+FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841,W605,E402
+# These warnings are for invalid escape sequences and imports not at the top;
+# they are triggered by the shell script-based workaround
+FLAKE8_IGNORE := $(FLAKE8_IGNORE),W605,E402
 
 ANSIBLE_LINT_SKIP := no-changed-when
 
