@@ -612,7 +612,7 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 	"""
 
 	rpm_versions = []
-	rpm_versions_dict = {}
+	rpm_versions_dict: Dict[str, Dict] = {}
 
 	yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
 				      security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
@@ -648,12 +648,14 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 					rpm_versions_dict[package]["installed"] = version
 				elif section == "available":
 					rpm_versions_dict[package]["available"].append(version)
-			# Now summarise
+	# Now summarise
 
 	for package, data in rpm_versions_dict.items():
 		candidate = "<none>"
 		if len(data["available"]) > 0:
 			candidate = data["available"][-1]
+			if data["installed"] == candidate:
+				candidate = ""
 		rpm_versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
 
 	return rpm_versions
@@ -746,6 +748,9 @@ def identify_k8s_distro() -> str:
 					tmp_k8s_distro = "vcluster"
 	if k8s_distro is None and tmp_k8s_distro is not None:
 		k8s_distro = tmp_k8s_distro
+
+	if k8s_distro is None:
+		k8s_distro = "<unknown>"
 
 	return k8s_distro
 
