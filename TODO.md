@@ -6,10 +6,10 @@
 * When running either cmt or cmu, check whether .ssh/id_ecdsa.pub is in authorized_keys
   in .cmt/ansible/inventory.yaml; if not, add it.
 * Rewrite command_parser to treat options passed before a command as global,
-  and to allow options interspersed with arguments.
+  and to allow options interspersed with arguments.  Perhaps even add short options.
 * Add `--dry-run` support for more commands.
 * Is it possible to rewrite the generator/processor system in a way that processors
-  could be completely eliminated.
+  could be completely eliminated?
 * Introduce .kube/current-context and have all clusters in .kube have their own files
   (named config-clustername) rather than merging the config-files
 
@@ -34,6 +34,10 @@
 * Audit and make a list of all necessary types
 * Make generic_infogetter consistent WRT to paths:
   ["literal", ["path"], [["alternate1", "alternate2"]]]
+* All use of curses should be abstracted away; ideally cmu should be able to use
+  a variety of different toolkits to present its data
+* All generators and other functions used to extract data should be removed from cmu;
+  that way we don't have to duplicate functionality between cmu and cmt
 
 cmtinv:
 * Optionally limit rebuild-inventory to a subset of clusters.
@@ -71,5 +75,5 @@ logparser:
   | Currently we strip tabs; if we want to handle them we need to modify cmtlib.py:split_msg()
 
 kubernetes_helper:
-* Replace playbooks/drain_node.yaml with cordon_node() + post evictions (or delete if PodDisruptionBudget causes issues)
-  for all non-DaemonSet pods.
+* Replace playbooks/drain_node.yaml with cordon_node() + post evictions
+  (or delete if PodDisruptionBudget causes issues) for all non-DaemonSet pods.
