@@ -3344,14 +3344,14 @@ class UIProps:
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
 			return Retval.MATCH
-		elif c == 27:	# ESCAPE
+		if c == 27:	# ESCAPE
 			del self
 			return Retval.RETURNONE
-		elif c == curses.KEY_MOUSE:
+		if c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(cast(curses.window, self.listpad), self.sorted_list, self.activatedfun, self.extraref, self.data)
-		elif c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
+		if c in (curses.KEY_ENTER, 10, 13) and self.activatedfun is not None:
 			return self.enter_handler(self.activatedfun, self.extraref, self.data)
-		elif c == ord("M"):
+		if c == ord("M"):
 			# Toggle mouse support on/off to allow for copy'n'paste
 			if get_mousemask() == 0:
 				set_mousemask(-1)
@@ -3361,32 +3361,32 @@ class UIProps:
 				self.statusbar.erase()
 			self.refresh_all()
 			return Retval.MATCH
-		elif c == ord("") or c == ord(""):
+		if c == ord("") or c == ord(""):
 			curses.endwin()
 			sys.exit()
-		elif c == curses.KEY_F1 or c == ord("H"):
+		if c == curses.KEY_F1 or c == ord("H"):
 			if self.helptext is not None:
 				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
 					     items = self.helptext, title = "Help", cursor = False)
 			self.refresh_all()
 			return Retval.MATCH
-		elif c == curses.KEY_F12:
+		if c == curses.KEY_F12:
 			if curses_configuration.abouttext is not None:
 				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
 					     items = curses_configuration.abouttext, title = "About", cursor = False)
 			self.refresh_all()
 			return Retval.MATCH
-		elif c == curses.KEY_F5:
+		if c == curses.KEY_F5:
 			# We need to rate limit this somehow
 			self.force_update()
 			return Retval.MATCH
-		elif c == ord("r"):
+		if c == ord("r"):
 			# Reverse the sort order
 			if self.listpad is not None and self.reversible == True:
 				self.sortorder_reverse = not self.sortorder_reverse
 				self.sort_triggered = True
 			return Retval.MATCH
-		elif c == curses.KEY_SLEFT:
+		if c == curses.KEY_SLEFT:
 			# For listpads we switch sort column with this; for logpads we move half a page left/right
 			if self.listpad is not None:
 				self.prev_sortcolumn()
@@ -3793,6 +3793,7 @@ class UIProps:
 
 		self.stdscr.timeout(100)
 		c = self.stdscr.getch()
+		altkey = False
 
 		# Default return value if we do not manage to match anything
 		retval = Retval.NOMATCH
@@ -3801,9 +3802,18 @@ class UIProps:
 			self.resize_window()
 			return Retval.MATCH, {}
 
-		if c == 27:	# ESCAPE
-			del self
-			return Retval.RETURNONE, {}
+		if c == 27:	# Either ESCAPE or ALT+<key>
+			self.stdscr.nodelay(True)
+			c2 = self.stdscr.getch()
+			self.stdscr.nodelay(False)
+			# No additional key; this was a real ESCAPE press
+			if c2 == -1:
+				del self
+				return Retval.RETURNONE, {}
+			else:
+				# Additional key pressed; this is ALT+<key>
+				altkey = True
+				c = c2
 
 		if c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(cast(curses.window, self.listpad), self.sorted_list, self.activatedfun, self.extraref, self.data), {}
@@ -3835,10 +3845,16 @@ class UIProps:
 
 		for shortcut_name, shortcut_data in __shortcuts.items():
 			keys = deep_get(shortcut_data, DictPath("shortcut"), [])
+			# Currently this is only used for [Alt]
+			modifier = deep_get(shortcut_data, DictPath("modifier"), "")
+
 			if isinstance(keys, int):
 				keys = [keys]
 
 			if c in keys:
+				if altkey and modifier.lower() != "alt" or not altkey and modifier.lower() == "alt":
+					continue
+
 				action = deep_get(shortcut_data, DictPath("action"))
 				action_call = deep_get(shortcut_data, DictPath("action_call"))
 				_action_args = deep_get(shortcut_data, DictPath("action_args"), {})
