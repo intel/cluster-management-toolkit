@@ -1,0 +1,105 @@
+kind: "Space"
+api_family: "tenancy.kiosk.sh"
+default_command: "spaces.kiosk"
+command:
+- "space.kiosk"
+- "kspaces"
+- "kspace"
+listview:
+  name: "Spaces"
+  group: "Kiosk"
+  field_indexes:
+    Normal:
+      fields: ["name", "owner", "phase", "age"]
+  fields:
+    owner:
+      header: "Owner:"
+      path: "spec#account"
+      type: "str"
+    phase:
+      header: "Status:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Active:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Terminating:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+infoview:
+  name: "Space Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["represented_namespace", "owner", "status"]
+    rows:
+      owner:
+        header: [["O", ["main", "infoheader_shortcut"]], ["wner:", ["main", "infoheader"]]]
+        path: "spec#account"
+        type: "str"
+      represented_namespace:
+        header: [["Represented ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
+        path: "metadata#name"
+        type: "str"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Active:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Terminating:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+  listpad:
+    listgetter: "listgetter_namespaced_resources"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "__kind_tuple"
+      name_path: "metadata#name"
+      namespace_path: "metadata#namespace"
+    field_indexes:
+      Normal:
+        fields: ["resource", "kind"]
+        sortcolumn: "kind"
+    fields:
+      kind:
+        header: "Kind:"
+        path: "__kind_tuple"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+      resource:
+        header: "Resource:"
+        path: "metadata#name"
+        type: "raw"
+  shortcuts:
+    "Represented Namespace":
+      key: "n"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for represented Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "metadata#name"

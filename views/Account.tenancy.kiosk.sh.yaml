@@ -1,0 +1,144 @@
+kind: "Account"
+api_family: "tenancy.kiosk.sh"
+default_command: "accounts.kiosk"
+command:
+- "account.kiosk"
+- "kaccounts"
+- "kaccount"
+listview:
+  name: "Accounts"
+  group: "Kiosk"
+  field_indexes:
+    Normal:
+      fields: ["name", "spaces", "subjects", "age"]
+  fields:
+    spaces:
+      header: "Spaces:"
+      paths:
+      - path: "status#namespaces"
+        pathtype: "count"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    subjects:
+      header: "Subjects:"
+      paths:
+      - path: "spec#subjects"
+        pathtype: "count"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Account Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["space_limit", "spaces"]
+    rows:
+      space_limit:
+        header: [["Max Number of Spaces:", ["main", "infoheader"]]]
+        path: "spec#space#limit"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      spaces:
+        header: [["S", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#namespaces"
+          pathtype: "items"
+          subpath: "name"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#subjects"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: ["metadata#namespace"]
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "kind"
+      api_group_path: "apiGroup"
+      namespace_path: ["namespace", "_extra_data#namespace"]
+      name_path: "name"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "kind", "exists"]
+        sortcolumn: "kind"
+    fields:
+      exists:
+        header: "Exists:"
+        paths:
+        - path: [["kind"], ["apiGroup"], ["namespace", "_extra_data#namespace"], ["name"], []]
+          pathtype: "lookup"
+          when:
+          - key: "metadata#name"
+            notnone: true
+          substitute: "True"
+          unknown: "Unknown"
+        default: "False"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Unknown":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      namespace:
+        header: "Namespace:"
+        paths:
+        - path: ["namespace", "_extra_data#namespace"]
+        type: "str"
+      kind:
+        header: "Kind:"
+        paths:
+        - path: [["kind"], ["apiGroup"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+  shortcuts:
+    "Show Spaces":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Spaces"
+      widget: "windowwidget"
+      title: "Spaces:"
+      headers: ["Name:"]
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#namespaces"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Space"
+        api_family: "tenancy.kiosk.sh"
+        name_path: 0

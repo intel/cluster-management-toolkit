@@ -840,6 +840,26 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/config.kio.kasten.io/v1alpha1/"],
 		"api": "profiles",
 	},
+	# config.kiosk.sh
+	("AccountQuota", "config.kiosk.sh"): {
+		"api_paths": ["apis/config.kiosk.sh/v1alpha1/"],
+		"api": "accountquotas",
+		"namespaced": False,
+	},
+	("Account", "config.kiosk.sh"): {
+		"api_paths": ["apis/config.kiosk.sh/v1alpha1/"],
+		"api": "accounts",
+		"namespaced": False,
+	},
+	("TemplateInstance", "config.kiosk.sh"): {
+		"api_paths": ["apis/config.kiosk.sh/v1alpha1/"],
+		"api": "templateinstances",
+	},
+	("Template", "config.kiosk.sh"): {
+		"api_paths": ["apis/config.kiosk.sh/v1alpha1/"],
+		"api": "templates",
+		"namespaced": False,
+	},
 	# config.openshift.io
 	("APIServer", "config.openshift.io"): {
 		"api_paths": ["apis/config.openshift.io/v1/"],
@@ -2842,6 +2862,17 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ConstraintTemplate", "templates.gatekeeper.sh"): {
 		"api_paths": ["apis/templates.gatekeeper.sh/v1/"],
 		"api": "constrainttemplates",
+		"namespaced": False,
+	},
+	# tenancy.kiosk.sh
+	("Account", "tenancy.kiosk.sh"): {
+		"api_paths": ["apis/tenancy.kiosk.sh/v1alpha1/"],
+		"api": "accounts",
+		"namespaced": False,
+	},
+	("Space", "tenancy.kiosk.sh"): {
+		"api_paths": ["apis/tenancy.kiosk.sh/v1alpha1/"],
+		"api": "spaces",
 		"namespaced": False,
 	},
 	# tensorboard.kubeflow.org
