@@ -180,7 +180,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 						ANSIThemeString("“ is not a valid POD Network CIDR.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif validator == "path":
-			if not Path(arg).is_file():
+			if not Path(subarg).is_file():
 				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 						ANSIThemeString(": “", "default"),
 						ANSIThemeString(f"{subarg}", "option"),
@@ -199,7 +199,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				# If validation failed as subname we check if it's a valid path;
 				# this will need deeper checks in the main function
 				if validator == "hostname_or_path":
-					if Path(arg).is_file():
+					if Path(subarg).is_file():
 						break
 				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 						ANSIThemeString(": “", "default"),
@@ -295,7 +295,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				tmp_arg = f"https://{arg}"
 
 			# Workaround; it seems validators.url accepts usernames that start with "-"
-			if arg.startswith("-") or validators is not None and not validators.url(tmp_arg):
+			if subarg.startswith("-") or validators is not None and not validators.url(tmp_arg):
 				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 						ANSIThemeString(": “", "default"),
 						ANSIThemeString(f"{subarg}", "option"),
