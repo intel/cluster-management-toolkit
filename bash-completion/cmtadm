@@ -57,7 +57,7 @@ _cmtadm() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
-			--enable-dra|--list-tasks|--no-cache-update|--no-password|--override|--override-cni|--reinstall|--resume|--save-ansible-logs|-Y)
+			--enable-dra|--list-tasks|--no-cache-update|--no-password|--override|--override-cni|--reinstall|--resume|--save-ansible-logs|-Y|--verbose|--disable-usergroup-autodetect)
 				# These options don't take any arguments
 				;;
 			--control-plane|--cri|--skip-tasks|--start-at-task|--usergroup)
@@ -128,7 +128,7 @@ _cmtadm() {
 
 	case "${COMP_WORDS[1]}" in
 	taint-control-plane|untaint-control-plane|teardown-control-plane)
-		control_planes=$(kubectl get no --no-headers | grep -E "control-plane|master" | cut -d' ' -f1)
+		control_planes=$(kubectl get no --no-headers 2> /dev/null | grep -E "control-plane|master" | cut -d' ' -f1)
 		commands=$(add_option_if_not_in_list "${control_planes}" ${commands})
 	esac
 
@@ -163,10 +163,11 @@ _cmtadm() {
 	case "${COMP_WORDS[1]}" in
 	audit)
 		commands=$(add_option_if_not_in_list "--usergroup" ${commands})
+		commands=$(add_option_if_not_in_list "--disable-usergroup-autodetect" ${commands})
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	preflight-check|prepare)
+	preflight-check|prepare|import-cluster)
 		commands=$(add_option_if_not_in_list "--no-password" ${commands})
 	esac
 
@@ -177,6 +178,7 @@ _cmtadm() {
 		commands=$(add_option_if_not_in_list "--save-ansible-logs" ${commands})
 		commands=$(add_option_if_not_in_list "--skip-tasks" ${commands})
 		commands=$(add_option_if_not_in_list "--start-at-task" ${commands})
+		commands=$(add_option_if_not_in_list "--verbose" ${commands})
 		;;
 	esac
 
