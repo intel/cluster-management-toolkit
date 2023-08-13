@@ -3364,8 +3364,6 @@ def set_context(config_path: Optional[FilePath] = None, name: Optional[str] = No
 			return None
 		raise
 
-	current_context = deep_get(kubeconfig, DictPath("current-context"), "")
-
 	new_context = None
 
 	# Find out whether the new context exists
@@ -3406,6 +3404,20 @@ class KubernetesHelper:
 	control_plane_path: Optional[str] = None
 
 	def list_contexts(self, config_path: Optional[FilePath] = None) -> List[Tuple[bool, str, str, str, str, str]]:
+		"""
+		Given the path to a kubeconfig file, returns the available contexts
+
+			Parameters:
+				config_path (FilePath): The path to the kubeconfig file
+			Returns:
+				contexts (list[(current, name, cluster, authinfo, namespace)]):
+					current (bool): Is this the current context?
+					name (str): The name of the context
+					cluster (str): The name of the cluster
+					authinfo (str): The name of the user
+					namespace (str): The name of the namespace
+					server (str): The API-server of the cluster
+		"""
 		return list_contexts(config_path)
 
 	def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:
@@ -3450,6 +3462,14 @@ class KubernetesHelper:
 		return clusters
 
 	def renew_token(self, cluster_name: str, context_name: str) -> None:
+		"""
+		Renew the authentication token, if applicable
+
+			Parameters:
+				cluster_name (str): The name of the cluster
+				context_name (str): The name of the context
+		"""
+
 		# If the current cluster_name + context_name
 		# has a matching entry in credentials we (attempt to) authenticate here
 
@@ -3458,8 +3478,7 @@ class KubernetesHelper:
 		except FilePathAuditError as e:
 			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) or "SecurityStatus.DOES_NOT_EXIST" in str(e):
 				return
-			else:
-				raise
+			raise
 		except FileNotFoundError:
 			# We can handle FileNotFoundError and PARENT_DOES_NOT_EXIST;
 			# other exceptions might be security related, so we let them raise
@@ -3490,8 +3509,7 @@ class KubernetesHelper:
 			}
 
 			connect_timeout: float = 3.0
-			# This isn't ideal; we might need different cluster proxies for different clusters
-			cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
+
 			try:
 				result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
 				status = result.status
@@ -3502,10 +3520,6 @@ class KubernetesHelper:
 				if "CERTIFICATE_VERIFY_FAILED" in str(e):
 					# Client Handshake Failed (Cloudflare)
 					status = 525
-					if "certificate verify failed" in str(e):
-						tmp = re.match(r".*SSL: CERTIFICATE_VERIFY_FAILED.*certificate verify failed: (.*) \(_ssl.*", str(e))
-						if tmp is not None:
-							message = f"; {tmp[1]}"
 				else:
 					status = 42503
 			except urllib3.exceptions.ConnectTimeoutError:
@@ -3624,7 +3638,7 @@ class KubernetesHelper:
 					e.args += (f"failed to decode certificate-authority-data: {e}", )
 					raise
 				break
-			elif ccac_file is not None:
+			if ccac_file is not None:
 				ca_certs = cast(str, secure_read(ccac_file))
 
 		if control_plane_ip is None or control_plane_port is None:
@@ -3646,38 +3660,37 @@ class KubernetesHelper:
 					if "crc" in cluster_name:
 						self.token = ""
 					break
-				else:
-					# cert
-					ccd = deep_get(user, DictPath("user#client-certificate-data"))
-					# cert file
-					ccd_file = deep_get(user, DictPath("user#client-certificate"))
+				# cert
+				ccd = deep_get(user, DictPath("user#client-certificate-data"))
+				# cert file
+				ccd_file = deep_get(user, DictPath("user#client-certificate"))
 
-					if ccd is not None:
-						try:
-							cert = base64.b64decode(ccd).decode("utf-8")
-						except UnicodeDecodeError as e:
-							e.args += (f"failed to decode client-certificate-data: {e}", )
-							raise
-					elif ccd_file is not None:
-						cert = cast(str, secure_read(ccd_file))
+				if ccd is not None:
+					try:
+						cert = base64.b64decode(ccd).decode("utf-8")
+					except UnicodeDecodeError as e:
+						e.args += (f"failed to decode client-certificate-data: {e}", )
+						raise
+				elif ccd_file is not None:
+					cert = cast(str, secure_read(ccd_file))
 
 
-					# key
-					ckd = deep_get(user, DictPath("user#client-key-data"))
-					# key file
-					ckd_file = deep_get(user, DictPath("user#client-key"))
+				# key
+				ckd = deep_get(user, DictPath("user#client-key-data"))
+				# key file
+				ckd_file = deep_get(user, DictPath("user#client-key"))
 
-					if ckd is not None:
-						try:
-							key = base64.b64decode(ckd).decode("utf-8")
-						except UnicodeDecodeError as e:
-							e.args += (f"failed to decode client-key-data: {e}", )
-							raise
-					elif ckd_file is not None:
-						key = cast(str, secure_read(ckd_file))
+				if ckd is not None:
+					try:
+						key = base64.b64decode(ckd).decode("utf-8")
+					except UnicodeDecodeError as e:
+						e.args += (f"failed to decode client-key-data: {e}", )
+						raise
+				elif ckd_file is not None:
+					key = cast(str, secure_read(ckd_file))
 
-					self.token = deep_get(user, DictPath("user#token"))
-					break
+				self.token = deep_get(user, DictPath("user#token"))
+				break
 
 		# We do not have the cert or token needed to access the server
 		if self.token is None and (cert is None or key is None):
@@ -4287,7 +4300,7 @@ class KubernetesHelper:
 						namespaced = deep_get(resource, DictPath("scope"), "") == "Namespaced"
 						kind = deep_get(resource, DictPath("responseKind#kind"), "")
 						verbs = deep_get(resource, DictPath("verbs"), [])
-						kind_tuple = (kind, api_version.split("/")[0])
+						kind_tuple = (kind, api_version.split("/", maxsplit = 1)[0])
 						# Let's hope we get them in the right order...
 						if kind_tuple in non_core_api_dict:
 							continue
@@ -4346,6 +4359,7 @@ class KubernetesHelper:
 		return status, api_resources
 
 	# TODO: This should ideally be modified to use get_api_resources()
+	# pylint: disable-next=too-many-return-statements
 	def get_available_kinds(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
 		"""
 		Return a dict of Kinds known by both kubernetes_helper and the API-server
@@ -4445,7 +4459,7 @@ class KubernetesHelper:
 						# This should not happen, but ignore it
 						continue
 					resources = deep_get(api_group, DictPath("resources"), [])
-					for resource in deep_get(version, DictPath("resources"), []):
+					for resource in resources:
 						if "list" not in deep_get(resource, DictPath("verbs"), []):
 							continue
 						kind = deep_get(resource, DictPath("responseKind#kind"), "")
