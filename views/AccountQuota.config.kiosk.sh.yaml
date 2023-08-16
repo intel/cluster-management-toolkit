@@ -1,0 +1,87 @@
+kind: "AccountQuota"
+api_family: "config.kiosk.sh"
+default_command: "accountquotas.kiosk"
+command:
+- "accountquotas.kiosk"
+- "kaccountquotas"
+- "kaccountquota"
+listview:
+  name: "Account Quotas"
+  group: "Kiosk"
+  field_indexes:
+    Normal:
+      fields: ["name", "account", "age"]
+  fields:
+    account:
+      header: "Account:"
+      path: "spec#account"
+      type: "str"
+infoview:
+  name: "Account Quota Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["spaces"]
+    rows:
+      spaces:
+        header: [["S", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#namespaces"
+          pathtype: "items"
+          subpath: "name"
+        default: ["ALL"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: ""
+    infogetter: "get_rq_item_info"
+    infogetter_args:
+      hard_path: "spec#quota#hard"
+      used_path: "status#total#hard"
+    field_indexes:
+      Normal:
+        fields: ["resource", "used", "hard"]
+    fields:
+      hard:
+        header: "Hard:"
+        path: "hard"
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: "str"
+      used:
+        header: "Used:"
+        path: "used"
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
+  shortcuts:
+    "Show Spaces":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Spaces"
+      widget: "windowwidget"
+      title: "Spaces:"
+      headers: ["Name:"]
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#namespaces"
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Space"
+        api_family: "tenancy.kiosk.sh"
+        name_path: 0

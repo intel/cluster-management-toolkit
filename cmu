@@ -3382,14 +3382,16 @@ class RQItemInfo:
 
 def get_rq_item_info(**kwargs):
 	obj = deep_get(kwargs, DictPath("_obj"))
+	hard_path = deep_get(kwargs, DictPath("hard_path"), DictPath("spec#hard"))
+	used_path = deep_get(kwargs, DictPath("used_path"), DictPath("status#used#hard"))
 	info = []
 
 	if obj is None:
 		return []
 
-	for resource in deep_get(obj, DictPath("spec#hard"), []):
-		used = deep_get(obj, DictPath(f"status#used#{resource}"), [])
-		hard = deep_get(obj, DictPath(f"spec#hard#{resource}"), [])
+	for resource in deep_get(obj, hard_path, []):
+		used = deep_get(obj, DictPath(f"{used_path}#{resource}"), [])
+		hard = deep_get(obj, DictPath(f"{hard_path}#{resource}"), [])
 
 		info.append(RQItemInfo(resource, used, hard))
 
