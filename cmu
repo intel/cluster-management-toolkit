@@ -1347,28 +1347,32 @@ def transform_list(vlist, transform):
 			value = vlist[key]
 
 		key_data = []
-		for _regex in key_regexes:
-			if key is None:
-				continue
 
-			key = str(key)
+		if key is None:
+			continue
 
-			_tmp = re.match(_regex, key)
-			if _tmp is not None:
-				for group in key_groups:
-					if group < len(_tmp.groups()):
-						_tmp2 = _tmp.groups()[group]
-						if _tmp2 is None and group < len(key_defaults):
-							key_data.append(key_defaults[group])
-						else:
-							key_data.append(_tmp2)
-			if key_join is not None and len(key_data) > 1:
-				tmp = ""
-				for i in range(0, len(key_data)):
-					tmp += key_data[i]
-					if i < len(key_data) - 1:
-						tmp += key_join[min(i, len(key_join) - 1)]
-				key_data = [tmp]
+		key = str(key)
+
+		if len(key_regexes) == 0:
+			key_data.append(key)
+		else:
+			for _regex in key_regexes:
+				_tmp = re.match(_regex, key)
+				if _tmp is not None:
+					for group in key_groups:
+						if group < len(_tmp.groups()):
+							_tmp2 = _tmp.groups()[group]
+							if _tmp2 is None and group < len(key_defaults):
+								key_data.append(key_defaults[group])
+							else:
+								key_data.append(_tmp2)
+				if key_join is not None and len(key_data) > 1:
+					tmp = ""
+					for i in range(0, len(key_data)):
+						tmp += key_data[i]
+						if i < len(key_data) - 1:
+							tmp += key_join[min(i, len(key_join) - 1)]
+					key_data = [tmp]
 
 		value_data = []
 		for _regex in value_regexes:

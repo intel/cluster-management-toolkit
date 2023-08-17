@@ -1,0 +1,97 @@
+kind: "TemplateInstance"
+api_family: "config.kiosk.sh"
+default_command: "templateinstances.kiosk"
+command:
+- "templateinstance.kiosk"
+- "ktemplateinstances"
+- "ktemplateinstance"
+listview:
+  name: "Template Instances"
+  group: "Kiosk"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "sync", "status", "age"]
+  fields:
+    status:
+      header: "Status:"
+      path: "status#status"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Deployed":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "Failed":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+    sync:
+      header: "Sync:"
+      path: "spec#sync"
+      type: "bool"
+      default: false
+infoview:
+  name: "Template Instance Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["template", "sync", "status", "status_message"]
+    rows:
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Deployed":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Failed":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      status_message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        type: "str"
+        default: "<none>"
+      sync:
+        header: [["Sync:", ["main", "infoheader"]]]
+        path: "spec#sync"
+        type: "bool"
+        default: false
+      template:
+        header: [["T", ["main", "infoheader_shortcut"]], ["emplate:", ["main", "infoheader"]]]
+        path: "spec#template"
+        type: "str"
+  shortcuts:
+    "Open Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Template"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Template"
+        api_family: "config.kiosk.sh"
+        name_path: "spec#template"
+    "View parameters":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show parameters"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Parameters"
+        _pass_obj: true
+        path: "spec#parameters"
+        include_root: true

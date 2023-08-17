@@ -1,0 +1,41 @@
+kind: "Template"
+api_family: "config.kiosk.sh"
+default_command: "templates.kiosk"
+command:
+- "template.kiosk"
+- "ktemplates"
+- "ktemplate"
+listview:
+  name: "Templates"
+  group: "Kiosk"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["resources"]
+    rows:
+      resources:
+        header: [["R", ["main", "infoheader_shortcut"]], ["esources:", ["main", "infoheader"]]]
+        paths:
+        - path: "resources"
+          pathtype: "dictlist"
+          transform:
+            output: ["key"]
+        formatter: "list"
+  shortcuts:
+    "View resources":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show resources"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Resources"
+        _pass_obj: true
+        path: "resources"
+        include_root: false
