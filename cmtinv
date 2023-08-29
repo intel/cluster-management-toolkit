@@ -24,7 +24,7 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, DictPath, FilePath, ProgrammingError, UnknownError
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, UnknownError
 from cmtpaths import HOMEDIR, SSH_DIR
 from cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
@@ -509,7 +509,13 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Finally import the hostkey into authorized_keys
 	pubkey = None
 
-	tmp = cmtio.secure_read_string(FilePath(str(PurePath(SSH_DIR).joinpath("id_ecdsa.pub"))))
+	try:
+		tmp = cmtio.secure_read_string(FilePath(str(PurePath(SSH_DIR).joinpath("id_ecdsa.pub"))))
+	except FilePathAuditError as e:
+		# We cannot import non-existing hostkeys...
+		if "SecurityStatus.DOES_NOT_EXIST" in str(e):
+			tmp = None
+
 	if tmp is not None:
 		tmplines = tmp.splitlines()
 		pubkey = tmplines[0]
