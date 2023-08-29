@@ -22,4 +22,5 @@
         kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
       fi
     delegate_to: "localhost"
+    run_once: true
     changed_when: false
