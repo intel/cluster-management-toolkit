@@ -8479,7 +8479,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					if deep_get(container_status, DictPath("name")) == containername:
 						break
 				if container_status is not None:
-					image = deep_get(container_status, DictPath("imageID"), "")
+					image = deep_get_with_fallback(container_status, [DictPath("image"), DictPath("imageID")], "")
 				else:
 					image = "<unavailable>"
 
