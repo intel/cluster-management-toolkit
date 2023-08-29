@@ -90,6 +90,8 @@
       enabled: true
       state: "started"
     when: "ansible_os_family == 'RedHat'"
+  - name: "The following node configuration will be used"  # noqa fqcn-builtins
+    command: "cat {{ node_config.path }}"
   - name: "Joining node to the cluster"  # noqa fqcn-builtins
     shell: |
       kubeadm join --config {{ node_config.path }}

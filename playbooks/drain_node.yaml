@@ -15,6 +15,11 @@
   - name: "Draining node"  # noqa fqcn-builtins
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
-      kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
+      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\.[0-9]*$/\1/")"
+      if [ "${minor_version}" -ge 20 ]; then
+        kubectl drain --delete-emptydir-data --ignore-daemonsets ${nodes}
+      else
+        kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
+      fi
     delegate_to: "localhost"
     changed_when: false

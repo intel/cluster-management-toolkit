@@ -43,6 +43,8 @@
       enabled: true
       state: "started"
     when: "ansible_os_family == 'RedHat'"
+  - name: "The following cluster configuration will be used"  # noqa fqcn-builtins
+    command: "cat {{ cluster_config.path }}"
   - name: "Pulling Kubernetes images"  # noqa fqcn-builtins
     shell: |
       if [ -n "{{ https_proxy }}" ]; then

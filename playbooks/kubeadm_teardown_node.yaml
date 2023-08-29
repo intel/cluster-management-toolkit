@@ -33,7 +33,8 @@
   - name: "Tearing down Kubernetes"  # noqa fqcn-builtins
     shell: |
       if kubeadm version > /dev/null 2> /dev/null; then
-        kubeadm reset -f
+        runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
+        kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
       fi
     changed_when: false
   - name: "Unmarking packages as held"  # noqa fqcn-builtins
