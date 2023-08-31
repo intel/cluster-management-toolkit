@@ -638,7 +638,7 @@ def patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network:": "{pod_network_cidr}"\2#'
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network": "{pod_network_cidr}"\2#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
@@ -658,7 +658,7 @@ def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network:": "{pod_network_cidr}",#'
+	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network": "{pod_network_cidr}",#'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
