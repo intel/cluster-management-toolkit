@@ -118,11 +118,11 @@
       else
         export https_proxy=
       fi
-      kubeadm config images pull
+      kubeadm config --config {{ cluster_config.path }} images pull
     changed_when: false
   - name: "Upgrading control plane"  # noqa fqcn-builtins
     shell: |
-      kubeadm upgrade apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
+      kubeadm upgrade --config {{ cluster_config.path }} apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
     changed_when: false
   - name: "Restarting kubelet"
     ansible.builtin.systemd:
