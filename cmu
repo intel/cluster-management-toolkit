@@ -210,7 +210,7 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[U
 	if timestamp is None:
 		array = [ThemeRef("strings", "none")]
 	else:
-		if localtimezone == True:
+		if localtimezone:
 			ftimestamp = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 		else:
 			ftimestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
@@ -570,7 +570,7 @@ def get_list_async_cb(vlist: List[Dict], async_cookie: Any, **kwargs: Dict) -> T
 	inventory_dict = deep_get(kwargs, DictPath("inventory_dict"), None)
 
 	if async_cookie is None:
-		if retrigger == True:
+		if retrigger:
 			async_cookie = ansible_ping_async(None, inventory_dict)
 		return vlist, async_cookie, kwargs
 
@@ -620,7 +620,7 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 	server_address_regex = re.compile(r"^(https?://)(.+)(:\d+)$")
 
 	for is_current_context, name, cluster, authinfo, namespace, server in context_list:
-		if is_current_context == True:
+		if is_current_context:
 			current = tag_prefix
 		else:
 			current = "".ljust(len(tag_prefix))
@@ -649,7 +649,7 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 
 	async_cookie, async_cb = setup_host_ping(inventory_dict, get_list_async_cb, ping_hosts)
 	key = deep_get(kwargs, DictPath("key"), "name")
-	retrigger_timeout = deep_get(kwargs, DictPath("retrigger_timeout"), 50)
+	retrigger_timeout = deep_get(kwargs, DictPath("retrigger_timeout"), 5)
 
 	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict, "retrigger_timeout": retrigger_timeout }
 
@@ -1416,7 +1416,7 @@ def transform_list(vlist, transform):
 			tmp = tuple(tmp)
 		result.append(tmp)
 
-	if sort == True:
+	if sort:
 		return natsorted(result)
 
 	return result
@@ -1459,7 +1459,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				if deep_get(field, DictPath("type")) is None:
 					raise ValueError(f"Field {name}: the path field has no default type; type must always be specified")
 				tmp_value = deep_get(obj, DictPath(path), global_default)
-				if tmp_value is not None and isinstance(tmp_value, (str, list)) and len(tmp_value) == 0 and fallback_on_empty == True:
+				if tmp_value is not None and isinstance(tmp_value, (str, list)) and len(tmp_value) == 0 and fallback_on_empty:
 					tmp_value = global_default
 				_values.append((tmp_value, deep_get(field, DictPath("type"))))
 
@@ -1486,10 +1486,10 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				replace_quotes = deep_get(_path, DictPath("replace_quotes"), "no")
 				if ptype == "list":
 					tmp = deep_get_with_fallback(obj, path, default = default, fallback_on_empty = fallback_on_empty)
-					if deep_get(_path, DictPath("sorted"), False) == True and tmp is not None:
+					if deep_get(_path, DictPath("sorted"), False) and tmp is not None:
 						tmp = natsorted(tmp)
 
-					if tmp is not None and tmp in ("None", ["None"]) and deep_get(_path, DictPath("none_str_as_none"), False) == True:
+					if tmp is not None and tmp in ("None", ["None"]) and deep_get(_path, DictPath("none_str_as_none"), False):
 						tmp = default
 
 					# Just return the list, unless a subset has been requested
@@ -1580,7 +1580,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 								if group is not None:
 									_key = group
 									match = True
-							if match == True:
+							if match:
 								break
 						match = False
 						for _regex in _regexes_value:
@@ -1592,7 +1592,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 								if group is not None:
 									_value = group
 									match = True
-							if match == True:
+							if match:
 								break
 						# A transform might yield multiple identical key/value pairs;
 						# ignore all except the first one
@@ -2073,9 +2073,9 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 				if deep_get(src, DictPath(key), "").rstrip() in values:
 					skip = True
 					break
-		if skip == True:
+		if skip:
 			break
-	if skip == True:
+	if skip:
 		entry = None
 	else:
 		d["ref"] = obj
@@ -5218,8 +5218,6 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	uip.list_needs_regeneration(True)
 
 	while True:
-		uip.countdown_to_update()
-
 		if async_cb is not None:
 			if async_cookie is not None:
 				# Note: by default async_cb will be called every 100ms until it receives all data;
@@ -5228,15 +5226,17 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				if async_cookie is None:
 					uip.force_update()
 					# Retrigger every 5 seconds by default
-					async_retrigger_timeout = deep_get(async_cb_args, DictPath("retrigger_timeout"), 50)
+					async_retrigger_timeout = deep_get(async_cb_args, DictPath("retrigger_timeout"), 5)
+					async_time_start = datetime.now()
 			else:
 				if async_retrigger_timeout is not None and async_cb is not None:
-					if async_retrigger_timeout == 0:
+					diff = datetime.now() - async_time_start
+					seconds = diff.days * 24 * 60 * 60 + diff.seconds
+
+					if seconds >= async_retrigger_timeout:
 						async_retrigger_timeout = None
 						async_cb_args["retrigger"] = True
 						vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
-					else:
-						async_retrigger_timeout -= 1
 
 		listgetter_async = None
 
@@ -5299,7 +5299,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 			tagged_items = set()
 
-		if uip.refresh == True:
+		if uip.refresh:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
@@ -6412,7 +6412,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	islocal = (hostname == name)
 	data_available = False
 	async_cookie = None
-	async_retrigger_timeout = 0
+	# Retrigger every 5 seconds by default
+	async_retrigger_timeout = 5
+	async_time_start = datetime.now()
 
 	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
@@ -6421,31 +6423,33 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	meminfo_raw = []
 	stat_raw = []
 
-	while True:
-		uip.countdown_to_update()
+	prev = datetime.now()
 
+	while True:
 		if async_cookie is not None:
 			# We are waiting for results
-			__ansible_results = ansible_async_get_data(async_cookie)
-			if __ansible_results is not None:
-				for __result in deep_get(__ansible_results, DictPath(control_plane_name), []):
-					if __result["task"] == "Fetching /proc/loadavg":
-						loadavg_raw = deep_get(__result, DictPath("stdout_lines"), [])
-					if __result["task"] == "Fetching /proc/meminfo":
-						meminfo_raw = deep_get(__result, DictPath("stdout_lines"), [])
-					elif __result["task"] == "Fetching /proc/stat":
-						stat_raw = deep_get(__result, DictPath("stdout_lines"), [])
+			async_results = ansible_async_get_data(async_cookie)
+			if async_results is not None:
+				async_time_start = datetime.now()
+				for async_result in deep_get(async_results, DictPath(control_plane_name), []):
+					task = deep_get(async_result, DictPath("task"), "")
+					if task == "Fetching /proc/loadavg":
+						loadavg_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+					elif task == "Fetching /proc/meminfo":
+						meminfo_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+					elif task == "Fetching /proc/stat":
+						stat_raw = deep_get(async_result, DictPath("stdout_lines"), [])
 				async_cookie = None
 				uip.force_update()
-				# Retrigger every 5 seconds; this might be revisited later
-				async_retrigger_timeout = 50
 		else:
 			if islocal == False:
-				if async_retrigger_timeout == 0:
+				diff = datetime.now() - async_time_start
+				seconds = diff.days * 24 * 60 * 60 + diff.seconds
+
+				if seconds >= async_retrigger_timeout:
 					ping_path = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml")))
 					async_cookie = ansible_run_playbook_on_selection_async(ping_path, selection = [control_plane_name])
-				else:
-					async_retrigger_timeout -= 1
+					async_time_start = datetime.now()
 
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
@@ -6675,7 +6679,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			selectednodetaintsarray: List[Union[ThemeRef, ThemeString]] = [
 				ThemeString("Taints: ", ThemeAttr("main", "infoheader")),
 			]
-			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, 0, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
+			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, heatmap_width, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
 
 			uip.addthemearray(listpad, selectednodearray, y = 1, x = node_heatmap_xpos + 1)
 			uip.addthemearray(listpad, selectednodestatusarray, y = 2, x = node_heatmap_xpos + 1)
@@ -6864,7 +6868,7 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 			except binascii.Error:
 				pass
 
-		if uudata == True:
+		if uudata:
 			try:
 				data = decoded.decode("utf-8")
 			except UnicodeDecodeError:
@@ -6946,7 +6950,7 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 		if r1.status == 200:
 			try:
 				weavestatus = json.loads(r1.read())
-				if deep_get(weavestatus, DictPath("VersionCheck#Enabled"), False) == True and deep_get(weavestatus, DictPath("VersionCheck#Success"), False) == True:
+				if deep_get(weavestatus, DictPath("VersionCheck#Enabled"), False) and deep_get(weavestatus, DictPath("VersionCheck#Success"), False):
 					candidate_version = deep_get(weavestatus, DictPath("VersionCheck#NewVersion"), None)
 			except DecodeException:
 				# We got a response, but the data is malformed
@@ -7014,7 +7018,7 @@ def update_cni(stdscr: curses.window, cni, current_version, candidate_version, d
 		except FileNotFoundError:
 			cpath = None
 
-		if dry_run == True or cpath is None:
+		if dry_run or cpath is None:
 			return cpath is not None
 
 		args = [cpath, "upgrade"]
@@ -7085,8 +7089,6 @@ def cniloop(stdscr: curses.window, view):
 	cni = None
 
 	while True:
-		uip.countdown_to_update()
-
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.infopad.erase()
@@ -7358,17 +7360,17 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 		if "shortcuts" in viewref:
 			for shortcut in deep_get(viewref, DictPath("shortcuts")):
 				read_only = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#read_only"), False)
-				if read_only_mode == True and read_only == False:
+				if read_only_mode and not read_only:
 					continue
 				tmp = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#helptext"))
 				if tmp is not None:
 					helptext.append(tmp)
 			helptext += helptexts.spacer
 
-		if deep_get(viewref, DictPath("is_taggable"), True) == True:
+		if deep_get(viewref, DictPath("is_taggable"), True):
 			helptext += helptexts.tagactions
 			helptext += helptexts.spacer
-			if deep_get(viewref, DictPath("labels"), True) == True:
+			if deep_get(viewref, DictPath("labels"), True):
 				helptext += helptexts.selectoractions
 				helptext += helptexts.spacer
 
@@ -7581,7 +7583,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			}
 		}
 
-	if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False) == True:
+	if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
 		sanity = True
 		_shortcuts = {}
 		for shortcut in shortcuts:
@@ -7646,8 +7648,6 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	raw_output = False
 
 	while True:
-		uip.countdown_to_update()
-
 		# Output listpad if we have one
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
@@ -7865,7 +7865,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				uip.list_needs_regeneration(False)
 
 		# Output logpad if we have one
-		if logpad is not None and uip.refresh == True:
+		if logpad is not None and uip.refresh:
 			uip.logpad.erase()
 			# This is needed in case we get a resize event or toggle borders
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
@@ -8151,7 +8151,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							w_confirm = os.path.exists(w_result)
 						else:
 							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
-					if w_confirm == True:
+					if w_confirm:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
@@ -8272,7 +8272,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							w_confirm = os.path.exists(w_result)
 						else:
 							sys.exit("Unknown value for w_confirm; must be either boolean or path_exists")
-					if w_confirm == True:
+					if w_confirm:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
 						if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False) == False:
@@ -8334,7 +8334,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						if retval is not None and retval == Retval.RETURNFULL:
 							return retval
 					changed = True
-			if force_update == True:
+			if force_update:
 				uip.force_update()
 
 def eventdispatch(stdscr: curses.window, **kwargs):
@@ -8453,13 +8453,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	facility_regex = re.compile(r"^.*/(.*)")
 
 	while True:
-		uip.countdown_to_update()
-
 		if uip.is_update_triggered():
 			# When following the log we update the log continuously, but tail lines is limited to the number of lines
 			# that fits on the screen, and cursor movements are disabled; as soon as the user presses a key the log
 			# will stop scrolling and the whole log (default number of tail lines) will be loaded
-			if uip.continuous_log == True:
+			if uip.continuous_log:
 				tail_lines = uip.logpadheight
 
 			if len(multilog_containers) == 0:
@@ -8502,7 +8500,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 							ThemeString(f"{containername}", ThemeAttr("types", "facility_extended")),
 							ThemeRef("separators", "facility_extended_suffix"),
 						]
-					elif multilog_prefix == ["podname", "container"] or multilog_prefix == ["namespace", "podname", "container"] and all_same_namespace == True:
+					elif multilog_prefix == ["podname", "container"] or multilog_prefix == ["namespace", "podname", "container"] and all_same_namespace:
 						facility_extended = [
 							ThemeRef("separators", "facility_extended_prefix"),
 							ThemeString(f"{podname}", ThemeAttr("types", "facility_extended")),
@@ -8521,7 +8519,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 							ThemeRef("separators", "facility_extended_suffix"),
 						]
 					rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
-					if internal_error == True:
+					if internal_error:
 						splitmsg = split_msg(rawmsg)
 						break
 					# Now we have one per line; now we need to add (podname, containername, image, facility_extended) to each line, to allow the logparser
@@ -8571,7 +8569,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					progressbar.timeout(10)
 					c = progressbar.getch()
 					if c == 27:	# ESCAPE
-						if reload == True:
+						if reload:
 							break
 						return Retval.RETURNDONE
 
@@ -8581,9 +8579,9 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					_parser = None
 				else:
 					line = _line
-				if internal_error == True:
+				if internal_error:
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser("internal_error", "", "", message = line, container_type = container_type, line = i)
-				elif raw_logs == True:
+				elif raw_logs:
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser("raw", "", "", message = line, container_type = container_type, line = i)
 				elif override_parser is not None or _parser is None or parser == "":
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser(podname, containername, image, message = line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type, line = i)
@@ -8808,7 +8806,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 											ThemeRef("separators", "container")
 										 ],
 										 ellipsise = 3)
-					if all_same_namespace == True:
+					if all_same_namespace:
 						namespacearray = [
 							ThemeString("Namespace: ", ThemeAttr("main", "infoheader")),
 							ThemeString(f"{namespace}", ThemeAttr("types", "namespace")),
@@ -8818,12 +8816,12 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 			uip.refresh = True
 
-		if uip.refresh == True:
+		if uip.refresh:
 			# FIXME: the status stuff should be done by curses_helper
 			theme = get_theme_ref()
 			uip.statusbar.erase()
 
-			if uip.continuous_log == True:
+			if uip.continuous_log:
 				interval = "Follow"
 			else:
 				interval = "Manual"
@@ -8866,7 +8864,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 						ThemeString("Unfolding messages", ThemeAttr("statusbar", "highlight")),
 						ThemeRef("separators", "statusbar"),
 					]
-				if merge_repeats == True:
+				if merge_repeats:
 					statusarray2 += [
 						ThemeString("Repeats merged", ThemeAttr("statusbar", "highlight")),
 						ThemeRef("separators", "statusbar"),
@@ -8903,12 +8901,12 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				]
 				statusarray2 = [
 				]
-				if fold_msg == False:
+				if not fold_msg:
 					statusarray2 += [
 						ThemeString("Unfolding", ThemeAttr("statusbar", "highlight")),
 						ThemeRef("separators", "statusbar_compact"),
 					]
-				if merge_repeats == True:
+				if merge_repeats:
 					statusarray2 += [
 						ThemeString("Repeats merged", ThemeAttr("statusbar", "highlight")),
 						ThemeRef("separators", "statusbar_compact"),
@@ -8942,7 +8940,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					statusarray2 += [
 						ThemeString(f"{parser[0]}", ThemeAttr("statusbar", "highlight")),
 					]
-				if uip.maxx - uip.minx > 128 and logparser_configuration.using_bundles == True:
+				if uip.maxx - uip.minx > 128 and logparser_configuration.using_bundles:
 					statusarray2 += [
 						ThemeString(" (Bundle)", ThemeAttr("statusbar", "dim")),
 					]
@@ -8973,7 +8971,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 						new_date = True
 				hourstamp = timestamp[len("YYYY-MM-DD "):]
 
-				if new_date == True and highlight_new_dates == True:
+				if new_date and highlight_new_dates:
 					datetype = "timestamp_newdate"
 				else:
 					datetype = "timestamp"
@@ -8988,8 +8986,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 				tsstrarray = None
 				# FIXME
-				if only_new_dates == True:
-					if new_date == True:
+				if only_new_dates:
+					if new_date:
 						tsthemearray: List[Union[ThemeRef, ThemeString]] = [ThemeString(datestamp, ThemeAttr("logview", datetype))]
 						new_date = False
 						# If we do empty lines for new dates we need something like this
@@ -9077,7 +9075,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					msgstrarray.append(ThemeString(msg, color_log_severity(severity)))
 				else:
 					msgstrarray += msg
-				if wrap_lines == True:
+				if wrap_lines:
 					sideadjust = 0
 					if uip.borders == False:
 						sideadjust = 2
@@ -9782,7 +9780,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 				ref_api_family = ""
 			ref_kind = (ref_kind, ref_api_family)
 			accept_only_owner = deep_get(kwargs, DictPath("accept_only_owner"), False)
-			if deep_get(ref, DictPath("controller"), False) == True:
+			if deep_get(ref, DictPath("controller"), False):
 				controller = (ref_kind, ref_name)
 			elif kind is not None and kind == ref_kind or holder_identity is not None or accept_only_owner and len(owner_references) == 1:
 				if non_controller is None:
@@ -9921,7 +9919,7 @@ def view_obj(stdscr: curses.window, **kwargs):
 	path = deep_get(kwargs, DictPath("path"))
 	formatter = deep_get(kwargs, DictPath("formatter"), formatters.format_yaml)
 	if path is not None:
-		if deep_get(kwargs, DictPath("include_root"), False) == True:
+		if deep_get(kwargs, DictPath("include_root"), False):
 			obj = [{f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}]
 		# pylint: disable-next=comparison-with-callable
 		elif formatter == formatters.format_yaml:
@@ -9948,7 +9946,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
 		return None
 	path = deep_get(kwargs, DictPath("path"))
 	if path is not None:
-		if deep_get(kwargs, DictPath("include_root"), False) == True:
+		if deep_get(kwargs, DictPath("include_root"), False):
 			_obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}
 		else:
 			_obj = deep_get(obj, DictPath(path))
@@ -10029,7 +10027,7 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 			break
 
 	# We successfully deleted everything
-	if success == True:
+	if success:
 		win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = "Successfully deleted all specified resources")
 
 	# Wait for a keypress
@@ -10674,7 +10672,7 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	curses.endwin()
 	_retval = clear_screen()
 
-	if action.get("requires_cluster_info") == True:
+	if action.get("requires_cluster_info"):
 		gather_cluster_info()
 
 	ansithemeprint(msg)
@@ -10868,13 +10866,13 @@ def populate_actionlist(context = None, action_list = None, control_plane_select
 			else:
 				raise ValueError(f"Unknown type for metadata {type(md)} for metadata {md}; expected ThemeString(str, ThemeAttr) or [str, [str, str]]")
 		metadata = tmp
-		if singleonly == True and single_item == False:
+		if singleonly and not single_item:
 			continue
-		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
+		if singleoncontrolplane and control_plane_selected and not single_item:
 			continue
-		if allowoncontrolplane == False and control_plane_selected == True:
+		if not allowoncontrolplane and control_plane_selected:
 			continue
-		if readonly == False and read_only_mode == True:
+		if not readonly and read_only_mode:
 			continue
 
 		if currentcategory != category:
@@ -11047,14 +11045,14 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 		readonly = action_list[item[2]].get("read_only", False)
 		comments = action_list[item[2]].get("comments", "")
 		lineattrs = WidgetLineAttrs.NORMAL
-		if read_only_mode == True and readonly == False:
+		if read_only_mode and not readonly:
 			continue
-		if singleoncontrolplane == True and control_plane_selected == True and single_item == False:
+		if singleoncontrolplane and control_plane_selected and not single_item:
 			continue
-		if allowoncontrolplane == False and control_plane_selected == True:
+		if not allowoncontrolplane and control_plane_selected:
 			continue
 
-		if action_list[item[2]].get("requires_cluster_info", False) == True and cluster_available == False:
+		if action_list[item[2]].get("requires_cluster_info", False) and not cluster_available:
 			metadata = []
 			if len(comments) > 0:
 				metadata.append(ThemeString(f"{comments},", ThemeAttr("windowwidget", "highlight")))
@@ -11099,7 +11097,7 @@ force_refresh_apis = False
 def format_selection_list(uip: UIProps, refresh_apis = False):
 	global force_refresh_apis # pylint: disable=global-statement
 
-	if force_refresh_apis == True:
+	if force_refresh_apis:
 		force_refresh_apis = False
 		refresh_apis = True
 
@@ -11108,14 +11106,14 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 	sortcolumn = deep_get(cmtlib.cmtconfig, DictPath("__Selector#sortcolumn"), "family")
 
 	if sortcolumn == "family":
-		if categorise == True:
+		if categorise:
 			sortkey1 = 1
 			sortkey2 = 2
 		else:
 			sortkey1 = 2
 			sortkey2 = 0
 	elif sortcolumn == "name":
-		if categorise == True:
+		if categorise:
 			sortkey1 = 1
 			sortkey2 = 0
 		else:
@@ -11124,7 +11122,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 	else:
 		sys.exit(f"Invalid sortcolumn {sortcolumn} for Selector; aborting.")
 
-	if refresh_apis == True:
+	if refresh_apis:
 		_notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Refreshing list of available APIs")
 		# Repopulate the list of views, on the offhand chance that a view file has been added
 		populate_views(force_refresh = refresh_apis)
@@ -11141,9 +11139,9 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 	# Find the correct sort order
 	for viewkey, viewref in views.items():
 		kind = None
-		if deep_get(viewref, DictPath("skip"), False) == True:
+		if deep_get(viewref, DictPath("skip"), False):
 			continue
-		if hide_unavailable == True:
+		if hide_unavailable:
 			kind = deep_get(viewref, DictPath("kind"), ("", ""))
 			if kind is not None and kind != ("", ""):
 				if not kind[0].startswith("__") and (kind not in available_api_families or deep_get(available_api_families[kind], DictPath("available"), False) == False):
@@ -11193,7 +11191,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 		else:
 			api_group = ""
 
-		if currentgroup != group and categorise == True:
+		if currentgroup != group and categorise:
 			items.append({
 				"lineattrs": WidgetLineAttrs.SEPARATOR,
 				"columns": [[ThemeString(f" {group} ", ThemeAttr("windowwidget", "highlight"))],
@@ -11464,7 +11462,7 @@ views_special = {
 		"group": "Administration",
 		"viewfunc": clusteroverviewloop,
 		"fields": None,
-		"update_delay": 50,
+		"update_delay": 5,
 		"sortcolumn": None,
 		"activatedfun": None,
 		"listgetter": None,
@@ -11565,7 +11563,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
 	available_api_families = set()
 	for kind, kind_data in tmp_available_api_families.items():
-		if deep_get(kind_data, DictPath("available"), False) == True:
+		if deep_get(kind_data, DictPath("available"), False):
 			available_api_families.add(kind)
 
 	viewdir = os.path.join(VIEW_DIR)
@@ -12084,7 +12082,7 @@ def setupui(stdscr: curses.window) -> None:
 	curses.raw()
 	# Enable mouse support
 	enable_mouse = deep_get(cmtlib.cmtconfig, DictPath("Mouse#enable"), True)
-	if enable_mouse == True:
+	if enable_mouse:
 		curses_helper.set_mousemask(-1)
 	else:
 		curses_helper.set_mousemask(0)

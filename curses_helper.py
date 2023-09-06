@@ -2032,12 +2032,11 @@ class UIProps:
 		self.xoffset = 0
 		self.maxyoffset = 0
 		self.maxxoffset = 0
-		# -1 -- Do not update
-		# 0 -- Update
-		# > 0 -- Count this down to 0 before updating
-		self.update_count = 0
-		# Count to use for update countdowns; only used if update_count > 0
+		self.last_update = None
+		# Number of seconds between updates
 		self.update_delay = 0
+		# Has an update been requested?
+		self.update_triggered = False
 		# Update will update the content to display,
 		# Refresh just updates the display
 		self.refresh = True
@@ -2161,9 +2160,11 @@ class UIProps:
 
 	def set_update_delay(self, delay: int) -> None:
 		self.update_delay = delay
+		if delay > 0:
+			self.last_update = datetime.now()
 
 	def force_update(self) -> None:
-		self.update_count = 0
+		self.update_triggered = True
 		self.refresh = True
 		self.sort_triggered = True
 		self.list_needs_regeneration(True)
@@ -2175,17 +2176,24 @@ class UIProps:
 		self.update_window()
 
 	def disable_update(self) -> None:
-		self.update_count = -1
+		self.last_update = None
 
 	def reset_update_delay(self) -> None:
-		self.update_count = self.update_delay
-
-	def countdown_to_update(self) -> None:
-		if self.update_count > 0:
-			self.update_count -= 1
+		if self.update_delay > 0:
+			self.last_update = datetime.now()
 
 	def is_update_triggered(self) -> bool:
-		return self.update_count == 0
+		if self.update_triggered:
+			self.update_triggered = False
+			return True
+
+		if self.last_update is None or self.update_delay == 0:
+			return False
+
+		timediff = datetime.now() - self.last_update
+		duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+
+		return duration >= self.update_delay
 
 	def list_needs_regeneration(self, regenerate_list: bool) -> None:
 		self.regenerate_list = regenerate_list
