@@ -395,7 +395,7 @@ def datagetter_regex_split_to_tuples(kh: kubernetes_helper.KubernetesHelper, obj
 	return list_fields, {}
 
 # pylint: disable-next=too-many-return-statements
-def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict) -> Tuple[str, StatusGroup]:
+def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Tuple[str, StatusGroup]:
 	"""
 	Get status for a Pod
 
@@ -405,6 +405,8 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict) -> Tuple[s
 		Returns:
 			phase (str), status_group (StatusGroup): The phase and status group of the pod
 	"""
+
+	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
 
 	if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
 		status = "Terminating"
@@ -460,11 +462,12 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict) -> Tuple[s
 				status_group = StatusGroup.NOT_OK
 				status = "NotReady"
 				# Can we get more info? Is the host available?
-				node_name = deep_get(obj, DictPath("spec#nodeName"))
-				node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, "")
-				node_status = get_node_status(node)
-				if node_status[0] == "Unreachable":
-					status = "NodeUnreachable"
+				if in_depth_node_status:
+					node_name = deep_get(obj, DictPath("spec#nodeName"))
+					node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, "")
+					node_status = get_node_status(node)
+					if node_status[0] == "Unreachable":
+						status = "NodeUnreachable"
 				break
 
 			if condition_type == "ContainersReady" and condition_status == "False":

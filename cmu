@@ -4686,6 +4686,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 			info (list[InfoClass]): A list with info
 	"""
 	vlist = deep_get(kwargs, DictPath("_vlist"))
+	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
 	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
 	filters = deep_get(kwargs, DictPath("filters"), [])
 	info: List[Type] = []
@@ -4728,7 +4729,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 		controller = format_controller(controller, show_kind)
 
 		pod_ip = deep_get(obj, DictPath("status#podIP"), "<unset>")
-		status, status_group = datagetters.get_pod_status(kh, obj)
+		status, status_group = datagetters.get_pod_status(kh, obj, in_depth_node_status = in_depth_node_status)
 		pod_restarts, restarted_at = get_pod_restarts_total(obj)
 		if restarted_at == -1:
 			last_restart = -1
@@ -6538,7 +6539,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			# Get the list of all pods
 			vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-			podinfo = get_pod_info(**{"_vlist": vlist})
+			podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
 			pod_statuses = [s.status_group for s in podinfo]
 
 			heatmap_width = ((uip.maxx - uip.minx - 1) // 2) - 2
