@@ -913,13 +913,12 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	return array
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> curses.window:
+def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Draw a bar of multiple subsets that sum up to a total
 	FIXME: This should be modified to just return a ThemeArray instead of drawing it
 
 		Parameters:
-			win (curses.window): The curses window to operate on
 			y (int): The y-position of the percentage bar
 			minx (int): The starting position of the percentage bar
 			maxx (int): The ending position of the percentage bar
@@ -928,30 +927,27 @@ def percentagebar(win: curses.window, y: int, minx: int, maxx: int, total: int, 
 				subset (int): The fraction of the total that this subset represents
 				themeattr (ThemeAttr): The colour to use for this subset
 		Returns:
-			win (curses.window): The curses window to operate on
+			themearray (ThemeArray): The themearray with the percentage bar
 	"""
 
+	themearray = []
+
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
-	barwidth = maxx - minx + 1
+	bar_width = maxx - minx + 1
 	barpos = minx + 1
+	subset_total = 0
 
-	win.addstr(y, minx, "[")
-	ax = barpos
-	for subset in subsets:
-		rx = 0
-		pct, themeattr = subset
-		col = themeattr_to_curses_merged(themeattr)
-		subsetwidth = int((pct / total) * barwidth)
+	if total > 0:
+		for subset in subsets:
+			pct, themeattr = subset
+			subset_width = int((pct / total) * bar_width)
+			subset_total += subset_width
+			themearray.append(ThemeString("".ljust(subset_width, block), themeattr))
 
-		while rx < subsetwidth and ax < maxx:
-			win.addstr(y, ax, block, col)
-			rx += 1
-			ax += 1
-	while ax < maxx:
-		win.addstr(y, ax, " ", col)
-		ax += 1
-	win.addstr(y, maxx, "]")
-	return win
+	# Pad to full width
+	themearray.append(ThemeString("".ljust(bar_width - subset_total), ThemeAttr("types", "generic")))
+
+	return themearray
 
 # pylint: disable=unused-argument
 def __notification(stdscr: Optional[curses.window], y: int, x: int, message: str, formatting: ThemeAttr) -> curses.window:
@@ -2381,7 +2377,7 @@ class UIProps:
 			self.addthemearray(self.statusbar, mousearray, y = 0, x = xpos)
 		ycurpos = self.curypos + self.yoffset
 		maxypos = self.maxcurypos + self.maxyoffset
-		if ycurpos != 0 or maxypos != 0:
+		if ycurpos >= 0 and maxypos >= 0:
 			curposarray: List[Union[ThemeRef, ThemeString]] = [
 				# pylint: disable-next=line-too-long
 				ThemeString("Line: ", ThemeAttr("statusbar", "infoheader")),

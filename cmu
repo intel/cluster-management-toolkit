@@ -6202,8 +6202,12 @@ def __resource_map_cursor(**kwargs):
 					uip.force_update()
 					break
 
+	xpos = selected % (heatmap_width + 1)
+	ypos = selected // (heatmap_width + 1)
 	return Retval.MATCH, {
 		"selected": selected,
+		"ypos": ypos,
+		"xpos": xpos,
 	}
 
 def __open_reference(**kwargs):
@@ -6388,12 +6392,13 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	uip.init_window(field_list, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, activatedfun = activatedfun, on_activation = on_activation)
 
 	infopadheight = 11
+	eventpadheight = 7
 
 	# For generic information
 	infopad = uip.init_infopad(height = infopadheight, width = -1, ypos = 1, xpos = 1)
 
 	# For the status panes
-	headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = infopadheight + 2, xpos = 1, header = False)
+	headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = infopadheight + eventpadheight + 2, xpos = 1, header = False)
 
 	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
 	statusbar = uip.init_statusbar()
@@ -6425,6 +6430,33 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	stat_raw = []
 
 	prev = datetime.now()
+	podinfo = None
+	nodeinfo = None
+
+	pod_curypos = 0
+	pod_curxpos = 0
+	node_curypos = 0
+	node_curxpos = 0
+
+	cpuutimeusernice = 0
+	cputimeuser = 0
+	cputimeusernice = 0
+	cputimetotalsystem = 0
+	cputimetotalguest = 0
+	cputimetotal = 1
+	cputimetotalused = 0
+	memused = 0
+	memcached = 0
+	buffers = 0
+	memtotal = 1
+	swapused = 0
+	running = 0
+	tasks = 0
+	loadavg_raw = []
+	meminfo_raw = []
+	stat_raw = []
+
+	swaptotal = 0
 
 	while True:
 		if async_cookie is not None:
@@ -6532,200 +6564,280 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				else:
 					stat_raw = []
 
-			# Get the list of all nodes
-			vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-			# We want the nodes to be sorted by name
-			vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
-			nodeinfo = get_node_info(vlist, extra_vars = {})
-			node_statuses = [s.status_group for s in nodeinfo]
+			if nodeinfo is None:
+				# Get the list of all nodes
+				vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+				# We want the nodes to be sorted by name
+				vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
+				nodeinfo = get_node_info(vlist, extra_vars = {})
+				node_statuses = [s.status_group for s in nodeinfo]
 
 			# Get the list of all pods
-			vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-			podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
-			pod_statuses = [s.status_group for s in podinfo]
+			if podinfo is None:
+				vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+				podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
+				pod_statuses = [s.status_group for s in podinfo]
 
-			heatmap_width = ((uip.maxx - uip.minx - 1) // 2) - 2
-			node_heatmap = curses_helper.generate_heatmap(heatmap_width, node_statuses, selected_node)
-			pod_heatmap = curses_helper.generate_heatmap(heatmap_width, pod_statuses, selected_pod)
+			# Get the 5 most recent events
+			vlist, _status = kh.get_list_by_kind_namespace(("Event", ""), "")
+			events = vlist[:5]
 
-			# Resize the list pad to fit the heatmaps
-			# XXX this needs to be fixed when we add more information
-			uip.resize_listpad(-1)
+			# We most likely have far more nodes than pods, so give the nodes 25% of the width and the pods 75% of the width;
+			# even this is probably too much for the nodes, but we can adjust that later
+			node_heatmap_width = ((uip.maxx - uip.minx - 1) // 4) - 2
+			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 3 // 4) - 2
 
 		k8s_distro = identify_k8s_distro()
 
-		namearray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("Control Plane: ", ThemeAttr("main", "infoheader")),
-			ThemeString(f"{name}", ThemeAttr("types", "generic"))
-		]
-		clusternamearray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("Cluster Name: ", ThemeAttr("main", "infoheader")),
-			ThemeString(f"{kh.cluster_name}", ThemeAttr("types", "generic"))
-		]
-		contextarray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("Cluster Context: ", ThemeAttr("main", "infoheader")),
-			ThemeString(f"{kh.context_name}", ThemeAttr("types", "generic"))
-		]
-		distroarray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("Kubernetes Distro: ", ThemeAttr("main", "infoheader")),
-		]
 		if k8s_distro is not None:
-			distroarray.append(ThemeString(f"{k8s_distro}", ThemeAttr("main", "generic")))
+			k8s_distro_string = ThemeString(f"{k8s_distro}", ThemeAttr("main", "generic"))
 		else:
-			distroarray.append(ThemeString("<unknown>", ThemeAttr("types", "unset")))
+			k8s_distro_string = ThemeString("<unknown>", ThemeAttr("types", "unset"))
 
-		internaliparray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
+		internal_ips_array = generators.format_list(iips, 0, 0, False, False)
+		external_ips_array = generators.format_list(eips, 0, 0, False, False)
+
+		infoarrays: List[List[Union[ThemeRef, ThemeString]]] = [
+			[
+				ThemeString("Control Plane: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{name}", ThemeAttr("types", "generic"))
+			], [
+				ThemeString("Cluster Name: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{kh.cluster_name}", ThemeAttr("types", "generic"))
+			], [
+				ThemeString("Cluster Context: ", ThemeAttr("main", "infoheader")),
+				ThemeString(f"{kh.context_name}", ThemeAttr("types", "generic"))
+			], [
+				ThemeString("Kubernetes Distro: ", ThemeAttr("main", "infoheader")),
+				k8s_distro_string,
+			], [
+				ThemeString("Internal IP-address(es): ", ThemeAttr("main", "infoheader")),
+			] + internal_ips_array, [
+				ThemeString("External IP-address(es): ", ThemeAttr("main", "infoheader")),
+			] + external_ips_array, [
+			# Kubernetes port
+			# KubeDNS
+			# control plane load, disk, mem, uptime (requires ansible or local)
+			], [
+			]
 		]
-		internaliparray += generators.format_list(iips, 0, 0, False, False)
-		externaliparray: List[Union[ThemeRef, ThemeString]] = [
-			ThemeString("External IP-address(es): ", ThemeAttr("main", "infoheader")),
-		]
-		externaliparray += generators.format_list(eips, 0, 0, False, False)
-		# Kubernetes port
-		# KubeDNS
-		# control plane load, disk, mem, uptime (requires ansible or local)
 
-		uip.addthemearray(infopad, namearray, y = 0, x = 0)
-		uip.addthemearray(infopad, clusternamearray, y = 1, x = 0)
-		uip.addthemearray(infopad, contextarray, y = 2, x = 0)
-		uip.addthemearray(infopad, distroarray, y = 3, x = 0)
-		uip.addthemearray(infopad, internaliparray, y = 4, x = 0)
-		uip.addthemearray(infopad, externaliparray, y = 5, x = 0)
+		y = 0
+		for i, row in enumerate(infoarrays):
+			uip.addthemearray(infopad, row, y = y + i, x = 0)
+		y += i
 
-		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
-			tasksarray: List[Union[ThemeRef, ThemeString]] = [
+		# cpu usage:
+		# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
+		# This is aggregate over all CPUs
+		percentagebar_cpu: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(8, 7, uip.infopadwidth - 10, cputimetotal, [
+			# Note: These are NOT themestrings!
+			(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
+			(cputimeuser, ThemeAttr("types", "cputime_user")),
+			(cputimetotalsystem, ThemeAttr("types", "cputime_total_system")),
+			(cputimetotalguest, ThemeAttr("types", "cputime_total_guest"))
+		])
+
+		# memory usage:
+		# used (green) / buffers (bold blue) / cache (yellow)
+		percentagebar_mem: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 7, uip.infopadwidth - 10, memtotal, [
+			# Note: These are NOT themestrings!
+			(memused - memcached - buffers, ThemeAttr("types", "mem")),
+			(buffers, ThemeAttr("types", "buffers")),
+			(memcached, ThemeAttr("types", "cached"))
+		])
+
+		# swap usage:
+		# used (red)
+		if swaptotal > 0:
+			percentagebar_or_string_swap: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 6, uip.infopadwidth - 10, swaptotal, [
+				# Note: These are NOT themestrings!
+				(swapused, ThemeAttr("types", "swap_used"))
+			])
+			percentagebar_or_string_swap += [
+				ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),
+				ThemeRef("separators", "percentage"),
+			]
+		else:
+			percentagebar_or_string_swap = [ThemeString("Disabled", ThemeAttr("types", "none"))]
+
+		tasksarrays: List[List[Union[ThemeRef, ThemeString]]] = [
+			[
 				ThemeString("Tasks: ", ThemeAttr("main", "infoheader")),
 				ThemeString(f"{running}", ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "fraction"),
 				ThemeString(f"{tasks} ", ThemeAttr("types", "numerical")),
 				ThemeString("running", ThemeAttr("types", "generic")),
-			]
-
-			cpuarray: List[Union[ThemeRef, ThemeString]] = [
+			], [
 				ThemeString("  CPU: ", ThemeAttr("main", "infoheader")),
-			]
-			cpuusagearray: List[Union[ThemeRef, ThemeString]] = [
+				ThemeString("[", ThemeAttr("types", "generic"))
+			] + percentagebar_cpu + [
+				ThemeString("]", ThemeAttr("types", "generic")),
 				ThemeString(f"{str(100 * cputimetotalused // cputimetotal).rjust(3)}", ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "percentage"),
-			]
-			memarray: List[Union[ThemeRef, ThemeString]] = [
+			], [
 				ThemeString("  Mem: ", ThemeAttr("main", "infoheader")),
-			]
-			memusagearray: List[Union[ThemeRef, ThemeString]] = [
+				ThemeString("[", ThemeAttr("types", "generic"))
+			] + percentagebar_mem + [
+				ThemeString("]", ThemeAttr("types", "generic")),
 				ThemeString(str(100 * memused // memtotal).rjust(3), ThemeAttr("types", "numerical")),
 				ThemeRef("separators", "percentage"),
-			]
-			swaparray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("Swap: ", ThemeAttr("main", "infoheader")),
-			]
-			disabledarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("Disabled", ThemeAttr("main", "highlight")),
-			]
+			], [
+				ThemeString(" Swap: ", ThemeAttr("main", "infoheader")),
+			] + percentagebar_or_string_swap,
+		]
 
-			uip.addthemearray(infopad, tasksarray, y = 7, x = 0)
-			uip.addthemearray(infopad, cpuarray, y = 8, x = 0)
-			uip.addthemearray(infopad, cpuusagearray, y = 8, x = (uip.infopadwidth - 8))
-			uip.addthemearray(infopad, memarray, y = 9, x = 0)
-			uip.addthemearray(infopad, memusagearray, y = 9, x = (uip.infopadwidth - 8))
-			uip.addthemearray(infopad, swaparray, y = 10, x = 0)
+		if len(loadavg_raw) > 0 and len(meminfo_raw) > 0 and len(stat_raw) > 0:
+			for i, row in enumerate(tasksarrays):
+				uip.addthemearray(infopad, row, y = y + i, x = 0)
+			y += i + 1
+		else:
+			y += len(tasksarrays)
 
-			# cpu usage:
-			# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
-			# This is aggregate over all CPUs
-			curses_helper.percentagebar(infopad, 8, 7, uip.infopadwidth - 10, cputimetotal, [
-				# Note: These are NOT themestrings!
-				(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
-				(cputimeuser, ThemeAttr("types", "cputime_user")),
-				(cputimetotalsystem, ThemeAttr("types", "cputime_total_system")),
-				(cputimetotalguest, ThemeAttr("types", "cputime_total_guest"))
-			])
+		# Namespace, Name, Last Seen, Type, Reason, Message
+		evheaders = [
+			"Namespace:",
+			"Name:",
+			"Last Seen:",
+			"Type:",
+			"Reason:",
+			"Message:",
+		]
 
-			# memory usage:
-			# used (green) / buffers (bold blue) / cache (yellow)
-			curses_helper.percentagebar(infopad, 9, 7, uip.infopadwidth - 10, memtotal, [
-				# Note: These are NOT themestrings!
-				(memused - memcached - buffers, ThemeAttr("types", "mem")),
-				(buffers, ThemeAttr("types", "buffers")),
-				(memcached, ThemeAttr("types", "cached"))
-			])
+		evfields = [
+			[DictPath("metadata#namespace")],
+			[DictPath("metadata#name")],
+			[DictPath("series#lastObservedTime"), DictPath("deprecatedLastTimestamp"), DictPath("lastTimestamp"), DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")],
+			[DictPath("type")],
+			[DictPath("reason")],
+			[DictPath("message"), DictPath("note")],
+		]
 
-			# swap usage:
-			# used (red)
-			if swaptotal == 0:
-				uip.addthemearray(infopad, disabledarray, y = 10, x = 6)
+		evlens = [len(header) for header in evheaders]
+
+		for event in events:
+			for i, paths in enumerate(evfields):
+				val = deep_get_with_fallback(event, paths, "")
+				evlens[i] = max(evlens[i], len(val))
+
+		# Draw the events over the bottom of the visible area of the listpad
+		eventarrays: List[Union[ThemeRef, ThemeString]] = [
+			[ThemeString("Events:", ThemeAttr("main", "listheader_compact"))],
+		]
+
+		tmp = []
+		for i, header in enumerate(evheaders):
+			tmp.append(ThemeString(header.ljust(evlens[i]), ThemeAttr("main", "listheader")))
+			if i < len(evheaders):
+				tmp.append(ThemeString("  ", ThemeAttr("main", "listheader")))
+		eventarrays.append(tmp)
+
+		for evindex in range(0, 5):
+			tmp = []
+
+			if evindex < len(events):
+				event = events[evindex]
+				for i, path in enumerate(evfields):
+					val = deep_get_with_fallback(event, path, "")
+					tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("main", "default")))
+					if i < len(evheaders):
+						tmp.append(ThemeString("  ", ThemeAttr("main", "default")))
 			else:
-				curses_helper.percentagebar(infopad, 9, 6, uip.infopadwidth - 10, swaptotal, [
-					# Note: These are NOT themestrings!
-					(swapused, ThemeAttr("types", "swap_used"))
-				])
-				swapusagearray: List[Union[ThemeRef, ThemeString]] = [
-					ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),
-					ThemeRef("separators", "percentage"),
-				]
-				uip.addthemearray(infopad, swapusagearray, y = 10, x = (uip.infopadwidth - 8))
+				tmp.append(ThemeString("<none>", ThemeAttr("types", "none")))
+			eventarrays.append(tmp)
+
+		y += 1
+		curses_helper.window_tee_hline(uip.stdscr, y = y, start = 0, end = uip.maxx)
+
+		for i, row in enumerate(eventarrays):
+			uip.addthemearray(uip.stdscr, row, y = y + i, x = 1)
+		y += i + 1
+		curses_helper.window_tee_hline(uip.stdscr, y = y, start = 0, end = uip.maxx)
 
 		if len(nodeinfo) > 0:
 			node_heatmap_xpos = 0
-			pod_heatmap_xpos = uip.maxx - heatmap_width - 3
-			uip.addthemearray(listpad, [ThemeString("Node heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node"))], y = 0, x = node_heatmap_xpos)
-			selectednodearray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("No", ThemeAttr("main", "listheader")),
-				ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
-				ThemeString("e: ", ThemeAttr("main", "listheader")),
-				ThemeString(f"{nodeinfo[selected_node].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
-			]
-			selectednodestatusarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
-				ThemeString(f"{nodeinfo[selected_node].status}".ljust(heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
-			]
-			selectednodetaintsarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("Taints: ", ThemeAttr("main", "infoheader")),
-			]
-			selectednodetaintsarray += generators.format_list(nodeinfo[selected_node].taints, heatmap_width, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
+			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 3
 
-			uip.addthemearray(listpad, selectednodearray, y = 1, x = node_heatmap_xpos + 1)
-			uip.addthemearray(listpad, selectednodestatusarray, y = 2, x = node_heatmap_xpos + 1)
-			uip.addthemearray(listpad, selectednodetaintsarray, y = 3, x = node_heatmap_xpos + 1)
+			selectednodetaints = generators.format_list(nodeinfo[selected_node].taints, node_heatmap_width, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
 
-			node_heatmap = curses_helper.generate_heatmap(heatmap_width, node_statuses, selected_node)
-			pod_heatmap = curses_helper.generate_heatmap(heatmap_width, pod_statuses, selected_pod)
+			nodearrays: List[List[Union[ThemeRef, ThemeString]]] = [
+				[
+					ThemeString(f"Node ({selected_node + 1}/{len(nodeinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+					ThemeString(f"".ljust(node_heatmap_width), ThemeAttr("types", "generic")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("No", ThemeAttr("main", "listheader")),
+					ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+					ThemeString("e: ", ThemeAttr("main", "listheader")),
+					ThemeString(f"{nodeinfo[selected_node].name}".ljust(node_heatmap_width), ThemeAttr("main", "highlight")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("Status: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{nodeinfo[selected_node].status}".ljust(node_heatmap_width), color_status_group(nodeinfo[selected_node].status_group)),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("Taints: ", ThemeAttr("main", "infoheader")),
+				] + selectednodetaints, [
+					# Empty line
+				], [
+					# Empty line
+				],
+			]
 
-			y = 6
-			for row in node_heatmap:
+			node_heatmap = curses_helper.generate_heatmap(node_heatmap_width, node_statuses, selected_node)
+			nodearrays += node_heatmap
+
+			podarrays: List[List[Union[ThemeRef, ThemeString]]] = [
+				[
+					ThemeString(f"Pod ({selected_pod + 1}/{len(podinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString(f"".ljust(pod_heatmap_width), ThemeAttr("types", "generic")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("od: ", ThemeAttr("main", "listheader")),
+					ThemeString(f"{podinfo[selected_pod].name}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("N", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("amespace: ", ThemeAttr("main", "listheader")),
+					ThemeString(f"{podinfo[selected_pod].namespace}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("No", ThemeAttr("main", "infoheader")),
+					ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("e: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{podinfo[selected_pod].node}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
+				], [
+					ThemeString(" ", ThemeAttr("main", "listheader")),
+					ThemeString("Status: ", ThemeAttr("main", "infoheader")),
+					ThemeString(f"{podinfo[selected_pod].status}".ljust(pod_heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
+				], [
+					# Empty line
+				]
+			]
+
+			pod_heatmap = curses_helper.generate_heatmap(pod_heatmap_width, pod_statuses, selected_pod)
+			podarrays += pod_heatmap
+
+			# Resize the list pad
+			uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap)))
+
+			for y, row in enumerate(nodearrays):
 				uip.addthemearray(listpad, row, y = y, x = node_heatmap_xpos)
-				y += 1
 
-			uip.addthemearray(listpad, [ThemeString("Pod heatmap:", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod"))], y = 0, x = pod_heatmap_xpos)
-			selectedpodarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
-				ThemeString("od: ", ThemeAttr("main", "listheader")),
-				ThemeString(f"{podinfo[selected_pod].name}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
-			]
-			selectedpodnamespacearray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("N", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
-				ThemeString("amespace: ", ThemeAttr("main", "listheader")),
-				ThemeString(f"{podinfo[selected_pod].namespace}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
-			]
-			selectedpodnodearray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("No", ThemeAttr("main", "infoheader")),
-				ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
-				ThemeString("e: ", ThemeAttr("main", "infoheader")),
-				ThemeString(f"{podinfo[selected_pod].node}".ljust(heatmap_width), ThemeAttr("main", "highlight")),
-			]
-			selectedpodstatusarray: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("Status: ", ThemeAttr("main", "infoheader")),
-				ThemeString(f"{podinfo[selected_pod].status}".ljust(heatmap_width), color_status_group(podinfo[selected_pod].status_group)),
-			]
-			uip.addthemearray(listpad, selectedpodarray, y = 1, x = pod_heatmap_xpos + 1)
-			uip.addthemearray(listpad, selectedpodnamespacearray, y = 2, x = pod_heatmap_xpos + 1)
-			uip.addthemearray(listpad, selectedpodnodearray, y = 3, x = pod_heatmap_xpos + 1)
-			uip.addthemearray(listpad, selectedpodstatusarray, y = 4, x = pod_heatmap_xpos + 1)
-
-			y = 6
-			for row in pod_heatmap:
+			for y, row in enumerate(podarrays):
 				uip.addthemearray(listpad, row, y = y, x = pod_heatmap_xpos)
-				y += 1
+
+		if selected_heatmap == "Pod":
+			uip.maxcurypos = len(pod_heatmap) - 1
+			uip.curypos = pod_curypos
+			uip.maxyoffset = 0
+			uip.yoffset = 0
+		elif selected_heatmap == "Node":
+			uip.maxcurypos = len(node_heatmap) - 1
+			uip.curypos = node_curypos
+			uip.maxyoffset = 0
+			uip.yoffset = 0
 
 		uip.refresh_window()
 		uip.refresh_infopad()
@@ -6739,12 +6851,14 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			__namespace = podinfo[selected_pod].namespace
 			__info = podinfo
 			__selected = selected_pod
+			heatmap_width = pod_heatmap_width
 		else:
 			__node_name = nodeinfo[selected_node].name
 			__namespace = None
 			__pod_name = None
 			__info = nodeinfo
 			__selected = selected_node
+			heatmap_width = node_heatmap_width
 
 		# These are arguments that *might* be needed by the callbacks
 		input_args = {
@@ -6766,8 +6880,10 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		if "selected" in return_args:
 			if selected_heatmap == "Pod":
 				selected_pod = deep_get(return_args, DictPath("selected"))
+				pod_curypos = deep_get(return_args, DictPath("ypos"), pod_curypos)
 			else:
 				selected_node = deep_get(return_args, DictPath("selected"))
+				node_curypos = deep_get(return_args, DictPath("ypos"), node_curypos)
 		if "selected_heatmap" in return_args:
 			selected_heatmap = deep_get(return_args, DictPath("selected_heatmap"))
 
