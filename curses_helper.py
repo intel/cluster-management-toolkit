@@ -3205,7 +3205,12 @@ class UIProps:
 		if bstate == curses.BUTTON1_DOUBLE_CLICKED and selections == True:
 			# double-clicks on list items
 			if activatedfun is not None and cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx:
-				selected = sorted_list[ypos + cyoffset]
+				# We want to move the cursor here,
+				# if "here" is a valid line
+				try:
+					selected = sorted_list[ypos + cyoffset]
+				except IndexError:
+					return Retval.NOMATCH
 				self.select(selected)
 				self.curypos = ypos
 
@@ -3235,8 +3240,12 @@ class UIProps:
 
 				# If we are clicking on something that is not selected (or if nothing is selected), move here
 				if selected is None or selected != sorted_list[ypos + cyoffset]:
-					# We want to move the cursor here
-					self.selected = sorted_list[ypos + self.yoffset]
+					# We want to move the cursor here,
+					# if "here" is a valid line
+					try:
+						self.selected = sorted_list[ypos + self.yoffset]
+					except IndexError:
+						return Retval.NOMATCH
 					self.curypos = ypos
 				else:
 					# If we click an already selected item we open it
