@@ -1739,6 +1739,16 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 						value.append(default)
 					for tmp in value:
 						_values.append((tmp, vtype))
+				elif ptype == "transform":
+					transform = deep_get(_path, DictPath("transform"), {})
+					tmp = deep_get_with_fallback(obj, path)
+					tmp_type = type(tmp)
+					if not isinstance(tmp, (dict, list)):
+						tmp = [tmp]
+					tmp = transform_list(tmp, transform)
+					if tmp_type not in (dict, list) and len(tmp) == 1:
+						tmp = tmp[0]
+					_values.append((tmp, vtype))
 				elif ptype == "timediff":
 					if len(mpaths) != 2:
 						raise ValueError(f"Field {name}: when using pathtype: 'timediff' path must be [start_time_path(s), end_time_path(s)]")

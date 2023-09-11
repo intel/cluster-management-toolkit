@@ -56,7 +56,7 @@ infoview:
   listpad:
     listgetter: "listgetter_dict_list"
     listgetter_args:
-      path: "spec#allocatableGpus"
+      path: "spec#allocatableDevices"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -65,8 +65,16 @@ infoview:
     fields:
       device:
         header: "Device:"
-        path: "value#cdiDevice"
-        type: "str"
+        paths:
+        - path: "value#uid"
+          pathtype: "transform"
+          type: "str"
+          transform:
+            key:
+              regex: ["^([^-]+).*"]
+              groups: [0]
+            output:
+              ["key"]
       max_vfs:
         header: "Max VFs:"
         path: "value#maxvfs"
