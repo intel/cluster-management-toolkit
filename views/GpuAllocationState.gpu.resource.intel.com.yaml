@@ -9,7 +9,7 @@ listview:
   group: "Dynamic Resource Allocation"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "allocatable", "claim_allocations", "age"]
+      fields: ["namespace", "name", "allocatable", "claim_allocations", "status", "age"]
       sortcolumn: "namespace"
   fields:
     allocatable:
@@ -32,12 +32,28 @@ listview:
         field_colors:
         - type: "numerical"
       align: "right"
+    status:
+      header: "Status:"
+      path: "status"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NotReady:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
 infoview:
   name: "GPU Allocation State Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name"]
+        fields: ["node_name", "status"]
     rows:
       node_name:
         header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
@@ -53,6 +69,22 @@ infoview:
         formatting:
           field_colors:
           - type: "host"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Ready:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NotReady:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
   listpad:
     listgetter: "listgetter_dict_list"
     listgetter_args:
