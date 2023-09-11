@@ -6564,19 +6564,17 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				else:
 					stat_raw = []
 
-			if nodeinfo is None:
-				# Get the list of all nodes
-				vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
-				# We want the nodes to be sorted by name
-				vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
-				nodeinfo = get_node_info(vlist, extra_vars = {})
-				node_statuses = [s.status_group for s in nodeinfo]
+			# Get the list of all nodes
+			vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
+			# We want the nodes to be sorted by name
+			vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
+			nodeinfo = get_node_info(vlist, extra_vars = {})
+			node_statuses = [s.status_group for s in nodeinfo]
 
 			# Get the list of all pods
-			if podinfo is None:
-				vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-				podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
-				pod_statuses = [s.status_group for s in podinfo]
+			vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+			podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
+			pod_statuses = [s.status_group for s in podinfo]
 
 			# Get the 5 most recent events
 			vlist, _status = kh.get_list_by_kind_namespace(("Event", ""), "")
