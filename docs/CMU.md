@@ -19,7 +19,7 @@ To open the view list you can press `F2`.
 
 ## Getting help
 
-To context specific help for a particular view,
+To show context specific help for a particular view,
 press either `F1` or `[shift] + H`. `F12` will display the "About" box.
 
 ## Read-only mode
