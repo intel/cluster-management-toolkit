@@ -1,0 +1,37 @@
+kind: "GpuClassParameters"
+api_family: "gpu.resource.intel.com"
+default_command: "gpuclassparameters"
+command:
+- "gpuclassparams"
+listview:
+  name: "GPU Class Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "monitor", "shared", "age"]
+  fields:
+    monitor:
+      header: "Monitor:"
+      path: "spec#monitor"
+      type: "str"
+      default: false
+    shared:
+      header: "Shared:"
+      path: "spec#shared"
+      type: "str"
+infoview:
+  name: "GPU Class Parameter Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["monitor", "shared"]
+    rows:
+      monitor:
+        header: [["Monitor:", ["main", "infoheader"]]]
+        path: "spec#monitor"
+        type: "str"
+        default: false
+      shared:
+        header: [["Shared:", ["main", "infoheader"]]]
+        path: "spec#shared"
+        type: "str"

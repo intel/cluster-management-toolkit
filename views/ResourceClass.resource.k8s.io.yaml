@@ -20,9 +20,37 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["driver"]
+        fields: ["driver", "param_ref"]
     rows:
       driver:
         header: [["Driver:", ["main", "infoheader"]]]
         path: "driverName"
         type: "str"
+      param_ref:
+        header: [["P", ["main", "infoheader_shortcut"]], ["arameter Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["parametersRef#kind"], ["parametersRef#apiGroup"], ["parametersRef#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+  shortcuts:
+    "Show Resource Parameters":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for resource class parameters"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "parametersRef#kind"
+        api_version_path: "parametersRef#apiGroup"
+        name_path: "parametersRef#name"

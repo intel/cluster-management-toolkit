@@ -1407,6 +1407,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],
 		"api": "gpuclaimparameters",
 	},
+	("GpuClassParameters", "gpu.resource.intel.com"): {
+		"api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],
+		"api": "gpuclassparameters",
+		"namespaced": False,
+	},
 	# helm.cattle.io
 	("HelmChartConfig", "helm.cattle.io"): {
 		"api_paths": ["apis/helm.cattle.io/v1/"],
