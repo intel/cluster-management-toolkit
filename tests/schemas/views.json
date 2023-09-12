@@ -326,8 +326,30 @@
 					"description": "If the infogetter is logpad_formatted() this is used to decide what formatter to use",
 					"type": "string"
 				},
+				"hard_path": {
+					"description": "The path to get hard quota information from",
+					"oneOf": [
+						{
+							"type": "string",
+							"maxLength": 0
+						}, {
+							"$ref": "#/definitions/simple_path"
+						}
+					]
+				},
 				"path": {
 					"description": "The path to get the information from",
+					"oneOf": [
+						{
+							"type": "string",
+							"maxLength": 0
+						}, {
+							"$ref": "#/definitions/simple_path"
+						}
+					]
+				},
+				"used_path": {
+					"description": "The path to get used quota information from",
 					"oneOf": [
 						{
 							"type": "string",
@@ -820,6 +842,7 @@
 				"substitution",
 				"timediff",
 				"timestamp_with_age",
+				"transform",
 				"tuple",
 				"value"
 			]
