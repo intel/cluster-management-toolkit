@@ -930,7 +930,7 @@ def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[
 			themearray (ThemeArray): The themearray with the percentage bar
 	"""
 
-	themearray = []
+	themearray: List[Union[ThemeRef, ThemeString]] = []
 
 	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
 	bar_width = maxx - minx + 1
@@ -2028,7 +2028,7 @@ class UIProps:
 		self.xoffset = 0
 		self.maxyoffset = 0
 		self.maxxoffset = 0
-		self.last_update = None
+		self.last_update: Optional[datetime] = None
 		# Number of seconds between updates
 		self.update_delay = 0
 		# Has an update been requested?

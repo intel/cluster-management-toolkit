@@ -300,7 +300,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 			controlplane (str): Name of the node to check the version from
 			k8s_distro (str): The Kubernetes distro used
 		Returns:
-			version (str): The Kubernetes version if discernible, None if not
+			version (str): The Kubernetes version if discernible, the empty string if not
 	"""
 
 	version = None
@@ -359,6 +359,9 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 				version = package_version
 				break
 
+	if version is None:
+		version = ""
+
 	return version
 
 def rebuild_installation_info(state: Optional[str] = None) -> None:
@@ -373,13 +376,6 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 	k8s_distro = None
 	controlplane = None
 	cri = "<none>"
-
-	controlplanes = __selection_control_planes()
-	if controlplanes is None or len(controlplanes) == 0:
-		ansithemeprint([ANSIThemeString("", "default")])
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": No control plane defined in inventory; cannot rebuild installation info. Aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
 
 	# This will only work for running clusters
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -405,10 +401,6 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
 			if cri is not None:
 				cri = cri.split(":")[0]
-			ipaddresses = []
-			for address in deep_get(node, DictPath("status#addresses")):
-				if deep_get(address, DictPath("type"), "") == "InternalIP":
-					ipaddresses.append(deep_get(address, DictPath("address")))
 			tmp_k8s_distro = None
 			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
 			labels = deep_get(node, DictPath("metadata#labels"), {})
@@ -453,8 +445,17 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 					sys.exit(errno.EINVAL)
 				else:
 					k8s_distro = tmp_k8s_distro
-			controlplanes.append((name, ipaddresses))
 
+	if controlplane is None:
+		ansithemeprint([ANSIThemeString("", "default")])
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not identify a control plane for the cluster; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if k8s_distro is None:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Unknown Kubernetes distro; cannot determine Kubernetes version.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 	version = get_control_plane_version(controlplane = controlplane, k8s_distro = k8s_distro)
 
 	if version is None or len(version) == 0:
@@ -2589,7 +2590,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbos
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
-def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]], phase: Union[str, int]) -> int:
+def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]], phase: Union[str, int]) -> int:
 	"""
 	Helper that validates the installer task index
 		Parameters:
@@ -2616,7 +2617,7 @@ def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dic
 		sys.exit(errno.ERANGE)
 	return phase
 
-def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]],
+def __list_phases(phases: List[Tuple[List[ANSIThemeString], Callable[..., None]]],
 		  start_phase: Optional[int] = 0, phase_skiplist: Optional[List] = None) -> None:
 	"""
 	Helper that lists installation phases
@@ -2666,7 +2667,7 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeString:
 		__string = ANSIThemeString(string, fmt)
 	return __string
 
-prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
 	([ANSIThemeString("Add ssh keys for localhost and the control plane(s) to ", "action"),
 	  ANSIThemeString(f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
@@ -2683,7 +2684,7 @@ prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] 
 	  ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
 ]
 
-__setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+__setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
 	([ANSIThemeString("Setup ", "action"),
@@ -2697,7 +2698,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 ]
 
-__setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+__setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
 	([ANSIThemeString("Setup ", "action"),
@@ -2714,7 +2715,7 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Di
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
-upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Drain the ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
 	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"),
@@ -2729,7 +2730,7 @@ upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, b
 	  ANSIThemeString("control planes", "hostname")], __task_uncordon_control_planes),
 ]
 
-teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Verify that only ", "action"),
 	  ANSIThemeString("control planes", "hostname"),
 	  ANSIThemeString(" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
@@ -2740,18 +2741,18 @@ teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, 
 	([ANSIThemeString("Remove kube config", "action")], __task_remove_kubeconfig),
 ]
 
-purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]] = [
+purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run purge playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
 ]
 
-def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]],
+def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]],
 	      phase: int, phase_skiplist: Set[int], final_state: str, verbose: bool = False) -> None:
 	"""
 	Run tasks
 
 		Parameters:
-			tasks list[(themestring, task)]: A list of tasks containing tuples of describing the task (in form of a themestr) and a function reference
+			tasks list[(themestring, task)]: A list of tasks containing tuples of describing the task (in form of an ANSIThemeString) and a function reference
 			phase (int): The installation phase
 			phase_skiplist (set(phase)): A set of phases to skip
 			final_state (str): The state to set if the task completes successfully
@@ -3288,7 +3289,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	print()
 
 def show_configuration(action: str,
-		       tasks: List[Tuple[List[ANSIThemeString], Callable[[Dict, bool], None]]]) -> None:
+		       tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]]) -> None:
 	"""
 	Show cluster configuration
 	"""
