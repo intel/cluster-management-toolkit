@@ -916,7 +916,6 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Draw a bar of multiple subsets that sum up to a total
-	FIXME: This should be modified to just return a ThemeArray instead of drawing it
 
 		Parameters:
 			y (int): The y-position of the percentage bar
@@ -2492,7 +2491,7 @@ class UIProps:
 		self.listpadheight = self.maxy - 2 - self.listpadypos
 		self.listpadwidth = max(width, self.listpadminwidth)
 		self.listpad = curses.newpad(self.listpadheight, self.listpadwidth)
-		self.selected = None
+		self.select(None)
 
 		return self.headerpad, self.listpad
 
@@ -3238,14 +3237,15 @@ class UIProps:
 			if cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx and selections == True:
 				selected = self.get_selected()
 
+				try:
+					here = sorted_list[ypos + cyoffset]
+					new_here = sorted_list[ypos + self.yoffset]
+				except IndexError:
+					return Retval.NOMATCH
+
 				# If we are clicking on something that is not selected (or if nothing is selected), move here
-				if selected is None or selected != sorted_list[ypos + cyoffset]:
-					# We want to move the cursor here,
-					# if "here" is a valid line
-					try:
-						self.selected = sorted_list[ypos + self.yoffset]
-					except IndexError:
-						return Retval.NOMATCH
+				if selected is None or here is None or selected != here:
+					self.select(new_here)
 					self.curypos = ypos
 				else:
 					# If we click an already selected item we open it
