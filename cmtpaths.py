@@ -21,6 +21,8 @@ CMTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(CMT_DIRNAME)))
 
 LOGS_DIRNAME = "logs"
 CMT_LOGS_DIR = FilePath(str(PurePath(CMTDIR).joinpath(LOGS_DIRNAME)))
+VERSION_CACHE_DIRNAME = "version-cache"
+VERSION_CACHE_DIR = FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME)))
 AUDIT_LOG_FILENAME = "audit_log.yaml"
 AUDIT_LOG_FILE = FilePath(str(PurePath(CMT_LOGS_DIR).joinpath(AUDIT_LOG_FILENAME)))
 DEBUG_LOG_FILENAME = "debug_log.yaml"

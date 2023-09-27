@@ -66,6 +66,7 @@
     run_once: true
   - name: "Failing if kubeconfig is missing"
     ansible.builtin.fail:
+      msg: "No kubeconfig file available"
     when: kubeconfig.stat.exists == False
   - name: "Fix file permissions for config file"
     ansible.builtin.file:
