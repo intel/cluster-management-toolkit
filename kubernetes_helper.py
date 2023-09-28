@@ -3424,6 +3424,14 @@ class KubernetesHelper:
 					server (str): The API-server of the cluster
 		"""
 
+		# If config_path is passed as a parameter, use it,
+		# else use the path used when initialising the class
+		if config_path is None:
+			config_path = self.config_path
+		# This should never be needed, but just in case
+		elif config_path is None:
+			config_path = KUBE_CONFIG_FILE
+
 		return list_contexts(config_path)
 
 	def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:
@@ -3438,6 +3446,14 @@ class KubernetesHelper:
 					cluster (str): The name of the cluster
 					context (str): The name of the context
 		"""
+
+		# If config_path is passed as a parameter, use it,
+		# else use the path used when initialising the class
+		if config_path is None:
+			config_path = self.config_path
+		# This should never be needed, but just in case
+		elif config_path is None:
+			config_path = KUBE_CONFIG_FILE
 
 		contexts = self.list_contexts(config_path = config_path)
 		__clusters: Dict = {}
@@ -3557,8 +3573,12 @@ class KubernetesHelper:
 		user_name = ""
 		namespace_name = "" # pylint: disable=unused-variable
 
+		# If config_path is passed as a parameter, use it,
+		# else use the path used when initialising the class
 		if config_path is None:
-			# Read kubeconfig
+			config_path = self.config_path
+		# This should never be needed, but just in case
+		elif config_path is None:
 			config_path = KUBE_CONFIG_FILE
 
 		config_path = FilePath(str(config_path))
@@ -3985,12 +4005,18 @@ class KubernetesHelper:
 		self.context_name = ""
 		self.cluster_name = ""
 
+		if config_path is None:
+			self.config_path = KUBE_CONFIG_FILE
+		else:
+			self.config_path = config_path
+
 		self.set_context(config_path = config_path)
 
 	def __del__(self) -> None:
 		self.__close_certs()
 		self.context_name = ""
 		self.cluster_name = ""
+		self.config_path = None
 
 	def is_cluster_reachable(self) -> bool:
 		"""

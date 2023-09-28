@@ -56,7 +56,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
-from cmtpaths import BINDIR, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
 from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
@@ -118,6 +118,7 @@ read_only_mode = False
 
 # Is Kubernetes support enabled
 kubernetes_support = True
+kube_config_file = None
 
 # Namespace
 selected_namespace = ""
@@ -135,7 +136,7 @@ def init_kubernetes_client() -> None:
 	global kh # pylint: disable=global-statement
 
 	if kubernetes_support:
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, config_path = kube_config_file)
 
 override_tail_lines = None
 default_tail_lines = 4000
@@ -12772,8 +12773,25 @@ COMMANDLINE = {
 					 ANSIThemeString(" to manage an Ansible inventory", "description")],
 				],
 			},
+			"--kube-config": {
+				"values": [ANSIThemeString("PATH", "argument")],
+				"description": [ANSIThemeString("PATH", "argument"),
+						ANSIThemeString(" to kubeconfig file to use", "description")],
+				"extended_description": [
+					[ANSIThemeString("Use ", "description"),
+					 ANSIThemeString("PATH", "argument"),
+					 ANSIThemeString(" as kubeconfig; by default ", "description")],
+					[ANSIThemeString(KUBE_CONFIG_FILE, "path"),
+					 ANSIThemeString(" is used", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "path",
+				},
+			},
 			"--namespace": {
-				"description": [ANSIThemeString("only show namespace ", "description"),
+				"values": [ANSIThemeString("NAMESPACE", "argument")],
+				"description": [ANSIThemeString("only show objects in namespace ", "description"),
 						ANSIThemeString("NAMESPACE", "argument")],
 				"requires_arg": True,
 				"validation": {
@@ -12833,9 +12851,15 @@ def main() -> None:
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "*", theme = themefile)
 
-	for opt, _optarg in options:
+	for opt, optarg in options:
 		if opt == "--developer-mode":
 			cmtlib.cmtconfig["Debug#developer_mode"] = True
+		# Currently we only support --kube-config, but in case
+		# we add option aliases (which we probably should) this
+		# is a good thing to have
+		elif opt in ("--kubeconfig", "--kube-config"):
+			global kube_config_file
+			kube_config_file = optarg
 
 	return command(options, args)
 
