@@ -305,7 +305,7 @@ class ThemeArray:
 		references = ""
 		first = True
 		for item in self.array:
-			if first == True:
+			if first:
 				references += f"{repr(item)}"
 			else:
 				references += f", {repr(item)}"
@@ -1100,7 +1100,7 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 
 	tpad.edit(inputwrapper)
 
-	if ignoreinput == True:
+	if ignoreinput:
 		string = ""
 	else:
 		string = tpad.gather()
@@ -1184,7 +1184,7 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 	# One may gracefully accept the request if so instructed using the wraparound flag, though.
 	if movement > 0:
 		if newcurypos > maxcurypos:
-			if newyoffset == maxyoffset and wraparound == True:
+			if newyoffset == maxyoffset and wraparound:
 				newcurypos = 0
 				newyoffset = 0
 			else:
@@ -1192,7 +1192,7 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 				newyoffset = min(yoffset + movement - (maxcurypos - curypos), maxyoffset)
 	elif movement < 0:
 		if newcurypos < 0:
-			if (yoffset + curypos) + newcurypos < 0 and wraparound == True:
+			if (yoffset + curypos) + newcurypos < 0 and wraparound:
 				newcurypos = maxcurypos
 				newyoffset = maxyoffset
 			else:
@@ -1333,7 +1333,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		tmp_attr = deep_get(theme, DictPath("main#default"))
 
 	if isinstance(tmp_attr, dict):
-		if selected == True:
+		if selected:
 			attr = tmp_attr["selected"]
 		else:
 			attr = tmp_attr["unselected"]
@@ -1501,7 +1501,7 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidt
 
 	linebreak = ThemeRef("separators", "line_break").to_themearray()
 
-	if wrap_marker == True:
+	if wrap_marker:
 		linebreaklen = len(linebreak)
 	else:
 		linebreaklen = 0
@@ -1524,7 +1524,7 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidt
 			themeattr = themearray_flattened[i].get_themeattr()
 
 			tmp_themearray.append(ThemeString(string[:maxwidth - linebreaklen - tmplen], themeattr))
-			if wrap_marker == True:
+			if wrap_marker:
 				tmp_themearray += linebreak
 			themearray_flattened[i] = ThemeString(string[maxwidth - linebreaklen - tmplen:], themeattr)
 			themearrays.append(tmp_themearray)
@@ -1591,7 +1591,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 	tagprefix = str(ThemeRef("separators", "tag"))
 
 	# Leave room for a tag prefix column if needed
-	if taggable == True:
+	if taggable:
 		tagprefixlen = len(tagprefix)
 	else:
 		tagprefixlen = 0
@@ -1617,7 +1617,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
 	if headers is not None:
 		extra_height += 2
-	if confirm == True:
+	if confirm:
 		extra_height += 2
 
 	height = min(maxy - 5, listpadheight) + 2 + extra_height
@@ -1625,7 +1625,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 	maxyoffset = listpadheight - (height - 2 - extra_height)
 	width = min(maxx - 5, listpadwidth) + 2
 	button_lengths = 0
-	if confirm == True:
+	if confirm:
 		for button in confirm_buttons[1:]:
 			for string, _ in button:
 				button_lengths += len(string)
@@ -1648,7 +1648,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		listpadypos = ypos + 1
 		scrollbarypos = 1
 
-	if confirm == True:
+	if confirm:
 		buttonpadypos = ypos + height - 2
 
 	win = curses.newwin(height, width, ypos, xpos)
@@ -1668,7 +1668,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 		headerpad.bkgd(" ", col)
 
-	if confirm == True:
+	if confirm:
 		buttonpad = curses.newpad(1, listpadwidth + 1)
 		col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 		headerpad.bkgd(" ", col)
@@ -1680,7 +1680,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
 	# Generate headers
 	if headers is not None:
-		if taggable == True:
+		if taggable:
 			headerarray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "highlight")))
 		for i in range(0, columns):
 			extrapad = padwidth
@@ -1708,7 +1708,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
 	while selection is None:
 		for _y, item in enumerate(items):
-			if cursor == True:
+			if cursor:
 				# These parentheses helps readability
 				# pylint: disable-next=superfluous-parens
 				_selected = (yoffset + curypos == _y)
@@ -1718,7 +1718,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 			lineattributes = item["lineattrs"]
 			linearray: List[Union[ThemeRef, ThemeString]] = []
 
-			if taggable == True:
+			if taggable:
 				if _y in tagged_items:
 					linearray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "tag")))
 				else:
@@ -1785,7 +1785,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
 		listpad.noutrefresh(yoffset, xoffset, listpadypos, xpos + 1, ypos + height - 2, xpos + width - 2)
 
-		if confirm == True:
+		if confirm:
 			x = width - button_lengths - 2
 			col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
 			buttonpad.bkgd(" ", col)
@@ -1815,16 +1815,16 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		elif c == ord(""):
 			curses.endwin()
 			sys.exit()
-		elif deep_get(kwargs, DictPath("KEY_F6"), False) == True and c == curses.KEY_F6:
+		elif deep_get(kwargs, DictPath("KEY_F6"), False) and c == curses.KEY_F6:
 			# This is used to toggle categorised list on/off
 			selection = -c
 			break
-		elif taggable == True and c == ord(" "):
+		elif taggable and c == ord(" "):
 			if curypos + yoffset in tagged_items:
 				tagged_items.discard(curypos + yoffset)
 			else:
 				tagged_items.add(curypos + yoffset)
-		elif ord("a") <= c <= ord("z") and cursor == True and confirm == False:
+		elif ord("a") <= c <= ord("z") and cursor and not confirm:
 			# Find the next entry starting with the pressed letter; wrap around if the bottom is hit
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
@@ -1838,7 +1838,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 					curypos = oldcurypos
 					yoffset = oldyoffset
 					break
-		elif ord("A") <= c <= ord("Z") and cursor == True and confirm == False:
+		elif ord("A") <= c <= ord("Z") and cursor and not confirm:
 			# Find the previous entry starting with the pressed letter; wrap around if the top is hit
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
@@ -1852,7 +1852,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 					curypos = oldcurypos
 					yoffset = oldyoffset
 					break
-		elif c == ord("\t") and cursor == True:
+		elif c == ord("\t") and cursor:
 			# Find next group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
@@ -1863,7 +1863,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
-		elif c == curses.KEY_BTAB and cursor == True:
+		elif c == curses.KEY_BTAB and cursor:
 			# Find previous group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
 				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
@@ -1901,18 +1901,18 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and confirm == False:
+		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and not confirm:
 			if deep_get(items[yoffset + curypos], DictPath("retval")) is None:
 				selection = items[yoffset + curypos]["columns"]
 			else:
 				selection = items[yoffset + curypos]["retval"]
 			break
-		elif confirm == True and c in confirm_buttons[0]:
+		elif confirm and c in confirm_buttons[0]:
 			confirm_press = c
 			break
 
 		# These only apply if we use a cursor
-		if cursor == True:
+		if cursor:
 			# Find the last acceptable line
 			if (yoffset + curypos) == (maxcurypos + maxyoffset):
 				while items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
@@ -1936,7 +1936,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 					curypos = oldcurypos + oldyoffset
 					yoffset = 0
 
-		if cursor == False:
+		if not cursor:
 			yoffset += curypos
 			yoffset = min(maxyoffset, yoffset)
 			curypos = 0
@@ -1944,10 +1944,10 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 	del listpad
 	del win
 
-	if taggable == True:
+	if taggable:
 		return tagged_items
 
-	if confirm == True:
+	if confirm:
 		return (confirm_press, selection)
 
 	return selection
@@ -2125,7 +2125,7 @@ class UIProps:
 			del self.logpad
 
 	def update_sorted_list(self) -> None:
-		if self.sort_triggered == False:
+		if not self.sort_triggered:
 			return
 		self.sort_triggered = False
 		self.list_needs_regeneration(True)
@@ -2194,7 +2194,7 @@ class UIProps:
 		self.regenerate_list = regenerate_list
 
 	def is_list_regenerated(self) -> bool:
-		return self.regenerate_list != True
+		return not self.regenerate_list
 
 	def select(self, selection: Union[None, Type]) -> None:
 		self.selected = selection
@@ -2263,7 +2263,7 @@ class UIProps:
 		self.stdscr.border()
 		# If we do not have sideborders we need to clear the right border we just painted,
 		# just in case the content of the logpad is not wide enough to cover it
-		if self.borders == False:
+		if not self.borders:
 			for y in range(self.logpadypos, self.maxy - 1):
 				self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = y, x = self.maxx)
 
@@ -2277,20 +2277,20 @@ class UIProps:
 			if self.headerpadypos > 1:
 				window_tee_hline(self.stdscr, self.headerpadypos - 1, 0, self.maxx)
 			window_tee_hline(self.stdscr, self.headerpadypos + 1, 0, self.maxx)
-			if self.borders == False:
+			if not self.borders:
 				if self.headerpadypos > 1:
 					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos - 1, x = 0)
 					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos - 1, x = self.maxx)
 				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos + 1, x = 0)
 				self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.headerpadypos + 1, x = self.maxx)
-		elif self.listpad is not None and self.borders == False:
+		elif self.listpad is not None and not self.borders:
 			self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = self.listpadypos - 1, x = 0)
 			self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = self.listpadypos - 1, x = self.maxx)
 
 		if self.logpad is not None:
 			if self.logpadypos > 2:
 				window_tee_hline(self.stdscr, self.logpadypos - 1, 0, self.maxx)
-			if self.borders == True:
+			if self.borders:
 				window_tee_hline(self.stdscr, self.maxy - 2, 0, self.maxx)
 				if self.tspad is not None and self.tspadxpos != self.logpadxpos and self.loglen > 0:
 					window_tee_vline(self.stdscr, self.logpadxpos - 1, self.logpadypos - 1, self.maxy - 2)
@@ -2321,13 +2321,13 @@ class UIProps:
 			ThemeString(lastupdate, ThemeAttr("main", "last_update")),
 		]
 
-		if self.borders == True:
+		if self.borders:
 			timestamparray += [
 				ThemeString(ltee, ThemeAttr("main", "default")),
 			]
 
 		xpos -= themearray_len(timestamparray)
-		if self.borders == False:
+		if not self.borders:
 			xpos += 1
 		self.addthemearray(self.stdscr, timestamparray, y = 0, x = xpos)
 
@@ -2338,7 +2338,7 @@ class UIProps:
 
 			winheaderarray: List[Union[ThemeRef, ThemeString]] = []
 
-			if self.borders == True:
+			if self.borders:
 				winheaderarray += [
 					ThemeString(rtee, ThemeAttr("main", "default")),
 				]
@@ -2348,7 +2348,7 @@ class UIProps:
 				ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")),
 				ThemeRef("separators", "mainheader_suffix"),
 			]
-			if self.borders == True:
+			if self.borders:
 				winheaderarray += [
 					ThemeString(ltee, ThemeAttr("main", "default")),
 				]
@@ -2357,7 +2357,7 @@ class UIProps:
 				self.addthemearray(self.stdscr, winheaderarray, y = 0, x = 0)
 
 	def refresh_window(self) -> None:
-		if self.borders == True:
+		if self.borders:
 			bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
 			br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
 			self.addthemearray(self.stdscr, [ThemeString(bl, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 0)
@@ -2450,7 +2450,7 @@ class UIProps:
 	def refresh_infopad(self) -> None:
 		if self.infopad is not None:
 			height = self.infopadheight
-			if self.borders == True:
+			if self.borders:
 				if self.logpad is None and self.listpad is None:
 					height = self.maxy - 3
 				try:
@@ -2466,7 +2466,7 @@ class UIProps:
 					pass
 
 			# If there's no logpad and no listpad, then the infopad is responsible for scrollbars
-			if self.listpad is None and self.logpad is None and self.borders == True:
+			if self.listpad is None and self.logpad is None and self.borders:
 				# pylint: disable-next=line-too-long
 				self.upperarrow, self.lowerarrow, self.vdragger = scrollbar_vertical(self.stdscr, self.maxx, self.infopadypos, self.maxy - 3, self.infopadheight, self.yoffset, ThemeAttr("main", "boxdrawing"))
 				# pylint: disable-next=line-too-long
@@ -2478,7 +2478,7 @@ class UIProps:
 	# pylint: disable-next=too-many-arguments
 	def init_listpad(self, listheight: int, width: int, ypos: int, xpos: int, header: bool = True) -> Tuple[Optional[curses.window], curses.window]:
 		self.listpadminwidth = self.maxx
-		if header == True:
+		if header:
 			self.headerpadypos = ypos
 			self.headerpadxpos = xpos
 			self.headerpadheight = 1
@@ -2507,7 +2507,7 @@ class UIProps:
 		else:
 			width = self.listpadwidth
 
-		if self.borders == True:
+		if self.borders:
 			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
 		else:
 			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
@@ -2525,7 +2525,7 @@ class UIProps:
 	def refresh_listpad(self) -> None:
 		xpos = self.listpadxpos
 		maxx = self.maxx - 1
-		if self.borders == False:
+		if not self.borders:
 			xpos -= 1
 			maxx = self.maxx
 		if self.headerpad is not None:
@@ -2534,7 +2534,7 @@ class UIProps:
 			except curses.error:
 				pass
 		if self.listpad is not None:
-			if self.borders == True:
+			if self.borders:
 				try:
 					self.listpad.noutrefresh(0, self.xoffset, self.listpadypos, xpos, self.maxy - 3, maxx)
 				except curses.error:
@@ -2560,7 +2560,7 @@ class UIProps:
 
 		self.tspadxpos = tspadxpos
 
-		if timestamps == False:
+		if not timestamps:
 			self.tspadwidth = 0
 			self.logpadxpos = self.tspadxpos
 		else:
@@ -2582,7 +2582,7 @@ class UIProps:
 
 		self.logpadheight = self.maxy - ypos - 2
 		self.recalculate_logpad_xpos(tspadxpos = xpos, timestamps = timestamps)
-		if timestamps == True:
+		if timestamps:
 			self.tspadypos = ypos
 			self.tspadheight = self.logpadheight
 			self.tspad = curses.newpad(self.tspadheight + 1, self.tspadwidth)
@@ -2604,7 +2604,7 @@ class UIProps:
 	def resize_logpad(self, height: int, width: int) -> None:
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
 		if height != -1:
-			if self.borders == True:
+			if self.borders:
 				self.tspadheight = height
 				self.logpadheight = height
 			else:
@@ -2632,12 +2632,12 @@ class UIProps:
 
 		tspadxpos = self.tspadxpos
 		logpadxpos = self.logpadxpos
-		if self.borders == False:
+		if not self.borders:
 			tspadxpos -= 1
 			logpadxpos -= 1
 		if self.tspad is not None and self.tspadxpos != self.logpadxpos:
 			hline = deep_get(theme, DictPath("boxdrawing#hline"))
-			if self.borders == True:
+			if self.borders:
 				for i in range(0, self.tspadwidth):
 					self.addthemearray(self.stdscr, [ThemeString(hline, ThemeAttr("main", "default"))], y = self.maxy - 2, x = 1 + i)
 				try:
@@ -2649,7 +2649,7 @@ class UIProps:
 					self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos, self.maxy - 2, self.tspadwidth - 1)
 				except curses.error:
 					pass
-		if self.borders == True:
+		if self.borders:
 			try:
 				self.logpad.noutrefresh(0, self.xoffset, self.logpadypos, logpadxpos, self.maxy - 3, self.maxx - 1)
 			except curses.error:
@@ -2771,7 +2771,7 @@ class UIProps:
 		return y, x
 
 	def move_xoffset_abs(self, position: int) -> None:
-		if self.borders == True:
+		if self.borders:
 			sideadjust = 0
 		else:
 			sideadjust = 2
@@ -2795,7 +2795,7 @@ class UIProps:
 		self.refresh = True
 
 	def move_xoffset_rel(self, movement: int) -> None:
-		if self.borders == True:
+		if self.borders:
 			sideadjust = 0
 		else:
 			sideadjust = 2
@@ -3035,7 +3035,7 @@ class UIProps:
 					if offset > 0:
 						match = True
 						break
-			if match == True:
+			if match:
 				break
 
 		# If we do not match we will just end up with the old pos
@@ -3064,7 +3064,7 @@ class UIProps:
 					if offset < 0:
 						match = True
 						break
-			if match == True:
+			if match:
 				break
 
 		# If we do not match we will just end up with the old pos
@@ -3083,7 +3083,7 @@ class UIProps:
 				match (InfoType): The unique match, the first partial match if no unique match is found, or None if no match is found
 		"""
 
-		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or hasattr(self.info[0], "name") == False:
+		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or not hasattr(self.info[0], "name"):
 			return None
 
 		# Search within sort category
@@ -3120,7 +3120,7 @@ class UIProps:
 
 		match = 0
 		for field in self.field_list:
-			if self.field_list[field].get("skip", False) == True:
+			if self.field_list[field].get("skip", False):
 				continue
 			if match == 1:
 				self.sortcolumn = field
@@ -3201,7 +3201,7 @@ class UIProps:
 
 		#if bstate == curses.BUTTON1_PRESSED:
 			# Here goes handling of dragging scrollbars
-		if bstate == curses.BUTTON1_DOUBLE_CLICKED and selections == True:
+		if bstate == curses.BUTTON1_DOUBLE_CLICKED and selections:
 			# double-clicks on list items
 			if activatedfun is not None and cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx:
 				# We want to move the cursor here,
@@ -3234,7 +3234,7 @@ class UIProps:
 					return _retval
 		elif bstate == curses.BUTTON1_CLICKED:
 			# clicks on list items
-			if cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx and selections == True:
+			if cypos <= y < min(cheight + cypos, cmaxy) and cxpos <= x < cmaxx and selections:
 				selected = self.get_selected()
 
 				try:
@@ -3315,13 +3315,13 @@ class UIProps:
 			# Scroll wheel up
 			if self.listpad is not None:
 				self.move_cur_with_offset(-5)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(-5)
 			return Retval.MATCH
 		elif curses_configuration.mousescroll_enable and bstate == curses_configuration.mousescroll_down:
 			if self.listpad is not None:
 				self.move_cur_with_offset(5)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(5)
 			return Retval.MATCH
 
@@ -3395,7 +3395,7 @@ class UIProps:
 			return Retval.MATCH
 		if c == ord("r"):
 			# Reverse the sort order
-			if self.listpad is not None and self.reversible == True:
+			if self.listpad is not None and self.reversible:
 				self.sortorder_reverse = not self.sortorder_reverse
 				self.sort_triggered = True
 			return Retval.MATCH
@@ -3403,25 +3403,25 @@ class UIProps:
 			# For listpads we switch sort column with this; for logpads we move half a page left/right
 			if self.listpad is not None:
 				self.prev_sortcolumn()
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_xoffset_rel(-(self.logpadminwidth // 2))
 			return Retval.MATCH
 		elif c == curses.KEY_SRIGHT:
 			if self.listpad is not None:
 				self.next_sortcolumn()
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_xoffset_rel(self.logpadminwidth // 2)
 			return Retval.MATCH
 		elif c == curses.KEY_UP:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-1)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(-1)
 			return Retval.MATCH
 		elif c == curses.KEY_DOWN:
 			if self.listpad is not None:
 				self.move_cur_with_offset(1)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(1)
 			return Retval.MATCH
 		elif c == curses.KEY_LEFT:
@@ -3467,25 +3467,25 @@ class UIProps:
 		elif c == curses.KEY_PPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-10)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(-(self.logpadheight - 2))
 			return Retval.MATCH
 		elif c == curses.KEY_NPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(10)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(self.logpadheight - 2)
 			return Retval.MATCH
 		elif c == ord("\t"):
 			if self.listpad is not None:
 				self.next_by_sortkey(self.info)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.next_line_by_severity(self.severities)
 			return Retval.MATCH
 		elif c == curses.KEY_BTAB:
 			if self.listpad is not None:
 				self.prev_by_sortkey(self.info)
-			elif self.logpad is not None and self.continuous_log == False:
+			elif self.logpad is not None and not self.continuous_log:
 				self.prev_line_by_severity(self.severities)
 			return Retval.MATCH
 		elif c == ord("§"):
@@ -3575,7 +3575,7 @@ class UIProps:
 
 				self.find_next_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
+				if self.maxyoffset == 0 or self.continuous_log or len(self.search_matches) == 0:
 					return Retval.MATCH
 
 				self.refresh = True
@@ -3591,7 +3591,7 @@ class UIProps:
 
 				self.find_prev_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log == True or len(self.search_matches) == 0:
+				if self.maxyoffset == 0 or self.continuous_log or len(self.search_matches) == 0:
 					return Retval.MATCH
 
 				self.refresh = True
@@ -3700,7 +3700,7 @@ class UIProps:
 
 		for shortcut_name, shortcut_data in shortcuts.items():
 			read_only = deep_get(shortcut_data, DictPath("read_only"), False)
-			if read_only_mode == True and read_only == False:
+			if read_only_mode and not read_only:
 				continue
 
 			helptext_group = deep_get(shortcut_data, DictPath("helpgroup"))
@@ -3713,14 +3713,14 @@ class UIProps:
 			helptext_groups[helptext_group].append(tmp)
 
 		helptext = []
-		if subview == True:
+		if subview:
 			helptext.append(("", ""))
 
 		first = True
 		for helptexts in helptext_groups:
 			if len(helptexts) == 0:
 				continue
-			if first == False:
+			if not first:
 				helptext.append(("", ""))
 			for key, description in helptexts:
 				helptext.append((key, description))

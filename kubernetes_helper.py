@@ -3403,6 +3403,7 @@ class KubernetesHelper:
 	cluster_unreachable: bool = True
 	cluster_name: str = ""
 	coontext_name: str = ""
+	config_path: Optional[FilePath] = None
 
 	control_plane_ip: Optional[str] = None
 	control_plane_port: Optional[str] = None
@@ -3648,7 +3649,7 @@ class KubernetesHelper:
 				control_plane_path = tmp[3]
 
 			insecuretlsskipverify = deep_get(cluster, DictPath("cluster#insecure-skip-tls-verify"), False)
-			if insecuretlsskipverify == True:
+			if insecuretlsskipverify:
 				break
 
 			# ca_certs
@@ -4237,6 +4238,7 @@ class KubernetesHelper:
 
 		raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
 
+	# pylint: disable=too-many-return-statements
 	def get_api_resources(self) -> Tuple[int, List[Tuple]]:
 		"""
 		Return information about all API-resources available in the cluster
@@ -4413,7 +4415,7 @@ class KubernetesHelper:
 			return kubernetes_resources, 42503, modified
 
 		# It is fairly easy to check if the API-list is "fresh"; just check whether Pod is available
-		if not force_refresh and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False) == True:
+		if not force_refresh and deep_get(kubernetes_resources[("Pod", "")], DictPath("available"), False):
 			return kubernetes_resources, 200, modified
 
 		method = "GET"
@@ -4477,7 +4479,7 @@ class KubernetesHelper:
 			for api_group in deep_get(aggregated_data, DictPath("items"), []):
 				name = deep_get(api_group, DictPath("metadata#name"), "")
 				known_api_group = name in _api_groups
-				if known_api_group == False:
+				if not known_api_group:
 					continue
 
 				versions = deep_get(api_group, DictPath("versions"), [])
@@ -4509,7 +4511,7 @@ class KubernetesHelper:
 		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
 			name = deep_get(api_group, DictPath("name"), "")
 			known_api_group = name in _api_groups
-			if known_api_group == False:
+			if not known_api_group:
 				continue
 
 			versions = deep_get(api_group, DictPath("versions"), [])
@@ -4558,7 +4560,7 @@ class KubernetesHelper:
 		vlist = []
 
 		for resource_kind, resource_data in kubernetes_resources.items():
-			if deep_get(resource_data, DictPath("namespaced"), True) == True:
+			if deep_get(resource_data, DictPath("namespaced"), True):
 				vlist.append(resource_kind)
 		return vlist
 
@@ -4748,12 +4750,12 @@ class KubernetesHelper:
 			raise ValueError(f"kind unknown: {kind}")
 
 		fullitem = f"{kind[0]}.{kind[1]} {name}"
-		if namespaced == True:
+		if namespaced:
 			fullitem = f"{fullitem} (namespace: {namespace})"
 
 		name = f"/{name}"
 
-		if namespaced == False:
+		if not namespaced:
 			namespace_part = ""
 
 		status = 42503
@@ -4775,7 +4777,7 @@ class KubernetesHelper:
 			"User-Agent": f"{self.programname} v{self.programversion}",
 		}
 
-		if strategic_merge == True:
+		if strategic_merge:
 			header_params["Content-Type"] = "application/strategic-merge-patch+json"
 		else:
 			header_params["Content-Type"] = "application/merge-patch+json"
@@ -4804,12 +4806,12 @@ class KubernetesHelper:
 			raise ValueError(f"kind unknown: {kind}")
 
 		fullitem = f"{kind[0]}.{kind[1]} {name}"
-		if namespaced == True:
+		if namespaced:
 			fullitem = f"{fullitem} (namespace: {namespace})"
 
 		name = f"/{name}"
 
-		if namespaced == False:
+		if not namespaced:
 			namespace_part = ""
 
 		message = ""
@@ -4847,12 +4849,12 @@ class KubernetesHelper:
 			raise ValueError(f"kind unknown: {kind}")
 
 		fullitem = f"{kind[0]}.{kind[1]} {name}"
-		if namespaced == True:
+		if namespaced:
 			fullitem = f"{fullitem} (namespace: {namespace})"
 
 		name = f"/{name}"
 
-		if namespaced == False:
+		if not namespaced:
 			namespace_part = ""
 
 		status = 42503
@@ -4908,7 +4910,7 @@ class KubernetesHelper:
 		if name != "":
 			name = f"/{name}"
 
-		if namespaced == False:
+		if not namespaced:
 			namespace_part = ""
 
 		status = 42503
@@ -5027,7 +5029,7 @@ class KubernetesHelper:
 					continue
 
 			if _old_effect == new_effect:
-				if overwrite == False:
+				if not overwrite:
 					# We already have the right taint,
 					# and we do not want to overwrite it
 					return "", 42304
@@ -5046,7 +5048,7 @@ class KubernetesHelper:
 			# Same key, but different effect; we keep the taint
 			modified_taints.append(taint)
 
-		if modified == False:
+		if not modified:
 			if new_effect is None:
 				return "", 304
 
@@ -5137,7 +5139,7 @@ a				the return value from __rest_helper_patch
 
 		query_params: List[Optional[Tuple[str, Any]]] = []
 
-		if force == True:
+		if force:
 			query_params.append(("gracePeriodSeconds", 0))
 
 		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)

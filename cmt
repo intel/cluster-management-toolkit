@@ -379,7 +379,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 
 		for node in vlist:
 			name = deep_get(node, DictPath("metadata#name"))
-			if all_items == False and name not in selection:
+			if not all_items and name not in selection:
 				continue
 
 			node_roles = kh.get_node_roles(cast(Dict, node))
@@ -391,7 +391,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 	# str kinds are things such as playbooks; for now cmt does not use them
 
 	# Finally, generate a list of non-existing items
-	if all_items == False:
+	if not all_items:
 		for item in selection:
 			if item not in items1 + items2:
 				non_existing.append(item)
@@ -428,7 +428,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	nodes = []
 	nodes += _nodes
-	if include_control_planes == True:
+	if include_control_planes:
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
@@ -443,7 +443,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if header == True:
+	if header:
 		ansithemeprint([ANSIThemeString("\n[Cordoning nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -511,7 +511,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 	nodes = []
 	nodes += _nodes
-	if include_control_planes == True:
+	if include_control_planes:
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
@@ -526,7 +526,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if header == True:
+	if header:
 		ansithemeprint([ANSIThemeString("\n[Draining nodes]", "phase")])
 	_args += nodes
 	execute_command(_args)
@@ -562,7 +562,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	nodes = []
 	nodes += _nodes
-	if include_control_planes == True:
+	if include_control_planes:
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
@@ -577,7 +577,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if header == True:
+	if header:
 		ansithemeprint([ANSIThemeString("\n[Uncordoning nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -681,7 +681,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	nodes = []
 	nodes += _nodes
-	if include_control_planes == True:
+	if include_control_planes:
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
@@ -696,7 +696,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if header == True:
+	if header:
 		ansithemeprint([ANSIThemeString("\n[Tainting nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -779,7 +779,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	nodes = []
 	nodes += _nodes
-	if include_control_planes == True:
+	if include_control_planes:
 		nodes += controlplanes
 
 	if len(non_existing) > 0:
@@ -794,7 +794,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if header == True:
+	if header:
 		ansithemeprint([ANSIThemeString("\n[Untainting nodes]", "phase")])
 
 	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
@@ -850,7 +850,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "-Y":
 			confirm = False
 
-	if from_file == True:
+	if from_file:
 		hostfile = args[0]
 		hostfile_path = Path(hostfile)
 		if not hostfile_path.exists():
@@ -893,7 +893,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	nodes, non_existing, controlplanes = get_selection(selection, kind = ("Node", ""))
 
 	if len(nodes) > 0 or len(controlplanes) > 0:
-		if ignore_existing == False:
+		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
@@ -961,7 +961,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	scan_and_add_ssh_keys(non_existing)
 
 	# We most likely will not be able to connect to the remote host without a password
-	if no_password == False:
+	if not no_password:
 		request_ansible_password()
 
 	extra_values = {
@@ -970,7 +970,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	}
 
 	run_retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
-	if run_retval == True:
+	if run_retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -1047,7 +1047,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
 
-	if from_file == True:
+	if from_file:
 		hostfile = args[0]
 		if not os.path.exists(hostfile):
 			ansithemeprint([ANSIThemeString("Error", "error"),
@@ -1414,7 +1414,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	playbooks = populate_playbooks_from_paths(add_playbooks)
 
 	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -1474,7 +1474,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
-		if force == False:
+		if not force:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
@@ -1504,9 +1504,9 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	extra_values: Dict = {}
 	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
-	elif force == True:
+	elif force:
 		ansithemeprint([ANSIThemeString("NOT OK", "warning"),
 				ANSIThemeString("; ignoring since “", "description"),
 				ANSIThemeString("--force", "option"),
@@ -1534,7 +1534,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	extra_values = {}
 	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -1543,7 +1543,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	ansithemeprint([ANSIThemeString("\nNodes successfully removed from cluster", "success")])
 
-	if purge == True:
+	if purge:
 		purge_hosts(options = [("--ignore-non-existing", None)], args = [",".join(nodes)])
 
 	cluster_name = get_cluster_name()
@@ -1629,7 +1629,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			selection.remove(host)
 
 	if len(not_in_inventory) > 0:
-		if ignore_non_existing == False:
+		if not ignore_non_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
 				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
@@ -1677,7 +1677,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		]
 	}
 	retval = run_playbooks(playbooks = playbooks, hosts = hosts, extra_values = extra_values)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -1747,7 +1747,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	extra_values: Dict = {}
 	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -2025,9 +2025,9 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Get a full list of views from all view directories
 	# Start by adding files from the views directory
 	view_dirs = []
-	if local_only is None or local_only is not None and local_only == True:
+	if local_only is None or local_only is not None and local_only:
 		view_dirs += deep_get(cmtlib.cmtconfig, DictPath("General#local_views"), [])
-	if local_only is None or local_only is not None and local_only == False:
+	if local_only is None or local_only is not None and not local_only:
 		view_dirs.append(viewdir)
 
 	filtered_api_resources = []
@@ -2085,14 +2085,14 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			list_support = False
 			info_support = False
 			if kind_tuple in kubernetes_resources:
-				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")) == True:
+				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")):
 					list_support = True
 					cmt_support.append("List")
-				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")) == True:
+				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")):
 					info_support = True
 					cmt_support.append("Info")
 				if "local" in kubernetes_resources[kind_tuple]:
-					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")) == True:
+					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")):
 						local_view = "True"
 					else:
 						local_view = "False"
@@ -2106,10 +2106,10 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				if "list" not in verbs:
 					continue
 
-				if known_filter["known"] == False and kind_tuple in kubernetes_resources:
+				if not known_filter["known"] and kind_tuple in kubernetes_resources:
 					continue
 
-				if known_filter["known"] == True:
+				if known_filter["known"]:
 					if kind_tuple not in kubernetes_resources:
 						continue
 
@@ -2265,14 +2265,14 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			info_support = False
 
 			if kind_tuple in kubernetes_resources:
-				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")) == True:
+				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")):
 					list_support = True
 					cmt_support.append("List")
-				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")) == True:
+				if "info" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("info")):
 					info_support = True
 					cmt_support.append("Info")
 				if "local" in kubernetes_resources[kind_tuple]:
-					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")) == True:
+					if deep_get(kubernetes_resources[kind_tuple], DictPath("local")):
 						local_view = "True"
 					else:
 						local_view = "False"
@@ -2281,10 +2281,10 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				if "list" not in verbs:
 					continue
 
-				if known_filter["known"] == False and kind_tuple in kubernetes_resources:
+				if not known_filter["known"] and kind_tuple in kubernetes_resources:
 					continue
 
-				if known_filter["known"] == True:
+				if known_filter["known"]:
 					if kind_tuple not in kubernetes_resources:
 						continue
 

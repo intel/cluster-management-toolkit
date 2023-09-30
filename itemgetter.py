@@ -623,7 +623,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 				else:
 					raise ValueError(f"Unhandled type {type(_value)} for {field}={value}")
 				tmp.append(value)
-			if pass_ref == True:
+			if pass_ref:
 				vlist.append({"fields": tmp, "ref": item})
 			else:
 				vlist.append(tmp)
@@ -719,9 +719,9 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 					matched = True
 					vlist.append((cm_namespace, pod_name))
 					break
-			if matched == True:
+			if matched:
 				break
-		if matched == True:
+		if matched:
 			continue
 		for container in deep_get(item, DictPath("spec#containers"), []):
 			for env in deep_get(volume, DictPath("env"), []):
@@ -729,7 +729,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 					matched = True
 					vlist.append((cm_namespace, pod_name))
 					break
-			if matched == True:
+			if matched:
 				break
 			for env_from in deep_get(volume, DictPath("envFrom"), []):
 				if deep_get(source, DictPath("configMapKeyRef#name"), "") == cm_name:

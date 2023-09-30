@@ -86,7 +86,7 @@ def format_list(items: Any,
 			if len(string) == 0:
 				continue
 
-			if i > 0 and skip_separator == False:
+			if i > 0 and not skip_separator:
 				field_sep = field_separators[min(i - 1, len(field_separators) - 1)]
 				field_sep.selected = selected
 				totallen += len(field_sep)
@@ -186,7 +186,7 @@ def map_value(value: Any,
 	if isinstance(reference_value, (int, float)) and len(ranges) > 0:
 		default_index = -1
 		for i in range(0, len(ranges)):
-			if deep_get(ranges[i], DictPath("default"), False) == True:
+			if deep_get(ranges[i], DictPath("default"), False):
 				if default_index != -1:
 					raise ValueError("Range cannot contain more than one default")
 				default_index = i
@@ -202,7 +202,7 @@ def map_value(value: Any,
 	elif isinstance(reference_value, (str, bool)) or len(ranges) == 0:
 		string = str(output_value)
 		_string = string
-		if match_case == False:
+		if not match_case:
 			matched = False
 			if string in _mapping and string.lower() in _mapping and string != string.lower():
 				raise ValueError("When using match_case == False the mapping cannot contain keys that only differ in case")
@@ -210,7 +210,7 @@ def map_value(value: Any,
 				if key.lower() == string.lower():
 					_string = key
 				matched = True
-			if matched == False and "__default" in _mapping:
+			if not matched and "__default" in _mapping:
 				_string = "__default"
 		elif _string not in _mapping and "__default" in _mapping:
 			_string = "__default"
@@ -272,7 +272,7 @@ def format_numerical_with_units(string: str,
 		if numeric is None:
 			numeric = char in non_units
 			substring += char
-		elif numeric == True:
+		elif numeric:
 			# Do we need to flush?
 			if not char in non_units:
 				if selected is None:
@@ -296,7 +296,7 @@ def format_numerical_with_units(string: str,
 			substring += char
 
 		if len(liststring) == 0:
-			if numeric == True:
+			if numeric:
 				if selected is None:
 					array.append(ThemeString(substring, ThemeAttr("types", ftype)))
 				else:
@@ -396,7 +396,7 @@ def generator_address(obj: Dict,
 		for ch in item:
 			if ch in separator_lookup:
 				if len(tmp) > 0:
-					if subnet == True:
+					if subnet:
 						_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
 					else:
 						_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
@@ -409,7 +409,7 @@ def generator_address(obj: Dict,
 				tmp += ch
 
 		if len(tmp) > 0:
-			if subnet == True:
+			if subnet:
 				_vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
 			else:
 				_vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
@@ -680,7 +680,7 @@ def generator_numerical_with_units(obj: Dict,
 		array = [ThemeString(value, fmt, selected)]
 		return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
 
-	if value == -1 and deep_get(formatting, DictPath("allow_signed")) == False:
+	if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
 		string = ""
 	else:
 		string = str(value)

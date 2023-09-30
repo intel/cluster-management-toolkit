@@ -311,7 +311,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				break
 
 			# If we have a checksum we need to confirm that the downloaded file matches the checksum
-			if checksum is not None and checksum_type is not None and verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)) == False:
+			if checksum is not None and checksum_type is not None and not verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)):
 				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
 							       ANSIThemeString(": File downloaded from ", "default"),
 							       ANSIThemeString(f"{url}", "url"),
@@ -326,7 +326,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				f.flush()
 
 				# We'd prefer to do this using BytesIO, but tarfile only supports it from Python 3.9+
-				if tarfile.is_tarfile(f.name) == True:
+				if tarfile.is_tarfile(f.name):
 					with tarfile.open(name = f.name, mode = "r") as tf:
 						members = tf.getnames()
 						if filename not in members:

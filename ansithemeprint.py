@@ -217,7 +217,7 @@ def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]]
 		else:
 			tmpitem = item
 
-		if first == False:
+		if not first:
 			if separator is not None:
 				themearray.append(separator)
 		else:
@@ -303,7 +303,7 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 
 	string = __themearray_to_string(themearray, color = color)
 
-	if stderr == True:
+	if stderr:
 		print(string, file = sys.stderr)
 	else:
 		print(string)
@@ -359,7 +359,7 @@ def init_ansithemeprint(themefile: Optional[FilePath]) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	if use_fallback_theme == True:
+	if use_fallback_theme:
 		theme = fallback_theme
 		themepath = FilePath("<built-in default>")
 	else:

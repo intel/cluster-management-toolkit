@@ -65,7 +65,7 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 			ANSIThemeString(f"{CMT_CONFIG_FILE}", "path"),
 			ANSIThemeString("]", "phase")])
 	disablestricthostkeychecking = deep_get(cmtconfig_dict, DictPath("Nodes#disablestricthostkeychecking"), False)
-	if disablestricthostkeychecking == False:
+	if not disablestricthostkeychecking:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 	else:
 		ansithemeprint([ANSIThemeString("  Warning", "warning"),
@@ -257,9 +257,11 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, cmtc
 			insecureskiptlsverify = deep_get(cluster, DictPath("insecure-skip-tls-verify"), False)
 			break
 
-	if insecureskiptlsverify == False:
+	if not insecureskiptlsverify:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 	else:
+		# Use critical for highlighting warning here,
+		# since the warning is so important
 		ansithemeprint([ANSIThemeString("  Warning", "critical"),
 				ANSIThemeString(": TLS verification has been disabled in ", "emphasis"),
 				ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
@@ -380,7 +382,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtco
 		error += 1
 		mismatch = True
 
-	if mismatch == False:
+	if not mismatch:
 		ansithemeprint([ANSIThemeString("  OK", "ok")])
 
 	return critical, error, warning, note
@@ -560,7 +562,7 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 			error += 1
 			mismatch = True
 
-	if mismatch == False:
+	if not mismatch:
 		ansithemeprint([ANSIThemeString("  OK", "ok")])
 
 	return critical, error, warning, note
@@ -812,7 +814,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 					    deep_get(condition, DictPath("status"), "False") == "True"):
 						ready = "Ready"
 				if phase != "Running" or ready != "Ready":
-					if first == True:
+					if first:
 						ansithemeprint([ANSIThemeString("    ", "default"),
 								ANSIThemeString("Error", "error"),
 								ANSIThemeString(":", "default")], stderr = True)
@@ -1096,7 +1098,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 		if len(usergroup) > 0:
 			alertmask = usergroup_alertmask
 		notemask = 0o000
-		if pathtype == "file" and executable == False:
+		if pathtype == "file" and not executable:
 			notemask = 0o111
 
 		path_entry = Path(path)
@@ -1247,7 +1249,7 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: 
 
 	issue, critical, error, warning, note = __check_permissions(recommended_file_permissions, "file", user, usergroup, critical, error, warning, note)
 
-	if issue == False:
+	if not issue:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return critical, error, warning, note

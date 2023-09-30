@@ -278,7 +278,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 	indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
 
 	if isinstance(lines, str):
-		if deep_get(kwargs, DictPath("json"), False) == True:
+		if deep_get(kwargs, DictPath("json"), False):
 			try:
 				d = json.loads(lines)
 				lines = [json_dumps(d)]
@@ -291,7 +291,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 
 	override_formatting: Union[ThemeAttr, Dict] = {}
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		override_formatting = generic_format
 
 	yaml.add_representer(str, __str_representer)
@@ -312,7 +312,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 				line = line[0:16384 - len(" [...] (Truncated)") - 1]
 				truncated = True
 			# This allows us to use the yaml formatter for json too
-			if first == True:
+			if first:
 				first = False
 				if line in ("|", "|-"):
 					continue
@@ -320,7 +320,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 				continue
 
 			tmpline: List[Union[ThemeRef, ThemeString]] = format_yaml_line(line, override_formatting = override_formatting)
-			if truncated == True:
+			if truncated:
 				tmpline += [ThemeString(" [...] (Truncated)", ThemeAttr("types", "yaml_key_error"))]
 			dumps.append(tmpline)
 
@@ -367,7 +367,7 @@ def format_crt(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -398,7 +398,7 @@ def format_haproxy(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Un
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	# Safe
@@ -464,7 +464,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -521,7 +521,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 					ThemeString(tmp[2], ThemeAttr("types", "caddyfile_block")),
 				]
 				line = tmp[3]
-				if site == True:
+				if site:
 					single_site = False
 				continue
 
@@ -541,7 +541,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 			# Is this a site?
 			tmp = site_regex.match(line)
 			if tmp is not None:
-				if block_depth == 0 and site == False and (single_site == True or "{" in tmp[3]):
+				if block_depth == 0 and not site and (single_site or "{" in tmp[3]):
 					if len(tmp[1]) > 0:
 						tmpline += [
 							ThemeString(tmp[1], ThemeAttr("types", "caddyfile_site")),
@@ -582,7 +582,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 				continue
 
 			# Is this a directive?
-			if directive == False:
+			if not directive:
 				tmp = directive_regex.match(line)
 				if tmp is not None:
 					if len(tmp[1]) > 0:
@@ -628,7 +628,7 @@ def format_mosquitto(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	# Safe
@@ -679,7 +679,7 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Unio
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -753,7 +753,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 	tag_named = False
 	comment = False
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -784,7 +784,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 
 		while len(line) > 0:
 			before = line
-			if tag_open == False:
+			if not tag_open:
 				# Are we opening a tag?
 				tmp = tag_open_regex.match(line)
 				if tmp is not None:
@@ -855,7 +855,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 						]
 
 					# > is ignored within comments
-					if tmp[2] == ">" and comment == True or tmp[2] == "-->":
+					if tmp[2] == ">" and comment or tmp[2] == "-->":
 						tmpline += [
 							ThemeString(tmp[2], ThemeAttr("types", "xml_comment")),
 						]
@@ -880,7 +880,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 					tag_open = False
 					continue
 
-				if tag_named == False and comment == False:
+				if not tag_named and not comment:
 					# Is this either "[<]tag", "[<]tag ", "[<]tag>" or "[<]tag/>"?
 					tmp = tag_named_regex.match(line)
 					if tmp is not None:
@@ -896,7 +896,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 					if tmp is None:
 						raise SyntaxError(f"XML syntax highlighter failed to parse {line}")
 
-					if comment == True:
+					if comment:
 						tmpline += [
 							ThemeString(tmp[1], ThemeAttr("types", "xml_comment")),
 							ThemeString(tmp[2], ThemeAttr("types", "xml_comment")),
@@ -952,7 +952,7 @@ def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 	multiline_basic = False
 	multiline_literal = False
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -969,14 +969,14 @@ def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 		if len(line) == 0:
 			continue
 
-		if multiline_basic == True or multiline_literal == True:
+		if multiline_basic or multiline_literal:
 			tmpline += [
 				ThemeString(line, ThemeAttr("types", "toml_value")),
 			]
 			dumps.append(tmpline)
-			if multiline_basic == True and line.lstrip(" ").endswith("\"\"\""):
+			if multiline_basic and line.lstrip(" ").endswith("\"\"\""):
 				multiline_basic = False
-			elif multiline_literal == True and line.lstrip(" ").endswith("'''"):
+			elif multiline_literal and line.lstrip(" ").endswith("'''"):
 				multiline_literal = False
 			continue
 
@@ -1043,7 +1043,7 @@ def format_fluentbit(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):
@@ -1097,7 +1097,7 @@ def format_ini(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 
-	if deep_get(kwargs, DictPath("raw"), False) == True:
+	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
 	if isinstance(lines, str):

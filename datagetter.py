@@ -48,7 +48,7 @@ def get_container_status(src_statuses: List[Dict], container: str) -> Tuple[str,
 				DictPath("state#running#startedAt")], "")
 			age = get_since(timestamp_to_datetime(ts))
 
-			if deep_get(container_status, DictPath("ready")) == False:
+			if not deep_get(container_status, DictPath("ready")):
 				status_group = StatusGroup.NOT_OK
 
 				if running is not None:
@@ -119,7 +119,7 @@ def get_endpointslices_endpoints(obj: Dict) -> List[Tuple[str, StatusGroup]]:
 		for endpoint in deep_get(obj, DictPath("endpoints"), []):
 			for address in deep_get(endpoint, DictPath("addresses"), []):
 				ready = deep_get(endpoint, DictPath("conditions#ready"), False)
-				if ready == True:
+				if ready:
 					status_group = StatusGroup.OK
 				else:
 					status_group = StatusGroup.NOT_OK
@@ -286,7 +286,7 @@ def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 			latest_minor = f"alpha{sorted_versions[0][2]}"
 		latest_version = f"{latest_major}{latest_minor}"
 
-		if deep_get(versions, DictPath(f"{latest_version}#deprecated"), False) == True:
+		if deep_get(versions, DictPath(f"{latest_version}#deprecated"), False):
 			message = deep_get(versions, DictPath(f"{latest_version}#deprecation_message"), "")
 			message = f"({message})"
 
@@ -432,7 +432,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 
 			if condition_type == "ContainersReady" and condition_status == "False":
 				for container in deep_get(obj, DictPath("status#initContainerStatuses"), []):
-					if deep_get(container, DictPath("ready")) == False:
+					if not deep_get(container, DictPath("ready")):
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
 							if reason in ("CrashLoopBackOff", "ImagePullBackOff"):
@@ -440,7 +440,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 							reason = f"Init:{reason}"
 							return reason, status_group
 				for container in deep_get(obj, DictPath("status#containerStatuses"), []):
-					if deep_get(container, DictPath("ready")) == False:
+					if not deep_get(container, DictPath("ready")):
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
 						if reason is not None and len(reason) > 0:
 							if reason in ("CrashLoopBackOff", "ErrImageNeverPull", "ErrImagePull"):
@@ -558,9 +558,9 @@ def datagetter_api_support(kh: kubernetes_helper.KubernetesHelper, obj: Dict, pa
 	try:
 		kind = kh.guess_kind((kind, api_family))
 		available_views.append("Known")
-		if deep_get(available_apis[kind], DictPath("list"), False) == True:
+		if deep_get(available_apis[kind], DictPath("list"), False):
 			available_views.append("List")
-		if deep_get(available_apis[kind], DictPath("info"), False) == True:
+		if deep_get(available_apis[kind], DictPath("info"), False):
 			available_views.append("Info")
 	except NameError:
 		pass

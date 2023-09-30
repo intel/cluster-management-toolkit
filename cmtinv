@@ -88,7 +88,7 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Set vars
 	if len(hostvars) > 0:
 		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to set vars for hosts {hosts}")
 
 	return 0
@@ -132,7 +132,7 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Set vars
 	if len(groupvars) > 0:
 		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to set vars for groups {groups}")
 
 	return 0
@@ -169,7 +169,7 @@ def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Unset vars
 	if len(hostvars) > 0:
 		retval = ansible_unset_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to unset vars for hosts {hosts}")
 
 	return 0
@@ -193,7 +193,7 @@ def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Unset vars
 	if len(groupvars) > 0:
 		retval = ansible_unset_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to unset vars for groups {groups}")
 
 	return 0
@@ -245,13 +245,13 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# Add the groups
 	retval = ansible_create_groups(inventory = ANSIBLE_INVENTORY, groups = groups)
 
-	if retval == False:
+	if not retval:
 		raise ProgrammingError(f"Programming error: failed to add {groups} to inventory")
 
 	# Set vars
 	if len(groupvars) > 0:
 		retval = ansible_set_groupvars(inventory = ANSIBLE_INVENTORY, groups = groups, groupvars = groupvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to set vars {groupvars} for groups {groups}")
 
 	return 0
@@ -307,7 +307,7 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(groups) == 0:
 		retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, skip_all = False)
 
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to add {hosts}")
 	else:
 		group = ""
@@ -315,13 +315,13 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		for group in groups:
 			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
 
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to add {hosts} to group {group}")
 
 	# Set vars
 	if len(hostvars) > 0:
 		retval = ansible_set_hostvars(inventory = ANSIBLE_INVENTORY, hosts = hosts, hostvars = hostvars)
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to set vars for hosts {hosts}")
 
 	return 0
@@ -387,8 +387,8 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 			forceneeded = True
 			extrahosts.append((group, grouphosts))
 
-	if forceneeded == True and force == False:
-		if forceneeded == True:
+	if forceneeded and not force:
+		if forceneeded:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": The following groups are non-empty:", "default")])
 			for group, hosts in extrahosts:
@@ -406,7 +406,7 @@ def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	retval = ansible_remove_groups(inventory = ANSIBLE_INVENTORY, groups = groups, force = force)
 
-	if retval == False:
+	if not retval:
 		raise ProgrammingError(f"Programming error: failed to remove {groups}")
 
 	return 0
@@ -457,7 +457,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 			force = True
 
 	# Is there a pre-existing inventory?
-	if Path(ANSIBLE_INVENTORY).is_file() and force == False:
+	if Path(ANSIBLE_INVENTORY).is_file() and not force:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Overwriting an existing inventory requires specifying “", "default"),
 				ANSIThemeString("--force", "option"),
@@ -503,7 +503,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		for group in groups:
 			retval = ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group, skip_all = False)
 
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to add {hosts} to group {group}")
 
 	# Finally import the hostkey into authorized_keys
@@ -576,8 +576,8 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if opt == "--force":
 			force = True
 
-	if "all" in groups and forceneeded == True and (force == False or len(groups) > 1):
-		if forceneeded == True:
+	if "all" in groups and forceneeded and (not force or len(groups) > 1):
+		if forceneeded:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": The following hosts are parts of other groups than “", "default"),
 					ANSIThemeString("all", "argument"),
@@ -609,7 +609,7 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	for group in groups:
 		retval = ansible_remove_hosts(inventory = ANSIBLE_INVENTORY, hosts = hosts, group = group)
 
-		if retval == False:
+		if not retval:
 			raise ProgrammingError(f"Programming error: failed to remove {hosts} to group {group}")
 
 	return 0

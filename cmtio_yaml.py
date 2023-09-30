@@ -36,9 +36,9 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a“ (append), “w“ (write) and “x“ (exclusive write)")
 
 	yaml_str = yaml.safe_dump(data, default_flow_style = False, sort_keys = sort_keys)
-	if replace_empty == True:
+	if replace_empty:
 		yaml_str = yaml_str.replace(r"''", "")
-	if replace_null == True:
+	if replace_null:
 		yaml_str = yaml_str.replace(r"null", "")
 	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
 

@@ -319,9 +319,9 @@ def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[Lis
 	for path in paths:
 		result = __deep_get_recursive(dictionary, path.split("#"))
 
-		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty):
 			break
-	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty:
 		result = default
 	return result
 
@@ -342,8 +342,8 @@ def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[A
 	result = None
 	for path in paths:
 		result = deep_get(obj, path)
-		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True):
+		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty):
 			break
-	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty == True:
+	if result is None or type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty:
 		result = default
 	return result

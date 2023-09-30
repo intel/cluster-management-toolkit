@@ -415,7 +415,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 					break
 			if minikube_name != "":
 				tmp_k8s_distro = "minikube"
-			elif deep_get(labels, DictPath("microk8s.io/cluster"), False) == True:
+			elif deep_get(labels, DictPath("microk8s.io/cluster"), False):
 				tmp_k8s_distro = "microk8s"
 			elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
 				tmp_k8s_distro = "kind"
@@ -596,7 +596,7 @@ def check_and_print_status(retval: bool) -> None:
 			retval (bool): True on success, False on failure
 	"""
 
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
@@ -1091,7 +1091,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	else:
 		cni = args[0]
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nSetup CNI (", "default"),
 					 ANSIThemeString(f"{cni}", "argument"),
 					 ANSIThemeString(")? [y/", "default"),
@@ -1104,7 +1104,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	ansithemeprint([ANSIThemeString("\n[Installing and configuring CNI]", "phase")])
 	result = __setup_cni(cni, pod_network_cidr, context_name, cluster_name)
-	if result == True:
+	if result:
 		update_installation_info(cluster_name = cluster_name, cni = cni)
 
 # pylint: disable-next=unused-argument
@@ -1158,7 +1158,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(": The inventory for this cluster does not contain any hosts; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if confirm == True:
+	if confirm:
 		input_retval = ansithemeinput([ANSIThemeString("\nUninstall CNI (", "default"),
 					       ANSIThemeString(f"{cni}", "argument"),
 					       ANSIThemeString(")? [y/", "default"),
@@ -1181,7 +1181,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	playbooks = populate_playbooks_from_paths(uninstall_cni_playbooks)
 
 	retval = run_playbooks(playbooks = playbooks, hosts = all_nodes_in_cluster)
-	if retval == True:
+	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 		update_installation_info(cluster_name = cluster_name, cni = "<none>")
 	else:
@@ -1251,7 +1251,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	context_name = execute_command_with_response([kubectl_path, "config", "current-context"]).splitlines()[0]
 
-	if install_cni == True:
+	if install_cni:
 		ansithemeprint([ANSIThemeString("\n[Installing CNI]", "phase")])
 	else:
 		ansithemeprint([ANSIThemeString("\n[Upgrading CNI]", "phase")])
@@ -1259,7 +1259,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	__upgrade_cni(cni, "executable", context_name, pod_network_cidr)
 	__upgrade_cni(cni, "CNI", context_name, pod_network_cidr)
 
-	if install_cni == True:
+	if install_cni:
 		ansithemeprint([ANSIThemeString("\nCNI installation successful", "success")])
 	else:
 		ansithemeprint([ANSIThemeString("\nCNI upgrade successful", "success")])
@@ -1452,7 +1452,7 @@ def add_ssh_keys_to_authorized_keys() -> bool:
 			if "SecurityStatus.DOES_NOT_EXIST" in str(e):
 				pass
 
-		if exists == False:
+		if not exists:
 			secure_write_string(authorized_keys_path, f"{pubkey}\n", write_mode = "a")
 
 		# We've added at least one public key
@@ -1473,7 +1473,7 @@ def __task_check_and_create_ssh_key(installation_info: Dict, verbose: bool = Fal
 	# FIXME
 	confirm = True
 
-	if check_for_ssh_key() == False:
+	if not check_for_ssh_key():
 		if confirm:
 			retval = ansithemeinput([ANSIThemeString("Warning", "warning"),
 						 ANSIThemeString(": No ssh key found in ", "default"),
@@ -1542,7 +1542,7 @@ def __task_add_ssh_keys_to_inventory(installation_info: Dict, verbose: bool = Fa
 
 		found_key = True
 
-	if found_key == False:
+	if not found_key:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not find a valid public key in ", "default"),
 				ANSIThemeString(SSH_DIR, "path"),
@@ -1848,7 +1848,7 @@ def __task_request_ansible_password(installation_info: Dict, verbose: bool = Fal
 	"""
 
 	# Check whether ansible_password is defined or not
-	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and no_password == False:
+	if deep_get(ansible_configuration, DictPath("ansible_password")) is None and not no_password:
 		ansithemeprint([ANSIThemeString("Attention", "warning"),
 				ANSIThemeString(": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
 		ansithemeprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.\n", "default")])
@@ -2297,7 +2297,7 @@ def __task_drain_control_planes(installation_info: Dict, verbose: bool = False) 
 		if "6443 (LISTEN)" in line:
 			running = True
 			break
-	if running == False:
+	if not running:
 		check_and_print_status(True)
 		return
 
@@ -2993,7 +2993,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	show_configuration(action = "Preparing cluster:", tasks = prepare_tasks)
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nStart control plane preparation? [y/", "default"),
 					 ANSIThemeString("N", "emphasis"),
 					 ANSIThemeString("]: ", "default")])
@@ -3074,13 +3074,13 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if len(args) > 0:
 		for cluster in args[0].split(","):
-			if cluster not in available_clusters and match == True:
+			if cluster not in available_clusters and match:
 				ansithemeprint([ANSIThemeString("Warning", "warning"),
 						ANSIThemeString(": Ignoring non-existing cluster ", "default"),
 						ANSIThemeString(cluster, "hostname"),
 						ANSIThemeString("\n", "default")], stderr = True)
 
-	if match == False:
+	if not match:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": No matching clusters found; available clusters are:", "default")], stderr = True)
 		for cluster in available_clusters:
@@ -3099,7 +3099,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString("".ljust(pad + 2 - len(cluster_name)), "default"),
 				ANSIThemeString(context, "default")])
 
-	if confirm == True:
+	if confirm:
 		input_retval = ansithemeinput([ANSIThemeString("\nImport the following clusters? [y/", "default"),
 					       ANSIThemeString("N", "emphasis"),
 					       ANSIThemeString("]: ", "default")])
@@ -3250,7 +3250,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 
-	if os_distro == "debian" and update_cache == True:
+	if os_distro == "debian" and update_cache:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
@@ -3549,7 +3549,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			cri = "containerd"
 		elif int(requested_minor) < 24:
 			cri = "docker-shim"
-		elif enable_dra == True:
+		elif enable_dra:
 			cri = "cri-o"
 		else:
 			cri = "containerd"
@@ -3610,7 +3610,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			new_cni = args[0]
 
 		if new_cni != cni:
-			if override_cni == False:
+			if not override_cni:
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": Installation was previous initiated with ", "default"),
 						ANSIThemeString(f"{cni}", "programname"),
@@ -3654,7 +3654,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	show_configuration(action = "Setting up control plane:", tasks = setup_control_plane_tasks)
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nStart installation? [y/", "default"),
 					 ANSIThemeString("N", "emphasis"),
 					 ANSIThemeString("]: ", "default")])
@@ -3764,14 +3764,14 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
 	__controlplanes = deep_get(inventory, DictPath("controlplane#hosts"), {})
 	__clusterhosts = deep_get(inventory, DictPath(f"{cluster_name}#hosts"), {})
 	controlplanes = []
-	if len(__controlplanes) == 0 and fail_on_empty == True:
+	if len(__controlplanes) == 0 and fail_on_empty:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": No control plane(s) defined in the inventory; rebuilding the inventory using “", "default"),
 				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME} ", "programname"),
 				ANSIThemeString("rebuild-inventory", "command"),
 				ANSIThemeString("“ might help. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
-	if len(__clusterhosts) == 0 and fail_on_empty == True:
+	if len(__clusterhosts) == 0 and fail_on_empty:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": The cluster ", "default"),
 				ANSIThemeString(f"{cluster_name}", "hostname"),
@@ -3868,7 +3868,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 	installation_info = update_installation_info(state = "tearing_down", phase = phase, phase_skiplist = list(phase_skiplist))
 	show_configuration(action = "Tearing down control plane", tasks = teardown_control_plane_tasks)
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nStart teardown? [y/", "default"),
 					 ANSIThemeString("N", "emphasis"),
 					 ANSIThemeString("]: ", "default")])
@@ -3950,7 +3950,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	installation_info = update_installation_info(state = "purging", phase = phase, phase_skiplist = list(phase_skiplist))
 	show_configuration(action = "Purging control plane:", tasks = purge_control_plane_tasks)
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nStart purge? [y/", "default"),
 					 ANSIThemeString("N", "emphasis"),
 					 ANSIThemeString("]: ", "default")])
@@ -4084,7 +4084,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if os_distro == "debian" and update_cache == True:
+	if os_distro == "debian" and update_cache:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating APT cache", "action")])
 		check_and_print_status(update_apt_cache())
@@ -4113,7 +4113,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 						ANSIThemeString(" is not available; aborting.", "default")], stderr = True)
 				sys.exit(errno.ENOENT)
 			elif requested_version == version:
-				if allow_reinstall == False:
+				if not allow_reinstall:
 					ansithemeprint([ANSIThemeString("Warning", "warning"),
 							ANSIThemeString(": The requested version ", "default"),
 							ANSIThemeString(f"{requested_version}", "version"),
@@ -4121,7 +4121,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 							ANSIThemeString("--reinstall", "option"),
 							ANSIThemeString("“.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
-			elif os_distro == "debian" and deb_compare_versions(version, requested_version) == True:
+			elif os_distro == "debian" and deb_compare_versions(version, requested_version):
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": The requested version ", "default"),
 						ANSIThemeString(f"{requested_version}", "version"),
@@ -4183,7 +4183,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			schedulable_count = 0
 			nodes_to_drain = []
 			for node in node_status:
-				if node["schedulable"] == False:
+				if not node["schedulable"]:
 					continue
 
 				if "control-plane" in node["roles"]:
@@ -4240,7 +4240,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	show_configuration(action = "Upgrading control plane:", tasks = upgrade_control_plane_tasks)
 
-	if confirm == True:
+	if confirm:
 		retval = ansithemeinput([ANSIThemeString("\nStart upgrade? [y/", "default"),
 					 ANSIThemeString("N", "emphasis"),
 					 ANSIThemeString("]: ", "default")])
@@ -4281,7 +4281,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
-			if first == True:
+			if first:
 				ansithemeprint([ANSIThemeString("Tainting control plane(s):", "header")])
 				first = False
 			ansithemeprint([ANSIThemeString(node["name"], "hostname")])
@@ -4296,7 +4296,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
-			if first == True:
+			if first:
 				ansithemeprint([ANSIThemeString("Tainting control plane(s):", "header")])
 				first = False
 			ansithemeprint([ANSIThemeString(node["name"], "hostname")])
@@ -4310,7 +4310,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 						ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-	if first == True:
+	if first:
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
 				ANSIThemeString(": No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
@@ -4336,7 +4336,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	for node in node_statuses:
 		if "control-plane" in node["roles"] and (len(args) == 0 or node["name"] in args):
-			if first == True:
+			if first:
 				ansithemeprint([ANSIThemeString("Untainting control plane(s):", "header")])
 				first = False
 			ansithemeprint([ANSIThemeString(node["name"], "hostname")])
@@ -4351,7 +4351,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				sys.exit(errno.EINVAL)
 
 		if "master" in node["roles"] and (len(args) == 0 or node["name"] in args):
-			if first == True:
+			if first:
 				ansithemeprint([ANSIThemeString("Untainting control plane(s):", "header")])
 				first = False
 			ansithemeprint([ANSIThemeString(node["name"], "hostname")])
@@ -4365,7 +4365,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 						ANSIThemeString(f"; HTTP error {status}; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-	if first == True:
+	if first:
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
 				ANSIThemeString(": No matching control planes found. Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
@@ -4475,7 +4475,7 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 	gid = pwd.getpwuid(uid).pw_gid
 	groupname = grp.getgrgid(gid).gr_name
 
-	if len(usergroup) == 0 and usergroup_autodetect == True:
+	if len(usergroup) == 0 and usergroup_autodetect:
 		logindefs = secure_read_string(FilePath("/etc/login.defs"))
 		usergroups_regex = re.compile(r"^USERGROUPS_ENAB\s+yes")
 		for line in logindefs.splitlines():

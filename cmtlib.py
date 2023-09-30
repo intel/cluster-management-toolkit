@@ -87,7 +87,7 @@ def validate_name(rtype: str, name: str) -> bool:
 			invalid = True
 		maxlen = 15
 
-	return invalid == False and len(name) <= maxlen
+	return not invalid and len(name) <= maxlen
 
 def clamp(value: int, minval: int, maxval: int) -> int:
 	"""
@@ -274,7 +274,7 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
 	else:
 		sign = ""
 
-	if seconds < -1 and negative_is_skew == True:
+	if seconds < -1 and negative_is_skew:
 		return "<clock skew detected>"
 
 	seconds = abs(seconds)
@@ -711,7 +711,7 @@ def identify_k8s_distro() -> str:
 					break
 			if minikube_name != "":
 				tmp_k8s_distro = "minikube"
-			elif deep_get(labels, DictPath("microk8s.io/cluster"), False) == True:
+			elif deep_get(labels, DictPath("microk8s.io/cluster"), False):
 				tmp_k8s_distro = "microk8s"
 			elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
 				tmp_k8s_distro = "kind"
