@@ -12,7 +12,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 try:
 	import validators # type: ignore
 except ModuleNotFoundError:
-	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
+	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` " \
+	      "or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
 
 import about
@@ -61,13 +62,13 @@ def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: b
 			result = True
 			retval = False
 
-	if result == False:
-		if error_on_failure == True:
+	if not result:
+		if error_on_failure:
 			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 					ANSIThemeString(": “", "default"),
 					ANSIThemeString(f"{value}", "option"),
 					ANSIThemeString("“ is not a boolean.", "default")], stderr = True)
-		if exit_on_failure == True:
+		if exit_on_failure:
 			sys.exit(errno.EINVAL)
 
 	return result, retval
@@ -90,12 +91,12 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 	try:
 		value = int(value)
 	except ValueError:
-		if error_on_failure == True:
+		if error_on_failure:
 			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 					ANSIThemeString(": “", "default"),
 					ANSIThemeString(f"{value}", "option"),
 					ANSIThemeString("“ is not an integer.", "default")], stderr = True)
-		if exit_on_failure == True:
+		if exit_on_failure:
 			sys.exit(errno.EINVAL)
 		return False
 
@@ -115,7 +116,7 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 		raise ValueError("minval > maxval: This is a programming error!")
 
 	if not minval <= int(value) <= maxval:
-		if error_on_failure == True:
+		if error_on_failure:
 			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 					ANSIThemeString(": “", "default"),
 					ANSIThemeString(f"{value}", "option"),
@@ -124,7 +125,7 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 					ANSIThemeString(", ", "default"),
 					ANSIThemeString(maxval_str, "emphasis"),
 					ANSIThemeString("].", "default")], stderr = True)
-		if exit_on_failure == True:
+		if exit_on_failure:
 			sys.exit(errno.EINVAL)
 		return False
 	return True
@@ -342,14 +343,27 @@ def __sub_usage(command: str) -> int:
 
 	commandinfo = {}
 	headerstring = None
+	command_found = False
 
 	for _key, value in commandline.items():
-		if command in deep_get(value, DictPath("command")):
+		if command in deep_get(value, DictPath("command"), {}):
 			commandstring = deep_get(value, DictPath("command_alias"), command)
 			headerstring = [ANSIThemeString(f"{programname}", "programname"),
 					ANSIThemeString(f" {commandstring}", "command")]
 			commandinfo = value
+			command_found = True
 			break
+
+	if not command_found:
+		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
+				ANSIThemeString(": unrecognised command “", "default"),
+				ANSIThemeString(f"{command}", "command"),
+				ANSIThemeString("“.", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("Try “", "default"),
+				ANSIThemeString(f"{programname} ", "programname"),
+				ANSIThemeString("help", "command"),
+				ANSIThemeString("“ for more information.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
 
 	if headerstring is None:
 		ansithemeprint([ANSIThemeString("Error", "warning"),
@@ -442,20 +456,20 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if deep_get(commandline, DictPath(f"{key}#max_args"), 0) > 0:
 			has_args = True
 
-	if commandcount > 2 or globaloptioncount == 0:
+	if commandcount > 3 or globaloptioncount == 0:
 		has_commands = True
 	else:
 		has_options = True
 
 	headerstring = [ANSIThemeString(f"{programname}", "programname")]
-	if has_commands == True:
+	if has_commands:
 		headerstring += [ANSIThemeString(" COMMAND", "command")]
-	if has_options == True:
+	if has_options:
 		headerstring += [ANSIThemeString(" [", "separator"),
 				 ANSIThemeString("OPTION", "option"),
 				 ANSIThemeString("]", "separator"),
 				 ANSIThemeString("...", "option")]
-	if has_args == True:
+	if has_args:
 		headerstring += [ANSIThemeString(" [", "separator"),
 				 ANSIThemeString("ARGUMENT", "argument"),
 				 ANSIThemeString("]", "separator"),
@@ -466,10 +480,10 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString(programdescription, "description")])
 	print()
 
-	if has_commands == True:
-		print("Commands:")
+	if has_commands:
+		ansithemeprint([ANSIThemeString("Commands:", "description")])
 	else:
-		print("Global Options:")
+		ansithemeprint([ANSIThemeString("Global Options:", "description")])
 
 	for key, value in commandline.items():
 		if key in ("__default", "extended_description", "__*"):
@@ -478,6 +492,9 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if key.startswith("spacer"):
 			commands.append(([ANSIThemeString("", "default")], [ANSIThemeString("", "default")]))
 			continue
+
+		if key == "__global_options" and has_commands:
+			commands.append(([ANSIThemeString("Global Options:", "description")], [ANSIThemeString("", "default")]))
 
 		tmp = []
 		separator = "|"
@@ -556,6 +573,24 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	return 0
 
+# pylint: disable-next=unused-argument
+def __command_usage(options: List[Tuple[str, str]], args: List[str]) -> int:
+	"""
+	Display usage information for a single command
+
+		Parameters:
+			options (list[(str, str)]): Unused
+			args (dict): The command to show help for
+		Returns:
+			0
+	"""
+
+	assert commandline is not None
+
+	if len(args) == 0:
+		return __usage(options, args)
+	return __sub_usage(args[0])
+
 def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]], str, int, int, List[Dict], List[Dict]]:
 	command = None
 	commandname = ""
@@ -589,6 +624,16 @@ def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callabl
 
 COMMANDLINEDEFAULTS = {
 	"Help": {
+		"command": ["help"],
+		"values": [ANSIThemeString("COMMAND", "argument")],
+		"description": [ANSIThemeString("Display help about ", "description"),
+				ANSIThemeString("COMMAND", "argument"),
+				ANSIThemeString(" and exit", "description")],
+		"min_args": 0,
+		"max_args": 1,
+		"callback": __command_usage,
+	},
+	"Help2": {
 		"command": ["help", "--help"],
 		"description": [ANSIThemeString("Display this help and exit", "description")],
 		"min_args": 0,
@@ -734,7 +779,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 					# Does this option require arguments?
 					requires_arg = deep_get(commandline, DictPath(f"{__key}#options#{option}#requires_arg"), False)
 
-					if requires_arg == True:
+					if requires_arg:
 						i += 1
 						if i >= len(argv):
 							ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
