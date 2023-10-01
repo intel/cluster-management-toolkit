@@ -43,7 +43,7 @@
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "port_check.rc == 1"
   - name: "Configuring proxy settings"
     ansible.builtin.template:
@@ -68,8 +68,8 @@
       {{ tempdir.path }}/rke2-installer
     when: "port_check.rc == 1"
     environment:
-      https_proxy: "{{ https_proxy }}"
-      no_proxy: "{{ no_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
+      no_proxy: "{{ no_proxy | default('') }}"
       INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
   - name: "Enabling and starting RKE2 control plane service"
     ansible.builtin.systemd:

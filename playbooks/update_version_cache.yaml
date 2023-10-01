@@ -47,7 +47,7 @@
     - { url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml", dest: "kubernetes_current.yaml" }
     - { url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml", dest: "kubernetes_past.yaml" }
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     # We might not be able to update the version cache for all projects; this is acceptable
     failed_when: false
   - name: "Updating last-updated"

@@ -94,7 +94,7 @@
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "(ansible_os_family in ['Debian', 'Suse'])"
   - name: "Fetching security:netfilter repository key"
     ansible.builtin.get_url:
@@ -104,7 +104,7 @@
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "ansible_os_family == 'Suse'"
   - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
     shell: |

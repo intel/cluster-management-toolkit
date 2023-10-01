@@ -556,6 +556,58 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, status
 
+def __recurse_data(path: Dict, obj: Any):
+	datapath = deep_get(path, DictPath("path"), "")
+	pathtype = deep_get(path, DictPath("pathtype"), "raw")
+	nextpath = deep_get(path, DictPath("data"), {})
+
+	if pathtype == "raw":
+		return obj
+	if pathtype == "list":
+		try:
+			if obj is None or len(obj) < datapath:
+				return obj
+			else:
+				data = obj[datapath]
+		except:
+			sys.exit(obj)
+	else:
+		data = deep_get(obj, datapath)
+
+	if len(nextpath) == 0:
+		return data
+
+	return __recurse_data(nextpath, data)
+
+def listgetter_files(**kwargs):
+	paths = deep_get(kwargs, DictPath("paths"), [])
+	vlist = []
+
+	for path in paths:
+		filepath = deep_get(path, DictPath("filepath"), "")
+		# Substitute {HOME}/ for {HOMEDIR}
+		if filepath.startswith(("{HOME}/", "{HOME}\\")):
+			filepath = FilePath(str(PurePath(HOMEDIR).joinpath(filepath[len('{HOME}/'):])))
+
+		d = secure_read_yaml(filepath)
+		if len(d) == 0:
+			continue
+
+		# Get the mtime of the file
+		p = Path(FilePath(filepath))
+		mtime = p.stat().st_mtime
+
+		item = __recurse_data(path, d)
+		extra_data = deep_get(path, DictPath("_extra_data"), {})
+		extra_data["mtime"] = mtime
+
+		if len(extra_data) > 0 and isinstance(item, dict):
+			item = { **item, "_extra_data": extra_data }
+
+		vlist.append(item)
+
+	return vlist, 200
+
 def setup_host_ping(inventory_dict: Dict, async_cb: Callable, ping_hosts: str = "Lazy") -> Tuple[Any, Callable]:
 	async_cookie = None
 
@@ -1155,6 +1207,8 @@ def process_value(field_name: str, value: Any, vtype: str, view: str, field_inde
 			new_value = "0"
 		else:
 			new_value = str(len(cast(Union[str, Sequence], value)))
+	elif vtype == "unix_timestamp":
+		new_value = datetime.fromtimestamp(value)
 	elif vtype == "timestamp":
 		new_value = __process_timestamp(value, action, formatter)
 	elif isinstance(vtype, list):
@@ -6599,6 +6653,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			# Get the 5 most recent events
 			vlist, _status = kh.get_list_by_kind_namespace(("Event", ""), "")
+			vlist = natsorted(vlist, key = lambda x: x.get("lastTimestamp", ""), reverse = True)
 			events = vlist[:5]
 
 			# We most likely have far more nodes than pods, so give the nodes 25% of the width and the pods 75% of the width;
@@ -6723,21 +6778,34 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			"Message:",
 		]
 
+		# path(s), type
 		evfields = [
-			[DictPath("metadata#namespace")],
-			[DictPath("metadata#name")],
-			[DictPath("series#lastObservedTime"), DictPath("deprecatedLastTimestamp"), DictPath("lastTimestamp"), DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")],
-			[DictPath("type")],
-			[DictPath("reason")],
-			[DictPath("message"), DictPath("note")],
+			([DictPath("metadata#namespace")], "namespace"),
+			([DictPath("metadata#name")], "str"),
+			([DictPath("series#lastObservedTime"),
+			  DictPath("deprecatedLastTimestamp"),
+			  DictPath("lastTimestamp"),
+			  DictPath("eventTime"),
+			  DictPath("deprecatedFirstTimestamp"),
+			  DictPath("firstTimestamp")],
+			 "timestamp"),
+			([DictPath("type")], "event_type"),
+			([DictPath("reason")], "str"),
+			([DictPath("message"), DictPath("note")], "str"),
 		]
 
 		evlens = [len(header) for header in evheaders]
 
 		for event in events:
-			for i, paths in enumerate(evfields):
+			for i, evfield in enumerate(evfields):
+				paths, ptype = evfield
 				val = deep_get_with_fallback(event, paths, "")
-				evlens[i] = max(evlens[i], len(val))
+				if ptype == "timestamp":
+					timestamp = timestamp_to_datetime(cast(str, val))
+					formatted_timestamp = format_timestamp(timestamp)
+					evlens[i] = max(evlens[i], themearray_len(formatted_timestamp))
+				else:
+					evlens[i] = max(evlens[i], len(val))
 
 		# Draw the events over the bottom of the visible area of the listpad
 		eventarrays: List[Union[ThemeRef, ThemeString]] = [
@@ -6756,9 +6824,28 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			if evindex < len(events):
 				event = events[evindex]
-				for i, path in enumerate(evfields):
-					val = deep_get_with_fallback(event, path, "")
-					tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("main", "default")))
+				for i, evfield in enumerate(evfields):
+					paths, ptype = evfield
+					val = deep_get_with_fallback(event, paths, "")
+					if ptype == "timestamp":
+						timestamp = timestamp_to_datetime(cast(str, val))
+						formatted_timestamp = format_timestamp(timestamp)
+						tmp += formatted_timestamp
+						if evlens[i] - themearray_len(formatted_timestamp) > 0:
+							tmp.append(ThemeString("".ljust(evlens[i] - themearray_len(formatted_timestamp)), ThemeAttr("main", "default")))
+					elif ptype == "namespace":
+						tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("types", "namespace")))
+					elif ptype == "event_type":
+						if val == "Error":
+							event_type = "status_not_ok"
+						elif val == "Warning":
+							event_type = "status_admin"
+						else:
+							event_type = "status_ok"
+						tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("main", event_type)))
+					else:
+						tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("main", "default")))
+
 					if i < len(evheaders):
 						tmp.append(ThemeString("  ", ThemeAttr("main", "default")))
 			else:
@@ -11554,6 +11641,7 @@ listgetter_allowlist = {
 	"generic_listgetter": generic_listgetter,
 	"get_metrics_list": get_metrics_list,
 	"get_pod_containers_list": get_pod_containers_list,
+	"listgetter_files": listgetter_files,
 	# Used by listpad
 	"get_hpa_metrics": get_hpa_metrics,
 	"get_ingress_rule_list": get_ingress_rule_list,

@@ -65,7 +65,7 @@
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "ansible_os_family == 'Debian'"
   - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
     shell: |
@@ -89,7 +89,7 @@
     - "rpm-package-key.gpg"
     - "yum-key.gpg"
     environment:
-      https_proxy: "{{ https_proxy }}"
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "ansible_os_family == 'Suse'"
   - name: "Importing repository keys"
     shell: |
