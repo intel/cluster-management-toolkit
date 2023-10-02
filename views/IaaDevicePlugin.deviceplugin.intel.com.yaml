@@ -1,0 +1,176 @@
+kind: "IaaDevicePlugin"
+api_family: "deviceplugin.intel.com"
+default_command: "iaadeviceplugins"
+command:
+- "iaadevplugins"
+- "iaadevplugin"
+listview:
+  name: "IAA Device Plugins"
+  group: "Accelerators"
+  field_indexes:
+    Normal:
+      fields: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
+  fields:
+    desired_number_scheduled:
+      header: "Desired:"
+      path: "status#desiredNumberScheduled"
+      type: "int"
+      align: "right"
+    node_selector:
+      header: "Node Selector:"
+      paths:
+      - path: ["spec#nodeSelector"]
+        pathtype: "key_value"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "key"
+        - type: "value"
+        field_separators:
+        - type: "selector"
+    number_ready:
+      header: "Ready:"
+      path: "status#numberReady"
+      type: "int"
+      align: "right"
+infoview:
+  name: "IAA Device Plugin Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controlled_daemon_set", "image", "init_image", "node_selector", "shared_device_number", "loglevel", "replicas"]
+    rows:
+      controlled_daemon_set:
+        header: [["Controlled ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["aemon Set:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#controlledDaemonSet#kind"], ["status#controlledDaemonSet#apiVersion"], ["status#controlledDaemonSet#namespace"], ["status#controlledDaemonSet#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      init_image:
+        header: [["Init Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#initImage"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      kernel_vf_drivers:
+        header: [["Kernel VF Drivers:", ["main", "infoheader"]]]
+        path: "spec#kernelVfDrivers"
+        type: "raw"
+        formatter: "list"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      max_num_devices:
+        header: [["Max # of Devices:", ["main", "infoheader"]]]
+        path: "spec#maxNumDevices"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      node_selector:
+        header: [["Node Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#nodeSelector"]
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      preferred_allocation_policy:
+        header: [["Preferred Allocation Policy:", ["main", "infoheader"]]]
+        path: "spec#preferredAllocationPolicy"
+        type: "str"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "numerical"
+          field_separators:
+          - type: "fraction"
+      resource_manager:
+        header: [["Resource Manager:", ["main", "infoheader"]]]
+        path: "spec#resourceManager"
+        type: "bool"
+      shared_device_number:
+        header: [["Shared Device Number:", ["main", "infoheader"]]]
+        path: "spec#sharedDevNum"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#nodeNames"
+      rename_bare: "name"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind: "Node"
+      name_path: "name"
+    field_indexes:
+      Normal:
+        fields: ["name"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+  shortcuts:
+    "Open Controlled Daemon Set":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controlled Daemon Set"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "status#controlledDaemonSet#kind"
+        api_version_path: "status#controlledDaemonSet#apiVersion"
+        namespace_path: "status#controlledDaemonSet#namespace"
+        name_path: "status#controlledDaemonSet#name"
