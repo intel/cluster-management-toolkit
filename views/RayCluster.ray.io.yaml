@@ -1,0 +1,29 @@
+kind: "RayCluster"
+api_family: "ray.io"
+default_command: "rayclusters"
+listview:
+  name: "Ray Clusters"
+  group: "KubeRay"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "available_workers", "desired_workers", "age"]
+      sortcolumn: "namespace"
+  fields:
+    available_workers:
+      header: "Available Workers:"
+      path: "status#availableWorkerReplicas"
+      default: 0
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
+    desired_workers:
+      header: "Desired Workers:"
+      path: "status#desiredWorkerReplicas"
+      default: 0
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
