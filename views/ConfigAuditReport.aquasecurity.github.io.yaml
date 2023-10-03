@@ -11,16 +11,52 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "scanner", "severity_danger", "severity_warning", "severity_pass", "age"]
+      fields: ["namespace", "name", "scanner", "severity_critical", "severity_high", "severity_medium", "severity_low", "age"]
       sortcolumn: "namespace"
   fields:
     scanner:
       header: "Scanner:"
       path: "report#scanner#name"
       type: "str"
-    severity_danger:
-      header: "Danger:"
-      path: "report#summary#dangerCount"
+    severity_critical:
+      header: "Critical:"
+      path: "report#summary#criticalCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_high:
+      header: "High:"
+      path: "report#summary#highCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_low:
+      header: "Low:"
+      path: "report#summary#lowCount"
       type: "raw"
       formatter: "value_mapper"
       formatting:
@@ -36,17 +72,9 @@ listview:
             - context: "types"
               type: "watermark_medium"
       align: "right"
-    severity_pass:
-      header: "Pass:"
-      path: "report#summary#passCount"
-      type: "int"
-      formatting:
-        field_colors:
-        - type: "numerical"
-      align: "right"
-    severity_warning:
-      header: "Warning:"
-      path: "report#summary#warningCount"
+    severity_medium:
+      header: "Medium:"
+      path: "report#summary#mediumCount"
       type: "raw"
       formatter: "value_mapper"
       formatting:
@@ -67,7 +95,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scanner", "vendor", "severity_header", "severity_danger", "severity_warning", "severity_pass"]
+        fields: ["controller", "scanner", "vendor", "severity_header", "severity_critical", "severity_high", "severity_medium", "severity_low"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -104,11 +132,9 @@ infoview:
           - type: "version"
           field_separators:
           - type: "version"
-      severity_header:
-        header: [["Severity:", ["main", "infoheader"]]]
-      severity_danger:
-        header: [["   Danger:", ["main", "infoheader"]]]
-        path: "report#summary#dangerCount"
+      severity_critical:
+        header: [["  Critical:", ["main", "infoheader"]]]
+        path: "report#summary#criticalCount"
         type: "raw"
         formatter: "value_mapper"
         formatting:
@@ -123,16 +149,45 @@ infoview:
               field_colors:
               - context: "types"
                 type: "watermark_high"
-      severity_pass:
-        header: [["     Pass:", ["main", "infoheader"]]]
-        path: "report#summary#passCount"
+      severity_header:
+        header: [["Severity:", ["main", "infoheader"]]]
+      severity_high:
+        header: [["      High:", ["main", "infoheader"]]]
+        path: "report#summary#highCount"
         type: "raw"
+        formatter: "value_mapper"
         formatting:
-          field_colors:
-          - type: "numerical"
-      severity_warning:
-        header: [["  Warning:", ["main", "infoheader"]]]
-        path: "report#summary#warningCount"
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      severity_low:
+        header: [["       Low:", ["main", "infoheader"]]]
+        path: "report#summary#lowCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      severity_medium:
+        header: [["    Medium:", ["main", "infoheader"]]]
+        path: "report#summary#mediumCount"
         type: "raw"
         formatter: "value_mapper"
         formatting:
@@ -152,10 +207,10 @@ infoview:
         path: "report#scanner#vendor"
         type: "str"
   listpad:
-    # on_activation:
-    #   call: "resourceinfodispatch"
-    #   kind: "__CISKubeBenchReportTestSetData"
-    #   api_family: "aquasecurity.github.io"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ConfigAuditReportTestData"
+      api_family: "aquasecurity.github.io"
     listgetter: "listgetter_path"
     listgetter_args:
       paths:
@@ -163,23 +218,19 @@ infoview:
         type: "list"
         key_name: "__type"
         key_value: "Basic"
-      - path: "report#containerChecks"
-        type: "dict"
-        key_name: "__type"
-        key_value: "Container"
-      - path: "report#podChecks"
-        type: "list"
-        key_name: "__type"
-        key_value: "Pod"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["type", "category", "test_case", "scope", "severity", "result"]
+        fields: ["check_id", "category", "test_case", "severity", "result"]
         sortcolumn: "result"
     fields:
       category:
         header: "Category:"
         path: "category"
+        type: "str"
+      check_id:
+        header: "ID:"
+        path: "checkID"
         type: "str"
       result:
         header: "Result:"
@@ -201,29 +252,35 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
-      scope:
-        header: "Scope:"
-        paths:
-        - path: [["scope#type"], ["scope#value"]]
-          pathtype: "tuple"
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "kind"
-          - type: "generic"
-          field_separators:
-          - type: "kind"
       severity:
         header: "Severity:"
-        path: "severity"
+        paths:
+        - path: "severity"
+          pathtype: "remap"
+          substitutions:
+            "HIGH": "High"
+            "LOW": "Low"
+            "MEDIUM": "Medium"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "High":
+                field_colors:
+                - context: "types"
+                  type: "watermark_high"
+              "Low":
+                field_colors:
+                - context: "types"
+                  type: "watermark_low"
+              "Medium":
+                field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       test_case:
         header: "Test Case:"
-        path: "message"
-        type: "str"
-      type:
-        header: "Type:"
-        path: "__type"
+        path: "title"
         type: "str"
   shortcuts:
     "Open controller":

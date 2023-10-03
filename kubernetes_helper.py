@@ -527,9 +527,24 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "ciskubebenchreports",
 		"namespaced": False,
 	},
+	("ClusterComplianceReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "clustercompliancereports",
+		"namespaced": False,
+	},
 	("ClusterConfigAuditReport", "aquasecurity.github.io"): {
 		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
 		"api": "clusterconfigauditreports",
+		"namespaced": False,
+	},
+	("ClusterInfraAssessmentReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "clusterinfraassessmentreports",
+		"namespaced": False,
+	},
+	("ClusterRbacAssessmentReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "clusterrbacassessmentreports",
 		"namespaced": False,
 	},
 	("ClusterVulnerabilityReport", "aquasecurity.github.io"): {
@@ -541,10 +556,26 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
 		"api": "configauditreports",
 	},
+	("ExposedSecretReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "exposedsecretreports",
+	},
+	("InfraAssessmentReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "infraassessmentreports",
+	},
 	("KubeHunterReport", "aquasecurity.github.io"): {
 		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
 		"api": "kubehunterreports",
 		"namespaced": False,
+	},
+	("RbacAssessmentReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "rbacassessmentreports",
+	},
+	("SbomReport", "aquasecurity.github.io"): {
+		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
+		"api": "sbomreports",
 	},
 	("VulnerabilityReport", "aquasecurity.github.io"): {
 		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
