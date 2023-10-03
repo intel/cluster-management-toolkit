@@ -92,7 +92,7 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["device", "type", "model", "memory", "max_vfs"]
+        fields: ["device", "type", "model", "memory", "max_vfs", "millicores", "ecc"]
         sortcolumn: "device"
     fields:
       device:
@@ -107,6 +107,10 @@ infoview:
               groups: [0]
             output:
               ["key"]
+      ecc:
+        header: "ECC:"
+        path: "value#ecc"
+        type: "bool"
       max_vfs:
         header: "Max VFs:"
         path: "value#maxvfs"
@@ -118,6 +122,14 @@ infoview:
       memory:
         header: "Mem (MiB):"
         path: "value#memory"
+        type: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      millicores:
+        header: "Millicores:"
+        path: "value#millicores"
         type: "numerical"
         formatting:
           field_colors:
