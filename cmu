@@ -2852,7 +2852,7 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 			key_value = deep_get(path, DictPath("key_value"))
 
 			if ptype == "list":
-				for item in deep_get(obj, DictPath(ppath)):
+				for item in deep_get(obj, DictPath(ppath), []):
 					tmpitem = copy.deepcopy(item)
 					if key_name is not None and key_value is not None:
 						tmpitem[key_name] = key_value
@@ -12088,8 +12088,12 @@ def populate_views(force_refresh: bool = False) -> None:
 					# We need to reformat the header
 					_header = deep_get(infopad_rows, DictPath(f"{row}#header"), [["<unset>", ["types", "unset"]]])
 					header: List[Union[ThemeRef, ThemeString]] = []
-					for string, formatting in _header:
-						header.append(ThemeString(string, ThemeAttr(formatting[0], formatting[1])))
+					try:
+						for string, formatting in _header:
+							header.append(ThemeString(string, ThemeAttr(formatting[0], formatting[1])))
+					except ValueError as e:
+						if str(e) == "not enough values to unpack (expected 2, got 1)":
+							sys.exit(f"Invalid header for info-header row \"{row}\" in file \"{view_file}\"; this header doesn't seem to be a valid ThemeArray")
 					row_fields[row]["header"] = header
 
 			listpad = deep_get(d, DictPath("infoview#listpad"), {})
