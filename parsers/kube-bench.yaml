@@ -1,0 +1,28 @@
+- name: "kube-bench"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/aquasec/kube-bench"
+  parser_rules:
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "[PASS]"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "[FAIL]"
+      loglevel: "error"
+    - matchtype: "startswith"
+      matchkey: "[WARN]"
+      loglevel: "warning"
+    - matchtype: "startswith"
+      matchkey: "[INFO]"
+      loglevel: "info"
+    - matchtype: "regex"
+      matchkey: "^[1-9]\\d* checks PASS$"
+      loglevel: "notice"
+    - matchtype: "regex"
+      matchkey: "^[1-9]\\d* checks FAIL$"
+      loglevel: "error"
+    - matchtype: "regex"
+      matchkey: "^[1-9]\\d* checks WARN$"
+      loglevel: "warning"
