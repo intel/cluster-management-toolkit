@@ -1,16 +1,15 @@
-kind: "VulnerabilityReport"
+kind: "ClusterInfraAssessmentReport"
 api_family: "aquasecurity.github.io"
-default_command: "vulnerabilityreports"
+default_command: "clusterinfraassessmentreports"
 command:
-- "vulns"
-- "vuln"
+- "clusterinfraassessments"
+- "clusterinfraassessment"
 listview:
-  name: "Vulnerability Reports"
+  name: "Cluster Infra Assessment Reports"
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "scanner", "severity_critical", "severity_high", "severity_medium", "severity_low", "severity_unknown", "severity_none", "age"]
-      sortcolumn: "namespace"
+      fields: ["name", "scanner", "severity_critical", "severity_high", "severity_medium", "severity_low", "age"]
   fields:
     scanner:
       header: "Scanner:"
@@ -88,38 +87,12 @@ listview:
             - context: "types"
               type: "watermark_medium"
       align: "right"
-    severity_none:
-      header: "None:"
-      path: "report#summary#noneCount"
-      type: "raw"
-      formatting:
-        field_colors:
-        - type: "numerical"
-      align: "right"
-    severity_unknown:
-      header: "Unknown:"
-      path: "report#summary#unknownCount"
-      type: "raw"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
-      align: "right"
 infoview:
-  name: "Vulnerability Report Info"
+  name: "Cluster Infra Assessment Report Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scanner", "vendor", "registry", "repository", "severity_header", "severity_critical", "severity_high", "severity_medium", "severity_low", "severity_unknown", "severity_none"]
+        fields: ["controller", "scanner", "vendor", "severity_header", "severity_critical", "severity_high", "severity_medium", "severity_low"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -144,14 +117,6 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      registry:
-        header: [["Registry:", ["main", "infoheader"]]]
-        path: "report#registry#server"
-        type: "str"
-      repository:
-        header: [["Repository:", ["main", "infoheader"]]]
-        path: "report#artifact#repository"
-        type: "str"
       scanner:
         header: [["Scanner:", ["main", "infoheader"]]]
         paths:
@@ -234,30 +199,6 @@ infoview:
               field_colors:
               - context: "types"
                 type: "watermark_medium"
-      severity_none:
-        header: [["      None:", ["main", "infoheader"]]]
-        path: "report#summary#noneCount"
-        type: "raw"
-        formatting:
-          field_colors:
-          - type: "numerical"
-      severity_unknown:
-        header: [["   Unknown:", ["main", "infoheader"]]]
-        path: "report#summary#unknownCount"
-        type: "raw"
-        formatter: "value_mapper"
-        formatting:
-          mapping:
-            ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
       vendor:
         header: [["Vendor:", ["main", "infoheader"]]]
         path: "report#scanner#vendor"
@@ -265,50 +206,49 @@ infoview:
   listpad:
     on_activation:
       call: "resourceinfodispatch"
-      kind: "__VulnerabilityReportData"
+      kind: "__ClusterInfraAssessmentReportData"
       api_family: "aquasecurity.github.io"
     listgetter: "listgetter_path"
     listgetter_args:
       paths:
-      - path: "report#vulnerabilities"
+      - path: "report#checks"
         type: "list"
         key_name: "__type"
         key_value: "Basic"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["vulnerability_id", "title", "severity", "score", "resource", "installed_version", "fixed_version", "published_date"]
-        sortcolumn: "severity"
+        fields: ["check_id", "category", "test_case", "severity", "result"]
+        sortcolumn: "result"
     fields:
-      fixed_version:
-        header: "Fixed Version:"
-        path: "fixedVersion"
+      category:
+        header: "Category:"
+        path: "category"
         type: "str"
+      check_id:
+        header: "ID:"
+        path: "checkID"
+        type: "str"
+      result:
+        header: "Result:"
+        paths:
+        - path: "success"
+          pathtype: "remap"
+          substitutions:
+            __True: "Success"
+            __False: "Fail"
+        formatter: "value_mapper"
         formatting:
-          field_colors:
-          - type: "version"
-      installed_version:
-        header: "Installed Version:"
-        path: "installedVersion"
-        type: "str"
-        formatting:
-          field_colors:
-          - type: "version"
-      published_date:
-        header: "Published Date:"
-        path: "publishedDate"
-        type: "timestamp"
-        formatter: "timestamp"
-      resource:
-        header: "Resource:"
-        path: "resource"
-        type: "str"
-      score:
-        header: "Score:"
-        path: "score"
-        type: "float"
-        formatter: "float"
-        align: "right"
+          mapping:
+            mappings:
+              "Success":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Fail":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       severity:
         header: "Severity:"
         paths:
@@ -319,44 +259,30 @@ infoview:
             "HIGH": "High"
             "LOW": "Low"
             "MEDIUM": "Medium"
-            "UNKNOWN": "Unknown"
         type: "str"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "Critical":
-                index: 0
                 field_colors:
                 - context: "main"
                   type: "severity_critical"
               "High":
-                index: 1
                 field_colors:
                 - context: "main"
                   type: "severity_high"
               "Low":
-                index: 4
                 field_colors:
                 - context: "main"
                   type: "severity_low"
               "Medium":
-                index: 2
                 field_colors:
                 - context: "main"
                   type: "severity_medium"
-              "Unknown":
-                index: 3
-                field_colors:
-                - context: "main"
-                  type: "severity_medium"
-      title:
-        header: "Title:"
+      test_case:
+        header: "Test Case:"
         path: "title"
-        type: "str"
-      vulnerability_id:
-        header: "ID:"
-        path: "vulnerabilityID"
         type: "str"
   shortcuts:
     "Open controller":

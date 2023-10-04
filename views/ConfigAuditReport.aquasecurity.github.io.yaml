@@ -258,6 +258,7 @@ infoview:
         - path: "severity"
           pathtype: "remap"
           substitutions:
+            "CRITICAL": "Critical"
             "HIGH": "High"
             "LOW": "Low"
             "MEDIUM": "Medium"
@@ -266,18 +267,22 @@ infoview:
         formatting:
           mapping:
             mappings:
+              "Critical":
+                field_colors:
+                - context: "main"
+                  type: "severity_critical"
               "High":
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                - context: "main"
+                  type: "severity_high"
               "Low":
                 field_colors:
-                - context: "types"
-                  type: "watermark_low"
+                - context: "main"
+                  type: "severity_low"
               "Medium":
                 field_colors:
-                - context: "types"
-                  type: "watermark_medium"
+                - context: "main"
+                  type: "severity_medium"
       test_case:
         header: "Test Case:"
         path: "title"

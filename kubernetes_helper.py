@@ -547,11 +547,6 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "clusterrbacassessmentreports",
 		"namespaced": False,
 	},
-	("ClusterVulnerabilityReport", "aquasecurity.github.io"): {
-		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
-		"api": "clustervulnerabilityreports",
-		"namespaced": False,
-	},
 	("ConfigAuditReport", "aquasecurity.github.io"): {
 		"api_paths": ["apis/aquasecurity.github.io/v1alpha1/"],
 		"api": "configauditreports",
