@@ -9,5 +9,45 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "scanner", "repository", "tag", "components_count", "dependencies_count", "age"]
       sortcolumn: "namespace"
+  fields:
+    components_count:
+      header: "Components:"
+      path: "report#summary#componentsCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    dependencies_count:
+      header: "Dependencies:"
+      path: "report#summary#dependenciesCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    repository:
+      header: "Repository:"
+      path: "report#artifact#repository"
+      type: "str"
+    scanner:
+      header: "Scanner:"
+      paths:
+      - path: [["report#scanner#name"], ["report#scanner#version"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
+    tag:
+      header: "Tag:"
+      path: "report#artifact#tag"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"

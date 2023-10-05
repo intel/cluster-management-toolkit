@@ -3642,6 +3642,7 @@ def resource_kind_to_rtype(resource):
 		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
 		("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
 		("CiliumEndpoint", "cilium.io"): "[cilium_endpoint]",
+		("ConfigAuditReport", "aquasecurity.github.io"): "[report]",
 		("ConfigMap", ""): "[configmap]",
 		("Container", ""): "[container]",
 		("Controller", ""): "[controller]",
@@ -3652,9 +3653,11 @@ def resource_kind_to_rtype(resource):
 		("Endpoints", ""): "[endpoints]",
 		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
 		("EphemeralContainer", ""): "[ephemeral_container]",
+		("ExposedSecretReport", "aquasecurity.github.io"): "[report]",
 		("Event", ""): "[event]",
 		("Event", "events.k8s.io"): "[event]",
 		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
+		("InfraAssessmentReport", "aquasecurity.github.io"): "[report]",
 		("Ingress", "networking.k8s.io"): "[ingress]",
 		("InitContainer", ""): "[init_container]",
 		("Job", "batch"): "[controller]",
@@ -3674,6 +3677,7 @@ def resource_kind_to_rtype(resource):
 		("Role", "rbac.authorization.k8s.io"): "[role]",
 		("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
 		("RuntimeClass", "node.k8s.io"): "[runtime_class]",
+		("SbomReport", "aquasecurity.github.io"): "[report]",
 		("Scheduler", ""): "[scheduler]",
 		("Secret", ""): "[secret]",
 		("Service", ""): "[service]",
@@ -3683,6 +3687,7 @@ def resource_kind_to_rtype(resource):
 		("TASPolicy", "telemetry.intel.com"): "[scheduling_policy]",
 		("TFJob", "kubeflow.org"): "[controller]",
 		("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): "[webhook_configuration]",
+		("VulnerabilityReport", "aquasecurity.github.io"): "[report]",
 		("Workflow", "argoproj.io"): "[controller]",
 	}
 
@@ -3817,6 +3822,9 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
+	controller_name = ""
+	controller_kind = ""
+
 	for owr in deep_get(obj, DictPath("metadata#ownerReferences"), []):
 		owr_kind = deep_get(owr, DictPath("kind"), "")
 		owr_api_version = deep_get(owr, DictPath("apiVersion"), "")
@@ -3828,6 +3836,8 @@ def get_pod_resource_list(obj, **kwargs):
 		owr_name = deep_get(owr, DictPath("name"), "")
 		is_controller = deep_get(owr, DictPath("controller"), False)
 		if is_controller:
+			controller_name = owr_name
+			controller_kind = owr_kind[0]
 			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
 				continue
 			rtype = "[controller]"
@@ -4094,6 +4104,320 @@ def get_pod_resource_list(obj, **kwargs):
 				"status": "",
 				"restarts": "",
 				"message": "",
+				"age": -1,
+			})
+
+	if "config_audit_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		kind = ("ConfigAuditReport", "aquasecurity.github.io")
+		if controller_kind == "Node":
+			trivy_kind = "Pod"
+			trivy_name = pod_name
+		else:
+			trivy_kind = controller_kind
+			trivy_name = controller_name
+		selector = {
+			"trivy-operator.resource.kind": trivy_kind,
+			"trivy-operator.resource.name": trivy_name,
+		}
+		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+
+		if len(lref) == 0 or status != 200:
+			ref = None
+		else:
+			ref = lref[0]
+
+		if ref is not None:
+			report_name = deep_get(ref, DictPath("metadata#name"))
+
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = (kind[0], "", report_name)
+
+			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
+			high = deep_get(ref, DictPath("report#summary#highCount"), 0)
+			medium = deep_get(ref, DictPath("report#summary#mediumCount"), 0)
+			low = deep_get(ref, DictPath("report#summary#lowCount"), 0)
+
+			message = ""
+			message_array = []
+
+			status = "OK"
+
+			if low > 0:
+				status = "Warning"
+				message_array.append(f"{low} Low")
+			if medium > 0:
+				status = "Warning"
+				message_array.insert(0, f"{medium} Medium")
+			if high > 0:
+				status = "Warning"
+				message_array.insert(0, f"{high} High")
+			if critical > 0:
+				status = "Warning"
+				message_array.insert(0, f"{critical} Critical")
+
+			if len(message_array) > 0:
+				message = "Reported issues: "
+				message += " / ".join(message_array)
+
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": message,
+				"age": -1,
+			})
+
+	if "infra_assessment_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		kind = ("InfraAssessmentReport", "aquasecurity.github.io")
+		if controller_kind == "Node":
+			trivy_kind = "Pod"
+			trivy_name = pod_name
+		else:
+			trivy_kind = controller_kind
+			trivy_name = controller_name
+		selector = {
+			"trivy-operator.resource.kind": trivy_kind,
+			"trivy-operator.resource.name": trivy_name,
+		}
+		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+
+		if len(lref) == 0 or status != 200:
+			ref = None
+		else:
+			ref = lref[0]
+
+		if ref is not None:
+			report_name = deep_get(ref, DictPath("metadata#name"))
+
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = (kind[0], "", report_name)
+
+			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
+			high = deep_get(ref, DictPath("report#summary#highCount"), 0)
+			medium = deep_get(ref, DictPath("report#summary#mediumCount"), 0)
+			low = deep_get(ref, DictPath("report#summary#lowCount"), 0)
+
+			message = ""
+			message_array = []
+
+			status = "OK"
+
+			if low > 0:
+				status = "Warning"
+				message_array.append(f"{low} Low")
+			if medium > 0:
+				status = "Warning"
+				message_array.insert(0, f"{medium} Medium")
+			if high > 0:
+				status = "Warning"
+				message_array.insert(0, f"{high} High")
+			if critical > 0:
+				status = "Warning"
+				message_array.insert(0, f"{critical} Critical")
+
+			if len(message_array) > 0:
+				message = "Reported issues: "
+				message += " / ".join(message_array)
+
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": message,
+				"age": -1,
+			})
+
+	if "vulnerability_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		kind = ("VulnerabilityReport", "aquasecurity.github.io")
+		if controller_kind == "Node":
+			trivy_kind = "Pod"
+			trivy_name = pod_name
+		else:
+			trivy_kind = controller_kind
+			trivy_name = controller_name
+		selector = {
+			"trivy-operator.resource.kind": trivy_kind,
+			"trivy-operator.resource.name": trivy_name,
+		}
+		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+
+		if len(lref) == 0 or status != 200:
+			ref = None
+		else:
+			ref = lref[0]
+
+		if ref is not None:
+			report_name = deep_get(ref, DictPath("metadata#name"))
+
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = (kind[0], "", report_name)
+
+			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
+			high = deep_get(ref, DictPath("report#summary#highCount"), 0)
+			medium = deep_get(ref, DictPath("report#summary#mediumCount"), 0)
+			unknown = deep_get(ref, DictPath("report#summary#unknownCount"), 0)
+			low = deep_get(ref, DictPath("report#summary#lowCount"), 0)
+
+			message = ""
+			message_array = []
+
+			status = "OK"
+
+			if low > 0:
+				status = "Warning"
+				message_array.append(f"{low} Low")
+			if unknown > 0:
+				status = "Warning"
+				message_array.insert(0, f"{unknown} Unknown")
+			if medium > 0:
+				status = "Warning"
+				message_array.insert(0, f"{medium} Medium")
+			if high > 0:
+				status = "Warning"
+				message_array.insert(0, f"{high} High")
+			if critical > 0:
+				status = "Warning"
+				message_array.insert(0, f"{critical} Critical")
+
+			if len(message_array) > 0:
+				message = "Reported issues: "
+				message += " / ".join(message_array)
+
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": message,
+				"age": -1,
+			})
+
+	if "exposed_secret_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		kind = ("ExposedSecretReport", "aquasecurity.github.io")
+		if controller_kind == "Node":
+			trivy_kind = "Pod"
+			trivy_name = pod_name
+		else:
+			trivy_kind = controller_kind
+			trivy_name = controller_name
+		selector = {
+			"trivy-operator.resource.kind": trivy_kind,
+			"trivy-operator.resource.name": trivy_name,
+		}
+		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+
+		if len(lref) == 0 or status != 200:
+			ref = None
+		else:
+			ref = lref[0]
+
+		if ref is not None:
+			report_name = deep_get(ref, DictPath("metadata#name"))
+
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = (kind[0], "", report_name)
+
+			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
+			high = deep_get(ref, DictPath("report#summary#highCount"), 0)
+			medium = deep_get(ref, DictPath("report#summary#mediumCount"), 0)
+			low = deep_get(ref, DictPath("report#summary#lowCount"), 0)
+
+			message = ""
+			message_array = []
+
+			status = "OK"
+
+			if low > 0:
+				status = "Warning"
+				message_array.append(f"{low} Low")
+			if medium > 0:
+				status = "Warning"
+				message_array.insert(0, f"{medium} Medium")
+			if high > 0:
+				status = "Warning"
+				message_array.insert(0, f"{high} High")
+			if critical > 0:
+				status = "Warning"
+				message_array.insert(0, f"{critical} Critical")
+
+			if len(message_array) > 0:
+				message = "Reported issues: "
+				message += " / ".join(message_array)
+
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": message,
+				"age": -1,
+			})
+
+	if "sbom_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		kind = ("SbomReport", "aquasecurity.github.io")
+		if controller_kind == "Node":
+			trivy_kind = "Pod"
+			trivy_name = pod_name
+		else:
+			trivy_kind = controller_kind
+			trivy_name = controller_name
+		selector = {
+			"trivy-operator.resource.kind": trivy_kind,
+			"trivy-operator.resource.name": trivy_name,
+		}
+		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+
+		if len(lref) == 0 or status != 200:
+			ref = None
+		else:
+			ref = lref[0]
+
+		if ref is not None:
+			report_name = deep_get(ref, DictPath("metadata#name"))
+
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = (kind[0], "", report_name)
+
+			message = ""
+			status = ""
+
+			if len(message_array) > 0:
+				message = "Reported issues: "
+				message += " / ".join(message_array)
+
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status,
+				"restarts": "",
+				"message": message,
 				"age": -1,
 			})
 

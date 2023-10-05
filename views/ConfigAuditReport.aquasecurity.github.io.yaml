@@ -16,8 +16,16 @@ listview:
   fields:
     scanner:
       header: "Scanner:"
-      path: "report#scanner#name"
-      type: "str"
+      paths:
+      - path: [["report#scanner#name"], ["report#scanner#version"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
     severity_critical:
       header: "Critical:"
       path: "report#summary#criticalCount"
