@@ -1,0 +1,86 @@
+kind: "__ClusterRbacAssessmentReportData"
+api_family: "aquasecurity.github.io"
+default_command: "__"
+infoview:
+  name: "Cluster RBAC Assessment Report Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["test_case", "check_id", "category", "severity", "result", "description_header", "description"]
+    rows:
+      category:
+        header: [["Category:", ["main", "infoheader"]]]
+        path: "category"
+        type: "str"
+      check_id:
+        header: [["ID:", ["main", "infoheader"]]]
+        path: "checkID"
+        type: "str"
+      description:
+        header: [["  ", ["main", "infoheader"]]]
+        path: "description"
+        type: "str"
+      description_header:
+        header: [["Description:", ["main", "infoheader"]]]
+      result:
+        header: [["Result:", ["main", "infoheader"]]]
+        paths:
+        - path: "success"
+          pathtype: "remap"
+          substitutions:
+            __True: "Success"
+            __False: "Fail"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Success":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Fail":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      severity:
+        header: [["Severity:", ["main", "infoheader"]]]
+        paths:
+        - path: "severity"
+          pathtype: "remap"
+          substitutions:
+            "CRITICAL": "Critical"
+            "HIGH": "High"
+            "LOW": "Low"
+            "MEDIUM": "Medium"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Critical":
+                field_colors:
+                - context: "main"
+                  type: "severity_critical"
+              "High":
+                field_colors:
+                - context: "main"
+                  type: "severity_high"
+              "Low":
+                field_colors:
+                - context: "main"
+                  type: "severity_low"
+              "Medium":
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+      test_case:
+        header: [["Test Case:", ["main", "infoheader"]]]
+        path: "title"
+        type: "str"
+  logpad:
+    infogetter: "logpad_formatted"
+    infogetter_args:
+      path: "messages"
+    timestamps: false
