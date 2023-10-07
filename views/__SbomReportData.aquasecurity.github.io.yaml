@@ -1,0 +1,75 @@
+kind: "__SbomReportData"
+api_family: "aquasecurity.github.io"
+default_command: "__"
+infoview:
+  name: "SBOM Report Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["name", "type", "version", "licenses", "bom_ref", "pkg_url", "supplier"]
+    rows:
+      bom_ref:
+        header: [["BOM Reference:", ["main", "infoheader"]]]
+        path: "bom-ref"
+        type: "str"
+      licenses:
+        header: [["Licenses:", ["main", "infoheader"]]]
+        paths:
+        - path: "licenses"
+          pathtype: "items"
+          subpaths:
+          - "license#name"
+          default: ["<unspecified>"]
+        type: "list"
+        formatter: "list"
+      name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "name"
+        type: "str"
+      pkg_url:
+        header: [["PKG URL:", ["main", "infoheader"]]]
+        path: "purl"
+        type: "str"
+        default: "<unspecified>"
+      supplier:
+        header: [["Supplier:", ["main", "infoheader"]]]
+        path: "supplier#name"
+        type: "str"
+        default: "<unspecified>"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "type"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  listpad:
+    on_activation:
+      call: null
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+      - path: "properties"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["property", "value"]
+        sortcolumn: "property"
+    fields:
+      property:
+        header: "Property:"
+        path: "name"
+        type: "str"
+      value:
+        header: "Value:"
+        path: "value"
+        type: "str"

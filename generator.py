@@ -92,10 +92,13 @@ def format_list(items: Any,
 				totallen += len(field_sep)
 				array.append(field_sep)
 
-			if string == "<none>":
+			if string in ("<none>", "<unknown>"):
 				fmt = ThemeAttr("types", "none")
 				formatted_string: Union[ThemeRef, ThemeString] = ThemeString(string, fmt, selected)
-			elif string == "<unset>":
+			elif string in ("<undefined>", "<unspecified>"):
+				fmt = ThemeAttr("types", "undefined")
+				formatted_string = ThemeString(string, fmt, selected)
+			elif string == ("<empty>", "<unset>"):
 				fmt = ThemeAttr("types", "unset")
 				formatted_string = ThemeString(string, fmt, selected)
 			elif string == "<not ready>":
@@ -438,7 +441,7 @@ def generator_basic(obj: Dict,
 		fmt = ThemeAttr("types", "none")
 	elif string == "<default>":
 		fmt = ThemeAttr("types", "default")
-	elif string == "<undefined>":
+	elif string in ("<undefined>", "<unspecified>"):
 		fmt = ThemeAttr("types", "undefined")
 	elif string in ("<empty>", "<unset>"):
 		fmt = ThemeAttr("types", "unset")

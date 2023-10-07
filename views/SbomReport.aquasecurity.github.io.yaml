@@ -51,3 +51,136 @@ listview:
       formatting:
         field_colors:
         - type: "version"
+infoview:
+  name: "SBOM Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "scanner", "vendor", "bom_format", "digest", "repository", "tag"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      bom_format:
+        header: [["BOM Format:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#components#bomFormat"], ["report#components#specVersion"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      digest:
+        header: [["Digest:", ["main", "infoheader"]]]
+        path: "report#artifact#digest"
+        type: "str"
+      repository:
+        header: [["Repository:", ["main", "infoheader"]]]
+        path: "report#artifact#repository"
+        type: "str"
+      scanner:
+        header: [["Scanner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      tag:
+        header: [["Tag:", ["main", "infoheader"]]]
+        path: "report#artifact#tag"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      vendor:
+        header: [["Vendor:", ["main", "infoheader"]]]
+        path: "report#scanner#vendor"
+        type: "str"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__SbomReportData"
+      api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+      - path: "report#components#components"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "type", "version", "licenses", "supplier"]
+        sortcolumn: "severity"
+    fields:
+      licenses:
+        header: "Licenses:"
+        paths:
+        - path: "licenses"
+          pathtype: "items"
+          subpaths:
+          - "license#name"
+          default: ["<unspecified>"]
+        type: "list"
+        formatter: "list"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      supplier:
+        header: "Supplier:"
+        path: "supplier#name"
+        type: "str"
+        default: "<unspecified>"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
+      version:
+        header: "Version:"
+        path: "version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
