@@ -6,7 +6,7 @@ listview:
   group: "Workloads"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time_with_age", "completion_mode", "containers_template"]
+      fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time_with_age", "completion_mode", "suspended", "containers_template"]
       sortcolumn: "state"
     Normal:
       fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time", "completion_mode", "containers_template"]
@@ -76,6 +76,7 @@ listview:
         - key: "controller"
           eq: true
         type: ["kind", "api_group", "name"]
+      default: ["<none>"]
       formatter: "list"
       formatting:
         field_colors:
@@ -90,6 +91,7 @@ listview:
       paths:
       - paths: [["status#startTime"], ["status#completionTime"]]
         pathtype: "timediff"
+      default: "<unset>"
       formatter: "age"
       align: "right"
     state:
@@ -137,6 +139,11 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+    suspended:
+      header: "Suspended:"
+      path: "spec#suspend"
+      default: "<unset>"
+      type: "bool"
   actions:
     actionlist:
       "Delete resource":
@@ -144,6 +151,30 @@ listview:
         category: "Resource Level"
         confirm: true
         actionfunc: "delete_resource"
+      "Resume resource":
+        # Requires Kubernetes 1.22+
+        description: "Resume resource"
+        category: "Resource Level"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Resuming"
+          args:
+            patch:
+              spec:
+                suspend: false
+            strategic_merge: true
+      "Suspend resource":
+        # Requires Kubernetes 1.22+
+        description: "Suspend resource"
+        category: "Resource Level"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Suspending"
+          args:
+            patch:
+              spec:
+                suspend: true
+            strategic_merge: true
 infoview:
   name: "Job Info"
   infopad:

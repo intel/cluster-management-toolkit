@@ -10182,7 +10182,9 @@ def patch_object(stdscr: curses.window, **kwargs):
 	namespace = deep_get(kwargs, DictPath("namespace"))
 	patch = deep_get(kwargs, DictPath("args#patch"))
 	subresource = deep_get(kwargs, DictPath("args#subresource"), "")
-	_message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch, subresource = subresource, strategic_merge = False)
+	strategic_merge = deep_get(kwargs, DictPath("args#strategic_merge"), False)
+
+	_message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch, subresource = subresource, strategic_merge = strategic_merge)
 
 	return Retval.RETURNDONE
 
@@ -11025,6 +11027,33 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 	stdscr.refresh()
 
 # pylint: disable=unused-argument
+def patch_resource(uip: UIProps, items, action, values, kind, **kwargs):
+	curses.endwin()
+	_retval = clear_screen()
+	action_str = deep_get(values, DictPath("action_str"))
+	args = deep_get(values, DictPath("args"), {})
+
+	for item in items:
+		namespace, name = item
+
+		if action_str is not None:
+			msg = [ANSIThemeString(f"{action_str} {kind[0]}.{kind[1]} “", "default"),
+			       ANSIThemeString(namespace, "argument"),
+			       ANSIThemeString("::", "separator"),
+			       ANSIThemeString(name, "argument"),
+			       ANSIThemeString("“", "default")]
+			ansithemeprint(msg)
+
+		patch_object(uip.stdscr, **{"kind": kind, "name": name, "namespace": namespace, "args": args})
+
+	print("\n")
+
+	waitforkeypress = True
+	if waitforkeypress:
+		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
+	uip.stdscr.refresh()
+
+# pylint: disable=unused-argument
 def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 	curses.endwin()
 	_retval = clear_screen()
@@ -11060,7 +11089,8 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
 		msg = [ANSIThemeString(f"Restarting {kind[0]}.{kind[1]} “", "default"),
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
-		       ANSIThemeString(name, "argument")]
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“", "default")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -11110,7 +11140,8 @@ def pause_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
 		msg = [ANSIThemeString(f"Pausing {kind[0]}.{kind[1]} “", "default"),
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
-		       ANSIThemeString(name, "argument")]
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“", "default")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -11133,7 +11164,8 @@ def resume_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs)
 		msg = [ANSIThemeString(f"Resuming {kind[0]}.{kind[1]} “", "default"),
 		       ANSIThemeString(namespace, "argument"),
 		       ANSIThemeString("::", "separator"),
-		       ANSIThemeString(name, "argument")]
+		       ANSIThemeString(name, "argument"),
+		       ANSIThemeString("“", "default")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -11924,6 +11956,7 @@ actionfunc_allowlist = {
 	"delete_logs": delete_logs,
 	"delete_resource": delete_resource,
 	"force_delete_resource": force_delete_resource,
+	"patch_resource": patch_resource,
 	"pause_resource_rollout": pause_resource_rollout,
 	"rescale_resource": rescale_resource,
 	"restart_resource_rescale": restart_resource_rescale,
