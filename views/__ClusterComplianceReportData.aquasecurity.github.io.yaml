@@ -1,0 +1,83 @@
+kind: "__ClusterComplianceReportData"
+api_family: "aquasecurity.github.io"
+default_command: "__"
+infoview:
+  name: "Cluster Compliance Report Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["name", "id", "description", "severity", "total_fail", "checks"]
+    rows:
+      checks:
+        header: [["Checks:", ["main", "infoheader"]]]
+        paths:
+        - path: "checks"
+          pathtype: "items"
+          subpaths:
+          - "id"
+          default: ["<unspecified>"]
+        type: "list"
+        formatter: "list"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "description"
+        type: "str"
+      id:
+        header: [["ID:", ["main", "infoheader"]]]
+        path: "id"
+        type: "str"
+      name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "name"
+        type: "str"
+      severity:
+        header: [["Severity:", ["main", "infoheader"]]]
+        paths:
+        - path: "severity"
+          pathtype: "remap"
+          substitutions:
+            "CRITICAL": "Critical"
+            "HIGH": "High"
+            "LOW": "Low"
+            "MEDIUM": "Medium"
+            "UNKNOWN": "Unknown"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Critical":
+                index: 0
+                field_colors:
+                - context: "main"
+                  type: "severity_critical"
+              "High":
+                index: 1
+                field_colors:
+                - context: "main"
+                  type: "severity_high"
+              "Low":
+                index: 4
+                field_colors:
+                - context: "main"
+                  type: "severity_low"
+              "Medium":
+                index: 2
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+              "Unknown":
+                index: 3
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+      total_fail:
+        header: [["Total Failed:", ["main", "infoheader"]]]
+        path: "totalFail"
+        type: "int"
+        default: "Manual check needed"
+        formatting:
+          field_colors:
+          - type: "numerical"

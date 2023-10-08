@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 import errno
 from getpass import getuser
 import http.client
+from itertools import zip_longest
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -2837,10 +2838,12 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 				retval (int): The return value
 	"""
 
+	vlists = []
 	vlist = []
 
 	rename_bare = deep_get(kwargs, DictPath("rename_bare"), None)
 	paths = deep_get(kwargs, DictPath("paths"))
+	join_key = deep_get(kwargs, DictPath("join_key"))
 
 	if paths is not None:
 		ppaths = []
@@ -2852,11 +2855,13 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 			key_value = deep_get(path, DictPath("key_value"))
 
 			if ptype == "list":
+				tmp = []
 				for item in deep_get(obj, DictPath(ppath), []):
 					tmpitem = copy.deepcopy(item)
 					if key_name is not None and key_value is not None:
 						tmpitem[key_name] = key_value
-					vlist.append(tmpitem)
+					tmp.append(tmpitem)
+				vlists.append(tmp)
 			else:
 				for key in deep_get(obj, DictPath(ppath), []):
 					for item in deep_get(obj, DictPath(f"{ppath}#{key}"), []):
@@ -2864,6 +2869,12 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 						if key_name is not None and key_value is not None:
 							tmpitem[key_name] = key_value
 						vlist.append(tmpitem)
+		if join_key is None:
+			for tmp in vlists:
+				vlist += tmp
+		else:
+			for tmp in vlists:
+				vlist = [{**u, **v} for u, v in zip_longest(vlist, tmp, fillvalue = {})]
 		return vlist, 200
 
 	path = deep_get(kwargs, DictPath("path"))

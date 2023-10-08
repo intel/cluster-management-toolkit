@@ -9,4 +9,297 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "scanner", "severity_critical", "severity_high", "severity_medium", "severity_low", "age"]
+  fields:
+    scanner:
+      header: "Scanner:"
+      paths:
+      - path: [["report#scanner#name"], ["report#scanner#version"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
+    severity_critical:
+      header: "Critical:"
+      path: "report#summary#criticalCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_high:
+      header: "High:"
+      path: "report#summary#highCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_low:
+      header: "Low:"
+      path: "report#summary#lowCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
+    severity_medium:
+      header: "Medium:"
+      path: "report#summary#mediumCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
+infoview:
+  name: "Cluster Config Audit Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "scanner", "vendor", "severity_header", "severity_critical", "severity_high", "severity_medium", "severity_low"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      scanner:
+        header: [["Scanner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      severity_critical:
+        header: [["  Critical:", ["main", "infoheader"]]]
+        path: "report#summary#criticalCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      severity_header:
+        header: [["Severity:", ["main", "infoheader"]]]
+      severity_high:
+        header: [["      High:", ["main", "infoheader"]]]
+        path: "report#summary#highCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      severity_low:
+        header: [["       Low:", ["main", "infoheader"]]]
+        path: "report#summary#lowCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      severity_medium:
+        header: [["    Medium:", ["main", "infoheader"]]]
+        path: "report#summary#mediumCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_medium"
+      vendor:
+        header: [["Vendor:", ["main", "infoheader"]]]
+        path: "report#scanner#vendor"
+        type: "str"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ClusterConfigAuditReportTestData"
+      api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+      - path: "report#checks"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["check_id", "category", "test_case", "severity", "result"]
+        sortcolumn: "result"
+    fields:
+      category:
+        header: "Category:"
+        path: "category"
+        type: "str"
+      check_id:
+        header: "ID:"
+        path: "checkID"
+        type: "str"
+      result:
+        header: "Result:"
+        paths:
+        - path: "success"
+          pathtype: "remap"
+          substitutions:
+            __True: "Success"
+            __False: "Fail"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Success":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Fail":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      severity:
+        header: "Severity:"
+        paths:
+        - path: "severity"
+          pathtype: "remap"
+          substitutions:
+            "CRITICAL": "Critical"
+            "HIGH": "High"
+            "LOW": "Low"
+            "MEDIUM": "Medium"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Critical":
+                field_colors:
+                - context: "main"
+                  type: "severity_critical"
+              "High":
+                field_colors:
+                - context: "main"
+                  type: "severity_high"
+              "Low":
+                field_colors:
+                - context: "main"
+                  type: "severity_low"
+              "Medium":
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+      test_case:
+        header: "Test Case:"
+        path: "title"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"

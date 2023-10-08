@@ -9,4 +9,191 @@ listview:
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "title", "version", "severity_fail", "severity_pass", "age", "description"]
+  fields:
+    description:
+      header: "Description:"
+      path: "spec#compliance#description"
+      type: "str"
+    severity_fail:
+      header: "Fail:"
+      path: "status#summary#failCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_pass:
+      header: "Pass:"
+      path: "status#summary#passCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    title:
+      header: "Title:"
+      path: "spec#compliance#title"
+      type: "str"
+    version:
+      header: "Version:"
+      path: "spec#compliance#version"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Cluster Compliance Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["title", "version", "description", "severity_header", "severity_pass", "severity_fail", "cron_schedule"]
+    rows:
+      cron_schedule:
+        header: [["Cron Schedule:", ["main", "infoheader"]]]
+        path: "spec#cron"
+        type: "str"
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#compliance#description"
+        type: "str"
+      severity_pass:
+        header: [["  Pass:", ["main", "infoheader"]]]
+        path: "status#summary#passCount"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      severity_header:
+        header: [["Severity:", ["main", "infoheader"]]]
+      severity_fail:
+        header: [["  Fail:", ["main", "infoheader"]]]
+        path: "status#summary#failCount"
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "types"
+                type: "watermark_low"
+            - default: true
+              field_colors:
+              - context: "types"
+                type: "watermark_high"
+      title:
+        header: [["Title:", ["main", "infoheader"]]]
+        path: "spec#compliance#title"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#compliance#version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ClusterComplianceReportData"
+      api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      join_key: "id"
+      paths:
+      - path: "spec#compliance#controls"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+      - path: "status#summaryReport#controlCheck"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["id", "name", "severity", "total_fail"]
+        sortcolumn: "severity"
+    fields:
+      id:
+        header: "ID:"
+        path: "id"
+        type: "str"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      severity:
+        header: "Severity:"
+        paths:
+        - path: "severity"
+          pathtype: "remap"
+          substitutions:
+            "CRITICAL": "Critical"
+            "HIGH": "High"
+            "LOW": "Low"
+            "MEDIUM": "Medium"
+            "UNKNOWN": "Unknown"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Critical":
+                index: 0
+                field_colors:
+                - context: "main"
+                  type: "severity_critical"
+              "High":
+                index: 1
+                field_colors:
+                - context: "main"
+                  type: "severity_high"
+              "Low":
+                index: 4
+                field_colors:
+                - context: "main"
+                  type: "severity_low"
+              "Medium":
+                index: 2
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+              "Unknown":
+                index: 3
+                field_colors:
+                - context: "main"
+                  type: "severity_medium"
+      total_fail:
+        header: "Total Failed:"
+        path: "totalFail"
+        type: "int"
+        default: "Manual check needed"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
