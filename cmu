@@ -9764,11 +9764,6 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 				},
 				{
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[ThemeString("Expand linebreaks", ThemeAttr("windowwidget", "default"))]],
-					"retval": "msg_linebreaks",
-				},
-				{
-					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[ThemeString("Replace bullets", ThemeAttr("windowwidget", "default"))]],
 					"retval": "msg_realbullets",
 				},
@@ -9781,6 +9776,16 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					"lineattrs": WidgetLineAttrs.NORMAL,
 					"columns": [[ThemeString("Merge starting version", ThemeAttr("windowwidget", "default"))]],
 					"retval": "merge_starting_version",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Expand newlines (WIP)", ThemeAttr("windowwidget", "default"))]],
+					"retval": "expand_newlines",
+				},
+				{
+					"lineattrs": WidgetLineAttrs.NORMAL,
+					"columns": [[ThemeString("Expand tabs (WIP)", ThemeAttr("windowwidget", "default"))]],
+					"retval": "expand_tabs",
 				},
 			]
 			preselection = set()

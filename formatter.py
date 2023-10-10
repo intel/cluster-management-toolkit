@@ -27,7 +27,7 @@ except ModuleNotFoundError:
 from cmttypes import deep_get, DictPath
 
 import cmtlib
-from cmtlib import split_msg
+from cmtlib import split_msg, strip_ansicodes
 
 from curses_helper import ThemeAttr, ThemeRef, ThemeString
 
@@ -162,16 +162,23 @@ def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 	]
 	return tmpline
 
-def format_yaml_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
+def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of YAML
 
 		Parameters:
 			line (str): a string
 			override_formatting (dict): Overrides instead of default YAML-formatting
+			kwargs (dict): Additional parameters
 		Returns:
 			themearray: a themearray
 	"""
+
+	override_formatting: Optional[Union[ThemeAttr, Dict]] = deep_get(kwargs, DictPath("override_formatting"))
+	expand_newline_fields: Tuple[str] = deep_get(kwargs, DictPath("expand_newline_fields"), ())
+	value_strip_ansicodes: bool = deep_get(kwargs, DictPath("value_strip_ansicodes"), True)
+	value_expand_tabs: bool = deep_get(kwargs, DictPath("value_expand_tabs"), False)
+	remnants = []
 
 	if override_formatting is None:
 		override_formatting = {}
@@ -244,12 +251,56 @@ def format_yaml_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 			else:
 				_key_format = key_format
 				_value_format = value_format
-			tmpline += [
-				ThemeString(f"{key}", _key_format),
-				ThemeString(f"{separator}", separator_format),
-				ThemeString(f"{reference}", reference_format),
-				ThemeString(f"{value}", _value_format),
-			]
+
+			if value_strip_ansicodes:
+				value = strip_ansicodes(value)
+
+			key_stripped = key.strip(" \"")
+			if key_stripped in expand_newline_fields:
+				split_value = split_msg(value.replace("\\n", "\n"))
+				value_line_indent = 0
+
+				for i, value_line in enumerate(split_value):
+					if value_expand_tabs:
+						tmp_split_value_line = value_line.replace("\\t", "\t").split("\t")
+						tmp_value_line = ""
+						for j, split_value_line_segment in enumerate(tmp_split_value_line):
+							tabsize = 0
+							if j < len(tmp_split_value_line):
+								tabsize = 8 - len(tmp_value_line) % 8
+							tmp_value_line += split_value_line_segment  + "".ljust(tabsize)
+						value_line = tmp_value_line
+
+					if i == 0:
+						tmpline = [
+							ThemeString(f"{key}", _key_format),
+							ThemeString(f"{separator}", separator_format),
+							ThemeString(f"{reference}", reference_format),
+							ThemeString(f"{value_line}", _value_format),
+						]
+						value_line_indent = len(value_line) - len(value_line.lstrip(" \""))
+					else:
+						remnants.append([
+							ThemeString("".ljust(value_line_indent + len(key + separator + reference)), _key_format),
+							ThemeString(f"{value_line}", _value_format),
+						])
+			else:
+				if value_expand_tabs:
+					tmp_split_value = value.replace("\\t", "\t").split("\t")
+					tmp_value = ""
+					for j, split_value_segment in enumerate(tmp_split_value):
+						tabsize = 0
+						if j < len(tmp_split_value):
+							tabsize = 8 - len(tmp_value) % 8
+						tmp_value += split_value_segment  + "".ljust(tabsize)
+					value = tmp_value
+
+				tmpline += [
+					ThemeString(f"{key}", _key_format),
+					ThemeString(f"{separator}", separator_format),
+					ThemeString(f"{reference}", reference_format),
+					ThemeString(f"{value}", _value_format),
+				]
 		else:
 			if isinstance(override_formatting, dict):
 				_value_format = deep_get(override_formatting, DictPath(f"{line}#value"), value_format)
@@ -259,9 +310,9 @@ def format_yaml_line(line: str, override_formatting: Optional[Union[ThemeAttr, D
 				ThemeString(f"{line}", _value_format),
 			]
 
-	return tmpline
+	return tmpline, remnants
 
-def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
+def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
@@ -319,10 +370,15 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 			if len(line) == 0:
 				continue
 
-			tmpline: List[Union[ThemeRef, ThemeString]] = format_yaml_line(line, override_formatting = override_formatting)
+			kwargs["override_formatting"] =  override_formatting
+			tmpline: List[Union[ThemeRef, ThemeString]] = []
+			remnants: List[List[Union[ThemeRef, ThemeString]]] = []
+			tmpline, remnants = format_yaml_line(line, **kwargs)
 			if truncated:
 				tmpline += [ThemeString(" [...] (Truncated)", ThemeAttr("types", "yaml_key_error"))]
 			dumps.append(tmpline)
+			if len(remnants) > 0:
+				dumps += remnants
 
 		if i < len(lines) - 1:
 			dumps.append([ThemeString("", generic_format)])
@@ -331,7 +387,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 
 	return dumps
 
-def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
+def reformat_json(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	kwargs["json"] = True
 	return format_yaml(lines, **kwargs)
 

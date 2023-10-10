@@ -159,6 +159,19 @@ def split_msg(rawmsg: str) -> List[str]:
 
 	return list(map(str.rstrip, tmp.splitlines()))
 
+def strip_ansicodes(message: str) -> str:
+	message = message.replace("\\x1b", "\x1b").replace("\\u001b", "\x1b")
+	# Safe
+	tmp = re.findall(r"("
+	                 r"\x1b\[\d+m|"
+	                 r"\x1b\[\d+;\d+m|"
+			 r"\x1b\[\d+;\d+;\d+m|"
+			 r".*?)", message)
+	if tmp is not None:
+		message = "".join(item for item in tmp if not item.startswith("\x1b"))
+
+	return message
+
 def read_cmtconfig() -> Dict:
 	"""
 	Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict

@@ -67,7 +67,7 @@ from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLe
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import cmtlib
-from cmtlib import none_timestamp
+from cmtlib import none_timestamp, strip_ansicodes
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
@@ -94,8 +94,9 @@ class logparser_configuration:
 	# this decides whether msg="foo\nbar" should be converted to:
 	# foo
 	# bar
-	# This does (currently) not affect "err=" and "error="
-	msg_linebreaks: bool = True
+	# Currently this only work with JSON & key_value on a subset of keys
+	# and does not affect "err=" and "error="
+	expand_newlines: bool = True
 	# Should "* " be replaced with real bullets?
 	msg_realbullets: bool = True
 	# Should override severity rules be applied?
@@ -106,6 +107,8 @@ class logparser_configuration:
 	# this decides whether should be converted to:
 	# msg="Starting foo" version="(version=.*)" => Starting foo (version=.*)
 	merge_starting_version: bool = True
+	# Replace tabs within values
+	expand_tabs: bool = True
 	using_bundles: bool = False
 
 if json_is_ujson:
@@ -1153,7 +1156,12 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 					severity = tagseverity
 
 				dump = json_dumps(logentry)
-				tmp = formatters.format_yaml([dump], override_formatting = override_formatting)
+
+				expand_newline_fields = ()
+				if logparser_configuration.expand_newlines:
+					expand_newline_fields = ("status.message", "stacktrace")
+
+				tmp = formatters.format_yaml([dump], override_formatting = override_formatting, expand_newline_fields = expand_newline_fields, value_expand_tabs = logparser_configuration.expand_tabs)
 
 				if len(message) == 0:
 					formatted_message = tmp[0]
@@ -1317,19 +1325,6 @@ def split_colon_facility(message: str, facility: str = "") -> Tuple[str, str]:
 		facility = tmp[1]
 		message = tmp[2]
 	return message, facility
-
-def strip_ansicodes(message: str) -> str:
-	message = message.replace("\\x1b", "\x1b")
-	# Safe
-	tmp = re.findall(r"("
-	                 r"\x1b\[\d+m|"
-	                 r"\x1b\[\d+;\d+m|"
-			 r"\x1b\[\d+;\d+;\d+m|"
-			 r".*?)", message)
-	if tmp is not None:
-		message = "".join(item for item in tmp if not item.startswith("\x1b"))
-
-	return message
 
 def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel, str]:
 	severity = default
@@ -1741,7 +1736,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				if len(tmp) > 0:
 					remnants = (tmp, severity)
 
-	if logparser_configuration.msg_linebreaks and "\\n" in message and isinstance(message, str) and not fold_msg:
+	if logparser_configuration.expand_newlines and "\\n" in message and isinstance(message, str) and not fold_msg:
 		lines = message.split("\\n")
 		message = lines[0]
 		_remnants = []
