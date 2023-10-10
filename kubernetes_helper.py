@@ -501,6 +501,18 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "deploymentconfigs",
 	},
 	# argoproj.io
+	("Application", "argoproj.io"): {
+		"api_paths": ["apis/argoproj.io/v1alpha1/"],
+		"api": "applications",
+	},
+	("ApplicationSet", "argoproj.io"): {
+		"api_paths": ["apis/argoproj.io/v1alpha1/"],
+		"api": "applicationsets",
+	},
+	("AppProject", "argoproj.io"): {
+		"api_paths": ["apis/argoproj.io/v1alpha1/"],
+		"api": "appprojects",
+	},
 	("ClusterWorkflowTemplate", "argoproj.io"): {
 		"api_paths": ["apis/argoproj.io/v1alpha1/"],
 		"api": "clusterworkflowtemplates",
@@ -779,6 +791,27 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("CiliumNodeConfig", "cilium.io"): {
 		"api_paths": ["apis/cilium.io/v2alpha1/"],
 		"api": "ciliumnodeconfigs",
+	},
+	# cis.cattle.io
+	("ClusterScanBenchmark", "cis.cattle.io"): {
+		"api_paths": ["apis/cis.cattle.io/v1/"],
+		"api": "clusterscanbenchmarks",
+		"namespaced": False,
+	},
+	("ClusterScanProfile", "cis.cattle.io"): {
+		"api_paths": ["apis/cis.cattle.io/v1/"],
+		"api": "clusterscanprofiles",
+		"namespaced": False,
+	},
+	("ClusterScanReport", "cis.cattle.io"): {
+		"api_paths": ["apis/cis.cattle.io/v1/"],
+		"api": "clusterscanreports",
+		"namespaced": False,
+	},
+	("ClusterScan", "cis.cattle.io"): {
+		"api_paths": ["apis/cis.cattle.io/v1/"],
+		"api": "clusterscans",
+		"namespaced": False,
 	},
 	# clone.kubevirt.io
 	("VirtualMachineClone", "clone.kubevirt.io"): {
@@ -1640,6 +1673,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Notebook", "kubeflow.org"): {
 		"api_paths": ["apis/kubeflow.org/v1/"],
 		"api": "notebooks",
+	},
+	("PaddleJob", "kubeflow.org"): {
+		"api_paths": ["apis/kubeflow.org/v1/"],
+		"api": "paddlejobs",
 	},
 	("PodDefault", "kubeflow.org"): {
 		"api_paths": ["apis/kubeflow.org/v1alpha1/"],
