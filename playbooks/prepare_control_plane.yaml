@@ -29,7 +29,7 @@
       swapunits="$(systemctl --type swap -o json-pretty)"
       if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
         for swap in $(systemctl --type swap -o json-pretty | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
-          systemctl mask "${swap}"
+          systemctl mask "$(printf -- "${swap}")"
         done
       fi
     changed_when: false
