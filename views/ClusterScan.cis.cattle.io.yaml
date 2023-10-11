@@ -1,0 +1,106 @@
+kind: "ClusterScan"
+api_family: "cis.cattle.io"
+default_command: "clusterscans"
+command:
+- "clrscans"
+- "clrscan"
+listview:
+  name: "Cluster Scans"
+  group: "Security"
+  field_indexes:
+    Wide:
+      fields: ["name", "scan_profile", "severity_pass", "severity_fail", "severity_warn", "severity_skip", "severity_not_applicable", "total", "last_run", "cron_schedule", "age"]
+    Normal:
+      fields: ["name", "scan_profile", "severity_pass", "severity_fail", "severity_warn", "severity_skip", "severity_na", "total", "last_run", "age"]
+  fields:
+    cron_schedule:
+      header: "Cron Schedule:"
+      path: "spec#cron"
+      type: "str"
+    last_run:
+      header: "Last Run:"
+      paths:
+      - path: ["status#lastRunTimestamp"]
+        type: "timestamp"
+        default: -1
+      formatter: "timestamp"
+    severity_pass:
+      header: "Pass:"
+      path: "status#summary#passCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    scan_profile:
+      header: "Scan Profile:"
+      path: "status#lastRunScanProfileName"
+      type: "str"
+    severity_fail:
+      header: "Fail:"
+      path: "status#summary#failCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_high"
+      align: "right"
+    severity_skip:
+      header: "Skip:"
+      path: "status#summary#skipCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    severity_na:
+      header: "N/A:"
+      path: "status#summary#notApplicableCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    severity_not_applicable:
+      header: "Not Applicable:"
+      path: "status#summary#notApplicableCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    severity_warn:
+      header: "Warn:"
+      path: "status#summary#warnCount"
+      type: "raw"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "types"
+              type: "watermark_low"
+          - default: true
+            field_colors:
+            - context: "types"
+              type: "watermark_medium"
+      align: "right"
+    total:
+      header: "Total:"
+      path: "status#summary#total"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"

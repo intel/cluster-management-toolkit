@@ -1,0 +1,27 @@
+kind: "ClusterScanReport"
+api_family: "cis.cattle.io"
+default_command: "clusterscanreports"
+command:
+- "clrscanreports"
+- "clrscanreport"
+listview:
+  name: "Cluster Scan Reports"
+  group: "Security"
+  field_indexes:
+    Normal:
+      fields: ["name", "benchmark_version", "last_run", "age"]
+  fields:
+    benchmark_version:
+      header: "Benchmark Version:"
+      path: "spec#benchmarkVersion"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+    last_run:
+      header: "Last Run:"
+      paths:
+      - path: ["status#lastRunTimestamp"]
+        type: "timestamp"
+        default: -1
+      formatter: "timestamp"
