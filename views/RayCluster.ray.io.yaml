@@ -1,6 +1,9 @@
 kind: "RayCluster"
 api_family: "ray.io"
 default_command: "rayclusters"
+command:
+- "rayclrs"
+- "rayclr"
 listview:
   name: "Ray Clusters"
   group: "KubeRay"
@@ -27,3 +30,91 @@ listview:
       formatting:
         field_colors:
         - type: "numerical"
+infoview:
+  name: "Ray Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "ray_version", "available_workers", "desired_workers"]
+    rows:
+      available_workers:
+        header: [["Available Workers:", ["main", "infoheader"]]]
+        path: "status#availableWorkerReplicas"
+        default: 0
+        type: "int"
+        align: "right"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      desired_workers:
+        header: [["Desired Workers:", ["main", "infoheader"]]]
+        path: "status#desiredWorkerReplicas"
+        default: 0
+        type: "int"
+        align: "right"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      ray_version:
+        header: [["Ray Version:", ["main", "infoheader"]]]
+        path: "spec#rayVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "View Head Group Specs":
+      key: "h"
+      read_only: true
+      helptext: "Show head group specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Head Group Specs"
+        _pass_obj: true
+        path: "spec#headGroupSpec"
+    "View Worker Group Specs":
+      key: "w"
+      read_only: true
+      helptext: "Show worker group specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Worker Group Specs"
+        _pass_obj: true
+        path: "spec#workerGroupSpecs"
+        include_root: true

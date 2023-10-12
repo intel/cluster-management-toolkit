@@ -659,7 +659,7 @@ def generator_numerical(obj: Dict,
 	else:
 		string = str(value)
 
-	fmt = ThemeAttr("types", "timestamp")
+	fmt = ThemeAttr("types", "numerical")
 
 	array = [
 		ThemeString(string, fmt, selected)

@@ -2842,6 +2842,7 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 	vlist = []
 
 	rename_bare = deep_get(kwargs, DictPath("rename_bare"), None)
+	flatten_dicts = deep_get(kwargs, DictPath("flatten_dicts"), False)
 	paths = deep_get(kwargs, DictPath("paths"))
 	join_key = deep_get(kwargs, DictPath("join_key"))
 
@@ -2899,7 +2900,11 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 		if rename_bare is not None and tmp is not None:
 			for item in tmp:
 				if not isinstance(item, dict):
-					vlist.append({rename_bare: item})
+					d = { rename_bare: item }
+					if flatten_dicts and isinstance(deep_get(tmp, DictPath(item)), dict):
+						for key, value in deep_get(tmp, DictPath(item), {}).items():
+							d[key] = value
+					vlist.append(d)
 				else:
 					vlist.append(item)
 		else:

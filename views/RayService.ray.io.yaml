@@ -1,6 +1,9 @@
 kind: "RayService"
 api_family: "ray.io"
 default_command: "rayservices"
+command:
+- "raysvcs"
+- "raysvc"
 listview:
   name: "Ray Services"
   group: "KubeRay"
@@ -8,3 +11,242 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Ray Service Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+        - "deployment_unhealthy_threshold"
+        - "service_unhealthy_threshold"
+        - "status_header"
+        - "status_dashboard_header"
+        - "status_dashboard_is_healthy"
+        - "status_dashboard_last_update"
+        - "status_raycluster_header"
+        - "status_raycluster_name"
+        - "status_raycluster_pod_ip"
+        - "status_raycluster_service_ip"
+        - "status_raycluster_version"
+        - "status_raycluster_last_update"
+        - "service_status"
+    rows:
+      deployment_unhealthy_threshold:
+        header: [["Deployment Unhealthy Threshold (seconds):", ["main", "infoheader"]]]
+        path: "spec#deploymentUnhealthySecondThreshold"
+        type: "int"
+        formatter: "numerical"
+      service_unhealthy_threshold:
+        header: [["Service Unhealthy Threshold (seconds):", ["main", "infoheader"]]]
+        path: "spec#serviceUnhealthySecondThreshold"
+        type: "int"
+        formatter: "numerical"
+      service_status:
+        header: [["Service Status:", ["main", "infoheader"]]]
+        path: "status#serviceStatus"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "FailedToGetOrCreateRayCluster":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "FailedToGetServeDeploymentStatus":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "FailedToUpdateIngress":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "FailedToUpdateServingPodLabel":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "FailedToUpdateService":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "Restarting":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "Running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "WaitForDashboard":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "WaitForServeDeploymentReady":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      status_dashboard_is_healthy:
+        header: [["    Healthy:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#dashboardStatus#isHealthy"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      status_dashboard_last_update:
+        header: [["    Last Update:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#dashboardStatus#lastUpdateTime"
+        type: "timestamp"
+        formatter: "timestamp"
+      status_dashboard_header:
+        header: [["  Dashboard:", ["main", "infoheader"]]]
+      status_header:
+        header: [["Status:", ["main", "infoheader"]]]
+      status_raycluster_header:
+        header: [["  ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["ay Cluster:", ["main", "infoheader"]]]
+      status_raycluster_name:
+        header: [["    Name:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#rayClusterName"
+        type: "str"
+      status_raycluster_last_update:
+        header: [["    Last Update:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#rayClusterStatus#lastUpdateTime"
+        type: "timestamp"
+        formatter: "timestamp"
+      status_raycluster_pod_ip:
+        header: [["    Pod IP:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#rayClusterStatus#head#podIP"
+        type: "str"
+        formatter: "address"
+      status_raycluster_service_ip:
+        header: [["    Service IP:", ["main", "infoheader"]]]
+        path: "status#activeServiceStatus#rayClusterStatus#head#serviceIP"
+        type: "str"
+        formatter: "address"
+      status_raycluster_version:
+        header: [["    Ray Version:", ["main", "infoheader"]]]
+        path: "spec#rayClusterConfig#rayVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#activeServiceStatus#applicationStatuses"
+      rename_bare: "application"
+      flatten_dicts: true
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["application", "status", "last_update"]
+        sortcolumn: "status"
+    fields:
+      application:
+        header: "Application:"
+        path: "application"
+        type: "str"
+      last_update:
+        header: "Last Update:"
+        path: "lastUpdateTime"
+        type: "timestamp"
+        formatter: "timestamp"
+      status:
+        header: "Status:"
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "DELETING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "DEPLOY_FAILED":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "DEPLOYING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "NOT_STARTED":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "RUNNING":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "UNHEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+  shortcuts:
+    "Endpoints":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Ray Cluster endpoints"
+      widget: "windowwidget"
+      title: "Ray Cluster endpoints:"
+      headers: ["Service:", "Port:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "status#activeServiceStatus#rayClusterStatus#endpoints"
+      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
+      # This isn't supported for now
+      sortcolumn: "service"
+    "Ray Cluster":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Ray Cluster"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RayCluster"
+        api_family: "ray.io"
+        name_path: "status#activeServiceStatus#rayClusterName"
+        namespace_path: "metadata#namespace"
+    "View Head Group Specs":
+      key: "h"
+      read_only: true
+      helptext: "Show head group specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Head Group Specs"
+        _pass_obj: true
+        path: "spec#rayClusterConfig#headGroupSpec"
+    "View Serve Config":
+      key: "s"
+      read_only: true
+      helptext: "Show serve config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Serve Config"
+        _pass_obj: true
+        path: "spec#serveConfigV2"
+    "View Worker Group Specs":
+      key: "w"
+      read_only: true
+      helptext: "Show worker group specs"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Worker Group Specs"
+        _pass_obj: true
+        path: "spec#rayClusterConfig#workerGroupSpecs"
+        include_root: true
