@@ -7375,6 +7375,8 @@ cmdata_format = [
 	("kube-system", "", "cni_network_config", "", "JSON"),
 	("", "coredns", "Corefile", "", "CaddyFile"),
 	("kube-system", "rke2-coredns", "Corefile", "", "CaddyFile"),
+	("kube-system", "rke2-coredns", "linear", "", "YAML"),
+	("kube-system", "rke2-etcd-snapshots", "", "", "JSON"),
 	("kube-system", "kubeadm-config", "", "", "YAML"),
 	("kube-system", "kubeconfig-in-cluster", "kubeconfig", "", "YAML"),
 	("kube-system", "kubelet-config", "", "", "YAML"),
@@ -7385,6 +7387,9 @@ cmdata_format = [
 	("", "kubeapps", "k8s-api-proxy.conf", "k8s-api-proxy.conf", "NGINX"),
 	("", "linkerd-config", "values", "", "YAML"),
 	("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
+	("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
+	("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
+	("", "trivy-operator", "scanJob.podTemplateContainerSecurityContext", "", "JSON"),
 	("", "", "", ".py", "Python"),
 	# Openshift
 	("", "dns-default", "Corefile", "", "CaddyFile"),
@@ -7408,6 +7413,7 @@ cmdata_format = [
 
 # These are based on the data itself
 cmdata_header = [
+	("<?xml ", "XML"),
 	("/bin/sh", "Shell Script"),
 	("/usr/bin/env bash", "BASH"),
 	("/usr/bin/env perl", "Perl"),
@@ -7421,41 +7427,75 @@ cmdata_header = [
 	("-----BEGIN CERTIFICATE-----", "CRT"),
 ]
 
+# Binary file headers
+cmdata_bin_header = [
+	(0, [0x1f, 0x8b], "gz / tar+gz"),
+	(0, [0x1f, 0x9d], "lzw / tar+lzw"),
+	(0, [0x1f, 0xa0], "lzh / tar+lzh"),
+	(0, [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0], "xz / tar+xz"),
+	(0, [0x42, 0x5a, 0x68], "bz2 / tar+bz2"),
+	(0, [0x4c, 0x49, 0x50], "lzip"),
+	(2, [0x2d, 0x68, 0x6c, 0x30, 0x2d], "lzh (no compression)"),
+	(2, [0x2d, 0x68, 0x6c, 0x35, 0x2d], "lzh (8KiB sliding window)"),
+	(0, [0x51, 0x46, 0x49], "qcow"),
+	(0, [0x30, 0x37, 0x30, 0x37, 0x30, 0x37], "cpio"),
+	(0, [0x28, 0xb5, 0x2f, 0xfd], "zstd"),
+	(0, [0x50, 0x4b, 0x03, 0x04], "zip"),
+	(0, [0x50, 0x4b, 0x05, 0x06], "zip (empty)"),
+	(0, [0x50, 0x4b, 0x07, 0x08], "zip (spanned archive)"),
+	(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00], "rar (v1.50+)"),
+	(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00], "rar (v5.00+)"),
+	(0, [0x7f, 0x45, 0x4c, 0x46], "ELF"),
+	(0x8001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0x8801, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0x9001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30], "tar"),
+	(0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00], "tar"),
+	(0, [0x78, 0x61, 0x72, 0x21], "xar"),
+	(0, [0x21, 0x3c, 0x61, 0x72, 0x63, 0x68, 0x3e, 0x0a], "deb"),
+	(0, [0xed, 0xab, 0xee, 0xdb], "rpm"),
+]
+
 def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
-	if len(data) > 0:
-		uudata = False
+	if len(data) == 0:
+		return "Empty", formatters.format_none
 
-		if "\n" not in data:
-			try:
-				decoded = base64.b64decode(data)
-				if base64.b64encode(decoded) == bytes(data, encoding = "utf-8"):
-					uudata = True
-			except binascii.Error:
-				pass
+	uudata = False
 
-		if uudata:
-			try:
-				data = decoded.decode("utf-8")
-			except UnicodeDecodeError:
-				# This is binary data
-				return "binary", formatters.format_binary
+	if "\n" not in data:
+		try:
+			decoded = base64.b64decode(data)
+			if base64.b64encode(decoded) == bytes(data, encoding = "utf-8"):
+				uudata = True
+		except binascii.Error:
+			pass
 
-		splitmsg = split_msg(data)
-		dataformat = ""
+	if uudata:
+		try:
+			data = decoded.decode("utf-8")
+		except UnicodeDecodeError:
+			for offset, match_infix, dataformat in cmdata_bin_header:
+				if len(decoded) < len(match_infix) + offset:
+					continue
 
-		# We are in luck; there is an interpreter signature
-		# or other type of signature to help
-		if len(splitmsg) > 0 and splitmsg[0].startswith(("#!", "-----")):
-			for match_infix, dataformat in cmdata_header:
-				if match_infix in data:
-					break
+				if bytes(match_infix) == decoded[offset:len(match_infix) + offset]:
+					return dataformat, formatters.format_binary
+			return "Text or Base64 encoded binary", formatters.format_none
 
-		if len(dataformat) == 0:
-			for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
-				if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
-					break
-	else:
-		dataformat = "Empty"
+	splitmsg = split_msg(data)
+	dataformat = ""
+
+	# We are in luck; there is an interpreter signature
+	# or other type of signature to help
+	if len(splitmsg) > 0 and splitmsg[0].startswith(("#!", "-----")):
+		for match_infix, dataformat in cmdata_header:
+			if match_infix in data:
+				break
+
+	if len(dataformat) == 0:
+		for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
+			if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
+				break
 
 	formatter = formatters.map_dataformat(dataformat)
 
