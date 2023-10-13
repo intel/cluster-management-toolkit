@@ -59,6 +59,66 @@ listview:
       header: "Reason:"
       path: "reason"
       type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            BackOff:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            BackoffLimitExceeded:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            FailedBinding:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            FailedScheduling:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            FailedToCreateEndpoint:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            Killing:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Pulled:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Pulling:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Scheduled:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ServiceNotReady:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            ServiceUnhealthy:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Started:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SuccessfulCreate:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
     reporter:
       header: "Reporter:"
       paths:
@@ -174,6 +234,66 @@ infoview:
         header: [["Reason:", ["main", "infoheader"]]]
         path: "reason"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              BackOff:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              BackoffLimitExceeded:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              FailedBinding:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              FailedScheduling:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              FailedToCreateEndpoint:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              Killing:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Pulled:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Pulling:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Scheduled:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ServiceNotReady:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              ServiceUnhealthy:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Started:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SuccessfulCreate:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
       reporter:
         header: [["Reporter:", ["main", "infoheader"]]]
         paths:
