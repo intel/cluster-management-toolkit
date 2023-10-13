@@ -212,6 +212,7 @@ def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 		"ERRO": LogLevel.ERR,
 		"WARN": LogLevel.WARNING,
 		"NOTI": LogLevel.NOTICE,
+		"SUCC": LogLevel.NOTICE,	# From KubeRay
 		"INFO": LogLevel.INFO,
 		"DEBU": LogLevel.DEBUG,
 	}
@@ -1121,6 +1122,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 			if len(logentry) > 0:
+				tagseverity = None
 				if structseverity == LogLevel.DEBUG:
 					override_formatting = ThemeAttr("logview", "severity_debug")
 				else:
@@ -1140,7 +1142,6 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 							"key": ThemeAttr("types", "yaml_key_error"),
 							"value": ThemeAttr("logview", f"severity_{loglevel_to_name(errorseverity).lower()}"),
 						}
-					tagseverity = None
 					for tag, tag_values in error_tags.items():
 						for tag_key, tag_severity in tag_values.items():
 							if tag_key in deep_get(logentry, DictPath(tag), []):
@@ -1159,7 +1160,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 				expand_newline_fields = ()
 				if logparser_configuration.expand_newlines:
-					expand_newline_fields = ("status.message", "stacktrace")
+					expand_newline_fields = ("status.message", "stacktrace", "config")
 
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting, expand_newline_fields = expand_newline_fields, value_expand_tabs = logparser_configuration.expand_tabs)
 
@@ -1575,6 +1576,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 	versions = deep_get(options, DictPath("versions"), [])
 	substitute_bullets = deep_get(options, DictPath("substitute_bullets"), True)
 	collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
+	is_event: bool = deep_get(options, DictPath("is_event"), False)
 
 	# Replace embedded quotes with fancy quotes
 	message = message.replace("\\\"", "”")
@@ -1720,9 +1722,27 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					elif d_key in versions:
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
-						d_value, __severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
-						# pylint: disable-next=superfluous-parens
-						tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
+						if is_event == True and d_key == "type":
+							if d_value.strip("\"") == "Normal":
+								__severity = LogLevel.NOTICE
+							elif d_value.strip("\"") == "Warning":
+								__severity = LogLevel.WARNING
+							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
+							if severity > __severity:
+								severity = __severity
+						elif is_event == True and d_key == "reason":
+							# A lot more reasons need to be added here
+							if d_value.strip("\"") in ("Created", "Killing", "Pulled", "Pulling", "Scheduled", "ServiceNotReady", "Started", "SuccessfulCreate"):
+								__severity = LogLevel.NOTICE
+							elif d_value.strip("\"") in ("BackOff", "FailedBinding", "FailedScheduling", "FailedToCreateEndpoint", "ServiceUnhealthy"):
+								__severity = LogLevel.WARNING
+							elif d_value.strip("\"") in ("BackoffLimitExceeded", ):
+								__severity = LogLevel.ERR
+							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
+						else:
+							d_value, __severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
+							# pylint: disable-next=superfluous-parens
+							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
 				else:
 					tmp.append(f"{d_key}={d_value}")
 
@@ -1763,6 +1783,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 	# pylint: disable-next=global-variable-not-assigned
 	global logparser_configuration
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	is_event = False
 
 	if fold_msg:
 		return facility, severity, message, remnants
@@ -1785,6 +1806,13 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 		new_message = tmp[0]
 		tmp_msg_extract = logparser_configuration.msg_extract
 		logparser_configuration.msg_extract = False
+
+		if new_message.strip("\"") == "Event occurred":
+			is_event = True
+		if options is None:
+			options = {}
+		options["is_event"] = is_event
+
 		facility, severity, first_message, tmp_new_remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
 		logparser_configuration.msg_extract = tmp_msg_extract
 		if tmp_new_remnants is not None and len(tmp_new_remnants) > 0:
