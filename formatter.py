@@ -172,6 +172,8 @@ def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 			kwargs (dict): Additional parameters
 		Returns:
 			themearray: a themearray
+			list[themearray]: A list of themearrays, in case the YAML-line is expanded into multiple lines;
+			                  used when encountering keys belonging to  expandd_newline_fields
 	"""
 
 	override_formatting: Optional[Union[ThemeAttr, Dict]] = deep_get(kwargs, DictPath("override_formatting"))
@@ -211,7 +213,7 @@ def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 		tmpline += [
 			ThemeString(line, comment_format),
 		]
-		return tmpline
+		return tmpline, remnants
 	if line.lstrip(" ").startswith("- "):
 		# Safe
 		tmp = re.match(r"^(\s*?)- (.*)", line)
@@ -222,7 +224,7 @@ def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 			]
 			line = tmp[2]
 			if len(line) == 0:
-				return tmpline
+				return tmpline, remnants
 
 	if line.endswith(":"):
 		if isinstance(override_formatting, dict):

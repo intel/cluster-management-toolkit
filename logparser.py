@@ -2077,13 +2077,13 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
 
 	if message == "}".rstrip():
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("end_block", None, {})
 	elif message.lstrip() != message or message == "{":
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
 	elif len(message.strip()) == 0 and allow_empty_lines:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
 	else:
 		remnants = None
@@ -2131,7 +2131,7 @@ def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 
 	if matched:
 		if format_block_start:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", json_line_scanner, options)
@@ -2179,12 +2179,12 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 				matched = False
 
 	if matched:
-		remnants = formatters.format_yaml_line(message, override_formatting = {})
+		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("block", yaml_line_scanner, options)
 	else:
 		if process_block_end:
 			if format_block_end:
-				remnants = formatters.format_yaml_line(message, override_formatting = {})
+				remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 			else:
 				remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 			processor = ("end_block", None, {})
@@ -2232,7 +2232,7 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched:
 		if format_block_start:
-			remnants = formatters.format_yaml_line(message, override_formatting = {})
+			remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", yaml_line_scanner, options)
