@@ -751,6 +751,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "issuers",
 	},
 	# cilium.io
+	("CiliumCIDRGroup", "cilium.io"): {
+		"api_paths": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumcidrgroups",
+		"namespaced": False,
+	},
 	("CiliumClusterwideNetworkPolicy", "cilium.io"): {
 		"api_paths": ["apis/cilium.io/v2/"],
 		"api": "ciliumclusterwidenetworkpolicies",
@@ -768,6 +773,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("CiliumIdentity", "cilium.io"): {
 		"api_paths": ["apis/cilium.io/v2/"],
 		"api": "ciliumidentities",
+		"namespaced": False,
+	},
+	("CiliumL2AnnouncementPolicy", "cilium.io"): {
+		"api_paths": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliuml2announcementpolicies",
 		"namespaced": False,
 	},
 	("CiliumLoadBalancerIPPool", "cilium.io"): {
@@ -791,6 +801,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("CiliumNodeConfig", "cilium.io"): {
 		"api_paths": ["apis/cilium.io/v2alpha1/"],
 		"api": "ciliumnodeconfigs",
+	},
+	("CiliumPodIPPool", "cilium.io"): {
+		"api_paths": ["apis/cilium.io/v2alpha1/"],
+		"api": "ciliumpodippools",
+		"namespaced": False,
 	},
 	# cis.cattle.io
 	("ClusterScanBenchmark", "cis.cattle.io"): {
