@@ -10011,25 +10011,30 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 			for y in range(0, uip.loglen):
 				# Even when the log is raw we want the first timestamp
-				if y >= len(timestamps):
+				if y >= len(timestamps) or isinstance(timestamps[y], str):
 					timestamp = "".ljust(uip.tspadwidth)
 				else:
-					timestamp = str(timestamps[y])
+					timestamp = str(timestamps[y])[0:uip.tspadwidth]
 
 				if y >= len(facilities) or facilities[y] == "":
 					facility = ""
 				else:
-					facility = f"<{facilities[y]}> "
+					if facilities[y].strip() == "":
+						facility = f" {facilities[y]}  "
+					else:
+						facility = f"<{facilities[y]}> "
 
 				if uip.yoffset + y >= len(severities):
 					severity_str = f"{lvl_to_4letter_severity(LogLevel.INFO)}: "
 				else:
 					severity_str = f"{lvl_to_4letter_severity(severities[y])}: "
 
+				message = themearray_to_string(messages[y])
+
 				if raw_logs:
-					data += f"{timestamp}  {messages[y]}\n"
+					data += f"{timestamp}  {message}\n"
 				else:
-					data += f"{timestamp}  {severity_str}{facility}{messages[y]}\n"
+					data += f"{timestamp}  {severity_str}{facility}{message}\n"
 
 			secure_write_string(FilePath(filename), data, allow_relative_path = True)
 
