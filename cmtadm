@@ -779,6 +779,7 @@ cni_upgrade_data = {
 			"candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
 			"install": ["cilium", "--context", "<<<context>>>", "install"],
+			"uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
 		}
 	}
 }
@@ -788,11 +789,6 @@ cni_data = {
 		"url": "https://raw.githubusercontent.com/antrea-io/antrea/main/build/yamls/antrea.yml",
 		"type": "yaml",
 		"filename": "antrea.yaml",
-	},
-	"calico": {
-		"url": "https://docs.projectcalico.org/manifests/calico.yaml",
-		"type": "yaml",
-		"filename": "calico.yaml",
 	},
 	"canal": {
 		"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/canal-etcd.yaml",
@@ -1060,9 +1056,12 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 
 	confirm = True
+	reinstall = False
 
 	for opt, _optarg in options:
-		if opt == "-Y":
+		if opt == "--reinstall":
+			reinstall = True
+		elif opt == "-Y":
 			confirm = False
 
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
@@ -1077,18 +1076,23 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	if cni not in ("", "none", "<none>", "<unknown>"):
+	if cni not in ("", "none", "<none>", "<unknown>") and not reinstall:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": The cluster already has a CNI installed; aborting.", "default")], stderr = True)
 		sys.exit(errno.EEXIST)
 
 	if len(args) == 0:
-		ansithemeprint([ANSIThemeString("Note", "note"),
-				ANSIThemeString(": No CNI specified; defaulting to ", "default"),
-				ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
-				ANSIThemeString(".", "default")], stderr = True)
-		cni = DEFAULT_CNI
+		if not reinstall:
+			ansithemeprint([ANSIThemeString("Note", "note"),
+					ANSIThemeString(": No CNI specified; defaulting to ", "default"),
+					ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
+					ANSIThemeString(".", "default")], stderr = True)
 	else:
+		if reinstall:
+			ansithemeprint([ANSIThemeString("Error", "note"),
+					ANSIThemeString("--reinstall", "option"),
+					ANSIThemeString(" cannot be used to change CNI; aborting.", "default")] , stderr = True)
+			sys.exit(errno.EINVAL)
 		cni = args[0]
 
 	if confirm:
@@ -1118,9 +1122,12 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 
 	confirm = True
+	cni_version = None
 
-	for opt, _optarg in options:
-		if opt == "-Y":
+	for opt, optarg in options:
+		if opt == "--cni-version":
+			cni_version = optarg
+		elif opt == "-Y":
 			confirm = False
 
 	if not Path(CMT_INSTALLATION_INFO_FILE).is_file():
@@ -1137,20 +1144,67 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		sys.exit(errno.ENOENT)
 
 	directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
-	cni_filename = deep_get(cni_data, DictPath(f"{cni}#filename"))
-	if cni_filename is None:
+
+	# This will only work for running clusters
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	cnis = kh.identify_cni()
+	if len(cnis) == 1:
+		installed_cni, installed_cni_version = cnis[0][0]
+	else:
+		installed_cni = "<unknown>"
+		installed_cni_version = "<unknown>"
+
+	if installed_cni != cni and installed_cni != "<unknown>":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
+				ANSIThemeString(" disagrees with the cluster about what CNI is installed", "default"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	if installed_cni_version == "<unknown>":
+		if cni_version is None:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": the CNI version could not be identified; use ", "default"),
+					ANSIThemeString("--cni-version", "option"),
+					ANSIThemeString(" to specify it; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+	else:
+		if cni_version is None:
+			cni_version = installed_cni_version
+
+	cni_filenames = []
+
+	if cni in cni_upgrade_data:
+		urls = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#urls"), [])
+		# We need to remove the files in reverse order
+		for url in reversed(urls):
+			filename = deep_get(url, DictPath("filename"), "")
+			substitutions = {
+				"<<<version>>>": cni_version,
+			}
+			if "<<<version>>>" in filename:
+				filename = substitute_string(filename, substitutions)
+			cni_filenames.append(filename)
+	else:
+		cni_filenames.append(deep_get(cni_data, DictPath(f"{cni}#filename")))
+
+	if len(cni_filenames) == 0:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": No data found for CNI. This is most likely a programming error; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	cni_path = FilePath(str(PurePath(directory).joinpath(cni_filename)))
+	for cni_filename in cni_filenames:
+		cni_path = FilePath(str(PurePath(directory).joinpath(cni_filename)))
 
-	security_violations = check_path(cni_path)
+		security_violations = check_path(cni_path)
 
-	if security_violations != [SecurityStatus.OK]:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": The CNI deployment file is either missing or unsafe to use; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
+		if security_violations != [SecurityStatus.OK]:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": The CNI deployment file {cni_filename} is either missing or unsafe to use; aborting.", "default")], stderr = True)
+			sys.exit(errno.EINVAL)
 
 	all_nodes_in_cluster = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, cluster_name)
 	if len(all_nodes_in_cluster) == 0:
@@ -1171,9 +1225,12 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	ansithemeprint([ANSIThemeString("\n[Removing CNI and configuration]", "phase")])
 
-	# OK, we have a path to the CNI; this should be enough to remove it
-	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
-	execute_command_with_response([kubectl_path, "delete", "-f", cni_path])
+	for cni_filename in cni_filename:
+		cni_path = FilePath(str(PurePath(directory).joinpath(cni_filename)))
+
+		# OK, we have paths to the CNI files; this should be enough to remove it
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		execute_command_with_response([kubectl_path, "delete", "-f", cni_path])
 
 	uninstall_cni_playbooks = [
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
@@ -5039,6 +5096,9 @@ COMMANDLINE = {
 			 ANSIThemeString(" will be used as CNI", "description")],
 		],
 		"options": {
+			"--reinstall": {
+				"description": [ANSIThemeString("Try to reinstall the already installed CNI", "description")],
+			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
@@ -5064,6 +5124,20 @@ COMMANDLINE = {
 			[ANSIThemeString("you want to switch to another CNI", "description")],
 		],
 		"options": {
+			"--cni-version": {
+				"values": [ANSIThemeString("CNI_VERSION", "argument")],
+				"description": [ANSIThemeString("The installed CNI version", "description")],
+				"extended_description": [
+					[ANSIThemeString("Use this option to specify", "description")],
+					[ANSIThemeString("the version in case it cannot", "description")],
+					[ANSIThemeString("be autodetected", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "regex",
+					"regex": "[a-zA-Z0-9+-]+",
+				},
+			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
