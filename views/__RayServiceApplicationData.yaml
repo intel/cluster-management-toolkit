@@ -1,0 +1,84 @@
+kind: "__RayServiceApplicationData"
+api_family: "ray.io"
+default_command: "__"
+infoview:
+  name: "Ray Service Application Data"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["name", "status", "serve_deployment_status", "last_update"]
+    rows:
+      name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "application"
+        type: "str"
+      last_update:
+        header: [["Last Update:", ["main", "infoheader"]]]
+        path: "lastUpdateTime"
+        type: "timestamp"
+        formatter: "timestamp"
+      serve_deployment_status:
+        header: [["Serve Deployment Status:", ["main", "infoheader"]]]
+        path: "serveDeploymentStatuses#status"
+        type: "str"
+        default: "<unset>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+              "HEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "UNHEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "UPDATING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "DELETING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "DEPLOY_FAILED":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "DEPLOYING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "NOT_STARTED":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "RUNNING":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "UNHEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+  logpad:
+    infogetter: "logpad_formatted"
+    infogetter_args:
+      formatter: "format_python_traceback"
+      path: "message"
+    timestamps: false

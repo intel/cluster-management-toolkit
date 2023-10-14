@@ -991,6 +991,56 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 
 	return dumps
 
+def format_python_traceback(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Python Traceback formatter; returns the text with syntax highlighting for Python Tracebacks
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
+
+	if isinstance(lines, str):
+		lines = split_msg(lines)
+
+	block = False
+
+	for line in lines:
+		if not block and line == "Traceback (most recent call last):":
+			dumps.append([
+				ThemeString(line, ThemeAttr("logview", "severity_error"))
+			])
+			block = True
+			continue
+		if block:
+			tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", line)
+			if tmp is not None:
+				dumps.append([
+					ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
+					ThemeString(tmp[2], ThemeAttr("types", "path")),
+					ThemeString(tmp[3], ThemeAttr("logview", "severity_info")),
+					ThemeString(tmp[4], ThemeAttr("types", "lineno")),
+					ThemeString(tmp[5], ThemeAttr("logview", "severity_info")),
+					ThemeString(tmp[6], ThemeAttr("types", "path"))
+				])
+				continue
+			tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:|socket.gaierror:)( .*)", line)
+			if tmp is not None:
+				dumps.append([
+					ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
+					ThemeString(tmp[2], ThemeAttr("logview", "severity_info"))
+				])
+				block = False
+				continue
+		dumps.append([ThemeString(line, ThemeAttr("logview", "severity_info"))])
+	return dumps
+
 def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	TOML formatter; returns the text with syntax highlighting for TOML
@@ -1241,6 +1291,7 @@ formatter_allowlist = {
 	"format_mosquitto": format_mosquitto,
 	"format_nginx": format_nginx,
 	"format_none": format_none,
+	"format_python_traceback": format_python_traceback,
 	"format_toml": format_toml,
 	"format_xml": format_xml,
 	"format_yaml": format_yaml,

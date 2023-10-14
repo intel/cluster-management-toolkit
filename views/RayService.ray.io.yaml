@@ -139,6 +139,10 @@ infoview:
           field_colors:
           - type: "version"
   listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__RayServiceApplicationData"
+      api_family: "ray.io"
     listgetter: "listgetter_path"
     listgetter_args:
       path: "status#activeServiceStatus#applicationStatuses"
@@ -147,7 +151,7 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["application", "status", "last_update"]
+        fields: ["application", "status", "serve_deployment_status", "last_update"]
         sortcolumn: "status"
     fields:
       application:
@@ -159,6 +163,31 @@ infoview:
         path: "lastUpdateTime"
         type: "timestamp"
         formatter: "timestamp"
+      serve_deployment_status:
+        header: "Serve Deployment Status:"
+        path: "serveDeploymentStatuses#status"
+        type: "str"
+        default: "<unset>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+              "HEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "UNHEALTHY":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "UPDATING":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
       status:
         header: "Status:"
         path: "status"

@@ -2068,7 +2068,7 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 			 severity),
 		]
 	else:
-		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:)( .*)", message)
+		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:|socket.gaierror:)( .*)", message)
 		if tmp is not None:
 			remnants = [
 				([ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
