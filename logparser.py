@@ -1759,6 +1759,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						elif is_event == True and d_key == "reason":
 							# A lot more reasons need to be added here
 							if d_value.strip("\"") in (
+									"Completed",
 									"Created",
 									"Killing",
 									"LeaderElection",
