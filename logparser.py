@@ -1160,7 +1160,11 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 				expand_newline_fields = ()
 				if logparser_configuration.expand_newlines:
-					expand_newline_fields = ("status.message", "stacktrace", "config")
+					expand_newline_fields = (
+						"config",
+						"errorVerbose",
+						"stacktrace",
+						"status.message")
 
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting, expand_newline_fields = expand_newline_fields, value_expand_tabs = logparser_configuration.expand_tabs)
 
