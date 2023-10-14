@@ -1732,11 +1732,31 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 								severity = __severity
 						elif is_event == True and d_key == "reason":
 							# A lot more reasons need to be added here
-							if d_value.strip("\"") in ("Created", "Killing", "Pulled", "Pulling", "Scheduled", "ServiceNotReady", "Started", "SuccessfulCreate"):
+							if d_value.strip("\"") in (
+									"Created",
+									"Killing",
+									"LeaderElection",
+									"Pulled",
+									"Pulling",
+									"RegisteredNode",
+									"Resumed",
+									"Scheduled",
+									"ServiceNotReady",
+									"Started",
+									"Suspended",
+									"SuccessfulCreate",
+									"SuccessfulDelete",
+									"WaitForServeDeploymentReady"):
 								__severity = LogLevel.NOTICE
-							elif d_value.strip("\"") in ("BackOff", "FailedBinding", "FailedScheduling", "FailedToCreateEndpoint", "ServiceUnhealthy"):
+							elif d_value.strip("\"") in (
+									"BackOff",
+									"FailedBinding",
+									"FailedScheduling",
+									"FailedToCreateEndpoint",
+									"ServiceUnhealthy"):
 								__severity = LogLevel.WARNING
-							elif d_value.strip("\"") in ("BackoffLimitExceeded", ):
+							elif d_value.strip("\"") in (
+									"BackoffLimitExceeded",):
 								__severity = LogLevel.ERR
 							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
 						else:
