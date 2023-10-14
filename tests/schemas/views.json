@@ -232,6 +232,9 @@
 									"properties": {
 										"field_colors": {
 											"$ref": "#/definitions/field_colors_mandatory_context"
+										},
+										"index": {
+											"type": "integer"
 										}
 									},
 									"additionalProperties": false
@@ -240,6 +243,10 @@
 									"properties": {
 										"field_colors": {
 											"$ref": "#/definitions/field_colors_mandatory_context"
+										},
+										"index": {
+											"description": "Sort index",
+											"type": "integer"
 										}
 									},
 									"additionalProperties": false
@@ -1082,6 +1089,10 @@
 										"description": {
 											"description": "A description of the action to use in the action menu",
 											"type": "string"
+										},
+										"extravars": {
+											"description": "Extra arguments to pass to the action (possibly a duplicate of action_args)",
+											"type": "object"
 										},
 										"metadata": {
 											"type": "array",
