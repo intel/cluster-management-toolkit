@@ -920,7 +920,7 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
 # or
 #             secondssinceepoch\tSEVERITY\t{facility if lowercase, else message}[\tjson]
-def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) ->\
+def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True, options: Optional[Dict] = None) ->\
 				Tuple[str, Optional[LogLevel], str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson]
@@ -930,11 +930,16 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 			severity (LogLevel): The current loglevel
 			facility (str): The current facility
 			fold_msg (bool): Should the message be expanded or folded?
+			options (dict): Additional, rule specific, options
 		Returns:
 			(message, severity, facility, remnants)
 	"""
 
 	remnants = []
+
+	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
+	errors = deep_get(options, DictPath("errors"), ["err", "error"])
+	versions = deep_get(options, DictPath("versions"), [])
 
 	fields = message.split("\t")
 	# If the first field is not a timestamp we cannot trust the rest of the message to be what we hope for
@@ -950,11 +955,28 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 	message = fields[message_index]
 	remnants_index = message_index + 1
 
+	override_formatting = {}
+	for _msg in versions:
+		override_formatting[f"\"{_msg}\""] = {
+			"key": ThemeAttr("types", "yaml_key"),
+			"value": ThemeAttr("logview", "severity_notice")
+		}
+	for _msg in messages:
+		override_formatting[f"\"{_msg}\""] = {
+			"key": ThemeAttr("types", "yaml_key"),
+			"value": ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")
+		}
+	for _err in errors:
+		override_formatting[f"\"{_err}\""] = {
+			"key": ThemeAttr("types", "yaml_key_error"),
+			"value": ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"),
+		}
+
 	if not fold_msg and remnants_index < len(fields) and fields[remnants_index].startswith("{") and fields[remnants_index].endswith("}"):
 		try:
 			d = json.loads(fields[remnants_index])
 			json_strs = json_dumps(d)
-			for remnant in formatters.format_yaml(json_strs):
+			for remnant in formatters.format_yaml(json_strs, override_formatting = override_formatting):
 				remnants.append((remnant, severity))
 		except DecodeException:
 			message = " ".join(fields[message_index:])
@@ -2589,8 +2611,6 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				# Multiparsers
 				if _filter == "glog":
 					message, severity, facility, remnants, _match = split_glog(message, severity = severity, facility = facility)
-				elif _filter == "tab_separated":
-					message, severity, facility, remnants = tab_separated(message, severity = severity, facility = facility, fold_msg = fold_msg)
 				elif _filter == "spaced_severity_facility":
 					message, severity, facility = __split_severity_facility_style(message, severity = severity, facility = facility)
 				elif _filter == "directory":
@@ -2694,6 +2714,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				elif _filter[0] == "ansible_line":
 					_parser_options = {**_filter[1], **options}
 					message, remnants = ansible_line(message, fold_msg = fold_msg, severity = severity, options = _parser_options)
+				elif _filter[0] == "tab_separated":
+					_parser_options = _filter[1]
+					message, severity, facility, remnants = tab_separated(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 			# These parsers CAN handle ThemeArrays
 			# Severity formats
 			if _filter[0] == "override_severity":
@@ -2824,7 +2847,6 @@ def init_parser_list():
 								 "spaced_severity_facility",
 								 "strip_ansicodes",
 								 "sysctl",
-								 "tab_separated",
 								 "ts_8601"):
 							rules.append(rule_name)
 						elif rule_name in ("ansible_line",
@@ -2839,6 +2861,7 @@ def init_parser_list():
 								   "key_value",
 								   "key_value_with_leading_message",
 								   "raw_formatter",
+								   "tab_separated",
 								   "yaml_line"):
 							options = {}
 							for key, value in deep_get(rule, DictPath("options"), {}).items():
