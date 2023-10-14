@@ -342,7 +342,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 
 	generic_format = ThemeAttr("types", "generic")
 
-	override_formatting: Union[ThemeAttr, Dict] = {}
+	override_formatting: Union[ThemeAttr, Dict] = deep_get(kwargs, DictPath("override_formatting"), {})
 
 	if deep_get(kwargs, DictPath("raw"), False):
 		override_formatting = generic_format
