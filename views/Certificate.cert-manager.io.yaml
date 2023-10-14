@@ -66,7 +66,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["common_name", "dns_names", "issuer", "secret_name", "condition_ready"]
+        fields: ["common_name", "dns_names", "issuer", "secret_name", "valid_from", "valid_until", "renewal_time", "condition_ready", "status_message"]
     rows:
       common_name:
         header: [["Common Name:", ["main", "infoheader"]]]
@@ -117,11 +117,36 @@ infoview:
           - type: "generic"
           item_separators:
           - type: "kind"
+      renewal_time:
+        header: [["Renewal Time:", ["main", "infoheader"]]]
+        path: "status#renewalTime"
+        type: "timestamp"
+        formatter: "timestamp"
       secret_name:
         header: [["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
         paths:
         - path: ["spec#secretName"]
           pathtype: "str"
+      status_message:
+        header: [["Status:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+          - key: "type"
+            eq: "Ready"
+          default: ""
+      valid_from:
+        header: [["Valid From:", ["main", "infoheader"]]]
+        path: "status#notBefore"
+        type: "timestamp"
+        formatter: "timestamp"
+      valid_until:
+        header: [["Valid Until:", ["main", "infoheader"]]]
+        path: "status#notAfter"
+        type: "timestamp"
+        formatter: "timestamp"
   shortcuts:
     "Issuer":
       key: "i"
