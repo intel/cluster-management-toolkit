@@ -1486,6 +1486,23 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "gpuclassparameters",
 		"namespaced": False,
 	},
+	# grafana.integreatly.org
+	("GrafanaDashboard", "grafana.integreatly.org"): {
+		"api_paths": ["apis/grafana.integreatly.org/v1beta1/"],
+		"api": "grafanadashboards",
+	},
+	("GrafanaDatasource", "grafana.integreatly.org"): {
+		"api_paths": ["apis/grafana.integreatly.org/v1beta1/"],
+		"api": "grafanadatasources",
+	},
+	("GrafanaFolder", "grafana.integreatly.org"): {
+		"api_paths": ["apis/grafana.integreatly.org/v1beta1/"],
+		"api": "grafanafolders",
+	},
+	("Grafana", "grafana.integreatly.org"): {
+		"api_paths": ["apis/grafana.integreatly.org/v1beta1/"],
+		"api": "grafanas",
+	},
 	# helm.cattle.io
 	("HelmChartConfig", "helm.cattle.io"): {
 		"api_paths": ["apis/helm.cattle.io/v1/"],
@@ -1592,23 +1609,6 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("VirtualMachinePreference", "instancetype.kubevirt.io"): {
 		"api_paths": ["apis/instancetype.kubevirt.io/v1alpha2/"],
 		"api": "virtualmachinepreferences",
-	},
-	# integreatly.org
-	("Grafana", "integreatly.org"): {
-		"api_paths": ["apis/integreatly.org/v1alpha1/"],
-		"api": "grafanas",
-	},
-	("GrafanaDashboard", "integreatly.org"): {
-		"api_paths": ["apis/integreatly.org/v1alpha1/"],
-		"api": "grafanadashboards",
-	},
-	("GrafanaDataSource", "integreatly.org"): {
-		"api_paths": ["apis/integreatly.org/v1alpha1/"],
-		"api": "grafanadatasources",
-	},
-	("GrafanaNotificationChannel", "integreatly.org"): {
-		"api_paths": ["apis/integreatly.org/v1alpha1/"],
-		"api": "grafananotificationchannels",
 	},
 	# jaegertracing.io
 	("Jaeger", "jaegertracing.io"): {
