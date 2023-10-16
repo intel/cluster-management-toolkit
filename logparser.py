@@ -321,6 +321,39 @@ def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tu
 
 	return message, severity
 
+def is_timestamp(message: str):
+	"""
+	Tries to check whether the field is a timestamp
+
+		Parameters:
+			message (str): The string to check
+		Returns:
+			(bool): True if the string is a timestamp, False if not
+	"""
+
+	tmp = re.match(r"^\d{15}e\+09", message)
+	if tmp is not None:
+		return True
+
+	tmp = re.match(r"^\d{4}[/-]\d\d[/-]\d\d" \
+		       r"[ T]" \
+		       r"\d\d[\.:]\d\d[\.:]\d\d" \
+		       r"([\.,]\d{8}Z|" \
+		        r"[\.,]\d{8}|" \
+		        r"[\.,]\d{8} [+-]\d\d(:|\.|\d\d)" \
+		        r"[\.,]\d{6}Z|" \
+		        r"[\.,]\d{6}" \
+		        r"[\.,]\d{6} [+-]\d\d(:|\.|\d\d)" \
+		        r"\d{3}Z|" \
+		        r"\d{3}|" \
+		        r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|" \
+		        r"Z|)$", message)
+
+	if tmp is not None:
+		return True
+
+	return False
+
 # Will split timestamp from messages that begin with timestamps of the form:
 # 2020-02-07T13:12:24.224Z (Z = UTC)
 # 2020-02-13T12:06:18.011345 [+-]0000 (+/-timezone)
@@ -942,8 +975,9 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 	versions = deep_get(options, DictPath("versions"), [])
 
 	fields = message.split("\t")
+
 	# If the first field is not a timestamp we cannot trust the rest of the message to be what we hope for
-	if len(fields) < 4 or len(fields[0]) != 24 and not fields[0].endswith("e+09"):
+	if len(fields) < 4 or not is_timestamp(fields[0]):
 		return message, severity, facility, remnants
 
 	severity = str_to_severity(fields[1], severity)
