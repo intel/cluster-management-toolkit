@@ -331,7 +331,7 @@ def is_timestamp(message: str):
 			(bool): True if the string is a timestamp, False if not
 	"""
 
-	tmp = re.match(r"^\d{15}e\+09", message)
+	tmp = re.match(r"^\d\.\d+e\+09", message)
 	if tmp is not None:
 		return True
 
