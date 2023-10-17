@@ -2166,9 +2166,17 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/monitoring.coreos.com/v1/"],
 		"api": "prometheuses",
 	},
+	("PrometheusAgent", "monitoring.coreos.com"): {
+		"api_paths": ["apis/monitoring.coreos.com/v1alpha1/"],
+		"api": "prometheusagents",
+	},
 	("PrometheusRule", "monitoring.coreos.com"): {
 		"api_paths": ["apis/monitoring.coreos.com/v1/"],
 		"api": "prometheusrules",
+	},
+	("ScrapeConfig", "monitoring.coreos.com"): {
+		"api_paths": ["apis/monitoring.coreos.com/v1alpha1/"],
+		"api": "scrapeconfigs",
 	},
 	("ServiceMonitor", "monitoring.coreos.com"): {
 		"api_paths": ["apis/monitoring.coreos.com/v1/"],
