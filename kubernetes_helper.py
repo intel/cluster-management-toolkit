@@ -1661,6 +1661,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/keda.sh/v1alpha1/"],
 		"api": "triggerauthentications",
 	},
+	# kepler.system.sustainable.computing.io
+	("Kepler", "kepler.system.sustainable.computing.io"): {
+		"api_paths": ["apis/kepler.system.sustainable.computing.io/v1alpha1/"],
+		"api": "keplers",
+		"namespaced": False,
+	},
 	# kilo.squat.ai
 	("Peer", "kilo.squat.ai"): {
 		"api_paths": ["apis/kilo.squat.ai/v1alpha1/"],
