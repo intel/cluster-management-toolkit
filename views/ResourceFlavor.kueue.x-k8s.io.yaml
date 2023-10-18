@@ -13,6 +13,42 @@ listview:
 infoview:
   name: "Resource Flavor Info"
   infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_labels", "node_taints"]
+    rows:
+      node_labels:
+        header: [["N", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["de Labels:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#nodeLabels"
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      node_taints:
+        header: [["Node ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["aints:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#nodeTaints"
+          pathtype: "items"
+          subpaths:
+          - "key"
+          - "value"
+          - "effect"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          - type: "generic"
+          field_separators:
+          - type: "keyvalue"
+          - type: "field"
   shortcuts:
     "Show Node Labels":
       key: "o"
@@ -28,6 +64,7 @@ infoview:
       sortcolumn: "label"
     "Show Node Taints":
       key: "t"
+      modifier: "shift"
       read_only: true
       helptext: "Show node taints"
       widget: "windowwidget"
