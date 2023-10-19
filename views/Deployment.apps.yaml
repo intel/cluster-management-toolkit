@@ -9,7 +9,7 @@ listview:
   group: "Workloads"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "unavailable_replicas", "age"]
+      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "unavailable_replicas", "paused", "age"]
       sortcolumn: "namespace"
   fields:
     available_replicas:
@@ -61,6 +61,23 @@ listview:
         field_colors:
         - type: "numerical"
       align: "right"
+    paused:
+      header: "Paused:"
+      path: "spec#paused"
+      type: "str"
+      default: "False"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
     ready_replicas:
       header: "Ready:"
       paths:
@@ -175,7 +192,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "node_selector", "priority_class", "update_strategy", "replicas", "available"]
+        fields: ["label_selector", "set_based_selector", "node_selector", "priority_class", "update_strategy", "replicas", "available", "paused"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]
@@ -224,6 +241,23 @@ infoview:
           - type: "value"
           field_separators:
           - type: "selector"
+      paused:
+        header: [["Paused:", ["main", "infoheader"]]]
+        path: "spec#paused"
+        type: "str"
+        default: "False"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
       priority_class:
         header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
         path: "spec#template#spec#priorityClassName"
