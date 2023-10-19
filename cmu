@@ -11126,7 +11126,7 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ scale: ", "default"),
-		       ANSIThemeString(old_scale, "emphasis")]
+		       ANSIThemeString(f"{old_scale}", "emphasis")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -11173,9 +11173,9 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ scale: ", "default"),
-		       ANSIThemeString(old_scale, "emphasis"),
+		       ANSIThemeString(f"{old_scale}", "emphasis"),
 		       ANSIThemeString(" => ", "default"),
-		       ANSIThemeString(scale, "emphasis")]
+		       ANSIThemeString(f"{scale}", "emphasis")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -11249,7 +11249,7 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString("::", "separator"),
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ scale: ", "default"),
-		       ANSIThemeString(old_scale, "emphasis"),
+		       ANSIThemeString(f"{old_scale}", "emphasis"),
 		       ANSIThemeString(" => ", "default"),
 		       ANSIThemeString("0", "emphasis")]
 		ansithemeprint(msg)
