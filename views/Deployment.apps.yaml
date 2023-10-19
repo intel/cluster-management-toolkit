@@ -162,13 +162,27 @@ listview:
         category: "Resource Level"
         metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
         confirm: true
-        actionfunc: "pause_resource_rollout"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Pausing"
+          args:
+            patch:
+              spec:
+                paused: true
+            strategic_merge: true
       "Resume resource (Rollout)":
         description: "Resume resource"
         category: "Resource Level"
         metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
         confirm: true
-        actionfunc: "resume_resource_rollout"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Resuming"
+          args:
+            patch:
+              spec:
+                paused: false
+            strategic_merge: true
       "Restart resource (Rollout)":
         description: "Restart resource"
         category: "Resource Level"

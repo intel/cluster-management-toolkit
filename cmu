@@ -10698,40 +10698,6 @@ def create_namespace(stdscr: curses.window, **kwargs):
 	stdscr.refresh()
 
 # Valid kinds:
-# ("Deployment", "apps")
-def __pause_resource(kind, namespace, name):
-	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
-	except FileNotFoundError:
-		curses.endwin()
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": Could not find ", "default"),
-				ANSIThemeString("kubectl", "path"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-
-	args = [kubectl_path, "rollout", "pause", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
-	return result
-
-# Valid kinds:
-# ("Deployment", "apps")
-def __resume_resource(kind, namespace, name):
-	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
-	except FileNotFoundError:
-		curses.endwin()
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": Could not find ", "default"),
-				ANSIThemeString("kubectl", "path"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-
-	args = [kubectl_path, "rollout", "resume", f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
-	result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
-	return result
-
-# Valid kinds:
 # ("DaemonSet", "apps")
 # ("Deployment", "apps")
 # ("StatefulSet", apps")
@@ -11176,54 +11142,6 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
 		       ANSIThemeString(f"{old_scale}", "emphasis"),
 		       ANSIThemeString(" => ", "default"),
 		       ANSIThemeString(f"{scale}", "emphasis")]
-		ansithemeprint(msg)
-
-	print("\n")
-
-	waitforkeypress = True
-	if waitforkeypress:
-		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
-	uip.stdscr.refresh()
-
-# Valid kinds:
-# ("Deployment", "apps")
-# pylint: disable=unused-argument
-def pause_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
-	curses.endwin()
-	_retval = clear_screen()
-
-	for item in items:
-		namespace, name = item
-		__pause_resource(kind, namespace, name)
-		msg = [ANSIThemeString(f"Pausing {kind[0]}.{kind[1]} “", "default"),
-		       ANSIThemeString(namespace, "argument"),
-		       ANSIThemeString("::", "separator"),
-		       ANSIThemeString(name, "argument"),
-		       ANSIThemeString("“", "default")]
-		ansithemeprint(msg)
-
-	print("\n")
-
-	waitforkeypress = True
-	if waitforkeypress:
-		ansithemeinput([ANSIThemeString("\nPress Enter to continue...", "default")])
-	uip.stdscr.refresh()
-
-# Valid kinds:
-# ("Deployment", "apps")
-# pylint: disable=unused-argument
-def resume_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
-	curses.endwin()
-	_retval = clear_screen()
-
-	for item in items:
-		namespace, name = item
-		__resume_resource(kind, namespace, name)
-		msg = [ANSIThemeString(f"Resuming {kind[0]}.{kind[1]} “", "default"),
-		       ANSIThemeString(namespace, "argument"),
-		       ANSIThemeString("::", "separator"),
-		       ANSIThemeString(name, "argument"),
-		       ANSIThemeString("“", "default")]
 		ansithemeprint(msg)
 
 	print("\n")
@@ -12015,11 +11933,9 @@ actionfunc_allowlist = {
 	"delete_resource": delete_resource,
 	"force_delete_resource": force_delete_resource,
 	"patch_resource": patch_resource,
-	"pause_resource_rollout": pause_resource_rollout,
 	"rescale_resource": rescale_resource,
 	"restart_resource_rescale": restart_resource_rescale,
 	"restart_resource_rollout": restart_resource_rollout,
-	"resume_resource_rollout": resume_resource_rollout,
 	"stop_resource_rescale": stop_resource_rescale,
 	"uncordon_node": uncordon_node,
 }
