@@ -1,0 +1,186 @@
+kind: "Kepler"
+api_family: "kepler.system.sustainable.computing.io"
+default_command: "keplers"
+listview:
+  name: "Keplers"
+  group: "Monitoring"
+  field_indexes:
+    Normal:
+      fields: ["name", "port", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "age"]
+  fields:
+    available_replicas:
+      header: "Available:"
+      paths:
+      - path: ["status#numberAvailable", "status#currentNumberScheduled"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+      align: "right"
+    current_replicas:
+      header: "Current:"
+      paths:
+      - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
+        pathtype: "comparison"
+        default: [0, 0]
+      align: "right"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+    desired_replicas:
+      header: "Desired:"
+      path: "status#desiredNumberScheduled"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    port:
+      header: "Port:"
+      path: "spec#exporter#deployment#port"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "port"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+      - path: ["status#numberReady", "status#currentNumberScheduled"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
+    uptodate_replicas:
+      header: "Up to Date:"
+      paths:
+      - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+      align: "right"
+infoview:
+  name: "Kepler Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["exporter_header", "exporter_node_selector", "exporter_port", "exporter_tolerations", "nodes"]
+    rows:
+      exporter_header:
+        header: [["Exporter:", ["main", "infoheader"]]]
+      exporter_node_selector:
+        header: [["  Node Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#exporter#deployment#nodeSelector"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      exporter_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#exporter#deployment#port"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      exporter_tolerations:
+        header: [["  Tolerations:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#exporter#deployment#tolerations"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+          - type: "keyvalue_taint"
+      nodes:
+        header: [["Nodes:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
