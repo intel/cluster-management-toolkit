@@ -1151,7 +1151,8 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	cnis = kh.identify_cni()
 	if len(cnis) == 1:
-		installed_cni, installed_cni_version = cnis[0][0]
+		installed_cni = cnis[0][0]
+		installed_cni_version = cnis[0][1]
 	else:
 		installed_cni = "<unknown>"
 		installed_cni_version = "<unknown>"
