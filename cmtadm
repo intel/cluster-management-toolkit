@@ -41,7 +41,7 @@ from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityC
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
 from cmtpaths import DEPLOYMENT_DIR, CMT_HOOKS_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE, KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
+from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE, KUBE_CONFIG_DIR, KUBE_CONFIG_FILE, VERSION_CACHE_DIR
 
 from commandparser import parse_commandline
 
@@ -1660,6 +1660,22 @@ def __task_check_and_install_ansible_posix(installation_info: Dict, verbose: boo
 
 	check_and_print_status(install_ansible_posix())
 
+def update_version_cache() -> bool:
+	"""
+	Update the version cache
+
+		Returns:
+			True on success, False on failure
+	"""
+
+	update_version_cache_path = get_playbook_path(FilePath("update_version_cache.yaml"))
+	retval, ansible_results = ansible_run_playbook_on_selection(update_version_cache_path, selection = ["localhost"])
+
+	if len(ansible_results) == 0:
+		return False
+
+	return True
+
 def update_apt_cache() -> bool:
 	"""
 	Update the APT cache
@@ -1723,6 +1739,37 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	elif os_distro in ("fedora", "rhel"):
 		pkg_versions = check_rpm_versions(pkg_packages)
 
+	# We are OK with the file not existing
+	security_checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	kubernetes_installed_version = "<unknown>"
+	kubernetes_upstream_version = "<unknown>"
+
+	try:
+		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
+	except FileNotFoundError:
+		version_cache = None
+		pass
+
+	if version_cache is not None:
+		if len (schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
+			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
+				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+
+	# Get the API-server version (if available)
+	# This will only work for running clusters
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	_server_major_version, _server_minor_version, kubernetes_installed_version = kh.get_api_server_version()
+
 	# Now check versions that need special checks
 	for version_check in version_checks:
 		tmp_software: str = version_check[0]
@@ -1751,6 +1798,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	# Finally, display the gathered version information; find the longest string of each type
 	# Create lists of header + all values belonging to that header, and get the length of the longest element
 	slen = len(max(["Software:"] + [tmp[0] for tmp in pkg_versions + other_versions], key = len))
+	slen = max(slen, len("Kubernetes (upstream)"))
 	ilen = len(max(["Installed Version:"] + [tmp[1] for tmp in pkg_versions + other_versions], key = len))
 
 	# Print a header
@@ -1759,6 +1807,12 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 			ANSIThemeString("Installed Version:", "header"),
 			ANSIThemeString(f"{''.ljust(ilen - len('Installed Version:') + 2)}", "default"),
 			ANSIThemeString("Candidate Version:", "header")])
+
+	ansithemeprint([ANSIThemeString("Kubernetes ", "default"),
+			ANSIThemeString("(upstream)".ljust(slen - len("Kubernetes ") + 2), "note"),
+			ANSIThemeString(f"{kubernetes_installed_version}".ljust(ilen + 2), "version"),
+			ANSIThemeString(f"{kubernetes_upstream_version}", "version")])
+
 	for software, installed_version, candidate_version, _ in cast(Tuple[str, str, str, List[str]], natsorted(pkg_versions)):
 		iformat = __get_theme(installed_version, "version")
 		cformat = __get_theme(candidate_version, "version")
@@ -3308,10 +3362,14 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 
-	if os_distro == "debian" and update_cache:
+	if update_cache:
+		if os_distro == "debian" and update_cache:
+			ansithemeprint([ANSIThemeString("\n• ", "separator"),
+					ANSIThemeString("Updating APT cache", "action")])
+			check_and_print_status(update_apt_cache())
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
-				ANSIThemeString("Updating APT cache", "action")])
-		check_and_print_status(update_apt_cache())
+				ANSIThemeString("Updating version cache", "action")])
+		check_and_print_status(update_version_cache())
 
 	pkg_packages = [
 		"ansible",
@@ -4142,10 +4200,14 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	if os_distro == "debian" and update_cache:
+	if update_cache:
+		if os_distro == "debian" and update_cache:
+			ansithemeprint([ANSIThemeString("\n• ", "separator"),
+					ANSIThemeString("Updating APT cache", "action")])
+			check_and_print_status(update_apt_cache())
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
-				ANSIThemeString("Updating APT cache", "action")])
-		check_and_print_status(update_apt_cache())
+				ANSIThemeString("Updating version cache", "action")])
+		check_and_print_status(update_version_cache())
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Running sanity checks", "action")])

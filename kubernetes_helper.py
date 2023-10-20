@@ -4977,17 +4977,17 @@ class KubernetesHelper:
 	# this way lists the result can be handled unconditionally in for loops
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_get(self, kind: Tuple[str, str], name: str = "", namespace: str = "",
+	def __rest_helper_get(self, kind: Tuple[str, str], raw_path: str = None, name: str = "", namespace: str = "",
 			      label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
-		if kind is None:
-			raise ValueError("__rest_helper_get API called with kind None; this is most likely a programming error")
+		if kind is None and raw_path is None:
+			raise ValueError("__rest_helper_get API called with kind None and raw_path None; this is most likely a programming error")
 
 		if self.cluster_unreachable:
 			# Our arbitrary return value for Cluster Unreachable
 			status = 42503
 
 			# If name is not set this is a list request, so return an empty list instead of None
-			if name == "":
+			if name == "" and not raw_path:
 				return [], status
 			return None, status
 
@@ -5003,14 +5003,18 @@ class KubernetesHelper:
 		if namespace is not None and namespace != "":
 			namespace_part = f"namespaces/{namespace}/"
 
-		kind = self.guess_kind(kind)
-
-		if kind in kubernetes_resources:
-			api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
-			api = deep_get(kubernetes_resources[kind], DictPath("api"))
-			namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
+		if raw_path is None:
+			kind = self.guess_kind(kind)
+			if kind in kubernetes_resources:
+				api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
+				api = deep_get(kubernetes_resources[kind], DictPath("api"))
+				namespaced = deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
+			else:
+				raise ValueError(f"kind unknown: {kind}; this is most likely a programming error")
 		else:
-			raise ValueError(f"kind unknown: {kind}; this is most likely a programming error")
+			api_paths = [raw_path]
+			api = ""
+			namespaced = False
 
 		if name != "":
 			name = f"/{name}"
@@ -5035,7 +5039,7 @@ class KubernetesHelper:
 					continue
 
 				# If name is set this is a read request, not a list request
-				if name != "":
+				if raw_path or name != "":
 					return d, status
 				return deep_get(d, DictPath("items"), []), status
 
@@ -5061,6 +5065,27 @@ class KubernetesHelper:
 			return [], status
 
 		return None, status
+
+	def get_api_server_version(self) -> Tuple[int, int, str]:
+		"""
+		Get API-server version
+
+			Returns:
+				(server_major_version, server_minor_version, server_git_version):
+					server_major_version (int): Major API-server version
+					server_minor_version (int): Minor API-server version
+					server_git_version (str): API-server GIT version
+		"""
+
+		ref, _status = self.__rest_helper_get(kind = None, raw_path = "version")
+		ref = cast(Dict, ref)
+		server_major_version = deep_get(ref, DictPath("major"), "")
+		server_minor_version = deep_get(ref, DictPath("minor"), "")
+		server_git_version = deep_get(ref, DictPath("gitVersion"), "")
+		if (tmp := re.match(r"^v?(\d+?)\.(\d+?)\.(\d+?)$", server_git_version)) is not None:
+			server_git_version = f"{tmp[1]}.{tmp[2]}.{tmp[3]}"
+
+		return server_major_version, server_minor_version, server_git_version
 
 	def create_namespace(self, name: str) -> Tuple[str, int]:
 		"""
@@ -5308,6 +5333,7 @@ a				the return value from __rest_helper_patch
 			Returns:
 				object (dict): An object dict
 		"""
+
 		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
 		ref = cast(Dict, ref)
 		return ref
