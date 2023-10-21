@@ -1732,6 +1732,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 					if isinstance(string, ThemeString):
 						tmpstring = str(string)
 						attribute = string.themeattr
+					elif isinstance(string, ThemeRef):
+						raise ProgrammingError(f"FIXME: windowwidget() currently cannot handle ThemeRef")
 					else:
 						raise ProgrammingError(f"In windowwidget(); we want to get rid of this: items={items}")
 						#tmpstring = string[0]

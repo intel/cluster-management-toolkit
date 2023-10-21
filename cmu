@@ -6232,10 +6232,12 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			taggeditemlist = []
 			if len(tagged_items) == 0:
 				continue
+			# XXX: Currently windowwidget cannot handle ThemeRefs
+			bullet = str(ThemeRef("separators", "widgetbullet"))
 			for item in tagged_items:
 				taggeditemlist.append({
 					"lineattrs": WidgetLineAttrs.NORMAL,
-					"columns": [[ThemeRef("separators", "widgetbullet"), ThemeString(f"{item.name}", ThemeAttr("windowwidget", "default"))]],
+					"columns": [[ThemeString(f"{bullet}{item.name}", ThemeAttr("windowwidget", "default"))]],
 				})
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
