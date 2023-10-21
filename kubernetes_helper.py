@@ -4670,7 +4670,7 @@ class KubernetesHelper:
 		return vlist
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_generic_json(self, method: Optional[str] = None, url: Optional[str] = None, header_params: Optional[Dict] = None,
+	def __rest_helper_generic_json(self, *, method: Optional[str] = None, url: Optional[str] = None, header_params: Optional[Dict] = None,
 				       query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None, body: Optional[bytes] = None,
 				       retries: int = 3, connect_timeout: float = 3.0) -> Tuple[Union[AnyStr, None], str, int]:
 		if query_params is None:
@@ -4827,7 +4827,7 @@ class KubernetesHelper:
 
 		return data, message, status
 
-	def __rest_helper_post(self, kind: Tuple[str, str], name: str = "", namespace: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
+	def __rest_helper_post(self, kind: Tuple[str, str], *, name: str = "", namespace: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
 		method = "POST"
 
 		if body is None or len(body) == 0:
@@ -4875,7 +4875,7 @@ class KubernetesHelper:
 		return message, status
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_patch(self, kind: Tuple[str, str], name: str, namespace: str = "", strategic_merge: bool = True, subresource: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
+	def __rest_helper_patch(self, kind: Tuple[str, str], *, name: str, namespace: str = "", strategic_merge: bool = True, subresource: str = "", body: Optional[bytes] = None) -> Tuple[str, int]:
 		method = "PATCH"
 
 		header_params = {
@@ -4931,7 +4931,7 @@ class KubernetesHelper:
 
 		return message, status
 
-	def __rest_helper_delete(self, kind: Tuple[str, str], name: str, namespace: str = "", query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None) -> Tuple[str, int]:
+	def __rest_helper_delete(self, kind: Tuple[str, str], *, name: str, namespace: str = "", query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None) -> Tuple[str, int]:
 		method = "DELETE"
 
 		if query_params is None:
@@ -4977,7 +4977,7 @@ class KubernetesHelper:
 	# this way lists the result can be handled unconditionally in for loops
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_get(self, kind: Tuple[str, str], raw_path: str = None, name: str = "", namespace: str = "",
+	def __rest_helper_get(self, *, kind: Optional[Tuple[str, str]] = None, raw_path: str = None, name: str = "", namespace: str = "",
 			      label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
 		if kind is None and raw_path is None:
 			raise ValueError("__rest_helper_get API called with kind None and raw_path None; this is most likely a programming error")
@@ -5077,7 +5077,7 @@ class KubernetesHelper:
 					server_git_version (str): API-server GIT version
 		"""
 
-		ref, _status = self.__rest_helper_get(kind = None, raw_path = "version")
+		ref, _status = self.__rest_helper_get(raw_path = "version")
 		ref = cast(Dict, ref)
 		server_major_version = deep_get(ref, DictPath("major"), "")
 		server_minor_version = deep_get(ref, DictPath("minor"), "")
@@ -5116,7 +5116,7 @@ class KubernetesHelper:
 		}
 
 		body = json.dumps(data).encode("utf-8")
-		return self.__rest_helper_post(kind, body = body)
+		return self.__rest_helper_post(kind = kind, body = body)
 
 	def taint_node(self, node: str, taints: List[Dict], new_taint: Tuple[str, Optional[str], Optional[str], Optional[str]], overwrite: bool = False) -> Tuple[str, int]:
 		"""
@@ -5197,7 +5197,7 @@ class KubernetesHelper:
 			}
 		}
 		body = json.dumps(data).encode("utf-8")
-		return self.__rest_helper_patch(kind, node, body = body)
+		return self.__rest_helper_patch(kind = kind, name = node, body = body)
 
 	def cordon_node(self, node: str) -> Tuple[str, int]:
 		"""
@@ -5216,7 +5216,7 @@ class KubernetesHelper:
 			}
 		}
 		body = json.dumps(data).encode("utf-8")
-		return self.__rest_helper_patch(kind, node, body = body)
+		return self.__rest_helper_patch(kind = kind, name = node, body = body)
 
 	def uncordon_node(self, node: str) -> Tuple[str, int]:
 		"""
@@ -5235,7 +5235,7 @@ a				the return value from __rest_helper_patch
 			}
 		}
 		body = json.dumps(data).encode("utf-8")
-		return self.__rest_helper_patch(kind, node, body = body)
+		return self.__rest_helper_patch(kind, name = node, body = body)
 
 	# pylint: disable-next=too-many-arguments
 	def patch_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, patch: Dict, subresource: str = "", strategic_merge: bool = True) -> Tuple[str, int]:
@@ -5252,7 +5252,7 @@ a				the return value from __rest_helper_patch
 				the return value from __rest_helper_delete
 		"""
 		body = json.dumps(patch).encode("utf-8")
-		return self.__rest_helper_patch(kind, name, namespace, body = body, subresource = subresource, strategic_merge = strategic_merge)
+		return self.__rest_helper_patch(kind = kind, name = name, namespace = namespace, body = body, subresource = subresource, strategic_merge = strategic_merge)
 
 	def delete_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, force: bool = False) -> Tuple[str, int]:
 		"""
@@ -5272,7 +5272,7 @@ a				the return value from __rest_helper_patch
 		if force:
 			query_params.append(("gracePeriodSeconds", 0))
 
-		return self.__rest_helper_delete(kind, name, namespace, query_params = query_params)
+		return self.__rest_helper_delete(kind = kind, name = name, namespace = namespace, query_params = query_params)
 
 	def get_metrics(self) -> Tuple[List[str], int]:
 		"""
@@ -5318,7 +5318,7 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
-		d, status = self.__rest_helper_get(kind, "", namespace, label_selector, field_selector)
+		d, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
 		d = cast(List[Optional[Dict]], d)
 		return d, status
 
@@ -5334,7 +5334,7 @@ a				the return value from __rest_helper_patch
 				object (dict): An object dict
 		"""
 
-		ref, _status = self.__rest_helper_get(kind, name, namespace, "", "")
+		ref, _status = self.__rest_helper_get(kind = kind, name = name, namespace = namespace)
 		ref = cast(Dict, ref)
 		return ref
 
@@ -5390,7 +5390,7 @@ a				the return value from __rest_helper_patch
 				object (dict): An object dict
 		"""
 
-		ref, _status = self.__rest_helper_get(deep_get(owr, DictPath("kind")), deep_get(owr, DictPath("name")), namespace)
+		ref, _status = self.__rest_helper_get(kind = deep_get(owr, DictPath("kind")), name = deep_get(owr, DictPath("name")), namespace = namespace)
 		ref = cast(dict, ref)
 		return ref
 
