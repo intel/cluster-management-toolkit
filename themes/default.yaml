@@ -141,7 +141,9 @@ color_pairs_curses:
     unselected: [["white", "bright"], ["black", "normal"]]
     selected: [["black", "bright"], ["white", "normal"]]
   http_protocol: [["green", "normal"], ["black", "normal"]]
-  url: [["cyan", "normal"], ["black", "normal"]]
+  url:
+    unselected: [["cyan", "normal"], ["black", "normal"]]
+    selected: [["cyan", "normal"], ["white", "normal"]]
   timestamp: [["cyan", "normal"], ["black", "normal"]]
   facility:
     unselected: [["magenta", "normal"], ["black", "normal"]]
@@ -918,6 +920,7 @@ types:
   undefined: ["type_undefined", "bold"]
   unit: "type_unit"
   unset: ["type_unset", "bold"]
+  url: ["url", "underline"]
   user: "type_user"
   version: "type_version"
   watermark_high: "type_watermark_high"

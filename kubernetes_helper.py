@@ -40,7 +40,7 @@ except ModuleNotFoundError:
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from cmtlog import CMTLogType, CMTLog
+from cmtlog import auditlog, debuglog
 from cmttypes import LogLevel
 from cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
 from cmtio import execute_command_with_response, secure_which
@@ -4813,7 +4813,7 @@ class KubernetesHelper:
 		elif status == 42503:
 			message = f"No route to host; method: {method}, URL: {url}; header_params: {header_params}"
 		else:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("__rest_helper_generic_json():", "emphasis")],
 					[ANSIThemeString(f"Unhandled error: {result.status}", "error")],
 					[ANSIThemeString("method: ", "emphasis"),

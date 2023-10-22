@@ -7,14 +7,24 @@ Structured log module for CMT
 
 from datetime import datetime, timezone
 from enum import auto, Enum
+import os
+from pathlib import Path, PurePath
 import sys
 from typing import cast, Dict, List, Optional, Union
 
-from cmtpaths import AUDIT_LOG_FILE, DEBUG_LOG_FILE
-from cmttypes import FilePath, LogLevel
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
+
+from cmtpaths import CMT_LOGS_DIR, AUDIT_LOG_BASENAME, DEBUG_LOG_BASENAME
+from cmttypes import FilePath, LogLevel, ProgrammingError
 from cmtio_yaml import secure_write_yaml
 
 from ansithemeprint import ANSIThemeString
+
+auditlog = None
+debuglog = None
 
 class CMTLogType(Enum):
 	"""
@@ -33,11 +43,35 @@ class CMTLog:
 	All other logs require flush() to be called.
 
 	If no timestamp is passed now(timezone.utc) will be used.
+
+	To avoid logs flooding the system every log file is limited to 1MB,
+	and the number of log files limited to 100, hence setting an upper limit to 100MB worth of logs.
 	"""
 
 	log: List[Dict] = []
 	logtype = None
-	path: Optional[FilePath] = None
+	basename: Optional[FilePath] = None
+	# These two are used for rate limiting
+	last_write = None
+	writes_last_minute = 0
+
+	def __rate_limit(self, filepath: FilePath, rate_limit: int, exception_on_flood: bool = True) -> bool:
+		now = datetime.now()
+
+		if self.last_write is None or (now - self.last_write).seconds > 60:
+			self.last_write = now
+			self.writes_last_minute = 1
+		else:
+			self.writes_last_minute += 1
+
+		# More than 10 log messages in a minute is an indication that something is very, very wrong;
+		# this should be close to 0
+		if self.writes_last_minute > rate_limit:
+			if exception_on_flood:
+				raise ProgrammingError(f"The log {filepath} is flooded; more than {rate_limit} messages in 60 seconds")
+			return False
+
+		return True
 
 	# pylint: disable-next=too-many-arguments
 	def __format_entry(self, message: Union[List[List[ANSIThemeString]], List[str]],
@@ -50,9 +84,10 @@ class CMTLog:
 			"timestamp": timestamp,
 			"severity": str(severity),
 			"facility": facility,
-			"file": file,
+			"file": PurePath(file).name,
 			"function": function,
 			"lineno": lineno,
+			"ppid": os.getppid(),
 		}
 
 		if not isinstance(message, list):
@@ -74,9 +109,38 @@ class CMTLog:
 			log_entry["themearray"] = loglines
 		return log_entry
 
+	def __rotate_filename(self, dirpath: FilePath, basename: str, suffix: str = "", maxsize: int = 1024 ** 3) -> Optional[FilePath]:
+		dir_path_entry = Path(dirpath)
+
+		if not dir_path_entry.is_dir():
+			return None
+
+		newest = None
+		count = 1
+
+		for filename in natsorted(list(dir_path_entry.glob(f"{basename}*{suffix}")), reverse = True):
+			if newest is None:
+				newest = str(filename)
+			count += 1
+
+		if newest is None:
+			filename = f"{basename}{count}{suffix}"
+		else:
+			path_entry = Path(FilePath(PurePath(dirpath).joinpath(newest)))
+			fstat = path_entry.stat()
+			if fstat.st_size > maxsize:
+				count += 1
+				filename = f"{basename}{count}{suffix}"
+			else:
+				filename = newest
+
+		return FilePath(str(PurePath(dirpath).joinpath(filename)))
+
 	# pylint: disable-next=too-many-arguments
-	def __init__(self, path: Union[CMTLogType, FilePath], message: Union[List[List[ANSIThemeString]], List[str]],
-		     severity: LogLevel = LogLevel.INFO, timestamp: Optional[datetime] = None, facility: str = ""):
+	def __init__(self, path: Union[CMTLogType, FilePath],
+		     message: Union[List[List[ANSIThemeString]], List[str]] = None,
+		     severity: LogLevel = LogLevel.INFO,
+		     timestamp: Optional[datetime] = None, facility: str = ""):
 		# Figure out what the caller was
 		file = None
 		function = None
@@ -91,24 +155,34 @@ class CMTLog:
 			lineno = int(frame.f_lineno) # type: ignore
 
 		if path == CMTLogType.DEBUG:
-			self.path = DEBUG_LOG_FILE
+			self.basename = DEBUG_LOG_BASENAME
 		elif path == CMTLogType.AUDIT:
-			self.path = AUDIT_LOG_FILE
+			self.basename = AUDIT_LOG_BASENAME
 		else:
-			self.path = cast(FilePath, path)
+			self.basename = cast(FilePath, path)
 
-		log_entry = self.__format_entry(message, severity, timestamp, facility, file, function, lineno)
 		if isinstance(path, CMTLogType):
 			self.logtype = path
 
+		# OK, we're initialising without logging anything
+		if message is None:
+			return
+
+		log_entry = self.__format_entry(message, severity, timestamp, facility, file, function, lineno)
+
 		# The audit log is always synchronous
 		if path == CMTLogType.AUDIT:
-			secure_write_yaml(AUDIT_LOG_FILE, [log_entry], permissions = 0o640, write_mode = "a")
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = AUDIT_LOG_BASENAME, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				secure_write_yaml(log_path, [warning_log_entry], permissions = 0o600, write_mode = "a")
 		else:
-			self.log.append(log_entry)
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = self.basename, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				self.log.append(log_entry)
 
 	def __del__(self) -> None:
-		self.flush()
+		if self.logtype != CMTLogType.AUDIT:
+			self.flush()
 		self.close()
 
 	def add(self, message: Union[List[List[ANSIThemeString]], List[str]],
@@ -141,15 +215,20 @@ class CMTLog:
 				"timestamp": timestamp,
 				"severity": str(LogLevel.WARNING),
 				"facility": facility,
-				"file": file,
+				"file": PurePath(file).name,
 				"function": function,
 				"lineno": lineno,
+				"ppid": os.getppid(),
 				"strarray": ["CMTLog.add() called from a synchronous log; this is a programming error."]
 			}
-			secure_write_yaml(AUDIT_LOG_FILE, [warning_log_entry], permissions = 0o640, write_mode = "a")
-			secure_write_yaml(AUDIT_LOG_FILE, [log_entry], permissions = 0o640, write_mode = "a")
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = self.basename, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				secure_write_yaml(log_path, [warning_log_entry], permissions = 0o600, write_mode = "a")
+				secure_write_yaml(log_path, [log_entry], permissions = 0o600, write_mode = "a")
 		else:
-			self.log.append(log_entry)
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = self.basename, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				self.log.append(log_entry)
 
 	def flush(self) -> None:
 		"""
@@ -174,14 +253,19 @@ class CMTLog:
 				"timestamp": datetime.now(timezone.utc),
 				"severity": str(LogLevel.WARNING),
 				"facility": "",
-				"file": file,
+				"file": PurePath(file).name,
 				"function": function,
 				"lineno": lineno,
+				"ppid": os.getppid(),
 				"strarray": ["CMTLog.flush() called from a synchronous log; this is a programming error."]
 			}
-			secure_write_yaml(AUDIT_LOG_FILE, [warning_log_entry], permissions = 0o640, write_mode = "a")
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = AUDIT_LOG_BASENAME, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				secure_write_yaml(log_path, [warning_log_entry], permissions = 0o600, write_mode = "a")
 		elif len(self.log) > 0:
-			secure_write_yaml(cast(FilePath, self.path), self.log, permissions = 0o640, write_mode = "a")
+			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = self.basename, suffix = ".yaml", maxsize = 1024 ** 3)
+			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
+				secure_write_yaml(log_path, self.log, permissions = 0o600, write_mode = "a")
 			self.log = []
 
 	def close(self) -> None:

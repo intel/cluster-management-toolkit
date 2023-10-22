@@ -1,0 +1,33 @@
+kind: "__CMTLogView"
+default_command: "__"
+infoview:
+  name: "CMTLog View"
+  infopad:
+    name_path: "filepath"
+    namespace_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["filesize", "mtime", "ctime"]
+    rows:
+      ctime:
+        header: [["Created:", ["main", "infoheader"]]]
+        paths:
+        - path: "ctime"
+          pathtype: "timestamp"
+        formatter: "timestamp"
+      filesize:
+        header: [["File Size:", ["main", "infoheader"]]]
+        path: "filesize"
+        type: "str"
+        formatter: "numerical_with_units"
+        align: "right"
+      mtime:
+        header: [["Modified:", ["main", "infoheader"]]]
+        paths:
+        - path: "ctime"
+          pathtype: "timestamp"
+        formatter: "timestamp"
+  logpad:
+    infogetter: "get_cmt_log"
+    timestamps: true

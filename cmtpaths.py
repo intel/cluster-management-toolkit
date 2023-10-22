@@ -23,10 +23,8 @@ LOGS_DIRNAME = "logs"
 CMT_LOGS_DIR = FilePath(str(PurePath(CMTDIR).joinpath(LOGS_DIRNAME)))
 VERSION_CACHE_DIRNAME = "version-cache"
 VERSION_CACHE_DIR = FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME)))
-AUDIT_LOG_FILENAME = "audit_log.yaml"
-AUDIT_LOG_FILE = FilePath(str(PurePath(CMT_LOGS_DIR).joinpath(AUDIT_LOG_FILENAME)))
-DEBUG_LOG_FILENAME = "debug_log.yaml"
-DEBUG_LOG_FILE = FilePath(str(PurePath(CMT_LOGS_DIR).joinpath(DEBUG_LOG_FILENAME)))
+AUDIT_LOG_BASENAME = "audit_log_"
+DEBUG_LOG_BASENAME = "debug_log_"
 
 CMT_CONFIG_FILENAME = "cmt.yaml"
 CMT_CONFIG_FILE = FilePath(str(PurePath(CMTDIR).joinpath(CMT_CONFIG_FILENAME)))

@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
-from cmtlog import CMTLogType, CMTLog
+from cmtlog import auditlog, debuglog
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
 from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
@@ -63,7 +63,7 @@ class ThemeString:
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
 		if not isinstance(string, str):
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("ThemeString()", "emphasis"),
 					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
 					[ANSIThemeString("string (type: ", "error")],
@@ -133,7 +133,7 @@ class ThemeRef:
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
 		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("ThemeRef()", "emphasis"),
 					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
 					[ANSIThemeString("context (type: ", "error")],
@@ -160,7 +160,7 @@ class ThemeRef:
 		string = ""
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("The ThemeRef(", "error")],
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
@@ -191,7 +191,7 @@ class ThemeRef:
 		themearray = []
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("The ThemeRef(", "error")],
 					[ANSIThemeString(f"{self.context}", "argument")],
 					[ANSIThemeString(", ", "error")],
@@ -232,7 +232,7 @@ class ThemeArray:
 
 	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
 		if array is None:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("ThemeArray()", "emphasis"),
 					 ANSIThemeString(" initialised with an empty array:", "error")],
 			       ], severity = LogLevel.ERR, facility = str(themefile))
@@ -241,7 +241,7 @@ class ThemeArray:
 		newarray: List[Union[ThemeRef, ThemeString]] = []
 		for item in array:
 			if not isinstance(item, (ThemeRef, ThemeString)):
-				CMTLog(CMTLogType.DEBUG, [
+				debuglog.add([
 						[ANSIThemeString("ThemeArray()", "emphasis"),
 						 ANSIThemeString(" initialised with invalid type ", "error"),
 						 ANSIThemeString(f"{type(item)}", "argument"),
@@ -269,7 +269,7 @@ class ThemeArray:
 		"""
 
 		if not isinstance(item, (ThemeRef, ThemeString)):
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("ThemeArray.append()", "emphasis"),
 					 ANSIThemeString(" called with invalid type ", "error"),
 					 ANSIThemeString(f"{type(item)}", "argument"),
@@ -397,7 +397,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 	col, attr = color
 
 	if not isinstance(attr, str):
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
 				[ANSIThemeString("“", "default"),
 				 ANSIThemeString("normal", "emphasis"),
@@ -410,7 +410,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 		       ], severity = LogLevel.ERR, facility = str(themefile))
 		attr = "normal"
 	elif attr not in ["normal", "bright"]:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Invalid color attribute “", "default"),
 				 ANSIThemeString(f"{attr}", "emphasis"),
 				 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
@@ -428,7 +428,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 		col = col.lower()
 
 	if not isinstance(col, str) or col not in color_map:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Invalid color type “", "default"),
 				 ANSIThemeString(f"{col}", "emphasis"),
 				 ANSIThemeString("“ used in theme; color has to be a string and one of:", "default"),
@@ -443,7 +443,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
 	curses_color = deep_get(color_map, DictPath(col))
 	if curses_color is None:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Invalid {color_type} color “", "default"),
 				 ANSIThemeString(f"{col}", "emphasis"),
 				 ANSIThemeString("“ used in theme; valid colors are:", "default"),
@@ -467,7 +467,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 	try:
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("__init_pair()", "emphasis"),
 					 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
 					 ANSIThemeString(f"{fg}", "argument"),
@@ -480,7 +480,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("init_pair()", "emphasis"),
 					 ANSIThemeString(" failed; attempting to limit fg & bg to ", "error"),
 					 ANSIThemeString("0", "argument"),
@@ -499,7 +499,7 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				fg = curses.COLOR_BLUE
 				bright_black_remapped = True
 			if fg & 7 == bg & 7:
-				CMTLog(CMTLogType.DEBUG, [
+				debuglog.add([
 						[ANSIThemeString("__init_pair()", "emphasis"),
 						 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
 						 ANSIThemeString(f"{fg}", "argument"),
@@ -1318,7 +1318,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp_attr = deep_get(theme, DictPath(f"{context}#{key}"))
 
 	if tmp_attr is None:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Could not find the tuple (", "default"),
 				 ANSIThemeString(f"{context}", "emphasis"),
 				 ANSIThemeString(", ", "default"),
@@ -1355,7 +1355,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 
 	for item in attr:
 		if not isinstance(item, str):
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
 					[ANSIThemeString("“", "default"),
 					 ANSIThemeString("dim", "emphasis"),
@@ -1379,7 +1379,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		elif item == "underline":
 			tmp |= curses.A_UNDERLINE
 		else:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("Invalid text attribute “", "default"),
 					 ANSIThemeString(f"{item}", "emphasis"),
 					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
@@ -1401,7 +1401,7 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 
 	curses_col = __color[col][selected]
 	if curses_col is None:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("themeattr_to_curses()", "emphasis")],
 				[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
 				[ANSIThemeString(f"{col}", "argument")],
@@ -1468,7 +1468,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 		elif isinstance(substring, ThemeRef):
 			themearray_flattened += substring.to_themearray()
 		else:
-			CMTLog(CMTLogType.DEBUG, [
+			debuglog.add([
 					[ANSIThemeString("themearray_flatten()", "emphasis"),
 					 ANSIThemeString(" called with invalid type ", "error"),
 					 ANSIThemeString(f"{type(substring)}", "argument"),

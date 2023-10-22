@@ -761,7 +761,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 	tmp_allowlist = []
 	for directory in fallback_allowlist:
 		if directory.startswith("{HOME}"):
-			directory.replace("{HOME}", HOMEDIR, 1)
+			directory = directory.replace("{HOME}", HOMEDIR, 1)
 
 		tmp_allowlist.append(directory)
 

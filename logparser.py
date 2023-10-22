@@ -60,19 +60,21 @@ except ModuleNotFoundError:
 	validators = None
 
 from cmtpaths import HOMEDIR, PARSER_DIR
-
-from cmtlog import CMTLogType, CMTLog
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
 
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import cmtlib
 from cmtlib import none_timestamp, strip_ansicodes
+from cmtlog import auditlog, debuglog
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
 from ansithemeprint import ANSIThemeString
+
+auditlog = None
+debuglog = None
 
 class logparser_configuration:
 	"""
@@ -1363,7 +1365,7 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
-		CMTLog(CMTLogType.DEBUG, [
+		debuglog.add([
 				[ANSIThemeString("Unknown EVENT type: ", "default"),
 				 ANSIThemeString(f"{event}", "argument")],
 		       ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")

@@ -62,7 +62,7 @@ from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_
 
 from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
-from cmtlog import CMTLogType, CMTLog
+from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 
 from commandparser import parse_commandline
 
@@ -128,6 +128,7 @@ selected_namespace = ""
 defaultview = ""
 
 kh: KubernetesHelper = None # type: ignore
+debuglog: CMTLog = None
 
 def init_kubernetes_client() -> None:
 	"""
@@ -570,6 +571,7 @@ def __recurse_data(path: Dict, obj: Any):
 				return obj
 			else:
 				data = obj[datapath]
+		# FIXME
 		except:
 			sys.exit(obj)
 	else:
@@ -579,6 +581,47 @@ def __recurse_data(path: Dict, obj: Any):
 		return data
 
 	return __recurse_data(nextpath, data)
+
+def listgetter_dir(**kwargs):
+	dirpath = deep_get(kwargs, DictPath("dirpath"), "")
+	# Substitute {HOME} for {HOMEDIR}
+	if dirpath.startswith("{HOME}"):
+		dirpath = dirpath.replace("{HOME}", HOMEDIR, 1)
+	prefixes = deep_get(kwargs, DictPath("prefixes"), [])
+	suffixes = deep_get(kwargs, DictPath("suffixes"), [])
+	kind = deep_get(kwargs, DictPath("kind"))
+
+	vlist = []
+
+	if os.path.isdir(dirpath):
+		for filename in os.listdir(dirpath):
+			if len(prefixes) > 0 and not filename.startswith(tuple(prefixes)):
+				continue
+			if len(suffixes) > 0 and not filename.endswith(tuple(suffixes)):
+				continue
+			filepath = FilePath(PurePath(dirpath).joinpath(filename))
+			filepath_entry = Path(filepath)
+			fstat = filepath_entry.stat()
+			mtime = datetime.fromtimestamp(fstat.st_mtime)
+			ctime = datetime.fromtimestamp(fstat.st_ctime)
+			filesize = disksize_to_human(fstat.st_size)
+
+			vlist.append({
+					"filename": filename,
+					"mtime": mtime,
+					"ctime": ctime,
+					"filesize": filesize,
+					"ref": {
+						"filename": filename,
+						"filepath": FilePath(str(filepath)),
+						"filesize": filesize,
+						"mtime": mtime,
+						"ctime": ctime,
+					},
+					"kind": kind,
+				})
+
+	return vlist, 200
 
 def listgetter_files(**kwargs):
 	paths = deep_get(kwargs, DictPath("paths"), [])
@@ -2503,6 +2546,83 @@ def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, The
 	messages = dump_formatter(deep_get(obj, path))
 
 	return messages
+
+# pylint: disable-next=unused-argument
+def get_cmt_log(obj: Dict, **kwargs: Dict):
+	filepath = deep_get(obj, DictPath("filepath"), "")
+	timestamps = []
+	messages = []
+	facilities = []
+	severities = []
+	messages = []
+
+	d = secure_read_yaml(filepath)
+
+	if len(d) == 0 or not isinstance(d, list):
+		return messages
+
+	for message in d:
+		timestamp = deep_get(message, DictPath("timestamp"), "")
+		severity = deep_get(message, DictPath("severity"), "")
+		facility = deep_get(message, DictPath("facility"), "")
+		file = deep_get(message, DictPath("file"), "")
+		function = deep_get(message, DictPath("function"), "")
+		lineno = deep_get(message, DictPath("lineno"), "")
+
+		facilitystr = f"{file}:{lineno} [{function}()]"
+
+		themestrings = True
+		msgs = deep_get(message, DictPath("themearray"), [])
+		if len(msgs) == 0:
+			themestrings = False
+			msgs = deep_get(message, DictPath("strarray"), [])
+
+		first = True
+
+		for msg in msgs:
+			if first:
+				timestamps.append(timestamp)
+				if len(facility) > 0:
+					facilities.append((facilitystr, facility))
+				else:
+					facilities.append(facilitystr)
+				first = False
+			else:
+				timestamps.append("")
+				if len(facility) > 0:
+					facilities.append(("".ljust(len(facilitystr)), "".ljust(len(facility))))
+				else:
+					facilities.append("".ljust(len(facilitystr)))
+			severities.append(severity)
+
+			reformatted_msg = []
+			for substring in msg:
+				if themestrings:
+					# These log messages are in ANSIThemeString format;
+					# hence we need to convert them to ThemeStrings.
+					# Luckily ANSIThemeString has fewer formats
+					# than ThemeString. We should probably have
+					# a cross-reference table in themes though.
+					string = deep_get(substring, DictPath("string"))
+					themeref = deep_get(substring, DictPath("themeref"))
+				else:
+					string = substring
+					themeref = "default"
+				if themeref == "default":
+					fmt = ThemeAttr("main", "default")
+				elif themeref == "emphasis":
+					fmt = ThemeAttr("main", "highlight")
+				elif themeref == "argument":
+					fmt = ThemeAttr("main", "infoheader")
+				elif themeref == "error":
+					fmt = ThemeAttr("logview", "error")
+				# Insert more here when necessary
+				else:
+					fmt = ThemeAttr("main", "default")
+				reformatted_msg.append(ThemeString(string, fmt))
+			messages.append(reformatted_msg)
+
+	return (timestamps, facilities, severities, messages)
 
 def logpad_yaml(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
@@ -4743,7 +4863,7 @@ def get_node_addresses(name, addresses):
 			if new_name is None:
 				new_name = address_address
 			else:
-				CMTLog(CMTLogType.DEBUG, [
+				debuglog.add([
 						[ANSIThemeString("We need to handle multiple hostnames in a better way", "default")],
 				       ], severity = LogLevel.ERR)
 		else:
@@ -7006,7 +7126,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		k8s_distro = identify_k8s_distro()
 
 		if k8s_distro is not None:
-			k8s_distro_string = ThemeString(f"{k8s_distro}", ThemeAttr("main", "generic"))
+			k8s_distro_string = ThemeString(f"{k8s_distro}", ThemeAttr("types", "generic"))
 		else:
 			k8s_distro_string = ThemeString("<unknown>", ThemeAttr("types", "unset"))
 
@@ -8485,10 +8605,32 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					fac = facilities[uip.yoffset + y]
 
 					if len(fac) > 0:
-						facility = [ThemeRef("separators", "facility_prefix"),
-							    ThemeString(facilities[uip.yoffset + y], ThemeAttr("logview", "facility")),
-							    ThemeRef("separators", "facility_suffix"),
-							    ThemeRef("separators", "facility_padding")]
+						if isinstance(fac, tuple):
+							fac0 = fac[0]
+							fac1 = fac[1]
+						else:
+							fac0 = fac
+							fac1 = ""
+
+						facility = []
+						if len(fac0.strip()) == 0:
+							facility += [ThemeString("".ljust(len(ThemeRef("separators", "facility_prefix"))), ThemeAttr("logview", "facility")),
+								     ThemeString(fac0, ThemeAttr("logview", "facility")),
+								     ThemeString("".ljust(len(ThemeRef("separators", "facility_suffix"))), ThemeAttr("logview", "facility"))]
+						else:
+							facility += [ThemeRef("separators", "facility_prefix"),
+								     ThemeString(fac0, ThemeAttr("logview", "facility")),
+								     ThemeRef("separators", "facility_suffix")]
+						if len(fac1) > 0:
+							if len(fac1.strip()) == 0:
+								facility += [ThemeString("".ljust(len(ThemeRef("separators", "facility_extended_prefix"))), ThemeAttr("logview", "facility")),
+									     ThemeString(fac1, ThemeAttr("types", "facility_extended")),
+									     ThemeString("".ljust(len(ThemeRef("separators", "facility_extended_suffix"))), ThemeAttr("logview", "facility"))]
+							else:
+								facility += [ThemeRef("separators", "facility_extended_prefix"),
+									     ThemeString(fac1, ThemeAttr("types", "facility_extended")),
+									     ThemeRef("separators", "facility_extended_suffix")]
+						facility += [ThemeRef("separators", "facility_padding")]
 
 				if timestamps is None or uip.yoffset + y >= len(timestamps):
 					timestamp = "".ljust(uip.tspadwidth)
@@ -11975,6 +12117,7 @@ infogetter_allowlist = {
 	"logpad_yaml": logpad_yaml,
 	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,
+	"get_cmt_log": get_cmt_log,
 	"get_themearrays": get_themearrays,
 	"get_traceflow": get_traceflow,
 }
@@ -11986,6 +12129,7 @@ listgetter_allowlist = {
 	"get_metrics_list": get_metrics_list,
 	"get_pod_containers_list": get_pod_containers_list,
 	"listgetter_files": listgetter_files,
+	"listgetter_dir": listgetter_dir,
 	# Used by listpad
 	"get_hpa_metrics": get_hpa_metrics,
 	"get_ingress_rule_list": get_ingress_rule_list,
@@ -13264,6 +13408,10 @@ def main() -> None:
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
 		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+	# Now initialise the audit log and the debug log
+	auditlog = CMTLog(CMTLogType.AUDIT)
+	debuglog = CMTLog(CMTLogType.DEBUG)
 
 	# Then initialise the configuration file
 	read_cmtconfig()

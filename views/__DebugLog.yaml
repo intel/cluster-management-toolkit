@@ -1,0 +1,64 @@
+kind: "__DebugLog"
+default_command: "debuglogs"
+command:
+- "debuglog"
+- "dbglogs"
+- "dbglog"
+listview:
+  name: "Debug Logs"
+  group: "Administration"
+  listgetter: "listgetter_dir"
+  listgetter_args:
+    dirpath: "{HOME}/.cmt/logs"
+    kind: "__CMTLogView"
+    suffixes:
+    - ".yaml"
+  on_activation:
+    call: null
+  field_indexes:
+    Normal:
+      fields: ["filename", "mtime", "ctime", "filesize"]
+      sortcolumn: "mtime"
+      sortorder_reverse: true
+  labels: false
+  fields:
+    ctime:
+      header: "Created:"
+      paths:
+      - path: "ctime"
+        pathtype: "timestamp"
+      formatter: "timestamp"
+    filename:
+      header: "Filename:"
+      path: "filename"
+      type: "str"
+    filesize:
+      header: "File Size:"
+      path: "filesize"
+      type: "str"
+      formatter: "numerical_with_units"
+      align: "right"
+    mtime:
+      header: "Modified:"
+      paths:
+      - path: "mtime"
+        pathtype: "timestamp"
+      formatter: "timestamp"
+  actions:
+    actionlist:
+      "Delete log":
+        description: "Delete log"
+        confirm: true
+        actionfunc: "delete_logs"
+  shortcuts:
+    "Edit resource": null
+    "View YAML dump": null
+    "View Log":
+      key: "enter"
+      read_only: true
+      helptext: "View selected log"
+      action: "call"
+      action_call: "resourceinfodispatch_from_pod_resource_list"
+      action_args:
+        _pass_obj: true
+        kind_path: "kind"
