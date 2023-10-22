@@ -1,4 +1,4 @@
-![CMT Logo](images/cmt_logo.png)
+![CMT Logo](docs/images/cmt_logo.png)
 
 # About
 
