@@ -1669,7 +1669,7 @@ def update_version_cache() -> bool:
 	"""
 
 	update_version_cache_path = get_playbook_path(FilePath("update_version_cache.yaml"))
-	retval, ansible_results = ansible_run_playbook_on_selection(update_version_cache_path, selection = ["localhost"])
+	retval, ansible_results = run_playbook(update_version_cache_path, hosts = ["localhost"])
 
 	if len(ansible_results) == 0:
 		return False
