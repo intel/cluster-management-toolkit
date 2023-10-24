@@ -844,7 +844,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration["forks"] = optarg
+			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--from-file":
 			from_file = True
 		elif opt == "-Y":
@@ -1023,7 +1023,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--ca-cert-path":
 			ca_cert_path = optarg
 		elif opt == "--forks":
-			ansible_configuration["forks"] = optarg
+			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--cri":
 			if optarg in ("docker-shim", "containerd", "cri-o"):
 				cri = optarg
@@ -1451,7 +1451,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration["forks"] = optarg
+			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--kubernetes-distro":
 			k8s_distro = optarg
 
@@ -1588,7 +1588,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration["forks"] = optarg
+			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--kubernetes-distro":
 			k8s_distro = cast(str, optarg)
 
@@ -1702,7 +1702,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
-			ansible_configuration["forks"] = optarg
+			ansible_configuration["ansible_forks"] = optarg
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
