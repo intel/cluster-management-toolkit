@@ -2955,8 +2955,12 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		raise ValueError(f"No support for distro {k8s_distro} implemented")
 
 	if k8s_distro == "kubeadm":
-		_major, minor, _patchrev = requested_version.split(".")
+		# First remove the distro revision
+		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		# Now split the version tuple
+		_major, minor, _patchrev = major_minor_patchrev.split(".")
 	else:
+		# Split the version tuple
 		_major, minor = requested_version.split(".")
 		requested_version = f"v{requested_version}"
 
@@ -4326,7 +4330,10 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 						ANSIThemeString("“", "default")])
 				sys.exit(errno.EBUSY)
 
-		requested_major, requested_minor, _rest = requested_version.split(".")
+		# First remove the distro revision
+		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		# Now split the version tuple
+		requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
 
 		if int(requested_minor) < 23:
 			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"

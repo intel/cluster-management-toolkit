@@ -605,7 +605,7 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			_split_response = _response.splitlines()
 			all_versions = []
 			for version in _split_response:
-				if "amd64 Packages" in version:
+				if version.endswith(" Packages"):
 					all_versions.append(__extract_version(version))
 			natsorted_versions = []
 			for natsorted_version in natsorted(all_versions, reverse = True):
