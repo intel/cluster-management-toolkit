@@ -73,9 +73,6 @@ from curses_helper import themearray_len, themearray_to_string, ThemeAttr, Theme
 
 from ansithemeprint import ANSIThemeString
 
-auditlog = None
-debuglog = None
-
 class logparser_configuration:
 	"""
 	Various configuration options used by the logparsers

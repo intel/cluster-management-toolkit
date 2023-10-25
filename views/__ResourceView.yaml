@@ -4,9 +4,25 @@ infoview:
   name: "Resource Viewer"
   logpad:
     infogetter: "get_themearrays"
+    infogetter_args:
+      formatter:
+        decode_base64: false
     timestamps: false
+  infoview_args:
+    decoder:
+      override_decoder: false
+      decoder: "decode_base64"
+  statusmsg:
+  - ["Decode Base64: ", ["var", "decoder#override_decoder"]]
   shortcuts:
     # __ResourceView has no last applied configuration or events, and is a YAML-viewer so cannot view itself...
     "Show Events": null
     "Last Applied Configuration": null
     "YAML": null
+    "Toggle Base64":
+      key: "&"
+      helptext: "Toggle (attempted) Base64 decode on/off"
+      action: "toggle_var"
+      action_args:
+        var: "decoder#override_decoder"
+      force_update: true

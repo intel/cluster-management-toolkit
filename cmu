@@ -128,7 +128,6 @@ selected_namespace = ""
 defaultview = ""
 
 kh: KubernetesHelper = None # type: ignore
-debuglog: CMTLog = None
 
 def init_kubernetes_client() -> None:
 	"""
@@ -7490,6 +7489,7 @@ cmdata_format = [
 	("", "kubeapps-clusters-config", "clusters.conf", "", "JSON"),
 	("", "kubeapps-internal-kubeappsapis-configmap", "plugins.conf", "", "JSON"),
 	("kube-public", "cluster-info", "kubeconfig", "", "YAML"),
+	("kube-public", "cluster-info", "jws-", "", "JWS"),
 	("kube-system", "antrea", "antrea-agent", "", "YAML"),
 	("kube-system", "antrea", "antrea-controller", "", "YAML"),
 	("kube-system", "antrea", "antrea-cni", "", "JSON"),
@@ -8164,6 +8164,9 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 	windowheader = deep_get(viewref, DictPath("windowheader"), f"{view[0]} Info")
 
+	# These values can be toggled, so we need to read them first
+	infoview_args = copy.deepcopy(viewref.get("infoview_args", {}))
+
 	# These are used for anything that uses ResourceViewer
 	if title is not None:
 		windowheader = title
@@ -8386,7 +8389,39 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				ThemeString("Fields: ", ThemeAttr("statusbar", "infoheader")),
 				ThemeString(field_index, ThemeAttr("statusbar", "highlight"))
 			]
+			statusarray2: List[Union[ThemeRef, ThemeString]] = []
+
+			for status_data in deep_get(viewref, DictPath("statusmsg"), []):
+				if len(status_data) == 2:
+					key, path = status_data
+					default_status = "<unset>"
+				else:
+					key, path, default_status = status_data
+
+				# If path is a list the first item tells what source to use and the second
+				# what path to fetch the value from
+				if isinstance(path, list):
+					if path[0] == "config":
+						src_obj = cmtlib.cmtconfig
+					#elif path[0] == "obj":
+					#	value_path = obj
+					elif path[0] == "var":
+						src_obj = infoview_args
+					value_path = DictPath(path[1])
+				else:
+					src_obj = infoview_args
+					value_path = DictPath(path)
+
+				value = str(deep_get(src_obj, value_path, default_status))
+				if len(statusarray2) > 0:
+					statusarray2 += [ThemeRef("separators", "statusbar")]
+				statusarray2 += [
+					ThemeString(key, ThemeAttr("statusbar", "infoheader")),
+					ThemeString(value, ThemeAttr("statusbar", "default")),
+				]
+
 			uip.addthemearray(statusbar, statusarray1, y = 0, x = 0)
+			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
 
 			# Refresh obj whenever we reload, unless this is a special view or "no_reload_on_refresh" is true
 			if not view[0].startswith("__") and not deep_get(viewref, DictPath("no_reload_on_refresh"), False):
@@ -8498,14 +8533,25 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				linelen = update_field_widths(field_dict, field_names, uip.info)
 				uip.resize_listpad(linelen)
 			elif logpad is not None:
-				if formatter is not None:
-					formatted_obj = formatter(obj, raw = raw_output)
+				if deep_get(infoview_args, DictPath("decoder#override_decoder")):
+					decoder = deep_get(infoview_args, DictPath("decoder#decoder"))
+					if decoder is not None:
+						try:
+							decoded_obj = copy.deepcopy(base64.b64decode(obj).decode("utf-8"))
+						except (binascii.Error, UnicodeDecodeError):
+							decoded_obj = obj
 				else:
-					formatted_obj = obj
+					decoded_obj = obj
+
+				if formatter is not None:
+					formatted_obj = formatter(decoded_obj, raw = raw_output)
+				else:
+					formatted_obj = decoded_obj
 
 				infogetter = deep_get(viewref, DictPath("logpad#infogetter"))
 				infogetter_args = deep_get(viewref, DictPath("logpad#infogetter_args"), {})
 				infogetter_args["_show_raw"] = raw_output
+
 				if infogetter is not None:
 					tmp = infogetter(formatted_obj, **infogetter_args)
 					if isinstance(tmp, tuple):
@@ -9004,6 +9050,11 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					retval = action_call(uip.stdscr, **action_args)
 					if retval is not None and retval == Retval.RETURNFULL:
 						return retval
+				elif action == "toggle_var":
+					var = deep_get(action_args, DictPath("var"))
+					if var is not None:
+						tmp = deep_get(infoview_args, DictPath(var))
+						deep_set(infoview_args, DictPath(var), not tmp)
 				elif action == "execute":
 					_command = deep_get(action_args, DictPath("command"), [])
 					# replace paths with data
@@ -12636,6 +12687,8 @@ def populate_views(force_refresh: bool = False) -> None:
 				"field_indexes": listpad_field_indexes,
 				"fields": listpad_fields,
 				"activatedfun": activatedfun,
+				"infoview_args": deep_get(d, DictPath("infoview#infoview_args"), {}),
+				"statusmsg": deep_get(d, DictPath("infoview#statusmsg"), {}),
 				"viewoverride": viewoverride,
 				"extraref": on_activation_extraref,
 				"data": on_activation_data,
@@ -13404,6 +13457,8 @@ def main() -> None:
 	"""
 	Main function for the program
 	"""
+	global auditlog
+	global debuglog
 
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:

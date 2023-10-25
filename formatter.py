@@ -1270,6 +1270,8 @@ def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Li
 		formatter = format_xml
 	elif dataformat == "INI" or dataformat.endswith((".ini")):
 		formatter = format_ini
+	elif dataformat == "JWS":
+		formatter = format_none
 	elif dataformat == "FluentBit":
 		formatter = format_fluentbit
 	elif dataformat in {"HAProxy", "haproxy.cfg"}:
