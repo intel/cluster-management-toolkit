@@ -134,25 +134,28 @@ def format_ansible_line(line: str, override_formatting: Optional[Union[ThemeAttr
 	return tmpline
 
 # pylint: disable-next=unused-argument
-def format_diff_line(line: str, override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> List[Union[ThemeRef, ThemeString]]:
+def format_diff_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Formats a single line of a diff
 
 		Parameters:
 			line (str): a string
 			override_formatting (dict): Overrides instead of default diff-formatting
+			kwargs (dict): Additional parameters
 		Returns:
 			themearray: a themearray
 	"""
+	override_formatting: Optional[Union[ThemeAttr, Dict]] = deep_get(kwargs, DictPath("override_formatting"))
+	indent = deep_get(kwargs, DictPath("indent"), "")
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
 
-	if line.startswith("+ "):
+	if line.startswith(f"{indent}+ "):
 		tmpline += [
 			ThemeString(line, ThemeAttr("logview", "severity_diffplus")),
 		]
 		return tmpline
-	if line.startswith("- "):
+	if line.startswith(f"{indent}- "):
 		tmpline += [
 			ThemeString(line, ThemeAttr("logview", "severity_diffminus")),
 		]

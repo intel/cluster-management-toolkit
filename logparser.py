@@ -2388,7 +2388,7 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 				matched = False
 
 	if matched:
-		remnants = formatters.format_diff_line(message, override_formatting = {})
+		remnants = formatters.format_diff_line(message, indent = deep_get(options, DictPath("indent"), ""))
 		processor: Tuple[str, Optional[Callable], Dict] = ("block", diff_line_scanner, options)
 	else:
 		if process_block_end:
@@ -2441,7 +2441,7 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	if matched:
 		if format_block_start:
-			remnants = formatters.format_diff_line(message, override_formatting = {})
+			remnants = formatters.format_diff_line(message, indent = deep_get(options, DictPath("indent"), ""))
 		else:
 			remnants = [ThemeString(message, ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
 		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", diff_line_scanner, options)
@@ -2902,7 +2902,16 @@ def init_parser_list():
 								   "yaml_line"):
 							options = {}
 							for key, value in deep_get(rule, DictPath("options"), {}).items():
-								if key == "regex":
+								if key in ("block_start", "block_end"):
+									tmp = []
+									for entry in value:
+										if deep_get(entry, DictPath("matchtype"), "") == "regex":
+											regex = deep_get(entry, DictPath("matchkey"), "")
+											if regex is not None:
+												compiled_regex = re.compile(regex)
+												entry["matchkey"] = compiled_regex
+										tmp.append(entry)
+								elif key == "regex":
 									regex = deep_get(rule, DictPath("options#regex"), "")
 									value = re.compile(regex)
 								options[key] = value
