@@ -7,6 +7,11 @@
   - name: "glog"
   - name: "tab_separated"
   - name: "key_value"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
 - name: "tensorflow"
   show_in_selector: false
   matchkeys:
