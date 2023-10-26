@@ -346,6 +346,7 @@ def is_timestamp(message: str):
 		        r"\d{3}Z|" \
 		        r"\d{3}|" \
 		        r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|" \
+		        r"[\.,]\d{3}Z|" \
 		        r"Z|)$", message)
 
 	if tmp is not None:
@@ -1574,8 +1575,11 @@ def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple
 
 	return severity, message, remnants
 
-def format_key_value(key: str, value: str, severity: LogLevel, force_severity: bool = False) -> List[Union[ThemeRef, ThemeString]]:
-	if key in ("error", "err"):
+def format_key_value(key: str, value: str, severity: LogLevel, **kwargs: Dict) -> List[Union[ThemeRef, ThemeString]]:
+	force_severity = deep_get(kwargs, DictPath("force_severity"), False)
+	error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
+
+	if key in error_keys:
 		tmp = [ThemeString(f"{key}", ThemeAttr("types", "key_error")),
 		       ThemeRef("separators", "keyvalue_log"),
 		       ThemeString(f"{value}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))]
@@ -1745,7 +1749,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				for key in errors:
 					value = d.pop(key, "")
 					if len(value) > 0:
-						tmp.append(format_key_value(key, value, severity))
+						tmp.append(format_key_value(key, value, severity, error_keys = errors))
 			else:
 				if logparser_configuration.msg_first:
 					if fold_msg:

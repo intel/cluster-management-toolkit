@@ -14,6 +14,24 @@ import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
+def format_special(string: str, selected: bool) -> Union[ThemeRef, ThemeString]:
+	formatted_string: Union[ThemeRef, ThemeString] = None
+
+	if string in ("<none>", "<unknown>"):
+		fmt = ThemeAttr("types", "none")
+		formatted_string = ThemeString(string, fmt, selected)
+	elif string in ("<undefined>", "<unspecified>"):
+		fmt = ThemeAttr("types", "undefined")
+		formatted_string = ThemeString(string, fmt, selected)
+	elif string in ("<empty>", "<unset>"):
+		fmt = ThemeAttr("types", "unset")
+		formatted_string = ThemeString(string, fmt, selected)
+	elif string == "<not ready>":
+		fmt = color_status_group(StatusGroup.NOT_OK)
+		formatted_string = ThemeString(string, fmt, selected)
+
+	return formatted_string
+
 def format_list(items: Any,
 		fieldlen: int,
 		pad: int,
@@ -92,18 +110,8 @@ def format_list(items: Any,
 				totallen += len(field_sep)
 				array.append(field_sep)
 
-			if string in ("<none>", "<unknown>"):
-				fmt = ThemeAttr("types", "none")
-				formatted_string: Union[ThemeRef, ThemeString] = ThemeString(string, fmt, selected)
-			elif string in ("<undefined>", "<unspecified>"):
-				fmt = ThemeAttr("types", "undefined")
-				formatted_string = ThemeString(string, fmt, selected)
-			elif string == ("<empty>", "<unset>"):
-				fmt = ThemeAttr("types", "unset")
-				formatted_string = ThemeString(string, fmt, selected)
-			elif string == "<not ready>":
-				fmt = color_status_group(StatusGroup.NOT_OK)
-				formatted_string = ThemeString(string, fmt, selected)
+			if (tmp := format_special(string, selected)) is not None:
+				formatted_string = tmp
 			else:
 				default_field_color = cast(ThemeAttr, field_colors[min(i, len(field_colors) - 1)])
 				formatted_string, __string = map_value(string, selected = selected, default_field_color = default_field_color, mapping = mapping)
@@ -329,11 +337,8 @@ def generator_age_raw(value: Union[int, str],
 	else:
 		string = cmtlib.seconds_to_age(value, negative_is_skew = True)
 
-	if string in ("<none>", "<unset>", "<unknown>"):
-		fmt = ThemeAttr("types", "none")
-		array = [
-			ThemeString(string, fmt, selected)
-		]
+	if (tmp := format_special(string, selected)) is not None:
+		array = [tmp]
 	elif string == "<clock skew detected>":
 		fmt = ThemeAttr("main", "status_not_ok")
 		array = [
@@ -723,17 +728,23 @@ def generator_timestamp(obj: Dict,
 
 	value = getattr(obj, field)
 
-	string = datetime_to_timestamp(value)
-	if value is None:
-		array = [
-			ThemeString(string, ThemeAttr("types", "generic"), selected)
-		]
-	elif value == datetime.fromtimestamp(0).astimezone():
-		array = [
-			ThemeString(string, ThemeAttr("types", "generic"), selected)
-		]
-	else:
-		array = format_numerical_with_units(string, "timestamp", selected)
+	if isinstance(value, str):
+		if (tmp := format_special(value, selected)) is not None:
+			array = [tmp]
+			string = value
+
+	if len(array) == 0:
+		string = datetime_to_timestamp(value)
+		if value is None:
+			array = [
+				ThemeString(string, ThemeAttr("types", "generic"), selected)
+			]
+		elif value == datetime.fromtimestamp(0).astimezone():
+			array = [
+				ThemeString(string, ThemeAttr("types", "generic"), selected)
+			]
+		else:
+			array = format_numerical_with_units(string, "timestamp", selected)
 
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
 

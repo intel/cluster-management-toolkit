@@ -1,0 +1,115 @@
+kind: "CachedImage"
+api_family: "kuik.enix.io"
+default_command: "cachedimages"
+command:
+- "cimgs"
+- "cimg"
+listview:
+  name: "Cached Images"
+  group: "Caches / Mirrors"
+  field_indexes:
+    Normal:
+      fields: ["name", "cached", "retain", "expiration", "use_count", "age"]
+      sortcolumn: "namespace"
+  fields:
+    cached:
+      header: "Cached:"
+      path: "status#isCached"
+      default: "<unset>"
+      type: "bool"
+    expiration:
+      header: "Expiration:"
+      path: "spec#expiresAt"
+      type: "timestamp"
+      default: "<unset>"
+      formatter: "timestamp"
+    retain:
+      header: "Retain:"
+      path: "spec#retain"
+      default: "<unset>"
+      type: "bool"
+    use_count:
+      header: "Use Count:"
+      path: "status#usedBy#count"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Cached Image Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["expiration", "cached", "retain", "pull_secret_namespace", "source_image"]
+    rows:
+      cached:
+        header: [["Cached:", ["main", "infoheader"]]]
+        path: "status#isCached"
+        default: "<unset>"
+        type: "bool"
+      expiration:
+        header: [["Expiration:", ["main", "infoheader"]]]
+        path: "spec#expiresAt"
+        default: "<unset>"
+        type: "timestamp"
+        formatter: "timestamp"
+      pull_secret_namespace:
+        header: [["Pull Secrets ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
+        path: "spec#pullSecretsNamespace"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      retain:
+        header: [["Retain:", ["main", "infoheader"]]]
+        path: "spec#retain"
+        default: "<unset>"
+        type: "bool"
+      source_image:
+        header: [["Source Image:", ["main", "infoheader"]]]
+        path: "spec#sourceImage"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#usedBy#pods"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind:  "Pod"
+      namespaced_name_path: "namespacedName"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name"]
+    fields:
+      namespace:
+        header: "Namespace:"
+        paths:
+        - path: "namespacedName"
+          pathtype: "value"
+          type: "regex_to_tuples"
+          regex: "^(.+?)/.+"
+        type: "str"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      name:
+        header: "Name:"
+        paths:
+        - path: "namespacedName"
+          pathtype: "value"
+          type: "regex_to_tuples"
+          regex: "^.+?/(.+)"
+        formatter: "list"
+  shortcuts:
+    "Open info page for Secrets Namespace":
+      key: "n"
+      modifier: "shift"
+      helptext: "Open info page for Secrets Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "spec#pullSecretsNamespace"

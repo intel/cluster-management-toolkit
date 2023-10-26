@@ -1869,6 +1869,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
 		"api": "workloads",
 	},
+	# kuik.enix.io
+	("CachedImage", "kuik.enix.io"): {
+		"api_paths": ["apis/kuik.enix.io/v1alpha1/"],
+		"api": "cachedimages",
+		"namespaced": False,
+	},
 	# kyverno.io
 	("AdmissionReport", "kyverno.io"): {
 		"api_paths": ["apis/kyverno.io/v1alpha2/"],

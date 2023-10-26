@@ -226,6 +226,9 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 	if value is None:
 		return ""
 
+	if isinstance(value, str):
+		return value
+
 	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
 	return string
 
@@ -1198,6 +1201,8 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 	else:
 		if value == -1:
 			new_value = none_timestamp()
+		elif isinstance(value, str) and value.startswith("<") and value.endswith(">"):
+			new_value = value
 		else:
 			new_value = timestamp_to_datetime(cast(str, value))
 
@@ -8538,7 +8543,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if decoder is not None:
 						try:
 							decoded_obj = copy.deepcopy(base64.b64decode(obj).decode("utf-8"))
-						except (binascii.Error, UnicodeDecodeError):
+						except (binascii.Error, TypeError, UnicodeDecodeError):
 							decoded_obj = obj
 				else:
 					decoded_obj = obj
@@ -10502,6 +10507,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 
 	name = deep_get(kwargs, DictPath("name"))
 	namespace = deep_get(kwargs, DictPath("namespace"))
+	namespaced_name = deep_get(obj, DictPath("namespacedName"))
 
 	name_path = deep_get(kwargs, DictPath("name_path"))
 	if name_path is not None and isinstance(name_path, str):
@@ -10509,6 +10515,9 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 	namespace_path = deep_get(kwargs, DictPath("namespace_path"), "")
 	if namespace_path is not None and isinstance(namespace_path, str):
 		namespace_path = [namespace_path]
+	namespaced_name_path = deep_get(kwargs, DictPath("namespaced_name_path"), "")
+	if namespaced_name_path is not None and isinstance(namespaced_name_path, str):
+		namespaced_name_path = [namespaced_name_path]
 
 	kind = deep_get(kwargs, DictPath("kind"))
 	kind_path = deep_get(kwargs, DictPath("kind_path"))
@@ -10609,10 +10618,19 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 		if name is None and obj is not None:
 			name = deep_get_with_fallback(obj, name_path)
 			# This is needed since CiliumID, for instance, is an integer
-			name = str(name)
+			if name is not None:
+				name = str(name)
 
 	if kind is None or isinstance(kind, tuple) and kind[0] is None:
 		return None
+
+	if name is None:
+		if namespaced_name_path is not None:
+			namespaced_name = deep_get_with_fallback(obj, DictPath(namespaced_name_path))
+		if namespaced_name is not None:
+			tmp = namespaced_name.split("/")
+			if len(tmp) == 2:
+				namespace, name = tmp
 
 	if name is None or len(name) == 0:
 		return None
