@@ -18,28 +18,69 @@ checks: bandit yamllint validate_yaml validate_playbooks
 clean: remove_test_symlinks
 
 bandit:
-	bandit -c .bandit $(python_executables) *.py || /bin/true
+	@cmd=bandit ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	$$cmd -c .bandit $(python_executables) *.py || /bin/true
 
 pylint:
-	@pylint --rcfile .pylint $(python_executables) *.py || /bin/true
+	@cmd=pylint ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
 
 flake8:
-	@flake8 --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true
+	@cmd=flake8 ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true
+
+regexploit:
+	@cmd=regexploit-py ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed; install with 'pip install regexploit' or 'pip install --proxy <proxy> regexploit'\n"; \
+		exit 2; \
+	fi; \
+	printf -- "Checking executables\n"; \
+	$$cmd $(python_executables); \
+	printf -- "\nChecking libraries\n"; \
+	$$cmd *.py
 
 yamllint:
-	@for dir in $(yaml_dirs); do \
-		yamllint $$dir/*.yaml || /bin/true; \
+	@cmd=yamllint ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	for dir in $(yaml_dirs); do \
+		$$cmd $$dir/*.yaml || /bin/true; \
 	done; \
-	yamllint cmt.yaml || /bin/true
+	$$cmd cmt.yaml || /bin/true
 
 mypy-strict:
-	@for file in $(python_executables) *.py; do \
-		mypy --ignore-missing-imports --check-untyped-defs $$file || true; \
+	@cmd=mypy ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	for file in $(python_executables) *.py; do \
+		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
 	done
 
 mypy:
+	@cmd=mypy ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
 	@for file in $(python_executables) *.py; do \
-		mypy --ignore-missing-imports $$file || true; \
+		$$cmd --ignore-missing-imports $$file || true; \
 	done
 
 export_src:
@@ -49,6 +90,10 @@ validate_yaml:
 	./tests/validate_yaml || /bin/true
 
 validate_playbooks:
+	@if [ ! -x ansible-lint ]; then \
+		printf -- "ansible-lint not installed\n" \
+		exit 2 \
+	fi \
 	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true
 
 parser_bundle:
