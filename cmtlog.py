@@ -174,7 +174,7 @@ class CMTLog:
 		if path == CMTLogType.AUDIT:
 			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = AUDIT_LOG_BASENAME, suffix = ".yaml", maxsize = 1024 ** 3)
 			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):
-				secure_write_yaml(log_path, [warning_log_entry], permissions = 0o600, write_mode = "a")
+				secure_write_yaml(log_path, [log_entry], permissions = 0o600, write_mode = "a")
 		else:
 			log_path = self.__rotate_filename(dirpath = CMT_LOGS_DIR, basename = self.basename, suffix = ".yaml", maxsize = 1024 ** 3)
 			if self.__rate_limit(filepath = log_path, rate_limit = 10, exception_on_flood = True):

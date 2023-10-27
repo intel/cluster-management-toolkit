@@ -1091,7 +1091,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if reinstall:
 			ansithemeprint([ANSIThemeString("Error", "note"),
 					ANSIThemeString("--reinstall", "option"),
-					ANSIThemeString(" cannot be used to change CNI; aborting.", "default")] , stderr = True)
+					ANSIThemeString(" cannot be used to change CNI; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 		cni = args[0]
 
@@ -1759,7 +1759,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 		pass
 
 	if version_cache is not None:
-		if len (schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
+		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
 			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
 				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
 

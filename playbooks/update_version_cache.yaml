@@ -44,8 +44,10 @@
       force: true
       use_proxy: "{{ use_proxy | default(false) }}"
     loop:
-    - { url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml", dest: "kubernetes_current.yaml" }
-    - { url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml", dest: "kubernetes_past.yaml" }
+    - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml"
+      dest: "kubernetes_current.yaml"
+    - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml"
+      dest: "kubernetes_past.yaml"
     environment:
       https_proxy: "{{ https_proxy | default('') }}"
     # We might not be able to update the version cache for all projects; this is acceptable

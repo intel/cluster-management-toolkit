@@ -7335,7 +7335,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			nodearrays: List[List[Union[ThemeRef, ThemeString]]] = [
 				[
 					ThemeString(f"Node ({selected_node + 1}/{len(nodeinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
-					ThemeString(f"".ljust(node_heatmap_width), ThemeAttr("types", "generic")),
+					ThemeString("".ljust(node_heatmap_width), ThemeAttr("types", "generic")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
 					ThemeString("No", ThemeAttr("main", "listheader")),
@@ -7362,7 +7362,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			podarrays: List[List[Union[ThemeRef, ThemeString]]] = [
 				[
 					ThemeString(f"Pod ({selected_pod + 1}/{len(podinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
-					ThemeString(f"".ljust(pod_heatmap_width), ThemeAttr("types", "generic")),
+					ThemeString("".ljust(pod_heatmap_width), ThemeAttr("types", "generic")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
 					ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),

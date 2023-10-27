@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import re
 import sys
-from typing import Any, Callable, cast, Dict, List, Optional, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:
