@@ -330,24 +330,26 @@ def is_timestamp(message: str):
 			(bool): True if the string is a timestamp, False if not
 	"""
 
+	# Safe
 	tmp = re.match(r"^\d\.\d+e\+09", message)
 	if tmp is not None:
 		return True
 
+	# Safe
 	tmp = re.match(r"^\d{4}[/-]\d\d[/-]\d\d"
 		       r"[ T]"
 		       r"\d\d[\.:]\d\d[\.:]\d\d"
 		       r"([\.,]\d{8}Z|"
-		        r"[\.,]\d{8}|"
-		        r"[\.,]\d{8} [+-]\d\d(:|\.|\d\d)"
-		        r"[\.,]\d{6}Z|"
-		        r"[\.,]\d{6}"
-		        r"[\.,]\d{6} [+-]\d\d(:|\.|\d\d)"
-		        r"\d{3}Z|"
-		        r"\d{3}|"
-		        r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|"
-		        r"[\.,]\d{3}Z|"
-		        r"Z|)$", message)
+		       r"[\.,]\d{8}|"
+		       r"[\.,]\d{8} [+-]\d\d(:|\.|\d\d)"
+		       r"[\.,]\d{6}Z|"
+		       r"[\.,]\d{6}"
+		       r"[\.,]\d{6} [+-]\d\d(:|\.|\d\d)"
+		       r"\d{3}Z|"
+		       r"\d{3}|"
+		       r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|"
+		       r"[\.,]\d{3}Z|"
+		       r"Z|)$", message)
 
 	if tmp is not None:
 		return True
@@ -621,23 +623,23 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 	# Short format
 	if len(ipaddress) > 0:
 		# Safe
-		tmp = re.match(r"( - - )"
-			       r"(\[)"
-			       r"(\d\d)"
+		tmp = re.match(r"( - - )" # separator1
+			       r"(\[)" # separator2
+			       r"(\d\d)" # day
 			       r"/"
-			       r"([A-Z][a-z][a-z])"
+			       r"([A-Z][a-z][a-z])" # _month
 			       r"/"
-			       r"(\d{4})"
+			       r"(\d{4})" # year
 			       r" "
-			       r"(\d\d:\d\d:\d\d)"
-			       r"(\])"
-			       r"(\s\")"
-			       r"([A-Z]*?\s)"
-			       r"(\S*?)"
-			       r"(\s\S*?)"
-			       r"(\"\s)"
-			       r"(\d+?)"
-			       r"(\s+[\d-]+?$)", message)
+			       r"(\d\d:\d\d:\d\d)" # hms
+			       r"(\])" # separator3
+			       r"(\s\")" # separator4
+			       r"([A-Z]*?\s)" # verb
+			       r"(\S*?)" # address3
+			       r"(\s\S*?)" # protocol
+			       r"(\"\s)" # separator5
+			       r"(\d+?)" # statuscode
+			       r"(\s+[\d-]+?$)", message) # separator6
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -768,8 +770,19 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			return new_message, severity, facility
 
 	# Alternate formats
-	# DoS
-	tmp = re.match(r"^\|\s+(\d{3})\s+\|\s+([0-9.]+)([^ ]*)\s+\|\s+([^:]*):(\d+?)\s+\|\s+([A-Z]+)\s+(.*)", message)
+	# Safe
+	tmp = re.match(r"^\|\s+"
+		       r"(\d{3})" # statuscode
+		       r"\s+\|\s+"
+		       r"([0-9.]+)" # duration
+		       r"([^ ]*)" # unit
+		       r"\s+\|\s+"
+		       r"([^:^\s]*)" # hostname
+		       r":(\d+?)" # port
+		       r"\s+\|\s+"
+		       r"([A-Z]+)" # verb
+		       r"\s+"
+		       r"(.*)", message) # url
 
 	if tmp is not None:
 		statuscode = tmp[1]
@@ -803,6 +816,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 		]
 		return new_message, severity, facility
 
+	# Safe
 	tmp = re.match(r"^\["
 		       r"(\d{4}-\d\d-\d\d)"
 		       r"T"
@@ -1391,8 +1405,8 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 	severity = default
 	facility = ""
 
-	# DoS
-	tmp = re.match(r"\[(.*?) (.*?) (.*?)\]: (.*)", message)
+	# Safe
+	tmp = re.match(r"^\[([^ ]+) ([^ ]+) (.+?)\]: (.+)", message)
 
 	if tmp is not None:
 		severity = str_to_severity(tmp[2])
@@ -1554,8 +1568,8 @@ def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple
 	message = raw_message[0:eventstart]
 	indent = 2
 	# Try to extract an embedded severity; use it if higher than severity
-	# DoS
-	tmp = re.match(r".*type: '([A-Z][a-z]+)' reason:.*", raw_message)
+	# Safe
+	tmp = re.match(r"^.*type: '([A-Z][a-z]+)' reason:", raw_message)
 	if tmp is not None:
 		if tmp[1] == "Normal":
 			_severity = LogLevel.INFO
@@ -1723,8 +1737,8 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 			if err.startswith("\"") and err.endswith("\""):
 				err = err[1:-1]
 			message = f"{msg}"
-			# DoS
-			tmp = re.match(r"(\d+ errors? occurred:)(.*)", err)
+			# Safe
+			tmp = re.match(r"^(\d+ errors? occurred:)(.*)", err)
 			if tmp is not None:
 				remnants.append(([ThemeString(tmp[1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 				s = tmp[2].replace("\\t", "").split("\\n")
@@ -1873,6 +1887,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 		return facility, severity, message, remnants
 
 	# Split into substrings based on spaces
+	# Safe
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None and len(tmp) > 0:
 		if "=" in tmp[0]:
@@ -1959,35 +1974,57 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 	if tmp is not None:
 		return facility, severity, message, remnants
 
-	# DoS
-	tmp = re.match(r"^(.)(.........)(\s+)(\d+)(\s+)(.*?)(\s+)(\*?)(\s+)(\d+)(,\s+\d+|)(\s+)(.+?)(\s+)(\d+)(\s+)(.*?)(\s+)(.+?)(=|\||/|)$", message)
+	# Safe
+	tmp = re.match(r"^(.)" # etype
+		       r"(.{9})" # permissions
+		       r"(\+|\s)" # acl
+		       r"(\s+)" # space1
+		       r"(\d+)" # linkcount
+		       r"(\s+)" # space2
+		       r"([^\s]+)" # owner
+		       r"(\s+)" # space3
+		       r"([^\s]+)" # group
+		       r"(\s+)" # space4
+		       r"(\d+)" # size part1
+		       r"(,\s+\d+|)" # size part2
+		       r"(\s+)" # space5
+		       r"([^\s]+)" # month
+		       r"(\s+)" # space6
+		       r"(\d+)" # day
+		       r"(\s+)" # space7
+		       r"([^\s]+)" # yearortime
+		       r"(\s+)" # space8
+		       r"(.+?)" # name
+		       r"(=|\||/|)$", message) # suffix
 	if tmp is None:
 		# This is unlikely to be a directory match
 		return facility, severity, message, remnants
 
 	etype = tmp[1]
 	permissions = tmp[2]
-	space1 = tmp[3]
-	linkcount = tmp[4]
-	space2 = tmp[5]
-	owner = tmp[6]
-	space3 = tmp[7]
-	group = tmp[8]
-	space4 = tmp[9]
-	size = tmp[10] + tmp[11]
-	space5 = tmp[12]
-	month = tmp[13]
-	space6 = tmp[14]
-	day = tmp[15]
-	space7 = tmp[16]
-	yearortime = tmp[17]
-	space8 = tmp[18]
-	name = tmp[19]
-	suffix = tmp[20]
+	acl = tmp[3]
+	space1 = tmp[4]
+	linkcount = tmp[5]
+	space2 = tmp[6]
+	owner = tmp[7]
+	space3 = tmp[8]
+	group = tmp[9]
+	space4 = tmp[10]
+	size = tmp[11] + tmp[12]
+	space5 = tmp[13]
+	month = tmp[14]
+	space6 = tmp[15]
+	day = tmp[16]
+	space7 = tmp[17]
+	yearortime = tmp[18]
+	space8 = tmp[19]
+	name = tmp[20]
+	suffix = tmp[21]
 
 	_message: List[Union[ThemeRef, ThemeString]] = [
 		ThemeString(f"{etype}", ThemeAttr("types", "dir_type")),
 		ThemeString(f"{permissions}", ThemeAttr("types", "dir_permissions")),
+		ThemeString(f"{acl}", ThemeAttr("types", "dir_permissions")),
 		ThemeString(f"{space1}", ThemeAttr("types", "generic")),
 		ThemeString(f"{linkcount}", ThemeAttr("types", "dir_linkcount")),
 		ThemeString(f"{space2}", ThemeAttr("types", "generic")),
@@ -2022,7 +2059,7 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 	# sticky bit has precedence over the regular directory type
 	elif permissions.endswith("t"):
 		_message += [
-			ThemeString(f"{name}", ThemeAttr("types", "dir_socket"))
+			ThemeString(f"{name}", ThemeAttr("types", "dir_sticky"))
 		]
 	# directory
 	elif etype == "d":
@@ -2031,7 +2068,8 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 		]
 	# symbolic link
 	elif etype == "l":
-		tmp2 = re.match(r"(.+?)( -> )(.+)", name)
+		# Safe
+		tmp2 = re.match(r"^(.+?)( -> )(.+)", name)
 		if tmp2 is None:
 			_message += [
 				ThemeString(f"{name}", ThemeAttr("types", "dir_symlink_name"))
@@ -2099,6 +2137,7 @@ def seconds_severity_facility(message: str, fold_msg: bool = True) ->\
 	severity = LogLevel.INFO
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
+	# Safe
 	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
 	if tmp is not None:
 		severity = cast(LogLevel, str_to_severity(tmp[2], default = severity))
@@ -2140,6 +2179,7 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 		([ThemeString(message, ThemeAttr("logview", "severity_info"))], severity)
 	]
 
+	# Safe
 	tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)
 	if tmp is not None:
 		remnants = [
@@ -2152,6 +2192,7 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 			 severity),
 		]
 	else:
+		# Safe
 		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:|socket.gaierror:)( .*)", message)
 		if tmp is not None:
 			remnants = [
@@ -2317,7 +2358,8 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "regex",
-		"matchkey": re.compile(r"\S+?: \S.*|\S+?:$"),
+		# Safe
+		"matchkey": re.compile(r"^\S+?: \S.*$|^\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
 	}])
@@ -2415,7 +2457,8 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "regex",
-		"matchkey": re.compile(r"\S+?: \S.*|\S+?:$"),
+		# Safe
+		"matchkey": re.compile(r"^\S+?: \S.*$|^\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
 	}])
@@ -2471,7 +2514,8 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 		processor = ("end_block", None, {})
 	else:
 		if "final_block" in options:
-			tmp = re.match(r"^.+?:\sok=(\d+)\s+changed=(\d+)\s+unreachable=(\d+)\s+failed=(\d+)\s+skipped=(\d+)\s+rescued=(\d+)\s+ignored=(\d+)", message)
+			# Safe
+			tmp = re.match(r"^.+?:\sok=(\d+)\s+changed=(\d+)\s+unreachable=(\d+)\s+failed=(\d+)\s+skipped=(\d+)\s+rescued=(\d+)\s+ignored=(\d+)$", message)
 			if tmp is not None:
 				ok = int(tmp[1])
 				changed = int(tmp[2])
