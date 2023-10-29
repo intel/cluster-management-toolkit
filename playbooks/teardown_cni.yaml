@@ -40,24 +40,31 @@
       if [ -x /usr/sbin/ip ]; then
         for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^cali|^tunl0:" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^cilium|^lxc" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^flannel|^cni0" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^veth" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
         for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
           ip link set dev "${network}" down || true
+          ip link delete "${network}" || true
         done
       else
         for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do

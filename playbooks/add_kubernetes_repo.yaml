@@ -17,6 +17,9 @@
         - description: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
           conditions:
           - "Debian and derivatives"
+        - description: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+          conditions:
+          - "Debian and derivatives"
         - description: "/etc/apt/sources.list.d/kubernetes.list"
           conditions:
           - "Debian and derivatives"
@@ -57,25 +60,46 @@
       state: "directory"
       suffix: "temp"
     register: "tempdir"
-  - name: "Fetching Kubernetes repository key"
+  - name: "Fetching Kubernetes repository key for apt.kubernetes.io"
     ansible.builtin.get_url:
       url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-      dest: "{{ tempdir.path }}/Release.key"
+      dest: "{{ tempdir.path }}/Release.key-apt.kubernetes.io"
       mode: "0644"
       force: true
       use_proxy: "{{ use_proxy }}"
     environment:
       https_proxy: "{{ https_proxy | default('') }}"
     when: "ansible_os_family == 'Debian'"
-  - name: "Dearmoring CRI-O key"  # noqa fqcn-builtins no-changed-when
-    shell: |
-      gpg --dearmor "{{ tempdir.path }}/Release.key"
+  - name: "Fetching Kubernetes repository key for pkgs.k8s.io"
+    ansible.builtin.get_url:
+      url: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key"
+      dest: "{{ tempdir.path }}/Release.key-pkgs.k8s.io"
+      mode: "0644"
+      force: true
+      use_proxy: "{{ use_proxy }}"
+    environment:
+      https_proxy: "{{ https_proxy | default('') }}"
     when: "ansible_os_family == 'Debian'"
-  - name: "Copying dearmored CRI-O key to /etc/apt/keyrings"
+  - name: "Dearmoring apt.kubernetes.io key"  # noqa fqcn-builtins no-changed-when
+    shell: |
+      gpg --dearmor "{{ tempdir.path }}/Release.key-apt.kubernetes.io"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Dearmoring pkgs.k8s.io key"  # noqa fqcn-builtins no-changed-when
+    shell: |
+      gpg --dearmor "{{ tempdir.path }}/Release.key-pkgs.k8s.io"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Copying dearmored apt.kubernetes.io key to /etc/apt/keyrings"
     ansible.builtin.copy:
       remote_src: true
-      src: "{{ tempdir.path }}/Release.key.gpg"
+      src: "{{ tempdir.path }}/Release.key-apt.kubernetes.io.gpg"
       dest: "/etc/apt/keyrings/kubernetes-archive-keyring.gpg"
+      mode: "0644"
+    when: "ansible_os_family == 'Debian'"
+  - name: "Copying dearmored pkgs.k8s.io key to /etc/apt/keyrings"
+    ansible.builtin.copy:
+      remote_src: true
+      src: "{{ tempdir.path }}/Release.key-pkgs.k8s.io.gpg"
+      dest: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
       mode: "0644"
     when: "ansible_os_family == 'Debian'"
   - name: "Fetching Kubernetes repository keys"

@@ -1743,6 +1743,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "ips",
 		"namespaced": False,
 	},
+	("IPPool", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "ippools",
+		"namespaced": False,
+	},
 	("IptablesDnatRule", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "iptables-dnat-rules",
@@ -1763,6 +1768,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "iptables-snat-rules",
 		"namespaced": False,
 	},
+	("OvnDnatRule", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "ovn-dnat-rules",
+		"namespaced": False,
+	},
 	("OvnEip", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "ovn-eips",
@@ -1781,6 +1791,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ProviderNetwork", "kubeovn.io"): {
 		"api_paths": ["apis/kubeovn.io/v1/"],
 		"api": "provider-networks",
+		"namespaced": False,
+	},
+	("QoSPolicy", "kubeovn.io"): {
+		"api_paths": ["apis/kubeovn.io/v1/"],
+		"api": "qos-policies",
 		"namespaced": False,
 	},
 	("SecurityGroup", "kubeovn.io"): {

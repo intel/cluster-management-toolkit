@@ -781,7 +781,7 @@ cni_upgrade_data = {
 			"install": ["cilium", "--context", "<<<context>>>", "install"],
 			"uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
 		}
-	}
+	},
 }
 
 cni_data = {
@@ -970,7 +970,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 								  substitute_list(candidate_version_command[1:], version_substitutions),
 								  candidate_version_regex)
 
-	if "urls" in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}")):
+	if "urls" in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}"), {}):
 		# pylint: disable-next=too-many-boolean-expressions
 		if (version is None or len(version) == 0) or version is not None and (candidate_version is None or len(candidate_version) == 0) or version < candidate_version:
 			new_version = "".join(candidate_version)
@@ -1015,7 +1015,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					execute_command_with_response([kubectl_path, "apply", "--server-side", "-f", new_path])
 		else:
 			ansithemeprint([ANSIThemeString("No newer version available.", "default")])
-	elif install_command is not None and version is None or len(version) == 0:
+	elif install_command is not None and (version is None or len(version) == 0):
 		new_version = "".join(candidate_version)
 
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -1088,7 +1088,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 					ANSIThemeString(f"{DEFAULT_CNI}", "programname"),
 					ANSIThemeString(".", "default")], stderr = True)
 	else:
-		if reinstall:
+		if reinstall and cni != args[0]:
 			ansithemeprint([ANSIThemeString("Error", "note"),
 					ANSIThemeString("--reinstall", "option"),
 					ANSIThemeString(" cannot be used to change CNI; aborting.", "default")], stderr = True)
@@ -1242,6 +1242,8 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 		update_installation_info(cluster_name = cluster_name, cni = "<none>")
+		ansithemeprint([ANSIThemeString("\nNote", "note"),
+				ANSIThemeString(": It is recommended to reboot the control plane(s) and all nodes after uninstalling the CNI\n", "default")])
 	else:
 		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -1340,7 +1342,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	installation_info = get_installation_info()
 	cluster_name = deep_get(installation_info, DictPath("installation_target"))
 	installation_info_cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
-	if installation_info_cni is None or installation_info_cni == "<none>":
+	if installation_info_cni is None or installation_info_cni in ("none", "<none>"):
 		pass_cni = [cni]
 
 	if cni == "none":
@@ -1719,6 +1721,32 @@ def __get_theme(string: str, default: str) -> str:
 	}
 	return translation.get(string, default)
 
+def get_latest_kubernetes_upstream_version() -> str:
+	# We are OK with the file not existing
+	security_checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	kubernetes_upstream_version = None
+
+	try:
+		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
+	except FileNotFoundError:
+		version_cache = None
+		pass
+
+	if version_cache is not None:
+		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
+			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
+				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+
+	return kubernetes_upstream_version
+
 def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
 	"""
 	Check versions for all relevant software
@@ -1739,29 +1767,9 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	elif os_distro in ("fedora", "rhel"):
 		pkg_versions = check_rpm_versions(pkg_packages)
 
-	# We are OK with the file not existing
-	security_checks = [
-		SecurityChecks.PARENT_RESOLVES_TO_SELF,
-		SecurityChecks.OWNER_IN_ALLOWLIST,
-		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-		SecurityChecks.PERMISSIONS,
-		SecurityChecks.PARENT_PERMISSIONS,
-		SecurityChecks.IS_FILE,
-	]
-
 	kubernetes_installed_version = "<unknown>"
-	kubernetes_upstream_version = "<unknown>"
-
-	try:
-		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
-	except FileNotFoundError:
-		version_cache = None
-		pass
-
-	if version_cache is not None:
-		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
-			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
-				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+		kubernetes_upstream_version = "<unknown>"
 
 	# Get the API-server version (if available)
 	# This will only work for running clusters
@@ -1769,6 +1777,9 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	_server_major_version, _server_minor_version, kubernetes_installed_version = kh.get_api_server_version()
+
+	if kubernetes_installed_version == kubernetes_upstream_version:
+		kubernetes_upstream_version = ""
 
 	# Now check versions that need special checks
 	for version_check in version_checks:
@@ -2024,6 +2035,20 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
 
+	# The first patch revision that isn't available from the old repositories is 1.28.3;
+	# this means that we need to include all minor versions from 28 and up.
+	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+				ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Split the version tuple
+	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	minor_versions = []
+	for minor_version in range(28, int(upstream_minor) + 1):
+		minor_versions.append(f"{minor_version}")
+
 	if os_distro == "debian":
 		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
@@ -2039,6 +2064,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"minor_versions": minor_versions,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
@@ -2057,6 +2083,20 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, 
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
 
+	# The first patch revision that isn't available from the old repositories is 1.28.3;
+	# this means that we need to include all minor versions from 28 and up.
+	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+				ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Split the version tuple
+	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	minor_versions = []
+	for minor_version in range(28, int(upstream_minor) + 1):
+		minor_versions.append(f"{minor_version}")
+
 	if os_distro == "debian":
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
@@ -2072,6 +2112,7 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, 
 		"held_packages": held_packages,
 		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"minor_versions": minor_versions,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
@@ -3121,6 +3162,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	ansithemeprint([ANSIThemeString("\n[Preparing localhost and control plane(s)]", "phase")])
 
+	check_and_print_status(update_version_cache())
+
 	run_tasks(tasks = prepare_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "prepared", verbose = verbose)
 
 	# Adjust the kube* packages for the control plane(s) and localhost to match the requested cluster version if necessary;
@@ -3365,6 +3408,8 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			update_cache = False
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
+	ansithemeprint([ANSIThemeString("Note", "note"),
+			ANSIThemeString(": Currently only local versions are checked.", "default")])
 
 	if update_cache:
 		if os_distro == "debian" and update_cache:
@@ -3394,7 +3439,6 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"kubernetes-node",
 		"python3-ansible-runner",
 		"python3-natsort",
-		"python3-openssl",
 		"python3-paramiko",
 		"python3-pip",
 		"python3-ujson",
@@ -3636,7 +3680,10 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = ""
 
 	if k8s_distro == "kubeadm":
-		requested_major, requested_minor, _rest = requested_version.split(".")
+		# First remove the distro revision
+		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		# Now split the version tuple
+		requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
 
 		if int(requested_minor) < 23:
 			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"

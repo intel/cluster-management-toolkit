@@ -42,8 +42,8 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus
-from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus, SecurityChecks
+from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VERSION_CACHE_DIR, VIEW_DIR
 
 import commandparser
 from commandparser import parse_commandline
@@ -86,6 +86,32 @@ def request_ansible_password() -> None:
 
 		ansible_configuration["ansible_password"] = ansible_password # type: ignore
 
+def get_latest_kubernetes_upstream_version() -> str:
+	# We are OK with the file not existing
+	security_checks = [
+		SecurityChecks.PARENT_RESOLVES_TO_SELF,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	kubernetes_upstream_version = None
+
+	try:
+		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
+	except FileNotFoundError:
+		version_cache = None
+		pass
+
+	if version_cache is not None:
+		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
+			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
+				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+
+	return kubernetes_upstream_version
+
 def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
@@ -102,6 +128,20 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 
 	# Eventually we should be using this
 	del quiet
+
+	# The first patch revision that isn't available from the old repositories is 1.28.3;
+	# this means that we need to include all minor versions from 28 and up.
+	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+				ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Split the version tuple
+	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	minor_versions = []
+	for minor_version in range(28, int(upstream_minor) + 1):
+		minor_versions.append(f"{minor_version}")
 
 	# Set necessary Ansible keys before running playbooks
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
@@ -131,6 +171,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		"insecure_registries": insecure_registries,
 		"registry_mirrors": registry_mirrors,
 		"use_proxy": use_proxy,
+		"minor_versions": minor_versions,
 	}
 	merged_values = { **values, **extra_values }
 
@@ -1315,7 +1356,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 					ANSIThemeString(f" package version from control plane at {control_plane_ip}; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 
-		version_major, version_minor, _rest = kubeadm_version.split(".")
+		# First remove the distro revision
+		major_minor_patchrev, _pkgrev = kubeadm_version.split("-")
+		# Now split the version tuple
+		version_major, version_minor, _rest = major_minor_patchrev.split(".")
 	elif k8s_distro == "rke2":
 		vlist = get_control_planes()
 		first_control_plane = vlist[0][0]
@@ -1741,6 +1785,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Run upgrade playbooks on nodes", "action")])
 	upgrade_playbooks = [
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
 		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_upgrade_node.yaml"))),
 	]
 	playbooks = populate_playbooks_from_paths(upgrade_playbooks)
