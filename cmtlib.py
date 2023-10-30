@@ -750,6 +750,13 @@ def identify_k8s_distro() -> str:
 					if manager == "kubeadm":
 						tmp_k8s_distro = "kubeadm"
 						break
+			if tmp_k8s_distro is None:
+				# Older versions of Kubernetes doesn't have managedFields;
+				# fall back to checking whether the annotation
+				# kubeadm.alpha.kubernetes.io/cri-socket exists if we cannot
+				# find any managedFields
+				if len(deep_get(node, DictPath("metadata#annotations#kubeadm.alpha.kubernetes.io/cri-socket"), "")) > 0:
+					tmp_k8s_distro = "kubeadm"
 			if tmp_k8s_distro is not None:
 				if k8s_distro is not None:
 					ansithemeprint([ANSIThemeString("Critical", "critical"),
