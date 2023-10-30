@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
-from cmtlog import auditlog, debuglog
+# from cmtlog import debuglog
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
 from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
@@ -63,24 +63,24 @@ class ThemeString:
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
 		if not isinstance(string, str):
-			debuglog.add([
-					[ANSIThemeString("ThemeString()", "emphasis"),
-					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-					[ANSIThemeString("string (type: ", "error")],
-					[ANSIThemeString(f"{type(string)}", "argument")],
-					[ANSIThemeString(", expected str):", "error")],
-					[ANSIThemeString(f"{string}", "default")],
-					[ANSIThemeString("themeattr (type: ", "error")],
-					[ANSIThemeString(f"{type(themeattr)}", "argument")],
-					[ANSIThemeString(", expected ThemeAttr):", "error")],
-					[ANSIThemeString(f"{themeattr}", "default")],
-					[ANSIThemeString("selected (type: ", "error")],
-					[ANSIThemeString(f"{type(selected)}", "argument")],
-					[ANSIThemeString(", expected bool):", "error")],
-					[ANSIThemeString(f"{selected}", "default")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("ThemeString()", "emphasis"),
+			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
+			#		[ANSIThemeString("string (type: ", "error")],
+			#		[ANSIThemeString(f"{type(string)}", "argument")],
+			#		[ANSIThemeString(", expected str):", "error")],
+			#		[ANSIThemeString(f"{string}", "default")],
+			#		[ANSIThemeString("themeattr (type: ", "error")],
+			#		[ANSIThemeString(f"{type(themeattr)}", "argument")],
+			#		[ANSIThemeString(", expected ThemeAttr):", "error")],
+			#		[ANSIThemeString(f"{themeattr}", "default")],
+			#		[ANSIThemeString("selected (type: ", "error")],
+			#		[ANSIThemeString(f"{type(selected)}", "argument")],
+			#		[ANSIThemeString(", expected bool):", "error")],
+			#		[ANSIThemeString(f"{selected}", "default")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
 		self.string = string
 		self.themeattr = themeattr
@@ -133,24 +133,24 @@ class ThemeRef:
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
 		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
-			debuglog.add([
-					[ANSIThemeString("ThemeRef()", "emphasis"),
-					 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-					[ANSIThemeString("context (type: ", "error")],
-					[ANSIThemeString(f"{type(context)}", "argument")],
-					[ANSIThemeString(", expected str):", "error")],
-					[ANSIThemeString(f"{context}", "default")],
-					[ANSIThemeString("key (type: ", "error")],
-					[ANSIThemeString(f"{type(key)}", "argument")],
-					[ANSIThemeString(", expected str):", "error")],
-					[ANSIThemeString(f"{key}", "default")],
-					[ANSIThemeString("selected (type: ", "error")],
-					[ANSIThemeString(f"{type(selected)}", "argument")],
-					[ANSIThemeString(", expected bool):", "error")],
-					[ANSIThemeString(f"{selected}", "default")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("ThemeRef()", "emphasis"),
+			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
+			#		[ANSIThemeString("context (type: ", "error")],
+			#		[ANSIThemeString(f"{type(context)}", "argument")],
+			#		[ANSIThemeString(", expected str):", "error")],
+			#		[ANSIThemeString(f"{context}", "default")],
+			#		[ANSIThemeString("key (type: ", "error")],
+			#		[ANSIThemeString(f"{type(key)}", "argument")],
+			#		[ANSIThemeString(", expected str):", "error")],
+			#		[ANSIThemeString(f"{key}", "default")],
+			#		[ANSIThemeString("selected (type: ", "error")],
+			#		[ANSIThemeString(f"{type(selected)}", "argument")],
+			#		[ANSIThemeString(", expected bool):", "error")],
+			#		[ANSIThemeString(f"{selected}", "default")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError("ThemeRef only accepts (str, str[, bool])")
 		self.context = context
 		self.key = key
@@ -160,15 +160,15 @@ class ThemeRef:
 		string = ""
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			debuglog.add([
-					[ANSIThemeString("The ThemeRef(", "error")],
-					[ANSIThemeString(f"{self.context}", "argument")],
-					[ANSIThemeString(", ", "error")],
-					[ANSIThemeString(f"{self.key}", "argument")],
-					[ANSIThemeString(") does not exist.", "error")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("The ThemeRef(", "error")],
+			#		[ANSIThemeString(f"{self.context}", "argument")],
+			#		[ANSIThemeString(", ", "error")],
+			#		[ANSIThemeString(f"{self.key}", "argument")],
+			#		[ANSIThemeString(") does not exist.", "error")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
 		for string_fragment, _attr in array:
 			string += string_fragment
@@ -191,15 +191,15 @@ class ThemeRef:
 		themearray = []
 		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if array is None:
-			debuglog.add([
-					[ANSIThemeString("The ThemeRef(", "error")],
-					[ANSIThemeString(f"{self.context}", "argument")],
-					[ANSIThemeString(", ", "error")],
-					[ANSIThemeString(f"{self.key}", "argument")],
-					[ANSIThemeString(") does not exist.", "error")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("The ThemeRef(", "error")],
+			#		[ANSIThemeString(f"{self.context}", "argument")],
+			#		[ANSIThemeString(", ", "error")],
+			#		[ANSIThemeString(f"{self.key}", "argument")],
+			#		[ANSIThemeString(") does not exist.", "error")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
 		for string, themeattr in array:
 			themearray.append(ThemeString(string, ThemeAttr(themeattr[0], themeattr[1]), self.selected))
@@ -232,24 +232,24 @@ class ThemeArray:
 
 	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
 		if array is None:
-			debuglog.add([
-					[ANSIThemeString("ThemeArray()", "emphasis"),
-					 ANSIThemeString(" initialised with an empty array:", "error")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("ThemeArray()", "emphasis"),
+			#		 ANSIThemeString(" initialised with an empty array:", "error")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError("A ThemeArray cannot be None")
 
 		newarray: List[Union[ThemeRef, ThemeString]] = []
 		for item in array:
 			if not isinstance(item, (ThemeRef, ThemeString)):
-				debuglog.add([
-						[ANSIThemeString("ThemeArray()", "emphasis"),
-						 ANSIThemeString(" initialised with invalid type ", "error"),
-						 ANSIThemeString(f"{type(item)}", "argument"),
-						 ANSIThemeString("; substring:", "error")],
-						[ANSIThemeString(f"{item}", "default")],
-						[ANSIThemeString("Backtrace:", "error")],
-						[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-				       ], severity = LogLevel.ERR, facility = str(themefile))
+				#debuglog.add([
+				#		[ANSIThemeString("ThemeArray()", "emphasis"),
+				#		 ANSIThemeString(" initialised with invalid type ", "error"),
+				#		 ANSIThemeString(f"{type(item)}", "argument"),
+				#		 ANSIThemeString("; substring:", "error")],
+				#		[ANSIThemeString(f"{item}", "default")],
+				#		[ANSIThemeString("Backtrace:", "error")],
+				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+				#       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
 			if selected is None:
 				newarray.append(item)
@@ -269,15 +269,15 @@ class ThemeArray:
 		"""
 
 		if not isinstance(item, (ThemeRef, ThemeString)):
-			debuglog.add([
-					[ANSIThemeString("ThemeArray.append()", "emphasis"),
-					 ANSIThemeString(" called with invalid type ", "error"),
-					 ANSIThemeString(f"{type(item)}", "argument"),
-					 ANSIThemeString("; substring:", "error")],
-					[ANSIThemeString(f"{item}", "default")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("ThemeArray.append()", "emphasis"),
+			#		 ANSIThemeString(" called with invalid type ", "error"),
+			#		 ANSIThemeString(f"{type(item)}", "argument"),
+			#		 ANSIThemeString("; substring:", "error")],
+			#		[ANSIThemeString(f"{item}", "default")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
 		self.array.append(item)
 
@@ -397,43 +397,43 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 	col, attr = color
 
 	if not isinstance(attr, str):
-		debuglog.add([
-				[ANSIThemeString("Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
-				[ANSIThemeString("“", "default"),
-				 ANSIThemeString("normal", "emphasis"),
-				 ANSIThemeString("“, “", "default"),
-				 ANSIThemeString("bright", "emphasis"),
-				 ANSIThemeString("“.", "default")],
-				[ANSIThemeString("Using “", "default"),
-				 ANSIThemeString("normal", "emphasis"),
-				 ANSIThemeString("“ as fallback.", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("Invalid color attribute used in theme; attribute has to be a string and one of:", "default")],
+		#		[ANSIThemeString("“", "default"),
+		#		 ANSIThemeString("normal", "emphasis"),
+		#		 ANSIThemeString("“, “", "default"),
+		#		 ANSIThemeString("bright", "emphasis"),
+		#		 ANSIThemeString("“.", "default")],
+		#		[ANSIThemeString("Using “", "default"),
+		#		 ANSIThemeString("normal", "emphasis"),
+		#		 ANSIThemeString("“ as fallback.", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		attr = "normal"
 	elif attr not in ["normal", "bright"]:
-		debuglog.add([
-				[ANSIThemeString("Invalid color attribute “", "default"),
-				 ANSIThemeString(f"{attr}", "emphasis"),
-				 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
-				[ANSIThemeString("“", "default"),
-				 ANSIThemeString("normal", "emphasis"),
-				 ANSIThemeString("“, “", "default"),
-				 ANSIThemeString("bright", "emphasis"),
-				 ANSIThemeString("“.", "default")],
-				[ANSIThemeString("Using “", "default"),
-				 ANSIThemeString("normal", "emphasis"),
-				 ANSIThemeString("“ as fallback.", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("Invalid color attribute “", "default"),
+		#		 ANSIThemeString(f"{attr}", "emphasis"),
+		#		 ANSIThemeString("“ used in theme; attribute has to be a string and one of:", "default")],
+		#		[ANSIThemeString("“", "default"),
+		#		 ANSIThemeString("normal", "emphasis"),
+		#		 ANSIThemeString("“, “", "default"),
+		#		 ANSIThemeString("bright", "emphasis"),
+		#		 ANSIThemeString("“.", "default")],
+		#		[ANSIThemeString("Using “", "default"),
+		#		 ANSIThemeString("normal", "emphasis"),
+		#		 ANSIThemeString("“ as fallback.", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		attr = "normal"
 	if isinstance(col, str):
 		col = col.lower()
 
 	if not isinstance(col, str) or col not in color_map:
-		debuglog.add([
-				[ANSIThemeString("Invalid color type “", "default"),
-				 ANSIThemeString(f"{col}", "emphasis"),
-				 ANSIThemeString("“ used in theme; color has to be a string and one of:", "default"),
-				 ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("Invalid color type “", "default"),
+		#		 ANSIThemeString(f"{col}", "emphasis"),
+		#		 ANSIThemeString("“ used in theme; color has to be a string and one of:", "default"),
+		#		 ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		raise ValueError(f"Invalid color type used in theme; color has to be a string and one of: {', '.join(color_map.keys())}")
 
 	if attr == "bright":
@@ -443,12 +443,12 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
 	curses_color = deep_get(color_map, DictPath(col))
 	if curses_color is None:
-		debuglog.add([
-				[ANSIThemeString("Invalid {color_type} color “", "default"),
-				 ANSIThemeString(f"{col}", "emphasis"),
-				 ANSIThemeString("“ used in theme; valid colors are:", "default"),
-				 ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("Invalid {color_type} color “", "default"),
+		#		 ANSIThemeString(f"{col}", "emphasis"),
+		#		 ANSIThemeString("“ used in theme; valid colors are:", "default"),
+		#		 ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		raise ValueError(f"Invalid {color_type} color {col} used in theme; valid colors are: {', '.join(color_map.keys())}")
 	return curses_color + curses_attr
 
@@ -467,29 +467,29 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 	try:
 		curses.init_pair(color_nr, fg, bg)
 		if fg == bg:
-			debuglog.add([
-					[ANSIThemeString("__init_pair()", "emphasis"),
-					 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
-					 ANSIThemeString(f"{fg}", "argument"),
-					 ANSIThemeString(",", "error"),
-					 ANSIThemeString(f"{bg}", "argument"),
-					 ANSIThemeString(")", "error")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("__init_pair()", "emphasis"),
+			#		 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
+			#		 ANSIThemeString(f"{fg}", "argument"),
+			#		 ANSIThemeString(",", "error"),
+			#		 ANSIThemeString(f"{bg}", "argument"),
+			#		 ANSIThemeString(")", "error")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
-			debuglog.add([
-					[ANSIThemeString("init_pair()", "emphasis"),
-					 ANSIThemeString(" failed; attempting to limit fg & bg to ", "error"),
-					 ANSIThemeString("0", "argument"),
-					 ANSIThemeString("-", "error"),
-					 ANSIThemeString("7", "argument"),
-					 ANSIThemeString(")", "error")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.DEBUG, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("init_pair()", "emphasis"),
+			#		 ANSIThemeString(" failed; attempting to limit fg & bg to ", "error"),
+			#		 ANSIThemeString("0", "argument"),
+			#		 ANSIThemeString("-", "error"),
+			#		 ANSIThemeString("7", "argument"),
+			#		 ANSIThemeString(")", "error")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			#       ], severity = LogLevel.DEBUG, facility = str(themefile))
 
 			# Most likely we failed due to the terminal only
 			# supporting colours 0-7. If "bright black" was
@@ -499,16 +499,16 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				fg = curses.COLOR_BLUE
 				bright_black_remapped = True
 			if fg & 7 == bg & 7:
-				debuglog.add([
-						[ANSIThemeString("__init_pair()", "emphasis"),
-						 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
-						 ANSIThemeString(f"{fg}", "argument"),
-						 ANSIThemeString(",", "error"),
-						 ANSIThemeString(f"{bg}", "argument"),
-						 ANSIThemeString(f"{bright_black_remapped}", "argument")],
-						[ANSIThemeString("Backtrace:", "error")],
-						[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-				       ], severity = LogLevel.ERR, facility = str(themefile))
+				#debuglog.add([
+				#		[ANSIThemeString("__init_pair()", "emphasis"),
+				#		 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
+				#		 ANSIThemeString(f"{fg}", "argument"),
+				#		 ANSIThemeString(",", "error"),
+				#		 ANSIThemeString(f"{bg}", "argument"),
+				#		 ANSIThemeString(f"{bright_black_remapped}", "argument")],
+				#		[ANSIThemeString("Backtrace:", "error")],
+				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+				#       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})") from e
 			curses.init_pair(color_nr, fg & 7, bg & 7)
 		else:
@@ -1318,18 +1318,18 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp_attr = deep_get(theme, DictPath(f"{context}#{key}"))
 
 	if tmp_attr is None:
-		debuglog.add([
-				[ANSIThemeString("Could not find the tuple (", "default"),
-				 ANSIThemeString(f"{context}", "emphasis"),
-				 ANSIThemeString(", ", "default"),
-				 ANSIThemeString(f"{key}", "emphasis"),
-				 ANSIThemeString(") in theme.", "default")],
-				[ANSIThemeString("Using (", "default"),
-				 ANSIThemeString("main", "emphasis"),
-				 ANSIThemeString(", ", "default"),
-				 ANSIThemeString("default", "emphasis"),
-				 ANSIThemeString(") as fallback.", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("Could not find the tuple (", "default"),
+		#		 ANSIThemeString(f"{context}", "emphasis"),
+		#		 ANSIThemeString(", ", "default"),
+		#		 ANSIThemeString(f"{key}", "emphasis"),
+		#		 ANSIThemeString(") in theme.", "default")],
+		#		[ANSIThemeString("Using (", "default"),
+		#		 ANSIThemeString("main", "emphasis"),
+		#		 ANSIThemeString(", ", "default"),
+		#		 ANSIThemeString("default", "emphasis"),
+		#		 ANSIThemeString(") as fallback.", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		tmp_attr = deep_get(theme, DictPath("main#default"))
 
 	if isinstance(tmp_attr, dict):
@@ -1354,22 +1354,22 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp = 0
 
 	for item in attr:
-		if not isinstance(item, str):
-			debuglog.add([
-					[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
-					[ANSIThemeString("“", "default"),
-					 ANSIThemeString("dim", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("normal", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("bold", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("underline", "emphasis"),
-					 ANSIThemeString("“.", "default")],
-					[ANSIThemeString("Using “", "default"),
-					 ANSIThemeString("normal", "emphasis"),
-					 ANSIThemeString("“ as fallback.", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+		#if not isinstance(item, str):
+			#debuglog.add([
+			#		[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
+			#		[ANSIThemeString("“", "default"),
+			#		 ANSIThemeString("dim", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("normal", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("bold", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("underline", "emphasis"),
+			#		 ANSIThemeString("“.", "default")],
+			#		[ANSIThemeString("Using “", "default"),
+			#		 ANSIThemeString("normal", "emphasis"),
+			#		 ANSIThemeString("“ as fallback.", "default")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 		if item == "dim":
 			tmp |= curses.A_DIM
 		elif item == "normal":
@@ -1379,38 +1379,38 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		elif item == "underline":
 			tmp |= curses.A_UNDERLINE
 		else:
-			debuglog.add([
-					[ANSIThemeString("Invalid text attribute “", "default"),
-					 ANSIThemeString(f"{item}", "emphasis"),
-					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
-					[ANSIThemeString("“", "default"),
-					 ANSIThemeString("dim", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("normal", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("bold", "emphasis"),
-					 ANSIThemeString("“, “", "default"),
-					 ANSIThemeString("underline", "emphasis"),
-					 ANSIThemeString("“.", "default")],
-					[ANSIThemeString("Using “", "default"),
-					 ANSIThemeString("normal", "emphasis"),
-					 ANSIThemeString("“ as fallback.", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			#debuglog.add([
+			#		[ANSIThemeString("Invalid text attribute “", "default"),
+			#		 ANSIThemeString(f"{item}", "emphasis"),
+			#		 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
+			#		[ANSIThemeString("“", "default"),
+			#		 ANSIThemeString("dim", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("normal", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("bold", "emphasis"),
+			#		 ANSIThemeString("“, “", "default"),
+			#		 ANSIThemeString("underline", "emphasis"),
+			#		 ANSIThemeString("“.", "default")],
+			#		[ANSIThemeString("Using “", "default"),
+			#		 ANSIThemeString("normal", "emphasis"),
+			#		 ANSIThemeString("“ as fallback.", "default")],
+			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			tmp |= curses.A_NORMAL
 	curses_attrs = tmp
 
 	curses_col = __color[col][selected]
 	if curses_col is None:
-		debuglog.add([
-				[ANSIThemeString("themeattr_to_curses()", "emphasis")],
-				[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
-				[ANSIThemeString(f"{col}", "argument")],
-				[ANSIThemeString(", ", "error")],
-				[ANSIThemeString(f"{selected}", "argument")],
-				[ANSIThemeString(").", "error")],
-				[ANSIThemeString("Backtrace:", "error")],
-				[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-		       ], severity = LogLevel.ERR, facility = str(themefile))
+		#debuglog.add([
+		#		[ANSIThemeString("themeattr_to_curses()", "emphasis")],
+		#		[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
+		#		[ANSIThemeString(f"{col}", "argument")],
+		#		[ANSIThemeString(", ", "error")],
+		#		[ANSIThemeString(f"{selected}", "argument")],
+		#		[ANSIThemeString(").", "error")],
+		#		[ANSIThemeString("Backtrace:", "error")],
+		#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
 	return curses_col, curses_attrs
 
@@ -1468,15 +1468,16 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 		elif isinstance(substring, ThemeRef):
 			themearray_flattened += substring.to_themearray()
 		else:
-			debuglog.add([
-					[ANSIThemeString("themearray_flatten()", "emphasis"),
-					 ANSIThemeString(" called with invalid type ", "error"),
-					 ANSIThemeString(f"{type(substring)}", "argument"),
-					 ANSIThemeString("; substring:", "error")],
-					[ANSIThemeString(f"{substring}", "default")],
-					[ANSIThemeString("Backtrace:", "error")],
-					[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			       ], severity = LogLevel.ERR, facility = str(themefile))
+			sys.exit(f"themearray_flatten() called with invalid type {type(substring)}; substring: {substring}\nBacktrace: {''.join(traceback.format_stack())}")
+			#debuglog.add([
+			#		[ANSIThemeString("themearray_flatten()", "emphasis"),
+			#		 ANSIThemeString(" called with invalid type ", "error"),
+			#		 ANSIThemeString(f"{type(substring)}", "argument"),
+			#		 ANSIThemeString("; substring:", "error")],
+			#		[ANSIThemeString(f"{substring}", "default")],
+			#		[ANSIThemeString("Backtrace:", "error")],
+			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+			 #      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError(f"themearray_flatten() called with invalid type {type(substring)}")
 	return themearray_flattened
 

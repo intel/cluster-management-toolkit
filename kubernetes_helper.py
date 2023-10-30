@@ -40,7 +40,7 @@ except ModuleNotFoundError:
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
-from cmtlog import auditlog, debuglog
+#from cmtlog import debuglog
 from cmttypes import LogLevel
 from cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, StatusGroup
 from cmtio import execute_command_with_response, secure_which
@@ -4835,16 +4835,16 @@ class KubernetesHelper:
 		elif status == 42503:
 			message = f"No route to host; method: {method}, URL: {url}; header_params: {header_params}"
 		else:
-			debuglog.add([
-					[ANSIThemeString("__rest_helper_generic_json():", "emphasis")],
-					[ANSIThemeString(f"Unhandled error: {result.status}", "error")],
-					[ANSIThemeString("method: ", "emphasis"),
-					 ANSIThemeString(f"{method}", "argument")],
-					[ANSIThemeString("URL: ", "emphasis"),
-					 ANSIThemeString(f"{url}", "argument")],
-					[ANSIThemeString("header_params: ", "emphasis"),
-					 ANSIThemeString(f"{header_params}", "argument")],
-			       ], severity = LogLevel.ERR)
+			#debuglog.add([
+			#		[ANSIThemeString("__rest_helper_generic_json():", "emphasis")],
+			#		[ANSIThemeString(f"Unhandled error: {result.status}", "error")],
+			#		[ANSIThemeString("method: ", "emphasis"),
+			#		 ANSIThemeString(f"{method}", "argument")],
+			#		[ANSIThemeString("URL: ", "emphasis"),
+			#		 ANSIThemeString(f"{url}", "argument")],
+			#		[ANSIThemeString("header_params: ", "emphasis"),
+			#		 ANSIThemeString(f"{header_params}", "argument")],
+			#       ], severity = LogLevel.ERR)
 			sys.exit(f"__rest_helper_generic_json():\nUnhandled error: {result.status}\nmethod: {method}\nURL: {url}\nheader_params: {header_params}")
 
 		return data, message, status

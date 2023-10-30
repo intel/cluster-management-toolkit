@@ -66,7 +66,7 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import cmtlib
 from cmtlib import none_timestamp, strip_ansicodes
-from cmtlog import auditlog, debuglog
+#from cmtlog import debuglog
 import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
@@ -1377,10 +1377,10 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
 	else:
-		debuglog.add([
-				[ANSIThemeString("Unknown EVENT type: ", "default"),
-				 ANSIThemeString(f"{event}", "argument")],
-		       ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
+		#debuglog.add([
+		#		[ANSIThemeString("Unknown EVENT type: ", "default"),
+		#		 ANSIThemeString(f"{event}", "argument")],
+		#      ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
 		return message, severity, facility, remnants
 
 	return new_message, severity, facility, remnants
@@ -2176,30 +2176,37 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 
 	# Default case
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = [
-		([ThemeString(message, ThemeAttr("logview", "severity_info"))], severity)
+		ThemeString(message, ThemeAttr("logview", "severity_info")),
 	]
 
 	# Safe
-	tmp = re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)
-	if tmp is not None:
+	if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
 		remnants = [
-			([ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
-			  ThemeString(tmp[2], ThemeAttr("types", "path")),
-			  ThemeString(tmp[3], ThemeAttr("logview", "severity_info")),
-			  ThemeString(tmp[4], ThemeAttr("types", "lineno")),
-			  ThemeString(tmp[5], ThemeAttr("logview", "severity_info")),
-			  ThemeString(tmp[6], ThemeAttr("types", "path"))],
-			 severity),
+			ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
+			ThemeString(tmp[2], ThemeAttr("types", "path")),
+			ThemeString(tmp[3], ThemeAttr("logview", "severity_info")),
+			ThemeString(tmp[4], ThemeAttr("types", "lineno")),
+			ThemeString(tmp[5], ThemeAttr("logview", "severity_info")),
+			ThemeString(tmp[6], ThemeAttr("types", "path")),
 		]
 	else:
 		# Safe
-		tmp = re.match(r"(^\S+?Error:|Exception:|GeneratorExit:|KeyboardInterrupt:|StopIteration:|StopAsyncIteration:|SystemExit:|socket.gaierror:)( .*)", message)
-		if tmp is not None:
+		if (tmp := re.match(r"(^\S+?Error:|"
+				    r"^\S+?Exception:|"
+				    r"GeneratorExit:|"
+				    r"KeyboardInterrupt:|"
+				    r"StopIteration:|"
+				    r"StopAsyncIteration:|"
+				    r"SystemExit:|"
+				    r"socket.gaierror:"
+				    r")( .*)", message)) is not None:
 			remnants = [
-				([ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
-				  ThemeString(tmp[2], ThemeAttr("logview", "severity_info"))],
-				 severity),
+				ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
+				ThemeString(tmp[2], ThemeAttr("logview", "severity_info")),
 			]
+			if not tmp[2].startswith(" <") or tmp[2].endswith(">"):
+				processor = ("end_block", None, {})
+		elif message == ">":
 			processor = ("end_block", None, {})
 		elif message.lstrip() == message:
 			processor = ("break", None, {})
@@ -2213,7 +2220,7 @@ def python_traceback(message: str, fold_msg: bool = True) ->\
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	if message == "Traceback (most recent call last):":
-		remnants = [([ThemeString(message, ThemeAttr("logview", "severity_error"))], LogLevel.ERR)]
+		remnants = [ThemeString(message, ThemeAttr("logview", "severity_error"))]
 		processor: Tuple[str, Optional[Callable], Dict] = ("start_block", python_traceback_scanner, {})
 		return processor, remnants
 
@@ -2754,7 +2761,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 					if len(parts) == 2:
 						# No leading message
 						if len(parts[0]) == 0:
-							message, severity, facility, remnants = split_json_style("{" + parts[1], severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
+							message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 						elif parts[0].rstrip() != parts[0]:
 							parts[0] = parts[0].rstrip()
 							# It isn't leading message + JSON unless there's whitespace in-between
