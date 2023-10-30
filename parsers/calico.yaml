@@ -83,8 +83,19 @@
         - ":"
       message:
         field: 4
+  - name: "custom_splitter"
+    options:
+      regex: '^(bird): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
   - name: "override_severity"
     overrides:
+    - matchtype: "regex"
+      matchkey: "^Unable to open configuration file.*No such file or directory$"
+      loglevel: "warning"
     - matchtype: "startswith"
       matchkey: "Typha starting up"
       loglevel: "notice"
