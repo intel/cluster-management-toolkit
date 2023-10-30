@@ -713,6 +713,7 @@ def identify_k8s_distro() -> str:
 					ipaddresses.append(deep_get(address, DictPath("address")))
 			tmp_k8s_distro = None
 			minikube_name = deep_get(node, DictPath("metadata#labels#minikube.k8s.io/name"), "")
+			os_image = deep_get(node, DictPath("status#nodeInfo#osImage"), "")
 			images = deep_get(node, DictPath("status#images"), [])
 			for image in images:
 				names = deep_get(image, DictPath("names"), [])
@@ -728,6 +729,8 @@ def identify_k8s_distro() -> str:
 				tmp_k8s_distro = "microk8s"
 			elif deep_get(node, DictPath("spec#providerID"), "").startswith("kind://"):
 				tmp_k8s_distro = "kind"
+			elif os_image.startswith("Talos"):
+				tmp_k8s_distro = "talos"
 			else:
 				managed_fields = deep_get(node, DictPath("metadata#managedFields"), [])
 				for managed_field in managed_fields:
