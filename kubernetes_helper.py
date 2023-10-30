@@ -4074,6 +4074,7 @@ class KubernetesHelper:
 		cni += self.__identify_cni("cilium", ("Deployment", "apps"), "metadata.name=cilium-operator", "cilium-operator")
 		# Flannel:
 		cni += self.__identify_cni("flannel", ("DaemonSet", "apps"), "metadata.name=kube-flannel-ds", "kube-flannel")
+		cni += self.__identify_cni("flannel", ("DaemonSet", "apps"), "metadata.name=kube-flannel", "kube-flannel")
 		# Kilo:
 		cni += self.__identify_cni("kilo", ("DaemonSet", "apps"), "metadata.name=kilo", "kilo")
 		# Kindnet:
