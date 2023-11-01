@@ -30,6 +30,7 @@
     when: "ansible_os_family == 'RedHat'"
   - name: "Upgrading all packages"  # noqa package-latest
     shell: |
-      zypper refresh
-      zypper -n update -y
+      # First refresh, then update packages;
+      # this way we fail faster
+      zypper --gpg-auto-import-keys refresh && zypper -n --no-refresh update -y
     when: "ansible_os_family == 'Suse'"
