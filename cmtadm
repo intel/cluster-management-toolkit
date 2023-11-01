@@ -56,7 +56,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import cmtlib
-from cmtlib import check_deb_versions, check_rpm_versions, identify_distro, read_cmtconfig
+from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper, identify_distro, read_cmtconfig
 
 import kubernetes_helper
 
@@ -1717,6 +1717,21 @@ def update_apt_cache() -> bool:
 	args = [sudo_path, apt_get_path, "update"]
 	return execute_command(args)
 
+def update_zypper_cache() -> bool:
+	"""
+	Update the Zypper cache
+
+		Returns:
+			True on success, False on failure
+	"""
+
+	sudo_path = cmtio.secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"],
+				       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	apt_get_path = cmtio.secure_which(FilePath("zypper"), fallback_allowlist = ["/bin", "/usr/bin"],
+					  security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+	args = [sudo_path, apt_get_path, "refresh"]
+	return execute_command(args)
+
 def deb_compare_versions(current_version: str, candidate_version: str) -> bool:
 	"""
 	Compare two package versions
@@ -1779,7 +1794,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 			deb_packages (list[str]): A list of debian packages
 			version_checks (list[(software, args, regex)]): A list of component, the command needed to check its version, and a regex to extract the version number
 		Returns:
-			(deb_versions, other_versions): A tuple of utput from check_deb_versions(), (software, installed_version, "")
+			(deb_versions, other_versions): A tuple of utput from check_versions_apt(), (software, installed_version, "")
 	"""
 
 	os_distro = identify_distro()
@@ -1787,9 +1802,11 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
 	if os_distro == "debian":
-		pkg_versions = check_deb_versions(pkg_packages)
+		pkg_versions = check_versions_apt(pkg_packages)
 	elif os_distro in ("fedora", "rhel"):
-		pkg_versions = check_rpm_versions(pkg_packages)
+		pkg_versions = check_versions_yum(pkg_packages)
+	elif os_distro == "suse":
+		pkg_versions = check_versions_zypper(pkg_packages)
 
 	kubernetes_installed_version = "<unknown>"
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
@@ -2972,9 +2989,11 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
 		if os_distro == "debian":
-			versions = check_deb_versions(["kubeadm"])
+			versions = check_versions_apt(["kubeadm"])
 		elif os_distro in ("fedora", "rhel"):
-			versions = check_rpm_versions(["kubeadm"])
+			versions = check_versions_yum(["kubeadm"])
+		elif os_distro in ("suse"):
+			versions = check_versions_zypper(["kubeadm"])
 
 		if len(versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -3436,10 +3455,14 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			ANSIThemeString(": Currently only local versions are checked.", "default")])
 
 	if update_cache:
-		if os_distro == "debian" and update_cache:
+		if os_distro == "debian":
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating APT cache", "action")])
 			check_and_print_status(update_apt_cache())
+		elif os_distro == "suse":
+			ansithemeprint([ANSIThemeString("\n• ", "separator"),
+					ANSIThemeString("Updating Zypper cache", "action")])
+			check_and_print_status(update_zypper_cache())
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating version cache", "action")])
 		check_and_print_status(update_version_cache())
@@ -4289,9 +4312,11 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	if k8s_distro == "kubeadm":
 		if os_distro == "debian":
-			pkg_versions = check_deb_versions(["kubeadm"])
+			pkg_versions = check_versions_apt(["kubeadm"])
 		elif os_distro in ("fedora", "rhel"):
-			pkg_versions = check_rpm_versions(["kubeadm"])
+			pkg_versions = check_versions_yum(["kubeadm"])
+		elif os_distro in ("suse"):
+			versions = check_versions_zypper(["kubeadm"])
 
 		if len(pkg_versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),

@@ -546,14 +546,14 @@ def __extract_version(line: str) -> str:
 		raise ValueError("Error: Failed to extract a version; this is (most likely) a programming error.")
 	return tmp[1].strip()
 
-def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
 	"""
 	Given a list of packages, return installed, candidate, and all available versions
 
 		Parameters:
-			deb_packages (list[str]): A list of packages to get versions for
+			packages (list[str]): A list of packages to get versions for
 		Returns:
-			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+			versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
 	"""
 
 	try:
@@ -563,11 +563,11 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 	except ModuleNotFoundError:
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-	deb_versions = []
+	versions = []
 
 	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"],
 					    security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	args = [apt_cache_path, "policy"] + deb_packages
+	args = [apt_cache_path, "policy"] + packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
 	# Safe
@@ -610,26 +610,26 @@ def check_deb_versions(deb_packages: List[str]) -> List[Tuple[str, str, str, Lis
 			natsorted_versions = []
 			for natsorted_version in natsorted(all_versions, reverse = True):
 				natsorted_versions.append(str(natsorted_version))
-			deb_versions.append((package, installed_version, candidate_version, natsorted_versions))
+			versions.append((package, installed_version, candidate_version, natsorted_versions))
 
-	return deb_versions
+	return versions
 
-def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
 	"""
 	Given a list of packages, return installed, candidate, and all available versions
 
 		Parameters:
-			deb_packages (list[str]): A list of packages to get versions for
+			packages (list[str]): A list of packages to get versions for
 		Returns:
-			deb_versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+			versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
 	"""
 
-	rpm_versions = []
-	rpm_versions_dict: Dict[str, Dict] = {}
+	versions = []
+	versions_dict: Dict[str, Dict] = {}
 
 	yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
 				      security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
-	args = [yum_path, "--showduplicates", "-q", "list"] + rpm_packages
+	args = [yum_path, "--showduplicates", "-q", "list"] + packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
 
@@ -650,28 +650,83 @@ def check_rpm_versions(rpm_packages: List[str]) -> List[Tuple[str, str, str, Lis
 				package = tmp[1]
 				version = tmp[2]
 
-				if package not in rpm_versions_dict:
-					rpm_versions_dict[package] = {
+				if package not in versions_dict:
+					versions_dict[package] = {
 						"installed": "<none>",
 						"candidate": "<none>",
 						"available": [],
 					}
 
 				if section == "installed":
-					rpm_versions_dict[package]["installed"] = version
+					versions_dict[package]["installed"] = version
 				elif section == "available":
-					rpm_versions_dict[package]["available"].append(version)
-	# Now summarise
+					versions_dict[package]["available"].append(version)
 
-	for package, data in rpm_versions_dict.items():
+	# Now summarise
+	for package, data in versions_dict.items():
 		candidate = "<none>"
 		if len(data["available"]) > 0:
 			candidate = data["available"][-1]
 			if data["installed"] == candidate:
 				candidate = ""
-		rpm_versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
+		versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
 
-	return rpm_versions
+	return versions
+
+def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+	"""
+	Given a list of packages, return installed, candidate, and all available versions
+
+		Parameters:
+			packages (list[str]): A list of packages to get versions for
+		Returns:
+			versions (list[(package, installed_version, candidate_version, all_versions)]): A list of package versions
+	"""
+
+	versions = []
+	versions_dict: Dict[str, Dict] = {}
+
+	zypper_path = cmtio.secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist = ["/usr/bin"],
+					 security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+	args = [zypper_path, "search", "-s", "-x"] + packages
+	response = cmtio.execute_command_with_response(args)
+	split_response = response.splitlines()
+
+	package_version = re.compile(r"^(.). \| (\S+) +\| package +\| (\S+) +\|.*")
+
+	section = ""
+
+	for line in split_response:
+		if (tmp := package_version.match(line)):
+			if tmp is not None:
+				package = tmp[2]
+				version = tmp[3]
+
+				if package not in versions_dict:
+					versions_dict[package] = {
+						"installed": "<none>",
+						"candidate": "<none>",
+						"available": [],
+					}
+
+				if tmp[1] == "i":
+					versions_dict[package]["installed"] = version
+				versions_dict[package]["available"].append(version)
+
+	# Now summarise
+	for package, data in versions_dict.items():
+		installed = data["installed"]
+		candidate = data["candidate"]
+		available = data["available"]
+		if installed == "<none>":
+			if len(available) > 0:
+				candidate = available[0]
+		else:
+			if candidate == installed:
+				candidate = ""
+		versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
+
+	return versions
 
 def identify_k8s_distro() -> str:
 	"""
