@@ -57,6 +57,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
+from cmttypes import ProgrammingError
 from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
@@ -98,7 +99,7 @@ from ansible_helper import ansible_async_get_data, ansible_ping_async, ansible_r
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, make_selector, update_api_status as kh_update_api_status
+from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
 
@@ -6003,7 +6004,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				selection = ""
 				for i in range(0, len(tmpselection)):
 					if len(tmpselection[i]) > 0:
-						selection += tmpselection[i][0][0]
+						selection += str(tmpselection[i][0])
 			uip.refresh_all()
 			curses.doupdate()
 
@@ -10972,7 +10973,7 @@ def __edit_resource(kind, namespace, name):
 	return result.returncode, args
 
 # pylint: disable=unused-argument
-def apply_configuration_from_file(uip: UIProps, items, action, values, kind, **kwargs):
+def perform_action_on_configuration(uip: UIProps, items, action, values, kind, **kwargs):
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
 	except FileNotFoundError:
@@ -10983,98 +10984,46 @@ def apply_configuration_from_file(uip: UIProps, items, action, values, kind, **k
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+	if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
+		if not resource_url.startswith(("http://", "https://")):
+			return Retval.MATCH
+		resource_path = resource_url
+		rtype = deep_get(action, DictPath("extravars#rtype"))
+	else:
+		resource_path, rtype = values["resource_path"]
+
+	configuration_action = deep_get(action, DictPath("extravars#action"))
+	if configuration_action is None:
+		raise ProgrammingError(f"perform_action_on_configuration() called without action'")
+	if configuration_action not in ("delete", "create", "apply"):
+		raise ProgrammingError(f"perform_action_on_configuration() does not support the action '{configuration_action}'")
+
 	curses.endwin()
 	_retval = clear_screen()
-	resource_path, rtype = values["resource_path"]
+
+	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubectl_get_version()
+	args = [kubectl_path]
+	extra_options = []
+
+	if configuration_action == "apply":
+		if kubectl_major_version <= 1 and kubectl_minor_version < 22:
+			configuration_action = "create"
+		else:
+			extra_options = ["--server-side"]
+
+	args.append(configuration_action)
+	args += extra_options
 
 	if rtype == "Configuration File":
-		args = [kubectl_path, "apply", "-f", resource_path]
+		args.append("-f")
 	elif rtype == "Kustomization":
-		args = [kubectl_path, "apply", "-k", resource_path]
+		args.append("-k")
 	else:
 		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
 
+	args.append(resource_path)
 	result = subprocess.run(args, universal_newlines = True, check = False)
 	return result.returncode, args
-
-# pylint: disable=unused-argument
-def __apply_or_create_configuration_from_url(resource_url, create = False):
-	"""
-	Given a URL, apply or create it using kubectl apply/create
-
-		Parameters:
-			resource_url (str): The URL to the the resource to apply
-			create (bool): True to create configuration, False to apply configuration
-		Returns:
-			retval (Retval): Always returns Retval.MATCH
-		Exits:
-			If kubectl is missing
-	"""
-
-	curses.endwin()
-	_retval = clear_screen()
-
-	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
-		args = [kubectl_path, "apply", "-f", resource_url]
-		_result = subprocess.run(args, universal_newlines = True, check = False)
-	except FileNotFoundError:
-		curses.endwin()
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": Could not find ", "default"),
-				ANSIThemeString("kubectl", "path"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-	return Retval.MATCH
-
-# pylint: disable=unused-argument
-def apply_configuration_from_url(uip: UIProps, items, action, values, kind, **kwargs):
-	"""
-	Given a URL, apply it using kubectl apply
-
-		Parameters:
-			uip (opaque): Unused
-			items (list): Unused
-			action (dict): Unused
-			values (dict): For passing values
-			kind (tuple(str, str)): Unused
-		Returns:
-			retval (Retval): Always returns Retval.MATCH
-		Exits:
-			errno.ENOENT: If kubectl is missing
-	"""
-
-	resource_url = deep_get(values, DictPath("resource_url"), "")
-
-	if not resource_url.startswith(("http://", "https://")):
-		return Retval.MATCH
-
-	return __apply_or_create_configuration_from_url(resource_url)
-
-# We should probably download and apply locally instead
-# pylint: disable=unused-argument
-def create_resource_from_url(uip: UIProps, items, action, values, kind, **kwargs):
-	"""
-	Given a URL, create it using kubectl create
-
-		Parameters:
-			uip (opaque): Unused
-			items (list): Unused
-			action (dict): Unused
-			values (dict): For passing values
-			kind (tuple(str, str)): Unused
-		Returns:
-			retval (Retval): Always returns Retval.MATCH
-		Exits:
-			errno.ENOENT: If kubectl is missing
-	"""
-
-	resource_url = deep_get(values, DictPath("resource_url"), "")
-
-	if not resource_url.startswith(("http://", "https://")):
-		return Retval.MATCH
-
-	return __apply_or_create_configuration_from_url(resource_url, create = True)
 
 def __summarise_resources(path):
 	resources = []
@@ -11092,65 +11041,14 @@ def __summarise_resources(path):
 	return resources
 
 # pylint: disable=unused-argument
-def create_resource_from_file(uip: UIProps, items, action, values, kind, **kwargs):
-	resource_path, rtype = values["resource_path"]
-	resource_list = []
-
-	_result = 0
-	args = []
-
-	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
-	except FileNotFoundError:
-		curses.endwin()
-		ansithemeprint([ANSIThemeString("Critical", "critical"),
-				ANSIThemeString(": Could not find ", "default"),
-				ANSIThemeString("kubectl", "path"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.ENOENT)
-
-	if rtype == "Configuration File":
-		resources = __summarise_resources(resource_path)
-
-		for kind, namespace, name in resources:
-			resource_list.append({
-				"lineattrs": WidgetLineAttrs.NORMAL,
-				"columns": [[ThemeString(namespace, ThemeAttr("windowwidget", "default"))],
-					    [ThemeString(name, ThemeAttr("windowwidget", "default"))],
-					    [ThemeString(kind, ThemeAttr("windowwidget", "default"))]],
-			})
-
-		headers = ["Namespace:", "Name:", "Kind:"]
-		title = "The following resources will be created; accept?"
-
-		uip.refresh_all()
-		confirm_buttons = [[ord("y"), ord("Y"), ord("n"), ord("N")],
-				   [ThemeString("[", ThemeAttr("windowwidget", "default")),
-				    ThemeString("Y", ThemeAttr("windowwidget", "highlight")),
-				    ThemeString("es", ThemeAttr("windowwidget", "default")),
-				    ThemeString("]", ThemeAttr("windowwidget", "default"))],
-				   [ThemeString("[", ThemeAttr("windowwidget", "default")),
-				    ThemeString("N", ThemeAttr("windowwidget", "highlight")),
-				    ThemeString("o", ThemeAttr("windowwidget", "default")),
-				    ThemeString("]", ThemeAttr("windowwidget", "default"))]]
-		confirm_press, _tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, resource_list, headers = headers,
-									  title = title, confirm = True, confirm_buttons = confirm_buttons, cursor = False)
-
-		if confirm_press in (ord("y"), ord("Y")):
-			args = [kubectl_path, "create", "-f", resource_path]
-	elif rtype == "Kustomization":
-		args = [kubectl_path, "create", "-k", resource_path]
-	else:
-		raise TypeError(f"Unknown resource type {rtype}; this is a programming error.")
-
-	if len(args) > 0:
-		_result = subprocess.run(args, universal_newlines = True, check = False).returncode
-
-	return Retval.MATCH
-
-# pylint: disable=unused-argument
 def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs):
-	resource_path, rtype = values["resource_path"]
+	if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
+		if not resource_url.startswith(("http://", "https://")):
+			return Retval.MATCH
+		resource_path = resource_url
+		rtype = deep_get(action, DictPath("extravars#rtype"))
+	else:
+		resource_path, rtype = values["resource_path"]
 
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
@@ -11206,7 +11104,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 			"columns": [[ThemeString(line, fmt)]],
 		})
 
-	_tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Diff between current and would be configuration:", cursor = False)
+	_tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, diff, title = "Difference if applying new configuration:", cursor = False)
 	return Retval.MATCH
 
 def format_commandline(args: List[str], implicit_command: bool = True) -> List[ANSIThemeString]:
@@ -12044,60 +11942,146 @@ def selectorloop(stdscr: curses.window, view: str) -> Retval:
 			return retval
 
 listviewactions = {
-	"Apply configuration from file": {
-		"description": "Apply configuration file or Kustomization",
+	"Apply configuration (local)": {
+		"description": "Apply configurations from file/Kustomization (autodetected)",
 		"confirm": True,
-		"actionfunc": apply_configuration_from_file,
-		"query": "Choose configuration/Kustomization to apply:",
+		"actionfunc": perform_action_on_configuration,
+		"query": "Choose file or Kustomization to apply:",
 		"queryval": "resource_path",
 		"queryfunc": "filechooser",
 		"extravars": {
+			"action": "apply",
 			"listgetter": list_configuration_files,
 			"basedir": DEPLOYMENT_DIR,
 		},
 		#"confirmfunc":
 		#"confirmstring": "The following changes will be performed:",
 	},
-	"Create resources from file": {
-		"description": "Create resource from configuration file/Kustomization",
-		"actionfunc": create_resource_from_file,
-		"query": "Choose configuration/Kustomization to create:",
+	"Create resources (local)": {
+		"description": "Create resources from file/Kustomization (autodetected)",
+		"actionfunc": perform_action_on_configuration,
+		"query": "Choose file or Kustomization to create:",
 		"queryval": "resource_path",
 		"queryfunc": "filechooser",
 		"extravars": {
+			"action": "create",
 			"listgetter": list_configuration_files,
 			"basedir": DEPLOYMENT_DIR,
 		},
 	},
-	"Apply configuration from URL": {
-		"description": "Apply configuration URL",
+	"Apply configuration (URL to file)": {
+		"description": "Apply configurations from URL (file)",
 		"confirm": True,
-		"actionfunc": apply_configuration_from_url,
+		"actionfunc": perform_action_on_configuration,
 		"query": "URL to apply",
 		"queryval": "resource_url",
 		"queryfunc": "string",
+		"extravars": {
+			"action": "apply",
+			"rtype": "Configuration File",
+		},
 		#"confirmfunc":
 		#"confirmstring": "The following changes will be performed:",
 	},
-	"Create resources from URL": {
-		"description": "Create resource from URL",
-		"actionfunc": create_resource_from_url,
+	"Apply configuration (URL to Kustomization)": {
+		"description": "Apply configurations from URL (Kustomization)",
+		"confirm": True,
+		"actionfunc": perform_action_on_configuration,
+		"query": "URL to apply",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"action": "apply",
+			"rtype": "Kustomization",
+		},
+		#"confirmfunc":
+		#"confirmstring": "The following changes will be performed:",
+	},
+	"Create resources (URL to file)": {
+		"description": "Create resources from URL (file)",
+		"actionfunc": perform_action_on_configuration,
 		"query": "URL to create resource from",
 		"queryval": "resource_url",
 		"queryfunc": "string",
+		"extravars": {
+			"action": "create",
+			"rtype": "Configuration File",
+		},
 	},
-	#"Delete resources from configuration": {
-	#	"description": "Delete resource by reverting configuration file/Kustomization",
-	#},
-	"Diff resource configuration": {
-		"description": "Show what modifications applying configuration file or Kustomization would make",
+	"Create resources (URL to Kustomization)": {
+		"description": "Create resources from URL (Kustomization)",
+		"actionfunc": perform_action_on_configuration,
+		"query": "URL to create resource from",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"action": "create",
+			"rtype": "Kustomization",
+		},
+	},
+	"Delete resources (file)": {
+		"description": "Delete resource by reverting configuration file/Kustomization (autodetected)",
+		"actionfunc": perform_action_on_configuration,
+		"query": "Choose file or Kustomization to delete:",
+		"queryval": "resource_path",
+		"queryfunc": "filechooser",
+		"extravars": {
+			"action": "delete",
+			"listgetter": list_configuration_files,
+			"basedir": DEPLOYMENT_DIR,
+		},
+	},
+	"Delete resources (URL to file)": {
+		"description": "Delete resource by reverting configuration URL (file)",
+		"actionfunc": perform_action_on_configuration,
+		"query": "URL to configuration file to revert",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"action": "delete",
+			"rtype": "Configuration File",
+		},
+	},
+	"Delete resources (URL to Kustomization)": {
+		"description": "Delete resource by reverting configuration URL (Kustomization)",
+		"actionfunc": perform_action_on_configuration,
+		"query": "URL to configuration Kustomization to revert",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"action": "delete",
+			"rtype": "Kustomization",
+		},
+	},
+	"Diff resource creation (local)": {
+		"description": "Show what changes applying file or Kustomization would make (autodetect)",
 		"actionfunc": diff_resource_configuration,
-		"query": "Choose configuration/Kustomization to show difference against:",
+		"query": "Choose file or Kustomization to show difference against:",
 		"queryval": "resource_path",
 		"queryfunc": "filechooser",
 		"extravars": {
 			"listgetter": list_configuration_files,
 			"basedir": DEPLOYMENT_DIR,
+		},
+	},
+	"Diff resource creation (URL to file)": {
+		"description": "Show what changes applying URL would make (file)",
+		"actionfunc": diff_resource_configuration,
+		"query": "URL to file to show difference against",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"rtype": "Configuration File",
+		},
+	},
+	"Diff resource creation (URL to Kustomization)": {
+		"description": "Show what changes applying URL would make (Kustomization)",
+		"actionfunc": diff_resource_configuration,
+		"query": "URL to Kustomization to show difference against",
+		"queryval": "resource_url",
+		"queryfunc": "string",
+		"extravars": {
+			"rtype": "Kustomization",
 		},
 	},
 }
