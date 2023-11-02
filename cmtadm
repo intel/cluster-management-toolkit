@@ -737,6 +737,8 @@ cni_upgrade_data = {
 			]
 		},
 		"CNI": {
+			"version_command": ["kubectl", "calico", "version"],
+			"version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
 			# Safe
@@ -1005,6 +1007,14 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 
 				if upgradetype == "CNI":
 					new_path = FilePath(str(PurePath(directory).joinpath(filename)))
+					args = [kubectl_path]
+					kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubernetes_helper.kubectl_get_version()
+					if kubectl_major_version <= 1 and kubectl_minor_version < 22:
+						args += ["create"]
+					else:
+						args += ["apply", "--server-side"]
+					args += ["-f", new_path]
+
 					patch_cni_call = deep_get(url, DictPath("patch"))
 					if patch_cni_call is not None:
 						ansithemeprint([ANSIThemeString("\n  • ", "separator"),
@@ -1015,9 +1025,11 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 							ANSIThemeString(f"Applying ", "subaction"),
 							ANSIThemeString(f"{filename}", "version")])
 					if verbose:
-						check_and_print_status(execute_command([kubectl_path, "apply", "--server-side", "-f", new_path]))
+						# This should check whether kubectl is >= 1.22; otherwise we need to use create
+						check_and_print_status(execute_command(args))
 					else:
-						check_and_print_status(execute_command_with_response([kubectl_path, "apply", "--server-side", "-f", new_path]))
+						# This should check whether kubectl is >= 1.22; otherwise we need to use create
+						check_and_print_status(execute_command_with_response(args))
 		else:
 			ansithemeprint([ANSIThemeString("No newer version available.", "default")])
 	elif install_command is not None and (version is None or len(version) == 0):
@@ -1454,7 +1466,9 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
-		args = ["/usr/bin/kubectl", "apply", "--server-side", "--context=<<<context>>>", "-f", cni_path]
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		# This should check whether kubectl is >= 1.22; otherwise we need to use create
+		args = [kubectl_path, "apply", "--server-side", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
 		args = deep_get(cni_data, DictPath(f"{cni}#command"))
 
