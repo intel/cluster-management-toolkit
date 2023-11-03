@@ -55,7 +55,10 @@ _cmu() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
-			--color|--format)
+			--disable-kubernetes|--read-only)
+				# These options don't take any arguments
+				;;
+			--color|--format|--theme|--kube-config|--namespace)
 				# These options take 1 argument
 				skip_optargs=1
 				;;
@@ -78,12 +81,22 @@ _cmu() {
 		return
 		;;
 	--format)
-		COMPREPLY=( $(compgen -W "csv default entry ssv tsv" -- "$2") )
+		COMPREPLY=( $(compgen -W "csv default ssv tsv" -- "$2") )
 		return
 		;;
 	--namespace)
 		available_namespaces=$(kubectl get no --no-headers -o custom-columns='NAME:metadata.name' 2> /dev/null)
 		COMPREPLY=( $(compgen -W "${available_namespaces}" -- "$2") )
+		return
+		;;
+	--kube-config)
+		comptopt -o filenames 2> /dev/null
+		COMPREPLY=( $(compgen -f -- $2) )
+		return
+		;;
+	--theme)
+		comptopt -o filenames 2> /dev/null
+		COMPREPLY=( $(compgen -f -- $2) )
 		return
 		;;
 	esac
@@ -97,20 +110,16 @@ _cmu() {
 		;;
 	"")
 		;;
-	*)
-		COMPREPLY=( $(compgen -W "" -- "$2") )
-		return
-		;;
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	list-namespaces|list-views)
+	list-namespaces|list-views|help|--help|version|--version)
 		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
 		return
 		;;
 	*)
 		if [ ${COMP_CWORD} -eq 1 ]; then
-			COMPREPLY=( $(compgen -W "VIEW list-namespaces list-views help version --namespace --read-only --help --version" -- "$2") )
+			COMPREPLY=( $(compgen -W "VIEW list-namespaces list-views help version --namespace --read-only --kube-config --theme --disable-kubernetes --help --version" -- "$2") )
 			return
 		fi
 	esac
