@@ -61,7 +61,7 @@ from cmttypes import ProgrammingError
 from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
-from cmtio import execute_command, execute_command_with_response, secure_read_string, secure_which, secure_write_string
+from cmtio import execute_command, execute_command_with_response, expand_path, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 
@@ -13476,12 +13476,8 @@ def main() -> None:
 	defaultthemefile = DEFAULT_THEME_FILE
 
 	themefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
-	if themefile is None or len(themefile) == 0:
-		themefile = defaultthemefile
-	elif themefile.startswith("{HOME}/"):
-		themefile = FilePath(os.path.join(HOMEDIR, themefile[len("{HOME}/"):]))
-	elif "/" not in themefile:
-		themefile = FilePath(os.path.join(THEME_DIR, themefile))
+	themefile = expand_path(path = themefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
+
 	read_theme(themefile, defaultthemefile)
 
 	curses_configuration.abouttext = helptexts.about
