@@ -13447,6 +13447,12 @@ COMMANDLINE = {
 					         r")$",
 				},
 			},
+			"--theme": {
+				"values": [ANSIThemeString("THEME", "argument")],
+				"description": [ANSIThemeString("THEME", "argument"),
+						ANSIThemeString(" to use", "description")],
+				"requires_arg": True,
+			},
 		},
 	},
 	"spacer3": {
@@ -13475,8 +13481,19 @@ def main() -> None:
 
 	defaultthemefile = DEFAULT_THEME_FILE
 
-	themefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
-	themefile = expand_path(path = themefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
+	themeindex = None
+	try:
+		themeindex = sys.argv.index("--theme")
+		if themeindex + 1 < len(sys.argv):
+			tmpthemefile = sys.argv[themeindex + 1]
+		sys.argv.pop(themeindex)
+		sys.argv.pop(themeindex)
+	except ValueError:
+		pass
+
+	if themeindex is None:
+		tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
+	themefile, theme_path_found = expand_path(path = tmpthemefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
 
 	read_theme(themefile, defaultthemefile)
 
@@ -13507,6 +13524,14 @@ def main() -> None:
 		elif opt in ("--kubeconfig", "--kube-config"):
 			global kube_config_file
 			kube_config_file = optarg
+
+	if themeindex and not theme_path_found:
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(": could not find theme “", "default"),
+				ANSIThemeString(f"{tmpthemefile}", "path"),
+				ANSIThemeString("“; using “", "default"),
+				ANSIThemeString(f"{defaultthemefile}", "path"),
+				ANSIThemeString("“ instead.\n", "default")])
 
 	return command(options, args)
 

@@ -21,7 +21,7 @@ from cmtpaths import HOMEDIR
 
 import ansithemeprint
 
-def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] = None, fallback: str = "") -> FilePath:
+def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] = None, fallback: str = "") -> Union[FilePath, bool]:
 	"""
 	Given a path, filename or partial filename, expand it to its full path
 
@@ -32,13 +32,14 @@ def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] =
 			fallback (str): The path to use if the provided path is empty or doesn't exist
 		Returns:
 			full_path (FilePath): The full path
+			status (bool): True if successful, False if fallback is returned
 	"""
 
 	partial_paths = []
-	full_path = ""
+	full_path = None
 
 	if path is None or len(path) == 0:
-		return FilePath(fallback)
+		return FilePath(fallback), False
 
 	if path.startswith("{HOME}/"):
 		partial_paths.append(os.path.join(HOMEDIR, path[len("{HOME}/"):]))
@@ -46,7 +47,7 @@ def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] =
 		partial_paths.append(path)
 	else:
 		if search_paths is None:
-			return fallback
+			return FilePath(fallback), False
 		else:
 			for search_path in search_paths:
 				partial_paths.append(os.path.join(search_path, path))
@@ -64,9 +65,9 @@ def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] =
 					full_path = partial_path_suffixed
 					break
 	if full_path is None:
-		full_path = fallback
+		return FilePath(fallback), False
 
-	return FilePath(full_path)
+	return FilePath(full_path), True
 
 def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus]) -> str:
 	"""
