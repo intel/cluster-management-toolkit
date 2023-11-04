@@ -29,7 +29,7 @@
       # Disable swap units
       swapunits="$(systemctl --type swap -o json-pretty)"
       if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
-        for swap in $(systemctl --type swap -o json-pretty | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
+        for swap in $(echo "${swapunits}" | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
           systemctl mask "$(printf -- "${swap}")"
         done
       fi

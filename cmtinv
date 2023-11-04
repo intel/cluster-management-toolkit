@@ -16,16 +16,21 @@ For usage, see:
 import errno
 import os
 from pathlib import Path, PurePath
+import re
 import sys
 from typing import cast, Dict, List, Optional, Tuple
+try:
+	import yaml
+except ModuleNotFoundError:
+	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, UnknownError
-from cmtpaths import HOMEDIR, SSH_DIR
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, ProgrammingError, UnknownError
+from cmtpaths import ANSIBLE_PLAYBOOK_DIR, HOMEDIR, SSH_DIR
 from cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE
 
 import cmtio
@@ -37,7 +42,7 @@ from ansible_helper import ansible_configuration, ansible_get_inventory_pretty, 
 from ansible_helper import ansible_get_groups_by_host, ansible_get_hosts_by_group, ansible_add_hosts
 from ansible_helper import ansible_remove_hosts, ansible_remove_groups, ansible_set_vars
 from ansible_helper import ansible_set_hostvars, ansible_set_groupvars, ansible_unset_hostvars
-from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansible_ping
+from ansible_helper import ansible_unset_groupvars, ansible_create_groups, ansible_ping, ansible_print_play_results, ansible_run_playbook_on_selection
 from ansible_helper import ANSIBLE_INVENTORY
 
 import cmtlib
@@ -662,11 +667,11 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 	color = "always"
 
 	# Valid formats:
-	# inventory = Normal output format (default)
+	# default = Normal output format (default)
 	# csv = Comma-separated values
 	# ssv = Space-separated values
 	# tsv = Tab-separated values
-	output_format = "inventory"
+	output_format = "default"
 
 	include_groupvars = False
 
@@ -678,7 +683,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--include-vars":
 			include_groupvars = True
 
-	if output_format != "inventory":
+	if output_format != "default":
 		separator = ""
 		if output_format == "csv":
 			separator = ","
@@ -711,11 +716,11 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	color = "always"
 
 	# Valid formats:
-	# inventory = Normal output format (default)
+	# default = Normal output format (default)
 	# csv = Comma-separated values
 	# ssv = Space-separated values
 	# tsv = Tab-separated values
-	output_format = "inventory"
+	output_format = "default"
 
 	include_hostvars = False
 
@@ -730,7 +735,7 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	groups = ["all"]
 
-	if output_format != "inventory":
+	if output_format != "default":
 		separator = ""
 		if output_format == "csv":
 			separator = ","
@@ -751,6 +756,219 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansithemeprint(item, color = color)
 
 	return 0
+
+def populate_playbooks() -> Dict:
+	playbook_dirs = []
+	playbooks = {}
+
+	local_playbook_dirs = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
+	for playbook_dir in local_playbook_dirs:
+		# Substitute {HOME}/ for {HOMEDIR}
+		if playbook_dir.startswith(("{HOME}/", "{HOME}\\")):
+			playbook_dir = FilePath(str(PurePath(HOMEDIR).joinpath(playbook_dir[len('{HOME}/'):])))
+		# Skip non-existing playbook paths
+		if not os.path.isdir(playbook_dir):
+			continue
+		playbook_dirs.append(playbook_dir)
+	playbook_dirs.append(ANSIBLE_PLAYBOOK_DIR)
+
+	# Safe
+	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
+
+	# This should be moved to ansible_helper and generalised to be usable both in cmu and cmtinv
+	for playbook_dir in playbook_dirs:
+		for playbook_path in Path(playbook_dir).iterdir():
+			if playbook_path.name.startswith(("~", ".")):
+				continue
+
+			tmp = yaml_regex.match(playbook_path.name)
+			if tmp is None:
+				continue
+
+			playbookname = str(tmp[1])
+
+			if playbookname in playbooks:
+				continue
+
+			description = None
+
+			try:
+				d = cmtio_yaml.secure_read_yaml(FilePath(str(playbook_path)), directory_is_symlink = True)
+			except yaml.YAMLError:
+				# This entry could not be parsed; add a dummy entry
+				playbooks[playbookname] = {
+					"description": playbook_path,
+					"playbook": str(playbook_path),
+					"category": "__INVALID__",
+					"comments": "Failed to parse (Not valid YAML)",
+				}
+				continue
+
+			# Empty files are used to disable playbooks completely
+			if d is None or len(d) == 0:
+				playbooks[playbookname] = {
+					"description": playbook_path,
+					"playbook": str(playbook_path),
+					"category": "__DISABLED__",
+				}
+				continue
+
+			if not isinstance(d, list):
+				# This entry could not be parsed; add a dummy entry
+				playbooks[playbookname] = {
+					"description": playbook_path,
+					"playbook": str(playbook_path),
+					"category": "__INVALID__",
+					"comments": "Failed to parse (Not a list of plays)",
+				}
+				continue
+
+			description = deep_get(d[0], DictPath("vars#metadata#description"))
+
+			# Ignore all playbooks that lack a description;
+			# typically they are internal playbooks
+			if description is None:
+				continue
+
+			playbooktypes = deep_get_with_fallback(d[0], [DictPath("vars#metadata#playbook_types"), DictPath("vars#metadata#playbook-types")], [])
+			description = deep_get(d[0], DictPath("vars#metadata#description"))
+			category = deep_get(d[0], DictPath("vars#metadata#category"), "Uncategorized")
+			readonly = deep_get_with_fallback(d[0], [DictPath("vars#metadata#read_only"), DictPath("vars#metadata#read-only")], False)
+			comments = deep_get(d[0], DictPath("vars#metadata#comments"), "")
+
+			if "cmtinv" not in playbooktypes:
+				continue
+
+			playbooks[playbookname] = {
+				"description": description,
+				"playbook": str(playbook_path),
+				"category": category,
+				"comments": comments,
+				"read_only": readonly,
+			}
+
+	return playbooks
+
+# pylint: disable-next=unused-argument
+def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
+	"""
+	List playbooks
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Unused
+		Returns:
+			0
+	"""
+
+	color = "always"
+
+	# Valid formats:
+	# default = Normal output format (default)
+	# csv = Comma-separated values
+	# ssv = Space-separated values
+	# tsv = Tab-separated values
+	output_format = "default"
+
+	include_groupvars = False
+
+	for opt, optarg in options:
+		if opt == "--color":
+			color = optarg
+		elif opt == "--format":
+			output_format = optarg
+
+	if output_format != "default":
+		separator = ""
+		if output_format == "csv":
+			separator = ","
+		elif output_format == "ssv":
+			separator = " "
+		elif output_format == "tsv":
+			separator = "\t"
+
+	playbooks = populate_playbooks()
+
+	if output_format == "default":
+		headers = ["Name:", "Description:", "Category:", "Read Only:"]
+		rows = []
+
+		maxlengths = []
+		for header in headers:
+			maxlengths.append(len(header))
+
+		for playbook, data in playbooks.items():
+			name = playbook
+			description = deep_get(data, DictPath("description"), "<unset>")
+			category = deep_get(data, DictPath("category"), "<unset>")
+			read_only = str(deep_get(data, DictPath("read_only"), False))
+			rows.append([name, description, category, read_only])
+		for row in rows:
+			for i, field in enumerate(row):
+				maxlengths[i] = max(maxlengths[i], len(field))
+
+		header_array = []
+		for i, header in enumerate(headers):
+			header_array.append(ANSIThemeString(header, "header"))
+			header_array.append(ANSIThemeString("".ljust(maxlengths[i] - len(header) + 2), "default"))
+		ansithemeprint(header_array)
+		for row in rows:
+			row_array = []
+			for i, field in enumerate(row):
+				row_array.append(ANSIThemeString(field, "default"))
+				row_array.append(ANSIThemeString("".ljust(maxlengths[i] - len(field) + 2), "default"))
+			ansithemeprint(row_array)
+	else:
+		ansithemeprint(ansithemestring_join_tuple_list(playbooks, formatting = "default", separator = ANSIThemeString(separator, "separator")), color = color)
+
+
+# pylint: disable-next=unused-argument
+def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
+	"""
+	Run playbook on host(s) or group(s)
+	A well-formed inventory should not have groups with the same name as any of the hosts,
+	thus mixing group and host names should be OK; but if there are overlaps the group
+	are prioritised over the hostname
+
+		Parameters:
+			options (list[(str, str)]): List of opt, optarg
+			args (list[str]): Unused
+		Returns:
+			0
+	"""
+
+	playbook = args[0]
+	groups_or_hosts = args[1].split(",")
+	selection = []
+	_all = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	for group_or_host in groups_or_hosts:
+		# First check if there's a group by this name
+		hosts = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, group_or_host)
+		# If the group is empty let's try to see if it is a host
+		if len(hosts) == 0:
+			if group_or_host in _all:
+				selection.append(group_or_host)
+			else:
+				ansithemeprint([ANSIThemeString("Warning", "warning"),
+						ANSIThemeString(": Skipping unknown host or group “", "default"),
+						ANSIThemeString(group_or_host, "argument"),
+						ANSIThemeString("“", "default")], stderr = True)
+		else:
+			selection += hosts
+	# Eliminate duplicates
+	selection = list(set(selection))
+
+	if len(selection) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": no valid hosts or groups specified; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	playbooks = populate_playbooks()
+	if playbook in playbooks and deep_get(playbooks, DictPath(f"{playbook}#category"), "") not in ("__DISABLED__", "__INVALID__"):
+		playbook_path = deep_get(playbooks, DictPath(f"{playbook}#playbook"), "")
+		retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection)
+
+		ansible_print_play_results(retval, ansible_results)
 
 def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
@@ -1043,7 +1261,7 @@ COMMANDLINE = {
 						ANSIThemeString("FORMAT", "description")],
 				"extended_description": [
 					[ANSIThemeString("Valid formats are: ", "description")],
-					[ANSIThemeString("inventory", "argument"),
+					[ANSIThemeString("default", "argument"),
 					 ANSIThemeString(" (inventory in tree format)", "description")],
 					[ANSIThemeString("csv", "argument"),
 					 ANSIThemeString(" (comma-separated values)", "description")],
@@ -1056,7 +1274,7 @@ COMMANDLINE = {
 				"validation": {
 					"validator": "allowlist",
 					"allowlist": [
-						"inventory",
+						"default",
 						"csv",
 						"ssv",
 						"tsv",
@@ -1098,7 +1316,7 @@ COMMANDLINE = {
 						ANSIThemeString("FORMAT", "description")],
 				"extended_description": [
 					[ANSIThemeString("Valid formats are: ", "description")],
-					[ANSIThemeString("inventory", "argument"),
+					[ANSIThemeString("default", "argument"),
 					 ANSIThemeString(" (inventory in tree format)", "description")],
 					[ANSIThemeString("csv", "argument"),
 					 ANSIThemeString(" (comma-separated values)", "description")],
@@ -1111,7 +1329,7 @@ COMMANDLINE = {
 				"validation": {
 					"validator": "allowlist",
 					"allowlist": [
-						"inventory",
+						"default",
 						"csv",
 						"ssv",
 						"tsv",
@@ -1276,6 +1494,103 @@ COMMANDLINE = {
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
+	},
+	"List Playbooks": {
+		"command": ["list-playbooks"],
+		"description": [ANSIThemeString("List available playbooks", "description")],
+		"options": {
+			"--color": {
+				"values": [ANSIThemeString("WHEN", "argument")],
+				"description": [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid arguments are: ", "description")],
+					[ANSIThemeString("always", "argument"),
+					 ANSIThemeString(" (always color the output; default)", "description")],
+					[ANSIThemeString("never", "argument"),
+					 ANSIThemeString(" (never color the output)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"always",
+						"never",
+					],
+				},
+			},
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Format the output as ", "description"),
+						ANSIThemeString("FORMAT", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are: ", "description")],
+					[ANSIThemeString("default", "argument"),
+					 ANSIThemeString(" (default format)", "description")],
+					[ANSIThemeString("csv", "argument"),
+					 ANSIThemeString(" (comma-separated values)", "description")],
+					[ANSIThemeString("ssv", "argument"),
+					 ANSIThemeString(" (space-separated values)", "description")],
+					[ANSIThemeString("tsv", "argument"),
+					 ANSIThemeString(" (tab-separated values)", "description")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": [
+						"default",
+						"csv",
+						"ssv",
+						"tsv",
+					],
+				},
+			},
+		},
+		"callback": list_playbooks,
+	},
+	"Run Playbook": {
+		"command": ["run"],
+		"values": [ANSIThemeString("PLAYBOOK ", "argument"),
+			   ANSIThemeString("HOST", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument"),
+			   ANSIThemeString("|", "separator"),
+			   ANSIThemeString("GROUP", "argument"),
+			   ANSIThemeString(",", "separator"),
+			   ANSIThemeString("...", "argument")],
+		"description": [ANSIThemeString("Run playbook on ", "description"),
+				ANSIThemeString("HOST", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument"),
+				ANSIThemeString(" or ", "description"),
+				ANSIThemeString("GROUP", "argument"),
+				ANSIThemeString(",", "separator"),
+				ANSIThemeString("...", "argument")],
+		"required_args": [
+			{
+				"name": "playbook",
+				"string": [ANSIThemeString("PLAYBOOK", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z0-9][a-z0-9_-]*[a-z0-9]$",
+				},
+			},
+			{
+				"name": "hosts_or_groups",
+				"string": [ANSIThemeString("HOST", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument"),
+					   ANSIThemeString("|", "argument"),
+					   ANSIThemeString("GROUP", "argument"),
+					   ANSIThemeString(",", "separator"),
+					   ANSIThemeString("...", "argument")],
+				"validation": {
+					"validator": "regex",
+					"regex": r"^[a-z_][a-z0-9_]*$",
+					"list_separator": ",",
+				},
+			},
+		],
+		"callback": run_playbook,
 	},
 	"Set Global Variables": {
 		"command": ["set-var", "set-vars"],

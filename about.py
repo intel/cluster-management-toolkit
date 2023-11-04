@@ -13,7 +13,7 @@ LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
 
 PROGRAM_SUITE_NAME = "CMT"
 PROGRAM_SUITE_FULL_NAME = "Cluster Management Toolkit for Kubernetes"
-PROGRAM_SUITE_VERSION = "0.5.6"
+PROGRAM_SUITE_VERSION = "0.5.7"
 
 UI_PROGRAM_NAME = "cmu"
 UI_PROGRAM_VERSION = "0.4.6"
@@ -28,7 +28,7 @@ ADMIN_PROGRAM_NAME = "cmtadm"
 ADMIN_PROGRAM_VERSION = "0.6.9"
 
 INVENTORY_PROGRAM_NAME = "cmtinv"
-INVENTORY_PROGRAM_VERSION = "0.4.1"
+INVENTORY_PROGRAM_VERSION = "0.4.2"
 
 # We don't support Python-versions older than 3.8
 version_info = sys.version_info

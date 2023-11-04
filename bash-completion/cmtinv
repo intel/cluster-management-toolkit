@@ -22,7 +22,7 @@ add_option_if_not_in_list() {
 
 _cmtinv() {
 	commands=""
-	all_commands_help="add-group add-groups add-host add-hosts inventory inv list-groups list-hosts ping rebuild-inventory remove-group remove-groups remove-host remove-hosts set-group-var set-group-vars set-host-var set-host-vars set-var set-vars unset-group-var unset-group-vars unset-host-var unset-host-vars unset-var unset-vars --help help --version version"
+	all_commands_help="add-group add-groups add-host add-hosts inventory inv list-groups list-hosts ping rebuild-inventory remove-group remove-groups remove-host remove-hosts set-group-var set-group-vars set-host-var set-host-vars set-var set-vars unset-group-var unset-group-vars unset-host-var unset-host-vars unset-var unset-vars run list-playbooks --help help --version version"
 
 	non_options=0
 	skip_optargs=0
@@ -71,7 +71,7 @@ _cmtinv() {
 		done
 
 		case "${COMP_WORDS[1]}" in
-		add-host|add-hosts|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|uset-group-var|unset-group-vars|unset-host-var|unset-host-vars)
+		add-host|add-hosts|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|uset-group-var|unset-group-vars|unset-host-var|unset-host-vars|run)
 			# These commands accept up to two arguments
 			if [ ${non_options} -ge 2 ]; then
 				COMPREPLY=( $(compgen -W "" -- "$2") )
@@ -100,7 +100,7 @@ _cmtinv() {
 		return
 		;;
 	--format)
-		COMPREPLY=( $(compgen -W "csv inventory ssv tsv" -- "$2") )
+		COMPREPLY=( $(compgen -W "csv default ssv tsv" -- "$2") )
 		return
 		;;
 	--groups)
@@ -131,9 +131,9 @@ _cmtinv() {
 		esac
 
 		case "${COMP_WORDS[1]}" in
-		list-groups|list-hosts)
+		list-groups|list-hosts|list-playbooks)
 			# If "--include-vars" is used, we shouldn't suggest "--format"
-			# since only "--format inventory" supports showing the variables
+			# since only "--format default" supports showing the variables
 			case "${COMP_WORDS[*]}" in
 			*--include-vars*)
 				;;
@@ -141,6 +141,12 @@ _cmtinv() {
 				commands=$(add_option_if_not_in_list "--format" ${commands})
 				;;
 			esac
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		list-playbooks)
+			commands=$(add_option_if_not_in_list "--color" ${commands})
 			;;
 		esac
 
@@ -185,7 +191,20 @@ _cmtinv() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	add-group|add-groups|add-host|add-hosts|inventory|inv|list-groups|list-hosts|ping|rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|set-var|set-vars|unset-group-var|unset-group-vars|unset-host-var|unset-host-vars|unset-var|unset-vars)
+	run)
+		if [ ${non_options} -eq 0 ]; then
+			available_playbooks=$(cmtinv list-playbooks --color never --format ssv 2> /dev/null)
+			commands="${commands} ${available_playbooks}"
+		elif [ ${non_options} -eq 1 ]; then
+			available_groups=$(cmtinv list-groups --color never --format ssv 2> /dev/null)
+			available_hosts=$(cmtinv list-hosts --color never --format ssv 2> /dev/null)
+			commands="${commands} ${available_groups} ${available_hosts}"
+		fi
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
+	add-group|add-groups|add-host|add-hosts|inventory|inv|list-groups|list-hosts|ping|rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts|set-group-var|set-group-vars|set-host-var|set-host-vars|set-var|set-vars|unset-group-var|unset-group-vars|unset-host-var|unset-host-vars|unset-var|unset-vars|run|list-playbooks)
 		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
 		return
 		;;

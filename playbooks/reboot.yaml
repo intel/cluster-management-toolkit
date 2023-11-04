@@ -1,4 +1,4 @@
-- hosts: "selection:!controlplane:!nas"
+- hosts: "selection:!controlplane:!nas:!localhost"
   name: "Reboot"
   vars:
     metadata:
@@ -6,6 +6,10 @@
       summary:
         "System actions":
         - description: "Reboots the system"
+      playbook_types:
+      - "cmtinv"
+      - "inventory"
+      - "nodes"
       confirm: true
       allow_on_control_plane: "never"
       category: "Administration"
