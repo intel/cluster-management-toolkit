@@ -7172,28 +7172,25 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 		# This is aggregate over all CPUs
 		percentagebar_cpu: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(8, 7, uip.infopadwidth - 10, cputimetotal, [
-			# Note: These are NOT themestrings!
-			(cputimeusernice, ThemeAttr("types", "cputime_user_nice")),
-			(cputimeuser, ThemeAttr("types", "cputime_user")),
-			(cputimetotalsystem, ThemeAttr("types", "cputime_total_system")),
-			(cputimetotalguest, ThemeAttr("types", "cputime_total_guest"))
+			(cputimeusernice, ThemeRef("strings", "cputime_user_nice")),
+			(cputimeuser, ThemeRef("strings", "cputime_user")),
+			(cputimetotalsystem, ThemeRef("strings", "cputime_total_system")),
+			(cputimetotalguest, ThemeRef("strings", "cputime_total_guest"))
 		])
 
 		# memory usage:
 		# used (green) / buffers (bold blue) / cache (yellow)
 		percentagebar_mem: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 7, uip.infopadwidth - 10, memtotal, [
-			# Note: These are NOT themestrings!
-			(memused - memcached - buffers, ThemeAttr("types", "mem")),
-			(buffers, ThemeAttr("types", "buffers")),
-			(memcached, ThemeAttr("types", "cached"))
+			(memused - memcached - buffers, ThemeRef("strings", "mem")),
+			(buffers, ThemeRef("strings", "buffers")),
+			(memcached, ThemeRef("strings", "cached"))
 		])
 
 		# swap usage:
 		# used (red)
 		if swaptotal > 0:
 			percentagebar_or_string_swap: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 6, uip.infopadwidth - 10, swaptotal, [
-				# Note: These are NOT themestrings!
-				(swapused, ThemeAttr("types", "swap_used"))
+				(swapused, ThemeRef("strings", "swap_used"))
 			])
 			percentagebar_or_string_swap += [
 				ThemeString(f"{100 * swapused // swaptotal}", ThemeAttr("main", "dim")),

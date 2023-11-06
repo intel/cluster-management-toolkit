@@ -158,8 +158,8 @@ class ThemeRef:
 
 	def __str__(self) -> str:
 		string = ""
-		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
-		if array is None:
+		data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+		if data is None:
 			#debuglog.add([
 			#		[ANSIThemeString("The ThemeRef(", "error")],
 			#		[ANSIThemeString(f"{self.context}", "argument")],
@@ -170,6 +170,14 @@ class ThemeRef:
 			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			#      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+		if isinstance(data, dict):
+			if self.selected:
+				selected = "selected"
+			else:
+				selected = "unselected"
+			array = deep_get(data, selected)
+		else:
+			array = data
 		for string_fragment, _attr in array:
 			string += string_fragment
 		return string
@@ -189,7 +197,15 @@ class ThemeRef:
 		"""
 
 		themearray = []
-		array = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+		data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
+		if isinstance(data, dict):
+			if self.selected:
+				selected = "selected"
+			else:
+				selected = "unselected"
+			array = deep_get(data, selected)
+		else:
+			array = data
 		if array is None:
 			#debuglog.add([
 			#		[ANSIThemeString("The ThemeRef(", "error")],
@@ -868,52 +884,42 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 			array (list[ThemeArray]): A list of themearrays
 	"""
 
-	array = []
-	row: List[Union[ThemeRef, ThemeString]] = []
-	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
-	selectedblock = deep_get(theme, DictPath("boxdrawing#block"), "█")
+	heatmap: List[Union[ThemeRef, ThemeString]] = []
 	x = 0
 
-	color = color_status_group(stgroups[0])
 	tmp = ""
 
-	# Try to make minimise the colour changes
+	# Append a dummy entry to avoid special casing
+	stgroups.append(StatusGroup.UNKNOWN)
+
+	current_status = None
+	status_width = 0
+
+	# Try to minimise the colour changes
 	for i, stgroup in enumerate(stgroups):
-		heat = stgroup
-		nextcolor = color_status_group(heat)
-		if selected == i:
-			sblock = selectedblock
+		new_status = ThemeRef("strings", stgroup_mapping[stgroup], selected = selected == i)
+		if current_status is None or current_status != new_status:
+			if current_status is not None:
+				# We have something to flush
+				# Flush
+				refarray = current_status.to_themearray()
+				if len(refarray) > 1:
+					raise ValueError(f"parcentagebar() cannot handle ThemeRef with multiple ThemeString")
+				refthemestr = refarray[0]
+				refstr = str(refthemestr)
+				refattr = refthemestr.get_themeattr()
+				is_selected = refthemestr.get_selected()
+				newstr = refstr * (status_width // len(refstr)) + refstr[0:status_width % len(refstr)]
+				heatmap.append(ThemeString(newstr, refattr, selected = is_selected))
+			current_status = new_status
+			status_width = 1
 		else:
-			sblock = block
+			status_width += 1
 
-		if x > maxwidth:
-			row.append(ThemeString(tmp, color, False))
-			x = 0
-			array.append(row)
-			row = []
-
-		# If we have a new colour we need a new element in the array,
-		# otherwise we just extend the current element
-		if x == 0:
-			color = nextcolor
-			tmp = f"{sblock}"
-		elif nextcolor == color:
-			tmp += f"{sblock}"
-		elif nextcolor != color:
-			row.append(ThemeString(tmp, color, False))
-			tmp = f"{sblock}"
-			color = nextcolor
-
-		x += 1
-		if i == len(stgroups) - 1:
-			row.append(ThemeString(tmp, color, False))
-			array.append(row)
-			break
-
-	return array
+	return themearray_wrap_line(heatmap, maxwidth, wrap_marker = False)
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeAttr]]) -> List[Union[ThemeRef, ThemeString]]:
+def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Draw a bar of multiple subsets that sum up to a total
 
@@ -922,26 +928,33 @@ def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[
 			minx (int): The starting position of the percentage bar
 			maxx (int): The ending position of the percentage bar
 			total (int): The total sum
-			subsets (list(subset, themeattr)):
+			subsets (list(subset, themeref)):
 				subset (int): The fraction of the total that this subset represents
-				themeattr (ThemeAttr): The colour to use for this subset
+				themeref (ThemeRef): The theme reference to use for this subset
+                                                     Note: The string part of the ThemeRef will be truncated or repeated as necessary.
 		Returns:
 			themearray (ThemeArray): The themearray with the percentage bar
 	"""
 
 	themearray: List[Union[ThemeRef, ThemeString]] = []
 
-	block = deep_get(theme, DictPath("boxdrawing#smallblock"), "■")
 	bar_width = maxx - minx + 1
 	barpos = minx + 1
 	subset_total = 0
 
 	if total > 0:
 		for subset in subsets:
-			pct, themeattr = subset
+			pct, themeref = subset
 			subset_width = int((pct / total) * bar_width)
 			subset_total += subset_width
-			themearray.append(ThemeString("".ljust(subset_width, block), themeattr))
+			refarray = themeref.to_themearray()
+			if len(refarray) > 1:
+				raise ValueError(f"parcentagebar() cannot handle ThemeRef with multiple ThemeString")
+			refthemestr = refarray[0]
+			refstr = str(refthemestr)
+			refattr = refthemestr.get_themeattr()
+			newstr = refstr * (subset_width // len(refstr)) + refstr[0:subset_width % len(refstr)]
+			themearray.append(ThemeString(newstr, refattr))
 
 	# Pad to full width
 	themearray.append(ThemeString("".ljust(bar_width - subset_total), ThemeAttr("types", "generic")))
