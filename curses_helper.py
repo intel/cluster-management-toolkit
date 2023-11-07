@@ -916,7 +916,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 		else:
 			status_width += 1
 
-	return themearray_wrap_line(heatmap, maxwidth, wrap_marker = False)
+	return themearray_wrap_line(heatmap, maxwidth + 1, wrap_marker = False)
 
 # pylint: disable-next=too-many-arguments
 def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeString]]:
