@@ -10728,7 +10728,7 @@ def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Di
 	if verbose:
 		ansithemeprint([ANSIThemeString("", "default")])
 
-	ansible_print_play_results(retval, ansible_results)
+	ansible_print_play_results(retval, ansible_results, verbose = verbose)
 
 	return retval
 

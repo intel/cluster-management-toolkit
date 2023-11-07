@@ -1264,11 +1264,20 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 			verbose (bool): Should skipped tasks be outputted?
 	"""
 
+	count_total = 0
+	count_no_hosts_match = 0
+	count_unreachable = 0
+	count_skip = 0
+	count_success = 0
+	count_fail = 0
+
 	if retval != 0 and len(__ansible_results) == 0:
 		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
 				ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
 		for host in __ansible_results:
+			count_total += 1
+
 			plays = __ansible_results[host]
 			header_output = False
 
@@ -1285,12 +1294,19 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 
 					if no_hosts_matched:
 						ansithemeprint([ANSIThemeString("[No hosts matched]", "error")])
+						count_no_hosts_match += 1
 					elif unreachable:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
+						count_unreachable += 1
+					elif skipped:
+						ansithemeprint([ANSIThemeString(f"[{host}]", "skip")])
+						count_skip += 1
 					elif retval == 0:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
+						count_success += 1
 					else:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
+						count_fail += 1
 
 				if not no_hosts_matched:
 					msg_lines = deep_get(play, DictPath("msg_lines"), "")
@@ -1304,6 +1320,27 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 				# Only show no hosts matched and unreachable once
 				if unreachable:
 					break
+
+	if verbose:
+		ansithemeprint([ANSIThemeString("Summary:", "default")])
+		ansithemeprint([ANSIThemeString("Total: ", "phase"),
+				ANSIThemeString(f"{count_total}", "numerical"),
+				ANSIThemeString(", ", "separator"),
+				ANSIThemeString("Successful: ", "success"),
+				ANSIThemeString(f"{count_success}", "numerical"),
+				ANSIThemeString(", ", "separator"),
+				ANSIThemeString("Failed: ", "error"),
+				ANSIThemeString(f"{count_fail}", "numerical"),
+				ANSIThemeString(", ", "separator"),
+				ANSIThemeString("Skipped: ", "skip"),
+				ANSIThemeString(f"{count_skip}", "numerical"),
+				ANSIThemeString(", ", "separator"),
+				ANSIThemeString("Unreachable: ", "error"),
+				ANSIThemeString(f"{count_unreachable}", "numerical"),
+				ANSIThemeString(", ", "separator"),
+				ANSIThemeString("No hosts matched: ", "error"),
+				ANSIThemeString(f"{count_no_hosts_match}", "numerical"),
+				])
 
 def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
 	"""

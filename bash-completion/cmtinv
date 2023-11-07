@@ -56,7 +56,7 @@ _cmtinv() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
-			--force|--include-vars)
+			--force|--include-vars|--verbose)
 				# These options don't take any arguments
 				;;
 			--color|--format|--groups|--vars)
@@ -169,6 +169,12 @@ _cmtinv() {
 		case "${COMP_WORDS[1]}" in
 		rebuild-inventory|remove-group|remove-groups|remove-host|remove-hosts)
 			commands=$(add_option_if_not_in_list "--force" ${commands})
+			;;
+		esac
+
+		case "${COMP_WORDS[1]}" in
+		run)
+			commands=$(add_option_if_not_in_list "--verbose" ${commands})
 			;;
 		esac
 	fi

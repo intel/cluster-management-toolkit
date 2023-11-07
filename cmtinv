@@ -937,6 +937,12 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0
 	"""
 
+	verbose = False
+
+	for opt, _optarg in options:
+		if opt == "--verbose":
+			verbose = True
+
 	playbook = args[0]
 	groups_or_hosts = args[1].split(",")
 	selection = []
@@ -966,9 +972,11 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 	playbooks = populate_playbooks()
 	if playbook in playbooks and deep_get(playbooks, DictPath(f"{playbook}#category"), "") not in ("__DISABLED__", "__INVALID__"):
 		playbook_path = deep_get(playbooks, DictPath(f"{playbook}#playbook"), "")
-		retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection)
+		retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, verbose = verbose)
+		if verbose:
+			ansithemeprint([ANSIThemeString("", "default")])
 
-		ansible_print_play_results(retval, ansible_results)
+		ansible_print_play_results(retval, ansible_results, verbose = verbose)
 
 def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
@@ -1565,6 +1573,11 @@ COMMANDLINE = {
 				ANSIThemeString("GROUP", "argument"),
 				ANSIThemeString(",", "separator"),
 				ANSIThemeString("...", "argument")],
+		"options": {
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
+		},
 		"required_args": [
 			{
 				"name": "playbook",
