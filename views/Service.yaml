@@ -75,7 +75,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity"]
+        fields: ["external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity_header", "session_affinity", "session_affinity_timeout"]
     rows:
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
@@ -169,9 +169,34 @@ infoview:
           field_separators:
           - type: "selector"
       session_affinity:
-        header: [["Session Affinity:", ["main", "infoheader"]]]
+        header: [["  Affinity:", ["main", "infoheader"]]]
         path: "spec#sessionAffinity"
         type: "str"
+      session_affinity_header:
+        header: [["Session:", ["main", "infoheader"]]]
+      session_affinity_timeout:
+        header: [["  Timeout (Seconds):", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#sessionAffinityConfig#clientIP#timeoutSeconds"], "s"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
+            notnone: true
+        - path: ["<none>", ""]
+          pathtype: "tuple"
+          when:
+          - key: "spec#sessionAffinityConfig#clientIP#timeoutSeconds"
+            none: true
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          list_separators:
+          - type: "no_pad"
+          field_separators:
+          - type: "no_pad"
       topology_keys:
         header: [["Topology Keys:", ["main", "infoheader"]]]
         path: "spec#topologyKeys"
