@@ -716,14 +716,11 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 	# Now summarise
 	for package, data in versions_dict.items():
 		installed = data["installed"]
-		candidate = data["candidate"]
 		available = data["available"]
-		if installed == "<none>":
-			if len(available) > 0:
-				candidate = available[0]
-		else:
-			if candidate == installed:
-				candidate = ""
+		if len(available) > 0:
+			candidate = available[0]
+		if candidate == installed:
+			candidate = ""
 		versions.append((package, data["installed"], candidate, list(reversed(data["available"]))))
 
 	return versions
