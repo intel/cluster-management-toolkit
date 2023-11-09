@@ -885,9 +885,9 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	"""
 
 	heatmap: List[Union[ThemeRef, ThemeString]] = []
-	x = 0
 
-	tmp = ""
+	if len(stgroups) == 0:
+		return heatmap
 
 	# Append a dummy entry to avoid special casing
 	stgroups.append(StatusGroup.UNKNOWN)

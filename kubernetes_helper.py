@@ -23,6 +23,7 @@ import re
 import ssl
 import sys
 import tempfile
+import threading
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
 try:
 	import yaml
@@ -61,6 +62,8 @@ CIPHERS = [
 	"ECDHE-RSA-AES128-GCM-SHA256",
 	"ECDHE-ECDSA-AES128-GCM-SHA256",
 ]
+
+renew_lock = threading.Lock()
 
 # A list of all K8s resources we have some knowledge about
 kubernetes_resources: Dict[Tuple[str, str], Any] = {
@@ -5096,7 +5099,8 @@ class KubernetesHelper:
 			if status == 401:
 				# Unauthorized:
 				# Try to renew the token then retry
-				self.renew_token(self.cluster_name, self.context_name)
+				with renew_lock:
+					self.renew_token(self.cluster_name, self.context_name)
 				reauth_retry = 42
 			else:
 				reauth_retry = 0
