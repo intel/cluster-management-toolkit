@@ -18,6 +18,7 @@ A curses-based UI for Cluster Management
 import ast
 import base64
 import binascii
+import concurrent.futures
 import copy
 import csv
 import curses
@@ -6783,6 +6784,7 @@ def __resource_map_cursor(**kwargs):
 	info = deep_get(kwargs, DictPath("info"))
 	status_len = len(info)
 	heatmap_width = deep_get(kwargs, DictPath("heatmap_width"))
+	stride = deep_get(kwargs, DictPath("stride"), 1)
 
 	maxval = status_len - 1
 	oldval = selected
@@ -6799,6 +6801,12 @@ def __resource_map_cursor(**kwargs):
 	elif keypress == curses.KEY_DOWN:
 		if (oldval + heatmap_width + 1) <= maxval:
 			selected = oldval + heatmap_width + 1
+	elif keypress == curses.KEY_PPAGE:
+		if (oldval - ((heatmap_width + 1) * stride)) >= 0:
+			selected = oldval - (heatmap_width + 1) * stride
+	elif keypress == curses.KEY_NPAGE:
+		if (oldval + ((heatmap_width + 1) * stride)) <= maxval:
+			selected = oldval + (heatmap_width + 1) * stride
 	elif keypress == curses.KEY_HOME:
 		selected = max((oldval // (heatmap_width + 1)) * (heatmap_width + 1), 0)
 	elif keypress == curses.KEY_END:
@@ -6938,6 +6946,16 @@ clusteroverview_shortcuts = {
 		"action": "key_callback",
 		"action_call": __resource_map_cursor,
 	},
+	"Move cursor 10 rows up / down within resource map": {
+		"helptext": ("[Page Up]", "Move cursor 10 rows up / down within resource map"),
+		"shortcut": [curses.KEY_PPAGE, curses.KEY_NPAGE],
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+		"action_args": {
+			"stride": 10,
+		}
+	},
 	"Switch to previous resource map": {
 		"shortcut": curses.KEY_SLEFT,
 		"helptext": ("[Shift] + [Left]", "Switch to previous resource map"),
@@ -7001,6 +7019,28 @@ clusteroverview_shortcuts = {
 		"action_call": __resource_map_cursor,
 	},
 }
+
+def get_list_async(kind: Tuple[str, str], namespace: str, fetch_args: Dict = None):
+	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
+	postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
+	limit = deep_get(fetch_args, DictPath("limit"))
+	extra_data = []
+
+	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
+	# Since sorting by deep keys is kind of complex we can only use predefined keys
+	if sort_key == "name":
+		vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
+	elif sort_key == "lastTimestamp":
+		vlist = natsorted(vlist, key = lambda x: x.get("lastTimestamp", ""), reverse = True)
+	if postprocess == "node":
+		vlist = get_node_info(vlist, extra_vars = {})
+		extra_data = [s.status_group for s in vlist]
+	elif postprocess == "pod":
+		vlist = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
+		extra_data = [s.status_group for s in vlist]
+	if limit is not None:
+		vlist = vlist[:limit]
+	return vlist, extra_data
 
 def clusteroverviewloop(stdscr: curses.window, view):
 	field_list, sortcolumn = (None, None)
@@ -7082,12 +7122,65 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 	swaptotal = 0
 
-	# To inject node and pod data from a file (for testing purposes),
-	# read them here; this will override the Kubernetes requests
-	node_vlist = None
-	pod_vlist = None
+	node_vlist = []
+	node_update_triggered = False
+	node_future = None
+	node_last_update = datetime.now()
+	pod_vlist = []
+	pod_update_triggered = False
+	pod_future = None
+	pod_last_update = datetime.now()
+	event_vlist = []
+	event_update_triggered = False
+	event_future = None
+	event_last_update = datetime.now()
+
+	# XXX: We need to fix renew_token() to be sure that this works
+	# made thread-safe
+	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 3)
+
+	node_vlist = []
+	pod_vlist = []
+	event_vlist = []
+	node_statuses = []
+	node_heatmap = []
+	nodeinfo = []
+	pod_statuses = []
+	podinfo = []
+	pod_heatmap = []
+	events = []
 
 	while True:
+		# Do we need to refresh the data?
+		# 5 seconds between each (completed) update;
+		# we might at some point revisit this and have multiple updates in flight
+		if not node_update_triggered and (datetime.now() - node_last_update).seconds > 5:
+			# Trigger data fetch
+			node_future = executor.submit(get_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "name", "postprocess": "node" })
+			node_update_triggered = True
+		if not pod_update_triggered and (datetime.now() - pod_last_update).seconds > 5:
+			pod_future = executor.submit(get_list_async, kind = ("Pod", ""), namespace = "", fetch_args = { "postprocess": "pod" })
+			pod_update_triggered = True
+		if not event_update_triggered and (datetime.now() - event_last_update).seconds > 5:
+			event_future = executor.submit(get_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "limit": 5 })
+			event_update_triggered = True
+
+		if node_update_triggered:
+			if node_future.done():
+				nodeinfo, node_statuses = node_future.result()
+				node_update_triggered = False
+				node_last_update = datetime.now()
+		if pod_update_triggered:
+			if pod_future.done():
+				podinfo, pod_statuses = pod_future.result()
+				pod_update_triggered = False
+				pod_last_update = datetime.now()
+		if event_update_triggered:
+			if event_future.done():
+				events, _status = event_future.result()
+				event_update_triggered = False
+				event_last_update = datetime.now()
+
 		if async_cookie is not None:
 			# We are waiting for results
 			async_results = ansible_async_get_data(async_cookie)
@@ -7193,33 +7286,10 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				else:
 					stat_raw = []
 
-			# Get the list of all nodes
-			if node_vlist is None:
-				vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
-			else:
-				vlist = node_vlist
-			# We want the nodes to be sorted by name
-			vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
-			nodeinfo = get_node_info(vlist, extra_vars = {})
-			node_statuses = [s.status_group for s in nodeinfo]
-
-			# Get the list of all pods
-			if pod_vlist is None:
-				vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-			else:
-				vlist = pod_vlist
-			podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
-			pod_statuses = [s.status_group for s in podinfo]
-
-			# Get the 5 most recent events
-			vlist, _status = kh.get_list_by_kind_namespace(("Event", ""), "")
-			vlist = natsorted(vlist, key = lambda x: x.get("lastTimestamp", ""), reverse = True)
-			events = vlist[:5]
-
 			# We most likely have far more nodes than pods, so give the nodes 20% of the width and the pods 80% of the width;
 			# even this is probably too much for the nodes, but we can adjust that later
 			node_heatmap_width = ((uip.maxx - uip.minx - 1) // 5) - 2
-			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 2
+			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 1
 
 		k8s_distro = identify_k8s_distro()
 
@@ -7417,7 +7487,10 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		y += i + 1
 		curses_helper.window_tee_hline(uip.stdscr, y = y, start = 0, end = uip.maxx)
 
-		if len(nodeinfo) > 0:
+		selected_pod = min(selected_pod, len(podinfo))
+		selected_node = min(selected_node, len(nodeinfo))
+
+		if len(nodeinfo) > 0 and len(podinfo) > 0:
 			node_heatmap_xpos = 0
 			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 3
 
@@ -7508,20 +7581,27 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		uip.refresh_statusbar()
 		curses.doupdate()
 
-		if selected_heatmap == "Pod":
+		if len(podinfo) > 0 and selected_heatmap == "Pod":
 			__node_name = podinfo[selected_pod].node
 			__pod_name = podinfo[selected_pod].name
 			__namespace = podinfo[selected_pod].namespace
 			__info = podinfo
 			__selected = selected_pod
 			heatmap_width = pod_heatmap_width
-		else:
+		elif len(nodeinfo) > 0:
 			__node_name = nodeinfo[selected_node].name
 			__namespace = None
 			__pod_name = None
 			__info = nodeinfo
 			__selected = selected_node
 			heatmap_width = node_heatmap_width
+		else:
+			__node_name = None
+			__namespace = None
+			__pod_name = None
+			__info = None
+			__selected = None
+			heatmap_width = 0
 
 		# These are arguments that *might* be needed by the callbacks
 		input_args = {
@@ -12984,7 +13064,7 @@ def setupui(stdscr: curses.window) -> None:
 						ANSIThemeString(": The requested view “", "default"),
 						ANSIThemeString(defaultview, "argument"),
 						ANSIThemeString("“ is not available; ", "default"),
-						ANSIThemeString("the cluster may be offline or the API disabled.", "default")], stderr = True)
+						ANSIThemeString("the cluster may be offline or the API disabled.", "default")])
 				sys.exit(errno.ENOTSUP)
 			viewfunc(stdscr, defaultview)
 		else:
