@@ -7018,16 +7018,14 @@ clusteroverview_shortcuts = {
 
 def get_list_async(kind: Tuple[str, str], namespace: str, fetch_args: Dict = None):
 	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
+	sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
 	postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
 	limit = deep_get(fetch_args, DictPath("limit"))
 	extra_data = []
 
 	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
-	# Since sorting by deep keys is kind of complex we can only use predefined keys
-	if sort_key == "name":
-		vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
-	elif sort_key == "lastTimestamp":
-		vlist = natsorted(vlist, key = lambda x: x.get("lastTimestamp", ""), reverse = True)
+	if len(sort_key) > 0:
+		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
 	if postprocess == "node":
 		vlist = get_node_info(vlist, extra_vars = {})
 		extra_data = [s.status_group for s in vlist]
@@ -7131,10 +7129,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	event_future = None
 	event_last_update = datetime.now()
 
-	# XXX: We need to fix renew_token() to be sure that this works
-	# made thread-safe
-	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 3)
-
 	node_vlist = []
 	pod_vlist = []
 	event_vlist = []
@@ -7146,19 +7140,23 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	pod_heatmap = []
 	events = []
 
+	# FIXME: We should really use 3 workers, since we have three sets of data to fetch,
+	# but something in our code isn't threadsafe, so until that's been resolved we just use
+	# one worker instead.
+	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 1)
+
 	while True:
 		# Do we need to refresh the data?
 		# 5 seconds between each (completed) update;
 		# we might at some point revisit this and have multiple updates in flight
 		if not node_update_triggered and (datetime.now() - node_last_update).seconds > 5:
-			# Trigger data fetch
-			node_future = executor.submit(get_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "name", "postprocess": "node" })
+			node_future = executor.submit(get_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "metadata#name", "postprocess": "node" })
 			node_update_triggered = True
 		if not pod_update_triggered and (datetime.now() - pod_last_update).seconds > 5:
 			pod_future = executor.submit(get_list_async, kind = ("Pod", ""), namespace = "", fetch_args = { "postprocess": "pod" })
 			pod_update_triggered = True
 		if not event_update_triggered and (datetime.now() - event_last_update).seconds > 5:
-			event_future = executor.submit(get_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "limit": 5 })
+			event_future = executor.submit(get_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5 })
 			event_update_triggered = True
 
 		if node_update_triggered:

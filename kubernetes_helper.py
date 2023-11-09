@@ -3851,7 +3851,8 @@ class KubernetesHelper:
 	tmp_key_file: Any = None
 	token: Optional[str] = None
 
-	pool_manager: Optional[Union[urllib3.PoolManager, urllib3.ProxyManager]] = None
+	pool_manager_args: Dict = {}
+	pool_manager_proxy = ""
 
 	programname = ""
 	programversion = ""
@@ -3990,7 +3991,11 @@ class KubernetesHelper:
 			connect_timeout: float = 3.0
 
 			try:
-				result = self.pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
+				if len(self.pool_manager_proxy) > 0:
+					pool_manager = urllib3.ProxyManager(self.pool_manager_proxy, **self.pool_manager_args)
+				else:
+					pool_manager = urllib3.PoolManager(**self.pool_manager_args)
+				result = pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
 				status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
@@ -4207,10 +4212,7 @@ class KubernetesHelper:
 		# Only permit a limited set of acceptable ciphers
 		ssl_context.set_ciphers(":".join(CIPHERS)) # nosem
 		# This isn't ideal; we might need different cluster proxies for different clusters
-		cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
-
-		if self.pool_manager is not None:
-			self.pool_manager.clear() # type: ignore
+		self.pool_manager_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), "")
 
 		# If we have a cert we also have a key
 		if cert is not None:
@@ -4226,58 +4228,32 @@ class KubernetesHelper:
 			self.tmp_key_file.flush()
 
 			if not insecuretlsskipverify:
-				if cluster_https_proxy is None:
-					self.pool_manager = urllib3.PoolManager(
-						cert_reqs = "CERT_REQUIRED",
-						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-						cert_file = self.tmp_cert_file.name,
-						key_file = self.tmp_key_file.name,
-						ssl_context = ssl_context)
-				else:
-					self.pool_manager = urllib3.ProxyManager(
-						cluster_https_proxy,
-						cert_reqs = "CERT_REQUIRED",
-						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-						cert_file = self.tmp_cert_file.name,
-						key_file = self.tmp_key_file.name,
-						ssl_context = ssl_context)
+				self.pool_manager_args = {
+					"cert_reqs": "CERT_REQUIRED",
+					"ca_certs": self.tmp_ca_certs_file.name, # type: ignore
+					"cert_file": self.tmp_cert_file.name,
+					"key_file": self.tmp_key_file.name,
+					"ssl_context": ssl_context,
+				}
 			else:
-				if cluster_https_proxy is None:
-					self.pool_manager = urllib3.PoolManager(
-						cert_reqs = "CERT_NONE",
-						ca_certs = None,
-						cert_file = self.tmp_cert_file.name,
-						key_file = self.tmp_key_file.name)
-				else:
-					self.pool_manager = urllib3.ProxyManager(
-						cluster_https_proxy,
-						cert_reqs = "CERT_NONE",
-						ca_certs = None,
-						cert_file = self.tmp_cert_file.name,
-						key_file = self.tmp_key_file.name)
+				self.pool_manager_args = {
+					"cert_reqs": "CERT_NONE",
+					"ca_certs": None,
+					"cert_file": self.tmp_cert_file.name,
+					"key_file": self.tmp_key_file.name,
+				}
 		elif self.token is not None:
 			if not insecuretlsskipverify:
-				if cluster_https_proxy is None:
-					self.pool_manager = urllib3.PoolManager(
-						cert_reqs = "CERT_REQUIRED",
-						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-						ssl_context = ssl_context)
-				else:
-					self.pool_manager = urllib3.ProxyManager(
-						cluster_https_proxy,
-						cert_reqs = "CERT_REQUIRED",
-						ca_certs = self.tmp_ca_certs_file.name, # type: ignore
-						ssl_context = ssl_context)
+				self.pool_manager_args = {
+					"cert_reqs": "CERT_REQUIRED",
+					"ca_certs": self.tmp_ca_certs_file.name, # type: ignore
+					"ssl_context": ssl_context
+				}
 			else:
-				if cluster_https_proxy is None:
-					self.pool_manager = urllib3.PoolManager(
-						cert_reqs = "CERT_NONE",
-						ca_certs = None)
-				else:
-					self.pool_manager = urllib3.ProxyManager(
-						cluster_https_proxy,
-						cert_reqs = "CERT_NONE",
-						ca_certs = None)
+				self.pool_manager_args = {
+					cert_reqs: "CERT_NONE",
+					ca_certs: None,
+				}
 
 		# The token might have expired, so try to renew it
 		if self.token is not None:
@@ -5069,10 +5045,14 @@ class KubernetesHelper:
 
 		while reauth_retry > 0:
 			try:
-				if body is not None:
-					result = self.pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
+				if len(self.pool_manager_proxy) > 0:
+					pool_manager = urllib3.ProxyManager(self.pool_manager_proxy, **self.pool_manager_args)
 				else:
-					result = self.pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
+					pool_manager = urllib3.PoolManager(**self.pool_manager_args)
+				if body is not None:
+					result = pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
+				else:
+					result = pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
 				status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
