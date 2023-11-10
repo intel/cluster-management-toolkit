@@ -38,8 +38,9 @@ import about
 PROGRAMDESCRIPTION = f"Setup {about.PROGRAM_SUITE_FULL_NAME}"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
+bindir = None
+
 DIRECTORIES = [
-	(BINDIR, 0o755),
 	(CMTDIR, 0o755),
 	(CMT_LOGS_DIR, 0o700),
 	(DEPLOYMENT_DIR, 0o755),
@@ -55,22 +56,17 @@ DIRECTORIES = [
 ]
 
 EXECUTABLE_SYMLINKS = [
-	# These are Python scripts
-	(FilePath(os.path.join(os.getcwd(), "cmtadm")), FilePath(os.path.join(BINDIR, "cmtadm"))),
-	(FilePath(os.path.join(os.getcwd(), "cmtinv")), FilePath(os.path.join(BINDIR, "cmtinv"))),
-	(FilePath(os.path.join(os.getcwd(), "cmt")), FilePath(os.path.join(BINDIR, "cmt"))),
-	(FilePath(os.path.join(os.getcwd(), "cmu")), FilePath(os.path.join(BINDIR, "cmu"))),
 ]
 
 MISC_SYMLINKS = [
-	(FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR),
-	(FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
-	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
-	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR),
-	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmt")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmt"))),
-	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtadm")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtadm"))),
-	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtinv")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtinv"))),
-	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmu")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmu"))),
+	(FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR, False),
+	(FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR, False),
+	(FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR, False),
+	(FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR, False),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmt")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmt")), False),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtadm")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtadm")), False),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtinv")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmtinv")), False),
+	(FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmu")), FilePath(os.path.join(BASH_COMPLETION_DIR, "cmu")), False),
 ]
 
 # Distros in always-fallback-distros will always use pip
@@ -203,7 +199,7 @@ PACKAGES_WITHOUT_FALLBACK = {
 }
 
 CONFIGURATION_FILES = [
-	(FilePath(os.path.join(os.getcwd(), CMT_CONFIG_FILENAME)), CMT_CONFIG_FILE, 0o644)
+	(FilePath(os.path.join(os.getcwd(), CMT_CONFIG_FILENAME)), CMT_CONFIG_FILE, 0o644, False)
 ]
 
 def create_directories(directories: List[Tuple[FilePath, int]], verbose: bool = False) -> None:
@@ -229,8 +225,8 @@ def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = F
 			verbose (bool): Be more verbose
 	"""
 
-	for src, dst in symlinks:
-		_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True)
+	for src, dst, needs_sudo in symlinks:
+		_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True, sudo = needs_sudo)
 
 def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
 	"""
@@ -242,7 +238,7 @@ def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = Fals
 			verbose (bool): Be more verbose
 	"""
 
-	for src, dst, permissions in files:
+	for src, dst, permissions, _needs_sudo in files:
 		_violations = secure_copy(src, dst, verbose = verbose, permissions = permissions)
 
 # pylint: disable-next=unused-argument
@@ -690,25 +686,52 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 			status (int): 0 on success, errno on failure
 	"""
 
+	global DIRECTORIES
+	global EXECUTABLE_SYMLINKS
+	global bindir
+
 	verbose: bool = False
 	install_dependencies: bool = True
 	confirm: bool = True
 	allow_fallback: bool = True
 	pip_proxy = ""
 
-	bindir_exists = Path(BINDIR).is_dir()
+	bindir = BINDIR
 
 	for opt, optarg in options:
-		if opt == "--verbose":
-			verbose = True
+		if opt == "--bin-path":
+			bindir = optarg
 		elif opt == "--no-dependencies":
 			install_dependencies = False
 		elif opt == "--no-fallback":
 			allow_fallback = False
 		elif opt == "--pip-proxy":
 			pip_proxy = optarg
+		if opt == "--verbose":
+			verbose = True
 		elif opt == "-Y":
 			confirm = False
+
+	bindir_exists = Path(bindir).is_dir()
+	bindir_system = not bindir.startswith(HOMEDIR)
+
+	if not bindir_exists and bindir_system:
+		ansithemeprint([ANSIThemeString("Error:", "error"),
+				ANSIThemeString(" The target directory for executables (", "default"),
+				ANSIThemeString(f"{bindir}", "path"),
+				ANSIThemeString(") does not exist and is not a subdirectory of ", "default"),
+				ANSIThemeString(f"{HOMEDIR}", "path"),
+				ANSIThemeString("; it needs to be created manually. Aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Now that we now the bindir we can create full paths
+	EXECUTABLE_SYMLINKS += [
+		# These are Python scripts
+		(FilePath(os.path.join(os.getcwd(), "cmtadm")), FilePath(os.path.join(bindir, "cmtadm")), bindir_system),
+		(FilePath(os.path.join(os.getcwd(), "cmtinv")), FilePath(os.path.join(bindir, "cmtinv")), bindir_system),
+		(FilePath(os.path.join(os.getcwd(), "cmt")), FilePath(os.path.join(bindir, "cmt")), bindir_system),
+		(FilePath(os.path.join(os.getcwd(), "cmu")), FilePath(os.path.join(bindir, "cmu")), bindir_system),
+	]
 
 	# Find out what distro this is run on
 	try:
@@ -811,21 +834,24 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Create the following new directories:", "action")])
 		for name, _permissions in DIRECTORIES:
-			ansithemeprint([ANSIThemeString(f"    {name}", "path")])
+			ansithemeprint([ANSIThemeString(f"     {name}", "path")])
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Install the following configuration files:", "action")])
-		for src, dst, _permissions in CONFIGURATION_FILES:
+		for src, dst, _permissions, _needs_sudo in CONFIGURATION_FILES:
 			ansithemeprint([ANSIThemeString(f"     {dst}", "path")])
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Create the following symlinks:", "action")])
-		for src, dst in MISC_SYMLINKS:
+		for src, dst, _needs_sudo in MISC_SYMLINKS:
 			ansithemeprint([ANSIThemeString(f"    {src}", "path"),
 					ANSIThemeString(" ⇨ ", "emphasis"),
 					ANSIThemeString(f"{dst}", "path")])
-		for src, dst in EXECUTABLE_SYMLINKS:
-			ansithemeprint([ANSIThemeString(f"    {src}", "path"),
-					ANSIThemeString(" ⇨ ", "emphasis"),
-					ANSIThemeString(f"{dst}", "path")])
+		for src, dst, needs_sudo in EXECUTABLE_SYMLINKS:
+			symlink_themestring = [ANSIThemeString(f"    {src}", "path"),
+					       ANSIThemeString(" ⇨ ", "emphasis"),
+					       ANSIThemeString(f"{dst}", "path")]
+			if needs_sudo:
+				symlink_themestring += [ANSIThemeString(" (requires sudo)", "emphasis")]
+			ansithemeprint(symlink_themestring)
 
 		if install_dependencies and not allow_fallback and len(pkgs_fallback) > 0:
 			ansithemeprint([ANSIThemeString("\n", "default"),
@@ -856,7 +882,7 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if not bindir_exists:
 		ansithemeprint([ANSIThemeString("\nWarning", "warning"),
 				ANSIThemeString(": ", "default"),
-				ANSIThemeString(f"{BINDIR}", "path"),
+				ANSIThemeString(f"{bindir}", "path"),
 				ANSIThemeString(" did not exist before installation; you will most likely need to ", "default"),
 				ANSIThemeString("logout and login again (or spawn a new shell/terminal) to have it added to ", "default"),
 				ANSIThemeString("$PATH", "argument"),
@@ -870,6 +896,16 @@ COMMANDLINE = {
 		"command": ["__global_options"],
 		"description": [ANSIThemeString("", "")],
 		"options": {
+			"--bin-path": {
+				"values": [ANSIThemeString("PATH", "argument")],
+				"description": [ANSIThemeString("Path for executables", "description")],
+				"extended_description": [
+					[ANSIThemeString("PATH to install executables in (default: ", "description"),
+					 ANSIThemeString(f"{BINDIR}", "path"),
+					 ANSIThemeString(")", "description")],
+				],
+				"requires_arg": True,
+			},
 			"--no-dependencies": {
 				"description": [ANSIThemeString("Do not install dependencies", "description")],
 			},

@@ -997,7 +997,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	return [SecurityStatus.OK]
 
 # pylint: disable-next=too-many-return-statements
-def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, replace_existing: bool = False) -> List[SecurityStatus]:
+def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, replace_existing: bool = False, sudo: bool = False) -> List[SecurityStatus]:
 	"""
 	Create or replace a symlink
 		Parameters:
@@ -1005,6 +1005,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			dst (str): The path to link to
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
+			sudo (bool): True if sudo permissions are required to create the symlink, False if not
 		Returns:
 			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
@@ -1116,6 +1117,10 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 		return violations
 
+	if sudo:
+		sudo_path = secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"],
+				         security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+
 	# Since the parent path resolves safely, we can unlink dst_path if it is a symlink
 	if dst_path.is_symlink():
 		if not replace_existing:
@@ -1131,12 +1136,24 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
 			return [SecurityStatus.EXISTS]
 
-		dst_path.unlink()
+		if sudo:
+			rm_path = secure_which(FilePath("rm"), fallback_allowlist = ["/bin", "/usr/bin"],
+					       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+			args = [sudo_path, rm_path, dst]
+			execute_command(args)
+		else:
+			dst_path.unlink()
 
-	try:
-		dst_path.symlink_to(src_path)
-	except FileExistsError:
-		return [SecurityStatus.EXISTS]
+	if sudo:
+		ln_path = secure_which(FilePath("ln"), fallback_allowlist = ["/bin", "/usr/bin"],
+				       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		args = [sudo_path, ln_path, "-s", src, dst]
+		execute_command(args)
+	else:
+		try:
+			dst_path.symlink_to(src_path)
+		except FileExistsError:
+			return [SecurityStatus.EXISTS]
 	return [SecurityStatus.OK]
 
 # This executes a command without capturing the output
