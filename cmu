@@ -7078,7 +7078,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	async_cookie = None
 	# Retrigger every 5 seconds by default
 	async_retrigger_timeout = 5
-	async_time_start = datetime.now()
+	async_time_start = datetime.now() - timedelta(seconds = 42)
 
 	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
@@ -7119,15 +7119,15 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	node_vlist = []
 	node_update_triggered = False
 	node_future = None
-	node_last_update = datetime.now()
+	node_last_update = datetime.now() - timedelta(seconds = 42)
 	pod_vlist = []
 	pod_update_triggered = False
 	pod_future = None
-	pod_last_update = datetime.now()
+	pod_last_update = datetime.now() - timedelta(seconds = 42)
 	event_vlist = []
 	event_update_triggered = False
 	event_future = None
-	event_last_update = datetime.now()
+	event_last_update = datetime.now() - timedelta(seconds = 42)
 
 	node_vlist = []
 	pod_vlist = []
