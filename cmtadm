@@ -4266,11 +4266,6 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	if state in ("installed", "upgraded"):
 		phase = 0
 
-	if len(args) > 0:
-		requested_version = __find_requested_version(k8s_distro, args[0])
-	else:
-		requested_version = __find_requested_version(k8s_distro)
-
 	for opt, optarg in options:
 		if opt == "--start-at-task":
 			phase = __validate_task_index(upgrade_control_plane_tasks, optarg)
@@ -4312,7 +4307,36 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				ANSIThemeString(" available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
+	ansithemeprint([ANSIThemeString("\n[Preparing upgrade]", "phase")])
+
 	if update_cache:
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Updating version cache", "action")])
+
+		# The first patch revision that isn't available from the old repositories is 1.28.3;
+		# this means that we need to include all minor versions from 28 and up.
+		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+					ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+
+		# Split the version tuple
+		upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+		minor_versions = []
+		for minor_version in range(28, int(upstream_minor) + 1):
+			minor_versions.append(f"{minor_version}")
+
+		extra_values = {
+			"minor_versions": minor_versions,
+		}
+
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Updating Kubernetes repository files on localhost and controlplane(s)", "action")])
+		selection = __selection_control_planes() + ["localhost"]
+		retval, ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
+						       hosts = selection, extra_values = extra_values, quiet = True)
+
 		if os_distro == "debian" and update_cache:
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating APT cache", "action")])
@@ -4320,6 +4344,11 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating version cache", "action")])
 		check_and_print_status(update_version_cache())
+
+	if len(args) > 0:
+		requested_version = __find_requested_version(k8s_distro, args[0])
+	else:
+		requested_version = __find_requested_version(k8s_distro)
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Running sanity checks", "action")])
