@@ -26,4 +26,4 @@ and python38-pip or newer to get a recent version of Python3.
 ## Limitations
 
 * CRI-O is currently not support as CRI on Red Hat-based distros.
-* Upgrades is not supported on SUSE-based distros.
+* Upgrading is not supported on SUSE-based distros.
