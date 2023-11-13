@@ -1322,23 +1322,36 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 					break
 
 	if verbose:
+		successful_formatting = "default"
+		failed_formatting = "skip"
+		unreachable_formatting = "skip"
+		no_hosts_matched_formatting = "skip"
+		if count_success > 0:
+			successful_formatting = "success"
+		if count_fail > 0:
+			failed_formatting = "error"
+		if count_unreachable > 0:
+			unreachable_formatting = "error"
+		if count_no_hosts_match > 0:
+			no_hosts_matched_formatting = "error"
+
 		ansithemeprint([ANSIThemeString("Summary:", "default")])
 		ansithemeprint([ANSIThemeString("Total: ", "phase"),
 				ANSIThemeString(f"{count_total}", "numerical"),
 				ANSIThemeString(", ", "separator"),
-				ANSIThemeString("Successful: ", "success"),
+				ANSIThemeString("Successful: ", successful_formatting),
 				ANSIThemeString(f"{count_success}", "numerical"),
 				ANSIThemeString(", ", "separator"),
-				ANSIThemeString("Failed: ", "error"),
+				ANSIThemeString("Failed: ", failed_formatting),
 				ANSIThemeString(f"{count_fail}", "numerical"),
 				ANSIThemeString(", ", "separator"),
 				ANSIThemeString("Skipped: ", "skip"),
 				ANSIThemeString(f"{count_skip}", "numerical"),
 				ANSIThemeString(", ", "separator"),
-				ANSIThemeString("Unreachable: ", "error"),
+				ANSIThemeString("Unreachable: ", unreachable_formatting),
 				ANSIThemeString(f"{count_unreachable}", "numerical"),
 				ANSIThemeString(", ", "separator"),
-				ANSIThemeString("No hosts matched: ", "error"),
+				ANSIThemeString("No hosts matched: ", no_hosts_matched_formatting),
 				ANSIThemeString(f"{count_no_hosts_match}", "numerical"),
 				])
 
