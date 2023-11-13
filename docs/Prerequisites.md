@@ -22,9 +22,8 @@ in path lookup and various I/O-operations.
 # Pre-requisites / tested platforms for setting up Kubernetes clusters
 
 The development platform for __CMT__ is Debian and Ubuntu, and those two are thus the most tested platforms.
-Support for running __CMT__ on openSUSE/SLES systems has been added, but only for RKE2 clusters.
-Limited testing has also been performed on RHEL8; some functionality, such as support for _CRI-O_,
-is currently missing on RHEL, but other than that it should be possible to install a cluster on a RHEL system using `cmtadm`/`cmt`.
+Running __CMT__ on openSUSE/SLES and RHEL8 systems has also been added, but the support for those platforms
+is less tested and may have limitations. Notably _CRI-O_ is not supported on RHEL8.
 
 Other distributions are not supported at this point. This also applies to Windows.
 
@@ -33,7 +32,7 @@ Other distributions are not supported at this point. This also applies to Window
 `firewalld` and other firewall software prevents
 Kubernetes from working _in their default configuration_. It is possible to configure firewalls
 to allow the required ports, but such configuration is, at least currently, out of scope for
-this documentation.  `cmtadm` and `cmt` will *NOT* disable firewalls during installation.
+this documentation.  `cmtadm` and `cmt` currently do *NOT* disable firewalls during installation.
 If you have issues you will either have to look up online how to configure the firewall to work
 with Kubernetes (recommended) or, if the setup is purely for internal use, disable the firewall
 completely (*not recommended*).

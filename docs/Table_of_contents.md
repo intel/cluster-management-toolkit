@@ -42,3 +42,4 @@
 9. [Supported platforms](Supported_platforms.md#supported-platforms)
     1. [Platform support](Supported_platforms.md#platform-support)
     2. [What prevents __CMT__ from being supported on other Distributions / Older versions](Supported_platforms.md#what-prevents-cmt-from-being-supported-on-other-distributions-older-versions)
+    1. [Limitations](Supported_platforms.md#limitations)

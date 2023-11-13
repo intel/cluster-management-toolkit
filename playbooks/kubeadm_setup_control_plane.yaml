@@ -37,12 +37,22 @@
       dest: "{{ cluster_config.path }}"
       src: "templates/config/clusterconfig.yaml.j2"
       mode: "0640"
+  - name: "Selecting kubelet version"
+    shell: |
+      sed -i -e 's,KUBELET_VER=.*,KUBELET_VER={{ kubernetes_major_minor_version }},' /etc/sysconfig/kubelet
+      sed -i -e 's,--container-runtime=\(docker\|remote\),,' /etc/sysconfig/kubelet
+    when: "ansible_os_family == 'Suse'"
   - name: "Enabling kubelet"
     ansible.builtin.systemd:
       name: "kubelet"
       enabled: true
       state: "started"
     when: "ansible_os_family == 'RedHat'"
+  - name: "Restarting kubelet"
+    ansible.builtin.systemd:
+      name: "kubelet"
+      daemon_reload: true
+      state: "restarted"
   - name: "The following cluster configuration will be used"  # noqa fqcn-builtins
     command: "cat {{ cluster_config.path }}"
   - name: "Pulling Kubernetes images"  # noqa fqcn-builtins

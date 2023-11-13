@@ -164,6 +164,22 @@ setup_control_plane_targets: Dict = {
 			"kubectl",
 			"kubelet",
 		],
+		"suse_packages": [
+			"kubectl",
+			# "kubernetes{major.minor}-client",
+			"kubeadm",
+			# "kubernetes{major.minor}-kubeadm",
+			"kubelet",
+			# "kubernetes{major.minor}-kubelet",
+		],
+		"suse_packages_held": [
+			"kubectl",
+			# "kubernetes{major.minor}-client",
+			"kubeadm",
+			# "kubernetes{major.minor}-kubeadm",
+			"kubelet",
+			# "kubernetes{major.minor}-kubelet",
+		],
 		"extra_values": {
 		},
 	},
@@ -186,9 +202,11 @@ setup_control_plane_targets: Dict = {
 		],
 		"suse_packages": [
 			"kubectl",
+			# "kubernetes{major.minor}-client",
 		],
 		"suse_packages_held": [
 			"kubectl",
+			# "kubernetes{major.minor}-client",
 		],
 	},
 	"rke2": {
@@ -639,7 +657,15 @@ def patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
 
 	# Ideally we should patch this using a round-trip capable YAML parser,
 	# such as ruamel
+	# This seems like the obvious thing to patch
 	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network": "{pod_network_cidr}"\2#'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+	# According to the canal documentation this should be patched too; let's patch both just in case
+	sedstr = fr's,# - name: CALICO_IPV4POOL_CIDR$,- name: CALICO_IPV4POOL_CIDR,'
+	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
+	check_and_print_status(execute_command(args))
+	sedstr = fr's,  value: "192.168.0.0/16"$,#   value: "{pod_network_cidr}",'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 
@@ -755,6 +781,21 @@ cni_upgrade_data = {
 			]
 		}
 	},
+	"canal": {
+		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/canal.yaml",
+					"filename": "canal.yaml",
+					"patch": patch_cni_canal,
+				}
+			]
+		}
+	},
 	"cilium": {
 		"executable": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
@@ -791,12 +832,6 @@ cni_data = {
 		"url": "https://raw.githubusercontent.com/antrea-io/antrea/main/build/yamls/antrea.yml",
 		"type": "yaml",
 		"filename": "antrea.yaml",
-	},
-	"canal": {
-		"url": "https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/canal-etcd.yaml",
-		"type": "yaml",
-		"filename": "canal.yaml",
-		"patch": patch_cni_canal,
 	},
 	"flannel": {
 		"url": "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml",
@@ -980,7 +1015,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 				"<<<context>>>": context,
 			}
 
-			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 			if upgradetype == "CNI":
 				secure_mkdir(DEPLOYMENT_DIR)
 				directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
@@ -1158,7 +1193,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	# We should get this using kubernetes_helper (and allow for manual override)
-	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	context = execute_command_with_response([kubectl_path, "config", "current-context"]).splitlines()[0]
 	cni = installation_info[cluster_name]["cni"]
 	if cni in ("", "<none>", "<unknown>"):
@@ -1200,6 +1235,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			cni_version = installed_cni_version
 
 	cni_filenames = []
+	uninstall_command = None
 
 	if cni in cni_upgrade_data:
 		urls = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#urls"), [])
@@ -1255,7 +1291,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		cni_path = FilePath(str(PurePath(directory).joinpath(cni_filename)))
 
 		# OK, we have paths to the CNI files; this should be enough to remove it
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 		execute_command_with_response([kubectl_path, "delete", "-f", cni_path])
 
 	if uninstall_command is not None:
@@ -1343,7 +1379,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" is currently not supported; exiting.", "default")])
 		sys.exit(errno.ENOTSUP)
 
-	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+	kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	context_name = execute_command_with_response([kubectl_path, "config", "current-context"]).splitlines()[0]
 
 	if install_cni:
@@ -1466,7 +1502,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 		patch_cni(cni_path, pod_network_cidr)
 
 	if filetype == "yaml":
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 		# This should check whether kubectl is >= 1.22; otherwise we need to use create
 		args = [kubectl_path, "apply", "--server-side", "--context=<<<context>>>", "-f", cni_path]
 	elif filetype == "installer":
@@ -1815,11 +1851,11 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		pkg_versions = check_versions_apt(pkg_packages)
 	elif os_distro in ("fedora", "rhel"):
 		pkg_versions = check_versions_yum(pkg_packages)
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		pkg_versions = check_versions_zypper(pkg_packages)
 
 	kubernetes_installed_version = "<unknown>"
@@ -2104,10 +2140,10 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2152,10 +2188,10 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, 
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2229,10 +2265,10 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2266,10 +2302,10 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict, verbos
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2571,10 +2607,10 @@ def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict, verbos
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2624,10 +2660,10 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verb
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -2782,10 +2818,10 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbos
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
 
-	if os_distro == "debian":
+	if os_distro in ("debian", ):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro == "suse":
+	elif os_distro in ("suse", ):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
 	elif os_distro in ("fedora", "rhel"):
@@ -3002,12 +3038,12 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		# If version is an exact match for a package version, use it.
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
-		if os_distro == "debian":
+		if os_distro in ("debian", ):
 			versions = check_versions_apt(["kubeadm"])
 		elif os_distro in ("fedora", "rhel"):
 			versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse"):
-			versions = check_versions_zypper(["kubeadm"])
+		elif os_distro in ("suse", ):
+			versions = check_versions_zypper([f"kubernetes{version}-kubeadm"])
 
 		if len(versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -3200,8 +3236,21 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString("“ is not a supported Kubernetes distribution.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-	if os_distro == "suse":
-		k8s_distro = "rke2"
+	if requested_version is None and os_distro == "suse":
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Updating version cache", "action")])
+
+		# The first patch revision that isn't available from the old repositories is 1.28.3;
+		# this means that we need to include all minor versions from 28 and up.
+		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+					ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
+
+		# Split the version tuple
+		upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+		requested_version = f"{upstream_major}.{upstream_minor}"
 
 	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, phase = phase, phase_skiplist = list(phase_skiplist))
 
@@ -3469,11 +3518,11 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			ANSIThemeString(": Currently only local versions are checked.", "default")])
 
 	if update_cache:
-		if os_distro == "debian":
+		if os_distro in ("debian", ):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating APT cache", "action")])
 			check_and_print_status(update_apt_cache())
-		elif os_distro == "suse":
+		elif os_distro in ("suse", ):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating Zypper cache", "action")])
 			check_and_print_status(update_zypper_cache())
@@ -3768,9 +3817,10 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 		# Disable canal since we install the CNI separately
 		rke2_disabled_options_list = ["rke2-canal"]
 		setup_control_plane_targets["rke2"]["extra_values"]["disabled_options_list"] = rke2_disabled_options_list
+	requested_major_minor = f"{requested_major}.{requested_minor}"
 
 	# Add major/minor to extra_values
-	setup_control_plane_targets[k8s_distro]["extra_values"]["kubernetes_major_minor_version"] = f"{requested_major}.{requested_minor}"
+	setup_control_plane_targets[k8s_distro]["extra_values"]["kubernetes_major_minor_version"] = requested_major_minor
 
 	if cri is None:
 		if k8s_distro == "rke2":
@@ -3906,12 +3956,37 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 		setup_control_plane_targets["localhost"]["fedora_packages"].remove("kubectl")
 		setup_control_plane_targets["localhost"]["fedora_packages"].append(f"kubectl-{requested_version}")
+		setup_control_plane_targets["localhost"]["fedora_packages_held"].remove("kubectl")
+		setup_control_plane_targets["localhost"]["fedora_packages_held"].append(f"kubectl-{requested_version}")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubectl")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubectl-{requested_version}")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubeadm")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubeadm-{requested_version}")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].remove("kubelet")
 		setup_control_plane_targets["kubeadm"]["fedora_packages"].append(f"kubelet-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].remove("kubectl")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].append(f"kubectl-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].remove("kubeadm")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].append(f"kubeadm-{requested_version}")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].remove("kubelet")
+		setup_control_plane_targets["kubeadm"]["fedora_packages_held"].append(f"kubelet-{requested_version}")
+
+		setup_control_plane_targets["localhost"]["suse_packages"].remove("kubectl")
+		setup_control_plane_targets["localhost"]["suse_packages"].append(f"kubernetes{requested_major_minor}-client")
+		setup_control_plane_targets["localhost"]["suse_packages_held"].remove("kubectl")
+		setup_control_plane_targets["localhost"]["suse_packages_held"].append(f"kubernetes{requested_major_minor}-client")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].remove("kubectl")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].append(f"kubernetes{requested_major_minor}-client")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].remove("kubeadm")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].append(f"kubernetes{requested_major_minor}-kubeadm")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].remove("kubelet")
+		setup_control_plane_targets["kubeadm"]["suse_packages"].append(f"kubernetes{requested_major_minor}-kubelet")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].remove("kubectl")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].append(f"kubernetes{requested_major_minor}-client")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].remove("kubeadm")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].append(f"kubernetes{requested_major_minor}-kubeadm")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].remove("kubelet")
+		setup_control_plane_targets["kubeadm"]["suse_packages_held"].append(f"kubernetes{requested_major_minor}-kubelet")
 
 	run_tasks(tasks = setup_control_plane_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "installed", verbose = verbose)
 	update_installation_info(version = requested_version)
@@ -4348,17 +4423,17 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	if len(args) > 0:
 		requested_version = __find_requested_version(k8s_distro, args[0])
 	else:
-		requested_version = __find_requested_version(k8s_distro)
+		requested_version = __find_requested_version(k8s_distro, f"{upstream_major}.{upstream_minor}")
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Running sanity checks", "action")])
 
 	if k8s_distro == "kubeadm":
-		if os_distro == "debian":
+		if os_distro in ("debian", ):
 			pkg_versions = check_versions_apt(["kubeadm"])
 		elif os_distro in ("fedora", "rhel"):
 			pkg_versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse"):
+		elif os_distro in ("suse", ):
 			versions = check_versions_zypper(["kubeadm"])
 
 		if len(pkg_versions) == 0:
@@ -4954,23 +5029,8 @@ COMMANDLINE = {
 			 ANSIThemeString("KUBERNETES_DISTRO", "argument"),
 			 ANSIThemeString(" are:", "description")],
 			[ANSIThemeString("kubeadm", "argument"),
-			 ANSIThemeString(" (default on ", "description"),
-			 ANSIThemeString("Debian", "programname"),
-			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("Ubuntu", "programname"),
-			 ANSIThemeString(", ", "separator"),
-			 ANSIThemeString("Red Hat", "programname"),
-			 ANSIThemeString(")", "description")],
-			[ANSIThemeString("rke2", "argument"),
-			 ANSIThemeString(" (default on ", "description"),
-			 ANSIThemeString("SUSE", "programname"),
-			 ANSIThemeString(")", "description")],
-			[ANSIThemeString("Note", "note"),
-			 ANSIThemeString(": currently ", "description"),
-			 ANSIThemeString("rke2", "argument"),
-			 ANSIThemeString(" is the only supported", "description")],
-			[ANSIThemeString("option on ", "description"),
-			 ANSIThemeString("SUSE", "programname")],
+			 ANSIThemeString(" (default)", "description")],
+			[ANSIThemeString("rke2", "argument")],
 		],
 		"options": {
 			"--control-plane": {

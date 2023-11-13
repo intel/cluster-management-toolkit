@@ -16,3 +16,4 @@ Note that the proxy will _not_ be used for intra-cluster communication.
 Also note that this proxy setting will __not__ be used by `cmt-install`,
 since that program is typically responsible for creating the `~/.cmt` directory,
 and thus the configuration directory cannot be relied upon to exist when running `cmt-install`.
+To use a proxy with `cmt-install` you can specify the `--pip-proxy` option.

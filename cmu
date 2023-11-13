@@ -10342,7 +10342,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 	"""
 
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -10939,7 +10939,7 @@ def create_namespace(stdscr: curses.window, **kwargs):
 # ("StatefulSet", apps")
 def __restart_resource(kind, namespace, name):
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -10963,7 +10963,7 @@ def __get_resource_scale(kind, namespace, name):
 # ("StatefulSet", apps")
 def __scale_replicas(kind, namespace, name, scale):
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -10978,7 +10978,7 @@ def __scale_replicas(kind, namespace, name, scale):
 
 def __edit_resource(kind, namespace, name):
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -10997,7 +10997,7 @@ def __edit_resource(kind, namespace, name):
 # pylint: disable=unused-argument
 def perform_action_on_configuration(uip: UIProps, items, action, values, kind, **kwargs):
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -11073,7 +11073,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 		resource_path, rtype = values["resource_path"]
 
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = [])
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:
 		curses.endwin()
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
