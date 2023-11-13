@@ -72,13 +72,13 @@
     when: "ansible_os_family == 'Suse'"
   - name: "Unmarking packages as held"  # noqa fqcn-builtins
     shell: |
-      zypper removelock "{{ held_packages | join(' ') }}" || true
+      zypper removelock {{ held_packages | join(' ') }} || true
     when: "ansible_os_family == 'Suse'"
   - name: "Installing custom packages"
     shell: |
-      zypper -n install -f -y "{{ packages | join(' ') }}"
+      zypper -n install -f -y {{ packages | join(' ') }}
     when: "ansible_os_family == 'Suse'"
   - name: "Marking packages as held"  # noqa fqcn-builtins
     shell: |
-      zypper addlock "{{ held_packages | join(' ') }}" || true
+      zypper addlock {{ held_packages | join(' ') }} || true
     when: "ansible_os_family == 'Suse'"
