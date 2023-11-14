@@ -40,6 +40,8 @@ except ModuleNotFoundError:
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
 from cmtpaths import DEPLOYMENT_DIR, CMT_HOOKS_DIR
+from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR, CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
+from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR, CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE, KUBE_CONFIG_DIR, KUBE_CONFIG_FILE, VERSION_CACHE_DIR
 
@@ -2113,6 +2115,35 @@ def __selection_localhost() -> List[str]:
 	return [socket.gethostname()]
 
 # pylint: disable-next=unused-argument
+def __generic_task_run_playbooks_on_selection(selection: List[str], installation_info: Dict, playbook_dir: FilePath, extra_values: Optional[Dict] = None, verbose: bool = False) -> None:
+	"""
+	A task that runs playbooks on selected hosts
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+	paths = __playbook_paths_from_path(CMT_PRE_UPGRADE_DIR)
+	playbooks = populate_playbooks_from_paths(paths)
+	if extra_values is None:
+		extra_values = {}
+	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
+
+# pylint: disable-next=unused-argument
+def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs pre-preparation playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PREPARE_DIR], extra_values = {}, verbose = verbose)
+
+# pylint: disable-next=unused-argument
 def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that runs preparation playbooks on localhost
@@ -2208,6 +2239,20 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, 
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
 # pylint: disable-next=unused-argument
+def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs post-preparation playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PREPARE_DIR], extra_values = {}, verbose = verbose)
+
+# pylint: disable-next=unused-argument
 def __task_setup_bash_completion(installation_info: Dict, verbose: bool = False) -> None:
 	"""
 	An installer task that sets up bash completion
@@ -2249,6 +2294,20 @@ def get_cluster_name() -> Optional[str]:
 			break
 
 	return cluster_name
+
+# pylint: disable-next=unused-argument
+def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs pre-setup playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_SETUP_DIR], extra_values = {}, verbose = verbose)
 
 def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
 	"""
@@ -2324,6 +2383,20 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict, verbos
 		**extra_values_setup,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
+
+# pylint: disable-next=unused-argument
+def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs post-setup playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_SETUP_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
@@ -2592,57 +2665,23 @@ def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = Fals
 			sys.exit(errno.EINVAL)
 
 # pylint: disable-next=unused-argument
-def __task_run_preupgrade_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that runs pre-upgrade playbooks on localhost
+	A task that runs pre-upgrade playbooks
 
 		Parameters:
-			installation_info (dict): A dict with installation information (Unused)
+			installation_info (dict): A dict with installation information
 			verbose (bool): If the results are printed, should skipped tasks be printed too?
 	"""
 
-	cluster_name = installation_info["installation_target"]
-	k8s_distro = installation_info[cluster_name]["distro"]
-	os_distro = identify_distro()
-	selection = __selection_localhost()
-	playbooks = populate_playbooks_from_paths(cast(List[FilePath], upgrade_control_plane_targets["localhost"]["playbooks"]))
-
-	if os_distro in ("debian", ):
-		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
-		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
-		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
-		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
-		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
-		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
-
-	extra_values = {
-		"packages": packages,
-		"held_packages": held_packages,
-	}
-	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
-
-# pylint: disable-next=unused-argument
-def __task_run_preupgrade_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
-	"""
-	An installer task that runs pre-upgrade playbooks on control planes
-
-		Parameters:
-			installation_info (dict): A dict with installation information (Unused)
-			verbose (bool): If the results are printed, should skipped tasks be printed too?
-	"""
-
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("pre-upgrade.d"))))
-	playbooks = populate_playbooks_from_paths(paths)
-
-	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_UPGRADE_DIR], extra_values = {}, verbose = verbose)
 
 # Run upgrade playbooks on control planes
 def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that runs upgrade playbooks on control planes
+	A task that runs upgrade playbooks on control planes
 
 		Parameters:
 			installation_info (dict): A dict with installation information
@@ -2682,25 +2721,23 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verb
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
 # pylint: disable-next=unused-argument
-def __task_run_postupgrade_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that runs post-upgrade playbooks on control planes
+	A task that runs post-upgrade playbooks
 
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 			verbose (bool): If the results are printed, should skipped tasks be printed too?
 	"""
 
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	paths = __playbook_paths_from_path(FilePath(str(PurePath(CMT_HOOKS_DIR).joinpath("post-upgrade.d"))))
-	playbooks = populate_playbooks_from_paths(paths)
-
-	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_UPGRADE_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that verifies that no non-control plane nodes remain in the cluster
+	A task that verifies that no non-control plane nodes remain in the cluster
 
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
@@ -2718,10 +2755,24 @@ def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bo
 
 	ansithemeprint([ANSIThemeString("OK", "ok")])
 
+# pylint: disable-next=unused-argument
+def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs pre-teardown playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
+
 # Run teardown playbooks on control planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that runs teardown playbooks on control planes
+	A task that runs teardown playbooks on control planes
 
 		Parameters:
 			installation_info (dict): A dict with installation information
@@ -2734,6 +2785,20 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict, ver
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], teardown_control_plane_targets[k8s_distro]["playbooks"]))
 
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = {}, verbose = verbose)
+
+# pylint: disable-next=unused-argument
+def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs post-teardown playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information (Unused)
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
@@ -2802,6 +2867,20 @@ def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 
 	check_and_print_status(True)
 
+# pylint: disable-next=unused-argument
+def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs pre-purge playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PURGE_DIR], extra_values = {}, verbose = verbose)
+
 # Run purge playbooks on control planes
 def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
 	"""
@@ -2833,6 +2912,20 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbos
 		"held_packages": held_packages,
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
+
+# pylint: disable-next=unused-argument
+def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+	"""
+	A task that runs post-purge playbooks
+
+		Parameters:
+			installation_info (dict): A dict with installation information
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
+	"""
+
+	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
+	selection = __selection_control_planes()
+	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PURGE_DIR], extra_values = {}, verbose = verbose)
 
 def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]], phase: Union[str, int]) -> int:
 	"""
@@ -2922,13 +3015,16 @@ prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Install ", "action"),
 	  ANSIThemeString("ansible.posix", "programname"),
 	  ANSIThemeString(" if necessary", "action")], __task_check_and_install_ansible_posix),
+	([ANSIThemeString("Run pre-prepare playbooks", "action")], __task_run_prepreparation_playbooks),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	([ANSIThemeString("Run post-prepare playbooks", "action")], __task_run_postpreparation_playbooks),
 ]
 
 __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
+	([ANSIThemeString("Run pre-setup playbooks", "action")], __task_run_presetup_playbooks),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
 	([ANSIThemeString("Setup ", "action"),
@@ -2940,9 +3036,11 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	([ANSIThemeString("Import kubeconfig", "action")], __task_import_kubeconfig),
 	([ANSIThemeString("Setup ", "action"),
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
+	([ANSIThemeString("Run post-setup playbooks", "action")], __task_run_postsetup_playbooks),
 ]
 
 __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
+	([ANSIThemeString("Run pre-setup playbooks", "action")], __task_run_presetup_playbooks),
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_setup_playbooks_on_localhost),
 	([ANSIThemeString("Setup ", "action"),
@@ -2955,6 +3053,7 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[...
 	([ANSIThemeString("Adjust kubeconfig server-address (if necessary)", "action")], __task_adjust_kubeconfig_server_address),
 	([ANSIThemeString("Setup ", "action"),
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
+	([ANSIThemeString("Run post-setup playbooks", "action")], __task_run_postsetup_playbooks),
 ]
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
@@ -2962,14 +3061,10 @@ setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Drain the ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
-	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"),
-	  ANSIThemeString("localhost", "hostname")], __task_run_preupgrade_playbooks_on_localhost),
-	([ANSIThemeString("Run pre-upgrade playbooks on ", "action"),
-	  ANSIThemeString("control planes", "hostname")], __task_run_preupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run pre-upgrade playbooks", "action")], __task_run_preupgrade_playbooks),
 	([ANSIThemeString("Run upgrade playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_upgrade_playbooks_on_control_planes),
-	([ANSIThemeString("Run post-upgrade playbooks on ", "action"),
-	  ANSIThemeString("control planes", "hostname")], __task_run_postupgrade_playbooks_on_control_planes),
+	([ANSIThemeString("Run post-upgrade playbooks", "action")], __task_run_postupgrade_playbooks),
 	([ANSIThemeString("Uncordon the ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_uncordon_control_planes),
 ]
@@ -2980,14 +3075,18 @@ teardown_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., No
 	  ANSIThemeString(" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
 	([ANSIThemeString("Drain the ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_drain_control_planes),
+	([ANSIThemeString("Run pre-teardown playbooks", "action")], __task_run_preteardown_playbooks),
 	([ANSIThemeString("Run teardown playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_teardown_playbooks_on_control_planes),
 	([ANSIThemeString("Remove kube config", "action")], __task_remove_kubeconfig),
+	([ANSIThemeString("Run post-teardown playbooks", "action")], __task_run_postteardown_playbooks),
 ]
 
 purge_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
+	([ANSIThemeString("Run pre-purge playbooks", "action")], __task_run_prepurge_playbooks),
 	([ANSIThemeString("Run purge playbooks on ", "action"),
 	  ANSIThemeString("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
+	([ANSIThemeString("Run post-purge playbooks", "action")], __task_run_postpurge_playbooks),
 ]
 
 def run_tasks(tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]],

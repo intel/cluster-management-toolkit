@@ -53,6 +53,16 @@ ANSIBLE_INVENTORY = FilePath(os.path.join(ANSIBLE_DIR, "inventory.yaml"))
 
 CMT_HOOKS_DIRNAME = "hooks"
 CMT_HOOKS_DIR = FilePath(os.path.join(CMTDIR, CMT_HOOKS_DIRNAME))
+CMT_PRE_PREPARE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-prepare.d"))
+CMT_POST_PREPARE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-prepare.d"))
+CMT_PRE_SETUP_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-setup.d"))
+CMT_POST_SETUP_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-setup.d"))
+CMT_PRE_UPGRADE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-upgrade.d"))
+CMT_POST_UPGRADE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-upgrade.d"))
+CMT_PRE_TEARDOWN_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-teardown.d"))
+CMT_POST_TEARDOWN_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-teardown.d"))
+CMT_PRE_PURGE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-purge.d"))
+CMT_POST_PURGE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-purge.d"))
 
 PARSER_DIRNAME = "parsers"
 PARSER_DIR = FilePath(os.path.join(CMTDIR, PARSER_DIRNAME))
