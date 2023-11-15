@@ -692,7 +692,9 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
 
-	package_version = re.compile(r"^(.). \| (\S+) +\| package +\| (\S+) +\|.*")
+	# il | kubernetes1.28-kubeadm | package | 1.28.3-150400.5.1 | x86_64 | kubic
+	# i | kubernetes1.28-kubeadm | package | 1.28.3-150400.5.1 | x86_64 | kubic
+	package_version = re.compile(r"^(.).? \| (\S+) +\| package +\| (\S+) +\|.*")
 
 	section = ""
 

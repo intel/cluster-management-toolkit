@@ -2141,7 +2141,7 @@ def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool =
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PREPARE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PREPARE_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
@@ -2250,7 +2250,7 @@ def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool 
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PREPARE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PREPARE_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_setup_bash_completion(installation_info: Dict, verbose: bool = False) -> None:
@@ -2307,7 +2307,7 @@ def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_SETUP_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_SETUP_DIR], extra_values = {}, verbose = verbose)
 
 def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
 	"""
@@ -2396,7 +2396,7 @@ def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = Fals
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_SETUP_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_SETUP_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
@@ -2676,7 +2676,7 @@ def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = Fal
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_UPGRADE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_UPGRADE_DIR], extra_values = {}, verbose = verbose)
 
 # Run upgrade playbooks on control planes
 def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
@@ -2732,7 +2732,7 @@ def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = Fa
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_UPGRADE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_UPGRADE_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bool = False) -> None:
@@ -2767,7 +2767,7 @@ def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = Fa
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
 
 # Run teardown playbooks on control planes
 def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
@@ -2798,7 +2798,7 @@ def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = F
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_TEARDOWN_DIR], extra_values = {}, verbose = verbose)
 
 # pylint: disable-next=unused-argument
 def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
@@ -2879,7 +2879,7 @@ def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PURGE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_PRE_PURGE_DIR], extra_values = {}, verbose = verbose)
 
 # Run purge playbooks on control planes
 def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
@@ -2925,7 +2925,7 @@ def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = Fals
 
 	# The default selection is control planes; the playbooks need to explicitly specify if the play should be run on other hosts
 	selection = __selection_control_planes()
-	__generic_task_run_playbooks_on_localhost(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PURGE_DIR], extra_values = {}, verbose = verbose)
+	__generic_task_run_playbooks_on_selection(selection = selection, installation_info = installation_info, playbook_dir = [CMT_POST_PURGE_DIR], extra_values = {}, verbose = verbose)
 
 def __validate_task_index(tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]], phase: Union[str, int]) -> int:
 	"""
@@ -3268,6 +3268,10 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 				ANSIThemeString(": Invalid installation state; the system cannot be in a configured or semi-configured state when running prepare; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
+	# The user has restarted preparation
+	if phase == "<done>" and state == "preparing":
+		phase = 0
+
 	if phase == "<none>" or state in ("prepared", "torn_down") and phase == "<done>":
 		phase = 0
 		requested_version = None
@@ -3275,7 +3279,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	hostname = socket.gethostname()
 
 	# default options
-	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, requested_version = requested_version, state = "preparing", phase = phase)
+	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, state = "preparing", phase = phase)
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
@@ -3303,6 +3307,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			phase = __validate_task_index(prepare_tasks, optarg)
 			if "--skip-tasks" not in options:
 				phase_skiplist = set()
+			if phase == 0:
+				requested_version = None
 		elif opt == "--skip-tasks":
 			skip_phases = __expand_index_list(optarg)
 			for __phase in skip_phases:
@@ -3326,7 +3332,10 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	if len(args) > 1:
 		requested_version = args[1]
 
-		if "=" in requested_version:
+		if requested_version in ("kubeadm", "rke2"):
+			k8s_distro = requested_version
+			requested__version = None
+		elif "=" in requested_version:
 			k8s_distro, requested_version = requested_version.split("=")
 			if k8s_distro not in ("kubeadm", "rke2"):
 				ansithemeprint([ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
@@ -3334,6 +3343,9 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString(f"{k8s_distro}", "option"),
 						ANSIThemeString("“ is not a supported Kubernetes distribution.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
+
+	if requested_version is not None and requested_version == "<none>":
+		requested_version = None
 
 	if requested_version is None and os_distro == "suse":
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -3351,7 +3363,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 		requested_version = f"{upstream_major}.{upstream_minor}"
 
-	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, phase = phase, phase_skiplist = list(phase_skiplist))
+	installation_info = update_installation_info(cluster_name = cluster_name, distro = k8s_distro, phase = phase, phase_skiplist = list(phase_skiplist), requested_version = requested_version)
 
 	show_configuration(action = "Preparing cluster:", tasks = prepare_tasks)
 
@@ -3381,9 +3393,10 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Updating installation information", "action")])
 
+	update_installation_info(requested_version = requested_version)
+
 	ansithemeprint([ANSIThemeString("   Requested version: ", "action"),
 			ANSIThemeString(requested_version, "version")])
-	update_installation_info(requested_version = requested_version)
 
 	ansithemeprint([ANSIThemeString("\nControl plane preparation successful", "success")])
 	print("\nNext step:")

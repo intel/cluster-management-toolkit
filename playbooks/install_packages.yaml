@@ -33,19 +33,19 @@
     shell: |
       apt-mark unhold "{{ item }}" || true
     loop: "{{ held_packages }}"
-    when: "ansible_os_family == 'Debian'"
+    when: "ansible_os_family == 'Debian' and len(vars['held_packages']) > 0"
   - name: "Installing custom packages"
     ansible.builtin.apt:
       pkg: "{{ packages }}"
       force_apt_get: true
       # allow downgrading packages
       force: true
-    when: "ansible_os_family == 'Debian'"
+    when: "ansible_os_family == 'Debian' and len(vars['packages']) > 0"
   - name: "Marking packages as held"  # noqa fqcn-builtins
     shell: |
       apt-mark hold "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
-    when: "ansible_os_family == 'Debian'"
+    when: "ansible_os_family == 'Debian' and len(vars['held_packages']) > 0"
   - name: "Updating package cache"
     ansible.builtin.dnf:
       update_cache: true
@@ -54,18 +54,18 @@
     shell: |
       dnf versionlock delete "{{ item }}" || true
     loop: "{{ held_packages }}"
-    when: "ansible_os_family == 'RedHat'"
+    when: "ansible_os_family == 'RedHat' and len(vars['held_packages']) > 0"
   - name: "Installing custom packages"
     ansible.builtin.dnf:
       pkg: "{{ packages }}"
       allow_downgrade: true
       disable_excludes: "kubernetes"
-    when: "ansible_os_family == 'RedHat'"
+    when: "ansible_os_family == 'RedHat' and len(vars['packages']) > 0"
   - name: "Marking packages as held"  # noqa fqcn-builtins
     shell: |
       dnf versionlock add "{{ item }}" || true
     loop: "{{ vars['held_packages'] }}"
-    when: "ansible_os_family == 'RedHat'"
+    when: "ansible_os_family == 'RedHat' and len(vars['held_packages']) > 0"
   - name: "Updating package cache"
     shell: |
       zypper --gpg-auto-import-keys refresh
@@ -73,12 +73,12 @@
   - name: "Unmarking packages as held"  # noqa fqcn-builtins
     shell: |
       zypper removelock {{ held_packages | join(' ') }} || true
-    when: "ansible_os_family == 'Suse'"
+    when: "ansible_os_family == 'Suse' and len(vars['held_packages']) > 0"
   - name: "Installing custom packages"
     shell: |
       zypper -n install -f -y {{ packages | join(' ') }}
-    when: "ansible_os_family == 'Suse'"
+    when: "ansible_os_family == 'Suse' and len(vars['packages']) > 0"
   - name: "Marking packages as held"  # noqa fqcn-builtins
     shell: |
       zypper addlock {{ held_packages | join(' ') }} || true
-    when: "ansible_os_family == 'Suse'"
+    when: "ansible_os_family == 'Suse' and len(vars['held_packages']) > 0"
