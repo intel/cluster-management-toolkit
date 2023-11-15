@@ -28,7 +28,7 @@ ADMIN_PROGRAM_NAME = "cmtadm"
 ADMIN_PROGRAM_VERSION = "0.7.1"
 
 INVENTORY_PROGRAM_NAME = "cmtinv"
-INVENTORY_PROGRAM_VERSION = "0.4.2"
+INVENTORY_PROGRAM_VERSION = "0.4.3"
 
 # We don't support Python-versions older than 3.8
 version_info = sys.version_info
