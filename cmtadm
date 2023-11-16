@@ -3656,9 +3656,6 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"kubectl",
 		"kubelet",
 		"kubernetes-cni",
-		"kubernetes-client",
-		"kubernetes-master",
-		"kubernetes-node",
 		"python3-ansible-runner",
 		"python3-natsort",
 		"python3-paramiko",
@@ -3667,6 +3664,16 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"python3-urllib3",
 		"runc",
 	]
+
+	if os_distro == "suse":
+		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is not None:
+			upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+
+			for package in ("client", "kubeadm", "kubelet"):
+				for i in range(17, int(upstream_minor) + 1):
+					pkg_packages.append(f"kubernetes1.{i}-{package}")
+
+	pkg_packages = natsorted(pkg_packages)
 
 	version_checks: List = []
 
