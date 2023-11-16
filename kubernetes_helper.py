@@ -807,6 +807,15 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "ciliumpodippools",
 		"namespaced": False,
 	},
+	("TracingPolicy", "cilium.io"): {
+		"api_paths": ["apis/cilium.io/v1alpha1/"],
+		"api": "tracingpolicies",
+		"namespaced": False,
+	},
+	("TracingPolicyNamespaced", "cilium.io"): {
+		"api_paths": ["apis/cilium.io/v1alpha1/"],
+		"api": "tracingpoliciesnamespaced",
+	},
 	# cis.cattle.io
 	("ClusterScanBenchmark", "cis.cattle.io"): {
 		"api_paths": ["apis/cis.cattle.io/v1/"],
