@@ -59,7 +59,7 @@ _cmt() {
 				COMPREPLY=( $(compgen -W "" -- "$2") )
 				return
 				;;
-			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--wide|-Y)
+			--delete-emptydir-data|--delete-local-data|--disable-eviction|--force|--from-file|--ignore-daemonsets|--ignore-existing|--ignore-non-existing|--include-control-planes|--no-data|--no-header|--no-password|--overwrite|--purge|--save-ansible-logs|--verbose|--wide|-Y)
 				# These options don't take any arguments
 				;;
 			--api-group|--ca-cert-file|--color|--cri|--forks|--format|--known|--kubernetes-distro|--local|--namespaced|--sort-by|--verbs)
@@ -184,6 +184,7 @@ _cmt() {
 	prepare|add-node|add-nodes|purge|upgrade-node|upgrade-nodes|remove-node|remove-nodes)
 		commands=$(add_option_if_not_in_list "--forks" ${commands})
 		commands=$(add_option_if_not_in_list "--save-ansible-logs" ${commands})
+		commands=$(add_option_if_not_in_list "--verbose" ${commands})
 		;;
 	esac
 

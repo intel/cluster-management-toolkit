@@ -112,7 +112,7 @@ def get_latest_kubernetes_upstream_version() -> str:
 
 	return kubernetes_upstream_version
 
-def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None, quiet: bool = False, verbose: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
@@ -120,14 +120,12 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 			playbookpath (FilePath): A path to the playbook to run
 			hosts (list[str]): A list of hosts to run the playbook on
 			extra_values (dict): A dict of values to set before running the playbook
-			quiet (bool): Unused
+			quiet (bool): Should the results of the run be printed? (Unused)
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
 		Returns:
 			retval (int): The return value from ansible_run_playbook_on_selection()
 			ansible_results (dict): A dict with the results from the run
 	"""
-
-	# Eventually we should be using this
-	del quiet
 
 	# The first patch revision that isn't available from the old repositories is 1.28.3;
 	# this means that we need to include all minor versions from 28 and up.
@@ -183,7 +181,9 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 				ANSIThemeString(" is either empty or missing; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	ansible_print_play_results(retval, ansible_results)
+	if not quiet:
+		ansible_print_play_results(retval, ansible_results, verbose = verbose)
+		print()
 
 	return retval, ansible_results
 
@@ -338,7 +338,7 @@ def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
 		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString(host, "hostname")])
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: Optional[List[str]] = None, extra_values: Optional[Dict] = None) -> bool:
+def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts: Optional[List[str]] = None, extra_values: Optional[Dict] = None, verbose: bool = False) -> bool:
 	"""
 	Run a set of playbooks
 
@@ -346,6 +346,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts
 			playbooks (list[(description, playbookpath)]): A list of playbooks
 			hosts (str): The hosts to run the playbooks on
 			extra_values (dict): Variables to set before running the playbooks
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
 		Returns:
 			True on success, False on failure
 	"""
@@ -355,7 +356,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], hosts
 
 	for string, playbookpath in playbooks:
 		ansithemeprint(string)
-		retval, _ansible_results = run_playbook(playbookpath, hosts = cast(List[str], hosts), extra_values = extra_values)
+		retval, _ansible_results = run_playbook(playbookpath, hosts = cast(List[str], hosts), extra_values = extra_values, verbose = verbose)
 
 		# We do not want to continue executing playbooks if the first one failed
 		if retval != 0:
@@ -876,6 +877,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	no_password = False
 	from_file = False
 	confirm = True
+	verbose = False
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -888,6 +890,8 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--from-file":
 			from_file = True
+		elif opt == "--verbose":
+			verbose = True
 		elif opt == "-Y":
 			confirm = False
 
@@ -1010,7 +1014,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 	}
 
-	run_retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
+	run_retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values, verbose = verbose)
 	if run_retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
@@ -1053,6 +1057,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ca_cert_path = ""
 	cri = None
 	confirm = True
+	verbose = False
 
 	for opt, optarg in options:
 		if opt == "--ignore-existing":
@@ -1076,6 +1081,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				sys.exit(errno.EINVAL)
 		elif opt == "--from-file":
 			from_file = True
+		elif opt == "--verbose":
+			verbose = True
 		elif opt == "-Y":
 			confirm = False
 		elif opt == "--kubernetes-distro":
@@ -1257,7 +1264,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_join_token.yaml")))
 			]
 			playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
-			retval = run_playbooks(playbooks = playbooks, hosts = controlplanes)
+			retval = run_playbooks(playbooks = playbooks, hosts = controlplanes, verbose = verbose)
 			join_token = kh.get_join_token()
 			if len(join_token) == 0:
 				ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -1457,7 +1464,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		}
 	playbooks = populate_playbooks_from_paths(add_playbooks)
 
-	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = non_existing, extra_values = extra_values, verbose = verbose)
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
@@ -1486,6 +1493,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	force = False
 	purge = False
+	verbose = False
 
 	for opt, optarg in options:
 		if opt == "--force":
@@ -1498,6 +1506,8 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			ansible_configuration["ansible_forks"] = optarg
 		elif opt == "--kubernetes-distro":
 			k8s_distro = optarg
+		elif opt == "--verbose":
+			verbose = True
 
 	if os_distro == "suse" and k8s_distro != "rke2":
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -1547,7 +1557,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	playbooks = populate_playbooks_from_paths(delete_playbooks)
 
 	extra_values: Dict = {}
-	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values, verbose = verbose)
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	elif force:
@@ -1577,7 +1587,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	playbooks = populate_playbooks_from_paths(teardown_playbooks)
 
 	extra_values = {}
-	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values, verbose = verbose)
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
@@ -1614,6 +1624,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 	k8s_distro = "kubeadm"
 
 	ignore_non_existing = False
+	verbose = False
 
 	selection = args[0].split(",")
 
@@ -1633,6 +1644,8 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["ansible_forks"] = optarg
+		elif opt == "--verbose":
+			verbose = True
 		elif opt == "--kubernetes-distro":
 			k8s_distro = cast(str, optarg)
 
@@ -1720,7 +1733,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 			"kubelet",
 		]
 	}
-	retval = run_playbooks(playbooks = playbooks, hosts = hosts, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = hosts, extra_values = extra_values, verbose = verbose)
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
@@ -1742,11 +1755,15 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			0 on success, exits with errno on failure
 	"""
 
+	verbose = False
+
 	for opt, optarg in options:
 		if opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "--forks":
 			ansible_configuration["ansible_forks"] = optarg
+		elif opt == "--verbose":
+			verbose = True
 
 	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
 
@@ -1791,7 +1808,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	playbooks = populate_playbooks_from_paths(upgrade_playbooks)
 
 	extra_values: Dict = {}
-	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values)
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values, verbose = verbose)
 	if retval:
 		ansithemeprint([ANSIThemeString("OK", "ok")])
 	else:
@@ -2797,6 +2814,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString("“", "description")]
 				],
 			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
@@ -2974,6 +2994,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString("“", "description")]
 				],
 			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
@@ -3073,6 +3096,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString("“", "description")]
 				],
 			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
 		},
 		"required_args": [
 			{
@@ -3167,6 +3193,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString("“", "description")]
 				],
 			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
 		},
 		"required_args": [
 			{
@@ -3240,6 +3269,9 @@ CMT_COMMANDLINE = {
 						ANSIThemeString(" logs", "command"),
 						ANSIThemeString("“", "description")]
 				],
+			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
 			},
 		},
 		"required_args": [
