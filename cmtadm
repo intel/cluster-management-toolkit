@@ -4503,23 +4503,23 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	ansithemeprint([ANSIThemeString("\n[Preparing upgrade]", "phase")])
 
+	# The first patch revision that isn't available from the old repositories is 1.28.3;
+	# this means that we need to include all minor versions from 28 and up.
+	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
+				ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Split the version tuple
+	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	minor_versions = []
+	for minor_version in range(28, int(upstream_minor) + 1):
+		minor_versions.append(f"{minor_version}")
+
 	if update_cache:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating version cache", "action")])
-
-		# The first patch revision that isn't available from the old repositories is 1.28.3;
-		# this means that we need to include all minor versions from 28 and up.
-		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
-					ANSIThemeString("this is either a network error or a bug; aborting.", "default")], stderr = True)
-			sys.exit(errno.ENOENT)
-
-		# Split the version tuple
-		upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
-		minor_versions = []
-		for minor_version in range(28, int(upstream_minor) + 1):
-			minor_versions.append(f"{minor_version}")
 
 		extra_values = {
 			"minor_versions": minor_versions,
