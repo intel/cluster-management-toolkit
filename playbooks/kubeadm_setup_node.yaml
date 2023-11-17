@@ -82,7 +82,7 @@
   - name: "Creating node configuration"
     ansible.builtin.template:
       dest: "{{ node_config.path }}"
-      src: "templates/config/nodeconfig.yaml.j2"
+      src: "{{ configuration_path }}"
       mode: "0640"
   - name: "Enabling kubelet"
     ansible.builtin.systemd:

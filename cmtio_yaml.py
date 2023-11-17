@@ -17,7 +17,7 @@ from cmttypes import FilePath, SecurityChecks
 
 # pylint: disable-next=too-many-arguments
 def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None,
-		      replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w") -> None:
+		      replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w", tempfile: bool = False) -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
@@ -28,6 +28,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 			replace_empty (bool): True strips empty strings
 			replace_null (bool): True strips null
 			write_mode (str): [w, a, x] Write, Append, Exclusive Write
+			tempfile (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
@@ -40,7 +41,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 		yaml_str = yaml_str.replace(r"''", "")
 	if replace_null:
 		yaml_str = yaml_str.replace(r"null", "")
-	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode)
+	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode, tempfile = tempfile)
 
 def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Any:
 	"""
