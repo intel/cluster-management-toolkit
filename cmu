@@ -9371,7 +9371,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			facilities = []
 			severities = []
 			messages = []
-			parser = ""
+			parser = None
 			prev_timestamp = None
 			prev_facility = ""
 			prev_severity = LogLevel.INFO
@@ -9400,8 +9400,6 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					progressbar.timeout(10)
 					c = progressbar.getch()
 					if c == 27:	# ESCAPE
-						if reload:
-							break
 						return Retval.RETURNDONE
 
 				if isinstance(_line, tuple):
@@ -9414,7 +9412,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser("internal_error", "", "", message = line, container_type = container_type, line = i)
 				elif raw_logs:
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser("raw", "", "", message = line, container_type = container_type, line = i)
-				elif override_parser is not None or _parser is None or parser == "":
+				elif override_parser is not None or _parser is None or parser is None:
 					timestamp, facility, severity, message, remnants, parser, _parser = logparser(podname, containername, image, message = line, fold_msg = fold_msg, override_parser = override_parser, container_type = container_type, line = i)
 				else:
 					timestamp, facility, severity, message, remnants = logparser_initialised(parser = _parser, message = line, fold_msg = fold_msg, line = i)
@@ -9750,11 +9748,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					ThemeString("Format: ", ThemeAttr("statusbar", "infoheader")),
 				]
 
-			if len(rawmsg) == 0 or parser[0] == "":
+			if len(rawmsg) == 0:
 				statusarray2 += [
 					ThemeString("Empty", ThemeAttr("main", "format_empty")),
 				]
-			elif parser[0] == "unknown":
+			elif parser is None or parser[0] == "unknown":
 				statusarray2 += [
 					ThemeString("Unknown", ThemeAttr("main", "format_unknown")),
 				]
