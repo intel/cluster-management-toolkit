@@ -182,8 +182,7 @@ setup_control_plane_targets: Dict = {
 			"kubelet",
 			# "kubernetes{major.minor}-kubelet",
 		],
-		"extra_values": {
-		},
+		"extra_values": {},
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
@@ -217,8 +216,7 @@ setup_control_plane_targets: Dict = {
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_setup_control_plane.yaml"))),
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("fetch_kube_config.yaml"))),
 		],
-		"extra_values": {
-		},
+		"extra_values": {},
 	},
 }
 
@@ -228,8 +226,7 @@ upgrade_control_plane_targets: Dict = {
 		"playbooks": [
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_upgrade_control_plane.yaml"))),
 		],
-		"extra_values": {
-		},
+		"extra_values": {},
 	},
 	"localhost": {
 		"pretty_name": [("host system", "programname")],
@@ -254,8 +251,7 @@ upgrade_control_plane_targets: Dict = {
 		"playbooks": [
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_upgrade_control_plane.yaml"))),
 		],
-		"extra_values": {
-		},
+		"extra_values": {},
 	},
 }
 
@@ -552,7 +548,7 @@ def update_installation_info(installation_target: Optional[str] = None, cluster_
 			     distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
 			     state: Optional[str] = None, phase: Optional[Union[int, str]] = None, phase_skiplist: Optional[List[str]] = None,
 			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None,
-			     control_planes: Optional[List[str]] = None) -> Dict:
+			     control_planes: Optional[List[str]] = None, nodes: Optional[List[str]] = None) -> Dict:
 	"""
 	Update installation info for a cluster
 
@@ -569,6 +565,7 @@ def update_installation_info(installation_target: Optional[str] = None, cluster_
 			pod_network_cidr (str): The CIDR to use for the pod network
 			cri (str): The CRI to use
 			control_planes ([str]): A list of the control planes
+			nodes ([str]): A list of the nodes
 		Returns:
 			info (dict): The updated installation info
 	"""
@@ -603,6 +600,8 @@ def update_installation_info(installation_target: Optional[str] = None, cluster_
 		info[cluster_name]["cri"] = cri
 	if control_planes is not None:
 		info[cluster_name]["control_planes"] = control_planes
+	if nodes is not None:
+		info[cluster_name]["nodes"] = nodes
 
 	secure_write_yaml(CMT_INSTALLATION_INFO_FILE, info, sort_keys = False)
 
@@ -1633,12 +1632,16 @@ def __task_scan_and_add_ssh_keys(installation_info: Dict, verbose: bool = False)
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
+	cluster_name = installation_info["installation_target"]
+	nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
+
 	controlplanes = get_control_planes()
 	hosts = [controlplane[0] for controlplane in controlplanes]
 	hosts += [f"{controlplane[0]}.local" for controlplane in controlplanes]
 	hosts += [
 		"localhost",
 	]
+	hosts += nodes
 
 	scan_and_add_ssh_keys(hosts)
 
@@ -2190,9 +2193,9 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	}
 	__run_playbooks_on_selection(playbooks = playbooks, selection = selection, extra_values = extra_values, verbose = verbose)
 
-def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_preparation_playbooks_on_hosts(installation_info: Dict, verbose: bool = False) -> None:
 	"""
-	An installer task that runs preparation playbooks on control planes
+	An installer task that runs preparation playbooks on hosts
 
 		Parameters:
 			installation_info (dict): A dict with installation information
@@ -2202,7 +2205,12 @@ def __task_run_preparation_playbooks_on_control_planes(installation_info: Dict, 
 	cluster_name = installation_info["installation_target"]
 	k8s_distro = installation_info[cluster_name]["distro"]
 	os_distro = identify_distro()
-	selection = __selection_control_planes()
+	control_planes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"), [])
+	nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
+	if len(control_planes) == 0:
+		selection = __selection_control_planes()
+	else:
+		selection = control_planes + nodes
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
 
 	# The first patch revision that isn't available from the old repositories is 1.28.3;
@@ -3006,7 +3014,7 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeString:
 
 prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
-	([ANSIThemeString("Add ssh keys for localhost and the control plane(s) to ", "action"),
+	([ANSIThemeString("Add ssh keys for localhost, control plane(s) and nodes to ", "action"),
 	  ANSIThemeString(f"{HOMEDIR}/.ssh/known_hosts", "path")], __task_scan_and_add_ssh_keys),
 	([ANSIThemeString("Add public ssh keys to ", "action"),
 	  ANSIThemeString(f"{HOMEDIR}/.ssh/authorized_keys", "path")], __task_check_and_add_ssh_keys_to_authorized_keys),
@@ -3019,7 +3027,7 @@ prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run playbooks on ", "action"),
 	  ANSIThemeString("localhost", "hostname")], __task_run_preparation_playbooks_on_localhost),
 	([ANSIThemeString("Run playbooks on ", "action"),
-	  ANSIThemeString("control planes", "hostname")], __task_run_preparation_playbooks_on_control_planes),
+	  ANSIThemeString("hosts", "hostname")], __task_run_preparation_playbooks_on_hosts),
 	([ANSIThemeString("Run post-prepare playbooks", "action")], __task_run_postpreparation_playbooks),
 ]
 
@@ -3262,6 +3270,9 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	phase: Union[str, int] = installation_info[cluster_name]["phase"]
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	verbose = False
+	hide_next_step = False
+	control_planes = []
+	nodes = []
 
 	if state is not None and state not in ("<none>", "preparing", "prepared", "torn_down"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -3322,12 +3333,18 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString(": Ignoring request to resume a completed preparation. Exiting.", "default")], stderr = True)
 				sys.exit(0)
 			phase = __validate_task_index(prepare_tasks, phase)
+		elif opt == "--hide-next-step":
+			hide_next_step = True
+		elif opt == "--nodes":
+			nodes = optarg
 		elif opt == "--verbose":
 			verbose = True
 		elif opt == "--save-ansible-logs":
 			ansible_configuration["save_logs"] = True
 		elif opt == "-Y":
 			confirm = False
+
+	installation_info = update_installation_info(cluster_name = cluster_name, control_planes = controlplanes, nodes = nodes)
 
 	if len(args) > 1:
 		requested_version = args[1]
@@ -3344,7 +3361,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString("“ is not a supported Kubernetes distribution.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 
-	if requested_version is not None and requested_version == "<none>":
+	if requested_version is not None and requested_version in ("<none>", ""):
 		requested_version = None
 
 	if requested_version is None and os_distro == "suse":
@@ -3399,22 +3416,24 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			ANSIThemeString(requested_version, "version")])
 
 	ansithemeprint([ANSIThemeString("\nControl plane preparation successful", "success")])
-	print("\nNext step:")
-	ansithemeprint([ANSIThemeString("• ", "separator"),
-			ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-			ANSIThemeString(" setup-control-plane ", "command"),
-			ANSIThemeString("[", "separator"),
-			ANSIThemeString("CNI", "argument"),
-			ANSIThemeString("]", "separator"),
-			ANSIThemeString(" [", "separator"),
-			ANSIThemeString("POD_NETWORK_CIDR", "argument"),
-			ANSIThemeString("]", "separator")])
-	ansithemeprint([ANSIThemeString("\nSee “", "separator"),
-			ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-			ANSIThemeString(" help", "command"),
-			ANSIThemeString("“ for more information about valid ", "default"),
-			ANSIThemeString("CNI", "argument"),
-			ANSIThemeString(" options.\n", "default")])
+
+	if not hide_next_step:
+		print("\nNext step:")
+		ansithemeprint([ANSIThemeString("• ", "separator"),
+				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+				ANSIThemeString(" setup-control-plane ", "command"),
+				ANSIThemeString("[", "separator"),
+				ANSIThemeString("CNI", "argument"),
+				ANSIThemeString("]", "separator"),
+				ANSIThemeString(" [", "separator"),
+				ANSIThemeString("POD_NETWORK_CIDR", "argument"),
+				ANSIThemeString("]", "separator")])
+		ansithemeprint([ANSIThemeString("\nSee “", "separator"),
+				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
+				ANSIThemeString(" help", "command"),
+				ANSIThemeString("“ for more information about valid ", "default"),
+				ANSIThemeString("CNI", "argument"),
+				ANSIThemeString(" options.\n", "default")])
 
 def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -3688,15 +3707,25 @@ def show_configuration(action: str,
 	"""
 
 	installation_info = get_installation_info()
-	cluster_name = installation_info["installation_target"]
-	k8s_distro = installation_info[cluster_name]["distro"]
-	version = installation_info[cluster_name]["version"]
-	requested_version = installation_info[cluster_name]["requested_version"]
-	cni = installation_info[cluster_name]["cni"]
-	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
-	cri = installation_info[cluster_name]["cri"]
+	cluster_name = deep_get(installation_info, DictPath("installation_target"))
+	k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#k8s_distro"))
+	version = deep_get(installation_info, DictPath(f"{cluster_name}#version"))
+	requested_version = deep_get(installation_info, DictPath(f"{cluster_name}#requested_version"))
+	cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
+	pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
+	cri = deep_get(installation_info, DictPath(f"{cluster_name}#cri"))
+	controlplanes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"))
+	nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"))
 
-	controlplanes = get_control_planes()
+	control_plane_info = []
+	for controlplane in controlplanes:
+		ip = socket.gethostbyname(controlplane)
+		control_plane_info.append((controlplane, ip))
+
+	node_info = []
+	for node in nodes:
+		ip = socket.gethostbyname(node)
+		node_info.append((node, ip))
 
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
@@ -3765,14 +3794,23 @@ def show_configuration(action: str,
 	ansithemeprint([ANSIThemeString("            No Proxy: ", "action"),
 			__format_none(no_proxy_env, "url"),
 			ANSIThemeString(" (Environment)", "default")])
-	if len(controlplanes) > 0:
+	if len(control_plane_info) > 0:
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 			ANSIThemeString("Control Plane(s):", "action")])
-		for controlplane in controlplanes:
+		for hostname, ip in control_plane_info:
 			ansithemeprint([ANSIThemeString("            Hostname: ", "action"),
-					ANSIThemeString(f"{controlplane[0]} ", "emphasis"),
+					ANSIThemeString(f"{hostname} ", "emphasis"),
 					ANSIThemeString("(", "default"),
-					ANSIThemeString(f"{controlplane[1]}", "emphasis"),
+					ANSIThemeString(f"{ip}", "emphasis"),
+					ANSIThemeString(")", "default")])
+	if len(node_info) > 0:
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+			ANSIThemeString("Node(s):", "action")])
+		for hostname, ip in node_info:
+			ansithemeprint([ANSIThemeString("            Hostname: ", "action"),
+					ANSIThemeString(f"{hostname} ", "emphasis"),
+					ANSIThemeString("(", "default"),
+					ANSIThemeString(f"{ip}", "emphasis"),
 					ANSIThemeString(")", "default")])
 
 	if tasks is not None:
@@ -3785,7 +3823,433 @@ def show_configuration(action: str,
 		phase_skiplist = installation_info[cluster_name]["phase_skiplist"]
 		__list_phases(tasks, start_phase = phase, phase_skiplist = phase_skiplist)
 
-def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def __get_configuration_data(configuration_file: str, configuration_type: str, configuration: Dict, default: FilePath) -> FilePath:
+	"""
+	Given a configuration dict, make sure that it doesn't contains both data and a path.
+	If given data write it to a temporary file. Returns the path on success, exists on failure.
+
+		Parameters:
+			configuration_file (str): The name of the configuration file; used for error messages
+			configuration_type (str): The type of the configuration we're expecting
+			configuration (dict): The configuration to verify and return a path to
+			default (FilePath): If the configuration is empty use path as fallback
+		Returns:
+			path (FilePath): The path to a file with the configuration on success
+	"""
+
+	data = deep_get(configuration, DictPath(f"{configuration_type}#data"))
+	path = deep_get(configuration, DictPath("{configuration_type}#path"))
+
+	if data is None and path is None:
+		return default
+
+	if data is not None and path is not None:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString("The configuration in ", "default"),
+				ANSIThemeString(f"{configuration_file}", "path"),
+				ANSIThemeString(" specifies both data and a path for ", "default"),
+				ANSIThemeString(f"{configuration_type}", "command"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if data is not None:
+		tf = tempfile.NamedTemporaryFile(suffix = ".yaml.j2", delete = False)
+		path = FilePath(tf.name)
+		secure_write_string(path, data, tempfile = True)
+	
+	return FilePath(path)
+
+def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	cordon_on_join = False
+	cri = "containerd"
+	forks = 5
+	context_name = None
+
+	configuration_paths = [
+		os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "join_configuration.yaml.j2"),
+	]
+
+	for opt, optarg in options:
+		if opt == "--verbose":
+			verbose = True
+		elif opt == "--save-ansible-logs":
+			ansible_configuration["save_logs"] = True
+		elif opt == "--configuration-paths":
+			configuration_paths = optarg
+		elif opt == "--cordon-on-join":
+			cordon_on_join = optarg
+		elif opt == "--cri":
+			cri = optarg
+		elif opt == "--forks":
+			ansible_configuration["ansible_forks"] = optarg
+
+	configuration_path = merge_configurations(configuration_paths)
+
+	nodes = args[0]
+	groups = args[1]
+
+	installation_info = get_installation_info()
+	cluster_name = deep_get(installation_info, DictPath("installation_target"))
+	control_plane_version = deep_get(installation_info, DictPath(f"{cluster_name}#version"))
+	# First remove the distro revision
+	major_minor_patchrev, _pkgrev = control_plane_version.split("-")
+	# Now split the version tuple
+	requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
+
+	join_token = kh.get_join_token()
+	if len(join_token) == 0:
+		ansithemeprint([ANSIThemeString("\nAborting", "error"),
+				ANSIThemeString(": No join token available.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+	ca_cert_hash = kh.get_ca_cert_hash()
+	if len(ca_cert_hash) == 0:
+		ansithemeprint([ANSIThemeString("\nAborting", "error"),
+				ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
+	if control_plane_ip is None:
+		ansithemeprint([ANSIThemeString("\nAborting", "error"),
+				ANSIThemeString(": Could not get the IP-address for the control plane.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	# Add all nodes to the inventory
+	ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, skip_all = False)
+
+	# Add the CRI to the setup playbooks for the control plane;
+	# the list is short enough that doing prepend isn't a performance issue
+	if cri == "docker-shim":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml")))]
+	elif cri == "containerd":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
+	elif cri == "cri-o":
+		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
+	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
+
+	add_playbooks += [
+		# cmtadm does not use run_before/run_after/add_to_groups/remove_from_groups,
+		# so we have to do all of that explicitly
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
+		FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_node.yaml")))
+	]
+
+	if int(requested_minor) < 23:
+		join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
+	else:
+		join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+
+	minor_versions = []
+	for minor_version in range(28, int(requested_minor) + 1):
+		minor_versions.append(f"{minor_version}")
+
+	extra_values = {
+		"control_plane_ip": control_plane_ip,
+		"control_plane_port": control_plane_port,
+		"control_plane_path": control_plane_path,
+		"cordon_nodes_on_join": cordon_on_join,
+		"join_token": join_token,
+		"ca_cert_hash": ca_cert_hash,
+		"control_plane_k8s_version": control_plane_version,
+		"cri_socket": cri_socket,
+		"configuration_path": configuration_path,
+		"kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
+		"join_configuration_api_version": join_configuration_api_version,
+		"minor_versions": minor_versions,
+	}
+
+	playbooks = populate_playbooks_from_paths(add_playbooks)
+
+	retval = run_playbooks(playbooks = playbooks, hosts = nodes, extra_values = extra_values, verbose = verbose)
+	if retval:
+		ansithemeprint([ANSIThemeString("OK", "ok")])
+	else:
+		ansithemeprint([ANSIThemeString("NOT OK", "notok"),
+				ANSIThemeString("; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	for group in ["nodes"] + groups + [cluster_name]:
+		ansible_add_hosts(inventory = ANSIBLE_INVENTORY, hosts = nodes, group = group, skip_all = True)
+
+def set_context(cluster_name: str, context_name: str) -> None:
+	"""
+	Set context
+
+		Parameters:
+			cluster_name (str): The name of the cluster (used for error messages)
+			context_name (str): The context to switch to
+	"""
+
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+
+	if not kh.set_context(name = context_name, unchanged_is_success = True):
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(": Failed to change to context ", "default"),
+				ANSIThemeString(f"{context_name}", "hostname"),
+				ANSIThemeString(" for cluster ", "default"),
+				ANSIThemeString(f"{cluster_name}", "hostname"),
+				ANSIThemeString("; aborting.", "default")], stderr= True)
+		sys.exit(errno.ENOENT)
+
+def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
+	"""
+	Create a cluster based on a ClusterDeployment template
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Options to use when executing this action
+	"""
+
+	installation_info = get_installation_info()
+	confirm = True
+
+	for opt, optarg in options:
+		if opt == "-Y":
+			confirm = False
+
+	cluster_deployment_file = args[0]
+
+	if not os.path.exists(cluster_deployment_file):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" does not exist; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+	elif not os.path.isfile(cluster_deployment_file):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" is not a file; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
+
+	security_checks = [
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+	cd = secure_read_yaml(cluster_deployment_file, checks = security_checks)
+	cd_kind = deep_get(cd, DictPath("kind"), "")
+	cd_api_version = deep_get(cd, DictPath("apiVersion"), "")
+
+	# Is this a cluster deployment and do we support this version?
+	if cd_kind != "ClusterDeployment":
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" is not a valid ", "default"),
+				ANSIThemeString("ClusterDeployment", "command"),
+				ANSIThemeString(" configuration; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	if cd_api_version not in ("v1alpha1", ):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString("The apiVersion ", "default"),
+				ANSIThemeString(f"{cd_api_version}", "version"),
+				ANSIThemeString(" used in ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" is not supported; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	# Fetch all configuration options
+	kubernetes_distro = "kubeadm"
+	requested_version = deep_get(cd, DictPath("options#version"), "latest")
+	verbose = deep_get(cd, DictPath("options#verbose"), False)
+	pod_network_cidr = deep_get(cd, DictPath("options#podNetworkCIDR"), "10.244.0.0/16")
+	cni = deep_get(cd, DictPath("options#cni"), "cilium")
+	prompt_for_password = deep_get(cd, DictPath("options#promptForPassword"), True)
+	save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
+
+	control_planes = deep_get(cd, DictPath("cluster#controlPlanes"))
+	if control_planes is None or len(control_planes) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString("The configuration in ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" does not specify a control plane; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	cri = deep_get(cd, DictPath("cluster#cri"), "containerd")
+
+	cluster_name = deep_get(cd, DictPath("cluster#clusterName"))
+	if cluster_name is None or len(cluster_name) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString("The configuration in ", "default"),
+				ANSIThemeString(f"{cluster_deployment_file}", "path"),
+				ANSIThemeString(" does not specify a cluster name; aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	cluster_configuration_path = __get_configuration_data(cluster_deployment_file,
+							      "clusterConfiguration",
+							      deep_get(cd, DictPath("cluster#configurationTemplates"), {}),
+							      os.path.join("templates", "config", "cluster_configuration.yaml.j2"))
+	init_configuration_path = __get_configuration_data(cluster_deployment_file,
+							   "initConfiguration",
+							   deep_get(cd, DictPath("cluster#configurationTemplates"), {}),
+							   os.path.join("templates", "config", "init_configuration.yaml.j2"))
+	kubelet_configuration_path = __get_configuration_data(cluster_deployment_file,
+							      "kubeletConfiguration",
+							      deep_get(cd, DictPath("cluster#configurationTemplates"), {}),
+							      os.path.join("templates", "config", "kubelet_configuration.yaml.j2"))
+	kube_proxy_configuration_path = __get_configuration_data(cluster_deployment_file,
+								 "kubeProxyConfiguration",
+								 deep_get(cd, DictPath("cluster#configurationTemplates"), {}),
+								 os.path.join("templates", "config", "kube_proxy_configuration.yaml.j2"))
+
+	nodes = []
+
+	# Get a list of all nodes in the cluster
+	for node_group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
+		nodes += deep_get(data, DictPath("nodes"), [])
+
+	prepare_options = [
+		("--control-plane", control_planes[0]),
+		("--hide-next-step", None),
+		("--nodes", nodes),
+	]
+	if not confirm:
+		prepare_options.append(("-Y", None))
+	if verbose:
+		prepare_options.append(("--verbose", None))
+	if save_ansible_logs:
+		prepare_options.append(("--save-ansible-logs", None))
+	if not prompt_for_password:
+		prepare_options.append(("--no-password", None))
+
+	prepare_args = [
+		cluster_name,
+	]
+
+	if requested_version == "latest":
+		prepare_args.append(f"{kubernetes_distro}=")
+	else:
+		prepare_args.append(f"{kubernetes_distro}={requested_version}")
+
+	setup_control_plane_options = [
+		("-Y", None),
+		("--cri", cri),
+		("--configuration-paths", [
+			cluster_configuration_path,
+			init_configuration_path,
+			kubelet_configuration_path,
+			kube_proxy_configuration_path,
+		]),
+	]
+	
+	taint_control_planes = not deep_get(cd, DictPath("cluster#untaintControlPlanes"), False)
+	setup_control_plane_options.append(("--extra-values", { "taint_control_plane": taint_control_planes }))
+
+	if verbose:
+		setup_control_plane_options.append(("--verbose", None))
+	if save_ansible_logs:
+		setup_control_plane_options.append(("--save-ansible-logs", None))
+
+	setup_control_plane_args = [
+		# Pass "none" as CNI; since we'll potentially be adding nodes
+		# we want to postpone deploying the CNI until after those
+		# have been added, to avoid extra traffic
+		"none",
+		pod_network_cidr,
+	]
+
+	cluster_name = installation_info["installation_target"]
+	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
+
+	if state is None or state in ("<none>", "preparing", "prepared", "torn_down"):
+		# First prepare all hosts
+		prepare_installation(prepare_options, prepare_args)
+
+	# Now it's time to setup the control plane(s)
+	if state in ("prepared", "installing"):
+		setup_control_planes(setup_control_plane_options, setup_control_plane_args)
+
+	# We (hopefully) don't need to check whether the nodes are part of the cluster already,
+	# since we've just setup the control plane...
+	ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
+
+	node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
+	node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
+	node_global_cordon_on_join = deep_get(cd, DictPath("nodes#options#cordonOnJoin"), False)
+	node_global_configuration = deep_get(cd, DictPath("nodes#options#configurationTemplates"), {})
+
+	# We've potentially got multiple groups of nodes,
+	# so calling add_nodes() once isn't gonna cut it
+	for group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
+		nodes = deep_get(data, DictPath("nodes"), [])
+		node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
+		node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
+		node_cordon_on_join = deep_get(cd, DictPath("options#cordonOnJoin"), node_global_cordon_on_join)
+
+		node_configuration = deep_get(group, DictPath("options#configurationTemplates"), node_global_configuration)
+		join_configuration_path = __get_configuration_data(cluster_deployment_file,
+								   "joinConfiguration",
+								   node_configuration,
+								   os.path.join("templates", "config", "join_configuration.yaml.j2"))
+		add_nodes_options = [
+			("--cri", node_cri),
+			("--configuration-paths", [
+				join_configuration_path,
+			]),
+			("--cordon-on-join", node_cordon_on_join),
+			("--forks", node_forks),
+		]
+		if verbose:
+			add_nodes_options.append(("--verbose", None))
+		if save_ansible_logs:
+			setup_control_plane_options.append(("--save-ansible-logs", None))
+
+		add_nodes_args = [
+			# List of nodes
+			nodes,
+			# Group(s) to add the nodes to
+			[group],
+		]
+
+		add_nodes(add_nodes_options, add_nodes_args)
+	ansithemeprint([ANSIThemeString("\nNodes successfully added", "success")])
+
+	# Now we can setup the CNI
+	admin_name = f"kubernetes-admin+{cluster_name}"
+	context_name = f"{admin_name}@{cluster_name}"
+
+	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+
+def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
+	"""
+	Given a list of configurations in YAML-format,
+	load them all and write them out to a single, temporary, file
+
+		Parameters:
+			configuration_paths ([str]): A list of paths to configuration files
+	"""
+
+	checks = [
+		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+		SecurityChecks.OWNER_IN_ALLOWLIST,
+		SecurityChecks.PERMISSIONS,
+		SecurityChecks.IS_FILE,
+	]
+
+	configurations = ""
+	tf = tempfile.NamedTemporaryFile(suffix = ".yaml.j2", delete = False)
+
+	for path in configuration_paths:
+		configuration = secure_read_string(path, checks = checks)
+		if len(configurations) > 0:
+			configurations += "---\n"
+		configurations += configuration
+
+	secure_write_string(tf.name, configurations, tempfile = tempfile)
+
+	return tf.name
+
+def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
 	Setup a control plane
 
@@ -3838,6 +4302,14 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 	cri = None
 	enable_dra = False
+	extra_values = {}
+
+	configuration_paths = [
+		os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "cluster_configuration.yaml.j2"),
+		os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "init_configuration.yaml.j2"),
+		os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "kubelet_configuration.yaml.j2"),
+		os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "kube_proxy_configuration.yaml.j2"),
+	]
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
@@ -3863,7 +4335,7 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			else:
 				ansithemeprint([ANSIThemeString("Error", "error"),
 						ANSIThemeString(": Unknown CRI “", "default"),
-						ANSIThemeString(optarg, "argument"),
+						ANSIThemeString(f"{optarg}", "argument"),
 						ANSIThemeString("“ specified; aborting.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif opt == "--override-cni":
@@ -3876,15 +4348,30 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			verbose = True
 		elif opt == "-Y":
 			confirm = False
+		elif opt == "--extra-values":
+			extra_values = optarg
+		elif opt == "--configuration-paths":
+			configuration_paths = optarg
+
+	configuration_path = merge_configurations(configuration_paths)
+
+	setup_control_plane_targets[k8s_distro]["extra_values"] = {
+		**extra_values,
+		"configuration_path": configuration_path,
+	}
 
 	if enable_dra:
-		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+		dra_extra_values = {
 			"api_server_feature_gates": "DynamicResourceAllocation=true",
 			"api_server_runtime_config_api_alpha_enabled": "true",
 			"controller_manager_feature_gates": "DynamicResourceAllocation=true",
 			"scheduler_feature_gates": "DynamicResourceAllocation=true",
 			"kubelet_feature_gates": "{ DynamicResourceAllocation: true }",
 			"kubeproxy_feature_gates": "{ DynamicResourceAllocation: true }",
+		}
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+			**setup_control_plane_targets[k8s_distro]["extra_values"],
+			**dra_extra_values,
 		}
 
 		# Override the feature-gate format if the parameters are passed via command-line;
@@ -3893,13 +4380,17 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			setup_control_plane_targets[k8s_distro]["extra_values"]["kubelet_feature_gates"] = "DynamicResourceAllocation=true"
 			setup_control_plane_targets[k8s_distro]["extra_values"]["kubeproxy_feature_gates"] = "DynamicResourceAllocation=true"
 	else:
-		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+		no_dra_extra_values = {
 			"api_server_feature_gates": "",
 			"api_server_runtime_config_api_alpha_enabled": "false",
 			"controller_manager_feature_gates": "",
 			"kubelet_feature_gates": "{}",
 			"kubeproxy_feature_gates": "{}",
 			"scheduler_feature_gates": "",
+		}
+		setup_control_plane_targets[k8s_distro]["extra_values"] = {
+			**setup_control_plane_targets[k8s_distro]["extra_values"],
+			**no_dra_extra_values,
 		}
 
 		# Override the feature-gate format if the parameters are passed via command-line;
@@ -4111,12 +4602,14 @@ def setup_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 	update_installation_info(version = requested_version)
 
 	ansithemeprint([ANSIThemeString("\nControl plane setup successful", "success")])
-	ansithemeprint([ANSIThemeString("\nNote:", "note")])
-	ansithemeprint([ANSIThemeString("If this is an RKE2 installation you may need to substitute ", "default"),
-			ANSIThemeString("127.0.0.1", "hostname")])
-	ansithemeprint([ANSIThemeString("in ", "default"),
-			ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
-			ANSIThemeString(" with the real IP-address of this host.\n", "default")])
+
+	if k8s_distro == "rke2":
+		ansithemeprint([ANSIThemeString("\nNote:", "note")])
+		ansithemeprint([ANSIThemeString("If this is an RKE2 installation you may need to substitute ", "default"),
+				ANSIThemeString("127.0.0.1", "hostname")])
+		ansithemeprint([ANSIThemeString("in ", "default"),
+				ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
+				ANSIThemeString(" with the real IP-address of this host.\n", "default")])
 
 def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
 	if not Path(KUBE_CONFIG_FILE).is_file():
@@ -5257,6 +5750,37 @@ COMMANDLINE = {
 		],
 		"callback": prepare_installation,
 	},
+	"Create cluster": {
+		"command": ["create-cluster"],
+		"values": [
+			ANSIThemeString("PATH", "argument"),
+		],
+		"description": [ANSIThemeString("Create a cluster based on template in ", "description"),
+				ANSIThemeString("PATH", "path")],
+		"extended_description": [
+			[ANSIThemeString("Create a cluster based on a ", "description"),
+			 ANSIThemeString("ClusterDeployment", "command")],
+			[ANSIThemeString("template.", "description")],
+			[ANSIThemeString("This combines all the necessary steps to prepare", "description")],
+			[ANSIThemeString("and setup control planes and worker nodes,", "description")],
+			[ANSIThemeString("as well as CNI for a cluster.", "description")],
+		],
+		"options": {
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
+			},
+		},
+		"required_args": [
+			{
+				"name": "path",
+				"string": [ANSIThemeString("PATH", "argument")],
+				"validation": {
+					"validator": "path",
+				},
+			},
+		],
+		"callback": create_cluster,
+	},
 	"Setup Control Plane": {
 		"command": ["setup-control-plane"],
 		"values": [
@@ -5454,7 +5978,7 @@ COMMANDLINE = {
 				},
 			},
 		],
-		"callback": setup_control_plane,
+		"callback": setup_control_planes,
 	},
 	"Setup CNI": {
 		"command": ["setup-cni"],

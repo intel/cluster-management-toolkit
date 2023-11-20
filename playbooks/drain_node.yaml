@@ -15,7 +15,7 @@
   - name: "Draining node"  # noqa fqcn-builtins
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
-      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\.[0-9]*$/\1/")"
+      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\..*$/\1/")"
       if [ "${minor_version}" -ge 20 ]; then
         kubectl drain --delete-emptydir-data --ignore-daemonsets ${nodes}
       else

@@ -566,7 +566,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
 			raise OSError from e
 
-def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False) -> None:
+def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False, tempfile: bool = False) -> None:
 	"""
 	Write a string to a file in a safe manner
 
@@ -576,6 +576,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 			permissions (int): File permissions (None uses system defaults)
 			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 			allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
+			tempfile (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
@@ -586,10 +587,12 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 	checks = [
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
-		SecurityChecks.PARENT_PERMISSIONS,
 		SecurityChecks.PERMISSIONS,
 		SecurityChecks.IS_FILE,
 	]
+
+	if not tempfile:
+		checks.append(SecurityChecks.PARENT_PERMISSIONS)
 
 	if not allow_relative_path:
 		checks += [
@@ -640,7 +643,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 
 def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
 	"""
-	Read a string from a file in a safe manner
+	Read the content of a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from

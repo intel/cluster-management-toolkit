@@ -1,15 +1,17 @@
-- hosts: "selection:!nas:!nodes"
+- hosts: "selection:!nas"
   name: "Prepare node"
   vars:
     metadata:
       description: "Prepare node"
       summary:
         "Modified files":
-        - description: "/etc/fstab (swap disabled)"
+        - description: "/etc/fstab (mounting of swapfiles and swap partitions disabled)"
         - description: "/etc/selinux/config (SELinux set to permissive mode)"
           conditions: "Red Hat and derivatives"
         "Modified systemd units":
         - description: "All swap-type units masked"
+        "Other actions":
+        - description: "Unmounts all swap partitions"
       playbook_types:
       - "internal"
       category: "Setup"

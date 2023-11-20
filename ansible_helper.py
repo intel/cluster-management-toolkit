@@ -1352,7 +1352,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 				ANSIThemeString(f"{count_unreachable}", "numerical"),
 				ANSIThemeString(", ", "separator"),
 				ANSIThemeString("No hosts matched: ", no_hosts_matched_formatting),
-				ANSIThemeString(f"{count_no_hosts_match}", "numerical"),
+				ANSIThemeString(f"{count_no_hosts_match}\n", "numerical"),
 				])
 
 def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:

@@ -15,7 +15,7 @@
   - name: "Deleting node from cluster"  # noqa fqcn-builtins risky-shell-pipe
     shell: |
       nodes="{{ groups["selection"] | join(" ") }}"
-      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\.[0-9]*$/\1/")"
+      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\..*$/\1/")"
       if [ "${minor_version}" -lt 18 ]; then
         kubectl drain --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
       elif [ "${minor_version}" -ge 20 ]; then

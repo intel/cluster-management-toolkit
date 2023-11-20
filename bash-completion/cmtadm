@@ -110,6 +110,14 @@ _cmtadm() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
+	create-cluster)
+		comptopt -o filenames 2> /dev/null
+		COMPREPLY=( $(compgen -f -- $2) )
+		return
+		;;
+	esac
+
+	case "${COMP_WORDS[1]}" in
 	setup-cni)
 		for cni in ${cni_list}; do
 			commands=$(add_option_if_not_in_list "${cni}" ${commands})
@@ -132,7 +140,7 @@ _cmtadm() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	import-cluster|prepare|purge-control-plane|setup-cni|setup-control-plane|teardown-control-plane|uninstall-cni|upgrade-control-plane)
+	create-cluster|import-cluster|prepare|purge-control-plane|setup-cni|setup-control-plane|teardown-control-plane|uninstall-cni|upgrade-control-plane)
 		commands=$(add_option_if_not_in_list "-Y" ${commands})
 	esac
 
@@ -182,13 +190,13 @@ _cmtadm() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
-	audit|check-versions|cv|help|--help|import-cluster|preflight-check|prepare|purge-control-plane|setup-cni|setup-control-plane|taint-control-plane|teardown-control-plane|troubleshoot|uninstall-cni|untaint-control-plane|upgrade-cni|upgrade-control-plane|version|--version)
+	audit|check-versions|cv|create-cluster|help|--help|import-cluster|preflight-check|prepare|purge-control-plane|setup-cni|setup-control-plane|taint-control-plane|teardown-control-plane|troubleshoot|uninstall-cni|untaint-control-plane|upgrade-cni|upgrade-control-plane|version|--version)
 		COMPREPLY=( $(compgen -W "${commands}" -- "$2") )
 		return
 		;;
 	*)
 		if [ ${COMP_CWORD} -eq 1 ]; then
-			COMPREPLY=( $(compgen -W "audit check-versions cv import-cluster preflight-check prepare purge-control-plane setup-cni setup-control-plane taint-control-plane teardown-control-plane troubleshoot uninstall-cni untaint-control-plane upgrade-control-plane upgrade-cni help version --help --version" -- "$2") )
+			COMPREPLY=( $(compgen -W "audit check-versions cv create-cluster import-cluster preflight-check prepare purge-control-plane setup-cni setup-control-plane taint-control-plane teardown-control-plane troubleshoot uninstall-cni untaint-control-plane upgrade-control-plane upgrade-cni help version --help --version" -- "$2") )
 			return
 		fi
 	esac

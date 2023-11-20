@@ -1,0 +1,326 @@
+apiVersion: v1alpha1
+kind: ClusterDeployment
+
+# Note: templated installs are only supported for kubeadm at the moment
+# This configuration uses:
+#   ClusterConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
+#   InitConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
+#   KubeletConfiguration kubelet.config.k8s.io/v1beta1 [Kubernetes
+#   KubeProxyConfiguration kubeproxy.config.k8s.io/v1alpha1 [Kubernetes
+options:
+  # Kubernetes version; valid options:
+  # 1.<minor>
+  # latest
+  # [optional; default: latest]
+  # version: "latest"
+
+  # Pod network CIDR:
+  # [optional; default: 10.244.0.0/16]
+  # podNetworkCIDR: "10.244.0.0/16"
+
+  # Verbose output; valid options:
+  # true
+  # false
+  # [optional; default: false]
+  # verbose: false
+
+  # What CNI to use; valid options:
+  # antrea
+  # calico
+  # canal
+  # cilium
+  # flannel
+  # kube-router
+  # weave
+  # none [no cni will be installed]
+  # [optional; default: cilium]
+  # cni: "cilium"
+
+  # Should the program prompt for an ansible/host password; valid options:
+  # true
+  # false
+  # [optional; default: true]
+  # promptForPassword: true
+
+  # Should ansible logs be saved for later viewing via cmu logs; valid options:
+  # true
+  # false
+  # [optional; default: false]
+  # saveAnsibleLogs: false
+
+# Cluster-wide configuration and configuration for the control plane(s)
+cluster:
+  # control plane(s) for the cluster:
+  # Note: Currently only one control plane is supported
+  # [mandatory]
+  controlPlanes:
+  - "mycontrolplane"
+
+  # CRI to use for the control plane(s); valid options:
+  # containerd
+  # docker-shim [Kubernetes < 1.24]
+  # cri-o
+  # [optional; default: containerd]
+  cri: "containerd"
+
+  # Name of the cluster:
+  # [mandatory]
+  clusterName: "mycluster"
+
+  # Should the control plane(s) accept normal workloads?
+  # [optional; default: false]
+  # untaintControlPlanes: false
+
+  # Cluster configuration templates:
+  # The configuration templates can either be embedded in the data
+  # section, or provided via a path; Only one of data/path is valid for each type
+  # of configuration; providing both is NOT supported.
+  # The post-processed templates will be concatenated together before passing them
+  # to kubeadm.
+  #
+  # Note: you can add any valid cluster configuration here; the configuration here
+  # is just the equivalent of the default configuration used by cmtadm/cmt,
+  # as well as the extra options provided by cmtadm
+  configurationTemplates:
+    clusterConfiguration:
+      # Embedded cluster configuration template:
+      data: |
+        apiVersion: kubeadm.k8s.io/v1beta3
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            # feature-gates is a comma-separated string
+            # To Enable Dynamic Resource Allocations use the following:
+            # Note: also requires alpha APIs and the matching feature gates
+            # to be enabled for controllerManager, kubeProxy and scheduler in cluster_configuration,
+            # kube_proxy_configuration, and kubelet_configuration
+            # [optional; default: false]
+            # feature-gates: "DynamicResourceAllocation=true"
+            # runtime-config is a comma-separated string
+            # runtime-config: "api/alpha=true"
+        # This will be auto-populated from the cluster settings
+        clusterName: "{{ cluster_name }}"
+        controllerManager:
+          extraArgs:
+            # feature-gates is a comma-separated string
+            # To Enable Dynamic Resource Allocations use the following:
+            # Note: also requires alpha APIs and the matching feature gates
+            # to be enabled for apiServer and scheduler in cluster_configuration,
+            # as well as in kube_proxy_configuration, and kubelet_configuration
+            # [optional; default: false]
+            # feature-gates: "DynamicResourceAllocation=true"
+        networking:
+          # This will be auto-populated from the cluster settings
+          podSubnet: "{{ pod_network_cidr }}"
+        scheduler:
+          extraArgs:
+            # feature-gates is a comma-separated string
+            # To Enable Dynamic Resource Allocations use the following:
+            # Note: also requires alpha APIs and the matching feature gates
+            # to be enabled for apiServer and controllerManager in cluster_configuration,
+            # as well as in kube_proxy_configuration, and kubelet_configuration
+            # [optional; default: false]
+            # feature-gates: "DynamicResourceAllocation=true"
+
+      # Path to cluster configuration template, relative to the playbook directory:
+      # path: "templates/config/cluster_configuration.yaml.j2"
+
+    initConfiguration:
+      # Embedded cluster configuration template:
+      data: |
+        apiVersion: kubeadm.k8s.io/v1beta3
+        kind: InitConfiguration
+        nodeRegistration:
+          # This will be auto-populated from the cluster settings
+          criSocket: "{{ cri_socket }}"
+          # Use this to add labels to the control planes
+          # kubeletExtraArgs:
+          #   node-labels: "foo=bar"
+          # This will be auto-populated
+        {% if taint_control_plane %}
+          taints:
+          - key: node-role.kubernetes.io/control-plane
+            effect: NoSchedule
+        {% else %}
+          taints: []
+        {% endif %}
+
+      # Path to cluster configuration template, relative to the playbook directory:
+      # path: "templates/config/init_configuration.yaml.j2"
+
+    kubeletConfiguration:
+      # Embedded cluster configuration template:
+      data: |
+        apiVersion: kubelet.config.k8s.io/v1beta1
+        kind: KubeletConfiguration
+        # Enable Dynamic Resource Allocations?
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer, controllerManager, kubeProxy # and scheduler in cluster_configuration
+        # [optional; default: false]
+        featureGates:
+          # DynamicResourceAllocation: true
+        # This will be auto-populated from the cluster settings
+        containerRuntimeEndpoint: "{{ cri_socket }}"
+
+      # Path to cluster configuration template, relative to the playbook directory:
+      # path: "templates/config/kubelet_configuration.yaml.j2"
+
+    kubeProxyConfiguration:
+      # Embedded cluster configuration template:
+      data: |
+        apiVersion: kubeproxy.config.k8s.io/v1alpha1
+        kind: KubeProxyConfiguration
+        # Enable Dynamic Resource Allocations?
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer, controllerManager and scheduler in cluster_configuration
+        # as well as for kubelet in kubelet_configuration
+        # [optional; default: false]
+        featureGates:
+          # DynamicResourceAllocation: true
+
+      # Path to cluster configuration template, relative to the playbook directory:
+      # path: "templates/config/kube_proxy_configuration.yaml.j2"
+
+# Configuration for nodes
+nodes:
+  # Global node options
+  options:
+    # CRI to use for the nodes; valid options:
+    # containerd
+    # docker-shim [Kubernetes < 1.24]
+    # cri-o
+    # [optional; if not provided the cluster-wide default will be used]
+    # cri: "containerd"
+
+    # Ansible parallelism:
+    # [optional; default: 5]
+    # forks: 5
+
+    # Cordon nodes on join:
+    # [optional; default: false]
+    # cordonOnJoin: false
+
+    # Node configuration templates:
+    # The configuration templates can either be embedded in the data
+    # section, or provided via a path; Only one of data/path is valid for each type
+    # of configuration; providing both is NOT supported.
+    # The post-processed templates will be concatenated together before passing them
+    # to kubeadm. Currently only JoinConfiguration is supported for worker nodes.
+    # The templates will be processed by jinja; the following variables are available:
+    # cri_socket
+    # join_token
+    # ca_cert_hash
+    # control_plane_ip
+    # control_plane_port
+    # control_plane_path
+    # pod_network_cidr
+    configurationTemplates:
+      joinConfiguration:
+        # Embedded node configuration template:
+        data: |
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: JoinConfiguration
+          nodeRegistration:
+            # This will be auto-populated from the node settings; only change if you know what you're doing
+            criSocket: "{{ cri_socket }}"
+            # Use this to add labels to the nodes
+            # kubeletExtraArgs:
+            #   node-labels: "foo=bar"
+            # A list of taints; an empty list means no taints
+            # This will be auto-populated; add extra taints below if wanted
+          {% if cordon_nodes_on_join %}
+            taints:
+            - key: node.kubernetes.io/unschedulable
+              effect: NoSchedule
+          {% else %}
+            taints: []
+          {% endif %}
+            # This will be auto-populated; only change if you know what you're doing
+            unschedulable: "{{ cordon_nodes_on_join }}"
+          discovery:
+            bootstrapToken:
+              # This will be auto-populated; only change if you know what you're doing
+              token: "{{ join_token }}"
+              caCertHashes:
+              # This will be auto-populated; only change if you know what you're doing
+              - "sha256:{{ ca_cert_hash }}"
+              # This will be auto-populated; only change if you know what you're doing
+              apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+
+        # Path to node configuration template, relative to the playbook directory:
+        # path: "templates/config/join_configuration.yaml.j2"
+
+  # Every group of nodes has their own group name;
+  # they will be added to that group in the ansible inventory
+  # (as well as the nodes group and the group for the cluster);
+  # Currently different Ansible groups are *not* processed in parallel.
+  groups:
+    # <group name1>:
+    # # A list of all nodes that belong to this group; leave empty
+    # # if only configuring a control plane at this time
+    # nodes:
+    # - "<node 1>"
+
+    # # Group specific options
+    # options:
+    #   # CRI to use for the nodes in this group; valid options:
+    #   # containerd
+    #   # docker-shim [Kubernetes < 1.24]
+    #   # cri-o
+    #   # [optional; if not provided the cluster-wide default will be used]
+    #   # cri: "containerd"
+
+    #   # Ansible parallelism:
+    #   # [optional; default: 5]
+    #   # forks: 5
+
+    #   # Cordon nodes on join:
+    #   # [optional; default: false]
+    #   # cordonOnJoin: false
+
+    #   # Node configuration templates:
+    #   # The configuration templates can either be embedded in the data
+    #   # section, or provided via a path; Only one of data/path is valid for each type
+    #   # of configuration; providing both is NOT supported.
+    #   # The post-processed templates will be concatenated together before passing them
+    #   # to kubeadm. Currently only JoinConfiguration is supported for worker nodes.
+    #   # The templates will be processed by jinja; the following variables are available:
+    #   # cri_socket
+    #   # join_token
+    #   # ca_cert_hash
+    #   # control_plane_ip
+    #   # control_plane_port
+    #   # control_plane_path
+    #   # pod_network_cidr
+    #   configurationTemplates:
+    #     joinConfiguration:
+    #       # Embedded node configuration template:
+    #       data: |
+    #         apiVersion: kubeadm.k8s.io/v1beta3
+    #         kind: JoinConfiguration
+    #         nodeRegistration:
+    #           # This will be auto-populated from the node group settings; only change if you know what you're doing
+    #           criSocket: "{{ cri_socket }}"
+    #           # Use this to add labels to the nodes
+    #           # kubeletExtraArgs:
+    #           #   node-labels: "foo=bar"
+    #           # A list of taints; an empty list means no taints
+    #           # This will be auto-populated from the node group settings; add extra taints below if wanted
+    #         {% if cordon_nodes_on_join %}
+    #           taints:
+    #           - key: node.kubernetes.io/unschedulable
+    #             effect: NoSchedule
+    #         {% else %}
+    #           taints: []
+    #         {% endif %}
+    #           # This will be auto-populated; only change if you know what you're doing
+    #           unschedulable: "{{ cordon_nodes_on_join }}"
+    #         discovery:
+    #           bootstrapToken:
+    #             # This will be auto-populated; only change if you know what you're doing
+    #             token: "{{ join_token }}"
+    #             caCertHashes:
+    #             # This will be auto-populated; only change if you know what you're doing
+    #             - "sha256:{{ ca_cert_hash }}"
+    #             # This will be auto-populated; only change if you know what you're doing
+    #             apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"

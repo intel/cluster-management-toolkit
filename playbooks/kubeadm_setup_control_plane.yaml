@@ -35,7 +35,7 @@
   - name: "Creating cluster configuration"
     ansible.builtin.template:
       dest: "{{ cluster_config.path }}"
-      src: "templates/config/clusterconfig.yaml.j2"
+      src: "{{ configuration_path }}"
       mode: "0640"
   - name: "Selecting kubelet version"
     shell: |

@@ -1288,7 +1288,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			if input_retval.lower() not in ("y", "yes"):
 				ansithemeprint([ANSIThemeString("\nAborting", "error"),
 						ANSIThemeString(": No CA certificate available.", "default")], stderr = True)
-				sys.exit(errno.EINTR)
+				sys.exit(errno.ENOENT)
 			else:
 				ca_cert = ""
 				ca_cert_hash = ""
@@ -1443,6 +1443,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			"control_plane_path": control_plane_path,
 			"join_token": join_token,
 			"ca_cert_hash": ca_cert_hash,
+			"configuration_path": "templates/config/nodeconfig.yaml.j2",
 			"control_plane_k8s_version": kubeadm_version,
 			"cri_socket": cri_socket,
 			"kubernetes_major_minor_version": f"{version_major}.{version_minor}",

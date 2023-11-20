@@ -3,15 +3,16 @@
   vars:
     metadata:
       description: "Prepare control plane"
-      playbook_types:
-      - "internal"
       summary:
-        "Masked units":
-        - description: "All swap units"
         "Modified files":
-        - description: "/etc/fstab (disables mounting of swapfiles and swap partitions)"
+        - description: "/etc/fstab (mounting of swapfiles and swap partitions disabled)"
+        "Modified systemd units":
+        - description: "All swap-type units masked"
         "Other actions":
         - description: "Unmounts all swap partitions"
+      playbook_types:
+      - "internal"
+      category: "Setup"
   gather_subset:
   - "!min"
   - "!all"
@@ -33,3 +34,10 @@
         done
       fi
     changed_when: false
+  - name: "Setting SELinux to permissive mode"  # noqa fqcn-builtins
+    become: true
+    become_user: "root"
+    shell: |
+      setenforce 0
+      sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+    when: "ansible_os_family == 'RedHat'"
