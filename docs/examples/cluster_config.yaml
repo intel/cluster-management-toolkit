@@ -232,11 +232,11 @@ nodes:
             taints:
             - key: node.kubernetes.io/unschedulable
               effect: NoSchedule
+            unschedulable: true
           {% else %}
             taints: []
+            unschedulable: false
           {% endif %}
-            # This will be auto-populated; only change if you know what you're doing
-            unschedulable: "{{ cordon_nodes_on_join }}"
           discovery:
             bootstrapToken:
               # This will be auto-populated; only change if you know what you're doing
@@ -310,11 +310,11 @@ nodes:
     #           taints:
     #           - key: node.kubernetes.io/unschedulable
     #             effect: NoSchedule
+    #           unschedulable: true
     #         {% else %}
     #           taints: []
+    #           unschedulable: false
     #         {% endif %}
-    #           # This will be auto-populated; only change if you know what you're doing
-    #           unschedulable: "{{ cordon_nodes_on_join }}"
     #         discovery:
     #           bootstrapToken:
     #             # This will be auto-populated; only change if you know what you're doing
