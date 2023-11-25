@@ -1160,7 +1160,7 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 		if c == 27:	# ESCAPE
 			break
 
-		if c == ord(""):
+		if c == ord("") or c == ord(""):
 			curses.endwin()
 			sys.exit()
 
@@ -1828,7 +1828,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 			selection = ""
 			confirm_press = c
 			break
-		elif c == ord(""):
+		elif c == ord("") or c == ord(""):
 			curses.endwin()
 			sys.exit()
 		elif deep_get(kwargs, DictPath("KEY_F6"), False) and c == curses.KEY_F6:
