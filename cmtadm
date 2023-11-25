@@ -3719,7 +3719,19 @@ def show_configuration(action: str,
 
 	control_plane_info = []
 	for controlplane in controlplanes:
-		ip = socket.gethostbyname(controlplane)
+		try:
+			ip = socket.gethostbyname(controlplane)
+		except socket.gaierror as e:
+			if str(e) in ("[Errno -2] Name or service not known",
+				      "[Errno -3] Temporary failure in name resolution",
+				      "[Errno -5] No address associated with hostname"):
+				tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": ", "default"),
+						ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
+						ANSIThemeString(f"{controlplane}", "hostname"),
+						ANSIThemeString("); aborting.", "default")], stderr = True)
+				sys.exit(errno.ENOENT)
 		control_plane_info.append((controlplane, ip))
 
 	node_info = []

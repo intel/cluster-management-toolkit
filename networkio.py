@@ -62,9 +62,17 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 		try:
 			transport = paramiko.Transport(host)
 		except socket.gaierror as e:
-			if str(e) in ("[Errno -3] Temporary failure in name resolution", "[Errno -2] Name or service not known"):
+			if str(e) in ("[Errno -2] Name or service not known",
+				      "[Errno -3] Temporary failure in name resolution",
+				      "[Errno -5] No address associated with hostname"):
 				continue
-			raise socket.gaierror(f"{str(e)}\nhost: {host}")
+			tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": ", "default"),
+					ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
+					ANSIThemeString(f"{controlplane}", "hostname"),
+					ANSIThemeString("); aborting.", "default")], stderr = True)
+			sys.exit(errno.ENOENT)
 		except paramiko.ssh_exception.SSHException as e:
 			ansithemeprint.ansithemeprint([ANSIThemeString("\nError", "error"),
 						       ANSIThemeString(f": {e}; aborting.", "default")], stderr = True)
