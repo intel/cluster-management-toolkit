@@ -742,9 +742,22 @@ def get_github_version(url: str, version_regex: str) -> List[str]:
 
 	return version
 
-# XXX: We should convert all of cni_data to use this format instead,
-#      and move all of this code to a separate file to allow it to be used both from cmu and cmtadm
+# XXX: We should move all of this code to a separate file to allow it to be used both from cmu and cmtadm
 cni_upgrade_data = {
+	"antrea": {
+		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/antrea-io/antrea/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://raw.githubusercontent.com/antrea-io/antrea/<<<version>>>/build/yamls/antrea.yml",
+					"filename": "antrea.yaml",
+				}
+			]
+		}
+	},
 	"calico": {
 		"executable": {
 			"candidate_version_function": get_github_version,
@@ -826,30 +839,50 @@ cni_upgrade_data = {
 			"uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
 		}
 	},
-}
-
-cni_data = {
-	"antrea": {
-		"url": "https://raw.githubusercontent.com/antrea-io/antrea/main/build/yamls/antrea.yml",
-		"type": "yaml",
-		"filename": "antrea.yaml",
-	},
 	"flannel": {
-		"url": "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml",
-		"type": "yaml",
-		"filename": "flannel.yaml",
-		"patch": patch_cni_flannel,
+		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/flannel-io/flannel/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/canal.yaml",
+					"url": "https://github.com/flannel-io/flannel/releases/<<<version>>>/download/kube-flannel.yml",
+					"filename": "flannel.yaml",
+					"patch": patch_cni_flannel,
+				}
+			]
+		}
 	},
 	"kube-router": {
-		"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml",
-		"type": "yaml",
-		"filename": "kube-router.yaml",
+		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/<<<version>>>/daemonset/kubeadm-kuberouter.yaml",
+					"filename": "kube-router.yaml",
+				}
+			]
+		}
 	},
 	"weave": {
-		"url": "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s-1.11.yaml",
-		"type": "yaml",
-		"filename": "weave.yaml",
-		"patch": patch_cni_weave,
+		"CNI": {
+			"candidate_version_function": get_github_version,
+			"candidate_version_url": "https://api.github.com/repos/weaveworks/weave/releases/latest",
+			# Safe
+			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+			"urls": [
+				{
+					"url": "https://github.com/weaveworks/weave/releases/download/<<<version>>>/weave-daemonset-k8s-1.11.yaml",
+					"filename": "weave.yaml",
+					"patch": patch_cni_weave,
+				}
+			]
+		}
 	},
 }
 
@@ -1238,21 +1271,18 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	cni_filenames = []
 	uninstall_command = None
 
-	if cni in cni_upgrade_data:
-		urls = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#urls"), [])
-		# We need to remove the files in reverse order
-		for url in reversed(urls):
-			filename = deep_get(url, DictPath("filename"), "")
-			substitutions = {
-				"<<<version>>>": cni_version,
-			}
-			if "<<<version>>>" in filename:
-				filename = substitute_string(filename, substitutions)
-			cni_filenames.append(filename)
-		# We might use an uninstall command rather than files
-		uninstall_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#uninstall"))
-	else:
-		cni_filenames.append(deep_get(cni_data, DictPath(f"{cni}#filename")))
+	urls = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#urls"), [])
+	# We need to remove the files in reverse order
+	for url in reversed(urls):
+		filename = deep_get(url, DictPath("filename"), "")
+		substitutions = {
+			"<<<version>>>": cni_version,
+		}
+		if "<<<version>>>" in filename:
+			filename = substitute_string(filename, substitutions)
+		cni_filenames.append(filename)
+	# We might use an uninstall command rather than files
+	uninstall_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#uninstall"))
 
 	if len(cni_filenames) == 0 and uninstall_command is None:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -1425,98 +1455,34 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 				ANSIThemeString(" specified; skipping CNI installation.", "default")], stderr = True)
 		return True
 
-	if cni not in cni_data and cni not in cni_upgrade_data:
+	if cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
 				ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	if cni in cni_upgrade_data:
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-		# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
-		# otherwise we might end up performing the changes on the wrong cluster
-		if not kh.set_context(name = context_name, unchanged_is_success = True):
-			ansithemeprint([ANSIThemeString("Warning", "warning"),
-					ANSIThemeString(": Failed to change to context ", "default"),
-					ANSIThemeString(f"{context_name}", "hostname"),
-					ANSIThemeString(" for cluster ", "default"),
-					ANSIThemeString(f"{cluster_name}", "hostname"),
-					ANSIThemeString("; cannot install/upgrade CNI; skipping.", "default")])
-			return False
+	# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
+	# otherwise we might end up performing the changes on the wrong cluster
+	if not kh.set_context(name = context_name, unchanged_is_success = True):
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(": Failed to change to context ", "default"),
+				ANSIThemeString(f"{context_name}", "hostname"),
+				ANSIThemeString(" for cluster ", "default"),
+				ANSIThemeString(f"{cluster_name}", "hostname"),
+				ANSIThemeString("; cannot install/upgrade CNI; skipping.", "default")])
+		return False
 
-		# Don't pass CNI as an argument here; installation_info contains that information during installation.
-		# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
-		# all information from the cluster. This will most likely fail during installation, since the cluster
-		# hasn't started fully yet and thus cannot provide the necessary information
-		upgrade_cni(options = [("install", ""), ("--verbose", "")], args = pass_cni)
-		# FIXME
-		return True
-
-	version_url = deep_get(cni_data, DictPath(f"{cni}#version_url"))
-	version_regex = deep_get(cni_data, DictPath(f"{cni}#version_regex"))
-
-	version = check_version_from_url(version_url, version_regex)
-
-	url = deep_get(cni_data, DictPath(f"{cni}#url"))
-	if url is None:
-		raise ValueError(f"URL for {cni} is empty; this is a programming error.")
-
-	checksum_url = deep_get(cni_data, DictPath(f"{cni}#checksum_url"))
-	checksum_type = deep_get(cni_data, DictPath(f"{cni}#checksum_type"))
-
-	# FIXME: for now we hardcode this
-	arch = "amd64"
-	substitutions = {
-		"<<<version>>>": "".join(version),
-		"<<<arch>>>": arch,
-	}
-
-	url = substitute_string(url, substitutions)
-	checksum_url = substitute_string(checksum_url, substitutions)
-
-	filename = deep_get(cni_data, DictPath(f"{cni}#filename"))
-	patch_cni = deep_get(cni_data, DictPath(f"{cni}#patch"), None)
-	filetype = deep_get(cni_data, DictPath(f"{cni}#type"))
-	if filetype is None:
-		raise ValueError(f"type for {cni} is missing; this is a programming error.")
-	if filetype == "yaml":
-		secure_mkdir(DEPLOYMENT_DIR)
-		directory = FilePath(os.path.join(DEPLOYMENT_DIR, "cni"))
-		permissions = 0o644
-	elif filetype == "installer":
-		directory = BINDIR
-		permissions = 0o755
-	secure_mkdir(directory)
-
-	check_and_print_status(download_files(directory, [(url, filename, checksum_url, checksum_type)], permissions = permissions))
-
-	cni_path = f"{directory}/{filename}"
-
-	if patch_cni is not None:
-		ansithemeprint([ANSIThemeString("\n• ", "separator"),
-				ANSIThemeString("Patching “", "action"),
-				ANSIThemeString(f"{cni}", "argument"),
-				ANSIThemeString("“ configuration", "action")])
-		patch_cni(cni_path, pod_network_cidr)
-
-	if filetype == "yaml":
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
-		# This should check whether kubectl is >= 1.22; otherwise we need to use create
-		args = [kubectl_path, "apply", "--server-side", "--context=<<<context>>>", "-f", cni_path]
-	elif filetype == "installer":
-		args = deep_get(cni_data, DictPath(f"{cni}#command"))
-
-	substitutions = {
-		"<<<cluster>>>": cluster_name,
-		"<<<context>>>": context_name,
-	}
-
-	result = execute_command(substitute_list(args, substitutions))
-	check_and_print_status(result)
-	return result
+	# Don't pass CNI as an argument here; installation_info contains that information during installation.
+	# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
+	# all information from the cluster. This will most likely fail during installation, since the cluster
+	# hasn't started fully yet and thus cannot provide the necessary information
+	upgrade_cni(options = [("install", ""), ("--verbose", "")], args = pass_cni)
+	# FIXME
+	return True
 
 def check_for_ssh_key() -> bool:
 	"""
@@ -4529,7 +4495,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
 		cni = new_cni
 
-	if cni != "none" and cni not in cni_data and cni not in cni_upgrade_data:
+	if cni != "none" and cni not in cni_upgrade_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
@@ -6080,13 +6046,6 @@ COMMANDLINE = {
 			   ANSIThemeString("CNI", "argument"),
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Upgrade the CNI", "description")],
-		"extended_description": [
-			[ANSIThemeString("Currently only ", "description"),
-			 ANSIThemeString("calico", "argument"),
-			 ANSIThemeString(" and ", "description"),
-			 ANSIThemeString("cilium", "argument"),
-			 ANSIThemeString(" are supported", "description")],
-		],
 		"options": {
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],
@@ -6098,7 +6057,7 @@ COMMANDLINE = {
 				"string": [ANSIThemeString("CNI", "argument")],
 				"validation": {
 					"validator": "allowlist",
-					"allowlist": ["calico", "cilium"],
+					"allowlist": ["antrea", "calico", "canal", "cilium", "flannel", "kube-router", "weave"],
 				},
 			},
 		],
