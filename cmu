@@ -13209,7 +13209,13 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		populate_views()
 		customise_listviews()
 
-	wrapper(setupui)
+	try:
+		wrapper(setupui)
+	except curses.error as e:
+		# We don't really know *why* if failed to close the window,
+		# but we don't really care, since we're about to close down anyway
+		if str(e) == "endwin() returned ERR":
+			pass
 
 COMMANDLINE = {
 	# This is purely for the benefit of the helptext generator
