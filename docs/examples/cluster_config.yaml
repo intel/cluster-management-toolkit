@@ -324,3 +324,108 @@ nodes:
     #             - "sha256:{{ ca_cert_hash }}"
     #             # This will be auto-populated; only change if you know what you're doing
     #             apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+workloads:
+  # The name of the workload
+  # [mandatory]
+- name: "node-feature-discovery"
+  # Should this entry be skipped?
+  skip: true
+  # A more elaborate description of the workload;
+  # only displayed when using verbose is set
+  # [optional; default: ""]
+  description: |
+    node-feature-discovery helps detect hardware features and system configuration.
+  # Error policy:
+  # ignore [ignore errors]
+  # abort [abort installation on errors]
+  # [optional; default: ignore]
+  errorPolicy: "ignore"
+  deployments:
+    # Each deployment can be deployed either using kubectl or helm;
+    # thus exactly one of kubectl or helm are permitted
+  - kubectl:
+      # The deployment method; valid options:
+      # apply [apply --server-side]
+      # create [create]
+      # [optional; default: apply]
+      method: "apply"
+      # The type of data; valid options:
+      # file
+      # kustomization
+      # [mandatory]
+      type: "kustomization"
+      # The URI to the data; valid prefixes:
+      # http:// [discouraged due to security reasons]
+      # https://
+      # file://
+      # [mandatory]
+      uri: "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.14.3"
+- name: "cert-manager"
+  # A more elaborate description of the workload;
+  # only displayed when using verbose is set
+  # [optional; default: ""]
+  description: |
+    cert-manager adds certificates and certificate issuers as resource types in Kubernetes clusters,
+    and simplifies the process of obtaining, renewing and using those certificates.
+  # Error policy:
+  # ignore [ignore errors]
+  # abort [abort installation on errors]
+  # [optional; default: ignore]
+  errorPolicy: "ignore"
+  # A workload can apply one or many deployments
+  deployments:
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.crds.yaml"
+  - helm:
+      # The name of the helm repo to add
+      repoName: "jetstack"
+      # The URL to the helm repo
+      repoURL: "https://charts.jetstack.io"
+      # The namespace to use
+      namespace: "cert-manager"
+      # The name of the component to install
+      name: "cert-manager"
+      # The name of the chart to install
+      chart: "jetstack/cert-manager"
+      # Create the namespace if it doesn't exist?
+      createNamespace: true
+      # The version to install
+      version: "v1.13.2"
+- name: "intel-resource-drivers-for-kubernetes"
+  # A more elaborate description of the workload;
+  # only displayed when using verbose is set
+  # [optional; default: ""]
+  description: |
+    Intel GPU resource driver is a better alternative for Intel GPU device plugin,
+    facilitating workload offloading by providing GPU access on Kubernetes cluster worker nodes.
+  # Error policy:
+  # ignore [ignore errors]
+  # abort [abort installation on errors]
+  # [optional; default: ignore]
+  errorPolicy: "ignore"
+  # A workload can apply one or many deployments
+  deployments:
+    # Each deployment can be deployed either using kubectl or helm;
+    # thus exactly one of kubectl or helm are permitted
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/static/crds/"
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-class.yaml"
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver-namespace.yaml"
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-defaults.yaml"
+  - kubectl:
+      method: "apply"
+      type: "file"
+      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver.yaml"

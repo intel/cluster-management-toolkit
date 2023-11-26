@@ -3986,6 +3986,15 @@ class KubernetesHelper:
 				pod_network_cidr (str): The Pod network CIDR
 		"""
 
+		# First try to get the CIDR from kubeadm-config, if it exists
+		ref = self.get_ref_by_kind_name_namespace(("ConfigMap", ""), name = "kubeadm-config", namespace = "kube-system")
+		if ref is not None:
+			data = deep_get(ref, DictPath("data#ClusterConfiguration"), {})
+			try:
+				d = yaml.safe_load(data)
+				return deep_get(d, DictPath("networking#podSubnet"))
+			except yaml.scanner.ScannerError:
+				pass
 		nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/control-plane")
 		if nodes is None or len(nodes) == 0 or status != 200:
 			nodes, status = self.get_list_by_kind_namespace(("Node", ""), "", label_selector = "node-role.kubernetes.io/master")

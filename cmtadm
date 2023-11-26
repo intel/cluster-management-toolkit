@@ -63,7 +63,7 @@ from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper
 import kubernetes_helper
 
 from ansithemeprint import ANSIThemeString, ansithemeinput, ansithemeinput_password, ansithemeprint
-from ansithemeprint import themearray_override_formatting
+from ansithemeprint import ansithemestring_join_tuple_list, themearray_override_formatting
 
 import checks
 
@@ -847,7 +847,7 @@ cni_upgrade_data = {
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
-					"url": "https://github.com/flannel-io/flannel/releases/<<<version>>>/download/kube-flannel.yml",
+					"url": "https://github.com/flannel-io/flannel/releases/download/<<<version>>>/kube-flannel.yml",
 					"filename": "flannel.yaml",
 					"patch": patch_cni_flannel,
 				}
@@ -1159,8 +1159,8 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
-	cni = installation_info[cluster_name]["cni"]
-	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+	cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
+	pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
@@ -1366,8 +1366,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	else:
 		installation_info = get_installation_info()
 		cluster_name = installation_info["installation_target"]
-		cni = installation_info[cluster_name]["cni"]
-		pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
+		cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
+		pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
 
 	if pod_network_cidr is None:
 		# If we have a running cluster and we are upgrading by CNI rather than through installation info we need to get the Pod CIDR
@@ -3162,9 +3162,9 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 
 	if k8s_distro == "kubeadm":
 		# First remove the distro revision
-		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		major_minor_patchrev = requested_version.split("-")
 		# Now split the version tuple
-		_major, minor, _patchrev = major_minor_patchrev.split(".")
+		_major, minor, _patchrev = major_minor_patchrev[0].split(".")
 	else:
 		# Split the version tuple
 		_major, minor = requested_version.split(".")
@@ -3679,11 +3679,14 @@ def show_configuration(action: str,
 	cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
 	pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
 	cri = deep_get(installation_info, DictPath(f"{cluster_name}#cri"))
-	controlplanes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"))
-	nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"))
+	controlplanes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"), [])
+	nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
+
+	failures = {}
 
 	control_plane_info = []
 	for controlplane in controlplanes:
+		ip = None
 		try:
 			ip = socket.gethostbyname(controlplane)
 		except socket.gaierror as e:
@@ -3691,18 +3694,39 @@ def show_configuration(action: str,
 				      "[Errno -3] Temporary failure in name resolution",
 				      "[Errno -5] No address associated with hostname"):
 				tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
-				ansithemeprint([ANSIThemeString("Error", "error"),
-						ANSIThemeString(": ", "default"),
-						ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
-						ANSIThemeString(f"{controlplane}", "hostname"),
-						ANSIThemeString("); aborting.", "default")], stderr = True)
-				sys.exit(errno.ENOENT)
+				if len(deep_get(failures, DictPath(tmp[2]), [])) == 0:
+					failures[tmp[2]] = []
+				failures[tmp[2]].append(controlplane)
 		control_plane_info.append((controlplane, ip))
 
 	node_info = []
 	for node in nodes:
-		ip = socket.gethostbyname(node)
+		ip = None
+		try:
+			ip = socket.gethostbyname(node)
+		except socket.gaierror as e:
+			if str(e) in ("[Errno -2] Name or service not known",
+				      "[Errno -3] Temporary failure in name resolution",
+				      "[Errno -5] No address associated with hostname"):
+				tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
+				if len(deep_get(failures, DictPath(tmp[2]), [])) == 0:
+					failures[tmp[2]] = []
+				failures[tmp[2]].append(node)
 		node_info.append((node, ip))
+
+	# If we fail to get the IP-address of any of the hostnames
+	# we output them here and abort.
+	if len(failures) > 0:
+		ansithemeprint([ANSIThemeString("Errors", "error"),
+				ANSIThemeString(":", "default")], stderr = True)
+	for error, hosts in failures.items():
+		hosts = ansithemestring_join_tuple_list(hosts, formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
+		ansithemeprint([ANSIThemeString(f"  {tmp[2]} (hosts: ", "default")] +
+				hosts +
+				[ANSIThemeString(")", "default")], stderr = True)
+	if len(failures) > 0:
+		ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
 	if http_proxy is not None and http_proxy == "":
@@ -3834,7 +3858,7 @@ def __get_configuration_data(configuration_file: str, configuration_type: str, c
 		tf = tempfile.NamedTemporaryFile(suffix = ".yaml.j2", delete = False)
 		path = FilePath(tf.name)
 		secure_write_string(path, data, tempfile = True)
-	
+
 	return FilePath(path)
 
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -3871,10 +3895,14 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 	installation_info = get_installation_info()
 	cluster_name = deep_get(installation_info, DictPath("installation_target"))
 	control_plane_version = deep_get(installation_info, DictPath(f"{cluster_name}#version"))
+	requested_version = deep_get(installation_info, DictPath(f"{cluster_name}#requested_version"))
+	if control_plane_version is None or control_plane_version == "<none>":
+		control_plane_version = requested_version
+
 	# First remove the distro revision
-	major_minor_patchrev, _pkgrev = control_plane_version.split("-")
+	major_minor_patchrev = control_plane_version.split("-")
 	# Now split the version tuple
-	requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
+	requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
 	join_token = kh.get_join_token()
 	if len(join_token) == 0:
@@ -3982,10 +4010,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	installation_info = get_installation_info()
 	confirm = True
+	redeploy = False
 
 	for opt, optarg in options:
 		if opt == "-Y":
 			confirm = False
+		elif opt == "--redeploy":
+			redeploy = True
 
 	cluster_deployment_file = args[0]
 
@@ -4062,6 +4093,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" does not specify a cluster name; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
+	if deep_get(installation_info, DictPath("installation_target")) != cluster_name:
+		installation_info = update_installation_info(installation_target = cluster_name, cluster_name = cluster_name, distro = kubernetes_distro)
+
 	cluster_configuration_path = __get_configuration_data(cluster_deployment_file,
 							      "clusterConfiguration",
 							      deep_get(cd, DictPath("cluster#configurationTemplates"), {}),
@@ -4118,7 +4152,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			kube_proxy_configuration_path,
 		]),
 	]
-	
+
 	taint_control_planes = not deep_get(cd, DictPath("cluster#untaintControlPlanes"), False)
 	setup_control_plane_options.append(("--extra-values", { "taint_control_plane": taint_control_planes }))
 
@@ -4137,65 +4171,346 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	cluster_name = installation_info["installation_target"]
 	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
+	phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
 
 	if state is None or state in ("<none>", "preparing", "prepared", "torn_down"):
 		# First prepare all hosts
 		prepare_installation(prepare_options, prepare_args)
 
+	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
+	phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
+
 	# Now it's time to setup the control plane(s)
 	if state in ("prepared", "installing"):
 		setup_control_planes(setup_control_plane_options, setup_control_plane_args)
+		phase = 0
+		state = "adding_nodes"
+		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
 
-	# We (hopefully) don't need to check whether the nodes are part of the cluster already,
-	# since we've just setup the control plane...
-	ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
+	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
+	phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
 
-	node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
-	node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
-	node_global_cordon_on_join = deep_get(cd, DictPath("nodes#options#cordonOnJoin"), False)
-	node_global_configuration = deep_get(cd, DictPath("nodes#options#configurationTemplates"), {})
+	admin_name = f"kubernetes-admin+{cluster_name}"
+	context_name = f"{admin_name}@{cluster_name}"
 
-	# We've potentially got multiple groups of nodes,
-	# so calling add_nodes() once isn't gonna cut it
-	for group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
-		nodes = deep_get(data, DictPath("nodes"), [])
-		node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
-		node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
-		node_cordon_on_join = deep_get(cd, DictPath("options#cordonOnJoin"), node_global_cordon_on_join)
+	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-		node_configuration = deep_get(group, DictPath("options#configurationTemplates"), node_global_configuration)
-		join_configuration_path = __get_configuration_data(cluster_deployment_file,
-								   "joinConfiguration",
-								   node_configuration,
-								   os.path.join("templates", "config", "join_configuration.yaml.j2"))
-		add_nodes_options = [
-			("--cri", node_cri),
-			("--configuration-paths", [
-				join_configuration_path,
-			]),
-			("--cordon-on-join", node_cordon_on_join),
-			("--forks", node_forks),
-		]
-		if verbose:
-			add_nodes_options.append(("--verbose", None))
-		if save_ansible_logs:
-			setup_control_plane_options.append(("--save-ansible-logs", None))
+	# We (hopefully) have a cluster now; change the context to that cluster
+	if not kh.set_context(name = context_name, unchanged_is_success = True):
+		ansithemeprint([ANSIThemeString("Warning", "warning"),
+				ANSIThemeString(": Failed to change to context ", "default"),
+				ANSIThemeString(f"{context_name}", "hostname"),
+				ANSIThemeString(" for cluster ", "default"),
+				ANSIThemeString(f"{cluster_name}", "hostname"),
+				ANSIThemeString("; aborting.", "default")])
+		sys.exit(errno.ENOENT)
 
-		add_nodes_args = [
-			# List of nodes
-			nodes,
-			# Group(s) to add the nodes to
-			[group],
-		]
+	if state == "installed" and phase == "<done>":
+		phase = 0
+		state = "adding_nodes"
+		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
 
-		add_nodes(add_nodes_options, add_nodes_args)
-	ansithemeprint([ANSIThemeString("\nNodes successfully added", "success")])
+	if state == "adding_nodes":
+		i = 0
+		# We (hopefully) don't need to check whether the nodes are part of the cluster already,
+		# since we've just setup the control plane...
+		ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
+
+		node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
+		node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
+		node_global_cordon_on_join = deep_get(cd, DictPath("nodes#options#cordonOnJoin"), False)
+		node_global_configuration = deep_get(cd, DictPath("nodes#options#configurationTemplates"), {})
+
+		# We've potentially got multiple groups of nodes,
+		# so calling add_nodes() once isn't gonna cut it
+		for group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
+			# Don't add node groups again
+			if i < phase:
+				continue
+			nodes = deep_get(data, DictPath("nodes"), [])
+			node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
+			node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
+			node_cordon_on_join = deep_get(cd, DictPath("options#cordonOnJoin"), node_global_cordon_on_join)
+
+			node_configuration = deep_get(group, DictPath("options#configurationTemplates"), node_global_configuration)
+			join_configuration_path = __get_configuration_data(cluster_deployment_file,
+									   "joinConfiguration",
+									   node_configuration,
+									   os.path.join("templates", "config", "join_configuration.yaml.j2"))
+			add_nodes_options = [
+				("--cri", node_cri),
+				("--configuration-paths", [
+					join_configuration_path,
+				]),
+				("--cordon-on-join", node_cordon_on_join),
+				("--forks", node_forks),
+			]
+			if verbose:
+				add_nodes_options.append(("--verbose", None))
+			if save_ansible_logs:
+				setup_control_plane_options.append(("--save-ansible-logs", None))
+
+			add_nodes_args = [
+				# List of nodes
+				nodes,
+				# Group(s) to add the nodes to
+				[group],
+			]
+
+			add_nodes(add_nodes_options, add_nodes_args)
+			i += 1
+			installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = i)
+
+		ansithemeprint([ANSIThemeString("\nNodes successfully added", "success")])
+		phase = 0
+		state = "setup_cni"
+		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
 
 	# Now we can setup the CNI
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+	if state == "setup_cni":
+		__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+		phase = 0
+		state = "deploy_workloads"
+		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
+
+	if redeploy:
+		phase = 0
+		state = "deploy_workloads"
+		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
+
+	# Finally we attempt to deploy workloads
+	workloads = deep_get(cd, DictPath("workloads"), [])
+
+	if state in ("deploy_workloads", "deploying") and len(workloads) > 0:
+		ansithemeprint([ANSIThemeString("\n[Deploying workloads]", "phase")])
+
+		for i, workload in enumerate(workloads):
+			if i < phase:
+				continue
+
+			name = deep_get(workload, DictPath("name"))
+			skip = deep_get(workload, DictPath("skip"), False)
+			if skip:
+				installation_info = update_installation_info(cluster_name = cluster_name, state = "deploying", phase = i)
+				continue
+			description = deep_get(workload, DictPath("description"), "")
+			split_description = description.splitlines()
+			error_policy = deep_get(workload, DictPath("errorPolicy"), "ignore")
+
+			if name is None:
+				ansithemeprint([ANSIThemeString("Error", "error"),
+						ANSIThemeString(": ", "default"),
+						ANSIThemeString("name", "emphasis"),
+						ANSIThemeString(" is a mandatory field for workloads; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+
+			args = []
+
+			ansithemeprint([ANSIThemeString("\n  • ", "separator"),
+					ANSIThemeString(f"Deploying ", "subaction"),
+					ANSIThemeString(f"{name}", "argument")])
+
+			if verbose:
+				for line in split_description:
+					ansithemeprint([ANSIThemeString("    ", "separator"),
+							ANSIThemeString(f"{line}", "default")])
+				print()
+
+			deployments = deep_get(workload, DictPath("deployments"), [])
+			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
+						    fallback_allowlist = ["/etc/alternatives"],
+						    security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+			try:
+				helm_path = secure_which(FilePath("/usr/bin/helm"),
+							 fallback_allowlist = ["/etc/alternatives", "/usr/local/bin", f"{HOMEDIR}/bin"],
+							 security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+			except FileNotFoundError:
+				helm_path = None
+
+			for data in deployments:
+				if ("kubectl" not in data and "helm" not in data) or ("kubectl" in data and "helm" in data):
+					ansithemeprint([ANSIThemeString("Error", "error"),
+							ANSIThemeString(": The workload ", "default"),
+							ANSIThemeString(f"{name}", "argument"),
+							ANSIThemeString(" is invalid; ", "default"),
+							ANSIThemeString("each deployment must contain exactly one of ", "default"),
+							ANSIThemeString("kubectl", "emphasis"),
+							ANSIThemeString(", or ", "default"),
+							ANSIThemeString("helm", "emphasis"),
+							ANSIThemeString("; aborting.", "default")], stderr = True)
+					sys.exit(errno.EINVAL)
+
+				if "kubectl" in data:
+					deployment = deep_get(data, DictPath("kubectl"), {})
+					method = deep_get(deployment, DictPath("method"), "apply")
+					wtype = deep_get(deployment, DictPath("type"), "file")
+					uri = deep_get(deployment, DictPath("uri"))
+
+					if wtype is None:
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; ", "default"),
+								ANSIThemeString("type", "emphasis"),
+								ANSIThemeString(" is a mandatory field for ", "default"),
+								ANSIThemeString("kubectl", "emphasis"),
+								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+
+					if wtype not in ("file", "kustomization"):
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The type ", "default"),
+								ANSIThemeString(f"{wtype}", "argument"),
+								ANSIThemeString(" for the workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; only ", "default"),
+								ANSIThemeString("file", "emphasis"),
+								ANSIThemeString(", and ", "default"),
+								ANSIThemeString("kustomization", "emphasis"),
+								ANSIThemeString(" are supported for .", "default"),
+								ANSIThemeString("kubectl", "emphasis"),
+								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					if method not in ("apply", "create"):
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The method ", "default"),
+								ANSIThemeString(f"{method}", "argument"),
+								ANSIThemeString(" for the workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; only ", "default"),
+								ANSIThemeString("apply", "emphasis"),
+								ANSIThemeString(", and ", "default"),
+								ANSIThemeString("create", "emphasis"),
+								ANSIThemeString(" are supported for .", "default"),
+								ANSIThemeString("kubectl", "emphasis"),
+								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					if uri is None:
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; ", "default"),
+								ANSIThemeString("uri", "emphasis"),
+								ANSIThemeString(" is a mandatoryr field for .", "default"),
+								ANSIThemeString("kubectl", "emphasis"),
+								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					if not uri.startswith(("file://", "http://", "https://")):
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The URI ", "default"),
+								ANSIThemeString(f"{uri}", "argument"),
+								ANSIThemeString(" for the workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; only ", "default"),
+								ANSIThemeString("http://", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString("https://", "emphasis"),
+								ANSIThemeString(", and ", "default"),
+								ANSIThemeString("file://", "emphasis"),
+								ANSIThemeString(" are supported URI-prefixes; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					args = [kubectl_path]
+					if method == "create":
+						args + ["create"]
+					elif method == "apply":
+						args += ["apply", "--server-side"]
+					if wtype == "file":
+						args += ["-f"]
+					elif wtype == "kustomization":
+						args += ["-k"]
+
+					if uri.startswith("file://"):
+						uri = uri[len("file://"):]
+						if uri.startswith("{HOME}"):
+							uri = uri.replace("{HOME}", HOMEDIR, 1)
+						uri_type = "file"
+					elif uri.startswith("http://"):
+						uri_type = "http"
+					elif uri.startswith("https://"):
+						uri_type = "https"
+
+					args += [uri]
+				elif "helm" in data:
+					if helm_path is None:
+						ansithemeprint([ANSIThemeString("Warning", "warning"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" uses ", "default"),
+								ANSIThemeString("Helm", "emphasis"),
+								ANSIThemeString(", but it's not installed; skipping.", "default")], stderr = True)
+						continue
+
+					deployment = deep_get(data, DictPath("helm"), {})
+					hname = deep_get(deployment, DictPath("name"))
+					chart = deep_get(deployment, DictPath("chart"))
+					namespace = deep_get(deployment, DictPath("namespace"))
+					create_namespace = deep_get(deployment, DictPath("createNamespace"), False)
+					repo_url = deep_get(deployment, DictPath("repoURL"))
+					repo_name = deep_get(deployment, DictPath("repoName"))
+					version = deep_get(deployment, DictPath("version"))
+
+					if hname is None or chart is None or namespace is None or repo_url is None or repo_name is None or version is None:
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; the following fields are mandatory for Helm deployments: ", "default"),
+								ANSIThemeString(f"name", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString(f"chart", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString(f"namespace", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString(f"repoURL", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString(f"repoName", "emphasis"),
+								ANSIThemeString(", and ", "default"),
+								ANSIThemeString("version", "emphasis"),
+								ANSIThemeString("; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					# Add helm repo
+					args = [helm_path, "repo", "add", repo_name, repo_url]
+					if verbose:
+						check_and_print_status(execute_command(args))
+					else:
+						check_and_print_status(execute_command_with_response(args))
+
+					# Check whether the component is already installed
+					args = [helm_path, "list", "--namespace", namespace, "--filter", f"^{hname}$", "--no-headers"]
+					response = execute_command_with_response(args)
+					tmp = re.match(f"^{hname}\s.+{version}$", response)
+					# We've got an exact match for version and name; for now we just ignore.
+					# We might add a remove + install policy later.
+					if tmp is not None:
+						ansithemeprint([ANSIThemeString("Warning", "warning"),
+								ANSIThemeString(": The component ", "default"),
+								ANSIThemeString(f"{hname}", "argument"),
+								ANSIThemeString(" is already installed using ", "default"),
+								ANSIThemeString("Helm", "emphasis"),
+								ANSIThemeString(" with the specified version; skipping.", "default")], stderr = True)
+						continue
+
+					args = [helm_path, "install", hname, chart, "--namespace", namespace, "--version", version]
+					if create_namespace:
+						args.append("--create-namespace")
+
+				if verbose:
+					check_and_print_status(execute_command(args))
+				else:
+					check_and_print_status(execute_command_with_response(args))
+
+			installation_info = update_installation_info(cluster_name = cluster_name, state = "deploying", phase = i)
+
+		installation_info = update_installation_info(cluster_name = cluster_name, state = "deployed", phase = "<done>")
 
 def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
 	"""
@@ -4378,9 +4693,9 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	if k8s_distro == "kubeadm":
 		# First remove the distro revision
-		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		major_minor_patchrev = requested_version.split("-")
 		# Now split the version tuple
-		requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
+		requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
 		if int(requested_minor) < 23:
 			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
@@ -4810,9 +5125,11 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 				ANSIThemeString(": Invalid installation state; there's no prepared or torn down cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	# If phase is "<done>" it's a holdover from a previous state
+	# If phase is "<done>" it's a holdover from a previous state;
+	# if this is the case we need to start from phase 0 and ignore the skiplist
 	if len(options) == 0 or phase == "<done>":
 		phase = 0
+		phase_skiplist = set()
 
 	for opt, optarg in options:
 		if opt == "--start-at-task":
@@ -5134,9 +5451,9 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				sys.exit(errno.EBUSY)
 
 		# First remove the distro revision
-		major_minor_patchrev, _pkgrev = requested_version.split("-")
+		major_minor_patchrev = requested_version.split("-")
 		# Now split the version tuple
-		requested_major, requested_minor, _rest = major_minor_patchrev.split(".")
+		requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
 		if int(requested_minor) < 23:
 			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
@@ -5743,6 +6060,9 @@ COMMANDLINE = {
 			[ANSIThemeString("as well as CNI for a cluster.", "description")],
 		],
 		"options": {
+			"--redeploy": {
+				"description": [ANSIThemeString("Redeploy workloads", "description")],
+			},
 			"-Y": {
 				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
