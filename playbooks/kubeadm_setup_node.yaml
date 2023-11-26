@@ -96,3 +96,8 @@
     shell: |
       kubeadm join --config {{ node_config.path }}
     changed_when: false
+  - name: "Remove temporary node configuration file"
+    ansible.builtin.file:
+      path: "{{ node_config.path }}"
+      state: "absent"
+    when: "node_config.path is defined"
