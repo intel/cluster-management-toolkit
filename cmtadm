@@ -4008,6 +4008,18 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
+	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
+	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
+	no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
+	env = {
+		"KUBECONFIG": os.path.join(f"{HOMEDIR}", ".kube", "config"),
+		"PATH": deep_get(dict(os.environ), DictPath("PATH"), ""),
+		"HOME": f"{HOMEDIR}",
+		"http_proxy": http_proxy,
+		"https_proxy": https_proxy,
+		"no_proxy": no_proxy,
+	}
+
 	installation_info = get_installation_info()
 	confirm = True
 	redeploy = False
@@ -4173,7 +4185,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
 	phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
 
-	if state is None or state in ("<none>", "preparing", "prepared", "torn_down"):
+	if state is None or state in ("<none>", "preparing", "torn_down"):
 		# First prepare all hosts
 		prepare_installation(prepare_options, prepare_args)
 
@@ -4331,24 +4343,116 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			except FileNotFoundError:
 				helm_path = None
 
+			try:
+				git_path = secure_which(FilePath("/usr/bin/git"),
+							 fallback_allowlist = ["/etc/alternatives", "/usr/local/bin", f"{HOMEDIR}/bin"],
+							 security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+			except FileNotFoundError:
+				git_path = None
+
 			for data in deployments:
-				if ("kubectl" not in data and "helm" not in data) or ("kubectl" in data and "helm" in data):
+				intersection = {"kubectl", "helm", "git"} & data.keys()
+				if len(intersection) != 1:
 					ansithemeprint([ANSIThemeString("Error", "error"),
 							ANSIThemeString(": The workload ", "default"),
 							ANSIThemeString(f"{name}", "argument"),
 							ANSIThemeString(" is invalid; ", "default"),
 							ANSIThemeString("each deployment must contain exactly one of ", "default"),
+							ANSIThemeString("git", "emphasis"),
+							ANSIThemeString(", ", "default"),
 							ANSIThemeString("kubectl", "emphasis"),
 							ANSIThemeString(", or ", "default"),
 							ANSIThemeString("helm", "emphasis"),
 							ANSIThemeString("; aborting.", "default")], stderr = True)
 					sys.exit(errno.EINVAL)
 
-				if "kubectl" in data:
+				if "git" in data:
+					if git_path is None:
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" uses ", "default"),
+								ANSIThemeString("git", "emphasis"),
+								ANSIThemeString(", but it's not installed; aborting.", "default")], stderr = True)
+						sys.exit(errno.ENOENT)
+
+					deployment = deep_get(data, DictPath("git"), {})
+					repo = deep_get(deployment, DictPath("repo"))
+					destination = deep_get(deployment, DictPath("destination"))
+					if destination.startswith("{HOME}"):
+						destination = destination.replace("{HOME}", HOMEDIR, 1)
+					branch = deep_get(deployment, DictPath("branch"))
+					fetch = deep_get(deployment, DictPath("fetch"), False)
+
+					if destination is None:
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; ", "default"),
+								ANSIThemeString("destination", "emphasis"),
+								ANSIThemeString(" is a mandatory field for ", "default"),
+								ANSIThemeString("git", "emphasis"),
+								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+
+					checks = [
+						SecurityChecks.PARENT_RESOLVES_TO_SELF,
+						SecurityChecks.OWNER_IN_ALLOWLIST,
+						SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+						SecurityChecks.PERMISSIONS,
+						SecurityChecks.PARENT_PERMISSIONS,
+						SecurityChecks.EXISTS,
+						SecurityChecks.IS_DIR,
+					]
+					retval = check_path(destination, checks = checks)
+
+					if check_path(destination) == [SecurityStatus.OK]:
+						if fetch:
+							args = [git_path, "-C", destination, "fetch"]
+							check_and_print_status(execute_command(args, env = env))
+
+						if branch is not None:
+							args = [git_path, "-C", destination, "checkout", f"tags/{branch}"]
+							check_and_print_status(execute_command(args, env = env))
+					elif retval == [SecurityStatus.DOES_NOT_EXIST]:
+						checks = [
+							SecurityChecks.PARENT_RESOLVES_TO_SELF,
+							SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+							SecurityChecks.PARENT_PERMISSIONS,
+						]
+
+						if check_path(destination, checks = checks) != [SecurityStatus.OK]:
+							ansithemeprint([ANSIThemeString("Error", "error"),
+									ANSIThemeString(": The workload ", "default"),
+									ANSIThemeString(f"{name}", "argument"),
+									ANSIThemeString(" has an invalid destionation path; aborting.", "default")], stderr = True)
+							sys.exit(errno.EINVAL)
+
+						if repo is None or len(repo) == 0:
+							ansithemeprint([ANSIThemeString("Error", "error"),
+									ANSIThemeString(": No local checkout of the workload ", "default"),
+									ANSIThemeString(f"{name}", "argument"),
+									ANSIThemeString(" exists, and ", "default"),
+									ANSIThemeString("repo", "emphasis"),
+									ANSIThemeString(" has not been specified; aborting.", "default")], stderr = True)
+							sys.exit(errno.ENOENT)
+
+						if branch is not None:
+							args = [git_path, "clone", "--depth", "1", "--branch", branch, repo, destination]
+						else:
+							args = [git_path, "clone", "--depth", "1", repo, destination]
+
+						check_and_print_status(execute_command(args, env = env))
+				elif "kubectl" in data:
 					deployment = deep_get(data, DictPath("kubectl"), {})
 					method = deep_get(deployment, DictPath("method"), "apply")
 					wtype = deep_get(deployment, DictPath("type"), "file")
-					uri = deep_get(deployment, DictPath("uri"))
+					uris = deep_get(deployment, DictPath("uri"))
+					pname = deep_get(deployment, DictPath("name"))
+					pnamespace = deep_get(deployment, DictPath("namespace"))
+					resource = deep_get(deployment, DictPath("resource"))
+					version = deep_get(deployment, DictPath("version"))
 
 					if wtype is None:
 						ansithemeprint([ANSIThemeString("Error", "error"),
@@ -4377,7 +4481,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if method not in ("apply", "create"):
+					if method not in ("apply", "create", "patch+strategic", "patch+merge", "patch+json"):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The method ", "default"),
 								ANSIThemeString(f"{method}", "argument"),
@@ -4385,14 +4489,20 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(f"{name}", "argument"),
 								ANSIThemeString(" is invalid; only ", "default"),
 								ANSIThemeString("apply", "emphasis"),
-								ANSIThemeString(", and ", "default"),
+								ANSIThemeString(", ", "default"),
 								ANSIThemeString("create", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString("patch+strategic", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString("patch+merge", "emphasis"),
+								ANSIThemeString(", and ", "default"),
+								ANSIThemeString("patch+json", "emphasis"),
 								ANSIThemeString(" are supported for .", "default"),
 								ANSIThemeString("kubectl", "emphasis"),
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if uri is None:
+					if uris is None:
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
@@ -4403,42 +4513,60 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if not uri.startswith(("file://", "http://", "https://")):
-						ansithemeprint([ANSIThemeString("Error", "error"),
-								ANSIThemeString(": The URI ", "default"),
-								ANSIThemeString(f"{uri}", "argument"),
-								ANSIThemeString(" for the workload ", "default"),
-								ANSIThemeString(f"{name}", "argument"),
-								ANSIThemeString(" is invalid; only ", "default"),
-								ANSIThemeString("http://", "emphasis"),
-								ANSIThemeString(", ", "default"),
-								ANSIThemeString("https://", "emphasis"),
-								ANSIThemeString(", and ", "default"),
-								ANSIThemeString("file://", "emphasis"),
-								ANSIThemeString(" are supported URI-prefixes; aborting.", "default")], stderr = True)
-						sys.exit(errno.EINVAL)
+					if isinstance(uris, str):
+						uris = [uris]
 
 					args = [kubectl_path]
 					if method == "create":
-						args + ["create"]
+						args += ["create"]
 					elif method == "apply":
 						args += ["apply", "--server-side"]
-					if wtype == "file":
+					elif method == "patch+strategic":
+						args += ["patch", resource, pname, "--type", "strategic", "--namespace", pnamespace]
+					elif method == "patch+merge":
+						args += ["patch", resource, pname, "--type", "merge", "--namespace", pnamespace]
+					elif method == "patch+json":
+						args += ["patch", resource, pname, "--type", "json", "--namespace", pnamespace]
+
+					if method.startswith("patch"):
+						args += ["--patch-file"]
+					elif wtype == "file":
 						args += ["-f"]
 					elif wtype == "kustomization":
 						args += ["-k"]
 
-					if uri.startswith("file://"):
-						uri = uri[len("file://"):]
-						if uri.startswith("{HOME}"):
-							uri = uri.replace("{HOME}", HOMEDIR, 1)
-						uri_type = "file"
-					elif uri.startswith("http://"):
-						uri_type = "http"
-					elif uri.startswith("https://"):
-						uri_type = "https"
+					for uri in uris:
+						if not uri.startswith(("file://", "http://", "https://")):
+							ansithemeprint([ANSIThemeString("Error", "error"),
+									ANSIThemeString(": The URI ", "default"),
+									ANSIThemeString(f"{uri}", "argument"),
+									ANSIThemeString(" for the workload ", "default"),
+									ANSIThemeString(f"{name}", "argument"),
+									ANSIThemeString(" is invalid; only ", "default"),
+									ANSIThemeString("http://", "emphasis"),
+									ANSIThemeString(", ", "default"),
+									ANSIThemeString("https://", "emphasis"),
+									ANSIThemeString(", and ", "default"),
+									ANSIThemeString("file://", "emphasis"),
+									ANSIThemeString(" are supported URI-prefixes; aborting.", "default")], stderr = True)
+							sys.exit(errno.EINVAL)
 
-					args += [uri]
+						if uri.startswith("file://"):
+							uri = uri[len("file://"):]
+							if uri.startswith("{HOME}"):
+								uri = uri.replace("{HOME}", HOMEDIR, 1)
+							uri_type = "file"
+						elif uri.startswith("http://"):
+							uri_type = "http"
+						elif uri.startswith("https://"):
+							uri_type = "https"
+						if version is not None:
+							uri = uri.replace("<<<version>>>", version)
+
+						if verbose:
+							check_and_print_status(execute_command(args + [uri], env = env))
+						else:
+							check_and_print_status(execute_command_with_response(args + [uri], env = env))
 				elif "helm" in data:
 					if helm_path is None:
 						ansithemeprint([ANSIThemeString("Warning", "warning"),
@@ -4486,7 +4614,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 					# Check whether the component is already installed
 					args = [helm_path, "list", "--namespace", namespace, "--filter", f"^{hname}$", "--no-headers"]
-					response = execute_command_with_response(args)
+					response = execute_command_with_response(args, env = env)
 					tmp = re.match(f"^{hname}\s.+{version}$", response)
 					# We've got an exact match for version and name; for now we just ignore.
 					# We might add a remove + install policy later.
@@ -4503,10 +4631,10 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					if create_namespace:
 						args.append("--create-namespace")
 
-				if verbose:
-					check_and_print_status(execute_command(args))
-				else:
-					check_and_print_status(execute_command_with_response(args))
+					if verbose:
+						check_and_print_status(execute_command(args, env = env))
+					else:
+						check_and_print_status(execute_command_with_response(args, env = env))
 
 			installation_info = update_installation_info(cluster_name = cluster_name, state = "deploying", phase = i)
 
@@ -4577,16 +4705,16 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	verbose = False
 
-	if state is not None and state in ("installed", "upgrading", "tearing_down", "torn_down", "purging"):
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-	elif state is None or state in ("<none>", "preparing"):
+	if state is None or state in ("<none>", "preparing"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": The system is not prepared for installation yet; run ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString(" prepare", "command"),
 				ANSIThemeString(" before continuing. Aborting.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+	elif state is not None and state not in ("installing", "prepared"):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": Invalid installation state; there is a partial or full installation already; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
 	if state == "prepared":

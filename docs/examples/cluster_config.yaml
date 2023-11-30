@@ -328,10 +328,11 @@ workloads:
   # The name of the workload
   # [mandatory]
 - name: "node-feature-discovery"
-  # Should this entry be skipped?
-  skip: true
+  # Workloads can be disabled by setting skip to true
+  # [optional; default: false]
+  skip: false
   # A more elaborate description of the workload;
-  # only displayed when using verbose is set
+  # only displayed when verbose is set
   # [optional; default: ""]
   description: |
     node-feature-discovery helps detect hardware features and system configuration.
@@ -340,9 +341,12 @@ workloads:
   # abort [abort installation on errors]
   # [optional; default: ignore]
   errorPolicy: "ignore"
+  # The deployments that this workload consists of
+  # [mandatory]
   deployments:
     # Each deployment can be deployed either using kubectl or helm;
-    # thus exactly one of kubectl or helm are permitted
+    # repositories can be checked out using git.
+    # Hence kubectl, helm, and git are valid targets
   - kubectl:
       # The deployment method; valid options:
       # apply [apply --server-side]
@@ -354,25 +358,25 @@ workloads:
       # kustomization
       # [mandatory]
       type: "kustomization"
-      # The URI to the data; valid prefixes:
-      # http:// [discouraged due to security reasons]
+      # When applying multiple URIs it can be convenient to centralise the version#;
+      # if <<<version>>> is encountered in a URI it will be substituted for the value
+      # of the version field.
+      # [optional; default: ""]
+      version: "v0.14.3"
+      # The URI[s] to the data;
+      # this field can be either a string (a single URI) or a list (a single or multiple URIs)
+      # All URIs need to be prefixed with their type
+      # Valid prefixes:
+      # http:// [highly discouraged due to security reasons]
       # https://
       # file://
+      # {HOME} is substituted for the path to the home directory of the user
       # [mandatory]
-      uri: "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.14.3"
+      uri: "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=<<<version>>>"
 - name: "cert-manager"
-  # A more elaborate description of the workload;
-  # only displayed when using verbose is set
-  # [optional; default: ""]
   description: |
     cert-manager adds certificates and certificate issuers as resource types in Kubernetes clusters,
     and simplifies the process of obtaining, renewing and using those certificates.
-  # Error policy:
-  # ignore [ignore errors]
-  # abort [abort installation on errors]
-  # [optional; default: ignore]
-  errorPolicy: "ignore"
-  # A workload can apply one or many deployments
   deployments:
   - kubectl:
       method: "apply"
@@ -394,38 +398,28 @@ workloads:
       # The version to install
       version: "v1.13.2"
 - name: "intel-resource-drivers-for-kubernetes"
-  # A more elaborate description of the workload;
-  # only displayed when using verbose is set
-  # [optional; default: ""]
+  skip: true
   description: |
     Intel GPU resource driver is a better alternative for Intel GPU device plugin,
     facilitating workload offloading by providing GPU access on Kubernetes cluster worker nodes.
-  # Error policy:
-  # ignore [ignore errors]
-  # abort [abort installation on errors]
-  # [optional; default: ignore]
-  errorPolicy: "ignore"
-  # A workload can apply one or many deployments
   deployments:
-    # Each deployment can be deployed either using kubectl or helm;
-    # thus exactly one of kubectl or helm are permitted
+  - git:
+      # The repository to clone (if not already available locally)
+      # [optional; the program will exit if no local checkout exists]
+      repo: "https://github.com/intel/intel-resource-drivers-for-kubernetes.git"
+      # The directory to store the repository in
+      # [mandatory]
+      destination: "{HOME}/git/intel-resource-drivers-for-kubernetes"
+      # Should git fetch be called each time the ClusterDeployment is applied
+      # [optional; default: false]
+      fetch: true
   - kubectl:
       method: "apply"
       type: "file"
-      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/static/crds/"
-  - kubectl:
-      method: "apply"
-      type: "file"
-      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-class.yaml"
-  - kubectl:
-      method: "apply"
-      type: "file"
-      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver-namespace.yaml"
-  - kubectl:
-      method: "apply"
-      type: "file"
-      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-defaults.yaml"
-  - kubectl:
-      method: "apply"
-      type: "file"
-      uri: "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver.yaml"
+      # Multiple applies can be defined at once as long as they are the same type
+      uri:
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/static/crds/"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-class.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver-namespace.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-defaults.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver.yaml"

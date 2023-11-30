@@ -1162,14 +1162,18 @@ def execute_command(args: List[Union[FilePath, str]], env: Optional[Dict] = None
 	return retval.returncode == comparison
 
 # This executes a command with the output captured
-def execute_command_with_response(args: List[str]) -> str:
+def execute_command_with_response(args: List[str], env: Optional[Dict] = None) -> str:
 	"""
 	Executes a command and returns stdout
 
 		Parameters:
 			args (list[str]): The commandline
+			env (dict): Environment variables to set
 		Returns:
 			stdout (str): The stdout from the execution
 	"""
-	result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	if env is None:
+		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+	else:
+		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, env = env, check = False)
 	return result.stdout.decode("utf-8", errors = "replace")
