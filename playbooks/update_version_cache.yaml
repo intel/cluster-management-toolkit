@@ -10,6 +10,7 @@
         "Fetched files":
         - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml (0o600)"
         - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml (0o600)"
+        - description: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version }}.md"
         "Information gathering":
         - description: "Fetches version information from upstream projects"
       playbook_types:
@@ -52,6 +53,25 @@
       https_proxy: "{{ https_proxy | default('') }}"
     # We might not be able to update the version cache for all projects; this is acceptable
     failed_when: false
+  - name: "Load version info"
+    ansible.builtin.set_fact:
+      d: "{{ lookup('ansible.builtin.file', '~/.cmt/version-cache/kubernetes_current.yaml') | ansible.builtin.from_yaml_all | first | ansible.builtin.from_yaml }}"
+  - name: "Latest version"
+    ansible.builtin.set_fact:
+      version: "{{ d['schedules'][0]['previousPatches'][0]['release'] }}"
+  - name: "Fetching changelog for upstream projects"
+    ansible.builtin.get_url:
+      url: "{{ item.url }}"
+      dest: "~/.cmt/version-cache/{{ item.dest }}"
+      mode: "0600"
+      force: true
+      use_proxy: "{{ use_proxy | default(false) }}"
+    loop:
+    # We'll need to fix this for fetching multiple versions
+    - url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version | splitext | first | string }}.md"
+      dest: "kubernetes_current_changelog.yaml"
+    environment:
+      https_proxy: "{{ https_proxy | default('') }}"
   - name: "Updating last-updated"
     ansible.builtin.file:
       path: "~/.cmt/version-cache/last-updated"
