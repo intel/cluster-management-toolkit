@@ -1388,7 +1388,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 		event_handler = __ansible_run_event_handler_cb
 
 	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks,
-					      event_handler = event_handler)
+					      event_handler = event_handler, envvars = { "ANSIBLE_JINJA2_NATIVE": True })
 
 	retval = 0
 	if runner is not None:
@@ -1416,7 +1416,7 @@ def ansible_run_playbook_async(playbook: FilePath, inventory: Dict, verbose: boo
 	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
 	_thread, runner = ansible_runner.interface.run_async(json_mode = True, quiet = True, playbook = playbook, inventory = inventory,
-							     forks = forks, finished_callback = __ansible_run_async_finished_cb)
+							     forks = forks, finished_callback = __ansible_run_async_finished_cb, envvars = { "ANSIBLE_JINJA2_NATIVE": True })
 
 	return runner
 
