@@ -29,7 +29,7 @@ from cmttypes import deep_get, DictPath
 import cmtlib
 from cmtlib import split_msg, strip_ansicodes
 
-from curses_helper import ThemeAttr, ThemeRef, ThemeString
+from curses_helper import ThemeAttr, ThemeRef, ThemeString, themearray_len
 
 if json_is_ujson:
 	def json_dumps(obj: Dict) -> str:
@@ -72,6 +72,113 @@ def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 	if "\n" in data:
 		return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
 	return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Markdown formatter; returns the text with syntax highlighting for a subset of Markdown
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			kwargs (dict): Unused
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
+
+	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
+	start = deep_get(kwargs, DictPath("start"), "")
+	include_start = deep_get(kwargs, DictPath("include_start"), False)
+	end = deep_get(kwargs, DictPath("end"), "")
+	include_end = deep_get(kwargs, DictPath("include_end"), False)
+	strip_empty_start = deep_get(kwargs, DictPath("include_end"), False)
+	strip_empty_end = deep_get(kwargs, DictPath("include_end"), False)
+
+	if isinstance(lines, str):
+		lines = split_msg(lines)
+
+	emptylines = []
+	started = False
+	for line in lines:
+		if not started and not line.startswith(start):
+			continue
+		if line.startswith(end):
+			break
+		started = True
+
+		if not include_start:
+			continue
+
+		if len(line) == 0:
+			emptylines.append(ThemeString("", ThemeAttr("types", "generic")))
+			continue
+		if (not strip_empty_start or len(dumps) > 0) and len(emptylines) > 0:
+			dumps.append(emptylines)
+			emptylines = []
+
+		# For headers we are--for now--lazy
+		# Level 1 header
+		if line.startswith("# "):
+			tformat = ThemeAttr("types", "markdown_header_1")
+			line = line[len("# "):]
+		# Level 2 header
+		elif line.startswith("## "):
+			tformat = ThemeAttr("types", "markdown_header_2")
+			line = line[len("## "):]
+		# Level 3 header
+		elif line.startswith("### "):
+			tformat = ThemeAttr("types", "markdown_header_3")
+			line = line[len("### "):]
+		else:
+			tmpline = []
+			if line.lstrip().startswith("- "):
+				striplen = len(line) - len(line.lstrip())
+				if striplen > 0:
+					tmpline.append(ThemeString("".ljust(striplen), ThemeAttr("types", "generic")))
+				tmpline.append(ThemeRef("separators", "genericbullet"))
+				line = line[themearray_len(tmpline):]
+
+			tformat = ThemeAttr("es", "generic")
+			# Assume consistent use of **/*/__/_
+			if "**" in line:
+				bold_sections = line.split("**")
+			elif "__" in line:
+				bold_sections = line.split("__")
+			else:
+				bold_sections = [line]
+			bold = True
+
+			for i, section in enumerate(bold_sections):
+				bold = not bold
+				if "*" in section:
+					italics_sections = section.split("*")
+				elif "_" in section:
+					italics_sections = section.split("_")
+				else:
+					italics_sections = [section]
+				italics = True
+				for j, italics_section in enumerate(italics_sections):
+					italics = not italics
+					if bold:
+						if italics:
+							tformat = ThemeAttr("types", "markdown_bold_italics")
+						else:
+							tformat = ThemeAttr("types", "markdown_bold")
+					else:
+						if italics:
+							tformat = ThemeAttr("types", "markdown_italics")
+						else:
+							tformat = ThemeAttr("types", "generic")
+					tmpline.append(ThemeString(italics_section, tformat))
+			dumps.append(tmpline)
+			continue
+
+		dumps.append([ThemeString(line, tformat)])
+		continue
+
+	if not strip_empty_end:
+		dumps.append(emptylines)
+	return dumps
 
 # pylint: disable-next=unused-argument
 def format_binary(lines: bytes, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
@@ -1293,6 +1400,7 @@ formatter_allowlist = {
 	"format_fluentbit": format_fluentbit,
 	"format_haproxy": format_haproxy,
 	"format_ini": format_ini,
+	"format_markdown": format_markdown,
 	"format_mosquitto": format_mosquitto,
 	"format_nginx": format_nginx,
 	"format_none": format_none,
