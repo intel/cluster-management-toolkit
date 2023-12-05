@@ -91,6 +91,13 @@ color_pairs_curses:
   paragraphheader: [["white", "bright"], ["black", "normal"]]
   boxdrawing: [["white", "normal"], ["black", "normal"]]
   mainheader: [["yellow", "normal"], ["blue", "normal"]]
+  markdown_header_1: [["white", "bright"], ["black", "normal"]]
+  markdown_header_2: [["yellow", "bright"], ["black", "normal"]]
+  markdown_header_3: [["white", "normal"], ["black", "normal"]]
+  markdown_bold: [["green", "bright"], ["black", "normal"]]
+  markdown_italics: [["cyan", "normal"], ["black", "normal"]]
+  markdown_bold_italics: [["cyan", "bright"], ["black", "normal"]]
+  markdown_code: [["blue", "bright"], ["white", "normal"]]
   last_update: [["yellow", "normal"], ["blue", "normal"]]
   statusbar: [["yellow", "normal"], ["blue", "normal"]]
   progressbar: [["yellow", "normal"], ["blue", "normal"]]
@@ -104,6 +111,7 @@ color_pairs_curses:
   widgetbright: [["white", "bright"], ["blue", "normal"]]
   widgetnotice: [["yellow", "normal"], ["blue", "normal"]]
   widgetbullet: [["yellow", "normal"], ["blue", "normal"]]
+  genericbullet: [["white", "normal"], ["black", "normal"]]
   matchbullet: [["magenta", "normal"], ["black", "normal"]]
   widgetdefault:
     unselected: [["white", "normal"], ["blue", "normal"]]
@@ -831,6 +839,12 @@ types:
   logbullet: ["severity_debug", "bold"]
   mainheader_prefix: ["mainheader", "bold"]
   mainheader_suffix: ["mainheader", "bold"]
+  markdown_header_1: ["markdown_header_1", ["underline", "bold"]]
+  markdown_header_2: ["markdown_header_2", ["underline", "bold"]]
+  markdown_header_3: ["markdown_header_3", ["underline"]]
+  markdown_bold: ["markdown_bold", "bold"]
+  markdown_italics: "markdown_italics"
+  markdown_bold_italics: ["markdown_bold_italics", "bold"]
   matchbullet: "matchbullet"
   mem: "type_mem"
   mosquitto_comment: "type_mosquitto_comment"
@@ -1037,6 +1051,7 @@ separators:
   ipblocks: [["IPBlocks", ["types", "separator_ipblocks"]]]
   secret_type: [["/", ["types", "separator_secret_type"]]]
   widgetbullet: [["• ", ["types", "widgetbullet"]]]
+  genericbullet: [["• ", ["types", "genericbullet"]]]
   matchbullet: [["◉ ", ["types", "matchbullet"]]]
   newline: [["\\n", ["types", "separator_newline"]]]
   logbullet: [["• ", ["types", "logbullet"]]]
