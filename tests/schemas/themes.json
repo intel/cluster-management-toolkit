@@ -47,12 +47,36 @@
 			]
 		},
 		"formatted_string": {
-			"description": "A a list of formatted string fragments",
-			"type": "array",
-			"items": {
-				"$ref": "#/definitions/formatted_string_fragment"
-			},
-			"minItems": 1
+			"description": "A a list of formatted string fragments, optionally with unselected and selected versions",
+			"anyOf": [
+				{
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/formatted_string_fragment"
+					},
+					"minItems": 1
+				}, {
+					"description": "Unselected and selected colour pair names from color_pairs_curses",
+					"type": "object",
+					"properties": {
+						"unselected": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/formatted_string_fragment"
+							},
+							"minItems": 1
+						},
+						"selected": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/formatted_string_fragment"
+							},
+							"minItems": 1
+						}
+					},
+					"additionalProperties": false
+				}
+			]
 		},
 		"formatted_string_fragment": {
 			"description": "A formatted string fragment",
