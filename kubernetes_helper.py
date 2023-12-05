@@ -4272,7 +4272,7 @@ class KubernetesHelper:
 				if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
 					# This is to handle systems that doesn't have the latest version of cryptography
 					# pylint: disable-next=import-outside-toplevel,no-name-in-module
-					from cryptography.hazmat.primitives import default_backend
+					from cryptography.hazmat.primitives import default_backend # type: ignore
 					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 				else:
 					raise
@@ -5017,7 +5017,7 @@ class KubernetesHelper:
 	# this way lists the result can be handled unconditionally in for loops
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_get(self, *, kind: Optional[Tuple[str, str]] = None, raw_path: str = None, name: str = "", namespace: str = "",
+	def __rest_helper_get(self, *, kind: Optional[Tuple[str, str]] = None, raw_path: Optional[str] = None, name: str = "", namespace: str = "",
 			      label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
 		if kind is None and raw_path is None:
 			raise ValueError("__rest_helper_get API called with kind None and raw_path None; this is most likely a programming error")
@@ -5044,7 +5044,7 @@ class KubernetesHelper:
 			namespace_part = f"namespaces/{namespace}/"
 
 		if raw_path is None:
-			kind = self.guess_kind(kind)
+			kind = self.guess_kind(cast(Tuple[str, str], kind))
 			if kind in kubernetes_resources:
 				api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
 				api = deep_get(kubernetes_resources[kind], DictPath("api"))

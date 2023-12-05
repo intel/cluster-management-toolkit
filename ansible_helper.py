@@ -226,7 +226,7 @@ def ansible_get_inventory_dict() -> Dict:
 	return d
 
 def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
-				 include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> List[List[ANSIThemeString]]:
+				 include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> Union[List[str], List[List[ANSIThemeString]]]:
 	"""
         Get the Ansible inventory and return it neatly formatted
 

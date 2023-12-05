@@ -14,14 +14,14 @@ import re
 import subprocess
 from subprocess import PIPE, STDOUT
 import sys
-from typing import cast, Dict, List, Optional, Set, Union
+from typing import cast, Dict, List, Optional, Set, Tuple, Union
 
 from cmttypes import FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import HOMEDIR
 
 import ansithemeprint
 
-def expand_path(path: str, search_paths: List[str] = None, suffixes: List[str] = None, fallback: str = "") -> Union[FilePath, bool]:
+def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: Optional[List[str]] = None, fallback: str = "") -> Tuple[FilePath, bool]:
 	"""
 	Given a path, filename or partial filename, expand it to its full path
 
