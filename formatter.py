@@ -138,7 +138,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 				tmpline.append(ThemeRef("separators", "genericbullet"))
 				line = line[themearray_len(tmpline):]
 
-			tformat = ThemeAttr("es", "generic")
+			tformat = ThemeAttr("types", "generic")
 			# Assume consistent use of **/*/__/_
 			if "**" in line:
 				bold_sections = line.split("**")

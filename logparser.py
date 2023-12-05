@@ -2536,11 +2536,11 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 				if ok > 0:
 					options["override_formatting"] = ThemeAttr("main", "status_ok")
 				if changed > 0:
-					options["override_formatting"] = ThemeAttr("logview", "severity_modified")
+					options["override_formatting"] = ThemeAttr("logview", "modified")
 				if skipped > 0:
 					options["override_formatting"] = ThemeAttr("logview", "severity_debug")
 				if ignored > 0 or rescued > 0:
-					options["override_formatting"] = ThemeAttr("logview", "severity_warn")
+					options["override_formatting"] = ThemeAttr("logview", "severity_warning")
 				if unreachable > 0 or failed > 0:
 					options["override_formatting"] = ThemeAttr("logview", "severity_error")
 
@@ -2549,7 +2549,7 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 		elif message.startswith("ok"):
 			options["override_formatting"] = ThemeAttr("main", "status_ok")
 		elif message.startswith("changed"):
-			options["override_formatting"] = ThemeAttr("logview", "severity_modified")
+			options["override_formatting"] = ThemeAttr("logview", "modified")
 		elif message.startswith("fatal"):
 			options["override_formatting"] = ThemeAttr("logview", "severity_error")
 		remnants = formatters.format_ansible_line(message, override_formatting = deep_get(options, DictPath("override_formatting")))
