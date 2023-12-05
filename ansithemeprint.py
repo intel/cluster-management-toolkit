@@ -131,7 +131,7 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
 
 	return string
 
-def __themearray_to_string(themearray: List[ANSIThemeString], color: str = "always") -> str:
+def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True) -> str:
 	if theme is None or themepath is None:
 		sys.exit("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
 
@@ -143,7 +143,7 @@ def __themearray_to_string(themearray: List[ANSIThemeString], color: str = "alwa
 		theme_attr_ref = themestring.themeref
 		theme_string = str(themestring)
 
-		if theme is not None and color != "never":
+		if theme is not None and color:
 			if theme_attr_ref in theme["term"]:
 				attr = theme["term"][theme_attr_ref]
 				reset = theme["term"]["reset"]
@@ -226,7 +226,7 @@ def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]]
 
 	return themearray
 
-def ansithemeinput(themearray: List[ANSIThemeString], color: str = "always") -> str:
+def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> str:
 	"""
 	Print a themearray and input a string;
 	a themearray is a list of format strings of the format:
@@ -254,7 +254,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "always") -> 
 	tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "always") -> str:
+def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "auto") -> str:
 	"""
 	Print a themearray and input a password;
 	a themearray is a list of format strings of the format:
@@ -283,7 +283,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "alw
 		tmp = tmp.replace("\x00", "<NUL>")
 	return tmp
 
-def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, color: str = "always") -> None:
+def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, color: str = "auto") -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
@@ -301,7 +301,21 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	if theme is None or themepath is None:
 		sys.exit("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = color)
+	if color == "auto":
+		if stderr and not sys.stderr.isatty():
+			use_color = False
+		elif not stderr and not sys.stdout.isatty():
+			use_color = False
+		else:
+			use_color = True
+	elif color == "always":
+		use_color = True
+	elif color == "never":
+		use_color = False
+	else:
+		sys.exit("Incorrect value for color passed to ansithemeprint(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+
+	string = __themearray_to_string(themearray, color = use_color)
 
 	if stderr:
 		print(string, file = sys.stderr)
