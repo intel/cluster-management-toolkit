@@ -1,7 +1,7 @@
 #! /bin/sh
 # vim: filetype=python
 # pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: ansible
 # Requires: python3 (>= 3.8)
@@ -632,11 +632,17 @@ def listgetter_files(**kwargs):
 
 	for path in paths:
 		filepath = deep_get(path, DictPath("filepath"), "")
+		filetype = deep_get(path, DictPath("filetype"), "yaml")
+
 		# Substitute {HOME}/ for {HOMEDIR}
 		if filepath.startswith(("{HOME}/", "{HOME}\\")):
 			filepath = FilePath(str(PurePath(HOMEDIR).joinpath(filepath[len('{HOME}/'):])))
 
-		d = secure_read_yaml(filepath)
+		if filetype == "yaml":
+			d = secure_read_yaml(filepath)
+		else:
+			d = secure_read_string(filepath)
+
 		if len(d) == 0:
 			continue
 
@@ -644,7 +650,10 @@ def listgetter_files(**kwargs):
 		p = Path(FilePath(filepath))
 		mtime = p.stat().st_mtime
 
-		item = __recurse_data(path, d)
+		if filetype == "text":
+			item = d
+		else:
+			item = __recurse_data(path, d)
 		extra_data = deep_get(path, DictPath("_extra_data"), {})
 		extra_data["mtime"] = mtime
 
@@ -2531,6 +2540,28 @@ def get_task_log(obj: Dict, **kwargs: Dict):
 def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 	return obj
 
+def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+	# This is essentially just a wrapper around listgetter_files
+	extra_values = deep_get(kwargs, DictPath("extra_values"), {})
+	extra_values_lookup = deep_get(kwargs, DictPath("extra_values_lookup"), {})
+	formatter = deep_get(kwargs, DictPath("formatter"), "none")
+
+	for key, path in extra_values_lookup.items():
+		if "extra_values" not in kwargs:
+			kwargs["extra_values"] = {}
+		kwargs["extra_values"][key] = deep_get_with_fallback(obj, path, "")
+
+	kwargs.pop("extra_values_lookup", "")
+
+	vlist, _status = listgetter_files(**kwargs)
+
+	formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
+
+	if formatter == "markdown":
+		return formatters.format_markdown(vlist[0], **formatter_args)
+	else:
+		return formatters.none(vlist[0], **formatter_args)
+
 def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	Takes an object and dumps it using the specified format (if possible)
@@ -2620,7 +2651,7 @@ def get_cmt_log(obj: Dict, **kwargs: Dict):
 				elif themeref == "argument":
 					fmt = ThemeAttr("main", "infoheader")
 				elif themeref == "error":
-					fmt = ThemeAttr("logview", "error")
+					fmt = ThemeAttr("logview", "severity_error")
 				# Insert more here when necessary
 				else:
 					fmt = ThemeAttr("main", "default")
@@ -12189,6 +12220,7 @@ infogetter_allowlist = {
 	"logpad_msg_getter": logpad_msg_getter,
 	# XXX: We should aim to replace this with logpad_formatted
 	"logpad_yaml": logpad_yaml,
+	"logpad_files": logpad_files,
 	"get_journalctl_log": get_journalctl_log,
 	"get_task_log": get_task_log,
 	"get_cmt_log": get_cmt_log,
@@ -12915,7 +12947,7 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 	List all available namespaces
 	"""
 
-	color = "always"
+	color = "auto"
 
 	# Valid formats:
 	# default = Normal output format (default)
@@ -13271,7 +13303,10 @@ COMMANDLINE = {
 				"extended_description": [
 					[ANSIThemeString("Valid arguments are: ", "description")],
 					[ANSIThemeString("always", "argument"),
-					 ANSIThemeString(" (always color the output; default)", "description")],
+					 ANSIThemeString(" (always color the output)", "description")],
+					[ANSIThemeString("auto", "argument"),
+					 ANSIThemeString(" (color the output when outputting", "description")],
+					[ANSIThemeString("to a terminal)", "description")],
 					[ANSIThemeString("never", "argument"),
 					 ANSIThemeString(" (never color the output)", "description")],
 				],
@@ -13280,6 +13315,7 @@ COMMANDLINE = {
 					"validator": "allowlist",
 					"allowlist": [
 						"always",
+						"auto",
 						"never",
 					],
 				},

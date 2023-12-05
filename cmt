@@ -1,7 +1,7 @@
 #! /bin/sh
 # vim: filetype=python
 # pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin | grep 'python3\.[0-9]*$' | sed -e 's/.*\.\([0-9]*\)$/\1/' | sort -nr | head -n1 ) && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: ansible
 # Requires: python3 (>= 3.8)
@@ -1986,7 +1986,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		"info": None,
 	}
 
-	color = "always"
+	color = "auto"
 
 	# Valid formats:
 	# table = Normal output format (default)
@@ -2297,7 +2297,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				       ANSIThemeString("".ljust(cmt_support_len - len(cmt_support_header) + 2), "default"),
 				       ANSIThemeString(local_view_header, "header"),
 				       ANSIThemeString("".ljust(local_view_len - len(local_view_header) + 2), "default")]
-		if color == "never":
+		if color == "never" or color == "auto" and not sys.stdout.isatty():
 			tmp_header = [item.upper() for item in tmp_header]
 		ansithemeprint(tmp_header, color = color)
 
@@ -3352,7 +3352,10 @@ CMT_COMMANDLINE = {
 				"extended_description": [
 					[ANSIThemeString("Valid arguments are: ", "description")],
 					[ANSIThemeString("always", "argument"),
-					 ANSIThemeString(" (always color the output; default)", "description")],
+					 ANSIThemeString(" (always color the output)", "description")],
+					[ANSIThemeString("auto", "argument"),
+					 ANSIThemeString(" (color the output when outputting", "description")],
+					[ANSIThemeString("to a terminal)", "description")],
 					[ANSIThemeString("never", "argument"),
 					 ANSIThemeString(" (never color the output)", "description")],
 				],
@@ -3361,6 +3364,7 @@ CMT_COMMANDLINE = {
 					"validator": "allowlist",
 					"allowlist": [
 						"always",
+						"auto",
 						"never",
 					],
 				},
