@@ -330,8 +330,12 @@
 					"type": "object"
 				},
 				"formatter": {
-					"description": "If the infogetter is logpad_formatted() this is used to decide what formatter to use",
+					"description": "If the infogetter is logpad_formatted() or logpad_files() this is used to decide what formatter to use",
 					"type": "string"
+				},
+				"formatter_args": {
+					"description": "Arguments to pass to the formatter",
+					"type": "object"
 				},
 				"hard_path": {
 					"description": "The path to get hard quota information from",
@@ -848,6 +852,7 @@
 				"str",
 				"substitution",
 				"timediff",
+				"timestamp",
 				"timestamp_with_age",
 				"transform",
 				"tuple",
@@ -1210,6 +1215,7 @@
 								"get_context_list",
 								"get_metrics_list",
 								"get_pod_containers_list",
+								"listgetter_dir",
 								"listgetter_files"
 							]
 						}, {
@@ -1722,6 +1728,9 @@
 						}
 					]
 				},
+				"infoview_args": {
+					"type": "object"
+				},
 				"listpad": {
 					"description": "A screen area used to display objects related to the info view",
 					"type": "object",
@@ -1796,9 +1805,11 @@
 						"infogetter": {
 							"description": "The function to use to get the content for the logpad",
 							"enum": [
+								"logpad_files",
 								"logpad_formatted",
 								"logpad_msg_getter",
 								"logpad_yaml",
+								"get_cmt_log",
 								"get_journalctl_log",
 								"get_task_log",
 								"get_themearrays",
@@ -2039,6 +2050,10 @@
 															"items": false
 														}
 													}
+												},
+												"var": {
+													"description": "A path to a variable",
+													"$ref": "#/definitions/simple_path"
 												}
 											},
 											"additionalProperties": false
@@ -2408,6 +2423,44 @@
 						}
 					},
 					"additionalProperties": false
+				},
+				"statusmsg": {
+					"description": "A list of entries to add to the status bar",
+					"type": "array",
+					"items": {
+						"description": "An item to add to the status bar",
+						"type": "array",
+						"prefixItems": [
+							{
+								"description": "The header for the entry",
+								"type": "string"
+							}, {
+								"type": "array",
+								"prefixItems": [
+									{
+										"description": "The source to get the value from",
+										"enum": [
+											"config",
+											"var"
+										]
+									}, {
+										"description": "The path to get the value from",
+										"$ref": "#/definitions/simple_path"
+									}
+								],
+								"items": false,
+								"minItems": 2,
+								"maxItems": 2
+							}, {
+								"description": "The default value to use if the path is empty",
+								"type": "string"
+							}
+						],
+						"items": false,
+						"minItems": 2,
+						"maxItems": 3
+					},
+					"minItems": 1
 				}
 			},
 			"required": [ "name" ],
