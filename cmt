@@ -53,7 +53,7 @@ from ansible_helper import ansible_print_action_summary, ansible_print_play_resu
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import cmtlib
-from cmtlib import identify_distro, read_cmtconfig
+from cmtlib import chunk_list, identify_distro, read_cmtconfig
 from cmtio import execute_command, secure_read_string, validate_fqdn
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
@@ -1494,6 +1494,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	force = False
 	purge = False
+	confirm = True
 	verbose = False
 
 	for opt, optarg in options:
@@ -1509,6 +1510,8 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			k8s_distro = optarg
 		elif opt == "--verbose":
 			verbose = True
+		elif opt == "-Y":
+			confirm = False
 
 	if os_distro == "suse" and k8s_distro != "rke2":
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -1548,6 +1551,30 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": No nodes available; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
+
+	if verbose:
+		ansithemeprint([ANSIThemeString("\n[Summary]", "phase")])
+		ansithemeprint([ANSIThemeString("\n• ", "separator"),
+				ANSIThemeString("Target Nodes:", "action")])
+
+		if len(nodes) < 20:
+			chunksize = 1
+		else:
+			chunksize = 8
+
+		# This might potentially be a list of hundreds of nodes; we don't want the list to scroll off-screen, but we also don't want to join them all to one line unless we have to
+		for node_chunk in chunk_list(nodes, chunksize):
+			ansithemeprint([ANSIThemeString("  • ", "separator")] +
+				       ansithemestring_join_tuple_list(node_chunk, formatting = "hostname", separator = ANSIThemeString(", ", "separator")))
+
+	if confirm:
+		input_retval = ansithemeinput([ANSIThemeString("\nStart node removal? [y/", "default"),
+					       ANSIThemeString("N", "emphasis"),
+					       ANSIThemeString("]: ", "default")])
+		if input_retval.lower() not in ("y", "yes"):
+			ansithemeprint([ANSIThemeString("\nAborting", "error"),
+					ANSIThemeString(": User stopped host preparation.", "default")], stderr = True)
+			sys.exit(errno.EINTR)
 
 	ansithemeprint([ANSIThemeString("\n[Removing nodes]", "phase")])
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -3099,6 +3126,9 @@ CMT_COMMANDLINE = {
 			},
 			"--verbose": {
 				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
+			"-Y": {
+				"description": [ANSIThemeString("Do not ask for confirmation", "description")],
 			},
 		},
 		"required_args": [

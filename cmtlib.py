@@ -10,7 +10,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
 import about
 from ansithemeprint import ANSIThemeString, ansithemeprint
@@ -88,6 +88,19 @@ def validate_name(rtype: str, name: str) -> bool:
 		maxlen = 15
 
 	return not invalid and len(name) <= maxlen
+
+def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
+	"""
+	Split a list into sublists, each up to chunksize elements long
+
+		Parameters:
+			items ([Any]): The list to split
+			chunksize (int): The chunksize
+		Returns:
+			chunk ([Any]): A generator for the chunked list
+	"""
+	for i in range(0, len(items), chunksize):
+		yield items[i:i + chunksize]
 
 def clamp(value: int, minval: int, maxval: int) -> int:
 	"""

@@ -201,6 +201,7 @@ _cmt() {
 	remove-node|remove-nodes)
 		commands=$(add_option_if_not_in_list "--force" ${commands})
 		commands=$(add_option_if_not_in_list "--purge" ${commands})
+		commands=$(add_option_if_not_in_list "-Y" ${commands})
 		;;
 	use-context|use-ctx)
 		commands="${commands} NAME INDEX"
