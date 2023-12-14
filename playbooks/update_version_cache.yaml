@@ -56,9 +56,13 @@
   - name: "Load version info"
     ansible.builtin.set_fact:
       d: "{{ lookup('ansible.builtin.file', '~/.cmt/version-cache/kubernetes_current.yaml') | ansible.builtin.from_yaml_all | first | ansible.builtin.from_yaml }}"
-  - name: "Latest version"
+  - name: "Latest version (patch revisions exist)"
     ansible.builtin.set_fact:
-      version: "{{ d['schedules'][0]['previousPatches'][0]['release'] }}"
+      version: "{{ d['schedules'][0]['previousPatches'][0]['release'] | default('') }}"
+  - name: "Latest version (no patch revisions exist)"
+    ansible.builtin.set_fact:
+      version: "{{ d['schedules'][0]['release'] }}.0"
+    when: "version == ''"
   - name: "Fetching changelog for upstream projects"
     ansible.builtin.get_url:
       url: "{{ item.url }}"

@@ -1,0 +1,8 @@
+server: "https://{{ control_plane_ip }}:9345"
+container-runtime-endpoint: "{{ cri_socket }}"
+token: "{{ node_token }}"
+kubelet-arg:
+# - feature-gates=""
+- cgroup-driver=systemd
+# kube-proxy-arg:
+# - feature-gates=""

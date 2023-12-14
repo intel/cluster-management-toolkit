@@ -59,7 +59,7 @@
   - name: "Configuring RKE2"
     ansible.builtin.template:
       dest: "/etc/rancher/rke2/config.yaml"
-      src: "templates/etc/rancher/rke2/config.yaml.j2"
+      src: "{{ configuration_path }}"
       mode: "0600"
       force: true
     when: "port_check.rc == 1"

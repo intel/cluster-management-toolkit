@@ -1,0 +1,18 @@
+cni:
+- none
+cluster-cidr: "{{ pod_network_cidr }}"
+container-runtime-endpoint: "{{ cri_socket }}"
+disable: "rke2-canal"
+disable-cloud-controller: true
+# kube-apiserver-arg:
+# - feature-gates=""
+# - runtime-config=""
+# kube-controller-manager-arg:
+# - feature-gates=""
+kubelet-arg:
+# - feature-gates=""
+- cgroup-driver=systemd
+# kube-proxy-arg:
+# - feature-gates=""
+# kube-scheduler-arg:
+# - feature-gates=""

@@ -1,13 +1,19 @@
-apiVersion: v1alpha1
+apiVersion: v1alpha2
 kind: ClusterDeployment
 
-# Note: templated installs are only supported for kubeadm at the moment
+# Note: templated installs are only supported for kubeadm and rke2 at the moment
 # This configuration uses:
 #   ClusterConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
 #   InitConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
-#   KubeletConfiguration kubelet.config.k8s.io/v1beta1 [Kubernetes
-#   KubeProxyConfiguration kubeproxy.config.k8s.io/v1alpha1 [Kubernetes
+#   KubeletConfiguration kubelet.config.k8s.io/v1beta1 [Kubernetes 1.10+]
+#   KubeProxyConfiguration kubeproxy.config.k8s.io/v1alpha1 [Kubernetes 1.12+]
 options:
+  # Kubernetes distro; valid options:
+  # kubeadm
+  # rke2
+  # [optional; default: kubeadm]
+  # distro: "kubeadm"
+
   # Kubernetes version; valid options:
   # 1.<minor>
   # latest
@@ -82,6 +88,70 @@ cluster:
   # is just the equivalent of the default configuration used by cmtadm/cmt,
   # as well as the extra options provided by cmtadm
   configurationTemplates:
+    rke2Configuration:
+      # Embedded cluster configuration template:
+      data: |
+        cni:
+        - none
+        # This will be auto-populated from the cluster settings
+        cluster-cidr: "{{ pod_network_cidr }}"
+        # This will be auto-populated from the cluster settings
+        container-runtime-endpoint: "{{ cri_socket }}"
+        # disable is a comma-separated list of built-in features to disable;
+        # unless you want to use rke2-canal as your CNI you should keep it here
+        # if you make changes
+        # [optional; default: "rke2-canal"]
+        # disable: "rke2-canal"
+        disable: "rke2-canal"
+        disable-cloud-controller: true
+        #kube-apiserver-arg:
+        # feature-gates is a comma-separated string
+        # To Enable Dynamic Resource Allocations use the following:
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for controllerManager, kubeProxy and scheduler in cluster_configuration,
+        # kube_proxy_configuration, and kubelet_configuration
+        # [optional; default: null]
+        # - feature-gates=DynamicResourceAllocation=true
+        # runtime-config is a comma-separated string;
+        # [optional; default: null]
+        # - runtime-config=api/alpha=true
+        #kube-controller-manager-arg:
+        # feature-gates is a comma-separated string
+        # To Enable Dynamic Resource Allocations use the following:
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer and scheduler in cluster_configuration,
+        # as well as in kube_proxy_configuration, and kubelet_configuration
+        # [optional; default: null]
+        # - feature-gates=DynamicResourceAllocation=true
+        kubelet-arg:
+        # feature-gates is a comma-separated string
+        # To Enable Dynamic Resource Allocations use the following:
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer and scheduler in cluster_configuration,
+        # as well as in kube_proxy_configuration, and kubelet_configuration
+        # [optional; default: null]
+        # - feature-gates=DynamicResourceAllocation=true
+        # The cgroup driver to use
+        - cgroup-driver=systemd
+        #kube-proxy-arg:
+        # feature-gates is a comma-separated string
+        # To Enable Dynamic Resource Allocations use the following:
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer and scheduler in cluster_configuration,
+        # as well as in kube_proxy_configuration, and kubelet_configuration
+        # [optional; default: ""]
+        # - feature-gates=DynamicResourceAllocation=true
+        #kube-scheduler-arg:
+        # feature-gates is a comma-separated string
+        # To Enable Dynamic Resource Allocations use the following:
+        # Note: also requires alpha APIs and the matching feature gates
+        # to be enabled for apiServer and scheduler in cluster_configuration,
+        # as well as in kube_proxy_configuration, and kubelet_configuration
+        # [optional; default: ""]
+        # - feature-gates=DynamicResourceAllocation=true
+
+      # Path to cluster configuration template, relative to the playbook directory:
+      # path: "templates/config/rke2_configuration.yaml.j2"
     clusterConfiguration:
       # Embedded cluster configuration template:
       data: |
@@ -215,6 +285,39 @@ nodes:
     # control_plane_path
     # pod_network_cidr
     configurationTemplates:
+      rke2Configuration:
+        # Embedded cluster configuration template:
+        data: |
+          # This will be auto-populated from the cluster settings
+          server: "https://{{ control_plane_ip }}:9345"
+          # This will be auto-populated from the cluster settings
+          container-runtime-endpoint: "{{ cri_socket }}"
+          # This will be auto-populated from the newly generated cluster
+          token: "{{ node_token }}"
+          # Arguments to pass to kubelet
+          kubelet-arg:
+          # feature-gates is a comma-separated string
+          # To Enable Dynamic Resource Allocations use the following:
+          # Note: also requires alpha APIs and the matching feature gates
+          # to be enabled for apiServer and scheduler in cluster_configuration,
+          # as well as in kube_proxy_configuration, and kubelet_configuration
+          # [optional; default: ""]
+          # - feature-gates=DynamicResourceAllocation=true
+          # The cgroup driver to use
+          - cgroup-driver=systemd
+          # Arguments to pass to kube-proxy
+          #kube-proxy-arg:
+          # feature-gates is a comma-separated string
+          # To Enable Dynamic Resource Allocations use the following:
+          # Note: also requires alpha APIs and the matching feature gates
+          # to be enabled for apiServer and scheduler in cluster_configuration,
+          # as well as in kube_proxy_configuration, and kubelet_configuration
+          # [optional; default: ""]
+          # - feature-gates=DynamicResourceAllocation=true
+
+        # Path to node configuration template, relative to the playbook directory:
+        # path: "templates/config/rke2_agent_configuration.yaml.j2"
+
       joinConfiguration:
         # Embedded node configuration template:
         data: |
@@ -293,6 +396,37 @@ nodes:
     #   # control_plane_path
     #   # pod_network_cidr
     #   configurationTemplates:
+    #     rke2Configuration:
+    #       # Embedded cluster configuration template:
+    #       data: |
+    #         # This will be auto-populated from the cluster settings
+    #         server: "https://{{ control_plane_ip }}:9345"
+    #         # This will be auto-populated from the cluster settings
+    #         container-runtime-endpoint: "{{ cri_socket }}"
+    #         # This will be auto-populated from the newly generated cluster
+    #         token: "{{ node_token }}"
+    #         kubelet-arg:
+    #         # feature-gates is a comma-separated string
+    #         # To Enable Dynamic Resource Allocations use the following:
+    #         # Note: also requires alpha APIs and the matching feature gates
+    #         # to be enabled for apiServer and scheduler in cluster_configuration,
+    #         # as well as in kube_proxy_configuration, and kubelet_configuration
+    #         # [optional; default: ""]
+    #         # - feature-gates=DynamicResourceAllocation=true
+    #         # The cgroup driver to use
+    #         - cgroup-driver=systemd
+    #         kube-proxy-arg:
+    #         # feature-gates is a comma-separated string
+    #         # To Enable Dynamic Resource Allocations use the following:
+    #         # Note: also requires alpha APIs and the matching feature gates
+    #         # to be enabled for apiServer and scheduler in cluster_configuration,
+    #         # as well as in kube_proxy_configuration, and kubelet_configuration
+    #         # [optional; default: ""]
+    #         # - feature-gates=DynamicResourceAllocation=true
+
+    #       # Path to node configuration template, relative to the playbook directory:
+    #       # path: "templates/config/rke2_agent_configuration.yaml.j2"
+
     #     joinConfiguration:
     #       # Embedded node configuration template:
     #       data: |
@@ -324,6 +458,9 @@ nodes:
     #             - "sha256:{{ ca_cert_hash }}"
     #             # This will be auto-populated; only change if you know what you're doing
     #             apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+
+    #       # Path to node configuration template, relative to the playbook directory:
+    #       # path: "templates/config/join_configuration.yaml.j2"
 workloads:
   # The name of the workload
   # [mandatory]
