@@ -1,9 +1,234 @@
 kind: "NodeFeature"
 api_family: "nfd.k8s-sigs.io"
 default_command: "nodefeatures"
+command:
+- "nfeats"
+- "nfeat"
 listview:
   name: "Node Features"
   group: "Cluster Configuration"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age"]
+infoview:
+  name: "Node Features Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cpu_header", "cpu_vendor", "cpu_family", "cpu_model", "cpu_cstate", "cpu_flags", "cpu_sgx", "pstate_header", "pstate_governor", "pstate_turbo", "pstate_status", "network_devices", "storage"]
+    rows:
+      cpu_family:
+        header: [["  Family:", ["main", "infoheader"]]]
+        path: "spec#features#attributes#cpu.model#elements#family"
+        type: "int"
+        formatter: "numerical"
+      cpu_flags:
+        header: [["  ", ["main", "infoheader"]], ["F", ["main", "infoheader_shortcut"]], ["lags:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#flags#cpu.cpuid#elements"
+          pathtype: "dictlist"
+          transform:
+            output: ["key"]
+        formatter: "list"
+        formatting:
+          ellipsise: 20
+      cpu_header:
+        header: [["CPU:", ["main", "infoheader"]]]
+      cpu_model:
+        header: [["  Model:", ["main", "infoheader"]]]
+        path: "spec#features#attributes#cpu.model#elements#id"
+        type: "int"
+        formatter: "numerical"
+      cpu_cstate:
+        header: [["  CState:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#attributes#cpu.cstate#elements"
+          pathtype: "substitution"
+          substitute: "Enabled"
+          else: ""
+          when:
+          - key: "enabled"
+            eq: "true"
+        - path: "spec#features#attributes#cpu.cstate#elements"
+          pathtype: "substitution"
+          substitute: "Disabled"
+          else: ""
+          when:
+          - key: "enabled"
+            eq: "false"
+      cpu_sgx:
+        header: [["  SGX:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#attributes#cpu.sgx#elements"
+          pathtype: "substitution"
+          substitute: "Enabled"
+          else: ""
+          when:
+          - key: "enabled"
+            eq: "true"
+        - path: "spec#features#attributes#cpu.sgx#elements"
+          pathtype: "substitution"
+          substitute: "Disabled"
+          else: ""
+          when:
+          - key: "enabled"
+            eq: "false"
+        type: "str"
+        default: "<unsupported>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "<unsupported>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+      cpu_vendor:
+        header: [["  Vendor:", ["main", "infoheader"]]]
+        path: "spec#features#attributes#cpu.model#elements#vendor_id"
+        type: "str"
+      network_devices:
+        header: [["Net", ["main", "infoheader"]], ["w", ["main", "infoheader_shortcut"]], ["ork Devices:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#instances#network.device#elements"
+          pathtype: "items"
+          subpaths:
+          - "attributes#name"
+        formatter: "list"
+        formatting:
+          ellipsise: 20
+      pstate_header:
+        header: [["PState:", ["main", "infoheader"]]]
+      pstate_governor:
+        header: [["  Governor:", ["main", "infoheader"]]]
+        path: "spec#features#attributes#cpu.pstate#elements#scaling_governor"
+        type: "str"
+      pstate_status:
+        header: [["  Status:", ["main", "infoheader"]]]
+        path: "spec#features#attributes#cpu.pstate#elements#status"
+        type: "str"
+      pstate_turbo:
+        header: [["  Turbo:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#attributes#cpu.pstate#elements"
+          pathtype: "substitution"
+          substitute: "Enabled"
+          else: ""
+          when:
+          - key: "turbo"
+            eq: "true"
+        - path: "spec#features#attributes#cpu.pstate#elements"
+          pathtype: "substitution"
+          substitute: "Disabled"
+          else: ""
+          when:
+          - key: "turbo"
+            eq: "false"
+      storage:
+        header: [["S", ["main", "infoheader_shortcut"]], ["torage:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#features#instances#storage.block#elements"
+          pathtype: "items"
+          subpaths:
+          - "attributes#name"
+        formatter: "list"
+        formatting:
+          ellipsise: 20
+  shortcuts:
+    "CPU Flags":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show CPU Flags"
+      widget: "windowwidget"
+      title: "CPU Flags:"
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "spec#features#flags#cpu.cpuid#elements"
+        fields:
+        - "key"
+      # This isn't supported for now
+      sortcolumn: "key"
+    "Kernel Configuration":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show kernel configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Kernel Configuration"
+        _pass_obj: true
+        path: "spec#features#attributes#kernel.config#elements"
+    "Network Devices":
+      key: "w"
+      read_only: true
+      helptext: "Show Network devices"
+      widget: "windowwidget"
+      title: "Network Devices:"
+      headers: ["Name:", "State:", "Speed:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#features#instances#network.device#elements"
+        fields:
+        - "attributes#name"
+        - "attributes#operstate"
+        - "attributes#speed"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "Storage Devices":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Storage"
+      widget: "windowwidget"
+      title: "Storage Devices:"
+      headers: ["Name:", "Rotational:", "Zoned:", "# of Zones:", "DAX:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#features#instances#storage.block#elements"
+        fields:
+        - "attributes#name"
+        - "attributes#rotational"
+        - "attributes#zoned"
+        - "attributes#nr_zones"
+        - "attributes#dax"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "PCI Devices":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show PCI devices"
+      widget: "windowwidget"
+      title: "PCI Devices:"
+      headers: ["Class:", "Vendor:", "Device:", "Subsystem Vendor:", "Subsystem Device:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#features#instances#pci.device#elements"
+        fields:
+        - "attributes#class"
+        - "attributes#vendor"
+        - "attributes#device"
+        - "attributes#subsystem_vendor"
+        - "attributes#subsystem_device"
+      # This isn't supported for now
+      sortcolumn: "class"
+    "USB Devices":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show USB devices"
+      widget: "windowwidget"
+      title: "USB Devices:"
+      headers: ["Class:", "Vendor:", "Device:", "Serial:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#features#instances#usb.device#elements"
+        fields:
+        - "attributes#class"
+        - "attributes#vendor"
+        - "attributes#device"
+        - "attributes#serial"
+      # This isn't supported for now
+      sortcolumn: "class"
