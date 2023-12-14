@@ -2802,6 +2802,10 @@ def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 
 	if os.path.exists(f"{HOMEDIR}/.kube/config.{cluster_name}"):
 		os.remove(f"{HOMEDIR}/.kube/config.{cluster_name}")
+	if os.path.exists(f"{HOMEDIR}/.kube/token.{cluster_name}"):
+		os.remove(f"{HOMEDIR}/.kube/token.{cluster_name}")
+	if os.path.exists(f"{HOMEDIR}/.kube/rke2.config.{cluster_name}.yaml"):
+		os.remove(f"{HOMEDIR}/.kube/rke2.config.{cluster_name}.yaml")
 
 	try:
 		d1 = secure_read_yaml(KUBE_CONFIG_FILE)
