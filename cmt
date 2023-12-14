@@ -2195,7 +2195,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 						local_view = "False"
 
 				if has_data:
-					vlist, _status = kh.get_list_by_kind_namespace(kind = (kind, api_group), namespace = "")
+					vlist, _status = kh.get_list_by_kind_namespace(kind = kind_tuple, namespace = "")
 					if vlist is None or len(vlist) == 0:
 						continue
 
