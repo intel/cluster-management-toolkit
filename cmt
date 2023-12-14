@@ -109,6 +109,13 @@ def get_latest_kubernetes_upstream_version() -> str:
 		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
 			if len(previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])) > 0:
 				kubernetes_upstream_version = deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+			else:
+				tmp = deep_get(schedules[0], DictPath("release"), "")
+				if tmp is not None and len(str(tmp)) > 0:
+					tmp = str(tmp)
+					if len(tmp.split(".")) < 3:
+						tmp = f"{tmp}.0"
+					kubernetes_upstream_version = tmp
 
 	return kubernetes_upstream_version
 
