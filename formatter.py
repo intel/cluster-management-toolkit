@@ -86,6 +86,18 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 			list[themearray]: A list of themearrays
 	"""
 
+	format_lookup = {
+		# codeblock, bold, italics
+		(False, False, False): ThemeAttr("types", "generic"),
+		(True, False, False): ThemeAttr("types", "markdown_code"),
+		(True, True, False): ThemeAttr("types", "markdown_code_bold"),
+		(True, False, True): ThemeAttr("types", "markdown_code_italics"),
+		(True, True, True): ThemeAttr("types", "markdown_code_bold_italics"),
+		(False, True, False): ThemeAttr("types", "markdown_bold"),
+		(False, False, True): ThemeAttr("types", "markdown_italics"),
+		(False, True, True): ThemeAttr("types", "markdown_bold_italics"),
+	}
+
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 	start = deep_get(kwargs, DictPath("start"), "")
 	include_start = deep_get(kwargs, DictPath("include_start"), False)
@@ -95,11 +107,16 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 	strip_empty_end = deep_get(kwargs, DictPath("include_end"), False)
 
 	if isinstance(lines, str):
+		# Remove all commented-out blocks
+		lines = re.sub(r"<!--.*?-->", r"", lines, flags = re.DOTALL)
 		lines = split_msg(lines)
 
 	emptylines = []
 	started = False
+	codeblock = ""
 	for line in lines:
+		if codeblock != "~~~":
+			codeblock = ""
 		if not started and not line.startswith(start):
 			continue
 		if line.startswith(end):
@@ -116,6 +133,12 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 			dumps.append(emptylines)
 			emptylines = []
 
+		if line in ("~~~", "```"):
+			if codeblock == "":
+				codeblock = "~~~"
+			else:
+				codeblock = ""
+			continue
 		# For headers we are--for now--lazy
 		# Level 1 header
 		if line.startswith("# "):
@@ -131,6 +154,11 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 			line = line[len("### "):]
 		else:
 			tmpline = []
+			if line.startswith("    "):
+				tformat = ThemeAttr("types", "markdown_code")
+				codeblock = "    "
+				tmpline = []
+
 			if line.lstrip().startswith("- "):
 				striplen = len(line) - len(line.lstrip())
 				if striplen > 0:
@@ -139,40 +167,46 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 				line = line[themearray_len(tmpline):]
 
 			tformat = ThemeAttr("types", "generic")
-			# Assume consistent use of **/*/__/_
-			if "**" in line:
-				bold_sections = line.split("**")
-			elif "__" in line:
-				bold_sections = line.split("__")
-			else:
-				bold_sections = [line]
-			bold = True
 
-			for i, section in enumerate(bold_sections):
-				bold = not bold
-				if "*" in section:
-					italics_sections = section.split("*")
-				elif "_" in section:
-					italics_sections = section.split("_")
-				else:
-					italics_sections = [section]
-				italics = True
-				for j, italics_section in enumerate(italics_sections):
-					italics = not italics
-					if bold:
-						if italics:
-							tformat = ThemeAttr("types", "markdown_bold_italics")
-						else:
-							tformat = ThemeAttr("types", "markdown_bold")
+			# Rescue backticks
+			line = line.replace("\\`", "<<<backtick>>>")
+			code_blocks = line.split("`")
+
+			for i, codesection in enumerate(code_blocks):
+				codesection = codesection.replace("<<<backtick>>>", "\\`")
+				# Toggle codeblock
+				if i > 0 and codeblock in ("`", ""):
+					if codeblock == "`":
+						codeblock = ""
 					else:
-						if italics:
-							tformat = ThemeAttr("types", "markdown_italics")
-						else:
-							tformat = ThemeAttr("types", "generic")
-					tmpline.append(ThemeString(italics_section, tformat))
+						codeblock = "`"
+				# Assume consistent use of **/*/__/_
+				if "**" in codesection and codeblock == "":
+					bold_sections = codesection.split("**")
+				elif "__" in codesection and codeblock == "":
+					bold_sections = codesection.split("__")
+				else:
+					bold_sections = [codesection]
+				bold = True
+
+				for j, section in enumerate(bold_sections):
+					if section.startswith("#### "):
+						section = section[len("#### "):]
+						bold = True
+					else:
+						bold = not bold
+					if "*" in section and codeblock == "":
+						italics_sections = section.split("*")
+					elif "_" in section and codeblock == "":
+						italics_sections = section.split("_")
+					else:
+						italics_sections = [section]
+					italics = True
+					for k, italics_section in enumerate(italics_sections):
+						italics = not italics
+						tmpline.append(ThemeString(italics_section, format_lookup[(codeblock != "", bold, italics)]))
 			dumps.append(tmpline)
 			continue
-
 		dumps.append([ThemeString(line, tformat)])
 		continue
 

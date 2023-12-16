@@ -2542,6 +2542,7 @@ def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
 
 def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	# This is essentially just a wrapper around listgetter_files
+	show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
 	extra_values = deep_get(kwargs, DictPath("extra_values"), {})
 	extra_values_lookup = deep_get(kwargs, DictPath("extra_values_lookup"), {})
 	formatter = deep_get(kwargs, DictPath("formatter"), "none")
@@ -2557,10 +2558,10 @@ def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeSt
 
 	formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
 
-	if formatter == "markdown":
+	if not show_raw and formatter == "markdown":
 		return formatters.format_markdown(vlist[0], **formatter_args)
 	else:
-		return formatters.none(vlist[0], **formatter_args)
+		return formatters.format_none(vlist[0], **formatter_args)
 
 def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
