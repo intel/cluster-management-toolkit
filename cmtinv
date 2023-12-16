@@ -902,6 +902,8 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
 			description = deep_get(data, DictPath("description"), "<unset>")
 			category = deep_get(data, DictPath("category"), "<unset>")
 			read_only = str(deep_get(data, DictPath("read_only"), False))
+			if category in ("__DISABLED__", "__INVALID__"):
+				continue
 			rows.append([name, description, category, read_only])
 		for row in rows:
 			for i, field in enumerate(row):
@@ -970,13 +972,32 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.ENOENT)
 
 	playbooks = populate_playbooks()
-	if playbook in playbooks and deep_get(playbooks, DictPath(f"{playbook}#category"), "") not in ("__DISABLED__", "__INVALID__"):
-		playbook_path = deep_get(playbooks, DictPath(f"{playbook}#playbook"), "")
-		retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, verbose = verbose)
-		if verbose:
-			ansithemeprint([ANSIThemeString("", "default")])
+	if playbook not in playbooks:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": “", "default"),
+				ANSIThemeString(f"{playbook}", "argument"),
+				ANSIThemeString("“ is not a valid playbook; use “", "default"),
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME}", "programname"),
+				ANSIThemeString(" list-playbooks", "command"),
+				ANSIThemeString("“ to list valid playbooks.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
-		ansible_print_play_results(retval, ansible_results, verbose = verbose)
+	if deep_get(playbooks, DictPath(f"{playbook}#category"), "") in ("__DISABLED__", "__INVALID__"):
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": The playbook “", "default"),
+				ANSIThemeString(f"{playbook}", "argument"),
+				ANSIThemeString("“ is either disabled or invalid; use “", "default"),
+				ANSIThemeString(f"{about.INVENTORY_PROGRAM_NAME}", "programname"),
+				ANSIThemeString(" list-playbooks", "command"),
+				ANSIThemeString("“ to list valid playbooks.", "default")], stderr = True)
+		sys.exit(errno.EINVAL)
+
+	playbook_path = deep_get(playbooks, DictPath(f"{playbook}#playbook"), "")
+	retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, verbose = verbose)
+	if verbose:
+		ansithemeprint([ANSIThemeString("", "default")])
+
+	ansible_print_play_results(retval, ansible_results, verbose = verbose)
 
 def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
