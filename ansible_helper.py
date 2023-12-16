@@ -394,6 +394,8 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 			overwrite (bool): True: Overwrite the existing inventory
 	"""
 
+	disable_strict_host_key_checking = deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)
+
 	# Do not create anything if the inventory exists;
 	# unless overwrite is set
 	if Path(inventory).exists() and not overwrite:
@@ -420,7 +422,8 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 	if deep_get(ansible_configuration, DictPath("ansible_password")) is not None:
 		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, DictPath("ansible_password"))
 
-	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking")) is not None:
+	disable_strict_host_key_checking = deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)
+	if disable_strict_host_key_checking:
 		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no"
 
 	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True)
@@ -1265,6 +1268,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 	"""
 
 	count_total = 0
+	count_task_total = 0
 	count_no_hosts_match = 0
 	count_unreachable = 0
 	count_skip = 0
@@ -1282,6 +1286,7 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 			header_output = False
 
 			for play in plays:
+				count_task_total += 1
 				task = deep_get(play, DictPath("task"))
 
 				no_hosts_matched = deep_get(play, DictPath("no_hosts_matched"), False)
@@ -1294,19 +1299,24 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 
 					if no_hosts_matched:
 						ansithemeprint([ANSIThemeString("[No hosts matched]", "error")])
-						count_no_hosts_match += 1
 					elif unreachable:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
-						count_unreachable += 1
 					elif skipped:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "skip")])
-						count_skip += 1
 					elif retval == 0:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
-						count_success += 1
 					else:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
-						count_fail += 1
+				if no_hosts_matched:
+					count_no_hosts_match += 1
+				elif unreachable:
+					count_unreachable += 1
+				elif skipped:
+					count_skip += 1
+				elif retval == 0:
+					count_success += 1
+				else:
+					count_fail += 1
 
 				if not no_hosts_matched:
 					msg_lines = deep_get(play, DictPath("msg_lines"), "")
@@ -1336,8 +1346,11 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 			no_hosts_matched_formatting = "error"
 
 		ansithemeprint([ANSIThemeString("Summary:", "default")])
-		ansithemeprint([ANSIThemeString("Total: ", "phase"),
+		ansithemeprint([ANSIThemeString("Total Plays: ", "phase"),
 				ANSIThemeString(f"{count_total}", "numerical"),
+				ANSIThemeString(" / ", "separator"),
+				ANSIThemeString("Tasks: ", "phase"),
+				ANSIThemeString(f"{count_task_total}", "numerical"),
 				ANSIThemeString(", ", "separator"),
 				ANSIThemeString("Successful: ", successful_formatting),
 				ANSIThemeString(f"{count_success}", "numerical"),
