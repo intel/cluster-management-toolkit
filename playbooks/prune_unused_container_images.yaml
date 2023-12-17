@@ -1,0 +1,22 @@
+- hosts: "selection:!nas"
+  name: "Prune unused container images"
+  vars:
+    metadata:
+      description: "Prune unused container images"
+      summary:
+        "Removed objects":
+        - description: "All unused container images"
+      confirm: true
+      allow_on_control_plane: "always"
+      playbook_types:
+      - "cmtinv"
+      - "inventory"
+      - "nodes"
+      category: "Administration"
+  become: true
+  become_user: "root"
+  tasks:
+  - name: "Pruning unused container images"
+    shell: |
+      command -v crictl 2>&1 > /dev/null && crictl rmi --prune
+    failed_when: false
