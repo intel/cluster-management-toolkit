@@ -3531,7 +3531,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 				if controlplane is None:
 					controlplane = node_name
 			else:
-				nodes.append(node)
+				nodes.append(node_name)
 
 		if controlplane is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
@@ -4278,7 +4278,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if state == "installed" and phase == "<done>":
 		phase = 0
 		state = "adding_nodes"
-		control_plane_version = get_control_plane_version(controlplane = controlplane, k8s_distro = k8s_distro)
+		control_plane_version = get_control_plane_version(controlplane = control_planes[0], k8s_distro = k8s_distro)
 		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase, version = control_plane_version)
 
 	if state == "adding_nodes":
