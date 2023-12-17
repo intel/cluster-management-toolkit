@@ -4246,6 +4246,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		# First prepare all hosts
 		prepare_installation(prepare_options, prepare_args)
 
+	installation_info = get_installation_info()
 	state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
 	phase = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
 
