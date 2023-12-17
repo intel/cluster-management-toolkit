@@ -3520,6 +3520,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			sys.exit(errno.EINVAL)
 
 		controlplanes = []
+		nodes = []
 		controlplane = None
 
 		for node in vlist:
@@ -3529,6 +3530,8 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 				controlplanes.append(node_name)
 				if controlplane is None:
 					controlplane = node_name
+			else:
+				nodes.append(node)
 
 		if controlplane is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
@@ -3591,7 +3594,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			version = tmp2[2]
 			if package == "kubeadm":
 				k8s_distro = "kubeadm"
-				update_installation_info(cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = pod_network_cidr, control_planes = controlplanes)
+				update_installation_info(cluster_name = cluster_name, distro = k8s_distro, version = version, requested_version = "<none>", cni = cni, state = "installed", phase = "<none>", pod_network_cidr = pod_network_cidr, control_planes = controlplanes, nodes = nodes)
 				break
 		if k8s_distro == "<unknown>":
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
