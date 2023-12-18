@@ -3979,6 +3979,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 		minor_versions.append(f"{minor_version}")
 
 	extra_values = {
+		"ansible_become_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
+		"ansible_ssh_pass": deep_get(ansible_configuration, DictPath("ansible_password")),
 		"cluster_name": cluster_name,
 		"control_plane_ip": control_plane_ip,
 		"control_plane_port": control_plane_port,
@@ -4287,6 +4289,23 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		# We (hopefully) don't need to check whether the nodes are part of the cluster already,
 		# since we've just setup the control plane...
 		ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
+
+		# Check whether ansible_password is defined or not
+		if deep_get(ansible_configuration, DictPath("ansible_password")) is None and not no_password:
+			ansithemeprint([ANSIThemeString("Attention", "warning"),
+					ANSIThemeString(": To be able to run playbooks you need to provide the ansible/ssh password.", "default")])
+			ansithemeprint([ANSIThemeString("Since the systems will be reconfigured to use passwordless sudo and ssh keys this is a one-time thing.\n", "default")])
+			ansithemeprint([ANSIThemeString("Note", "note"),
+					ANSIThemeString(": If the remote host is already configured for passwordless sudo and allows for login using a pre-generated SSH-key you can use “", "default"),
+					ANSIThemeString("--no-password", "option"),
+					ANSIThemeString("“ to bypass this check.", "default")])
+			ansible_password = ansithemeinput_password([ANSIThemeString("\nPassword: ", "default")])
+			if len(ansible_password) == 0:
+				ansithemeprint([ANSIThemeString("\nError", "error"),
+						ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
+				sys.exit(errno.EINVAL)
+			else:
+				ansible_configuration["ansible_password"] = ansible_password
 
 		node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
 		node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
