@@ -1085,6 +1085,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "consolequickstarts",
 		"namespaced": False,
 	},
+	("ConsoleSample", "console.openshift.io"): {
+		"api_paths": ["apis/console.openshift.io/v1/"],
+		"api": "consolesamples",
+		"namespaced": False,
+	},
 	("ConsoleYAMLSample", "console.openshift.io"): {
 		"api_paths": ["apis/console.openshift.io/v1/"],
 		"api": "consoleyamlsamples",
@@ -2242,6 +2247,15 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/mutations.gatekeeper.sh/v1alpha1/"],
 		"api": "assignimage",
 		"namespaced": False,
+	},
+	# monitoring.openshift.io
+	("AlertingRule", "monitoring.openshift.io"): {
+		"api_paths": ["apis/monitoring.openshift.io/v1/"],
+		"api": "alertingrules",
+	},
+	("AlertRelabelConfig", "monitoring.openshift.io"): {
+		"api_paths": ["apis/monitoring.openshift.io/v1/"],
+		"api": "alertrelabelconfigs",
 	},
 	# network.openshift.io
 	("ClusterNetwork", "network.openshift.io"): {
