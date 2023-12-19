@@ -170,7 +170,7 @@
   - name: "Installing cri-o and dependencies"
     shell: |
       zypper -n install conntrack-tools cni-plugins conmon libcontainers-common runc
-      zypper -n install --repo kubic -f -y cri-o
+      zypper -n install --repo kubic -y cri-o
     when: "ansible_os_family == 'Suse'"
   - name: "Configure cri-o to use default apparmor_profile"
     ansible.builtin.template:
