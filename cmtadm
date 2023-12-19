@@ -4430,8 +4430,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 			try:
 				git_path = secure_which(FilePath("/usr/bin/git"),
-							 fallback_allowlist = ["/etc/alternatives", "/usr/local/bin", f"{HOMEDIR}/bin"],
-							 security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+							fallback_allowlist = ["/etc/alternatives", "/usr/lib/git", "/usr/local/bin", f"{HOMEDIR}/bin"],
+							security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
 			except FileNotFoundError:
 				git_path = None
 
@@ -4933,6 +4933,16 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString("“ was specified as version, but latest upstream version could not be found; aborting.", "default")], stderr = True)
 				sys.exit(errno.ENOENT)
 			version_split = kubernetes_upstream_version.split(".")
+			requested_major = version_split[0]
+			requested_minor = version_split[1]
+			requested_major_minor = f"{requested_major}.{requested_minor}"
+			# Add major/minor to extra_values
+			setup_control_plane_targets[k8s_distro]["extra_values"]["kubernetes_major_minor_version"] = requested_major_minor
+		else:
+			# First remove the distro revision, if any
+			major_minor_patchrev = requested_version.lstrip("v").split("-")
+			# Now split the version tuple
+			version_split = major_minor_patchrev[0].split(".")
 			requested_major = version_split[0]
 			requested_minor = version_split[1]
 			requested_major_minor = f"{requested_major}.{requested_minor}"

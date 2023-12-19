@@ -77,7 +77,7 @@
   - name: "Installing custom packages"
     shell: |
       zypper -n install -f -y {{ packages | join(' ') }}
-    when: "ansible_os_family == 'Suse' and len(vars['packages']) > 0"
+    when: "ansible_os_family == 'Suse' and (vars['packages'] | length > 0)"
   - name: "Marking packages as held"  # noqa fqcn-builtins
     shell: |
       zypper addlock {{ held_packages | join(' ') }} || true
