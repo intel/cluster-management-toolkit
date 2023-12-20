@@ -4280,9 +4280,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if state == "installed" and phase == "<done>":
 		phase = 0
-		state = "adding_nodes"
-		control_plane_version = get_control_plane_version(controlplane = control_planes[0], k8s_distro = k8s_distro)
-		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase, version = control_plane_version)
+		if len(nodes) > 0:
+			state = "adding_nodes"
+			control_plane_version = get_control_plane_version(controlplane = control_planes[0], k8s_distro = k8s_distro)
+			installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase, version = control_plane_version)
+		else:
+			state = "setup_cni"
+			installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase)
 
 	if state == "adding_nodes":
 		i = 0
@@ -4534,6 +4538,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					method = deep_get(deployment, DictPath("method"), "apply")
 					wtype = deep_get(deployment, DictPath("type"), "file")
 					uris = deep_get(deployment, DictPath("uri"))
+					data = deep_get(deployment, DictPath("data"))
 					pname = deep_get(deployment, DictPath("name"))
 					pnamespace = deep_get(deployment, DictPath("namespace"))
 					resource = deep_get(deployment, DictPath("resource"))
@@ -4551,13 +4556,15 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						sys.exit(errno.EINVAL)
 
 
-					if wtype not in ("file", "kustomization"):
+					if wtype not in ("embedded", "file", "kustomization"):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The type ", "default"),
 								ANSIThemeString(f"{wtype}", "argument"),
 								ANSIThemeString(" for the workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
 								ANSIThemeString(" is invalid; only ", "default"),
+								ANSIThemeString("embedded", "emphasis"),
+								ANSIThemeString(", ", "default"),
 								ANSIThemeString("file", "emphasis"),
 								ANSIThemeString(", and ", "default"),
 								ANSIThemeString("kustomization", "emphasis"),
@@ -4587,17 +4594,21 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if uris is None:
+					if uris is None and data is None or uris is not None and data is not None:
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
-								ANSIThemeString(" is invalid; ", "default"),
+								ANSIThemeString(" is invalid; exactly one of ", "default"),
 								ANSIThemeString("uri", "emphasis"),
-								ANSIThemeString(" is a mandatoryr field for .", "default"),
+								ANSIThemeString(" or ", "default"),
+								ANSIThemeString("data", "emphasis"),
+								ANSIThemeString(" is a mandatory field for .", "default"),
 								ANSIThemeString("kubectl", "emphasis"),
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
+					if uris is None:
+						uris = []
 					if isinstance(uris, str):
 						uris = [uris]
 
@@ -4615,7 +4626,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 					if method.startswith("patch"):
 						args += ["--patch-file"]
-					elif wtype == "file":
+					elif wtype in ("embedded", "file"):
 						args += ["-f"]
 					elif wtype == "kustomization":
 						args += ["-k"]
@@ -4652,6 +4663,15 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							check_and_print_status(execute_command(args + [uri], env = env))
 						else:
 							check_and_print_status(execute_command_with_response(args + [uri], env = env))
+					if data is not None:
+						tf = tempfile.NamedTemporaryFile(delete = True)
+						path = FilePath(tf.name)
+						secure_write_string(path, data, tempfile = True)
+						if verbose:
+							check_and_print_status(execute_command(args + [path], env = env))
+						else:
+							check_and_print_status(execute_command_with_response(args + [path], env = env))
+
 				elif "helm" in data:
 					if helm_path is None:
 						ansithemeprint([ANSIThemeString("Warning", "warning"),
