@@ -59,6 +59,14 @@ listview:
       type: "bool"
   actions:
     actionlist:
+      "Trigger Job":
+        description: "Trigger Job"
+        category: "Resource Level"
+        confirm: true
+        action: "execute"
+        action_args:
+          command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>", "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
+          iterate: true
       "Delete resource":
         description: "Delete resource"
         category: "Resource Level"
@@ -137,6 +145,14 @@ infoview:
         path: "spec#suspend"
         type: "bool"
   shortcuts:
+    "Trigger Job":
+      description: "Trigger Job"
+      key: "j"
+      modifier: "shift"
+      helptext: "Trigger Job"
+      action: "execute"
+      action_args:
+        command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>", "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
     "View Pod Template":
       key: "T"
       modifier: "shift"

@@ -20,6 +20,38 @@ import cmtio
 
 cmtconfig = {}
 
+def substitute_string(string: str, substitutions: Dict) -> str:
+	"""
+	Substitutes substrings in a string
+
+		Parameters:
+			string (str): The string to perform substitutions on
+			substitutions (dict): A dict where key is the substring to match against, and value is the replacement for that substring
+		Returns:
+			string (str): The string with substitutions performed
+	"""
+
+	for key, value in substitutions.items():
+		if string is None or value is None:
+			continue
+		string = string.replace(key, value)
+	return string
+
+def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
+	"""
+	Substitutes substrings in all strings in a list
+
+		Parameters:
+			string (list[str]): A list with the strings to perform substitutions on
+			substitutions (dict): A dict where key is the substring to match against, and value is the replacement for that substring
+		Returns:
+			list[str]: The list of strings with substitutions performed
+	"""
+
+	for key, value in substitutions.items():
+		strlist = [s.replace(key, value) for s in strlist]
+	return strlist
+
 def validate_name(rtype: str, name: str) -> bool:
 	"""
 	Given a name validate whether it is valid for the given type

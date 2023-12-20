@@ -58,7 +58,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from networkio import download_files, scan_and_add_ssh_keys
 
 import cmtlib
-from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper, identify_distro, read_cmtconfig
+from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper, identify_distro, read_cmtconfig, substitute_list, substitute_string
 
 import kubernetes_helper
 
@@ -884,38 +884,6 @@ cni_upgrade_data = {
 		}
 	},
 }
-
-def substitute_string(string: str, substitutions: Dict) -> str:
-	"""
-	Substitutes substrings in a string
-
-		Parameters:
-			string (str): The string to perform substitutions on
-			substitutions (dict): A dict where key is the substring to match against, and value is the replacement for that substring
-		Returns:
-			string (str): The string with substitutions performed
-	"""
-
-	for key, value in substitutions.items():
-		if string is None or value is None:
-			continue
-		string = string.replace(key, value)
-	return string
-
-def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
-	"""
-	Substitutes substrings in all strings in a list
-
-		Parameters:
-			string (list[str]): A list with the strings to perform substitutions on
-			substitutions (dict): A dict where key is the substring to match against, and value is the replacement for that substring
-		Returns:
-			list[str]: The list of strings with substitutions performed
-	"""
-
-	for key, value in substitutions.items():
-		strlist = [s.replace(key, value) for s in strlist]
-	return strlist
 
 def check_version_from_url(url: str, version_regex: str) -> List[str]:
 	"""

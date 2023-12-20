@@ -74,7 +74,7 @@ import curses_helper
 import cmtlib
 from cmtlib import clamp, disksize_to_human, get_package_versions, identify_k8s_distro, make_set_expression_list
 from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since
-from cmtlib import split_msg, versiontuple, read_cmtconfig
+from cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
 from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
 from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len, themearray_truncate, ThemeAttr, ThemeRef, ThemeString
@@ -9141,10 +9141,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					_values = {}
 					_values = {
 						"action_args": {
-							"command": command
+							"command": command,
+							"iterate": True,
 						}
 					}
-					action_execute_command(uip, items = [], action = {}, values = _values, kind = None, title = "")
+					items = [(deep_get(obj, DictPath("metadata#namespace"), ""), deep_get(obj, DictPath("metadata#name")))]
+					action_execute_command(uip, items = items, action = {}, values = _values, kind = None, title = "")
 			else:
 				call = deep_get(value, DictPath("call"))
 				call_name = None
@@ -11351,6 +11353,7 @@ def delete_logs(uip: UIProps, items, action, values, kind, **kwargs):
 # pylint: disable=unused-argument
 def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	tmpargs = deep_get(values, DictPath("action_args#command"), [])
+	iterate = deep_get(values, DictPath("action_args#iterate"), False)
 	if len(tmpargs) == 0:
 		return
 
@@ -11377,15 +11380,29 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) 
 
 	ansithemeprint(msg)
 
-	try:
-		result = subprocess.run(args, check = False)
-		retval = result.returncode
-	except FileNotFoundError:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-			  ANSIThemeString(": Command “", "default"),
-			  ANSIThemeString(f"{args[0]}", "programname"),
-			  ANSIThemeString("“ not found", "default")])
-		retval = 2
+	if iterate:
+		iterations = items
+	else:
+		iterations = [items]
+
+	for item in iterations:
+		substitutions = {}
+		if isinstance(item, tuple):
+			for i, subitem in enumerate(item):
+				substitutions[f"<<<item.{i}>>>"] = subitem
+		else:
+			substitutions["<<<item>>>"] = item
+		iterargs = substitute_list(args, substitutions)
+
+		try:
+			result = subprocess.run(iterargs, check = False)
+			retval = result.returncode
+		except FileNotFoundError:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+				  ANSIThemeString(": Command “", "default"),
+				  ANSIThemeString(f"{args[0]}", "programname"),
+				  ANSIThemeString("“ not found", "default")])
+			retval = 2
 
 	waitforkeypress = True
 	if waitforkeypress or retval > 0:
