@@ -15,6 +15,15 @@ listview:
       header: "Signer:"
       path: "spec#signerName"
       type: "str"
+      default: "<unlinked>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "<unlinked>":
+              field_colors:
+              - context: "types"
+                type: "undefined"
 infoview:
   name: "Cluster Trust Bundle Info"
   infopad:
@@ -26,6 +35,15 @@ infoview:
         header: [["Signer:", ["main", "infoheader"]]]
         path: "spec#signerName"
         type: "str"
+        default: "<unlinked>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "<unlinked>":
+                field_colors:
+                - context: "types"
+                  type: "undefined"
   logpad:
     infogetter: "logpad_formatted"
     timestamps: false
