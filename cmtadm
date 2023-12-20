@@ -4425,6 +4425,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
 						    fallback_allowlist = ["/etc/alternatives"],
 						    security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+			sudo_path = cmtio.secure_which(FilePath("sudo"), fallback_allowlist = ["/bin", "/usr/bin"],
+						       security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 			try:
 				helm_path = secure_which(FilePath("/usr/bin/helm"),
 							 fallback_allowlist = ["/etc/alternatives", "/usr/local/bin", f"{HOMEDIR}/bin"],
@@ -4539,6 +4541,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					wtype = deep_get(deployment, DictPath("type"), "file")
 					uris = deep_get(deployment, DictPath("uri"))
 					data = deep_get(deployment, DictPath("data"))
+					cert = deep_get(deployment, DictPath("cert"))
+					key = deep_get(deployment, DictPath("key"))
 					pname = deep_get(deployment, DictPath("name"))
 					pnamespace = deep_get(deployment, DictPath("namespace"))
 					resource = deep_get(deployment, DictPath("resource"))
@@ -4556,7 +4560,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						sys.exit(errno.EINVAL)
 
 
-					if wtype not in ("embedded", "file", "kustomization"):
+					if wtype not in ("embedded", "file", "kustomization", "secret+tls"):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The type ", "default"),
 								ANSIThemeString(f"{wtype}", "argument"),
@@ -4565,6 +4569,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" is invalid; only ", "default"),
 								ANSIThemeString("embedded", "emphasis"),
 								ANSIThemeString(", ", "default"),
+								ANSIThemeString("secret+tls", "emphasis"),
+								ANSIThemeString(", and ", "default"),
 								ANSIThemeString("file", "emphasis"),
 								ANSIThemeString(", and ", "default"),
 								ANSIThemeString("kustomization", "emphasis"),
@@ -4594,7 +4600,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if uris is None and data is None or uris is not None and data is not None:
+					if wtype != "secret+tls" and (uris is None and data is None or uris is not None and data is not None):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
@@ -4602,9 +4608,22 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString("uri", "emphasis"),
 								ANSIThemeString(" or ", "default"),
 								ANSIThemeString("data", "emphasis"),
-								ANSIThemeString(" is a mandatory field for .", "default"),
+								ANSIThemeString(" is a mandatory field for ", "default"),
 								ANSIThemeString("kubectl", "emphasis"),
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
+						sys.exit(errno.EINVAL)
+
+					if wtype == "secret+tls" and (cert is None or key is None):
+						ansithemeprint([ANSIThemeString("Error", "error"),
+								ANSIThemeString(": The workload ", "default"),
+								ANSIThemeString(f"{name}", "argument"),
+								ANSIThemeString(" is invalid; when type is ", "default"),
+								ANSIThemeString("secret+tls", "argument"),
+								ANSIThemeString(" both ", "default"),
+								ANSIThemeString("key", "emphasis"),
+								ANSIThemeString(" and ", "default"),
+								ANSIThemeString("cert", "emphasis"),
+								ANSIThemeString(" are mandatory fields.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
 					if uris is None:
@@ -4618,18 +4637,25 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					elif method == "apply":
 						args += ["apply", "--server-side"]
 					elif method == "patch+strategic":
-						args += ["patch", resource, pname, "--type", "strategic", "--namespace", pnamespace]
+						args += ["patch", resource, pname, "--type", "strategic"]
 					elif method == "patch+merge":
-						args += ["patch", resource, pname, "--type", "merge", "--namespace", pnamespace]
+						args += ["patch", resource, pname, "--type", "merge"]
 					elif method == "patch+json":
-						args += ["patch", resource, pname, "--type", "json", "--namespace", pnamespace]
+						args += ["patch", resource, pname, "--type", "json"]
 
 					if method.startswith("patch"):
+						if pnamespace is not None:
+							args += ["--namespace", pnamespace]
 						args += ["--patch-file"]
 					elif wtype in ("embedded", "file"):
 						args += ["-f"]
 					elif wtype == "kustomization":
 						args += ["-k"]
+					elif wtype == "secret+tls":
+						# secret + tls needs to run as sudo to be able to access /etc/kubernetes/pki
+						args = [sudo_path, kubectl_path, "create", "--kubeconfig", KUBE_CONFIG_FILE, "secret", "tls", pname, "--cert", cert, "--key", key]
+						if pnamespace is not None:
+							args += ["--namespace", pnamespace]
 
 					for uri in uris:
 						if not uri.startswith(("file://", "http://", "https://")):
@@ -4663,6 +4689,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							check_and_print_status(execute_command(args + [uri], env = env))
 						else:
 							check_and_print_status(execute_command_with_response(args + [uri], env = env))
+					if wtype == "secret+tls":
+						dry_run_result = execute_command_with_response(args + ["--dry-run=server"], env = env)
+						if not "already exists" in dry_run_result:
+							if verbose:
+								check_and_print_status(execute_command(args, env = env))
+							else:
+								check_and_print_status(execute_command_with_response(args, env = env))
 					if data is not None:
 						tf = tempfile.NamedTemporaryFile(delete = True)
 						path = FilePath(tf.name)
@@ -4671,7 +4704,6 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							check_and_print_status(execute_command(args + [path], env = env))
 						else:
 							check_and_print_status(execute_command_with_response(args + [path], env = env))
-
 				elif "helm" in data:
 					if helm_path is None:
 						ansithemeprint([ANSIThemeString("Warning", "warning"),
