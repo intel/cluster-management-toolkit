@@ -5,8 +5,6 @@
     container_name: "catalog-operator"
   - pod_name: "olm-operator"
     container_name: "olm-operator"
-  - pod_name: "package-server"
-    container_name: "package-server"
   - pod_name: "packageserver"
     container_name: "packageserver"
   parser_rules:
@@ -46,6 +44,15 @@
       matchkey: "Trace["
       loglevel: "debug"
   - name: "expand_event"
+- name: "olm"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "package-server"
+    container_name: "package-server"
+  parser_rules:
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "json_with_leading_message"
 - name: "olm"
   show_in_selector: false
   matchkeys:
