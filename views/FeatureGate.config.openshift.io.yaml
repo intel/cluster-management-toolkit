@@ -9,13 +9,19 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "feature_set", "age"]
+  fields:
+    feature_set:
+      header: "Feature Set:"
+      path: "spec#featureSet"
+      type: "str"
+      default: "<unset>"
 infoview:
   name: "Feature Gate Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version"]
+        fields: ["cluster_version", "feature_set"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
@@ -28,6 +34,49 @@ infoview:
           - key: "kind"
             eq: "ClusterVersion"
         default: "<none>"
+      feature_set:
+        header: [["Feature Set:", ["main", "infoheader"]]]
+        path: "spec#featureSet"
+        type: "str"
+        default: "<unset>"
+  listpad:
+    listgetter: "listgetter_feature_gates"
+    listgetter_args:
+      path: "status#featureGates"
+      subpaths:
+      - path: "enabled"
+        type: "list"
+        key: "name"
+        extras:
+          key: "enabled"
+          value: true
+      - path: "disabled"
+        type: "list"
+        key: "name"
+        extras:
+          key: "enabled"
+          value: false
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["feature_gate", "enabled", "payload_version"]
+        sortcolumn: "feature_gate"
+    fields:
+      enabled:
+        header: "Enabled:"
+        path: "enabled"
+        type: "bool"
+      feature_gate:
+        header: "Feature Gate:"
+        path: "name"
+        type: "str"
+      payload_version:
+        header: "Payload Version:"
+        path: "version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"

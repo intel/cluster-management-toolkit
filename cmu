@@ -2982,6 +2982,42 @@ def get_auth_rule_info(**kwargs: Dict) -> List[Type]:
 			}))
 	return info
 
+def listgetter_feature_gates(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]], int]:
+	"""
+	Listgetter for FeatureGate.config.openshift.io
+
+		Parameters:
+			obj (Dict): The object to extract a list of data from
+			kwargs (Dict): Additional parameters
+		Returns:
+			(vlist, retval):
+				vlist (list[dict]): The list of data
+				retval (int): The return value
+	"""
+
+	vlist = []
+	path = deep_get(kwargs, DictPath("path"))
+
+	for payload_version_data in deep_get(obj, DictPath(path), []):
+		version = deep_get(payload_version_data, DictPath("version"), "<unknown>")
+		for enabled_feature_gate in deep_get(payload_version_data, DictPath("enabled"), []):
+			name = deep_get(enabled_feature_gate, DictPath("name"), "<unknown>")
+			item = {
+				"enabled": True,
+				"version": version,
+				"name": name,
+			}
+			vlist.append(item)
+		for disabled_feature_gate in deep_get(payload_version_data, DictPath("disabled"), []):
+			name = deep_get(disabled_feature_gate, DictPath("name"), "<unknown>")
+			item = {
+				"enabled": False,
+				"version": version,
+				"name": name,
+			}
+			vlist.append(item)
+	return vlist, 200
+
 def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]], int]:
 	"""
 	Listgetter for paths
@@ -12271,6 +12307,7 @@ listgetter_allowlist = {
 	"listgetter_matchrules": listgetter_matchrules,
 	"listgetter_namespaced_resources": listgetter_namespaced_resources,
 	"listgetter_noop": listgetter_noop,
+	"listgetter_feature_gates": listgetter_feature_gates,
 	"listgetter_path": listgetter_path,
 	"listgetter_policy_rules": listgetter_policy_rules,
 }
