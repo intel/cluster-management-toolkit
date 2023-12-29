@@ -5,8 +5,15 @@
     container_name: "cluster-capi-operator"
   - pod_name: "capi-"
     container_name: "manager"
+  - pod_name: "capi-"
+    container_name: "cluster-kube-cluster-api-operator"
   - pod_name: "capo-"
     container_name: "manager"
   parser_rules:
   - name: "glog"
   - name: "key_value_with_leading_message"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
