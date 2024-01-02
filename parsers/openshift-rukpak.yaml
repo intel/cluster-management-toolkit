@@ -1,28 +1,10 @@
-- name: "helm-install"
+- name: "openshift-rukpak"
   show_in_selector: false
   matchkeys:
-  - pod_name: "helm-install"
-    container_name: "helm"
-  parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([a-z]+)\]\s+\d{4}/\d\d/\d\d\s+\d\d:\d\d:\d\d\s+(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Starting Tiller v"
-      loglevel: "notice"
-- name: "helm-provisioner"
-  show_in_selector: false
-  matchkeys:
-  - pod_name: "helm-provisioner"
+  - pod_name: "core"
     container_name: "manager"
+  - pod_name: "rukpak-webhooks"
+    container_name: "webhooks"
   parser_rules:
   - name: "custom_splitter"
     options:

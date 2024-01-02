@@ -37,11 +37,10 @@
   parser_rules:
   - name: "ts_8601"
   - name: "glog"
-  - name: "json_with_leading_message"
-# - name: "expand_event"
+  - name: "expand_event"
   - name: "custom_splitter"
     options:
-      regex: '^\t([A-Z]+?)\t(\S+?)\t(\S+?:\d+?)\t(.*)'
+      regex: '^\t([A-Z]+?)\t([^\s]+?)\t([^\s]+?:\d+?)\t(.*)'
       severity:
         field: 1
         transform: "str"
@@ -53,6 +52,7 @@
         - "|"
       message:
         field: 4
+  - name: "json_with_leading_message"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"

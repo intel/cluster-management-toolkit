@@ -1,29 +1,10 @@
-- name: "helm-install"
+- name: "openshift-operator-controller"
   show_in_selector: false
   matchkeys:
-  - pod_name: "helm-install"
-    container_name: "helm"
-  parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([a-z]+)\]\s+\d{4}/\d\d/\d\d\s+\d\d:\d\d:\d\d\s+(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Starting Tiller v"
-      loglevel: "notice"
-- name: "helm-provisioner"
-  show_in_selector: false
-  matchkeys:
-  - pod_name: "helm-provisioner"
+  - pod_name: "operator-controller-controller-manager"
     container_name: "manager"
   parser_rules:
+  - name: "glog"
   - name: "custom_splitter"
     options:
       regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s([A-Z]+)\s([a-z][^\s]+)\s(.*)'
