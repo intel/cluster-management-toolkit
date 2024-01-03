@@ -7,7 +7,7 @@ for Cluster Management Toolkit for Kubernetes
 
 import sys
 
-COPYRIGHT = "Copyright © 2019-2023 Intel Corporation"
+COPYRIGHT = "Copyright © 2019-2024 Intel Corporation"
 LICENSE  = "This is free software; see the source for copying conditions.  There is NO\n"
 LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 

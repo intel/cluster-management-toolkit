@@ -6,13 +6,17 @@ If you haven't already cloned the CMT repository, first do so:
 
 ## Without proxy
 
-`$ cd cluster-management-toolkit`  
-`$ ./cmt-install`
+```
+$ cd cluster-management-toolkit
+$ ./cmt-install
+```
 
 ## With proxy
 
-`$ cd cluster-management-toolkit`  
-`$ ./cmt-install --pip-proxy PROXY`
+```
+$ cd cluster-management-toolkit
+$ ./cmt-install --pip-proxy PROXY
+```
 
 Running `cmt-install` creates necessary symlinks, directories, etc.,
 and installs the packages necessary to run __CMT__. Note that `cmt-install`

@@ -32,6 +32,8 @@
 * `cmtinv ping` (Ansible ping all hosts in the inventory)
 * `cmtinv ping GROUP[,...]` (Ansible ping all hosts in GROUP[,...])
 * `cmtinv ping HOST[,...]` (Ansible ping HOST[,...])
+* `cmtinv list-playbooks` (List Ansible playbook that can be used by `cmtinv`)
+* `cmtinv run PLAYBOOK HOST[,...]` (Run the Ansible playbook PLAYBOOK on HOST[,...])
 * `cmtinv add-host HOST[,...]` (Add HOST[,...] to the inventory)
 * `cmtinv add-host HOST[,...] GROUP[,...]` (Add HOST[,...] to GROUP[,...])
 * `cmtinv remove-host HOST[,...]` (Remove HOST[,...] from the inventory)

@@ -22,7 +22,7 @@ about = [
 	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Copyright © 2019-2023 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
+	(0, [ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
 	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
 	(0, [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))]),
 	(0, [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))]),
