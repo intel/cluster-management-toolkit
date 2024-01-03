@@ -79,7 +79,7 @@ mypy:
 		printf -- "$$cmd not installed\n"; \
 		exit 2; \
 	fi; \
-	@for file in $(python_executables) *.py; do \
+	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
 	done
 
@@ -90,10 +90,11 @@ validate_yaml:
 	./tests/validate_yaml || /bin/true
 
 validate_playbooks:
-	@if [ ! -x ansible-lint ]; then \
-		printf -- "ansible-lint not installed\n" \
-		exit 2 \
-	fi \
+	@cmd=ansible-lint ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "ansible-lint not installed\n"; \
+		exit 2; \
+	fi; \
 	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true
 
 parser_bundle:
