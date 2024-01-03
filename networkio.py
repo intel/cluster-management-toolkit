@@ -70,7 +70,7 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default"),
 					ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
-					ANSIThemeString(f"{controlplane}", "hostname"),
+					ANSIThemeString(f"{host}", "hostname"),
 					ANSIThemeString("); aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		except paramiko.ssh_exception.SSHException as e:
