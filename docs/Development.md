@@ -4,7 +4,7 @@
 
 Contributions are warmly welcome!  All contributors MUST follow the guidelines in
 ![CONTRIBUTING.md](../CONTRIBUTING.md) and ![CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
-All contributions must be made under license specified in ![LICENSE.md](../LICENSE.md)
+All contributions must be made under license specified in ![LICENSE.md](../LICENSE.md).
 
 ## Testing
 
