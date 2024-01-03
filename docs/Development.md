@@ -10,7 +10,7 @@ All contributions must be made under license specified in ![LICENSE.md](../LICEN
 
 All contributions MUST be tested when applicable.
 
-### Python
+### Testing Python
 
 To verify that changes to the Python code do not introduce vulnerabilities,
 the code MUST be checked code using:
@@ -31,7 +31,7 @@ Note: some files will generate a __lot__ of errors from mypy, due to missing typ
 You are not responsible for errors in other files, unless your changes introduce them,
 but new or changed code should not introduce more errors.
 
-### _parser-files_, _themes_, _view-files_
+### Testing _Parser-files_, _Themes_, _View-files_
 
 If you add or modify _parser-files_, _themes_, or _view-files_ you need to use
 
@@ -39,7 +39,7 @@ If you add or modify _parser-files_, _themes_, or _view-files_ you need to use
 make validate_yaml
 ```
 
-### Ansible Playbooks
+### Testing Ansible Playbooks
 
 If you add or modify Ansible playbooks you should use:
 
@@ -47,13 +47,13 @@ If you add or modify Ansible playbooks you should use:
 make validate_playbooks
 ```
 
-### Documentation
+### Testing Documentation
 
 Make sure, within your own branch, to test all Markdown files you modify/add.
 This has to be done manually. All new text should be in English. It is RECOMMENDED
 that you check the spelling and grammar.
 
-### Other YAML-files
+### Testing Other YAML-files
 
 If you modify other YAML-files, you can use:
 
