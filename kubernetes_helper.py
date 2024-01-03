@@ -41,13 +41,13 @@ from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
 #from cmtlog import debuglog
-from cmttypes import LogLevel
+#from cmttypes import LogLevel
 from cmttypes import deep_get, deep_get_with_fallback, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, StatusGroup
 from cmtio import execute_command_with_response, secure_which
 from cmtio import secure_read
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-from ansithemeprint import ANSIThemeString
+#from ansithemeprint import ANSIThemeString
 
 # Acceptable ciphers
 CIPHERS = [

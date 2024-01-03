@@ -71,7 +71,7 @@ import formatter as formatters # pylint: disable=wrong-import-order,deprecated-m
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
-from ansithemeprint import ANSIThemeString
+#from ansithemeprint import ANSIThemeString
 
 class logparser_configuration:
 	"""
@@ -1380,7 +1380,7 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 		#debuglog.add([
 		#		[ANSIThemeString("Unknown EVENT type: ", "default"),
 		#		 ANSIThemeString(f"{event}", "argument")],
-		#      ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
+		#	     ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
 		return message, severity, facility, remnants
 
 	return new_message, severity, facility, remnants

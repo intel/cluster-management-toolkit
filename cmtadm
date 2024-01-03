@@ -39,7 +39,7 @@ except ModuleNotFoundError:
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
-from cmtpaths import DEPLOYMENT_DIR, CMT_HOOKS_DIR
+from cmtpaths import DEPLOYMENT_DIR
 from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR, CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
 from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR, CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -663,7 +663,7 @@ def patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 	# According to the canal documentation this should be patched too; let's patch both just in case
-	sedstr = fr's,# - name: CALICO_IPV4POOL_CIDR$,- name: CALICO_IPV4POOL_CIDR,'
+	sedstr = r's,# - name: CALICO_IPV4POOL_CIDR$,- name: CALICO_IPV4POOL_CIDR,'
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	check_and_print_status(execute_command(args))
 	sedstr = fr's,  value: "192.168.0.0/16"$,#   value: "{pod_network_cidr}",'
@@ -1037,7 +1037,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 				filename = substitute_string(filename, substitutions)
 
 				ansithemeprint([ANSIThemeString("\n  • ", "separator"),
-						ANSIThemeString(f"Downloading ", "subaction"),
+						ANSIThemeString("Downloading ", "subaction"),
 						ANSIThemeString(f"{filename}", "version")])
 				check_and_print_status(download_files(directory, [(download_url, filename, checksum_url, checksum_type)], permissions = permissions))
 
@@ -1054,11 +1054,11 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					patch_cni_call = deep_get(url, DictPath("patch"))
 					if patch_cni_call is not None:
 						ansithemeprint([ANSIThemeString("\n  • ", "separator"),
-								ANSIThemeString(f"Patching ", "subaction"),
+								ANSIThemeString("Patching ", "subaction"),
 								ANSIThemeString(f"{filename}", "version")])
 						patch_cni_call(new_path, pod_network_cidr)
 					ansithemeprint([ANSIThemeString("\n  • ", "separator"),
-							ANSIThemeString(f"Applying ", "subaction"),
+							ANSIThemeString("Applying ", "subaction"),
 							ANSIThemeString(f"{filename}", "version")])
 					if verbose:
 						# This should check whether kubectl is >= 1.22; otherwise we need to use create
@@ -4380,7 +4380,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args = []
 
 			ansithemeprint([ANSIThemeString("\n  • ", "separator"),
-					ANSIThemeString(f"Deploying ", "subaction"),
+					ANSIThemeString("Deploying ", "subaction"),
 					ANSIThemeString(f"{name}", "argument")])
 
 			if verbose:
@@ -4696,15 +4696,15 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
 								ANSIThemeString(" is invalid; the following fields are mandatory for Helm deployments: ", "default"),
-								ANSIThemeString(f"name", "emphasis"),
+								ANSIThemeString("name", "emphasis"),
 								ANSIThemeString(", ", "default"),
-								ANSIThemeString(f"chart", "emphasis"),
+								ANSIThemeString("chart", "emphasis"),
 								ANSIThemeString(", ", "default"),
-								ANSIThemeString(f"namespace", "emphasis"),
+								ANSIThemeString("namespace", "emphasis"),
 								ANSIThemeString(", ", "default"),
-								ANSIThemeString(f"repoURL", "emphasis"),
+								ANSIThemeString("repoURL", "emphasis"),
 								ANSIThemeString(", ", "default"),
-								ANSIThemeString(f"repoName", "emphasis"),
+								ANSIThemeString("repoName", "emphasis"),
 								ANSIThemeString(", and ", "default"),
 								ANSIThemeString("version", "emphasis"),
 								ANSIThemeString("; aborting.", "default")], stderr = True)

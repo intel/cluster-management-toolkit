@@ -904,7 +904,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 				# Flush
 				refarray = current_status.to_themearray()
 				if len(refarray) > 1:
-					raise ValueError(f"parcentagebar() cannot handle ThemeRef with multiple ThemeString")
+					raise ValueError("parcentagebar() cannot handle ThemeRef with multiple ThemeString")
 				refthemestr = refarray[0]
 				refstr = str(refthemestr)
 				refattr = refthemestr.get_themeattr()
@@ -949,7 +949,7 @@ def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[
 			subset_total += subset_width
 			refarray = themeref.to_themearray()
 			if len(refarray) > 1:
-				raise ValueError(f"parcentagebar() cannot handle ThemeRef with multiple ThemeString")
+				raise ValueError("parcentagebar() cannot handle ThemeRef with multiple ThemeString")
 			refthemestr = refarray[0]
 			refstr = str(refthemestr)
 			refattr = refthemestr.get_themeattr()
@@ -1490,7 +1490,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 			#		[ANSIThemeString(f"{substring}", "default")],
 			#		[ANSIThemeString("Backtrace:", "error")],
 			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			 #      ], severity = LogLevel.ERR, facility = str(themefile))
+			#	      ], severity = LogLevel.ERR, facility = str(themefile))
 			raise TypeError(f"themearray_flatten() called with invalid type {type(substring)}")
 	return themearray_flattened
 

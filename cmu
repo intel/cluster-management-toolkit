@@ -11085,7 +11085,7 @@ def perform_action_on_configuration(uip: UIProps, items, action, values, kind, *
 
 	configuration_action = deep_get(action, DictPath("extravars#action"))
 	if configuration_action is None:
-		raise ProgrammingError(f"perform_action_on_configuration() called without action'")
+		raise ProgrammingError("perform_action_on_configuration() called without action'")
 	if configuration_action not in ("delete", "create", "apply"):
 		raise ProgrammingError(f"perform_action_on_configuration() does not support the action '{configuration_action}'")
 
