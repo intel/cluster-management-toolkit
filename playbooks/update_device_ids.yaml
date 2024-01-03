@@ -20,8 +20,9 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Upgrading PCI device ID database"
+  - name: "Upgrading PCI device ID database"  # noqa fqcn-builtins
     shell: |
       update-pciids
     environment:
       https_proxy: "{{ https_proxy | default('') }}"
+    changed_when: true

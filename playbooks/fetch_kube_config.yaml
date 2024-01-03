@@ -25,7 +25,7 @@
       state: "directory"
       mode: "0700"
     delegate_to: "localhost"
-    run_once: true
+    when: "inventory_hostname == ansible_play_hosts_all[0]"
   - name: "Attempting to copy /etc/kubernetes/admin.conf from control plane to localhost"
     become: true
     become_user: "root"
@@ -61,19 +61,19 @@
   - name: "Checking whether any of the copies were successful"
     ansible.builtin.stat:
       path: "~/.kube/config.{{ cluster_name }}"
-    register: kubeconfig
+    register: "kubeconfig"
     delegate_to: "localhost"
-    run_once: true
+    when: "inventory_hostname == ansible_play_hosts_all[0]"
   - name: "Failing if kubeconfig is missing"
     ansible.builtin.fail:
       msg: "No kubeconfig file available"
-    when: kubeconfig.stat.exists == False
+    when: "not kubeconfig.stat.exists"
   - name: "Fix file permissions for config file"
     ansible.builtin.file:
       path: "~/.kube/config.{{ cluster_name }}"
       mode: "0600"
     delegate_to: "localhost"
-    run_once: true
+    when: "inventory_hostname == ansible_play_hosts_all[0]"
   - name: "Attempting to copy /etc/rancher/node/password from control plane to localhost"
     become: true
     become_user: "root"
@@ -87,7 +87,7 @@
       path: "~/.kube/token.{{ cluster_name }}"
       mode: "0600"
     delegate_to: "localhost"
-    run_once: true
+    when: "inventory_hostname == ansible_play_hosts_all[0]"
     failed_when: false
   - name: "Attempting to copy /etc/rancher/rke2/config.yaml RKE2 config file from control plane to localhost"
     become: true
@@ -102,5 +102,5 @@
       path: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
       mode: "0600"
     delegate_to: "localhost"
-    run_once: true
+    when: "inventory_hostname == ansible_play_hosts_all[0]"
     failed_when: false

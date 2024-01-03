@@ -58,7 +58,7 @@
   - name: "Reading RKE2 configuration"
     ansible.builtin.include_vars:
       file: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
-      name: config
+      name: "config"
     when: "port_check.rc == 1"
   - name: "Setting facts"
     become: false

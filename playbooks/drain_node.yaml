@@ -1,4 +1,5 @@
-- hosts: "selection"
+- hosts: "localhost"
+  connection: "local"
   name: "Drain node"
   vars:
     metadata:
@@ -21,6 +22,4 @@
       else
         kubectl drain --delete-local-data --ignore-daemonsets ${nodes}
       fi
-    delegate_to: "localhost"
-    run_once: true
-    changed_when: false
+    changed_when: true

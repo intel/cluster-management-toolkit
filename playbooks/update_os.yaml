@@ -26,15 +26,18 @@
       force_apt_get: true
       upgrade: "safe"
     when: "ansible_os_family == 'Debian'"
+    changed_when: true
   - name: "Upgrading all packages"  # noqa package-latest
     ansible.builtin.dnf:
       update_cache: true
       name: "*"
       state: "latest"
     when: "ansible_os_family == 'RedHat'"
-  - name: "Upgrading all packages"  # noqa package-latest
+    changed_when: true
+  - name: "Upgrading all packages"  # noqa fqcn-builtins package-latest
     shell: |
       # First refresh, then update packages;
       # this way we fail faster
       zypper --gpg-auto-import-keys refresh && zypper -n --no-refresh update -y
     when: "ansible_os_family == 'Suse'"
+    changed_when: true

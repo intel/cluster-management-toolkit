@@ -67,7 +67,7 @@
       state: "latest"
       force_apt_get: true
     when: "ansible_os_family == 'Debian'"
-  - name: "Installing containerd.io and runc"
+  - name: "Installing containerd.io and runc"  # noqa package-latest
     ansible.builtin.dnf:
       name:
       - "containerd.io"
@@ -134,6 +134,7 @@
       insertafter: "EOF"
       state: "present"
       create: true
+      mode: "0644"
   - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
     shell: |
       modprobe br_netfilter

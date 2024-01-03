@@ -1,4 +1,5 @@
-- hosts: "selection"
+- hosts: "localhost"
+  connection: "local"
   name: "Drain node (No grace period)"
   vars:
     metadata:
@@ -24,6 +25,4 @@
       else
         kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
       fi
-    delegate_to: "localhost"
-    run_once: true
     changed_when: false

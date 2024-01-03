@@ -32,11 +32,13 @@
       age: "-6h"
     register: "last_updated"
   - name: "Exit if the cache is recent"
+    when: "(last_updated.matched > 0) and (force is undefined or not force)"
     block:
-    - ansible.builtin.debug:
+    - name: "The version cache is up to date"
+      ansible.builtin.debug:
         msg: "The version cache is up to date"
-    - meta: end_play
-    when: "(last_updated.matched > 0) and (force is undefined or force == false)"
+    - name: "Exit the play"
+      ansible.builtin.meta: "end_play"
   - name: "Fetching version information from upstream projects"
     ansible.builtin.get_url:
       url: "{{ item.url }}"
@@ -80,3 +82,4 @@
     ansible.builtin.file:
       path: "~/.cmt/version-cache/last-updated"
       state: "touch"
+      mode: "0600"
