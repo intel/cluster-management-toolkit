@@ -200,16 +200,22 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 				description = deep_get(section_item, DictPath("description"), "")
 				ansithemeprint([ANSIThemeString(f"        {description}", "default")])
 
-def ansible_get_inventory_dict() -> Dict:
+def ansible_get_inventory_dict(create_if_missing: bool = False) -> Dict:
 	"""
         Get the Ansible inventory and return it as a dict
 
+		Parameters:
+			create_if_missing (bool): Create an empty inventory if no inventory file exists
 		Returns:
 			d (dict): A dictionary with an Ansible inventory
 	"""
 
 	if not Path(ANSIBLE_INVENTORY).exists():
-		return {}
+		return {
+			"all": {
+				"hosts": {},
+				"vars": {},
+			}}
 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
 	if d.get("all") is None:
