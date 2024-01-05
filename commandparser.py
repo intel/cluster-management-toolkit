@@ -423,7 +423,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	Display usage information
 
 		Parameters:
-			options (list[(str, str)]): Unused
+			options (list[(opt, optarg)]): Options to use when executing this action
 			args (dict): Unused
 
 		Returns:
@@ -435,6 +435,13 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	has_commands: bool = False
 	has_options: bool = False
 	has_args: bool = False
+
+	output: List[List[ANSIThemeString]] = []
+	output_format = "default"
+
+	for opt, optarg in options:
+		if opt == "--format":
+			output_format = optarg
 
 	maxlen = 0
 	commands = []
@@ -461,40 +468,62 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	else:
 		has_options = True
 
-	headerstring = [ANSIThemeString(f"{programname}", "programname")]
+	if output_format == "default":
+		headerstring = [ANSIThemeString(f"{programname}", "programname")]
+	elif output_format == "markdown":
+		headerstring = [ANSIThemeString(f"# ___{programname}___", "default")]
+
 	if has_commands:
-		headerstring += [ANSIThemeString(" COMMAND", "command")]
+		if output_format == "default":
+			headerstring += [ANSIThemeString(" COMMAND", "command")]
+		elif output_format == "markdown":
+			headerstring += [ANSIThemeString(" __COMMAND__", "default")]
 	if has_options:
-		headerstring += [ANSIThemeString(" [", "separator"),
-				 ANSIThemeString("OPTION", "option"),
-				 ANSIThemeString("]", "separator"),
-				 ANSIThemeString("...", "option")]
+		if output_format == "default":
+			headerstring += [ANSIThemeString(" [", "separator"),
+					 ANSIThemeString("OPTION", "option"),
+					 ANSIThemeString("]", "separator"),
+					 ANSIThemeString("...", "option")]
+		elif output_format == "markdown":
+			headerstring += [ANSIThemeString(" _\\[OPTION\\]_...", "default")]
 	if has_args:
-		headerstring += [ANSIThemeString(" [", "separator"),
-				 ANSIThemeString("ARGUMENT", "argument"),
-				 ANSIThemeString("]", "separator"),
-				 ANSIThemeString("...", "argument")]
+		if output_format == "default":
+			headerstring += [ANSIThemeString(" [", "separator"),
+					 ANSIThemeString("ARGUMENT", "argument"),
+					 ANSIThemeString("]", "separator"),
+					 ANSIThemeString("...", "argument")]
+		elif output_format == "markdown":
+			headerstring += [ANSIThemeString(" _\\[ARGUMENT\\]_...", "default")]
 
-	ansithemeprint(headerstring)
-	print()
-	ansithemeprint([ANSIThemeString(programdescription, "description")])
-	print()
+	output.append(headerstring)
+	output.append([ANSIThemeString("", "default")])
+	output.append([ANSIThemeString(programdescription, "description")])
+	output.append([ANSIThemeString("", "default")])
 
 	if has_commands:
-		ansithemeprint([ANSIThemeString("Commands:", "description")])
+		if output_format == "default":
+			output.append([ANSIThemeString("Commands:", "description")])
+		elif output_format == "markdown":
+			output.append([ANSIThemeString("## Commands:", "description")])
 	else:
-		ansithemeprint([ANSIThemeString("Global Options:", "description")])
+		if output_format == "default":
+			output.append([ANSIThemeString("Global Options:", "description")])
+		elif output_format == "markdown":
+			output.append([ANSIThemeString("## Global Options:", "description")])
 
 	for key, value in commandline.items():
 		if key in ("__default", "extended_description", "__*"):
 			continue
 
 		if key.startswith("spacer"):
-			commands.append(([ANSIThemeString("", "default")], [ANSIThemeString("", "default")]))
+			commands.append(([ANSIThemeString("  ", "default")], [ANSIThemeString("  ", "default")]))
 			continue
 
 		if key == "__global_options" and has_commands:
-			commands.append(([ANSIThemeString("Global Options:", "description")], [ANSIThemeString("", "default")]))
+			if output_format == "default":
+				commands.append(([ANSIThemeString("Global Options:", "description")], [ANSIThemeString("", "default")]))
+			elif output_format == "markdown":
+				commands.append(([ANSIThemeString("### _Global Options:_", "description")], [ANSIThemeString("", "default")]))
 
 		tmp = []
 		separator = "|"
@@ -505,22 +534,47 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 			if len(tmp) > 0:
 				tmp.append(ANSIThemeString(f"{separator}", "separator"))
 			tmp.append(ANSIThemeString(f"{cmd}", "command"))
+		if len(tmp) > 0 and output_format == "markdown":
+			tmp.insert(0, ANSIThemeString(f"### ", "command"))
 
 		values = deep_get(value, DictPath("values"))
 		if values is not None:
-			tmp.append(ANSIThemeString(" ", "default"))
+			if output_format == "default":
+				tmp.append(ANSIThemeString(" ", "default"))
+			elif output_format == "markdown":
+				tmp.append(ANSIThemeString(" _", "default"))
 			for part in values:
 				tmp.append(part)
+			if output_format == "markdown":
+				tmp.append(ANSIThemeString("_", "default"))
 
 		tlen = themearray_len(tmp)
 		maxlen = max(maxlen, tlen)
 		if tlen > 0:
-			commands.append((tmp, deep_get(value, DictPath("description"))))
+			description = deep_get(value, DictPath("description"))
+			if output_format == "default":
+				commands.append((tmp, description))
+			elif output_format == "markdown":
+				description.insert(0, ANSIThemeString("#### ", "default"))
+				commands.append((tmp, description))
+				commands.append(([ANSIThemeString("  ", "default")], [ANSIThemeString("  ", "default")]))
 
-		for line in deep_get(value, DictPath("extended_description"), []):
-			commands.append(([ANSIThemeString("", "default")], line))
+		extended_description = deep_get(value, DictPath("extended_description"), [])
+		if output_format == "default":
+			for line in extended_description:
+				commands.append(([ANSIThemeString("", "default")], line))
+		elif output_format == "markdown":
+			tmp_extended_description = []
+			for i, line in enumerate(extended_description):
+				if i > 0:
+					tmp_extended_description += [ANSIThemeString(" ", "default")]
+				tmp_extended_description += line
+			if len(tmp_extended_description) > 0:
+				commands.append(([ANSIThemeString("", "default")], tmp_extended_description))
+				commands.append(([ANSIThemeString("  ", "default")], [ANSIThemeString("  ", "default")]))
 
-		for option in deep_get(value, DictPath("options"), []):
+		options = deep_get(value, DictPath("options"), [])
+		for option in options:
 			indent = ""
 			if len(tmp) > 0:
 				indent = "  "
@@ -530,24 +584,40 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 					# The first string is the initial indentation
 					if len(tmp2) > 1:
 						tmp2.append(ANSIThemeString("  ", "separator"))
-					tmp2.append(ANSIThemeString(f"{_opt}", "option"))
+					if output_format == "default":
+						tmp2.append(ANSIThemeString(f"{_opt}", "option"))
+					elif output_format == "markdown":
+						tmp2.append(ANSIThemeString(f"__{_opt}__", "option"))
 			elif key.startswith("__"):
-				tmp2.append(ANSIThemeString(f"  {option}", "option"))
+				if output_format == "default":
+					tmp2.append(ANSIThemeString(f"  {option}", "option"))
+				elif output_format == "markdown":
+					tmp2.append(ANSIThemeString(f"  __{option}__", "option"))
 			else:
-				tmp2.append(ANSIThemeString(f"{option}", "option"))
+				if output_format == "default":
+					tmp2.append(ANSIThemeString(f"{option}", "option"))
+				elif output_format == "markdown":
+					tmp2.append(ANSIThemeString(f"__{option}__", "option"))
 			values = deep_get(value, DictPath(f"options#{option}#values"))
 			if values is not None:
 				tmp2.append(ANSIThemeString(" ", "default"))
+				if output_format == "markdown":
+					tmp2.append(ANSIThemeString("_", "default"))
 
 				for part in values:
 					tmp2.append(part)
+				if output_format == "markdown":
+					tmp2.append(ANSIThemeString("_", "default"))
 			tlen = themearray_len(tmp2)
 			maxlen = max(maxlen, tlen)
 			description = deep_get(value, DictPath(f"options#{option}#description"))
 			if len(indent) > 0:
 				description = [ANSIThemeString(indent, "default")] + description
+			if output_format == "markdown":
+				description.append(ANSIThemeString("  ", "default"))
 			commands.append((tmp2, description))
-			for line in deep_get(value, DictPath(f"options#{option}#extended_description"), []):
+			extended_description = deep_get(value, DictPath("options#{option}#extended_description"), [])
+			for line in extended_description:
 				if len(indent) > 0:
 					commands.append(([ANSIThemeString("", "default")], [ANSIThemeString(indent, "default")] + line))
 				else:
@@ -556,20 +626,52 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# cmd[0]: formatted cmd/option
 	# cmd[1]: formatted description
 	for cmd in commands:
-		if themearray_len(cmd[0]) > 27 or themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or themearray_len(cmd[1]) > 51:
-			ansithemeprint(cmd[0])
-			string = themearray_ljust([ANSIThemeString("", "default")], 29) + cmd[1]
-			ansithemeprint(string)
-			#if themearray_len(string) > 79:
-			#	sys.exit(f"FIXME: {themearray_len(string)} > 79 characters; please file a bug report.")
-		else:
-			string = themearray_ljust(cmd[0], 29) + cmd[1]
-			ansithemeprint(string)
+		if output_format == "default":
+			if themearray_len(cmd[0]) > 27 or themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or themearray_len(cmd[1]) > 51:
+				output.append(cmd[0])
+				string = themearray_ljust([ANSIThemeString("", "default")], 29) + cmd[1]
+				output.append(string)
+				#if themearray_len(string) > 79:
+				#	sys.exit(f"FIXME: {themearray_len(string)} > 79 characters; please file a bug report.")
+			else:
+				string = themearray_ljust(cmd[0], 29) + cmd[1]
+				output.append(string)
+		elif output_format == "markdown":
+			output.append(cmd[0])
+			output.append(cmd[1])
 
 	if "extended_description" in commandline:
-		print()
+		output.append([ANSIThemeString("", "default")])
 		for line in deep_get(commandline, DictPath("extended_description"), []):
-			ansithemeprint(line)
+			output.append(line)
+
+	# Post-processing filtering
+	for line in output:
+		if output_format == "markdown":
+			tmpline = []
+			for segment in line:
+				themeref = segment.get_themeref()
+				string = str(segment)
+				string = string.replace("<", "\\<")
+				string = string.replace(">", "\\>")
+				string = string.replace("`", "\\`")
+				if themeref in ("option", "emphasis"):
+					stripped, lcount = cmtlib.lstrip_count(string, " ")
+					stripped, rcount = cmtlib.rstrip_count(stripped, " ")
+					if len(stripped) > 0 and not stripped.startswith("__") and not stripped.endswith("__"):
+						string = "".ljust(lcount) + f"__{stripped}__" + "".ljust(rcount)
+						segment = ANSIThemeString(string, themeref)
+				elif themeref in ("argument", "note", "path", "version"):
+					stripped, lcount = cmtlib.lstrip_count(string, " ")
+					stripped, rcount = cmtlib.rstrip_count(stripped, " ")
+					if len(stripped) > 0 and not stripped.startswith("_") and not stripped.endswith("_"):
+						string = "".ljust(lcount) + f"_{stripped}_" + "".ljust(rcount)
+						segment = ANSIThemeString(string, themeref)
+				#elif themeref not in ("command", "default", "description", "programname", "separator"):
+				#	sys.exit(themeref)
+				tmpline.append(segment)
+			line = tmpline
+		ansithemeprint(line)
 
 	return 0
 
@@ -629,6 +731,25 @@ COMMANDLINEDEFAULTS = {
 		"description": [ANSIThemeString("Display help about ", "description"),
 				ANSIThemeString("COMMAND", "argument"),
 				ANSIThemeString(" and exit", "description")],
+		"options": {
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Output the help as ", "description"),
+						ANSIThemeString("FORMAT", "argument"),
+						ANSIThemeString(" instead", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are:", "description")],
+					[ANSIThemeString("default", "argument"),
+					 ANSIThemeString(", ", "separator"),
+					 ANSIThemeString("markdown", "argument")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["default", "markdown"],
+				},
+			},
+		},
 		"min_args": 0,
 		"max_args": 1,
 		"callback": __command_usage,
@@ -636,6 +757,25 @@ COMMANDLINEDEFAULTS = {
 	"Help2": {
 		"command": ["help", "--help"],
 		"description": [ANSIThemeString("Display this help and exit", "description")],
+		"options": {
+			"--format": {
+				"values": [ANSIThemeString("FORMAT", "argument")],
+				"description": [ANSIThemeString("Output the help as ", "description"),
+						ANSIThemeString("FORMAT", "argument"),
+						ANSIThemeString(" instead", "description")],
+				"extended_description": [
+					[ANSIThemeString("Valid formats are:", "description")],
+					[ANSIThemeString("default", "argument"),
+					 ANSIThemeString(", ", "separator"),
+					 ANSIThemeString("markdown", "argument")],
+				],
+				"requires_arg": True,
+				"validation": {
+					"validator": "allowlist",
+					"allowlist": ["default", "markdown"],
+				},
+			},
+		},
 		"min_args": 0,
 		"max_args": 0,
 		"callback": __usage,

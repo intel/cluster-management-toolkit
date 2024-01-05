@@ -51,6 +51,9 @@ class ANSIThemeString:
 		self.themeref = themeref
 		return self
 
+	def get_themeref(self) -> str:
+		return self.themeref
+
 	def upper(self) -> "ANSIThemeString":
 		return ANSIThemeString(self.string.upper(), self.themeref)
 

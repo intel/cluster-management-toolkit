@@ -52,6 +52,34 @@ def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
 		strlist = [s.replace(key, value) for s in strlist]
 	return strlist
 
+def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
+	"""
+	Given a string remove prefix and return the stripped string and the count of stripped characters
+
+		Parameters:
+			string (str): The string to strip
+			prefix (str): The prefix to strip
+		Return:
+			(string (str), count (int)): The stripped string and the count of stripped characters
+	"""
+
+	stripped = string.lstrip(prefix)
+	return stripped, len(string) - len(stripped)
+
+def rstrip_count(string: str, suffix: str) -> Tuple[str, int]:
+	"""
+	Given a string remove suffix and return the stripped string and the count of stripped characters
+
+		Parameters:
+			string (str): The string to strip
+			suffix (str): The suffix to strip
+		Return:
+			(string (str), count (int)): The stripped string and the count of stripped characters
+	"""
+
+	stripped = string.rstrip(suffix)
+	return stripped, len(string) - len(stripped)
+
 def validate_name(rtype: str, name: str) -> bool:
 	"""
 	Given a name validate whether it is valid for the given type
