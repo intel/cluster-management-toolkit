@@ -1817,6 +1817,22 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 	if kubernetes_installed_version == kubernetes_upstream_version:
 		kubernetes_upstream_version = ""
 
+	crc_installed_version = ""
+	crc_upstream_version = ""
+
+	try:
+		crc_path = cmtio.secure_which(FilePath("crc"), fallback_allowlist = ["/bin", "/usr/bin", f"{HOMEDIR}/bin"],
+					      security_policy = SecurityPolicy.ALLOWLIST_STRICT)
+		args = [crc_path, "version"]
+		response = execute_command_with_response(args)
+		for line in response.splitlines():
+			if (tmp := re.match(r"^CRC version: (\d+\.\d+\.\d+).*", line)) is not None:
+				crc_installed_version = tmp[1]
+			elif (tmp := re.match(r"^.*A new version \((\d+\.\d+\.\d+)\).*", line)) is not None:
+				crc_upstream_version = tmp[1]
+	except FileNotFoundError:
+		pass
+	#
 	# Now check versions that need special checks
 	for version_check in version_checks:
 		tmp_software: str = version_check[0]
@@ -1859,6 +1875,12 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 			ANSIThemeString("(upstream)".ljust(slen - len("Kubernetes ") + 2), "note"),
 			ANSIThemeString(f"{kubernetes_installed_version}".ljust(ilen + 2), "version"),
 			ANSIThemeString(f"{kubernetes_upstream_version}", "version")])
+
+	if len(crc_installed_version) > 0:
+		ansithemeprint([ANSIThemeString("CRC ", "default"),
+				ANSIThemeString("(upstream)".ljust(slen - len("CRC ") + 2), "note"),
+				ANSIThemeString(f"{crc_installed_version}".ljust(ilen + 2), "version"),
+				ANSIThemeString(f"{crc_upstream_version}", "version")])
 
 	for software, installed_version, candidate_version, _ in cast(Tuple[str, str, str, List[str]], natsorted(pkg_versions)):
 		iformat = __get_theme(installed_version, "version")
