@@ -123,7 +123,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 					       ANSIThemeString("strongly", "emphasis"),
 					       ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
-		m = hashlib.sha1() # nosec
+		m = hashlib.sha1() # nosec nosem
 		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
 					       ANSIThemeString(": Use of SHA1 checksums is ", "default"),
 					       ANSIThemeString("strongly", "emphasis"),

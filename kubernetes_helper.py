@@ -4190,7 +4190,7 @@ class KubernetesHelper:
 		# Disable anything older than TLSv1.2
 		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
 		# Only permit a limited set of acceptable ciphers
-		ssl_context.set_ciphers(":".join(CIPHERS))
+		ssl_context.set_ciphers(":".join(CIPHERS)) # nosem
 		# This isn't ideal; we might need different cluster proxies for different clusters
 		cluster_https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), None)
 

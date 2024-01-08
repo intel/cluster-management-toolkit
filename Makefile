@@ -13,9 +13,30 @@ FLAKE8_IGNORE := $(FLAKE8_IGNORE),W605,E402
 
 ANSIBLE_LINT_SKIP := no-changed-when
 
-checks: bandit yamllint validate_yaml validate_playbooks
+checks: bandit yamllint regexploit semgrep
+checks-strict: checks validate_yaml validate_playbooks
 
 clean: remove_test_symlinks
+
+# Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
+# and also doesn't understand that python executables aren't necessarily suffixed with .py;
+# export the repository, rename the files and run semgrep in that checkout
+semgrep:
+	@cmd=semgrep ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "$$cmd not installed\n"; \
+		exit 2; \
+	fi; \
+	mkdir -p tests/modified_repo; \
+	git archive main | tar -x -C tests/modified_repo; \
+	(cd tests/modified_repo; \
+	 mv cmt cmt.py; \
+	 mv cmtadm cmtadm.py; \
+	 mv cmt-install cmt-install.py; \
+	 mv cmtinv cmtinv.py; \
+	 mv cmu cmu.py; \
+	 $$cmd scan) || /bin/true; \
+	printf -- "\n-----\n\n"
 
 bandit:
 	@cmd=bandit ;\
@@ -23,7 +44,8 @@ bandit:
 		printf -- "$$cmd not installed\n"; \
 		exit 2; \
 	fi; \
-	$$cmd -c .bandit $(python_executables) *.py || /bin/true
+	$$cmd -c .bandit $(python_executables) *.py || /bin/true; \
+	printf -- "\n-----\n\n"
 
 pylint:
 	@cmd=pylint ;\
@@ -31,7 +53,8 @@ pylint:
 		printf -- "$$cmd not installed\n"; \
 		exit 2; \
 	fi; \
-	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
+	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true; \
+	printf -- "\n-----\n\n"
 
 flake8:
 	@cmd=flake8 ;\
@@ -39,7 +62,8 @@ flake8:
 		printf -- "$$cmd not installed\n"; \
 		exit 2; \
 	fi; \
-	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true
+	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true; \
+	printf -- "\n-----\n\n"
 
 regexploit:
 	@cmd=regexploit-py ;\
@@ -48,9 +72,10 @@ regexploit:
 		exit 2; \
 	fi; \
 	printf -- "Checking executables\n"; \
-	$$cmd $(python_executables); \
+	$$cmd $(python_executables) || /bin/true; \
 	printf -- "\nChecking libraries\n"; \
-	$$cmd *.py
+	$$cmd *.py || /bin/true; \
+	printf -- "\n-----\n\n"
 
 yamllint:
 	@cmd=yamllint ;\
@@ -61,7 +86,8 @@ yamllint:
 	for dir in $(yaml_dirs); do \
 		$$cmd $$dir/*.yaml || /bin/true; \
 	done; \
-	$$cmd cmt.yaml || /bin/true
+	$$cmd cmt.yaml || /bin/true; \
+	printf -- "\n-----\n\n"
 
 mypy-strict:
 	@cmd=mypy ;\
@@ -71,7 +97,8 @@ mypy-strict:
 	fi; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
-	done
+	done; \
+	printf -- "\n-----\n\n"
 
 mypy:
 	@cmd=mypy ;\
@@ -81,13 +108,12 @@ mypy:
 	fi; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
-	done
-
-export_src:
-	git archive --format zip --output ~/cmt-$(shell date -I).zip origin/main
+	done; \
+	printf -- "\n-----\n\n"
 
 validate_yaml:
-	./tests/validate_yaml || /bin/true
+	./tests/validate_yaml || /bin/true; \
+	printf -- "\n-----\n\n"
 
 validate_playbooks:
 	@cmd=ansible-lint ;\
@@ -95,7 +121,11 @@ validate_playbooks:
 		printf -- "ansible-lint not installed\n"; \
 		exit 2; \
 	fi; \
-	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true
+	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true; \
+	printf -- "\n-----\n\n"
+
+export_src:
+	git archive --format zip --output ~/cmt-$(shell date -I).zip origin/main
 
 parser_bundle:
 	@printf -- "Building parser bundle\n" ;\
@@ -145,11 +175,13 @@ setup_tests: create_test_symlinks
 	 chmod o+w 01-wrong_permissions )
 
 iotests: setup_tests
-	@(cd tests && ./iotests)
+	@(cd tests && ./iotests); \
+	printf -- "\n-----\n\n"
 
 check_theme_use: setup_tests
 	@for theme in themes/*.yaml; do \
 		printf -- "\nChecking against theme file $$theme:\n" ;\
 		printf -- "---\n" ;\
 		./tests/check_theme_use $$theme $(python_executables) *.py ;\
-	done
+	done; \
+	printf -- "\n-----\n\n"
