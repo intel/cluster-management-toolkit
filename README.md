@@ -1,6 +1,10 @@
-![CMT Logo](docs/images/cmt_logo.png)
+# Cluster Management Toolkit for Kubernetes
 
-# About
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8263/badge)](https://www.bestpractices.dev/projects/8263)
+
+![CMT Logo](docs/images/cmt_logo.png 'CMT Logo')
+
+----
 
 __Cluster Management Toolkit for Kubernetes__ (CMT) is a set of tools intended
 to simplify installation and maintenance of _Kubernetes_ clusters. It provides
@@ -15,3 +19,4 @@ _Python_ scripts, a _curses_-based user interface, as well as calls to _kubectl_
 or _kubeadm_ whenever necessary.
 
 Usage documentation for CMT is available [here](docs/README.md).
+
