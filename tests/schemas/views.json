@@ -1073,6 +1073,9 @@
 														"type": "string"
 													},
 													"minItems": 1
+												},
+												"iterate": {
+													"type": "boolean"
 												}
 											},
 											"additionalProperties": false
@@ -1399,9 +1402,6 @@
 														]
 													},
 													"minItems": 1
-												},
-												"iterate": {
-													"type": "boolean"
 												},
 												"kind": {
 													"$ref": "#/definitions/kind"
@@ -1839,9 +1839,16 @@
 									"type": "object",
 									"properties": {
 										"action": {
-											"type": "string"
+											"description": "Info view shortcut actions",
+											"enum": [
+												"call",
+												"execute",
+												"from_ref",
+												"toggle_var"
+											]
 										},
 										"action_args": {
+											"description": "Arguments to pass to the action",
 											"type": "object",
 											"properties": {
 												"accept_only_owner": {
