@@ -13,20 +13,28 @@ FLAKE8_IGNORE := $(FLAKE8_IGNORE),W605,E402
 
 ANSIBLE_LINT_SKIP := no-changed-when
 
-checks: bandit yamllint regexploit semgrep
-checks-strict: checks validate_yaml validate_playbooks
+code-checks-weak: flake8
+code-checks: flake8 mypy
+code-checks-strict: flake8 mypy-strict pylint
+
+checks: bandit regexploit semgrep yamllint validate_yaml
+checks-strict: checks validate_playbooks
+
+tests: iotests
 
 clean: remove_test_symlinks
 
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
-# export the repository, rename the files and run semgrep in that checkout
+# export the repository, rename the files, remove the hack, and run semgrep on that checkout.
+# We also need to extend the timeout since validation gives up on cmu otherwise.
 semgrep:
 	@cmd=semgrep ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running semgrep to check for common security issues in Python code\n\n"; \
 	mkdir -p tests/modified_repo; \
 	git archive main | tar -x -C tests/modified_repo; \
 	(cd tests/modified_repo; \
@@ -35,42 +43,51 @@ semgrep:
 	 mv cmt-install cmt-install.py; \
 	 mv cmtinv cmtinv.py; \
 	 mv cmu cmu.py; \
-	 $$cmd scan) || /bin/true; \
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt.py; \
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtadm.py; \
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt-install.py; \
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtinv.py; \
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmu.py; \
+	 $$cmd scan --timeout=0 --no-git-ignore) || /bin/true; \
 	printf -- "\n-----\n\n"
 
 bandit:
 	@cmd=bandit ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running bandit to check for common security issues in Python code\n\n"; \
 	$$cmd -c .bandit $(python_executables) *.py || /bin/true; \
 	printf -- "\n-----\n\n"
 
 pylint:
 	@cmd=pylint ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running pylint to check Python code quality\n\n"; \
 	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true; \
 	printf -- "\n-----\n\n"
 
 flake8:
 	@cmd=flake8 ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running flake8 to check Python code quality\n\n"; \
 	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true; \
 	printf -- "\n-----\n\n"
 
 regexploit:
 	@cmd=regexploit-py ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed; install with 'pip install regexploit' or 'pip install --proxy <proxy> regexploit'\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed (install with 'pipx install regexploit' or pipx install --proxy <proxy> regexploit'); skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running regexploit to check for ReDoS attacks\n\n"; \
 	printf -- "Checking executables\n"; \
 	$$cmd $(python_executables) || /bin/true; \
 	printf -- "\nChecking libraries\n"; \
@@ -80,9 +97,10 @@ regexploit:
 yamllint:
 	@cmd=yamllint ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running yamllint to check that all YAML is valid\n\n"; \
 	for dir in $(yaml_dirs); do \
 		$$cmd $$dir/*.yaml || /bin/true; \
 	done; \
@@ -92,9 +110,10 @@ yamllint:
 mypy-strict:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running mypy to check Python typing\n\n"; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
 	done; \
@@ -103,24 +122,27 @@ mypy-strict:
 mypy:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "$$cmd not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running mypy to check Python typing\n\n"; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
 	done; \
 	printf -- "\n-----\n\n"
 
 validate_yaml:
+	@printf -- "Running validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
 	./tests/validate_yaml || /bin/true; \
 	printf -- "\n-----\n\n"
 
 validate_playbooks:
 	@cmd=ansible-lint ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "ansible-lint not installed\n"; \
-		exit 2; \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
 	fi; \
+	printf -- "Running ansible-lint to check that all Ansible playbooks are valid\n\n"; \
 	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true; \
 	printf -- "\n-----\n\n"
 

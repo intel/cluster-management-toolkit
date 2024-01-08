@@ -535,7 +535,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 				tmp.append(ANSIThemeString(f"{separator}", "separator"))
 			tmp.append(ANSIThemeString(f"{cmd}", "command"))
 		if len(tmp) > 0 and output_format == "markdown":
-			tmp.insert(0, ANSIThemeString(f"### ", "command"))
+			tmp.insert(0, ANSIThemeString("### ", "command"))
 
 		values = deep_get(value, DictPath("values"))
 		if values is not None:

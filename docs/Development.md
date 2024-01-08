@@ -16,15 +16,16 @@ To verify that changes to the Python code do not introduce vulnerabilities,
 the code MUST be checked code using:
 
 ```
-make bandit
-make regexploit
+make bandit (should only report Severity: Low warnings about submodule/PIPE)
+make regexploit (should not report any issues)
+make semgrep (should not report any issues)
 ```
 
 You SHOULD also check for code quality issues using:
 
 ```
-make flake8
-make mypy
+make flake8 (should not report any issues)
+make mypy (will report a lot of issues; but should not report more issues after your changes than before)
 ```
 
 Note: some files will generate a __lot__ of errors from mypy, due to missing type-annotations.
@@ -36,7 +37,7 @@ but new or changed code should not introduce more errors.
 If you add or modify _parser-files_, _themes_, or _view-files_ you need to use
 
 ```
-make validate_yaml
+make validate_yaml (should not report any issues)
 ```
 
 ### Testing Ansible Playbooks
@@ -44,7 +45,7 @@ make validate_yaml
 If you add or modify Ansible playbooks you should use:
 
 ```
-make validate_playbooks
+make validate_playbooks (currently reports many issues; these will be fixed where possible)
 ```
 
 ### Testing Documentation
@@ -58,7 +59,7 @@ that you check the spelling and grammar.
 If you modify other YAML-files, you can use:
 
 ```
-make yamllint
+make yamllint (should not report any issues)
 ```
 
 ## New Dependencies
@@ -90,9 +91,18 @@ parameters, returns). Code SHOULD be documented if it's not immediately obvious 
 ### Python Version
 
 __CMT__ uses Python 3.8 to allow for compatibility with some (not all) older enterprise distros.
-This means that type annotations and the features used MUST NOT require newer versions of Python.
+This means that type annotations and the features used MUST NOT require newer versions of Python
 
 ## Documentation
 
 If you add new documentation to the _docs_ directory, make sure to add links to all chapters
 to the newly added documentation from [Table of Contents](Table_of_contents.md#table-of-contents).
+
+## Commandline tool helptexts
+
+If you add, remove, or change the behaviour of any of the commandline options for any of the executables,
+you need to update docs/_COMMAND_\_helptext.md accordingly.  This can be done using:
+
+```
+COMMAND help --format markdown > docs/COMMAND_helptext.md
+```

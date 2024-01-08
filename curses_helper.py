@@ -1367,22 +1367,22 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 	tmp = 0
 
 	for item in attr:
-		#if not isinstance(item, str):
-			#debuglog.add([
-			#		[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
-			#		[ANSIThemeString("“", "default"),
-			#		 ANSIThemeString("dim", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("normal", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("bold", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("underline", "emphasis"),
-			#		 ANSIThemeString("“.", "default")],
-			#		[ANSIThemeString("Using “", "default"),
-			#		 ANSIThemeString("normal", "emphasis"),
-			#		 ANSIThemeString("“ as fallback.", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
+#		if not isinstance(item, str):
+#			debuglog.add([
+#					[ANSIThemeString("Invalid text attribute used in theme; attribute has to be a string and one of:", "default")],
+#					[ANSIThemeString("“", "default"),
+#					 ANSIThemeString("dim", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("normal", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("bold", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("underline", "emphasis"),
+#					 ANSIThemeString("“.", "default")],
+#					[ANSIThemeString("Using “", "default"),
+#					 ANSIThemeString("normal", "emphasis"),
+#					 ANSIThemeString("“ as fallback.", "default")],
+#			], severity = LogLevel.ERR, facility = str(themefile))
 		if item == "dim":
 			tmp |= curses.A_DIM
 		elif item == "normal":
@@ -1392,38 +1392,38 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 		elif item == "underline":
 			tmp |= curses.A_UNDERLINE
 		else:
-			#debuglog.add([
-			#		[ANSIThemeString("Invalid text attribute “", "default"),
-			#		 ANSIThemeString(f"{item}", "emphasis"),
-			#		 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
-			#		[ANSIThemeString("“", "default"),
-			#		 ANSIThemeString("dim", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("normal", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("bold", "emphasis"),
-			#		 ANSIThemeString("“, “", "default"),
-			#		 ANSIThemeString("underline", "emphasis"),
-			#		 ANSIThemeString("“.", "default")],
-			#		[ANSIThemeString("Using “", "default"),
-			#		 ANSIThemeString("normal", "emphasis"),
-			#		 ANSIThemeString("“ as fallback.", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
+#			debuglog.add([
+#					[ANSIThemeString("Invalid text attribute “", "default"),
+#					 ANSIThemeString(f"{item}", "emphasis"),
+#					 ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
+#					[ANSIThemeString("“", "default"),
+#					 ANSIThemeString("dim", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("normal", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("bold", "emphasis"),
+#					 ANSIThemeString("“, “", "default"),
+#					 ANSIThemeString("underline", "emphasis"),
+#					 ANSIThemeString("“.", "default")],
+#					[ANSIThemeString("Using “", "default"),
+#					 ANSIThemeString("normal", "emphasis"),
+#					 ANSIThemeString("“ as fallback.", "default")],
+#			], severity = LogLevel.ERR, facility = str(themefile))
 			tmp |= curses.A_NORMAL
 	curses_attrs = tmp
 
 	curses_col = __color[col][selected]
 	if curses_col is None:
-		#debuglog.add([
-		#		[ANSIThemeString("themeattr_to_curses()", "emphasis")],
-		#		[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
-		#		[ANSIThemeString(f"{col}", "argument")],
-		#		[ANSIThemeString(", ", "error")],
-		#		[ANSIThemeString(f"{selected}", "argument")],
-		#		[ANSIThemeString(").", "error")],
-		#		[ANSIThemeString("Backtrace:", "error")],
-		#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-		#       ], severity = LogLevel.ERR, facility = str(themefile))
+#		debuglog.add([
+#				[ANSIThemeString("themeattr_to_curses()", "emphasis")],
+#				[ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
+#				[ANSIThemeString(f"{col}", "argument")],
+#				[ANSIThemeString(", ", "error")],
+#				[ANSIThemeString(f"{selected}", "argument")],
+#				[ANSIThemeString(").", "error")],
+#				[ANSIThemeString("Backtrace:", "error")],
+#				[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
+#		], severity = LogLevel.ERR, facility = str(themefile))
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
 	return curses_col, curses_attrs
 
