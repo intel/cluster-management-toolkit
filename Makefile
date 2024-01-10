@@ -34,7 +34,9 @@ semgrep:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running semgrep to check for common security issues in Python code\n\n"; \
+	printf -- "Running semgrep to check for common security issues in Python code\n"; \
+	printf -- "Note: if this is taking a very long time you might be behind a proxy;\n"; \
+	printf -- "if that's the case you need to set the environment variable https_proxy\n\n"; \
 	mkdir -p tests/modified_repo; \
 	git archive main | tar -x -C tests/modified_repo; \
 	(cd tests/modified_repo; \
