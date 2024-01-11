@@ -95,6 +95,7 @@ This means that type annotations and the features used MUST NOT require newer ve
 
 ## Documentation
 
+Ensure that you keep documentation up to date. This also applies for screenshots.
 If you add new documentation to the _docs_ directory, make sure to add links to all chapters
 to the newly added documentation from [Table of Contents](Table_of_contents.md#table-of-contents).
 
