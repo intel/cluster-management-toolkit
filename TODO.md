@@ -15,8 +15,8 @@
 
 ## cmu
 * Bundle all Core APIs into one file and load them all using secure_read_yaml_all();
-  the same should be done for parser-files; this *should* lead to a slight performance
-  improvement; note that the files should be kept separate and only bundle upon "build"
+  this *should* lead to a slight performance improvement;
+  note that the files should be kept separate and only bundle upon "build"
 * In Node and Inventory Info view we should provide a way to list all logs
   related to the host, and a shortcut to jump to that log.
 * Try to find other things we can simplify in the views.

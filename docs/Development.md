@@ -6,9 +6,18 @@ Contributions are warmly welcome!  All contributors MUST follow the guidelines i
 ![CONTRIBUTING.md](../CONTRIBUTING.md) and ![CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
 All contributions must be made under license specified in ![LICENSE.md](../LICENSE.md).
 
+## Roadmap
+
+If you want to contribute, but cannot quite decide what to prioritise it might
+be good to consult the
+[project roadmap](roadmap/Project_roadmap.md#project-roadmap).
+It tries to provide a highlevel view of what is planned for the upcoming year or so.
+
 ## Testing
 
-All contributions MUST be tested when applicable.
+All contributions MUST be tested when applicable. Remember: tested contributions are good,
+contributions that can be tested by others are better, but contributions that can be tested
+automatically are the best.
 
 ### Testing Python
 
@@ -20,6 +29,14 @@ make bandit (should only report Severity: Low warnings about submodule/PIPE)
 make regexploit (should not report any issues)
 make semgrep (should not report any issues)
 ```
+
+You SHOULD also run:
+
+```
+make tests
+```
+
+If you modify `cmtio.py`, `cmtio_yaml.py`, or `networkio.py` you MUST run `make tests`.
 
 You SHOULD also check for code quality issues using:
 

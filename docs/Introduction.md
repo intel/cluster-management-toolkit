@@ -16,3 +16,6 @@ information.
 
 To get started using _CMT_, the first step is
 [installation](Installing_CMT.md#installing-cmt).
+
+If interested you can also check out the
+[project roadmap](roadmap/Project_roadmap.md#project-roadmap).
