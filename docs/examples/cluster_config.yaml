@@ -1,4 +1,4 @@
-apiVersion: "v1alpha2"
+apiVersion: "v1alpha3"
 kind: "ClusterDeployment"
 
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
@@ -56,11 +56,14 @@ options:
 
 # Cluster-wide configuration and configuration for the control plane(s)
 cluster:
-  # control plane(s) for the cluster:
+  # Control plane(s) for the cluster:
   # Note: Currently only one control plane is supported
   # [mandatory]
   controlPlanes:
-  - "mycontrolplane"
+  - hostname: "mycontrolplane"
+    virtualised: true
+    ipAddress: "192.168.42.1"
+    vmImage: "{HOME}/vmimages/test.qcow2"
 
   # CRI to use for the control plane(s); valid options:
   # containerd
@@ -360,9 +363,50 @@ nodes:
   groups:
     # <group name1>:
     # # A list of all nodes that belong to this group; leave empty
-    # # if only configuring a control plane at this time
+    # # if only configuring a control plane at this time.
+    # #
+    # # If you're using bare metal nodes, you only need to provide hostname.
+    # # If your node names are sequential you can also template them.
+    # # Ranges are inclusive; [0,2] for instance, is 0, 1, 2.
+    # # If you want to use dynamically created VMs for the nodes,
+    # # the syntax is a bit more complex.
+    # #
+    # # Each range entry can take up to 3 ranges or fixed values.
+    # # These will be substituted by index into the hostnameTemplate or ipTemplate.
     # nodes:
-    # - "<node 1>"
+    # - hostname: "<node 1>"
+    # - # A template for used for specifying multiple hostnames in one entry.
+    #   # The ranges entry substitutes to "node-2" and "node-3"
+    #   hostnameTemplate: "node-<<<item.0>>>"
+    #   # The index range for the hostnames.
+    #   ranges:
+    #   - [[2, 3]]
+    # - # A template for used for specifying multiple hostnames in one entry.
+    #   # The first ranges entry substitutes to "vm-node-42-<2,3,...,255>".
+    #   # The second ranges entry substitutes to "vm-node-44-<1,2,...,255>"
+    #   # followed by "vm-node-45-<1,2,...,255>".
+    #   hostnameTemplate: "vm-node-<<<item.0>>>-<item.1>>>"
+    #   # The index range for the hostnames.
+    #   ranges:
+    #   - [42, [2, 255]]
+    #   - [[44, 45], [1, 255]]
+    # - # A template for used for specifying IP-addresses for the hosts;
+    #   # necessary when using virtualised hosts. Ignored for bare metal hosts.
+    #   # The first ranges entry substitutes to "192.168.42.<2,3,...,255>".
+    #   # The second ranges entry substitutes to "192.168.42.<1,2,...,255>"
+    #   # followed by "vm-node-45-<1,2,...,255>".
+    #   ipTemplate: "192.168.<<<item.0>>>.<<<item.1>>>"
+    #   # The index range for the hostnames and IP-addresses.
+    #   ranges:
+    #   - [42, [2, 255]]
+    #   - [[44, 45], [1, 255]]
+    #   # Create a VM for the node to run in; valid options:
+    #   # true
+    #   # false
+    #   # [optional; default: false]
+    #   virtualise: true
+    #   # The VM-image to use for the nodes in this group
+    #   vmImage: "{HOME}/vmimages/test.qcow2"
 
     # # Group specific options
     # options:
