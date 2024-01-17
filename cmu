@@ -6782,6 +6782,13 @@ def __resource_map_cursor(**kwargs):
 	keypress = deep_get(kwargs, DictPath("__keypress"))
 	selected = deep_get(kwargs, DictPath("selected"))
 	info = deep_get(kwargs, DictPath("info"))
+	if info is None:
+		return Retval.MATCH, {
+			"selected": 0,
+			"ypos": 0,
+			"xpos": 0,
+		}
+
 	status_len = len(info)
 	heatmap_width = deep_get(kwargs, DictPath("heatmap_width"))
 	stride = deep_get(kwargs, DictPath("stride"), 1)
@@ -7020,7 +7027,16 @@ clusteroverview_shortcuts = {
 	},
 }
 
-def get_list_async(kind: Tuple[str, str], namespace: str, fetch_args: Dict = None):
+def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+	playbook = deep_get(kwargs, DictPath("playbook"))
+	selection = deep_get(kwargs, DictPath("selection"))
+	status, result = ansible_run_playbook_on_selection(playbook = playbook, selection = selection, verbose = False)
+	return result, status
+
+def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
+	kind = deep_get(kwargs, DictPath("kind"))
+	namespace = deep_get(kwargs, DictPath("namespace"), "")
+	fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
 	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
 	sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
 	postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
@@ -7036,9 +7052,55 @@ def get_list_async(kind: Tuple[str, str], namespace: str, fetch_args: Dict = Non
 	elif postprocess == "pod":
 		vlist = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
 		extra_data = [s.status_group for s in vlist]
+	else:
+		extra_data = _status
 	if limit is not None:
 		vlist = vlist[:limit]
 	return vlist, extra_data
+
+class ReExecutor:
+	def __init__(self, max_workers = 1) -> None:
+		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
+		self.futures = {}
+
+	def __trigger(self, key: str) -> None:
+		data = self.futures[key]
+		data["triggered"] = True
+		data["future"] = self.executor.submit(data["function"], *data["args"], **data["kwargs"])
+		self.futures[key] = data
+
+	def trigger(self, key: str, interval: int, fn: Callable, /, *args, **kwargs) -> None:
+		if key not in self.futures:
+			data = {
+				"function": fn,
+				"args": args,
+				"kwargs": kwargs,
+				"last_update": datetime.now(),
+				"future": None,
+				"interval": interval,
+			}
+			self.futures[key] = data
+		self.__trigger(key)
+
+	def retrigger(self, key: str) -> None:
+		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
+
+	def get(self, key: str) -> Tuple[List[Type], List[Any]]:
+		info = []
+		status = []
+
+		if key in self.futures:
+			if self.futures[key]["triggered"] and self.futures[key]["future"].done():
+				self.futures[key]["last_update"] = datetime.now()
+				info, status = self.futures[key]["future"].result()
+				self.futures[key]["triggered"] = False
+				self.futures[key]["future"] = None
+			elif not self.futures[key]["triggered"] and (datetime.now() - self.futures[key]["last_update"]).seconds > self.futures[key]["interval"]:
+				self.retrigger(key)
+		return info, status
+
+	def shutdown(self) -> None:
+		self.executor.shutdown(wait = False, cancel_futures = True)
 
 def clusteroverviewloop(stdscr: curses.window, view):
 	field_list, sortcolumn = (None, None)
@@ -7069,8 +7131,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	selected_node = 0
 	selected_pod = 0
 
-	nodeinfo = None
-
 	# Get control plane node
 	control_plane_node, control_plane_name = get_control_plane()
 	control_plane_addresses = deep_get(control_plane_node, DictPath("status#addresses"), [])
@@ -7078,11 +7138,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 	hostname = socket.gethostname()
 	islocal = (hostname == name)
-	data_available = False
-	async_cookie = None
-	# Retrigger every 5 seconds by default
-	async_retrigger_timeout = 5
-	async_time_start = datetime.now() - timedelta(seconds = 42)
 
 	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
@@ -7091,9 +7146,8 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	meminfo_raw = []
 	stat_raw = []
 
-	prev = datetime.now()
-	podinfo = None
-	nodeinfo = None
+	podinfo = []
+	nodeinfo = []
 
 	pod_curypos = 0
 	pod_curxpos = 0
@@ -7121,19 +7175,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	swaptotal = 0
 
 	node_vlist = []
-	node_update_triggered = False
-	node_future = None
-	node_last_update = datetime.now() - timedelta(seconds = 42)
-	pod_vlist = []
-	pod_update_triggered = False
-	pod_future = None
-	pod_last_update = datetime.now() - timedelta(seconds = 42)
-	event_vlist = []
-	event_update_triggered = False
-	event_future = None
-	event_last_update = datetime.now() - timedelta(seconds = 42)
-
-	node_vlist = []
 	pod_vlist = []
 	event_vlist = []
 	node_statuses = []
@@ -7144,65 +7185,33 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	pod_heatmap = []
 	events = []
 
-	# FIXME: We should really use 3 workers, since we have three sets of data to fetch,
-	# but something in our code isn't threadsafe, so until that's been resolved we just use
-	# one worker instead.
-	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 1)
+	executor = ReExecutor(max_workers = 5)
+
+	if not islocal:
+		executor.trigger("sysinfo", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml"))), selection = [control_plane_name])
+	executor.trigger("node", 5, get_kubernetes_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "metadata#name", "postprocess": "node" })
+	executor.trigger("pod", 5, get_kubernetes_list_async, kind = ("Pod", ""), namespace = "", fetch_args = { "postprocess": "pod" })
+	executor.trigger("event", 5, get_kubernetes_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5 })
 
 	while True:
-		# Do we need to refresh the data?
-		# 5 seconds between each (completed) update;
-		# we might at some point revisit this and have multiple updates in flight
-		if not node_update_triggered and (datetime.now() - node_last_update).seconds > 5:
-			node_future = executor.submit(get_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "metadata#name", "postprocess": "node" })
-			node_update_triggered = True
-		if not pod_update_triggered and (datetime.now() - pod_last_update).seconds > 5:
-			pod_future = executor.submit(get_list_async, kind = ("Pod", ""), namespace = "", fetch_args = { "postprocess": "pod" })
-			pod_update_triggered = True
-		if not event_update_triggered and (datetime.now() - event_last_update).seconds > 5:
-			event_future = executor.submit(get_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5 })
-			event_update_triggered = True
-
-		if node_update_triggered:
-			if node_future.done():
-				nodeinfo, node_statuses = node_future.result()
-				node_update_triggered = False
-				node_last_update = datetime.now()
-		if pod_update_triggered:
-			if pod_future.done():
-				podinfo, pod_statuses = pod_future.result()
-				pod_update_triggered = False
-				pod_last_update = datetime.now()
-		if event_update_triggered:
-			if event_future.done():
-				events, _status = event_future.result()
-				event_update_triggered = False
-				event_last_update = datetime.now()
-
-		if async_cookie is not None:
-			# We are waiting for results
-			async_results = ansible_async_get_data(async_cookie)
-			if async_results is not None:
-				async_time_start = datetime.now()
-				for async_result in deep_get(async_results, DictPath(control_plane_name), []):
-					task = deep_get(async_result, DictPath("task"), "")
+		if (result := executor.get("sysinfo")) != ([], []):
+			ansible_results, ansible_status = result
+			if ansible_status == 0:
+				for ansible_result in deep_get(ansible_results, DictPath(control_plane_name), []):
+					task = deep_get(ansible_result, DictPath("task"), "")
 					if task == "Fetching /proc/loadavg":
-						loadavg_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+						loadavg_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
 					elif task == "Fetching /proc/meminfo":
-						meminfo_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+						meminfo_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
 					elif task == "Fetching /proc/stat":
-						stat_raw = deep_get(async_result, DictPath("stdout_lines"), [])
-				async_cookie = None
-				uip.force_update()
-		else:
-			if not islocal:
-				diff = datetime.now() - async_time_start
-				seconds = diff.days * 24 * 60 * 60 + diff.seconds
-
-				if seconds >= async_retrigger_timeout:
-					ping_path = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml")))
-					async_cookie = ansible_run_playbook_on_selection_async(ping_path, selection = [control_plane_name])
-					async_time_start = datetime.now()
+						stat_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
+					uip.force_update()
+		if (result := executor.get("node")) != ([], []):
+			nodeinfo, node_statuses = result
+		if (result := executor.get("pod")) != ([], []):
+			podinfo, pod_statuses = result
+		if (result := executor.get("event")) != ([], []):
+			events, _status = result
 
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
@@ -7590,7 +7599,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			__node_name = nodeinfo[selected_node].name
 			__namespace = None
 			__pod_name = None
-			__info = nodeinfo
+			__info = copy.deepcopy(nodeinfo)
 			__selected = selected_node
 			heatmap_width = node_heatmap_width
 		else:
@@ -7631,8 +7640,10 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		if retval == Retval.MATCH:
 			continue
 		if retval == Retval.RETURNONE:
+			executor.shutdown()
 			return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
+			executor.shutdown()
 			return retval
 
 # These are based on attributes of the name of the cmdata
@@ -10846,8 +10857,14 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	kind = ("Namespace", "")
 	namespace = deep_get(obj, DictPath("metadata#name"))
 
+	# 10 is randomly picked; this can be adjusted as we go along
+	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 10)
+	executors = {}
 	for kind in namespaced_resources:
-		_vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
+		joined_kind = ".".join(kind)
+		executors[kind] = executor.submit(get_kubernetes_list_async, kind = kind, namespace = namespace)
+	for kind, ex in executors.items():
+		_vlist, _status = ex.result()
 		if _status != 200:
 			status = _status
 			continue
@@ -10858,6 +10875,7 @@ def listgetter_namespaced_resources(obj, **kwargs):
 		for obj in _vlist:
 			obj["__kind_tuple"] = kind
 		vlist += _vlist
+	executor.shutdown()
 	return vlist, status
 
 # Iterate over the list of items and execute command on all of them

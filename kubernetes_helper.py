@@ -3540,6 +3540,69 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 }
 
+class PoolManagerContext:
+	"""
+	A class for wrapping PoolManager/ProxyManager
+	"""
+
+	def __init__(self,
+		     cert_file: Optional[str] = None, key_file: Optional[str] = None, ca_certs_file: Optional[str] = None,
+		     token: Optional[str] = None, insecuretlsskipverify: bool = False) -> None:
+		self.pool_manager = None
+		self.cert_file = cert_file
+		self.key_file = key_file
+		self.ca_certs_file = ca_certs_file
+		self.token = token
+		self.insecuretlsskipverify = insecuretlsskipverify
+
+	def __enter__(self) -> Union[urllib3.ProxyManager, urllib3.PoolManager]:
+		# Only permit a limited set of acceptable ciphers
+		ssl_context = urllib3.util.ssl_.create_urllib3_context(ciphers = ":".join(CIPHERS))
+		# Disable anything older than TLSv1.2
+		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+		# This isn't ideal; we might need different cluster proxies for different clusters
+		pool_manager_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), "")
+
+		if self.cert_file is not None:
+			if not self.insecuretlsskipverify:
+				pool_manager_args = {
+					"cert_reqs": "CERT_REQUIRED",
+					"ca_certs": self.ca_certs_file,
+					"cert_file": self.cert_file,
+					"key_file": self.key_file,
+					"ssl_context": ssl_context,
+				}
+			else:
+				pool_manager_args = {
+					"cert_reqs": "CERT_NONE",
+					"ca_certs": None,
+					"cert_file": self.cert_file,
+					"key_file": self.key_file,
+				}
+		elif self.token is not None:
+			if not insecuretlsskipverify:
+				pool_manager_args = {
+					"cert_reqs": "CERT_REQUIRED",
+					"ca_certs": self.ca_certs_file,
+					"ssl_context": ssl_context,
+				}
+			else:
+				pool_manager_args = {
+					"cert_reqs": "CERT_NONE",
+					"ca_certs": None,
+				}
+
+		if len(pool_manager_proxy) > 0:
+			self.pool_manager = urllib3.ProxyManager(pool_manager_proxy, **pool_manager_args)
+		else:
+			self.pool_manager = urllib3.PoolManager(**pool_manager_args)
+
+		return self.pool_manager
+
+	def __exit__(self, *args, **kwargs):
+		self.pool_manager.clear()
+		self.pool_manager = None
+
 def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 	"""
 	Given a kind tuple, return a string representation
@@ -3837,6 +3900,10 @@ class KubernetesHelper:
 	tmp_ca_certs_file: Any = None
 	tmp_cert_file: Any = None
 	tmp_key_file: Any = None
+
+	ca_certs_file: Optional[str] = None
+	cert_file: Optional[str] = None
+	key_file: Optional[str] = None
 	token: Optional[str] = None
 
 	pool_manager_args: Dict = {}
@@ -3979,12 +4046,9 @@ class KubernetesHelper:
 			connect_timeout: float = 3.0
 
 			try:
-				if len(self.pool_manager_proxy) > 0:
-					pool_manager = urllib3.ProxyManager(self.pool_manager_proxy, **self.pool_manager_args)
-				else:
-					pool_manager = urllib3.PoolManager(**self.pool_manager_args)
-				result = pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
-				status = result.status
+				with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+					result = pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
+					status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
 				# 503 is Service Unavailable; this is generally temporary, but to distinguish it from a real 503
@@ -4080,7 +4144,7 @@ class KubernetesHelper:
 		control_plane_ip = None
 		control_plane_port = None
 		control_plane_path = None
-		insecuretlsskipverify = False
+		self.insecuretlsskipverify = False
 		ca_certs = None
 
 		# OK, we have a user and a cluster to look for
@@ -4097,8 +4161,8 @@ class KubernetesHelper:
 				control_plane_port = tmp[2]
 				control_plane_path = tmp[3]
 
-			insecuretlsskipverify = deep_get(cluster, DictPath("cluster#insecure-skip-tls-verify"), False)
-			if insecuretlsskipverify:
+			self.insecuretlsskipverify = deep_get(cluster, DictPath("cluster#insecure-skip-tls-verify"), False)
+			if self.insecuretlsskipverify:
 				break
 
 			# ca_certs
@@ -4173,7 +4237,7 @@ class KubernetesHelper:
 			return False
 
 		# We cannot authenticate the server correctly
-		if ca_certs is None and not insecuretlsskipverify:
+		if ca_certs is None and not self.insecuretlsskipverify:
 			return False
 
 		# OK, we've got the cluster IP and port,
@@ -4185,71 +4249,30 @@ class KubernetesHelper:
 		self.control_plane_ip = control_plane_ip
 		self.control_plane_port = control_plane_port
 		self.control_plane_path = control_plane_path
+		if key is not None:
+			key = str(key)
 
-		if not insecuretlsskipverify:
+		if not self.insecuretlsskipverify:
 			ca_certs = str(ca_certs)
 			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
+			self.ca_certs_file = self.tmp_ca_certs_file.name
 			self.tmp_ca_certs_file.write(ca_certs.encode("utf-8"))
 			self.tmp_ca_certs_file.flush()
 		else:
 			urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-		ssl_context = ssl.SSLContext()
-		# Disable anything older than TLSv1.2
-		ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
-		# Only permit a limited set of acceptable ciphers
-		ssl_context.set_ciphers(":".join(CIPHERS)) # nosem
-		# This isn't ideal; we might need different cluster proxies for different clusters
-		self.pool_manager_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#cluster_https_proxy"), "")
-
 		# If we have a cert we also have a key
 		if cert is not None:
-			key = str(key)
-
 			self.tmp_cert_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
 			self.tmp_key_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
+			self.cert_file = self.tmp_cert_file.name
+			self.key_file = self.tmp_key_file.name
 
 			self.tmp_cert_file.write(cert.encode("utf-8"))
 			self.tmp_cert_file.flush()
 
 			self.tmp_key_file.write(key.encode("utf-8"))
 			self.tmp_key_file.flush()
-
-			if not insecuretlsskipverify:
-				self.pool_manager_args = {
-					"cert_reqs": "CERT_REQUIRED",
-					"ca_certs": self.tmp_ca_certs_file.name, # type: ignore
-					"cert_file": self.tmp_cert_file.name,
-					"key_file": self.tmp_key_file.name,
-					"ssl_context": ssl_context,
-				}
-			else:
-				self.pool_manager_args = {
-					"cert_reqs": "CERT_NONE",
-					"ca_certs": None,
-					"cert_file": self.tmp_cert_file.name,
-					"key_file": self.tmp_key_file.name,
-				}
-		elif self.token is not None:
-			if not insecuretlsskipverify:
-				self.pool_manager_args = {
-					"cert_reqs": "CERT_REQUIRED",
-					"ca_certs": self.tmp_ca_certs_file.name, # type: ignore
-					"ssl_context": ssl_context
-				}
-			else:
-				self.pool_manager_args = {
-					cert_reqs: "CERT_NONE",
-					ca_certs: None,
-				}
-
-		# The token might have expired, so try to renew it
-		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
-			if userindex is not None:
-				# self.token will only be non-None if the user entry
-				# has a token *or* there's an empty user entry
-				deep_set(dictionary = kubeconfig["users"][userindex], path = DictPath("user#token"), value = self.token, create_path = True)
 
 		self.cluster_unreachable = False
 		self.cluster_name = cluster_name
@@ -4689,136 +4712,142 @@ class KubernetesHelper:
 		# First get all core APIs
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
 
-		if status == 200 and raw_data is not None:
-			# Success
-			try:
-				core_apis = json.loads(raw_data)
-			except DecodeException:
-				# We got a response, but the data is malformed
-				return 42422, []
-		else:
-			# Something went wrong
-			self.cluster_unreachable = True
-			return status, []
-
-		group_version = deep_get(core_apis, DictPath("groupVersion"), "")
-
-		for api in deep_get(core_apis, DictPath("resources"), []):
-			name = deep_get(api, DictPath("name"), "")
-			shortnames = deep_get(api, DictPath("shortNames"), [])
-			api_version = group_version
-			namespaced = deep_get(api, DictPath("namespaced"), False)
-			kind = deep_get(api, DictPath("kind"), "")
-			verbs = deep_get(api, DictPath("verbs"), [])
-			if len(verbs) == 0:
-				continue
-			api_resources.append((name, shortnames, api_version, namespaced, kind, verbs))
-
-		# Now fetch non-core APIs
-		non_core_apis = {}
-		non_core_api_dict = {}
-
-		# Attempt aggregated discovery; we need custom header_params to do this.
-		# Fallback to the old method if aggregate discovery isn't supported.
-		header_params = {
-			"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
-			"Content-Type": "application/json",
-			"User-Agent": f"{self.programname} v{self.programversion}",
-		}
-		aggregated_data = {}
-
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params)
-
-		if status == 200 and raw_data is not None:
-			# Success
-			try:
-				aggregated_data = json.loads(raw_data)
-			except DecodeException:
-				# We got a response, but the data is malformed
-				pass
-		else:
-			# No non-core APIs found; this is a bit worrying, but OK...
-			pass
-
-		# We successfully got aggregated data
-		if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
-			for api_group in deep_get(aggregated_data, DictPath("items"), []):
-				api_group_name = deep_get(api_group, DictPath("metadata#name"), "")
-				versions = deep_get(api_group, DictPath("versions"), [])
-
-				# Now we need to check what kinds this api_group supports
-				# and using what version
-				for version in versions:
-					_version = deep_get(version, DictPath("version"))
-					if _version is None:
-						# This should not happen, but ignore it
-						continue
-					resources = deep_get(api_group, DictPath("resources"), [])
-					for resource in deep_get(version, DictPath("resources"), []):
-						name = deep_get(resource, DictPath("resource"), [])
-						shortnames = deep_get(resource, DictPath("shortNames"), [])
-						api_version = "/".join([api_group_name, _version])
-						namespaced = deep_get(resource, DictPath("scope"), "") == "Namespaced"
-						kind = deep_get(resource, DictPath("responseKind#kind"), "")
-						verbs = deep_get(resource, DictPath("verbs"), [])
-						kind_tuple = (kind, api_version.split("/", maxsplit = 1)[0])
-						# Let's hope we get them in the right order...
-						if kind_tuple in non_core_api_dict:
-							continue
-						non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
-			api_resources += list(non_core_api_dict.values())
-
-			return status, api_resources
-
-		# Nope, this is only non-core APIs
-		non_core_apis = aggregated_data
-
-		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
-			name = deep_get(api_group, DictPath("name"), "")
-			versions = deep_get(api_group, DictPath("versions"), [])
-
-			# Now we need to check what kinds this api_group supports
-			# and using what version
-			for version in versions:
-				group_version = deep_get(version, DictPath("groupVersion"))
-				if group_version is None:
-					# This should not happen, but ignore it
-					continue
-				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{group_version}"
-				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
-
-				if status != 200 or raw_data is None:
-					# Could not get API info; this is worrying, but ignore it
-					continue
+			if status == 200 and raw_data is not None:
+				# Success
 				try:
-					data = json.loads(raw_data)
+					core_apis = json.loads(raw_data)
 				except DecodeException:
 					# We got a response, but the data is malformed
+					return 42422, []
+			else:
+				# Something went wrong
+				self.cluster_unreachable = True
+				return status, []
+
+			group_version = deep_get(core_apis, DictPath("groupVersion"), "")
+
+			for api in deep_get(core_apis, DictPath("resources"), []):
+				name = deep_get(api, DictPath("name"), "")
+				shortnames = deep_get(api, DictPath("shortNames"), [])
+				api_version = group_version
+				namespaced = deep_get(api, DictPath("namespaced"), False)
+				kind = deep_get(api, DictPath("kind"), "")
+				verbs = deep_get(api, DictPath("verbs"), [])
+				if len(verbs) == 0:
 					continue
+				api_resources.append((name, shortnames, api_version, namespaced, kind, verbs))
 
-				resources = deep_get(data, DictPath("resources"), [])
-				for resource in resources:
-					kind = deep_get(resource, DictPath("kind"), "")
-					if len(kind) == 0:
-						continue
+			# Now fetch non-core APIs
+			non_core_apis = {}
+			non_core_api_dict = {}
 
-					name = deep_get(resource, DictPath("name"), "")
-					shortnames = deep_get(resource, DictPath("shortNames"), [])
-					api_version = group_version
-					namespaced = deep_get(resource, DictPath("namespaced"), False)
-					kind = deep_get(resource, DictPath("kind"), "")
-					verbs = deep_get(resource, DictPath("verbs"), [])
-					if len(verbs) == 0:
-						continue
-					kind_tuple = (kind, api_version.split("/")[0])
-					# Let's hope we get them in the right order...
-					if kind_tuple in non_core_api_dict:
-						continue
-					non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
-		api_resources += list(non_core_api_dict.values())
+			# Attempt aggregated discovery; we need custom header_params to do this.
+			# Fallback to the old method if aggregate discovery isn't supported.
+			header_params = {
+				"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
+				"Content-Type": "application/json",
+				"User-Agent": f"{self.programname} v{self.programversion}",
+			}
+			aggregated_data = {}
+
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
+			if self.token is not None:
+				self.renew_token(cluster_name, context_name)
+			with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+				raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, header_params = header_params)
+
+				if status == 200 and raw_data is not None:
+					# Success
+					try:
+						aggregated_data = json.loads(raw_data)
+					except DecodeException:
+						# We got a response, but the data is malformed
+						pass
+				else:
+					# No non-core APIs found; this is a bit worrying, but OK...
+					pass
+
+				# We successfully got aggregated data
+				if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
+					for api_group in deep_get(aggregated_data, DictPath("items"), []):
+						api_group_name = deep_get(api_group, DictPath("metadata#name"), "")
+						versions = deep_get(api_group, DictPath("versions"), [])
+
+						# Now we need to check what kinds this api_group supports
+						# and using what version
+						for version in versions:
+							_version = deep_get(version, DictPath("version"))
+							if _version is None:
+								# This should not happen, but ignore it
+								continue
+							resources = deep_get(api_group, DictPath("resources"), [])
+							for resource in deep_get(version, DictPath("resources"), []):
+								name = deep_get(resource, DictPath("resource"), [])
+								shortnames = deep_get(resource, DictPath("shortNames"), [])
+								api_version = "/".join([api_group_name, _version])
+								namespaced = deep_get(resource, DictPath("scope"), "") == "Namespaced"
+								kind = deep_get(resource, DictPath("responseKind#kind"), "")
+								verbs = deep_get(resource, DictPath("verbs"), [])
+								kind_tuple = (kind, api_version.split("/", maxsplit = 1)[0])
+								# Let's hope we get them in the right order...
+								if kind_tuple in non_core_api_dict:
+									continue
+								non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
+					api_resources += list(non_core_api_dict.values())
+
+					return status, api_resources
+
+				# Nope, this is only non-core APIs
+				non_core_apis = aggregated_data
+
+				for api_group in deep_get(non_core_apis, DictPath("groups"), []):
+					name = deep_get(api_group, DictPath("name"), "")
+					versions = deep_get(api_group, DictPath("versions"), [])
+
+					# Now we need to check what kinds this api_group supports
+					# and using what version
+					for version in versions:
+						group_version = deep_get(version, DictPath("groupVersion"))
+						if group_version is None:
+							# This should not happen, but ignore it
+							continue
+						url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{group_version}"
+						raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
+
+						if status != 200 or raw_data is None:
+							# Could not get API info; this is worrying, but ignore it
+							continue
+						try:
+							data = json.loads(raw_data)
+						except DecodeException:
+							# We got a response, but the data is malformed
+							continue
+
+						resources = deep_get(data, DictPath("resources"), [])
+						for resource in resources:
+							kind = deep_get(resource, DictPath("kind"), "")
+							if len(kind) == 0:
+								continue
+
+							name = deep_get(resource, DictPath("name"), "")
+							shortnames = deep_get(resource, DictPath("shortNames"), [])
+							api_version = group_version
+							namespaced = deep_get(resource, DictPath("namespaced"), False)
+							kind = deep_get(resource, DictPath("kind"), "")
+							verbs = deep_get(resource, DictPath("verbs"), [])
+							if len(verbs) == 0:
+								continue
+							kind_tuple = (kind, api_version.split("/")[0])
+							# Let's hope we get them in the right order...
+							if kind_tuple in non_core_api_dict:
+								continue
+							non_core_api_dict[kind_tuple] = (name, shortnames, api_version, namespaced, kind, verbs)
+				api_resources += list(non_core_api_dict.values())
 
 		return status, api_resources
 
@@ -4854,60 +4883,95 @@ class KubernetesHelper:
 		core_apis = {}
 
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
 
-		if status == 200 and raw_data is not None:
-			# Success
-			try:
-				core_apis = json.loads(raw_data)
-			except DecodeException:
-				# We got a response, but the data is malformed
-				return kubernetes_resources, 42422, False
-		else:
-			self.cluster_unreachable = True
-			# We could not get the core APIs; there is no use continuing
-			modified = True
-			return kubernetes_resources, status, modified
+			if status == 200 and raw_data is not None:
+				# Success
+				try:
+					core_apis = json.loads(raw_data)
+				except DecodeException:
+					# We got a response, but the data is malformed
+					return kubernetes_resources, 42422, False
+			else:
+				self.cluster_unreachable = True
+				# We could not get the core APIs; there is no use continuing
+				modified = True
+				return kubernetes_resources, status, modified
 
-		# Flush the entire API list
-		for _resource_kind, resource_data in kubernetes_resources.items():
-			resource_data["available"] = False
+			# Flush the entire API list
+			for _resource_kind, resource_data in kubernetes_resources.items():
+				resource_data["available"] = False
 
-		for api in deep_get(core_apis, DictPath("resources"), []):
-			if "list" not in deep_get(api, DictPath("verbs"), []):
-				# Ignore non-list APIs
-				continue
-			name = deep_get(api, DictPath("name"), "")
-			kind = deep_get(api, DictPath("kind"), "")
-			if (kind, "") in kubernetes_resources:
-				kubernetes_resources[(kind, "")]["available"] = True
+			for api in deep_get(core_apis, DictPath("resources"), []):
+				if "list" not in deep_get(api, DictPath("verbs"), []):
+					# Ignore non-list APIs
+					continue
+				name = deep_get(api, DictPath("name"), "")
+				kind = deep_get(api, DictPath("kind"), "")
+				if (kind, "") in kubernetes_resources:
+					kubernetes_resources[(kind, "")]["available"] = True
 
-		# Attempt aggregated discovery; we need custom header_params to do this.
-		# Fallback to the old method if aggregate discovery isn't supported.
-		header_params = {
-			"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
-			"Content-Type": "application/json",
-			"User-Agent": f"{self.programname} v{self.programversion}",
-		}
-		aggregated_data = {}
+			# Attempt aggregated discovery; we need custom header_params to do this.
+			# Fallback to the old method if aggregate discovery isn't supported.
+			header_params = {
+				"Accept": "application/json;g=apidiscovery.k8s.io;v=v2beta1;as=APIGroupDiscoveryList,application/json",
+				"Content-Type": "application/json",
+				"User-Agent": f"{self.programname} v{self.programversion}",
+			}
+			aggregated_data = {}
 
-		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
-		raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params)
-		if status == 200 and raw_data is not None:
-			# Success
-			try:
-				aggregated_data = json.loads(raw_data)
-			except DecodeException:
-				# We got a response, but the data is malformed
-				return kubernetes_resources, 42422, False
+			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
+			raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, header_params = header_params)
+			if status == 200 and raw_data is not None:
+				# Success
+				try:
+					aggregated_data = json.loads(raw_data)
+				except DecodeException:
+					# We got a response, but the data is malformed
+					return kubernetes_resources, 42422, False
 
-		# These are all API-groups we know of
-		_api_groups = set(api_group for kind, api_group in kubernetes_resources)
+			# These are all API-groups we know of
+			_api_groups = set(api_group for kind, api_group in kubernetes_resources)
 
-		# We successfully got aggregated data
-		if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
-			for api_group in deep_get(aggregated_data, DictPath("items"), []):
-				name = deep_get(api_group, DictPath("metadata#name"), "")
+			# We successfully got aggregated data
+			if deep_get(aggregated_data, DictPath("kind"), "") == "APIGroupDiscoveryList":
+				for api_group in deep_get(aggregated_data, DictPath("items"), []):
+					name = deep_get(api_group, DictPath("metadata#name"), "")
+					known_api_group = name in _api_groups
+					if not known_api_group:
+						continue
+
+					versions = deep_get(api_group, DictPath("versions"), [])
+
+					# Now we need to check what kinds this api_group supports
+					# and using what version
+					for version in versions:
+						_version = deep_get(version, DictPath("version"))
+						if _version is None:
+							# This should not happen, but ignore it
+							continue
+						resources = deep_get(version, DictPath("resources"), [])
+						for resource in resources:
+							if "list" not in deep_get(resource, DictPath("verbs"), []):
+								continue
+							kind = deep_get(resource, DictPath("responseKind#kind"), "")
+							if len(kind) == 0:
+								continue
+							if (kind, name) in kubernetes_resources and \
+									f"apis/{name}/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
+								kubernetes_resources[(kind, name)]["available"] = True
+								continue
+				modified = True
+				return kubernetes_resources, status, modified
+
+			# Nope, this is only non-core APIs
+			non_core_apis = aggregated_data
+
+			for api_group in deep_get(non_core_apis, DictPath("groups"), []):
+				name = deep_get(api_group, DictPath("name"), "")
 				known_api_group = name in _api_groups
 				if not known_api_group:
 					continue
@@ -4917,64 +4981,32 @@ class KubernetesHelper:
 				# Now we need to check what kinds this api_group supports
 				# and using what version
 				for version in versions:
-					_version = deep_get(version, DictPath("version"))
+					_version = deep_get(version, DictPath("groupVersion"))
 					if _version is None:
 						# This should not happen, but ignore it
 						continue
-					resources = deep_get(version, DictPath("resources"), [])
-					for resource in resources:
+					url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{_version}"
+					raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
+
+					if status != 200 or raw_data is None:
+						# Could not get API info; this is worrying, but ignore it
+						continue
+					try:
+						data = json.loads(raw_data)
+					except DecodeException:
+						# We got a response, but the data is malformed
+						continue
+
+					for resource in deep_get(data, DictPath("resources"), []):
 						if "list" not in deep_get(resource, DictPath("verbs"), []):
 							continue
-						kind = deep_get(resource, DictPath("responseKind#kind"), "")
+						kind = deep_get(resource, DictPath("kind"), "")
 						if len(kind) == 0:
 							continue
-						if (kind, name) in kubernetes_resources and \
-								f"apis/{name}/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
-							kubernetes_resources[(kind, name)]["available"] = True
+						if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
+							if (kind, name) in kubernetes_resources:
+								kubernetes_resources[(kind, name)]["available"] = True
 							continue
-			modified = True
-			return kubernetes_resources, status, modified
-
-		# Nope, this is only non-core APIs
-		non_core_apis = aggregated_data
-
-		for api_group in deep_get(non_core_apis, DictPath("groups"), []):
-			name = deep_get(api_group, DictPath("name"), "")
-			known_api_group = name in _api_groups
-			if not known_api_group:
-				continue
-
-			versions = deep_get(api_group, DictPath("versions"), [])
-
-			# Now we need to check what kinds this api_group supports
-			# and using what version
-			for version in versions:
-				_version = deep_get(version, DictPath("groupVersion"))
-				if _version is None:
-					# This should not happen, but ignore it
-					continue
-				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{_version}"
-				raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url)
-
-				if status != 200 or raw_data is None:
-					# Could not get API info; this is worrying, but ignore it
-					continue
-				try:
-					data = json.loads(raw_data)
-				except DecodeException:
-					# We got a response, but the data is malformed
-					continue
-
-				for resource in deep_get(data, DictPath("resources"), []):
-					if "list" not in deep_get(resource, DictPath("verbs"), []):
-						continue
-					kind = deep_get(resource, DictPath("kind"), "")
-					if len(kind) == 0:
-						continue
-					if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
-						if (kind, name) in kubernetes_resources:
-							kubernetes_resources[(kind, name)]["available"] = True
-						continue
 
 		modified = True
 		return kubernetes_resources, status, modified
@@ -4995,9 +5027,14 @@ class KubernetesHelper:
 		return vlist
 
 	# pylint: disable-next=too-many-arguments
-	def __rest_helper_generic_json(self, *, method: Optional[str] = None, url: Optional[str] = None, header_params: Optional[Dict] = None,
+	def __rest_helper_generic_json(self, *, pool_manager: Tuple[urllib3.PoolManager, urllib3.ProxyManager], method: Optional[str] = None,
+				       url: Optional[str] = None, header_params: Optional[Dict] = None,
 				       query_params: Optional[Sequence[Optional[Tuple[str, Any]]]] = None, body: Optional[bytes] = None,
 				       retries: int = 3, connect_timeout: float = 3.0) -> Tuple[Union[AnyStr, None], str, int]:
+
+		if pool_manager is None:
+			raise ProgrammingError("__rest_helper_generic_json() should never be called without a pool_manager")
+
 		if query_params is None:
 			query_params = []
 
@@ -5033,10 +5070,6 @@ class KubernetesHelper:
 
 		while reauth_retry > 0:
 			try:
-				if len(self.pool_manager_proxy) > 0:
-					pool_manager = urllib3.ProxyManager(self.pool_manager_proxy, **self.pool_manager_args)
-				else:
-					pool_manager = urllib3.PoolManager(**self.pool_manager_args)
 				if body is not None:
 					result = pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
 				else:
@@ -5196,11 +5229,14 @@ class KubernetesHelper:
 		status = 42503
 
 		# Try the newest API first and iterate backwards
-		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
-			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
-			if status in (200, 201, 204, 42503):
-				break
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			for api_path in api_paths:
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
+				_data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, header_params = header_params, body = body)
+				if status in (200, 201, 204, 42503):
+					break
 
 		return message, status
 
@@ -5253,11 +5289,14 @@ class KubernetesHelper:
 		status = 42503
 
 		# Try the newest API first and iterate backwards
-		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}{subresource_part}"
-			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, header_params = header_params, body = body)
-			if status in (200, 204, 42503):
-				break
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			for api_path in api_paths:
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}{subresource_part}"
+				_data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, header_params = header_params, body = body)
+				if status in (200, 204, 42503):
+					break
 
 		return message, status
 
@@ -5295,11 +5334,14 @@ class KubernetesHelper:
 		status = 42503
 
 		# Try the newest API first and iterate backwards
-		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
-			_data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
-			if status in (200, 204, 42503):
-				break
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			for api_path in api_paths:
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
+				_data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, query_params = query_params)
+				if status in (200, 204, 42503):
+					break
 
 		return message, status
 
@@ -5355,40 +5397,43 @@ class KubernetesHelper:
 		status = 42503
 
 		# Try the newest API first and iterate backwards
-		for api_path in api_paths:
-			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
-			raw_data, _message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			for api_path in api_paths:
+				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
+				raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, query_params = query_params)
 
-			# All fatal failures are handled in __rest_helper_generic
-			if status == 200 and raw_data is not None:
-				# Success
-				try:
-					d = json.loads(raw_data)
-				except DecodeException:
-					# We got a response, but the data is malformed; skip the entry
+				# All fatal failures are handled in __rest_helper_generic
+				if status == 200 and raw_data is not None:
+					# Success
+					try:
+						d = json.loads(raw_data)
+					except DecodeException:
+						# We got a response, but the data is malformed; skip the entry
+						continue
+
+					# If name is set this is a read request, not a list request
+					if raw_path or name != "":
+						return d, status
+					return deep_get(d, DictPath("items"), []), status
+
+				if status in (204, 400, 403, 503):
+					# We did not get any data, but we might not want to fail
 					continue
 
-				# If name is set this is a read request, not a list request
-				if raw_path or name != "":
-					return d, status
-				return deep_get(d, DictPath("items"), []), status
+				#if status == 404:
+					# We did not get any data, but we might not want to fail
 
-			if status in (204, 400, 403, 503):
-				# We did not get any data, but we might not want to fail
-				continue
+					# page not found (API not available or possibly programming error)
+					# raise UnknownError(f"API not available; this is probably a programming error; URL {url}")
 
-			#if status == 404:
-				# We did not get any data, but we might not want to fail
+				#if status == 410:
+					# XXX: Should be handled when we implement support for update events
 
-				# page not found (API not available or possibly programming error)
-				# raise UnknownError(f"API not available; this is probably a programming error; URL {url}")
-
-			#if status == 410:
-				# XXX: Should be handled when we implement support for update events
-
-				# Gone
-				# We requested update events (using resourceVersion), but it has been too long since the previous request;
-				# retry without &resourceVersion=xxxxx
+					# Gone
+					# We requested update events (using resourceVersion), but it has been too long since the previous request;
+					# retry without &resourceVersion=xxxxx
 
 		# If name is not set this is a list request, so return an empty list instead of None
 		if name == "":
@@ -5614,23 +5659,29 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
+		msg = []
+		status = 42503
+
 		if self.cluster_unreachable:
-			return [], 42503
+			return msg, status
 
 		query_params: List[Optional[Tuple[str, Any]]] = []
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/metrics"
-		data, _message, status = self.__rest_helper_generic_json(method = "GET", url = url, query_params = query_params)
-		if status == 200 and data is not None:
-			if isinstance(data, bytes):
-				msg = data.decode("utf-8", errors = "replace").splitlines()
-			elif isinstance(data, str):
-				msg = data.splitlines()
-		elif status == 204:
-			# No Content; pretend that everything is fine
-			msg = []
-			status = 200
-		else:
-			msg = []
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = "GET", url = url, query_params = query_params)
+			if status == 200 and data is not None:
+				if isinstance(data, bytes):
+					msg = data.decode("utf-8", errors = "replace").splitlines()
+				elif isinstance(data, str):
+					msg = data.splitlines()
+			elif status == 204:
+				# No Content; pretend that everything is fine
+				msg = []
+				status = 200
+			else:
+				msg = []
 		return msg, status
 
 	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
@@ -5683,6 +5734,9 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
+		msg = ""
+		status = "42503"
+
 		query_params: List[Optional[Tuple[str, Any]]] = []
 		if container is not None:
 			query_params.append(("container", container))
@@ -5692,18 +5746,21 @@ a				the return value from __rest_helper_patch
 
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1/namespaces/{namespace}/pods/{name}/log"
-		data, message, status = self.__rest_helper_generic_json(method = method, url = url, query_params = query_params)
+		if self.token is not None:
+			self.renew_token(cluster_name, context_name)
+		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
+			data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, query_params = query_params)
 
-		if status == 200 and data is not None:
-			if isinstance(data, bytes):
-				msg = data.decode("utf-8", errors = "replace")
-			elif isinstance(data, str):
-				msg = data
-		elif status == 204:
-			# No Content
-			msg = "No Content"
-		else:
-			msg = message
+			if status == 200 and data is not None:
+				if isinstance(data, bytes):
+					msg = data.decode("utf-8", errors = "replace")
+				elif isinstance(data, str):
+					msg = data
+			elif status == 204:
+				# No Content
+				msg = "No Content"
+			else:
+				msg = message
 
 		return msg, status
 
