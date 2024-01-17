@@ -1,6 +1,6 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch
 test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py reexecutor.py
 
 # Most of these are warnings/errors emitted due to coding style differences
