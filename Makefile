@@ -1,7 +1,7 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
 python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests
-test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
+test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py
 
 # Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
@@ -135,6 +135,16 @@ mypy:
 	for file in $(python_executables) $(python_test_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
 	done
+
+nox: create_test_symlinks
+	@cmd=nox ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "Running nox for unit testing\n\n"; \
+	$$cmd || true; \
+	printf -- "\n-----\n\n"
 
 validate_yaml:
 	@printf -- "\n\nRunning validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
