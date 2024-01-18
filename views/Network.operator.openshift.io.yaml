@@ -9,13 +9,41 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "ready_replicas", "age"]
+  fields:
+    ready_replicas:
+      header: "Ready Replicas:"
+      path: "status#readyReplicas"
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
 infoview:
   name: "Network Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["deploy_kube_proxy", "disable_multi_network", "use_multi_network_policy", "loglevel", "operator_loglevel", "management_state", "ready_replicas", "version", "disable_network_diagnostics", "cluster_network", "service_network"]
+        fields:
+        - "deploy_kube_proxy"
+        - "disable_multi_network"
+        - "use_multi_network_policy"
+        - "loglevel"
+        - "operator_loglevel"
+        - "management_state"
+        - "ready_replicas"
+        - "version"
+        - "disable_network_diagnostics"
+        - "default_network_header"
+        - "default_network_type"
+        - "default_network_header_note"
+        - "default_network_openshift_sdn_config"
+        - "default_network_openshift_sdn_enable_unidling"
+        - "default_network_openshift_sdn_mtu"
+        - "default_network_openshift_sdn_mode"
+        - "default_network_openshift_sdn_vxlan_port"
+        - "cluster_network"
+        - "service_network"
     rows:
       deploy_kube_proxy:
         header: [["Deploy kube-proxy:", ["main", "infoheader"]]]
@@ -75,6 +103,42 @@ infoview:
           - type: "no_pad"
           - type: "no_pad"
           - type: "no_pad"
+      default_network_header:
+        header: [["Default Network:", ["main", "infoheader"]]]
+      default_network_header_note:
+        header: [["  # Note: currently only SDN config is shown", ["main", "infoheader_note"]]]
+      default_network_openshift_sdn_config:
+        header: [["  OpenShift SDN Config:", ["main", "infoheader"]]]
+      default_network_openshift_sdn_enable_unidling:
+        header: [["    Enable Unidling:", ["main", "infoheader"]]]
+        path: "spec#defaultNetwork#openshiftSDNConfig#enableUnidling"
+        type: "bool"
+        default: true
+      default_network_openshift_sdn_mode:
+        header: [["    Mode:", ["main", "infoheader"]]]
+        path: "spec#defaultNetwork#openshiftSDNConfig#mode"
+        fallback_on_empty: true
+        type: "str"
+        default: "<unset>"
+      default_network_openshift_sdn_mtu:
+        header: [["    MTU:", ["main", "infoheader"]]]
+        path: "spec#defaultNetwork#openshiftSDNConfig#mtu"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      default_network_openshift_sdn_vxlan_port:
+        header: [["    VXLAN Port:", ["main", "infoheader"]]]
+        path: "spec#defaultNetwork#openshiftSDNConfig#vxlanPort"
+        type: "int"
+        default: "4789"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      default_network_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#defaultNetwork#type"
+        type: "str"
       service_network:
         header: [["Service Network:", ["main", "infoheader"]]]
         path: "spec#serviceNetwork"
