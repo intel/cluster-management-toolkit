@@ -3580,7 +3580,7 @@ class PoolManagerContext:
 					"key_file": self.key_file,
 				}
 		elif self.token is not None:
-			if not insecuretlsskipverify:
+			if not self.insecuretlsskipverify:
 				pool_manager_args = {
 					"cert_reqs": "CERT_REQUIRED",
 					"ca_certs": self.ca_certs_file,
@@ -4713,7 +4713,8 @@ class KubernetesHelper:
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
 
@@ -4757,7 +4758,8 @@ class KubernetesHelper:
 
 			url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis"
 			if self.token is not None:
-				self.renew_token(cluster_name, context_name)
+				with renew_lock:
+					self.renew_token(self.cluster_name, self.context_name)
 			with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 				raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, header_params = header_params)
 
@@ -4884,7 +4886,8 @@ class KubernetesHelper:
 
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1"
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
 
@@ -5100,8 +5103,9 @@ class KubernetesHelper:
 			if status == 401:
 				# Unauthorized:
 				# Try to renew the token then retry
-				with renew_lock:
-					self.renew_token(self.cluster_name, self.context_name)
+				if self.token is not None:
+					with renew_lock:
+						self.renew_token(self.cluster_name, self.context_name)
 				reauth_retry = 42
 			else:
 				reauth_retry = 0
@@ -5230,7 +5234,8 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			for api_path in api_paths:
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
@@ -5290,7 +5295,8 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			for api_path in api_paths:
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}{subresource_part}"
@@ -5335,7 +5341,8 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			for api_path in api_paths:
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
@@ -5398,7 +5405,8 @@ class KubernetesHelper:
 
 		# Try the newest API first and iterate backwards
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			for api_path in api_paths:
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
@@ -5668,7 +5676,8 @@ a				the return value from __rest_helper_patch
 		query_params: List[Optional[Tuple[str, Any]]] = []
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/metrics"
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = "GET", url = url, query_params = query_params)
 			if status == 200 and data is not None:
@@ -5747,7 +5756,8 @@ a				the return value from __rest_helper_patch
 		method = "GET"
 		url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/api/v1/namespaces/{namespace}/pods/{name}/log"
 		if self.token is not None:
-			self.renew_token(cluster_name, context_name)
+			with renew_lock:
+				self.renew_token(self.cluster_name, self.context_name)
 		with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
 			data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, query_params = query_params)
 
