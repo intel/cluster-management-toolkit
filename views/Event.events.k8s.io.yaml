@@ -63,6 +63,7 @@ listview:
       header: "Reason:"
       path: "reason"
       type: "str"
+      default: "<unset>"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -71,10 +72,26 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            Admitted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            AfterShutdownDelayDuration:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            AllRequirementsMet:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             AlreadyMountedVolume:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            AnnotationChange:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             BackOff:
               field_colors:
               - context: "main"
@@ -95,7 +112,15 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            CABundleUpdateRequired:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             CertificateIssued:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CertificateUpdated:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -108,11 +133,67 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            ClientCertificateCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ClusterInfrastructureStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ClusterRoleBindingCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ClusterRoleCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ClusterUpgradeBackupControllerUpdatingStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             Completed:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            ComponentUnhealthy:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ConfigDriftMonitorStarted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ConfigDriftMonitorStopped:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ConfigMapCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ConfigMapCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             ConfigMapUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ConfigMissing:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ConfigOperatorStatusChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ConnectivityOutageDetected:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ConnectivityRestored:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -120,6 +201,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            Cordon:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             CREATE:
               field_colors:
               - context: "main"
@@ -128,7 +213,27 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            <unknown>Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CreatedDefaultCertificate:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CreatedSCCRanges:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             CreatedVMPod:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CreatedWildcardCACert:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CSRApproval:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -136,11 +241,56 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            CSRCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CustomResourceDefinitionCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            CustomResourceDefinitionCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            DaemonSetCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            # This is an assumption, not an observed event
+            DaemonSetCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            DaemonSetUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             DeadlineExceeded:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            DeploymentCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            DeploymentCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            DeploymentUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             DNSConfigForming:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            Drain:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            EnvVarControllerUpdatingStatus:
               field_colors:
               - context: "main"
                 type: "status_warning"
@@ -148,10 +298,22 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            EtcdEndpointsErrorUpdatingStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            EtcdMembersErrorUpdatingStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             ExceededGracePeriod:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            ExternalProvisioning:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             Failed:
               field_colors:
               - context: "main"
@@ -252,6 +414,18 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            FastControllerResync:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            FeatureGatesInitialized:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            FileChangeWatchdogStarted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             FileSystemResizeFailed:
               field_colors:
               - context: "main"
@@ -268,14 +442,38 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            HTTPServerStoppedListening:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             ImageGCFailed:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            InFlightRequestsDrained:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             InspectFailed:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            InstallCheckFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            InstallerPodFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            InstallSucceeded:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            InstallWaiting:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
             InvalidDiskCapacity:
               field_colors:
               - context: "main"
@@ -288,6 +486,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            KubeAPIReadyz:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             KubeletSetupFailed:
               field_colors:
               - context: "main"
@@ -300,11 +502,47 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            MasterNodeObserved:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            MemberAddAsLearner:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            MemberPromote:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            MemberRemove:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NamespaceCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NamespaceUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NeedsReinstall:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             NetworkNotReady:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
             NodeAllocatableEnforced:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NodeCurrentRevisionChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            NodeDone:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -336,6 +574,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            NodeTargetRevisionChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             NodeUnresponsive:
               field_colors:
               - context: "main"
@@ -344,11 +586,107 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            NoValidCertificateFound:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ObserveAPIAudiences:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveAPIServerURL:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveAuditProfile:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveConsoleURL:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveExternalRegistryHostnameChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveFeatureFlagsUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveIdentityProviders:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveInternalRegistryHostnameChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveRouterSecret:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveServiceCAConfigMap:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveStorageFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ObserveStorageUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveTLSSecurityProfile:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveTemplates:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveTokenConfig:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObserveWebhookTokenAuthenticator:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObservedConfigChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ObservedConfigWriteError:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            OpenShiftAPICheckFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            "OperatorDegraded: RequiredPoolsFailed":
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             OperatorStatusChanged:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            OperatorVersionChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             PayloadLoaded:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            PodCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            PodDisruptionBudgetCreated:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -368,11 +706,35 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            PrometheusRuleCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Provisioning:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ProvisioningSucceeded:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            PublishedRouterCA:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            PublishedRouterCertificates:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             Pulled:
               field_colors:
               - context: "main"
                 type: "status_ok"
             Pulling:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Reboot:
               field_colors:
               - context: "main"
                 type: "status_pending"
@@ -396,10 +758,22 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            RenderedConfigGenerated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ReportEtcdMembersErrorUpdatingStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             Requested:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            RequiredInstallerResourcesMissing:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             Resumed:
               field_colors:
               - context: "main"
@@ -408,10 +782,58 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            RequirementsUnknown:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            RevisionCreate:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            RevisionCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            RevisionTriggered:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            RoleBindingCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            RoleBindingCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            RoleCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            RoleCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            RotationError:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            RoutingConfigSubdomainChanged:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             SandboxChanged:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            SATokenSignerControllerOK:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SATokenSignerControllerStuck:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             SawCompletedJob:
               field_colors:
               - context: "main"
@@ -424,6 +846,46 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            ScriptControllerErrorUpdatingStatus:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            SecretCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SecretCreateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            SecretDeleted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SecretUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SecretUpdateFailed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            ServiceAccountCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ServiceAccountIssuer:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ServiceCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            ServiceMonitorCreated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             ServiceNotReady:
               field_colors:
               - context: "main"
@@ -432,15 +894,47 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+            ServiceUpdated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SetDesiredConfig:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             Shutdown:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            ShutdownInitiated:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            SignerUpdateRequired:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            SkipReboot:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             Starting:
               field_colors:
               - context: "main"
                 type: "status_pending"
             Started:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            StaticPodInstallerCompleted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "Status upgrade":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            StorageVersionMigrationCreated:
               field_colors:
               - context: "main"
                 type: "status_ok"
@@ -468,6 +962,18 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            TargetConfigDeleted:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            TargetUpdateRequired:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            TerminationGracefulTerminationFinished:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             TerminationMinimalShutdownDurationFinished:
               field_colors:
               - context: "main"
@@ -488,10 +994,18 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            Uncordon:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             Unhealthy:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+            Updated:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             VolumeResizeFailed:
               field_colors:
               - context: "main"
@@ -500,14 +1014,22 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
-            WaitForServeDeploymentReady:
-              field_colors:
-              - context: "main"
-                type: "status_pending"
             WaitingForApproval:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            WaitForFirstConsumer:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            WaitForServeDeploymentReady:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            <unset>:
+              field_colors:
+              - context: "types"
+                type: "unset"
     reporter:
       header: "Reporter:"
       paths:
@@ -534,6 +1056,7 @@ listview:
       header: "Type:"
       path: "type"
       type: "str"
+      default: "<unset>"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -542,14 +1065,18 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
-            Warning:
-              field_colors:
-              - context: "main"
-                type: "status_admin"
             Normal:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            Warning:
+              field_colors:
+              - context: "main"
+                type: "status_admin"
+            <unset>:
+              field_colors:
+              - context: "types"
+                type: "unset"
   shortcuts:
     "Show Resource":
       key: "r"
@@ -623,6 +1150,7 @@ infoview:
         header: [["Reason:", ["main", "infoheader"]]]
         path: "reason"
         type: "str"
+        default: "<unset>"
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -631,10 +1159,26 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              Admitted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              AfterShutdownDelayDuration:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              AllRequirementsMet:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               AlreadyMountedVolume:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              AnnotationChange:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               BackOff:
                 field_colors:
                 - context: "main"
@@ -655,7 +1199,15 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              CABundleUpdateRequired:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               CertificateIssued:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CertificateUpdated:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -668,11 +1220,67 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              ClientCertificateCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ClusterInfrastructureStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ClusterRoleBindingCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ClusterRoleCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ClusterUpgradeBackupControllerUpdatingStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               Completed:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              ComponentUnhealthy:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ConfigDriftMonitorStarted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ConfigDriftMonitorStopped:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ConfigMapCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ConfigMapCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               ConfigMapUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ConfigMissing:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ConfigOperatorStatusChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ConnectivityOutageDetected:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ConnectivityRestored:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -680,6 +1288,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              Cordon:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               CREATE:
                 field_colors:
                 - context: "main"
@@ -688,7 +1300,27 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              <unknown>Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CreatedDefaultCertificate:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CreatedSCCRanges:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               CreatedVMPod:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CreatedWildcardCACert:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CSRApproval:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -696,11 +1328,56 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              CSRCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CustomResourceDefinitionCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              CustomResourceDefinitionCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              DaemonSetCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              # This is an assumption, not an observed event
+              DaemonSetCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              DaemonSetUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               DeadlineExceeded:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              DeploymentCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              DeploymentCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              DeploymentUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               DNSConfigForming:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              Drain:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              EnvVarControllerUpdatingStatus:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
@@ -708,10 +1385,22 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              EtcdEndpointsErrorUpdatingStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              EtcdMembersErrorUpdatingStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               ExceededGracePeriod:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              ExternalProvisioning:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               Failed:
                 field_colors:
                 - context: "main"
@@ -812,6 +1501,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              FastControllerResync:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              FeatureGatesInitialized:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              FileChangeWatchdogStarted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               FileSystemResizeFailed:
                 field_colors:
                 - context: "main"
@@ -828,14 +1529,38 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              HTTPServerStoppedListening:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               ImageGCFailed:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              InFlightRequestsDrained:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               InspectFailed:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              InstallCheckFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              InstallerPodFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              InstallSucceeded:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              InstallWaiting:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
               InvalidDiskCapacity:
                 field_colors:
                 - context: "main"
@@ -848,6 +1573,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              KubeAPIReadyz:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               KubeletSetupFailed:
                 field_colors:
                 - context: "main"
@@ -860,11 +1589,47 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              MasterNodeObserved:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              MemberAddAsLearner:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              MemberPromote:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              MemberRemove:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NamespaceCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NamespaceUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NeedsReinstall:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               NetworkNotReady:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
               NodeAllocatableEnforced:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NodeCurrentRevisionChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              NodeDone:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -896,6 +1661,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              NodeTargetRevisionChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               NodeUnresponsive:
                 field_colors:
                 - context: "main"
@@ -904,11 +1673,107 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              NoValidCertificateFound:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ObserveAPIAudiences:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveAPIServerURL:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveAuditProfile:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveConsoleURL:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveExternalRegistryHostnameChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveFeatureFlagsUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveIdentityProviders:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveInternalRegistryHostnameChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveRouterSecret:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveServiceCAConfigMap:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveStorageFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ObserveStorageUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveTLSSecurityProfile:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveTemplates:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveTokenConfig:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObserveWebhookTokenAuthenticator:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObservedConfigChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ObservedConfigWriteError:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              OpenShiftAPICheckFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              "OperatorDegraded: RequiredPoolsFailed":
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               OperatorStatusChanged:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              OperatorVersionChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               PayloadLoaded:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              PodCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              PodDisruptionBudgetCreated:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -928,11 +1793,35 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              PrometheusRuleCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Provisioning:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ProvisioningSucceeded:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              PublishedRouterCA:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              PublishedRouterCertificates:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               Pulled:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
               Pulling:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Reboot:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
@@ -956,10 +1845,22 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              RenderedConfigGenerated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ReportEtcdMembersErrorUpdatingStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               Requested:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              RequiredInstallerResourcesMissing:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               Resumed:
                 field_colors:
                 - context: "main"
@@ -968,10 +1869,58 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              RequirementsUnknown:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              RevisionCreate:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              RevisionCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              RevisionTriggered:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              RoleBindingCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              RoleBindingCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              RoleCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              RoleCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              RotationError:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              RoutingConfigSubdomainChanged:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               SandboxChanged:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              SATokenSignerControllerOK:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SATokenSignerControllerStuck:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               SawCompletedJob:
                 field_colors:
                 - context: "main"
@@ -984,6 +1933,46 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              ScriptControllerErrorUpdatingStatus:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              SecretCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SecretCreateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              SecretDeleted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SecretUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SecretUpdateFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              ServiceAccountCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ServiceAccountIssuer:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ServiceCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              ServiceMonitorCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               ServiceNotReady:
                 field_colors:
                 - context: "main"
@@ -992,15 +1981,47 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+              ServiceUpdated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SetDesiredConfig:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               Shutdown:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              ShutdownInitiated:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              SignerUpdateRequired:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              SkipReboot:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               Starting:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
               Started:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              StaticPodInstallerCompleted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Status upgrade":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              StorageVersionMigrationCreated:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
@@ -1028,6 +2049,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              TargetConfigDeleted:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              TargetUpdateRequired:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              TerminationGracefulTerminationFinished:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               TerminationMinimalShutdownDurationFinished:
                 field_colors:
                 - context: "main"
@@ -1048,10 +2081,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_warning"
+              Uncordon:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               Unhealthy:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+              Updated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               VolumeResizeFailed:
                 field_colors:
                 - context: "main"
@@ -1060,14 +2101,22 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
-              WaitForServeDeploymentReady:
-                field_colors:
-                - context: "main"
-                  type: "status_pending"
               WaitingForApproval:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              WaitForFirstConsumer:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              WaitForServeDeploymentReady:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              <unset>:
+                field_colors:
+                - context: "types"
+                  type: "unset"
       reporter:
         header: [["Reporter:", ["main", "infoheader"]]]
         paths:
@@ -1094,6 +2143,7 @@ infoview:
         header: [["Type:", ["main", "infoheader"]]]
         path: "type"
         type: "str"
+        default: "<unset>"
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -1102,14 +2152,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
-              Warning:
-                field_colors:
-                - context: "main"
-                  type: "status_admin"
               Normal:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              Warning:
+                field_colors:
+                - context: "main"
+                  type: "status_admin"
+              <unset>:
+                field_colors:
+                - context: "types"
+                  type: "unset"
   shortcuts:
     "Open involved object":
       key: "i"

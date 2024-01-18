@@ -6,4 +6,123 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "ready_replicas", "age"]
+  fields:
+    ready_replicas:
+      header: "Ready Replicas:"
+      path: "status#readyReplicas"
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
+infoview:
+  name: "API Server Info"
+  infopad:
+    row_indexes:
+      Wide:
+        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites", "min_tls_version", "ready_replicas"]
+      Normal:
+        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "cipher_suites_ellipsise", "min_tls_version", "ready_replicas"]
+    rows:
+      cipher_suites:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        path: "spec#observedConfig#servingInfo#cipherSuites"
+        type: "raw"
+        formatter: "list"
+      cipher_suites_ellipsise:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ipher Suites:", ["main", "infoheader"]]]
+        path: "spec#observedConfig#servingInfo#cipherSuites"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          ellipsise: 3
+      min_tls_version:
+        header: [["Min TLS Version:", ["main", "infoheader"]]]
+        path: "spec#observedConfig#servingInfo#minTLSVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        type: "str"
+      operator_loglevel:
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
+      ready_replicas:
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
+        path: "status#readyReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#nodeStatuses"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind: "Node"
+      api_family: ""
+      name_path: "nodeName"
+    field_indexes:
+      Normal:
+        fields: ["name", "current_revision"]
+        sortcolumn: "type"
+    fields:
+      name:
+        header: "Node:"
+        path: "nodeName"
+        type: "str"
+      current_revision:
+        header: "Current Revision:"
+        path: "currentRevision"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "Show Cipher Suites":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List cipher suites"
+      widget: "windowwidget"
+      title: "Cipher Suites:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#observedConfig#servingInfo#cipherSuites"]
+      # Not supported for now
+      sortcolumn: "cipher"

@@ -9,7 +9,16 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "ready_replicas", "age"]
+  fields:
+    ready_replicas:
+      header: "Ready Replicas:"
+      path: "status#readyReplicas"
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
 infoview:
   name: "Config Info"
   infopad:
