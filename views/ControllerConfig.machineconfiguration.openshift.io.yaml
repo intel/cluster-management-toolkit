@@ -7,3 +7,150 @@ listview:
   field_indexes:
     Normal:
       fields: ["name", "age"]
+infoview:
+  name: "Controller Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["pull_secret", "cluster_dns_ip", "images_header", "image_base_os", "image_base_os_container", "image_base_os_extensions_container", "image_api_server_watcher_key", "image_baremetal_runtime_config", "image_coredns", "image_haproxy", "image_infra_key", "image_keepalived", "image_machine_config_operator", "image_release"]
+    rows:
+      cluster_dns_ip:
+        header: [["Cluster DNS IP:", ["main", "infoheader"]]]
+        path: "spec#clusterDNSIP"
+        type: "str"
+        formatter: "address"
+      images_header:
+        header: [["Images:", ["main", "infoheader"]]]
+      image_api_server_watcher_key:
+        header: [["  API-server Watcher Key:", ["main", "infoheader"]]]
+        path: "spec#images#apiServerWatcherKey"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_baremetal_runtime_config:
+        header: [["  Baremetal Runtime Config:", ["main", "infoheader"]]]
+        path: "spec#images#baremetalRuntimeCfgImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_base_os:
+        header: [["  Base OS:", ["main", "infoheader"]]]
+        path: "spec#osImageURL"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_base_os_container:
+        header: [["  Base OS Container:", ["main", "infoheader"]]]
+        path: "spec#baseOSContainerImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_base_os_extensions_container:
+        header: [["  Base OS Extensions Container:", ["main", "infoheader"]]]
+        path: "spec#baseOSExtensionsContainerImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_coredns:
+        header: [["  CoreDNS:", ["main", "infoheader"]]]
+        path: "spec#images#corednsImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_haproxy:
+        header: [["  HAProxy:", ["main", "infoheader"]]]
+        path: "spec#images#haproxyImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_infra_key:
+        header: [["  Infra Key:", ["main", "infoheader"]]]
+        path: "spec#images#infraImageKey"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_keepalived:
+        header: [["  Keepalived:", ["main", "infoheader"]]]
+        path: "spec#images#keepalivedImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_machine_config_operator:
+        header: [["  Machine Config Operator:", ["main", "infoheader"]]]
+        path: "spec#images#machineConfigOperator"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      image_release:
+        header: [["  Release:", ["main", "infoheader"]]]
+        path: "spec#releaseImage"
+        type: "str"
+        default: "<none>"
+        fallback_on_empty: true
+      pull_secret:
+        header: [["P", ["main", "infoheader_shortcut"]], ["ull Secret:", ["main", "infoheader"]]]
+        paths:
+        - path: ["Secret", ["spec#pullSecret#namespace"], ["spec#pullSecret#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "kind"
+          - type: "namespace"
+  shortcuts:
+    "List controller certificates":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List controller certificates"
+      widget: "windowwidget"
+      title: "Controller certificates:"
+      headers: ["Bundle File:", "Signer:", "Subject:"]
+      selectable: false
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#controllerCertificates"
+        fields:
+        - "bundleFile"
+        - "signer"
+        - "subject"
+      # Not supported for now
+      sortcolumn: "bundle_file"
+    "Open pull Secret":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for pull Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#pullSecret#name"
+        namespace_path: "spec#pullSecret#namespace"
+        kind: "Secret"
+    "View DNS configuration":
+      key: "d"
+      read_only: true
+      helptext: "Show DNS configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "DNS Configuration"
+        _pass_obj: true
+        path: "spec#dns"
+        include_root: true
+    "View Infrastructure configuration":
+      key: "i"
+      read_only: true
+      helptext: "Show Infrastructure configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Infrastructure Configuration"
+        _pass_obj: true
+        path: "spec#infra"
+        include_root: true

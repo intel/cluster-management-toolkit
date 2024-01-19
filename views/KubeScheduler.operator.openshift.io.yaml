@@ -37,13 +37,6 @@ infoview:
         formatter: "list"
         formatting:
           ellipsise: 3
-      min_tls_version:
-        header: [["Min TLS Version:", ["main", "infoheader"]]]
-        path: "spec#observedConfig#servingInfo#minTLSVersion"
-        type: "str"
-        formatting:
-          field_colors:
-          - type: "version"
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
@@ -63,6 +56,13 @@ infoview:
         header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
         type: "str"
+      min_tls_version:
+        header: [["Min TLS Version:", ["main", "infoheader"]]]
+        path: "spec#observedConfig#servingInfo#minTLSVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
       operator_loglevel:
         header: [["Operator Loglevel:", ["main", "infoheader"]]]
         path: "spec#operatorLogLevel"

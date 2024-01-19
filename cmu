@@ -10724,8 +10724,18 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 				api_group = themearray_to_string(tmp)
 
 	api_version_path = deep_get(kwargs, DictPath("api_version_path"))
-	if api_version_path is not None and isinstance(api_version_path, str):
-		api_version_path = [api_version_path]
+	if api_version_path is not None:
+		if isinstance(api_version_path, str):
+			api_version_path = [api_version_path]
+		elif isinstance(api_version_path, int) and selection is not None and len(selection) > 0:
+			tmp = selection[api_version_path]
+			if tmp is not None:
+				api_version = themearray_to_string(tmp)
+				if api_version is not None:
+					if "/" in api_version:
+						api_group = api_version.split("/")[0]
+					else:
+						api_group = ""
 
 	owner_reference_path = deep_get(kwargs, DictPath("owner_reference_path"))
 	holder_identity_path = deep_get(kwargs, DictPath("holder_identity_path"))
@@ -10748,7 +10758,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 
 	if obj is not None:
 		kind = deep_get_with_fallback(obj, kind_path, kind)
-		if kind is not None and len(kind) > 0:
+		if kind is not None and len(kind) > 0 and isinstance(api_version_path, str):
 			api_version = deep_get_with_fallback(obj, api_version_path)
 			if api_version is not None:
 				if "/" in api_version:
