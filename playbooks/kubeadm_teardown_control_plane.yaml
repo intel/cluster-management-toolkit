@@ -6,20 +6,23 @@
       time_consumption: "Slow"
       summary:
         "Kubernetes actions":
-        - description: "Resets the Kubernetes configuration"
-        - description: "Kills the API-server"
+          - description: "Resets the Kubernetes configuration"
+          - description: "Kills the API-server"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_facts: false
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down Kubernetes"  # noqa fqcn-builtins
-    shell: |
-      if kubeadm version > /dev/null 2> /dev/null; then
-        runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
-        kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
-      fi
-      killall -q kube-apiserver || true
-    changed_when: false
+    - name: "Tearing down Kubernetes"
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          if kubeadm version > /dev/null 2> /dev/null; then
+            runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
+            kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
+          fi
+          killall -q kube-apiserver || true
+        executable: "/bin/bash"
+      changed_when: false

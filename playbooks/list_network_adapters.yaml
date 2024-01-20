@@ -14,8 +14,8 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Listing Network Adapters"  # noqa fqcn-builtins risky-shell-pipe var-spacing
-    shell: |
+  - name: "Listing Network Adapters"  # noqa risky-shell-pipe jinja[spacing]
+    ansible.builtin.shell: |
       get_speeds()
       {
         duplex=${1}

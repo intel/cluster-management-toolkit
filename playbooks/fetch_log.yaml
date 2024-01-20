@@ -7,7 +7,7 @@
       description: "Fetch a journald log for the specified unit"
       summary:
         "Fetched files":
-        - description: "Fetch a journald log file for remote:{{ unit }} => localhost:/home/{{ ansible_user }}/.cmt/ansible/{{ timestamp }}_{{ unit }}"
+          - description: "Fetch a journald log file for remote:{{ unit }} => localhost:/home/{{ ansible_user }}/.cmt/ansible/{{ timestamp }}_{{ unit }}"
       query:
         string: "Unit to fetch log for"
         function: "string"
@@ -19,7 +19,7 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Fetching a journald log"  # noqa command-instead-of-shell fqcn-builtins
-    shell: |
-      journalctl -u '{{ unit }}' --no-pager -n 1000
-    changed_when: false
+    - name: "Fetching a journald log"
+      ansible.builtin.shell: |
+        journalctl -u '{{ unit }}' --no-pager -n 1000
+      changed_when: false

@@ -5,31 +5,31 @@
       description: "Purge RKE2"
       summary:
         "Removed files":
-        - description: "/usr/local/bin/rke2"
-        - description: "/usr/local/bin/rke2-killall.sh"
-        - description: "/usr/local/bin/rke2-uninstall.sh"
-        - description: "/opt/bin/rke2"
-        - description: "/opt/bin/rke2-killall.sh"
-        - description: "/opt/bin/rke2-uninstall.sh"
+          - description: "/usr/local/bin/rke2"
+          - description: "/usr/local/bin/rke2-killall.sh"
+          - description: "/usr/local/bin/rke2-uninstall.sh"
+          - description: "/opt/bin/rke2"
+          - description: "/opt/bin/rke2-killall.sh"
+          - description: "/opt/bin/rke2-uninstall.sh"
       time_consumption: "Moderately slow"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Removing files"
-    ansible.builtin.file:
-      path: "{{ item }}"
-      state: "absent"
-    with_items:
-    - "/usr/local/bin/rke2"
-    - "/usr/local/bin/rke2-killall.sh"
-    - "/usr/local/bin/rke2-uninstall.sh"
-    - "/opt/bin/rke2"
-    - "/opt/bin/rke2-killall.sh"
-    - "/opt/bin/rke2-uninstall.sh"
+    - name: "Removing files"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: "absent"
+      with_items:
+        - "/usr/local/bin/rke2"
+        - "/usr/local/bin/rke2-killall.sh"
+        - "/usr/local/bin/rke2-uninstall.sh"
+        - "/opt/bin/rke2"
+        - "/opt/bin/rke2-killall.sh"
+        - "/opt/bin/rke2-uninstall.sh"

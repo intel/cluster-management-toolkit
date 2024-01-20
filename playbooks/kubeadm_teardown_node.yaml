@@ -6,61 +6,67 @@
       time_consumption: "Slow"
       summary:
         "Kubernetes actions":
-        - description: "Resets the Kubernetes configuration"
+          - description: "Resets the Kubernetes configuration"
         "Removed packages":
-        - description: "kubeadm (purged)"
-        - description: "kubectl (purged)"
-        - description: "kubelet (purged)"
-        - description: "kubernetes-cni (purged)"
+          - description: "kubeadm (purged)"
+          - description: "kubectl (purged)"
+          - description: "kubelet (purged)"
+          - description: "kubernetes-cni (purged)"
       playbook_types:
-      - "node"
+        - "node"
       confirm: true
       allow_on_control_plane: "never"
       run_before:
-      - "delete_node"
+        - "delete_node"
       run_after:
-      - "teardown_cni"
+        - "teardown_cni"
       remove_from_groups:
-      - "nodes"
+        - "nodes"
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down Kubernetes"  # noqa fqcn-builtins
-    shell: |
-      if kubeadm version > /dev/null 2> /dev/null; then
-        runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
-        kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
-      fi
-    changed_when: false
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: "apt-mark unhold kubeadm kubectl kubelet || true"
-    when: "ansible_os_family == 'Debian'"
-  - name: "Removing Kubernetes packages"
-    ansible.builtin.apt:
-      pkg:
-      - "kubeadm"
-      - "kubectl"
-      - "kubelet"
-      - "kubernetes-cni"
-      force_apt_get: true
-      state: "absent"
-      purge: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      dnf versionlock delete kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Removing Kubernetes packages"
-    ansible.builtin.dnf:
-      pkg:
-      - "kubeadm"
-      - "kubectl"
-      - "kubelet"
-      - "kubernetes-cni"
-      state: "absent"
-    when: "ansible_os_family == 'RedHat'"
+    - name: "Tearing down Kubernetes"
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          if kubeadm version > /dev/null 2> /dev/null; then
+            runtime_endpoint=$(grep "^runtime-endpoint: " /etc/crictl.yaml | sed -e 's/^runtime-endpoint: \(.*\)/\1/')
+            kubeadm reset -f || kubeadm reset -f --cri-socket ${runtime_endpoint}
+          fi
+        executable: "/bin/bash"
+      changed_when: false
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        apt-mark unhold kubeadm kubectl kubelet || true
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Removing Kubernetes packages"
+      ansible.builtin.apt:
+        pkg:
+          - "kubeadm"
+          - "kubectl"
+          - "kubelet"
+          - "kubernetes-cni"
+        force_apt_get: true
+        state: "absent"
+        purge: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        dnf versionlock delete kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Removing Kubernetes packages"
+      ansible.builtin.dnf:
+        pkg:
+          - "kubeadm"
+          - "kubectl"
+          - "kubelet"
+          - "kubernetes-cni"
+        state: "absent"
+      when: "ansible_os_family == 'RedHat'"

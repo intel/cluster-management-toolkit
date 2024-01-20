@@ -5,54 +5,56 @@
       description: "Purge kubeadm"
       summary:
         "Removed directories":
-        - description: "/etc/kubernetes"
-        - description: "/etc/systemd/system/kubelet.service.d"
-        - description: "/var/lib/etcd"
-        - description: "/var/lib/kubelet"
+          - description: "/etc/kubernetes"
+          - description: "/etc/systemd/system/kubelet.service.d"
+          - description: "/var/lib/etcd"
+          - description: "/var/lib/kubelet"
         "Removed packages":
-        - description: "{{ packages }}"
+          - description: "{{ packages }}"
       time_consumption: "Moderately slow"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      apt-mark unhold "{{ item }}" || true
-    loop: "{{ held_packages }}"
-    when: "ansible_os_family == 'Debian'"
-  - name: "Removing Kubernetes packages"
-    ansible.builtin.apt:
-      name: "{{ packages }}"
-      force_apt_get: true
-      state: "absent"
-      purge: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      dnf versionlock delete "{{ item }}" || true
-    loop: "{{ held_packages }}"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Removing Kubernetes packages"
-    ansible.builtin.dnf:
-      name: "{{ packages }}"
-      state: "absent"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Removing directories"
-    ansible.builtin.file:
-      path: "{{ item }}"
-      state: "absent"
-    with_items:
-    - "/etc/kubernetes"
-    - "/etc/systemd/system/kubelet.service.d"
-    - "/var/lib/etcd"
-    - "/var/lib/kubelet"
-  - name: "Reloading systemd configuration"
-    ansible.builtin.systemd:
-      daemon_reload: true
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        apt-mark unhold "{{ item }}" || true
+      loop: "{{ held_packages }}"
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Removing Kubernetes packages"
+      ansible.builtin.apt:
+        name: "{{ packages }}"
+        force_apt_get: true
+        state: "absent"
+        purge: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        dnf versionlock delete "{{ item }}" || true
+      loop: "{{ held_packages }}"
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Removing Kubernetes packages"
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: "absent"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Removing directories"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: "absent"
+      with_items:
+        - "/etc/kubernetes"
+        - "/etc/systemd/system/kubelet.service.d"
+        - "/var/lib/etcd"
+        - "/var/lib/kubelet"
+    - name: "Reloading systemd configuration"
+      ansible.builtin.systemd:
+        daemon_reload: true

@@ -5,15 +5,15 @@
       description: "Uptime"
       summary:
         "Other actions":
-        - description: "Executes /usr/bin/uptime"
+          - description: "Executes /usr/bin/uptime"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Checking uptime"  # noqa fqcn-builtins
-    command: "/usr/bin/uptime"
-    changed_when: false
+    - name: "Checking uptime"
+      ansible.builtin.command: "/usr/bin/uptime"
+      changed_when: false

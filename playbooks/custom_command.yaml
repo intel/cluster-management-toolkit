@@ -5,7 +5,7 @@
       description: "Execute command"
       summary:
         "Other actions":
-        - description: "Executes a user specified action"
+          - description: "Executes a user specified action"
       confirm: true
       requires_cluster_info: true
       query:
@@ -15,6 +15,6 @@
       category: "Administration"
   gather_facts: false
   tasks:
-  - name: "Executing command"  # noqa command-instead-of-shell fqcn-builtins
-    shell: "{{ command }}"
-    changed_when: false
+    - name: "Executing command"  # noqa command-instead-of-shell
+      ansible.builtin.shell: "{{ command }}"
+      changed_when: false

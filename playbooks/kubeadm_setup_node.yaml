@@ -5,99 +5,104 @@
       description: "Setup Kubernetes node using kubeadm"
       summary:
         "Enabled services":
-        - description: "kubelet"
+          - description: "kubelet"
         "Installed packages":
-        - description: "kubeadm"
-        - description: "kubectl"
-        - description: "kubelet"
+          - description: "kubeadm"
+          - description: "kubectl"
+          - description: "kubelet"
         "Kubernetes actions":
-        - description: "Creates a permanent join token"
+          - description: "Creates a permanent join token"
         "Other actions":
-        - description: "Updates package cache"
-          conditions:
-          - "Debian and derivatives"
-        - description: "Configures Kubernetes node"
-        - description: "Joins the Kubernetes node to the cluster"
+          - description: "Updates package cache"
+            conditions:
+              - "Debian and derivatives"
+          - description: "Configures Kubernetes node"
+          - description: "Joins the Kubernetes node to the cluster"
       time_consumption: "Slow"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Setup"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Updating package cache"
-    ansible.builtin.apt:
-      update_cache: true
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Gathering package facts"
-    ansible.builtin.package_facts:
-      manager: "apt"
-    when: "ansible_os_family == 'Debian'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      apt-mark unhold kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Installing Kubernetes packages"
-    ansible.builtin.apt:
-      pkg:
-      - "kubelet={{ control_plane_k8s_version }}"
-      - "kubeadm={{ control_plane_k8s_version }}"
-      - "kubectl={{ control_plane_k8s_version }}"
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Marking packages as held"  # noqa fqcn-builtins
-    shell: |
-      apt-mark hold kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Gathering package facts"
-    ansible.builtin.package_facts:
-      manager: "rpm"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      dnf versionlock delete kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Installing Kubernetes packages"
-    ansible.builtin.dnf:
-      pkg:
-      - "kubelet-{{ control_plane_k8s_version }}"
-      - "kubeadm-{{ control_plane_k8s_version }}"
-      - "kubectl-{{ control_plane_k8s_version }}"
-      disable_excludes: "kubernetes"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Marking packages as held"  # noqa fqcn-builtins
-    shell: |
-      dnf versionlock add kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Creating temporary file for node configuration"
-    ansible.builtin.tempfile:
-      state: "file"
-      suffix: "temp"
-    register: "node_config"
-  - name: "Creating node configuration"
-    ansible.builtin.template:
-      dest: "{{ node_config.path }}"
-      src: "{{ configuration_path }}"
-      mode: "0640"
-  - name: "Enabling kubelet"
-    ansible.builtin.systemd:
-      name: "kubelet"
-      enabled: true
-      state: "started"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "The following node configuration will be used"  # noqa fqcn-builtins
-    command: "cat {{ node_config.path }}"
-  - name: "Joining node to the cluster"  # noqa fqcn-builtins
-    shell: |
-      kubeadm join --config {{ node_config.path }}
-    changed_when: false
-  - name: "Remove temporary node configuration file"
-    ansible.builtin.file:
-      path: "{{ node_config.path }}"
-      state: "absent"
-    when: "node_config.path is defined"
+    - name: "Updating package cache"
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Gathering package facts"
+      ansible.builtin.package_facts:
+        manager: "apt"
+      when: "ansible_os_family == 'Debian'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        apt-mark unhold kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Installing Kubernetes packages"
+      ansible.builtin.apt:
+        pkg:
+          - "kubelet={{ control_plane_k8s_version }}"
+          - "kubeadm={{ control_plane_k8s_version }}"
+          - "kubectl={{ control_plane_k8s_version }}"
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Marking packages as held"
+      ansible.builtin.shell: |
+        apt-mark hold kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Gathering package facts"
+      ansible.builtin.package_facts:
+        manager: "rpm"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        dnf versionlock delete kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Installing Kubernetes packages"
+      ansible.builtin.dnf:
+        pkg:
+          - "kubelet-{{ control_plane_k8s_version }}"
+          - "kubeadm-{{ control_plane_k8s_version }}"
+          - "kubectl-{{ control_plane_k8s_version }}"
+        disable_excludes: "kubernetes"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Marking packages as held"
+      ansible.builtin.shell: |
+        dnf versionlock add kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Creating temporary file for node configuration"
+      ansible.builtin.tempfile:
+        state: "file"
+        suffix: "temp"
+      register: "node_config"
+    - name: "Creating node configuration"
+      ansible.builtin.template:
+        dest: "{{ node_config.path }}"
+        src: "{{ configuration_path }}"
+        mode: "0640"
+    - name: "Enabling kubelet"
+      ansible.builtin.systemd:
+        name: "kubelet"
+        enabled: true
+        state: "started"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "The following node configuration will be used"
+      ansible.builtin.command: "cat {{ node_config.path }}"
+      changed_when: false
+    - name: "Joining node to the cluster"
+      ansible.builtin.shell: |
+        kubeadm join --config {{ node_config.path }}
+      changed_when: true
+    - name: "Remove temporary node configuration file"
+      ansible.builtin.file:
+        path: "{{ node_config.path }}"
+        state: "absent"
+      when: "node_config.path is defined"

@@ -5,24 +5,24 @@
       description: "Update the PCI device ID database"
       summary:
         "Modified files":
-        - description: "/usr/share/misc/pci.ids"
+          - description: "/usr/share/misc/pci.ids"
       confirm: true
       allow_on_control_plane: "always"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Upgrading PCI device ID database"  # noqa fqcn-builtins
-    shell: |
-      update-pciids
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-    changed_when: true
+    - name: "Upgrading PCI device ID database"
+      ansible.builtin.shell: |
+        update-pciids
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+      changed_when: true

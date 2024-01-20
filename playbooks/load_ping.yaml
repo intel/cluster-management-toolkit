@@ -13,12 +13,12 @@
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Fetching /proc/loadavg"  # noqa fqcn-builtins
-    command: "cat /proc/loadavg"
+  - name: "Fetching /proc/loadavg"
+    ansible.builtin.command: "cat /proc/loadavg"
     changed_when: false
-  - name: "Fetching /proc/meminfo"  # noqa fqcn-builtins
-    command: "cat /proc/meminfo"
+  - name: "Fetching /proc/meminfo"
+    ansible.builtin.command: "cat /proc/meminfo"
     changed_when: false
-  - name: "Fetching /proc/stat"  # noqa fqcn-builtins
-    command: "cat /proc/stat"
+  - name: "Fetching /proc/stat"
+    ansible.builtin.command: "cat /proc/stat"
     changed_when: false

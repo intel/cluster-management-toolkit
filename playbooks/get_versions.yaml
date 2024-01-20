@@ -5,58 +5,58 @@
       description: "Get package versions"
       summary:
         "Information gathering":
-        - description: "Fetches version information for important software"
+          - description: "Fetches version information for important software"
       playbook_types:
-      - "internal"
-      - "cmtinv"
+        - "internal"
+        - "cmtinv"
       category: "Information"
       read_only: true
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   tasks:
-  - name: "Gathering package facts"
-    ansible.builtin.package_facts:
-      manager: "apt"
-    when: "ansible_os_family == 'Debian'"
-  - name: "Gathering package facts"
-    ansible.builtin.package_facts:
-      manager: "rpm"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Package versions"
-    ansible.builtin.debug:
-      msg: |
-        ansible: {% if (ansible_facts.packages['ansible'] is defined) %}{{ ansible_facts.packages['ansible'][0].version }}{% else %}N/A{% endif %}
+    - name: "Gathering package facts"
+      ansible.builtin.package_facts:
+        manager: "apt"
+      when: "ansible_os_family == 'Debian'"
+    - name: "Gathering package facts"
+      ansible.builtin.package_facts:
+        manager: "rpm"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Package versions"
+      ansible.builtin.debug:
+        msg: |
+          ansible: {% if (ansible_facts.packages['ansible'] is defined) %}{{ ansible_facts.packages['ansible'][0].version }}{% else %}N/A{% endif %}
 
-        ansible-core: {% if (ansible_facts.packages['ansible-core'] is defined) %}{{ ansible_facts.packages['ansible-core'][0].version }}{% else %}N/A{% endif %}
+          ansible-core: {% if (ansible_facts.packages['ansible-core'] is defined) %}{{ ansible_facts.packages['ansible-core'][0].version }}{% else %}N/A{% endif %}
 
-        containerd: {% if (ansible_facts.packages['containerd'] is defined) %}{{ ansible_facts.packages['containerd'][0].version }}{% else %}N/A{% endif %}
+          containerd: {% if (ansible_facts.packages['containerd'] is defined) %}{{ ansible_facts.packages['containerd'][0].version }}{% else %}N/A{% endif %}
 
-        containerd.io: {% if (ansible_facts.packages['containerd.io'] is defined) %}{{ ansible_facts.packages['containerd.io'][0].version }}{% else %}N/A{% endif %}
+          containerd.io: {% if (ansible_facts.packages['containerd.io'] is defined) %}{{ ansible_facts.packages['containerd.io'][0].version }}{% else %}N/A{% endif %}
 
-        cri-o: {% if (ansible_facts.packages['cri-o'] is defined) %}{{ ansible_facts.packages['cri-o'][0].version }}{% else %}N/A{% endif %}
+          cri-o: {% if (ansible_facts.packages['cri-o'] is defined) %}{{ ansible_facts.packages['cri-o'][0].version }}{% else %}N/A{% endif %}
 
-        cri-tools: {% if (ansible_facts.packages['cri-tools'] is defined) %}{{ ansible_facts.packages['cri-tools'][0].version }}{% else %}N/A{% endif %}
+          cri-tools: {% if (ansible_facts.packages['cri-tools'] is defined) %}{{ ansible_facts.packages['cri-tools'][0].version }}{% else %}N/A{% endif %}
 
-        docker-ce: {% if (ansible_facts.packages['docker-ce'] is defined) %}{{ ansible_facts.packages['docker-ce'][0].version }}{% else %}N/A{% endif %}
+          docker-ce: {% if (ansible_facts.packages['docker-ce'] is defined) %}{{ ansible_facts.packages['docker-ce'][0].version }}{% else %}N/A{% endif %}
 
-        docker-engine: {% if (ansible_facts.packages['docker-engine'] is defined) %}{{ ansible_facts.packages['docker-engine'][0].version }}{% else %}N/A{% endif %}
+          docker-engine: {% if (ansible_facts.packages['docker-engine'] is defined) %}{{ ansible_facts.packages['docker-engine'][0].version }}{% else %}N/A{% endif %}
 
-        docker.io: {% if (ansible_facts.packages['docker.io'] is defined) %}{{ ansible_facts.packages['docker.io'][0].version }}{% else %}N/A{% endif %}
+          docker.io: {% if (ansible_facts.packages['docker.io'] is defined) %}{{ ansible_facts.packages['docker.io'][0].version }}{% else %}N/A{% endif %}
 
-        kubeadm: {% if (ansible_facts.packages['kubeadm'] is defined) %}{{ ansible_facts.packages['kubeadm'][0].version }}{% else %}N/A{% endif %}
+          kubeadm: {% if (ansible_facts.packages['kubeadm'] is defined) %}{{ ansible_facts.packages['kubeadm'][0].version }}{% else %}N/A{% endif %}
 
-        kubectl: {% if (ansible_facts.packages['kubectl'] is defined) %}{{ ansible_facts.packages['kubectl'][0].version }}{% else %}N/A{% endif %}
+          kubectl: {% if (ansible_facts.packages['kubectl'] is defined) %}{{ ansible_facts.packages['kubectl'][0].version }}{% else %}N/A{% endif %}
 
-        kubelet: {% if (ansible_facts.packages['kubelet'] is defined) %}{{ ansible_facts.packages['kubelet'][0].version }}{% else %}N/A{% endif %}
+          kubelet: {% if (ansible_facts.packages['kubelet'] is defined) %}{{ ansible_facts.packages['kubelet'][0].version }}{% else %}N/A{% endif %}
 
-        kubernetes-cni: {% if (ansible_facts.packages['kubernetes-cni'] is defined) %}{{ ansible_facts.packages['kubernetes-cni'][0].version }} {% else %}N/A{% endif %}
+          kubernetes-cni: {% if (ansible_facts.packages['kubernetes-cni'] is defined) %}{{ ansible_facts.packages['kubernetes-cni'][0].version }} {% else %}N/A{% endif %}
 
-        kubernetes-client: {% if (ansible_facts.packages['kubernetes-client'] is defined) %}{{ ansible_facts.packages['kubernetes-client'][0].version }} {% else %}N/A{% endif %}
+          kubernetes-client: {% if (ansible_facts.packages['kubernetes-client'] is defined) %}{{ ansible_facts.packages['kubernetes-client'][0].version }} {% else %}N/A{% endif %}
 
-        kubernetes-master: {% if (ansible_facts.packages['kubernetes-master'] is defined) %}{{ ansible_facts.packages['kubernetes-master'][0].version }} {% else %}N/A{% endif %}
+          kubernetes-master: {% if (ansible_facts.packages['kubernetes-master'] is defined) %}{{ ansible_facts.packages['kubernetes-master'][0].version }} {% else %}N/A{% endif %}
 
-        kubernetes-node: {% if (ansible_facts.packages['kubernetes-node'] is defined) %}{{ ansible_facts.packages['kubernetes-node'][0].version }} {% else %}N/A{% endif %}
+          kubernetes-node: {% if (ansible_facts.packages['kubernetes-node'] is defined) %}{{ ansible_facts.packages['kubernetes-node'][0].version }} {% else %}N/A{% endif %}
 
-        runc: {% if (ansible_facts.packages['runc'] is defined) %}{{ ansible_facts.packages['runc'][0].version }}{% else %}N/A{% endif %}
+          runc: {% if (ansible_facts.packages['runc'] is defined) %}{{ ansible_facts.packages['runc'][0].version }}{% else %}N/A{% endif %}

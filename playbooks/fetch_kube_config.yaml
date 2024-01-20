@@ -6,101 +6,101 @@
       description: "Copy kubeconfig from control plane to .kube on localhost"
       summary:
         "Created directories":
-        - description: "localhost:/home/{{ ansible_user }}/.kube (0o700)"
+          - description: "localhost:/home/{{ ansible_user }}/.kube (0o700)"
         "Fetched files":
-        - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
-        - description: "remote:/etc/rancher/rke2/rke2.yaml => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
-        - description: "remote:/var/snap/microk8s/current/credentials/client.config => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
-        - description: "remote:/var/lib/k0s/pki/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
-        - description: "remote:/var/lib/rancher/rke2/server/node-token => localhost:/home/{{ ansible_user }}/.kube/token.{{ cluster_name }} (0o600)"
+          - description: "remote:/etc/kubernetes/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+          - description: "remote:/etc/rancher/rke2/rke2.yaml => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+          - description: "remote:/var/snap/microk8s/current/credentials/client.config => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+          - description: "remote:/var/lib/k0s/pki/admin.conf => localhost:/home/{{ ansible_user }}/.kube/config.{{ cluster_name }} (0o600)"
+          - description: "remote:/var/lib/rancher/rke2/server/node-token => localhost:/home/{{ ansible_user }}/.kube/token.{{ cluster_name }} (0o600)"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Setup"
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Creating .kube if it doesn't exist"
-    ansible.builtin.file:
-      path: "~/.kube"
-      state: "directory"
-      mode: "0700"
-    delegate_to: "localhost"
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-  - name: "Attempting to copy /etc/kubernetes/admin.conf from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/etc/kubernetes/admin.conf"
-      dest: "~/.kube/config.{{ cluster_name }}"
-      flat: true
-    failed_when: false
-  - name: "Attempting to copy /etc/rancher/rke2/rke2.yaml from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/etc/rancher/rke2/rke2.yaml"
-      dest: "~/.kube/config.{{ cluster_name }}"
-      flat: true
-    failed_when: false
-  - name: "Attempting to copy /var/snap/microk8s/current/credentials/client.config from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/var/snap/microk8s/current/credentials/client.config"
-      dest: "~/.kube/config.{{ cluster_name }}"
-      flat: true
-    failed_when: false
-  - name: "Attempting to copy /var/lib/k0s/pki/admin.conf from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/var/lib/k0s/pki/admin.conf"
-      dest: "~/.kube/config.{{ cluster_name }}"
-      flat: true
-    failed_when: false
-  - name: "Checking whether any of the copies were successful"
-    ansible.builtin.stat:
-      path: "~/.kube/config.{{ cluster_name }}"
-    register: "kubeconfig"
-    delegate_to: "localhost"
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-  - name: "Failing if kubeconfig is missing"
-    ansible.builtin.fail:
-      msg: "No kubeconfig file available"
-    when: "not kubeconfig.stat.exists"
-  - name: "Fix file permissions for config file"
-    ansible.builtin.file:
-      path: "~/.kube/config.{{ cluster_name }}"
-      mode: "0600"
-    delegate_to: "localhost"
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-  - name: "Attempting to copy /etc/rancher/node/password from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/var/lib/rancher/rke2/server/node-token"
-      dest: "~/.kube/token.{{ cluster_name }}"
-      flat: true
-    failed_when: false
-  - name: "Fix file permissions for token file"
-    ansible.builtin.file:
-      path: "~/.kube/token.{{ cluster_name }}"
-      mode: "0600"
-    delegate_to: "localhost"
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-    failed_when: false
-  - name: "Attempting to copy /etc/rancher/rke2/config.yaml RKE2 config file from control plane to localhost"
-    become: true
-    become_user: "root"
-    ansible.builtin.fetch:
-      src: "/etc/rancher/rke2/config.yaml"
-      dest: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
-      flat: true
-    failed_when: false
-  - name: "Fix file permissions for RKE config file"
-    ansible.builtin.file:
-      path: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
-      mode: "0600"
-    delegate_to: "localhost"
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-    failed_when: false
+    - name: "Creating .kube if it doesn't exist"
+      ansible.builtin.file:
+        path: "~/.kube"
+        state: "directory"
+        mode: "0700"
+      delegate_to: "localhost"
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+    - name: "Attempting to copy /etc/kubernetes/admin.conf from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/etc/kubernetes/admin.conf"
+        dest: "~/.kube/config.{{ cluster_name }}"
+        flat: true
+      failed_when: false
+    - name: "Attempting to copy /etc/rancher/rke2/rke2.yaml from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/etc/rancher/rke2/rke2.yaml"
+        dest: "~/.kube/config.{{ cluster_name }}"
+        flat: true
+      failed_when: false
+    - name: "Attempting to copy /var/snap/microk8s/current/credentials/client.config from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/var/snap/microk8s/current/credentials/client.config"
+        dest: "~/.kube/config.{{ cluster_name }}"
+        flat: true
+      failed_when: false
+    - name: "Attempting to copy /var/lib/k0s/pki/admin.conf from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/var/lib/k0s/pki/admin.conf"
+        dest: "~/.kube/config.{{ cluster_name }}"
+        flat: true
+      failed_when: false
+    - name: "Checking whether any of the copies were successful"
+      ansible.builtin.stat:
+        path: "~/.kube/config.{{ cluster_name }}"
+      register: "kubeconfig"
+      delegate_to: "localhost"
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+    - name: "Failing if kubeconfig is missing"
+      ansible.builtin.fail:
+        msg: "No kubeconfig file available"
+      when: "not kubeconfig.stat.exists"
+    - name: "Fix file permissions for config file"
+      ansible.builtin.file:
+        path: "~/.kube/config.{{ cluster_name }}"
+        mode: "0600"
+      delegate_to: "localhost"
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+    - name: "Attempting to copy /etc/rancher/node/password from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/var/lib/rancher/rke2/server/node-token"
+        dest: "~/.kube/token.{{ cluster_name }}"
+        flat: true
+      failed_when: false
+    - name: "Fix file permissions for token file"
+      ansible.builtin.file:
+        path: "~/.kube/token.{{ cluster_name }}"
+        mode: "0600"
+      delegate_to: "localhost"
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+      failed_when: false
+    - name: "Attempting to copy /etc/rancher/rke2/config.yaml RKE2 config file from control plane to localhost"
+      become: true
+      become_user: "root"
+      ansible.builtin.fetch:
+        src: "/etc/rancher/rke2/config.yaml"
+        dest: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
+        flat: true
+      failed_when: false
+    - name: "Fix file permissions for RKE config file"
+      ansible.builtin.file:
+        path: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
+        mode: "0600"
+      delegate_to: "localhost"
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+      failed_when: false

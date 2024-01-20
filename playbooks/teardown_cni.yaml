@@ -5,97 +5,97 @@
       description: "Tear down container network interfaces (CNI)"
       summary:
         "Deleted directories":
-        - description: "/etc/cni"
-        - description: "/etc/origin/openvswitch"
-        - description: "/etc/origin/ovn"
-        - description: "/var/lib/cni"
-        - description: "/var/lib/weave"
-        - description: "/var/log/openvswitch"
-        - description: "/var/log/ovn"
-        - description: "/var/run/openvswitch"
-        - description: "/var/run/ovn"
+          - description: "/etc/cni"
+          - description: "/etc/origin/openvswitch"
+          - description: "/etc/origin/ovn"
+          - description: "/var/lib/cni"
+          - description: "/var/lib/weave"
+          - description: "/var/log/openvswitch"
+          - description: "/var/log/ovn"
+          - description: "/var/run/openvswitch"
+          - description: "/var/run/ovn"
         "Deleted files":
-        - description: "/etc/cni/*"
-        - description: "/etc/origin/openvswitch/*"
-        - description: "/etc/origin/ovn/*"
-        - description: "/var/lib/cni/*"
-        - description: "/var/lib/weave/*"
-        - description: "/var/log/openvswitch/*"
-        - description: "/var/log/ovn/*"
-        - description: "/var/run/openvswitch/*"
-        - description: "/var/run/ovn/*"
+          - description: "/etc/cni/*"
+          - description: "/etc/origin/openvswitch/*"
+          - description: "/etc/origin/ovn/*"
+          - description: "/var/lib/cni/*"
+          - description: "/var/lib/weave/*"
+          - description: "/var/log/openvswitch/*"
+          - description: "/var/log/ovn/*"
+          - description: "/var/run/openvswitch/*"
+          - description: "/var/run/ovn/*"
         "Other actions":
-        - description: "Deletes all CNI-related network interfaces"
-        - description: "Kills the weaver process"
-        - description: "Deletes iptable rules"
+          - description: "Deletes all CNI-related network interfaces"
+          - description: "Kills the weaver process"
+          - description: "Deletes iptable rules"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_facts: false
   become: true
   become_user: "root"
   tasks:
-  - name: "Tearing down container network interfaces"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      if [ -x /usr/sbin/ip ]; then
-        for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^cali|^tunl0:" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^cilium|^lxc" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^flannel|^cni0" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^veth" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
-          ip link set dev "${network}" down || true
-          ip link delete "${network}" || true
-        done
-      else
-        for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^cali|^tunl0:" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^cilium|^lxc" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^flannel|^cni0" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^veth" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-        for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
-          ifconfig "${network}" down || true
-        done
-      fi
-      killall -q weaver || true
-    changed_when: false
-  - name: "Removing leftover network configurations"  # noqa fqcn-builtins deprecated-command-syntax
-    shell: |
-      rm -rf /etc/cni /var/lib/cni /var/lib/weave
-      iptables -F
-      iptables -t nat -F
-      iptables -t mangle -F
-      iptables -X
-    changed_when: false
+    - name: "Tearing down container network interfaces"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        if [ -x /usr/sbin/ip ]; then
+          for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^cali|^tunl0:" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^cilium|^lxc" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^flannel|^cni0" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^veth" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
+            ip link set dev "${network}" down || true
+            ip link delete "${network}" || true
+          done
+        else
+          for network in $(cat /proc/net/dev | grep -E "^antrea|^genev" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^cali|^tunl0:" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^cilium|^lxc" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^flannel|^cni0" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^veth" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^kube-bridge" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+          for network in $(cat /proc/net/dev | grep -E "^datapath|^vxlan|^\s*weave" | cut -f 1 -d:); do
+            ifconfig "${network}" down || true
+          done
+        fi
+        killall -q weaver || true
+      changed_when: false
+    - name: "Removing leftover network configurations"
+      ansible.builtin.shell: |
+        rm -rf /etc/cni /var/lib/cni /var/lib/weave
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      changed_when: false

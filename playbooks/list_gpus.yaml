@@ -4,19 +4,22 @@
     metadata:
       description: "List GPUs"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Information"
       summary:
         "Information gathering":
-        - description: "Lists GPUs (VGA|Display)"
+          - description: "Lists GPUs (VGA|Display)"
       read_only: true
   gather_facts: false
   become: true
   become_user: "root"
   tasks:
-  - name: "Listing GPUs"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      lspci -nn | grep -E "VGA|Display"
-    changed_when: false
+    - name: "Listing GPUs"
+      ansible.builtin.shell: |
+        lspci -nn -d "*:*:0300"
+        lspci -nn -d "*:*:0301"
+        lspci -nn -d "*:*:0302"
+        lspci -nn -d "*:*:0380"
+      changed_when: false

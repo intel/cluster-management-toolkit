@@ -5,24 +5,24 @@
       description: "Delete node from cluster"
       summary:
         "Kubernetes actions":
-        - description: "Forcibly drains the specified nodes"
-        - description: "Deletes the specified nodes from the clusters"
+          - description: "Forcibly drains the specified nodes"
+          - description: "Deletes the specified nodes from the clusters"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_facts: false
   tasks:
-  - name: "Deleting node from cluster"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      nodes="{{ groups["selection"] | join(" ") }}"
-      minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\..*$/\1/")"
-      if [ "${minor_version}" -lt 18 ]; then
-        kubectl drain --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
-      elif [ "${minor_version}" -ge 20 ]; then
-        kubectl drain --disable-eviction=true --delete-emptydir-data --force --grace-period=0 --ignore-daemonsets ${nodes}
-      else
-        kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
-      fi
-      kubectl delete node ${nodes}
-    when: "inventory_hostname == ansible_play_hosts_all[0]"
-    changed_when: true
+    - name: "Deleting node from cluster"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        nodes="{{ groups["selection"] | join(" ") }}"
+        minor_version="$(kubectl version | grep "Client Version" | sed -e "s/.*Minor:\"\([0-9]*\)\".*/\1/;s/^Client Version: v[0-9]*\.\([0-9]*\)\..*$/\1/")"
+        if [ "${minor_version}" -lt 18 ]; then
+          kubectl drain --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+        elif [ "${minor_version}" -ge 20 ]; then
+          kubectl drain --disable-eviction=true --delete-emptydir-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+        else
+          kubectl drain --disable-eviction=true --delete-local-data --force --grace-period=0 --ignore-daemonsets ${nodes}
+        fi
+        kubectl delete node ${nodes}
+      when: "inventory_hostname == ansible_play_hosts_all[0]"
+      changed_when: true

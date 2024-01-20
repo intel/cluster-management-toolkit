@@ -5,111 +5,115 @@
       description: "Upgrade a Kubernetes node using kubeadm"
       summary:
         "Kubernetes actions":
-        - description: "Upgrades Kubernetes node"
+          - description: "Upgrades Kubernetes node"
         "Other actions":
-        - description: "Updates package cache"
-          conditions:
-          - "Debian and derivatives || Red Hat and derivatives"
+          - description: "Updates package cache"
+            conditions:
+              - "Debian and derivatives || Red Hat and derivatives"
         "Restarted services":
-        - description: "kubelet"
+          - description: "kubelet"
         "Upgraded packages":
-        - description: "kubeadm"
-        - description: "kubectl"
-        - description: "kubelet"
+          - description: "kubeadm"
+          - description: "kubectl"
+          - description: "kubelet"
       time_consumption: "Slow"
       playbook_types:
-      - "node"
+        - "node"
       confirm: true
       allow_on_control_plane: "never"
       requires_cluster_info: true
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Updating package cache"
-    ansible.builtin.apt:
-      update_cache: true
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      apt-mark unhold kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Installing new versions of kubeadm, kubelet and kubectl"
-    ansible.builtin.apt:
-      pkg:
-      - "kubeadm={{ control_plane_k8s_version }}"
-      - "kubelet={{ control_plane_k8s_version }}"
-      - "kubectl={{ control_plane_k8s_version }}"
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Marking packages as held"  # noqa fqcn-builtins
-    shell: |
-      apt-mark hold kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Updating package cache"
-    ansible.builtin.dnf:
-      update_cache: true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Unmarking packages as held"  # noqa fqcn-builtins
-    shell: |
-      dnf versionlock delete kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Remove deprecated config options"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
-      minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
-      if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
-        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
-          sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+    - name: "Updating package cache"
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        apt-mark unhold kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Installing new versions of kubeadm, kubelet and kubectl"
+      ansible.builtin.apt:
+        pkg:
+          - "kubeadm={{ control_plane_k8s_version }}"
+          - "kubelet={{ control_plane_k8s_version }}"
+          - "kubectl={{ control_plane_k8s_version }}"
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Marking packages as held"
+      ansible.builtin.shell: |
+        apt-mark hold kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Updating package cache"
+      ansible.builtin.dnf:
+        update_cache: true
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Unmarking packages as held"
+      ansible.builtin.shell: |
+        dnf versionlock delete kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Remove deprecated config options"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
+        minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
+        if [ $major_version -gt 0 ] && [ $minor_version -gt 23 ]; then
+          if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+            sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+          fi
         fi
-      fi
-    changed_when: false
-  - name: "Removing deprecated config flags"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
-      minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
-      if [ $major_version -ge 1 ] && [ $minor_version -ge 24 ]; then
-        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
-          sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+      changed_when: false
+    - name: "Removing deprecated config flags"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        major_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^\([0-9]*\)\.[0-9]*.*/\1/')
+        minor_version=$(echo {{ control_plane_k8s_version }} | sed -e 's/^[0-9]*\.\([0-9]*\).*/\1/')
+        if [ $major_version -ge 1 ] && [ $minor_version -ge 24 ]; then
+          if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+            sed -i -e 's/--network-plugin=cni//' /var/lib/kubelet/kubeadm-flags.env
+          fi
+          if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
+            sed -i -e 's/--network-plugin=cni//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+          fi
         fi
-        if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
-          sed -i -e 's/--network-plugin=cni//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        if [ $major_version -ge 1 ] && [ $minor_version -ge 27 ]; then
+          if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
+            sed -i -e 's/--container-runtime=\(docker\|remote\)//' /var/lib/kubelet/kubeadm-flags.env
+            sed -i -e 's/--pod-infra-container-image=[^ ]*//' /var/lib/kubelet/kubeadm-flags.env
+          fi
+          if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
+            sed -i -e 's/--container-runtime=\(docker\|remote\)//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+            sed -i -e 's/--pod-infra-container-image=[^ ]*//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+          fi
         fi
-      fi
-      if [ $major_version -ge 1 ] && [ $minor_version -ge 27 ]; then
-        if [ -e /var/lib/kubelet/kubeadm-flags.env ]; then
-          sed -i -e 's/--container-runtime=\(docker\|remote\)//' /var/lib/kubelet/kubeadm-flags.env
-          sed -i -e 's/--pod-infra-container-image=[^ ]*//' /var/lib/kubelet/kubeadm-flags.env
-        fi
-        if [ -e /etc/systemd/system/kubelet.service.d/10-kubeadm.conf ]; then
-          sed -i -e 's/--container-runtime=\(docker\|remote\)//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-          sed -i -e 's/--pod-infra-container-image=[^ ]*//' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-        fi
-      fi
-    changed_when: false
-  - name: "Installing new versions of kubeadm, kubelet and kubectl"
-    ansible.builtin.dnf:
-      pkg:
-      - "kubeadm-{{ control_plane_k8s_version }}"
-      - "kubelet-{{ control_plane_k8s_version }}"
-      - "kubectl-{{ control_plane_k8s_version }}"
-      disable_excludes: "kubernetes"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Marking packages as held"  # noqa fqcn-builtins
-    shell: |
-       dnf versionlock add kubeadm kubelet kubectl || true
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Upgrading node"  # noqa fqcn-builtins
-    shell: |
-      kubeadm upgrade node
-    changed_when: false
-  - name: "Restarting kubelet"
-    ansible.builtin.systemd:
-      name: "kubelet"
-      daemon_reload: true
-      state: "restarted"
+      changed_when: false
+    - name: "Installing new versions of kubeadm, kubelet and kubectl"
+      ansible.builtin.dnf:
+        pkg:
+          - "kubeadm-{{ control_plane_k8s_version }}"
+          - "kubelet-{{ control_plane_k8s_version }}"
+          - "kubectl-{{ control_plane_k8s_version }}"
+        disable_excludes: "kubernetes"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Marking packages as held"
+      ansible.builtin.shell: |
+         dnf versionlock add kubeadm kubelet kubectl || true
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Upgrading node"
+      ansible.builtin.shell: |
+        kubeadm upgrade node
+      changed_when: false
+    - name: "Restarting kubelet"
+      ansible.builtin.systemd:
+        name: "kubelet"
+        daemon_reload: true
+        state: "restarted"

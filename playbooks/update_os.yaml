@@ -5,39 +5,39 @@
       description: "Update the Operating System"
       summary:
         "Upgraded packages":
-        - description: "All packages that can be upgraded"
+          - description: "All packages that can be upgraded"
       confirm: true
       allow_on_control_plane: "single"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Upgrading all packages"
-    ansible.builtin.apt:
-      update_cache: true
-      force_apt_get: true
-      upgrade: "safe"
-    when: "ansible_os_family == 'Debian'"
-    changed_when: true
-  - name: "Upgrading all packages"  # noqa package-latest
-    ansible.builtin.dnf:
-      update_cache: true
-      name: "*"
-      state: "latest"
-    when: "ansible_os_family == 'RedHat'"
-    changed_when: true
-  - name: "Upgrading all packages"  # noqa fqcn-builtins package-latest
-    shell: |
-      # First refresh, then update packages;
-      # this way we fail faster
-      zypper --gpg-auto-import-keys refresh && zypper -n --no-refresh update -y
-    when: "ansible_os_family == 'Suse'"
-    changed_when: true
+    - name: "Upgrading all packages"
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+        upgrade: "safe"
+      when: "ansible_os_family == 'Debian'"
+      changed_when: true
+    - name: "Upgrading all packages"  # noqa package-latest
+      ansible.builtin.dnf:
+        update_cache: true
+        name: "*"
+        state: "latest"
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
+    - name: "Upgrading all packages"  # noqa package-latest
+      ansible.builtin.shell: |
+        # First refresh, then update packages;
+        # this way we fail faster
+        zypper --gpg-auto-import-keys refresh && zypper -n --no-refresh update -y
+      when: "ansible_os_family == 'Suse'"
+      changed_when: true

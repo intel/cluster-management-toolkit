@@ -5,54 +5,54 @@
       description: "Upgrade a Kubernetes node using RKE2"
       summary:
         "Downloaded files":
-        - description: "https://get.rke2.io"
+          - description: "https://get.rke2.io"
         "Kubernetes actions":
-        - description: "Upgrades Kubernetes node"
+          - description: "Upgrades Kubernetes node"
         "Restarted services":
-        - description: "rke2-server"
+          - description: "rke2-server"
       time_consumption: "Slow"
       playbook_types:
-      - "node"
+        - "node"
       confirm: true
       allow_on_control_plane: "never"
       requires_cluster_info: true
       category: "Administration"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Creating temporary directory for RKE2 installer"
-    ansible.builtin.tempfile:
-      state: "directory"
-      suffix: "temp"
-    register: "tempdir"
-  - name: "Fetching RKE2 installer"
-    ansible.builtin.get_url:
-      url: "https://get.rke2.io"
-      dest: "{{ tempdir.path }}/rke2-installer"
-      mode: "0755"
-      force: true
-      use_proxy: "{{ use_proxy }}"
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-  - name: "Configuring proxy settings"
-    ansible.builtin.template:
-      src: "templates/etc/default/rke2-server.j2"
-      dest: "/etc/default/rke2-agent"
-      mode: "0644"
-  - name: "Running RKE2 installer"  # noqa fqcn-builtins no-changed-when
-    shell: |
-      {{ tempdir.path }}/rke2-installer
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-      no_proxy: "{{ no_proxy | default('') }}"
-      INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
-  - name: "Restarting RKE2 agent service"
-    ansible.builtin.systemd:
-      name: "rke2-agent"
-      daemon_reload: true
-      state: "restarted"
-      enabled: true
+    - name: "Creating temporary directory for RKE2 installer"
+      ansible.builtin.tempfile:
+        state: "directory"
+        suffix: "temp"
+      register: "tempdir"
+    - name: "Fetching RKE2 installer"
+      ansible.builtin.get_url:
+        url: "https://get.rke2.io"
+        dest: "{{ tempdir.path }}/rke2-installer"
+        mode: "0755"
+        force: true
+        use_proxy: "{{ use_proxy }}"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+    - name: "Configuring proxy settings"
+      ansible.builtin.template:
+        src: "templates/etc/default/rke2-server.j2"
+        dest: "/etc/default/rke2-agent"
+        mode: "0644"
+    - name: "Running RKE2 installer"  # noqa no-changed-when
+      ansible.builtin.shell: |
+        {{ tempdir.path }}/rke2-installer
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+        no_proxy: "{{ no_proxy | default('') }}"
+        INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
+    - name: "Restarting RKE2 agent service"
+      ansible.builtin.systemd:
+        name: "rke2-agent"
+        daemon_reload: true
+        state: "restarted"
+        enabled: true

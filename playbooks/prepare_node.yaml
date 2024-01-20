@@ -5,41 +5,42 @@
       description: "Prepare node"
       summary:
         "Modified files":
-        - description: "/etc/fstab (mounting of swapfiles and swap partitions disabled)"
-        - description: "/etc/selinux/config (SELinux set to permissive mode)"
-          conditions: "Red Hat and derivatives"
+          - description: "/etc/fstab (mounting of swapfiles and swap partitions disabled)"
+          - description: "/etc/selinux/config (SELinux set to permissive mode)"
+            conditions: "Red Hat and derivatives"
         "Modified systemd units":
-        - description: "All swap-type units masked"
+          - description: "All swap-type units masked"
         "Other actions":
-        - description: "Unmounts all swap partitions"
+          - description: "Unmounts all swap partitions"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Setup"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Disabling swap"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      # Disable swap during this boot
-      swapoff -a
-      # Disable swap entries in /etc/fstab
-      sed -i -e 's,^/swapfile,#&,;s,^/swap.img,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
-      # Disable swap units
-      swapunits="$(systemctl --type swap -o json-pretty)"
-      if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
-        for swap in $(echo "${swapunits}" | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
-          systemctl mask "$(printf -- "${swap}")"
-        done
-      fi
-    changed_when: false
-  - name: "Setting SELinux to permissive mode"  # noqa fqcn-builtins
-    become: true
-    become_user: "root"
-    shell: |
-      setenforce 0
-      sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-    when: "ansible_os_family == 'RedHat'"
+    - name: "Disabling swap"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        # Disable swap during this boot
+        swapoff -a
+        # Disable swap entries in /etc/fstab
+        sed -i -e 's,^/swapfile,#&,;s,^/swap.img,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
+        # Disable swap units
+        swapunits="$(systemctl --type swap -o json-pretty)"
+        if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
+          for swap in $(echo "${swapunits}" | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
+            systemctl mask "$(printf -- "${swap}")"
+          done
+        fi
+      changed_when: true
+    - name: "Setting SELinux to permissive mode"
+      become: true
+      become_user: "root"
+      ansible.builtin.shell: |
+        setenforce 0
+        sed -i -e 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+      when: "ansible_os_family == 'RedHat'"
+      changed_when: true
