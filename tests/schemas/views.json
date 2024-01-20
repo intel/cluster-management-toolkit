@@ -1879,7 +1879,15 @@
 												},
 												"api_version_path": {
 													"description": "Path to get the API version of the object from, optionally with fallback(s)",
-													"$ref": "#/definitions/path"
+													"anyof": [
+														{
+															"$ref": "#/definitions/simple_path"
+														}, {
+															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
 												},
 												"command": {
 													"description": "Command to execute; only valid if widget is 'command'; use nested arrays to denote paths",
