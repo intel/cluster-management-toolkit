@@ -5,7 +5,7 @@
       description: "Execute command (as root)"
       summary:
         "Other actions":
-        - description: "Executes a user specified action with root permissions"
+          - description: "Executes a user specified action with root permissions"
       confirm: true
       query:
         string: "Command to execute"
@@ -16,6 +16,6 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Executing command as root"  # noqa command-instead-of-shell fqcn-builtins
-    shell: "{{ command }}"
-    changed_when: false
+    - name: "Executing command as root"  # noqa command-instead-of-shell
+      ansible.builtin.shell: "{{ command }}"
+      changed_when: false

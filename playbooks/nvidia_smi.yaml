@@ -5,20 +5,20 @@
       description: "Show NVidia information"
       summary:
         "Information gathering":
-        - description: "Displays information about NVidia cards"
+          - description: "Displays information about NVidia cards"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Information"
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Showing NVidia information"  # noqa fqcn-builtins risky-shell-pipe
-    shell: |
-      if [ -x /usr/bin/nvidia-smi ]; then
-        nvidia-smi | sed -e '/^\s*$/q'
-      else
-        printf -- "[SKIP] nvidia-smi not installed\n"
-      fi
-    changed_when: false
+    - name: "Showing NVidia information"  # noqa risky-shell-pipe
+      ansible.builtin.shell: |
+        if [ -x /usr/bin/nvidia-smi ]; then
+          nvidia-smi | sed -e '/^\s*$/q'
+        else
+          printf -- "[SKIP] nvidia-smi not installed\n"
+        fi
+      changed_when: false

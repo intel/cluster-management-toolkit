@@ -5,11 +5,11 @@
       description: "Reboot"
       summary:
         "System actions":
-        - description: "Reboots the system"
+          - description: "Reboots the system"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       confirm: true
       allow_on_control_plane: "never"
       category: "Administration"
@@ -17,5 +17,5 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Rebooting system"
-    ansible.builtin.reboot:
+    - name: "Rebooting system"
+      ansible.builtin.reboot:

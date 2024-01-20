@@ -5,19 +5,20 @@
       description: "Create a join token"
       summary:
         "Kubernetes actions":
-        - description: "Creates a permanent join token"
+          - description: "Creates a permanent join token"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Setup"
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking that cluster is running"  # noqa fqcn-builtins
-    shell: |
-      lsof -i:6443 -sTCP:LISTEN -t > /dev/null
-    register: "port_check"
-    failed_when: false
-    changed_when: false
-  - name: "Creating permanent join token"  # noqa fqcn-builtins
-    command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
-    when: "port_check.rc == 0"
+    - name: "Checking that cluster is running"
+      ansible.builtin.shell: |
+        lsof -i:6443 -sTCP:LISTEN -t > /dev/null
+      register: "port_check"
+      failed_when: false
+      changed_when: false
+    - name: "Creating permanent join token"
+      ansible.builtin.command: "kubeadm token create --kubeconfig /etc/kubernetes/admin.conf --ttl 0 --print-join-command"
+      when: "port_check.rc == 0"
+      changed_when: true

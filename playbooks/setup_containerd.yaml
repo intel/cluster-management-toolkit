@@ -5,147 +5,150 @@
       description: "Setup Containerd"
       summary:
         "Created directories":
-        - description: "/etc/containerd"
-        - description: "/etc/systemd/system/kubelet.service.d"
-        - description: "/etc/systemd/system/containerd.service.d"
+          - description: "/etc/containerd"
+          - description: "/etc/systemd/system/kubelet.service.d"
+          - description: "/etc/systemd/system/containerd.service.d"
         "Created files":
-        - description: "/etc/containerd/config.toml"
-        - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
-        - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
-        - description: "/etc/zypp/repos.d/openSUSE:Factory.repo"
-          conditions:
-          - "SUSE and derivatives"
+          - description: "/etc/containerd/config.toml"
+          - description: "/etc/systemd/system/containerd.service.d/http-proxy.conf (proxy settings for containerd)"
+          - description: "/etc/systemd/system/containerd.service.d/ip-forward.conf (enable IP-forwarding when using containerd)"
+          - description: "/etc/zypp/repos.d/openSUSE:Factory.repo"
+            conditions:
+              - "SUSE and derivatives"
         "Installed packages":
-        - description: "containerd"
-          conditions:
-          - "Debian and derivatives"
-          - "SUSE and derivatives"
-        - description: "containerd.io"
-          conditions:
-          - "Red Hat and derivatives"
-        - description: "runc"
-          conditions:
-          - "Debian and derivatives"
-          - "Red Hat and derivatives"
-          - "SUSE and derivatives"
+          - description: "containerd"
+            conditions:
+              - "Debian and derivatives"
+              - "SUSE and derivatives"
+          - description: "containerd.io"
+            conditions:
+              - "Red Hat and derivatives"
+          - description: "runc"
+            conditions:
+              - "Debian and derivatives"
+              - "Red Hat and derivatives"
+              - "SUSE and derivatives"
         "Modified files":
-        - description: "/etc/crictl.yaml (use containerd by default)"
-        - description: "/etc/modules (ensure that br_netfilter is loaded)"
+          - description: "/etc/crictl.yaml (use containerd by default)"
+          - description: "/etc/modules (ensure that br_netfilter is loaded)"
         "Other actions":
-        - description: "Updates package cache"
-          conditions:
-          - "Debian and derivatives"
-          - "Red Hat and derivatives"
-          - "SUSE and derivatives"
-        - description: "modprobe br_netfilter"
+          - description: "Updates package cache"
+            conditions:
+              - "Debian and derivatives"
+              - "Red Hat and derivatives"
+              - "SUSE and derivatives"
+          - description: "modprobe br_netfilter"
         "Restarted services":
-        - description: "containerd"
-        - description: "kubelet"
+          - description: "containerd"
+          - description: "kubelet"
       playbook_types:
-      - "internal"
+        - "internal"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Updating package cache"
-    ansible.builtin.apt:
-      update_cache: true
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Installing containerd"  # noqa package-latest
-    ansible.builtin.apt:
-      name: "containerd"
-      state: "latest"
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Installing runc"  # noqa package-latest
-    ansible.builtin.apt:
-      name: "runc"
-      state: "latest"
-      force_apt_get: true
-    when: "ansible_os_family == 'Debian'"
-  - name: "Installing containerd.io and runc"  # noqa package-latest
-    ansible.builtin.dnf:
-      name:
-      - "containerd.io"
-      - "runc"
-      state: "latest"
-    when: "ansible_os_family == 'RedHat'"
-  - name: "Configuring package repository for Containerd"
-    ansible.builtin.template:
-      dest: "/etc/zypp/repos.d/Virtualization_containers.repo"
-      src: "templates/etc/zypp/repos.d/Virtualization_containers.repo.j2"
-      mode: "0644"
-    when: "ansible_os_family == 'Suse'"
-  - name: "Updating package cache"
-    shell: |
-      zypper --gpg-auto-import-keys refresh
-    when: "ansible_os_family == 'Suse'"
-  - name: "Installing containerd"  # noqa package-latest
-    shell: |
-      zypper -n remove containerd runc || true
-      zypper -n install -y containerd runc
-    when: "ansible_os_family == 'Suse'"
-  - name: "Configuring crictl"
-    ansible.builtin.template:
-      dest: "/etc/crictl.yaml"
-      src: "templates/etc/crictl-containerd.yaml.j2"
-      mode: "0644"
-      force: true
-  - name: "Creating /etc/containerd"
-    ansible.builtin.file:
-      path: "/etc/containerd"
-      state: "directory"
-      mode: "0755"
-  - name: "Configuring containerd"
-    ansible.builtin.template:
-      dest: "/etc/containerd/config.toml"
-      src: "templates/etc/containerd/config.toml.j2"
-      mode: "0644"
-  - name: "Creating /etc/systemd/system/kubelet.service.d"
-    ansible.builtin.file:
-      path: "/etc/systemd/system/kubelet.service.d"
-      state: "directory"
-      mode: "0755"
-  - name: "Creating /etc/systemd/system/containerd.service.d"
-    ansible.builtin.file:
-      path: "/etc/systemd/system/containerd.service.d"
-      state: "directory"
-      mode: "0755"
-  - name: "Creating /etc/systemd/system/containerd.service.d/http-proxy.conf"
-    ansible.builtin.template:
-      dest: "/etc/systemd/system/containerd.service.d/http-proxy.conf"
-      src: "templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2"
-      mode: "0644"
-      force: true
-  - name: "Creating /etc/systemd/system/containerd.service.d/ip-forward.conf"
-    ansible.builtin.template:
-      dest: "/etc/systemd/system/containerd.service.d/ip-forward.conf"
-      src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"
-      mode: "0644"
-      force: true
-  - name: "Ensure that br_netfilter is loaded on boot"
-    ansible.builtin.lineinfile:
-      path: "/etc/modules"
-      line: "br_netfilter"
-      insertafter: "EOF"
-      state: "present"
-      create: true
-      mode: "0644"
-  - name: "Load br_netfilter if it isn't already loaded"  # noqa fqcn-builtins no-changed-when
-    shell: |
-      modprobe br_netfilter
-  - name: "Restarting Containerd"
-    ansible.builtin.systemd:
-      name: "containerd"
-      daemon_reload: true
-      state: "restarted"
-  - name: "Restarting Kubelet"
-    ansible.builtin.systemd:
-      name: "kubelet"
-      daemon_reload: true
-      state: "restarted"
-    failed_when: false
+    - name: "Updating package cache"
+      ansible.builtin.apt:
+        update_cache: true
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Installing containerd"  # noqa package-latest
+      ansible.builtin.apt:
+        name: "containerd"
+        state: "latest"
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Installing runc"  # noqa package-latest
+      ansible.builtin.apt:
+        name: "runc"
+        state: "latest"
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
+    - name: "Installing containerd.io and runc"  # noqa package-latest
+      ansible.builtin.dnf:
+        name:
+          - "containerd.io"
+          - "runc"
+        state: "latest"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "Configuring package repository for Containerd"
+      ansible.builtin.template:
+        dest: "/etc/zypp/repos.d/Virtualization_containers.repo"
+        src: "templates/etc/zypp/repos.d/Virtualization_containers.repo.j2"
+        mode: "0644"
+      when: "ansible_os_family == 'Suse'"
+    - name: "Updating package cache"
+      ansible.builtin.shell: |
+        zypper --gpg-auto-import-keys refresh
+      when: "ansible_os_family == 'Suse'"
+      changed_when: true
+    - name: "Installing containerd"  # noqa package-latest
+      ansible.builtin.shell: |
+        zypper -n remove containerd runc || true
+        zypper -n install -y containerd runc
+      when: "ansible_os_family == 'Suse'"
+      changed_when: true
+    - name: "Configuring crictl"
+      ansible.builtin.template:
+        dest: "/etc/crictl.yaml"
+        src: "templates/etc/crictl-containerd.yaml.j2"
+        mode: "0644"
+        force: true
+    - name: "Creating /etc/containerd"
+      ansible.builtin.file:
+        path: "/etc/containerd"
+        state: "directory"
+        mode: "0755"
+    - name: "Configuring containerd"
+      ansible.builtin.template:
+        dest: "/etc/containerd/config.toml"
+        src: "templates/etc/containerd/config.toml.j2"
+        mode: "0644"
+    - name: "Creating /etc/systemd/system/kubelet.service.d"
+      ansible.builtin.file:
+        path: "/etc/systemd/system/kubelet.service.d"
+        state: "directory"
+        mode: "0755"
+    - name: "Creating /etc/systemd/system/containerd.service.d"
+      ansible.builtin.file:
+        path: "/etc/systemd/system/containerd.service.d"
+        state: "directory"
+        mode: "0755"
+    - name: "Creating /etc/systemd/system/containerd.service.d/http-proxy.conf"
+      ansible.builtin.template:
+        dest: "/etc/systemd/system/containerd.service.d/http-proxy.conf"
+        src: "templates/etc/systemd/system/containerd.service.d/http-proxy.conf.j2"
+        mode: "0644"
+        force: true
+    - name: "Creating /etc/systemd/system/containerd.service.d/ip-forward.conf"
+      ansible.builtin.template:
+        dest: "/etc/systemd/system/containerd.service.d/ip-forward.conf"
+        src: "templates/etc/systemd/system/containerd.service.d/ip-forward.conf.j2"
+        mode: "0644"
+        force: true
+    - name: "Ensure that br_netfilter is loaded on boot"
+      ansible.builtin.lineinfile:
+        path: "/etc/modules"
+        line: "br_netfilter"
+        insertafter: "EOF"
+        state: "present"
+        create: true
+        mode: "0644"
+    - name: "Load br_netfilter if it isn't already loaded"
+      ansible.builtin.shell: |
+        modprobe br_netfilter
+      changed_when: true
+    - name: "Restarting Containerd"
+      ansible.builtin.systemd:
+        name: "containerd"
+        daemon_reload: true
+        state: "restarted"
+    - name: "Restarting Kubelet"
+      ansible.builtin.systemd:
+        name: "kubelet"
+        daemon_reload: true
+        state: "restarted"
+      failed_when: false

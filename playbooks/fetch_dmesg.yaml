@@ -6,7 +6,7 @@
       description: "Fetch dmesg"
       summary:
         "Fetched files":
-        - description: "remote:dmesg => localhost:/home/{{ ansible_user }}/.cmt/ansible/{{ timestamp }}_fetch_dmesg"
+          - description: "remote:dmesg => localhost:/home/{{ ansible_user }}/.cmt/ansible/{{ timestamp }}_fetch_dmesg"
       category: "Administration"
       quiet: true
       read_only: true
@@ -14,8 +14,8 @@
   become: true
   become_user: "root"
   tasks:
-  - name: "Fetching dmesg"  # noqa command-instead-of-shell fqcn-builtins
-    shell: |
-      # journalctl -k --no-pager -ojson -n 1000
-      journalctl -k
-    changed_when: false
+    - name: "Fetching dmesg"
+      ansible.builtin.shell: |
+        # journalctl -k --no-pager -ojson -n 1000
+        journalctl -k
+      changed_when: false

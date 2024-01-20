@@ -6,22 +6,22 @@
       time_consumption: "Slow"
       summary:
         "Kubernetes actions":
-        - description: "Kills all RKE2 processes"
-        - description: "Uninstalls RKE2"
+          - description: "Kills all RKE2 processes"
+          - description: "Uninstalls RKE2"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Administration"
   gather_facts: false
   become: true
   become_user: "root"
   tasks:
-  - name: "Killing RKE2 processes"  # noqa fqcn-builtins
-    shell: |
-      [ -x /usr/local/bin/rke2-killall.sh ] && /usr/local/bin/rke2-killall.sh || true
-      [ -x /opt/rke2/bin/rke2-killall.sh ] && /opt/rke2/bin/rke2-killall.sh || true
-    changed_when: false
-  - name: "Uninstalling RKE2"  # noqa fqcn-builtins
-    shell: |
-      [ -x /usr/local/bin/rke2-uninstall.sh ] && /usr/local/bin/rke2-uninstall.sh || true
-      [ -x /opt/rke2/bin/rke2-uninstall.sh ] && /opt/rke2/bin/rke2-uninstall.sh || true
-    changed_when: false
+    - name: "Killing RKE2 processes"
+      ansible.builtin.shell: |
+        [ -x /usr/local/bin/rke2-killall.sh ] && /usr/local/bin/rke2-killall.sh || true
+        [ -x /opt/rke2/bin/rke2-killall.sh ] && /opt/rke2/bin/rke2-killall.sh || true
+      changed_when: false
+    - name: "Uninstalling RKE2"
+      ansible.builtin.shell: |
+        [ -x /usr/local/bin/rke2-uninstall.sh ] && /usr/local/bin/rke2-uninstall.sh || true
+        [ -x /opt/rke2/bin/rke2-uninstall.sh ] && /opt/rke2/bin/rke2-uninstall.sh || true
+      changed_when: false

@@ -5,88 +5,89 @@
       description: "Setup Kubernetes node using RKE2"
       summary:
         "Downloaded files":
-        - description: "https://get.rke2.io"
+          - description: "https://get.rke2.io"
         "Enabled services":
-        - description: "rke2-agent"
+          - description: "rke2-agent"
         "Other actions":
-        - description: "Configures and starts a Kubernetes node"
+          - description: "Configures and starts a Kubernetes node"
       time_consumption: "Slow"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "Setup"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "distribution"
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
-  - name: "Checking if kubelet is already running"  # noqa fqcn-builtins
-    shell: |
-      lsof -i:6443 -sTCP:LISTEN -t > /dev/null
-    register: "port_check"
-    failed_when: false
-    changed_when: false
-  - name: "Creating temporary directory for RKE2 installer"
-    ansible.builtin.tempfile:
-      state: "directory"
-      suffix: "temp"
-    register: "tempdir"
-    when: "port_check.rc == 1"
-  - name: "Fetching RKE2 installer"
-    ansible.builtin.get_url:
-      url: "https://get.rke2.io"
-      dest: "{{ tempdir.path }}/rke2-installer"
-      mode: "0755"
-      force: true
-      use_proxy: "{{ use_proxy }}"
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-    when: "port_check.rc == 1"
-  - name: "Configuring proxy settings"
-    ansible.builtin.template:
-      src: "templates/etc/default/rke2-server.j2"
-      dest: "/etc/default/rke2-agent"
-      mode: "0644"
-    when: "port_check.rc == 1"
-  - name: "Creating /etc/rancher/rke2"
-    ansible.builtin.file:
-      path: "/etc/rancher/rke2"
-      state: "directory"
-      mode: "0755"
-    when: "port_check.rc == 1"
-  - name: "Reading RKE2 configuration"
-    ansible.builtin.include_vars:
-      file: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
-      name: "config"
-    when: "port_check.rc == 1"
-  - name: "Setting facts"
-    become: false
-    ansible.builtin.set_fact:
-      kubelet_arg: "{{ config['kubelet-arg'] }}"
-      kube_proxy_arg: "{{ config['kube-proxy-arg'] }}"
-      node_token: "{{ lookup('ansible.builtin.file', '~/.kube/token.{{ cluster_name }}') }}"
-    when: "port_check.rc == 1"
-  - name: "Creating node configuration file"
-    ansible.builtin.template:
-      dest: "/etc/rancher/rke2/config.yaml"
-      src: "{{ configuration_path }}"
-      mode: "0600"
-      force: true
-    when: "port_check.rc == 1"
-  - name: "Running RKE2 installer"  # noqa fqcn-builtins no-changed-when
-    shell: |
-      {{ tempdir.path }}/rke2-installer
-    when: "port_check.rc == 1"
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-      no_proxy: "{{ no_proxy | default('') }}"
-      INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
-      INSTALL_RKE2_TYPE: "agent"
-  - name: "Enabling and starting RKE2 agent service"
-    ansible.builtin.systemd:
-      name: "rke2-agent"
-      daemon_reload: true
-      state: "restarted"
-      enabled: true
-    when: "port_check.rc == 1"
+    - name: "Checking if kubelet is already running"
+      ansible.builtin.shell: |
+        lsof -i:6443 -sTCP:LISTEN -t > /dev/null
+      register: "port_check"
+      failed_when: false
+      changed_when: false
+    - name: "Creating temporary directory for RKE2 installer"
+      ansible.builtin.tempfile:
+        state: "directory"
+        suffix: "temp"
+      register: "tempdir"
+      when: "port_check.rc == 1"
+    - name: "Fetching RKE2 installer"
+      ansible.builtin.get_url:
+        url: "https://get.rke2.io"
+        dest: "{{ tempdir.path }}/rke2-installer"
+        mode: "0755"
+        force: true
+        use_proxy: "{{ use_proxy }}"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+      when: "port_check.rc == 1"
+    - name: "Configuring proxy settings"
+      ansible.builtin.template:
+        src: "templates/etc/default/rke2-server.j2"
+        dest: "/etc/default/rke2-agent"
+        mode: "0644"
+      when: "port_check.rc == 1"
+    - name: "Creating /etc/rancher/rke2"
+      ansible.builtin.file:
+        path: "/etc/rancher/rke2"
+        state: "directory"
+        mode: "0755"
+      when: "port_check.rc == 1"
+    - name: "Reading RKE2 configuration"
+      ansible.builtin.include_vars:
+        file: "~/.kube/rke2.config.{{ cluster_name }}.yaml"
+        name: "config"
+      when: "port_check.rc == 1"
+    - name: "Setting facts"
+      become: false
+      ansible.builtin.set_fact:
+        kubelet_arg: "{{ config['kubelet-arg'] }}"
+        kube_proxy_arg: "{{ config['kube-proxy-arg'] }}"
+        node_token: "{{ lookup('ansible.builtin.file', '~/.kube/token.{{ cluster_name }}') }}"
+      when: "port_check.rc == 1"
+    - name: "Creating node configuration file"
+      ansible.builtin.template:
+        dest: "/etc/rancher/rke2/config.yaml"
+        src: "{{ configuration_path }}"
+        mode: "0600"
+        force: true
+      when: "port_check.rc == 1"
+    - name: "Running RKE2 installer"
+      ansible.builtin.shell: |
+        {{ tempdir.path }}/rke2-installer
+      when: "port_check.rc == 1"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+        no_proxy: "{{ no_proxy | default('') }}"
+        INSTALL_RKE2_CHANNEL: "{{ requested_version }}"
+        INSTALL_RKE2_TYPE: "agent"
+      changed_when: "port_check.rc == 1"
+    - name: "Enabling and starting RKE2 agent service"
+      ansible.builtin.systemd:
+        name: "rke2-agent"
+        daemon_reload: true
+        state: "restarted"
+        enabled: true
+      when: "port_check.rc == 1"

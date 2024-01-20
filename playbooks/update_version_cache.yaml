@@ -6,80 +6,80 @@
       description: "Update local version cache from upstream projects"
       summary:
         "Created directories":
-        - description: "localhost:/home/{{ ansible_user }}/.cmt/version_data (0o700)"
+          - description: "localhost:/home/{{ ansible_user }}/.cmt/version_data (0o700)"
         "Fetched files":
-        - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml (0o600)"
-        - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml (0o600)"
-        - description: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version }}.md"
+          - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml (0o600)"
+          - description: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml (0o600)"
+          - description: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version }}.md"
         "Information gathering":
-        - description: "Fetches version information from upstream projects"
+          - description: "Fetches version information from upstream projects"
       playbook_types:
-      - "internal"
+        - "internal"
       category: "SHOULD NOT SHOW UP"
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Creating version cache directory if it doesn't exist"
-    # This directory is usually created by cmt-install, but cmt-install might not have been re-run recently
-    ansible.builtin.file:
-      path: "~/.cmt/version-cache"
-      state: "directory"
-      mode: "0700"
-  - name: "Checking if version cache update is necessary"
-    ansible.builtin.find:
-      paths: "~/.cmt/version-cache"
-      pattern: "last-updated"
-      age: "-6h"
-    register: "last_updated"
-  - name: "Exit if the cache is recent"
-    when: "(last_updated.matched > 0) and (force is undefined or not force)"
-    block:
-    - name: "The version cache is up to date"
-      ansible.builtin.debug:
-        msg: "The version cache is up to date"
-    - name: "Exit the play"
-      ansible.builtin.meta: "end_play"
-  - name: "Fetching version information from upstream projects"
-    ansible.builtin.get_url:
-      url: "{{ item.url }}"
-      dest: "~/.cmt/version-cache/{{ item.dest }}"
-      mode: "0600"
-      force: true
-      use_proxy: "{{ use_proxy | default(false) }}"
-    loop:
-    - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml"
-      dest: "kubernetes_current.yaml"
-    - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml"
-      dest: "kubernetes_past.yaml"
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-    # We might not be able to update the version cache for all projects; this is acceptable
-    failed_when: false
-  - name: "Load version info"
-    ansible.builtin.set_fact:
-      d: "{{ lookup('ansible.builtin.file', '~/.cmt/version-cache/kubernetes_current.yaml') | ansible.builtin.from_yaml_all | first | ansible.builtin.from_yaml }}"
-  - name: "Latest version (patch revisions exist)"
-    ansible.builtin.set_fact:
-      version: "{{ d['schedules'][0]['previousPatches'][0]['release'] | default('') }}"
-  - name: "Latest version (no patch revisions exist)"
-    ansible.builtin.set_fact:
-      version: "{{ d['schedules'][0]['release'] }}.0"
-    when: "version == ''"
-  - name: "Fetching changelog for upstream projects"
-    ansible.builtin.get_url:
-      url: "{{ item.url }}"
-      dest: "~/.cmt/version-cache/{{ item.dest }}"
-      mode: "0600"
-      force: true
-      use_proxy: "{{ use_proxy | default(false) }}"
-    loop:
-    # We'll need to fix this for fetching multiple versions
-    - url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version | splitext | first | string }}.md"
-      dest: "kubernetes_current_changelog.yaml"
-    environment:
-      https_proxy: "{{ https_proxy | default('') }}"
-  - name: "Updating last-updated"
-    ansible.builtin.file:
-      path: "~/.cmt/version-cache/last-updated"
-      state: "touch"
-      mode: "0600"
+    - name: "Creating version cache directory if it doesn't exist"
+      # This directory is usually created by cmt-install, but cmt-install might not have been re-run recently
+      ansible.builtin.file:
+        path: "~/.cmt/version-cache"
+        state: "directory"
+        mode: "0700"
+    - name: "Checking if version cache update is necessary"
+      ansible.builtin.find:
+        paths: "~/.cmt/version-cache"
+        pattern: "last-updated"
+        age: "-6h"
+      register: "last_updated"
+    - name: "Exit if the cache is recent"
+      when: "(last_updated.matched > 0) and (force is undefined or not force)"
+      block:
+        - name: "The version cache is up to date"
+          ansible.builtin.debug:
+            msg: "The version cache is up to date"
+        - name: "Exit the play"
+          ansible.builtin.meta: "end_play"
+    - name: "Fetching version information from upstream projects"
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "~/.cmt/version-cache/{{ item.dest }}"
+        mode: "0600"
+        force: true
+        use_proxy: "{{ use_proxy | default(false) }}"
+      loop:
+        - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml"
+          dest: "kubernetes_current.yaml"
+        - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/eol.yaml"
+          dest: "kubernetes_past.yaml"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+      # We might not be able to update the version cache for all projects; this is acceptable
+      failed_when: false
+    - name: "Load version info"
+      ansible.builtin.set_fact:
+        d: "{{ lookup('ansible.builtin.file', '~/.cmt/version-cache/kubernetes_current.yaml') | ansible.builtin.from_yaml_all | first | ansible.builtin.from_yaml }}"
+    - name: "Latest version (patch revisions exist)"
+      ansible.builtin.set_fact:
+        version: "{{ d['schedules'][0]['previousPatches'][0]['release'] | default('') }}"
+    - name: "Latest version (no patch revisions exist)"
+      ansible.builtin.set_fact:
+        version: "{{ d['schedules'][0]['release'] }}.0"
+      when: "version == ''"
+    - name: "Fetching changelog for upstream projects"
+      ansible.builtin.get_url:
+        url: "{{ item.url }}"
+        dest: "~/.cmt/version-cache/{{ item.dest }}"
+        mode: "0600"
+        force: true
+        use_proxy: "{{ use_proxy | default(false) }}"
+      loop:
+      # We'll need to fix this for fetching multiple versions
+        - url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version | splitext | first | string }}.md"
+          dest: "kubernetes_current_changelog.yaml"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+    - name: "Updating last-updated"
+      ansible.builtin.file:
+        path: "~/.cmt/version-cache/last-updated"
+        state: "touch"
+        mode: "0600"
