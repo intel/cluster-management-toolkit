@@ -11,14 +11,11 @@ FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841,W605,E402
 # they are triggered by the shell script-based workaround
 FLAKE8_IGNORE := $(FLAKE8_IGNORE),W605,E402
 
-ANSIBLE_LINT_SKIP := no-changed-when
-
 code-checks-weak: flake8
 code-checks: flake8 mypy
 code-checks-strict: flake8 mypy-strict pylint
 
-checks: bandit regexploit semgrep yamllint validate_yaml
-checks-strict: checks validate_playbooks
+checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 
 tests: iotests
 
@@ -38,67 +35,62 @@ semgrep:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running semgrep to check for common security issues in Python code\n"; \
-	printf -- "Note: if this is taking a very long time you might be behind a proxy;\n"; \
-	printf -- "if that's the case you need to set the environment variable https_proxy\n\n"; \
-	mkdir -p tests/modified_repo; \
-	git archive main | tar -x -C tests/modified_repo; \
-	(cd tests/modified_repo; \
-	 mv cmt cmt.py; \
-	 mv cmtadm cmtadm.py; \
-	 mv cmt-install cmt-install.py; \
-	 mv cmtinv cmtinv.py; \
-	 mv cmu cmu.py; \
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt.py; \
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtadm.py; \
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt-install.py; \
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtinv.py; \
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmu.py; \
-	 $$cmd scan --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980" --timeout=0 --no-git-ignore) || /bin/true; \
-	printf -- "\n-----\n\n"
+	printf -- "\n\nRunning semgrep to check for common security issues in Python code\n" ;\
+	printf -- "Note: if this is taking a very long time you might be behind a proxy;\n" ;\
+	printf -- "if that's the case you need to set the environment variable https_proxy\n\n" ;\
+	mkdir -p tests/modified_repo ;\
+	git archive main | tar -x -C tests/modified_repo ;\
+	(cd tests/modified_repo ;\
+	 mv cmt cmt.py ;\
+	 mv cmtadm cmtadm.py ;\
+	 mv cmt-install cmt-install.py ;\
+	 mv cmtinv cmtinv.py ;\
+	 mv cmu cmu.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtadm.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt-install.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtinv.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmu.py ;\
+	 $$cmd scan --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980" --timeout=0 --no-git-ignore)
 
 bandit:
 	@cmd=bandit ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
-	printf -- "Running bandit to check for common security issues in Python code\n\n"; \
-	$$cmd -c .bandit $(python_executables) *.py || /bin/true; \
-	printf -- "\n-----\n\n"
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning bandit to check for common security issues in Python code\n\n" ;\
+	$$cmd -c .bandit $(python_executables) *.py
 
 pylint:
 	@cmd=pylint ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
-	printf -- "Running pylint to check Python code quality\n\n"; \
-	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true; \
-	printf -- "\n-----\n\n"
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
+	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
 
 flake8:
 	@cmd=flake8 ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
-	printf -- "Running flake8 to check Python code quality\n\n"; \
-	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py || /bin/true; \
-	printf -- "\n-----\n\n"
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning flake8 to check Python code quality\n\n" ;\
+	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py
 
 regexploit:
 	@cmd=regexploit-py ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed (install with 'pipx install regexploit' or pipx install --proxy <proxy> regexploit'); skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
-	printf -- "Running regexploit to check for ReDoS attacks\n\n"; \
-	printf -- "Checking executables\n"; \
-	$$cmd $(python_executables) || /bin/true; \
-	printf -- "\nChecking libraries\n"; \
-	$$cmd *.py || /bin/true; \
-	printf -- "\n-----\n\n"
+		printf -- "\n\n$$cmd not installed (install with 'pipx install regexploit' or pipx install --proxy <proxy> regexploit'); skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning regexploit to check for ReDoS attacks\n\n" ;\
+	printf -- "Checking executables\n" ;\
+	$$cmd $(python_executables) &&\
+	printf -- "\nChecking libraries\n" ;\
+	$$cmd *.py
 
 yamllint:
 	@cmd=yamllint ;\
@@ -106,41 +98,41 @@ yamllint:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running yamllint to check that all YAML is valid\n\n"; \
+	printf -- "\n\nRunning yamllint to check that all YAML is valid\n\n"; \
 	for dir in $(yaml_dirs); do \
-		$$cmd $$dir/*.yaml || /bin/true; \
+		$$cmd $$dir/*.yaml; \
 	done; \
-	$$cmd cmt.yaml || /bin/true; \
-	printf -- "\n-----\n\n"
+	$$cmd cmt.yaml
 
+# Note: we know that the code does not have complete type-hinting,
+# hence we return 0 after each test to avoid it from stopping.
 mypy-strict:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running mypy to check Python typing\n\n"; \
+	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
-	done; \
-	printf -- "\n-----\n\n"
+	done
 
+# Note: we know that the code does not have complete type-hinting,
+# hence we return 0 after each test to avoid it from stopping.
 mypy:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running mypy to check Python typing\n\n"; \
+	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
-	done; \
-	printf -- "\n-----\n\n"
+	done
 
 validate_yaml:
-	@printf -- "Running validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
-	./tests/validate_yaml || /bin/true; \
-	printf -- "\n-----\n\n"
+	@printf -- "\n\nRunning validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
+	./tests/validate_yaml
 
 validate_playbooks:
 	@cmd=ansible-lint ;\
@@ -148,9 +140,8 @@ validate_playbooks:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "Running ansible-lint to check that all Ansible playbooks are valid\n\n"; \
-	ansible-lint -x $(ANSIBLE_LINT_SKIP) playbooks/*.yaml || /bin/true; \
-	printf -- "\n-----\n\n"
+	printf -- "\n\nRunning ansible-lint to check that all Ansible playbooks are valid\n\n"; \
+	ansible-lint playbooks/*.yaml
 
 export_src:
 	git archive --format zip --output ~/cmt-$(shell date -I).zip origin/main
@@ -203,13 +194,13 @@ setup_tests: create_test_symlinks
 	 chmod o+w 01-wrong_permissions )
 
 iotests: setup_tests
-	@(cd tests && ./iotests); \
-	printf -- "\n-----\n\n"
+	@printf -- "\n\nRunning iotests to check that the I/O-helpers in cmtio behave as expected\n\n"; \
+	(cd tests && ./iotests)
 
 check_theme_use: setup_tests
-	@for theme in themes/*.yaml; do \
+	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \
+	for theme in themes/*.yaml; do \
 		printf -- "\nChecking against theme file $$theme:\n" ;\
 		printf -- "---\n" ;\
 		./tests/check_theme_use $$theme $(python_executables) *.py ;\
-	done; \
-	printf -- "\n-----\n\n"
+	done
