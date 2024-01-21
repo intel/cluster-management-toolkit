@@ -5147,7 +5147,7 @@ class KubernetesHelper:
 			message = "502: Bad Gateway"
 		elif status == 503:
 			# Service Unavailable
-			# This is might be a CRD that has failed to deploy properly
+			# This might be a CRD that has failed to deploy properly
 			message = f"503: Service Unavailable; method: {method}, URL: {url}; header_params: {header_params}"
 		elif status == 504:
 			# Gateway Timeout
