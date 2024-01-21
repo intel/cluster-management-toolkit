@@ -137,7 +137,7 @@ def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail:
 			sys.exit(msg)
 		except jsonschema.exceptions.ValidationError as e:
 			tmp_msg = f"\n  Failed to validate {yaml_path} using {schema_path}\n" + f"\njsonschema.exceptions.ValidationError: {e}\n"
-			if abort_on_fail == True:
+			if abort_on_fail:
 				sys.exit(msg + tmp_msg)
 			elif verbose > 2:
 				msg += tmp_msg
@@ -262,9 +262,9 @@ def main() -> None:
 			if file is not None:
 				failed_files.append(file)
 
-	if no_summary == False:
+	if not no_summary:
 		print("\nSummary:")
-		if abort_on_fail == False:
+		if not abort_on_fail:
 			print(f"     fail: {fail}")
 		print(f"     skip: {skip}")
 		print(f"  success: {count - fail - skip}")

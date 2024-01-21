@@ -75,7 +75,7 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 		else:
 			string = f"{type(e)}"
 
-	if result == False:
+	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
 
@@ -108,7 +108,7 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 		else:
 			string = f"{type(e)}"
 
-	if result == False:
+	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
 
@@ -140,7 +140,7 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 		else:
 			string = f"{type(e)}"
 
-	if result == False:
+	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
 
@@ -173,7 +173,7 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 		else:
 			string = f"{type(e)}"
 
-	if result == False:
+	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
 

@@ -8,7 +8,7 @@ Print themed strings to the console
 import errno
 from getpass import getpass
 from pathlib import PurePath
-import subprocess
+import subprocess # nosec
 import sys
 from typing import List, Optional, Sequence, Union
 

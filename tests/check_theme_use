@@ -75,7 +75,7 @@ class FindVisits(ast.NodeVisitor):
 
 				# As a special case, if string is a constant and is empty, it's ok that the formatting is empty too
 				if isinstance(node.args[0], ast.Constant) and node.args[0].value == "" and node.args[1].value == "":
-					if verbose == True:
+					if verbose:
 						self.result[call_func].append({
 							"ref": termattr,
 							"file": path,
@@ -99,7 +99,7 @@ class FindVisits(ast.NodeVisitor):
 						"theme": themepath,
 						"result": "ERROR: Reference does not exist in theme",
 					})
-				elif verbose == True:
+				elif verbose:
 					self.result[call_func].append({
 						"ref": termattr,
 						"file": path,
@@ -142,7 +142,7 @@ class FindVisits(ast.NodeVisitor):
 						"theme": themepath,
 						"result": "ERROR: Reference does not exist in theme",
 					})
-				elif verbose == True:
+				elif verbose:
 					self.result[call_func].append({
 						"ref": f"(\"{key}\", \"{value}\")",
 						"file": path,

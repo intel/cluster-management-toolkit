@@ -714,26 +714,25 @@ def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[st
 		if line == "Installed Packages":
 			section = "installed"
 			continue
-		elif line == "Available Packages":
+		if line == "Available Packages":
 			section = "available"
 			continue
-		else:
-			tmp = package_version.match(line)
-			if tmp is not None:
-				package = tmp[1]
-				version = tmp[2]
+		tmp = package_version.match(line)
+		if tmp is not None:
+			package = tmp[1]
+			version = tmp[2]
 
-				if package not in versions_dict:
-					versions_dict[package] = {
-						"installed": "<none>",
-						"candidate": "<none>",
-						"available": [],
-					}
+			if package not in versions_dict:
+				versions_dict[package] = {
+					"installed": "<none>",
+					"candidate": "<none>",
+					"available": [],
+				}
 
-				if section == "installed":
-					versions_dict[package]["installed"] = version
-				elif section == "available":
-					versions_dict[package]["available"].append(version)
+			if section == "installed":
+				versions_dict[package]["installed"] = version
+			elif section == "available":
+				versions_dict[package]["available"].append(version)
 
 	# Now summarise
 	for package, data in versions_dict.items():

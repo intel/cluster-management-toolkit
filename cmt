@@ -103,7 +103,6 @@ def get_latest_kubernetes_upstream_version() -> str:
 		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
 	except FileNotFoundError:
 		version_cache = None
-		pass
 
 	if version_cache is not None:
 		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
