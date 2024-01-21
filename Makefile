@@ -28,6 +28,10 @@ clean: remove_test_symlinks
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
 # export the repository, rename the files, remove the hack, and run semgrep on that checkout.
 # We also need to extend the timeout since validation gives up on cmu otherwise.
+#
+# --exclude-rule generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980
+# is necessary since it triggers on every single mention of the word secret
+# (which occurs a lot in various Kubernetes API names).
 semgrep:
 	@cmd=semgrep ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
@@ -50,7 +54,7 @@ semgrep:
 	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt-install.py; \
 	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtinv.py; \
 	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmu.py; \
-	 $$cmd scan --timeout=0 --no-git-ignore) || /bin/true; \
+	 $$cmd scan --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980" --timeout=0 --no-git-ignore) || /bin/true; \
 	printf -- "\n-----\n\n"
 
 bandit:
