@@ -67,11 +67,11 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 				      "[Errno -5] No address associated with hostname"):
 				continue
 			tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": ", "default"),
-					ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
-					ANSIThemeString(f"{host}", "hostname"),
-					ANSIThemeString("); aborting.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
+						       ANSIThemeString(": ", "default"),
+						       ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
+						       ANSIThemeString(f"{host}", "hostname"),
+						       ANSIThemeString("); aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		except paramiko.ssh_exception.SSHException as e:
 			ansithemeprint.ansithemeprint([ANSIThemeString("\nError", "error"),

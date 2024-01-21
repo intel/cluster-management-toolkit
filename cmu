@@ -43,8 +43,8 @@ import os
 from pathlib import Path, PurePath
 import re
 import socket
-import subprocess
-from subprocess import PIPE, STDOUT
+import subprocess # nosec
+from subprocess import PIPE, STDOUT # nosec
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
@@ -573,8 +573,7 @@ def __recurse_data(path: Dict, obj: Any):
 	if pathtype == "list":
 		if obj is None or len(obj) < datapath:
 			return obj
-		else:
-			data = obj[datapath]
+		data = obj[datapath]
 	else:
 		data = deep_get(obj, datapath)
 
@@ -1195,9 +1194,8 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 		for tmp1 in value:
 			if tmp1 is None or tmp1 == -1:
 				continue
-			else:
-				# The only valid integer value is -1
-				timestamp = timestamp_to_datetime(cast(str, tmp1))
+			# The only valid integer value is -1
+			timestamp = timestamp_to_datetime(cast(str, tmp1))
 			if tmp_timestamp == none_timestamp():
 				tmp_timestamp = timestamp
 			else:
@@ -1992,8 +1990,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 												if group is not None:
 													tmp.append(group)
 											break
-										else:
-											tmp.append("")
+										tmp.append("")
 							else:
 								prefix = deep_get(_path, DictPath("prefix"), [])
 								suffix = deep_get(_path, DictPath("suffix"), [])
@@ -2560,8 +2557,7 @@ def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeSt
 
 	if not show_raw and formatter == "markdown":
 		return formatters.format_markdown(vlist[0], **formatter_args)
-	else:
-		return formatters.format_none(vlist[0], **formatter_args)
+	return formatters.format_none(vlist[0], **formatter_args)
 
 def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
@@ -5027,7 +5023,7 @@ def get_control_plane() -> Tuple[Dict, str]:
 		ansithemeprint([ANSIThemeString("Error", "warning"),
 				ANSIThemeString(": None of the nodes in the cluster are labelled as control planes. The cluster is most likely misconfigured.", "default")], stderr = True)
 		return {}, ""
-	elif len(control_planes) > 1:
+	if len(control_planes) > 1:
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
 				ANSIThemeString(": Multiple control planes not supported yet, found multiple; returning first entry:", "default")], stderr = True)
 		for control_plane in control_planes:
@@ -5433,7 +5429,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		# so just prepend/append whitespace instead
 		if ralign:
 			headerarray.append(ThemeString("".ljust(fieldlen - len(header)), ThemeAttr("types", "generic")))
-		headerarray.append(ThemeString(header, ThemeAttr("main", "listheader"), selected = (uip.get_sortcolumn() == field)))
+		headerarray.append(ThemeString(header, ThemeAttr("main", "listheader"), selected = uip.get_sortcolumn() == field))
 		headerarray.append(ThemeString(sort_direction_char, ThemeAttr("main", "listheader_arrows")))
 		if not ralign:
 			headerarray.append(ThemeString("".ljust(fieldlen - len(header)), ThemeAttr("types", "generic")))
@@ -7505,12 +7501,12 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			nodearrays: List[List[Union[ThemeRef, ThemeString]]] = [
 				[
-					ThemeString(f"Node ({selected_node + 1}/{len(nodeinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+					ThemeString(f"Node ({selected_node + 1}/{len(nodeinfo)}):", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Node"),
 					ThemeString("".ljust(node_heatmap_width), ThemeAttr("types", "generic")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
 					ThemeString("No", ThemeAttr("main", "listheader")),
-					ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Node")),
+					ThemeString("d", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Node"),
 					ThemeString("e: ", ThemeAttr("main", "listheader")),
 					ThemeString(f"{nodeinfo[selected_node].name}".ljust(node_heatmap_width), ThemeAttr("main", "highlight")),
 				], [
@@ -7532,22 +7528,22 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 			podarrays: List[List[Union[ThemeRef, ThemeString]]] = [
 				[
-					ThemeString(f"Pod ({selected_pod + 1}/{len(podinfo)}):", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString(f"Pod ({selected_pod + 1}/{len(podinfo)}):", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Pod"),
 					ThemeString("".ljust(pod_heatmap_width), ThemeAttr("types", "generic")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
-					ThemeString("P", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("P", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Pod"),
 					ThemeString("od: ", ThemeAttr("main", "listheader")),
 					ThemeString(f"{podinfo[selected_pod].name}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
-					ThemeString("N", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("N", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Pod"),
 					ThemeString("amespace: ", ThemeAttr("main", "listheader")),
 					ThemeString(f"{podinfo[selected_pod].namespace}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
 				], [
 					ThemeString(" ", ThemeAttr("main", "listheader")),
 					ThemeString("No", ThemeAttr("main", "infoheader")),
-					ThemeString("d", ThemeAttr("main", "listheader"), selected = (selected_heatmap == "Pod")),
+					ThemeString("d", ThemeAttr("main", "listheader"), selected = selected_heatmap == "Pod"),
 					ThemeString("e: ", ThemeAttr("main", "infoheader")),
 					ThemeString(f"{podinfo[selected_pod].node}".ljust(pod_heatmap_width), ThemeAttr("main", "highlight")),
 				], [

@@ -1294,8 +1294,7 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
 			selected = element.get_selected()
 			truncated_themearray.append(ThemeString(string[0:max_element_len], attr, selected = selected))
 			break
-		else:
-			truncated_themearray.append(element)
+		truncated_themearray.append(element)
 
 	if output_format == ThemeArray:
 		truncated_themearray = ThemeArray(cast(List[Union[ThemeRef, ThemeString]], truncated_themearray))
@@ -1819,6 +1818,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		oldyoffset = yoffset
 
 		c = stdscr.getch()
+
+		# The following inputs terminate the loop
 		if c == curses.KEY_RESIZE:
 			curses.endwin()
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -1828,14 +1829,25 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 			selection = ""
 			confirm_press = c
 			break
-		elif c == ord("") or c == ord(""):
+		if c == ord("") or c == ord(""):
 			curses.endwin()
 			sys.exit()
-		elif deep_get(kwargs, DictPath("KEY_F6"), False) and c == curses.KEY_F6:
+		if deep_get(kwargs, DictPath("KEY_F6"), False) and c == curses.KEY_F6:
 			# This is used to toggle categorised list on/off
 			selection = -c
 			break
-		elif taggable and c == ord(" "):
+		if c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and not confirm:
+			if deep_get(items[yoffset + curypos], DictPath("retval")) is None:
+				selection = items[yoffset + curypos]["columns"]
+			else:
+				selection = items[yoffset + curypos]["retval"]
+			break
+		if confirm and c in confirm_buttons[0]:
+			confirm_press = c
+			break
+
+		# While all of these are just navigation
+		if taggable and c == ord(" "):
 			if curypos + yoffset in tagged_items:
 				tagged_items.discard(curypos + yoffset)
 			else:
@@ -1917,15 +1929,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
 			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
-		elif c in (curses.KEY_ENTER, 10, 13) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 and not confirm:
-			if deep_get(items[yoffset + curypos], DictPath("retval")) is None:
-				selection = items[yoffset + curypos]["columns"]
-			else:
-				selection = items[yoffset + curypos]["retval"]
-			break
-		elif confirm and c in confirm_buttons[0]:
-			confirm_press = c
-			break
 
 		# These only apply if we use a cursor
 		if cursor:
@@ -3422,49 +3425,49 @@ class UIProps:
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_xoffset_rel(-(self.logpadminwidth // 2))
 			return Retval.MATCH
-		elif c == curses.KEY_SRIGHT:
+		if c == curses.KEY_SRIGHT:
 			if self.listpad is not None:
 				self.next_sortcolumn()
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_xoffset_rel(self.logpadminwidth // 2)
 			return Retval.MATCH
-		elif c == curses.KEY_UP:
+		if c == curses.KEY_UP:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-1)
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(-1)
 			return Retval.MATCH
-		elif c == curses.KEY_DOWN:
+		if c == curses.KEY_DOWN:
 			if self.listpad is not None:
 				self.move_cur_with_offset(1)
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(1)
 			return Retval.MATCH
-		elif c == curses.KEY_LEFT:
+		if c == curses.KEY_LEFT:
 			if self.logpad is not None and self.continuous_log:
 				return Retval.MATCH
 
 			self.move_xoffset_rel(-1)
 			return Retval.MATCH
-		elif c == curses.KEY_RIGHT:
+		if c == curses.KEY_RIGHT:
 			if self.logpad is not None and self.continuous_log:
 				return Retval.MATCH
 
 			self.move_xoffset_rel(1)
 			return Retval.MATCH
-		elif c == curses.KEY_HOME:
+		if c == curses.KEY_HOME:
 			if self.logpad is not None and self.continuous_log:
 				return Retval.MATCH
 
 			self.move_xoffset_abs(0)
 			return Retval.MATCH
-		elif c == curses.KEY_END:
+		if c == curses.KEY_END:
 			if self.logpad is not None and self.continuous_log:
 				return Retval.MATCH
 
 			self.move_xoffset_abs(-1)
 			return Retval.MATCH
-		elif c == curses.KEY_SHOME:
+		if c == curses.KEY_SHOME:
 			if self.logpad is not None:
 				if self.continuous_log:
 					return Retval.MATCH
@@ -3472,7 +3475,7 @@ class UIProps:
 			elif self.listpad is not None:
 				self.move_cur_abs(0)
 			return Retval.MATCH
-		elif c == curses.KEY_SEND:
+		if c == curses.KEY_SEND:
 			if self.logpad is not None:
 				if self.continuous_log:
 					return Retval.MATCH
@@ -3480,31 +3483,31 @@ class UIProps:
 			elif self.listpad is not None:
 				self.move_cur_abs(-1)
 			return Retval.MATCH
-		elif c == curses.KEY_PPAGE:
+		if c == curses.KEY_PPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(-10)
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(-(self.logpadheight - 2))
 			return Retval.MATCH
-		elif c == curses.KEY_NPAGE:
+		if c == curses.KEY_NPAGE:
 			if self.listpad is not None:
 				self.move_cur_with_offset(10)
 			elif self.logpad is not None and not self.continuous_log:
 				self.move_yoffset_rel(self.logpadheight - 2)
 			return Retval.MATCH
-		elif c == ord("\t"):
+		if c == ord("\t"):
 			if self.listpad is not None:
 				self.next_by_sortkey(self.info)
 			elif self.logpad is not None and not self.continuous_log:
 				self.next_line_by_severity(self.severities)
 			return Retval.MATCH
-		elif c == curses.KEY_BTAB:
+		if c == curses.KEY_BTAB:
 			if self.listpad is not None:
 				self.prev_by_sortkey(self.info)
 			elif self.logpad is not None and not self.continuous_log:
 				self.prev_line_by_severity(self.severities)
 			return Retval.MATCH
-		elif c == ord("§"):
+		if c == ord("§"):
 			# For listpads this jumps to the next column
 			if self.listpad is not None:
 				# In case the list empty for some reason
@@ -3517,7 +3520,7 @@ class UIProps:
 							self.move_xoffset_abs(tabstop)
 						break
 			return Retval.MATCH
-		elif c == ord("½"):
+		if c == ord("½"):
 			# For listpads this jumps to the previous column
 			if self.listpad is not None:
 				# In case the list empty for some reason
@@ -3529,7 +3532,7 @@ class UIProps:
 						self.move_xoffset_abs(tabstop)
 						break
 			return Retval.MATCH
-		elif c == ord("") or c == ord("/"):
+		if c == ord("") or c == ord("/"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
 					return Retval.MATCH
@@ -3554,7 +3557,7 @@ class UIProps:
 				self.find_all_matches_by_searchkey(self.messages, searchkey)
 				self.find_next_match()
 			return Retval.MATCH
-		elif c == ord("?"):
+		if c == ord("?"):
 			self.search_matches.clear()
 
 			if self.listpad is not None:
@@ -3581,7 +3584,7 @@ class UIProps:
 				self.find_all_matches_by_searchkey(self.messages, searchkey)
 				self.find_next_match()
 			return Retval.MATCH
-		elif c == ord("n"):
+		if c == ord("n"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
 					return Retval.MATCH
@@ -3597,7 +3600,7 @@ class UIProps:
 				self.refresh = True
 				self.find_next_match()
 			return Retval.MATCH
-		elif c == ord("p"):
+		if c == ord("p"):
 			if self.listpad is not None:
 				if self.listpadheight < 2:
 					return Retval.MATCH
@@ -3613,7 +3616,7 @@ class UIProps:
 				self.refresh = True
 				self.find_prev_match()
 			return Retval.MATCH
-		elif c == ord("a"):
+		if c == ord("a"):
 			if self.annotations is not None:
 				title = ""
 
@@ -3622,7 +3625,7 @@ class UIProps:
 
 				self.refresh_all()
 				return Retval.MATCH
-		elif c == ord("l"):
+		if c == ord("l"):
 			if self.labels is not None:
 				title = ""
 
@@ -3839,10 +3842,9 @@ class UIProps:
 			if c2 == -1:
 				del self
 				return Retval.RETURNONE, {}
-			else:
-				# Additional key pressed; this is ALT+<key>
-				altkey = True
-				c = c2
+			# Additional key pressed; this is ALT+<key>
+			altkey = True
+			c = c2
 
 		if c == curses.KEY_MOUSE:
 			return self.handle_mouse_events(cast(curses.window, self.listpad), self.sorted_list, self.activatedfun, self.extraref, self.data), {}

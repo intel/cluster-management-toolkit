@@ -1799,7 +1799,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					elif d_key in versions:
 						tmp.append(format_key_value(d_key, d_value, LogLevel.NOTICE, force_severity = True))
 					else:
-						if is_event == True and d_key == "type":
+						if is_event and d_key == "type":
 							if d_value.strip("\"") == "Normal":
 								__severity = LogLevel.NOTICE
 							elif d_value.strip("\"") == "Warning":
@@ -1807,7 +1807,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
 							if severity > __severity:
 								severity = __severity
-						elif is_event == True and d_key == "reason":
+						elif is_event and d_key == "reason":
 							# A lot more reasons need to be added here
 							if d_value.strip("\"") in (
 									"Completed",
@@ -2613,8 +2613,7 @@ def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: s
 					tmp_msg.append(ThemeString(group, ThemeAttr(field_colors[color_index]["context"], field_colors[color_index]["type"])))
 			message = tmp_msg
 			break
-		else:
-			raise TypeError(f"Unsupported matchtype {matchtype}")
+		raise TypeError(f"Unsupported matchtype {matchtype}")
 
 	return message, severity, facility
 

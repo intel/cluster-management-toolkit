@@ -11,8 +11,8 @@ from getpass import getuser
 import os
 from pathlib import Path, PurePath
 import re
-import subprocess
-from subprocess import PIPE, STDOUT
+import subprocess # nosec
+from subprocess import PIPE, STDOUT # nosec
 import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 
@@ -48,9 +48,8 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: O
 	else:
 		if search_paths is None:
 			return FilePath(fallback), False
-		else:
-			for search_path in search_paths:
-				partial_paths.append(os.path.join(search_path, path))
+		for search_path in search_paths:
+			partial_paths.append(os.path.join(search_path, path))
 
 	for partial_path in partial_paths:
 		path_entry = Path(partial_path)

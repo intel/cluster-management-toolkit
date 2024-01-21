@@ -27,7 +27,7 @@ import pwd
 import re
 import shutil
 import socket
-import subprocess
+from subprocess import CalledProcessError # nosec
 import sys
 import tempfile
 from typing import Callable, cast, Dict, List, Optional, Set, Tuple, Union
@@ -1765,7 +1765,6 @@ def get_latest_kubernetes_upstream_version() -> str:
 		version_cache = secure_read_yaml(FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath("kubernetes_current.yaml"))), checks = security_checks)
 	except FileNotFoundError:
 		version_cache = None
-		pass
 
 	if version_cache is not None:
 		if len(schedules := deep_get(version_cache, DictPath("schedules"), [])) > 0:
@@ -1844,7 +1843,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 		except FileNotFoundError:
 			other_versions.append((tmp_software, "<none>", "", []))
 			continue
-		except subprocess.CalledProcessError:
+		except CalledProcessError:
 			other_versions.append((tmp_software, "<unknown>", "", []))
 			continue
 
