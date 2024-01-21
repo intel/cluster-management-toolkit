@@ -5500,7 +5500,12 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 					ANSIThemeString(" does not exist; rebuilding.", "default")])
 		rebuild_installation_info(state = "upgrading")
 
+	# This is the cluster name according to .kube/config; this is what we care about when upgrading,
+	# not whatever is currently set as the target in installation info
+	cluster_name = get_cluster_name()
 	installation_info = get_installation_info()
+	installation_info = update_installation_info(installation_target = cluster_name)
+
 	cluster_name = deep_get(installation_info, DictPath("installation_target"))
 	os_distro = identify_distro()
 	k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#distro"))
