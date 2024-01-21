@@ -1,0 +1,181 @@
+kind: "SupportBundleCollection"
+api_family: "crd.antrea.io"
+default_command: "supportbundlecollections"
+listview:
+  name: "Antrea Support Bundle Collection"
+  group: "Antrea"
+  field_indexes:
+    Normal:
+      fields: ["name", "collected", "age"]
+  fields:
+    collected:
+      header: "Collected:"
+      paths:
+      - path: [["status#collectedNodes"], ["status#desiredNodes"]]
+        pathtype: "tuple"
+        default: ["0", "0"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Support Bundle Collection Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["nodes_header", "nodes_names", "nodes_match_label_selector", "external_nodes_header", "external_nodes_names", "external_nodes_namespace", "external_nodes_match_label_selector", "file_server", "authentication_header", "authentication_secret", "authentication_type", "expiration", "since"]
+    rows:
+      authentication_header:
+        header: [["Authentication:", ["main", "infoheader"]]]
+      authentication_secret:
+        header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#authentication#authSecret#namespace"], ["spec#authentication#authSecret#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
+      authentication_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#authentication#authType"
+        type: "str"
+      collected:
+        header: [["Collected:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#collectedNodes"], ["status#desiredNodes"]]
+          pathtype: "tuple"
+          default: ["0", "0"]
+        formatter: "list"
+      expiration:
+        header: [["Expiration Time:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#expirationMinutes"], "m"]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "unit"
+          field_separators:
+          - type: "no_pad"
+      file_server:
+        header: [["File Server:", ["main", "infoheader"]]]
+        path: "spec#fileServer#url"
+        type: "str"
+      external_nodes_header:
+        header: [["External Nodes:", ["main", "infoheader"]]]
+      external_nodes_match_label_selector:
+        header: [["  Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#externalNodes#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      external_nodes_names:
+        header: [["  N", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["de Names:", ["main", "infoheader"]]]
+        path: "spec#externalNodes#nodeNames"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      external_nodes_namespace:
+        header: [["  Namespace:", ["main", "infoheader"]]]
+        path: "spec#externalNodes#namespace"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      nodes_header:
+        header: [["Nodes:", ["main", "infoheader"]]]
+      nodes_match_label_selector:
+        header: [["  Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#externalNodes#nodeSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      nodes_names:
+        header: [["  No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Names:", ["main", "infoheader"]]]
+        path: "spec#nodes#nodeNames"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+      since:
+        header: [["Since:", ["main", "infoheader"]]]
+        path: "spec#sinceTime"
+        type: "str"
+        formatter: "age"
+  shortcuts:
+    "Show Node list":
+      key: "d"
+      read_only: true
+      helptext: "List Nodes"
+      widget: "windowwidget"
+      title: "Nodes:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#nodes#nodeNames"]
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Node"
+        name_path: 0
+    "Show External Node list":
+      key: "o"
+      read_only: true
+      helptext: "List External Nodes"
+      widget: "windowwidget"
+      title: "Nodes:"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#externalNodes#nodeNames"]
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ExternalNode"
+        api_family: "crd.antrea.io"
+        name_path: 0
+        namespace_path: "spec#externalNodes#namespace"
+    "Open Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "spec#authentication#authSecret#namespace"
+        name_path: "spec#authentication#authSecret#name"
