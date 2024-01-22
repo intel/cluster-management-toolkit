@@ -19,13 +19,19 @@ All contributions MUST be tested when applicable. Remember: tested contributions
 contributions that can be tested by others are better, but contributions that can be tested
 automatically are the best.
 
+### Adding New Testcases
+
+Please do. Unit-tests should be added in the tests-directory and should be written in Python.
+They should return 0 on success, non-zero on failure.  They may output useful information
+to the screen. Unit-tests must not require user input, but other tests may.
+
 ### Testing Python
 
 To verify that changes to the Python code do not introduce vulnerabilities,
 the code MUST be checked code using:
 
 ```
-make bandit (should only report Severity: Low warnings about submodule/PIPE)
+make bandit (should not report any issues)
 make regexploit (should not report any issues)
 make semgrep (should not report any issues)
 ```
@@ -62,7 +68,7 @@ make validate_yaml (should not report any issues)
 If you add or modify Ansible playbooks you should use:
 
 ```
-make validate_playbooks (currently reports many issues; these will be fixed where possible)
+make validate_playbooks (should not report any issues)
 ```
 
 ### Testing Documentation
@@ -82,23 +88,24 @@ make yamllint (should not report any issues)
 ## New Dependencies
 
 New dependencies MUST NOT be introduced without discussion. This applies to anything that would require
-installing new distro-packages or adding something to ![requirements.txt](../requirements.txt).
+installing new distro-packages or adding something to [requirements.txt](../requirements.txt).
 
 ## Submitting Contributions
 
 Contributions should be submitted as Pull Requests.  All contributions __MUST__ have a Signed-off-by line
 at the end of the change description in every commit. If the submission fixes an issue in the Issue Tracker
 you SHOULD add a comment to the issue tracker that references the Pull Request. You MUST NOT resolve the issue
-as fixed until the Pull Request has been merged.
+as fixed until the Pull Request has been merged.  If possible mention the resolved issue in the commit message.
 
 ## Coding Standard
 
-Unlike many other Python project, __CMT__ uses tabs for indentation; space is only used to align indentation.
+Unlike many other Python project, __CMT__ currently uses tabs for indentation; space is only used to align indentation.
 Other than that the coding standard is very similar to the upstream Python coding standard as dictated by Pylint,
 Flake8, etc.
 
-Note: __CMT__ prioritises legibility over line length, hence the use of tabs for indentation and the less
-strict enforcement of line length.
+Note: For now __CMT__ prioritises legibility over line length, hence the use of tabs for indentation and the less
+strict enforcement of line length. However, it is likely that we will move to coding style that more
+closely follows common Python standards, to make it easier for people to contribute to the project.
 
 ### Type Annotations and Documentation
 
@@ -108,7 +115,7 @@ parameters, returns). Code SHOULD be documented if it's not immediately obvious 
 ### Python Version
 
 __CMT__ uses Python 3.8 to allow for compatibility with some (not all) older enterprise distros.
-This means that type annotations and the features used MUST NOT require newer versions of Python
+This means that type annotations and the features used MUST NOT require newer versions of Python.
 
 ## Documentation
 
@@ -122,5 +129,5 @@ If you add, remove, or change the behaviour of any of the commandline options fo
 you need to update docs/_COMMAND_\_helptext.md accordingly.  This can be done using:
 
 ```
-COMMAND help --format markdown > docs/COMMAND_helptext.md
+make generate_helptexts
 ```
