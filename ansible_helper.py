@@ -157,7 +157,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 	return playbooks
 
 # pylint: disable-next=unused-argument
-def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], FilePath]], extra_vars: Optional[Dict] = None) -> None:
+def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], FilePath]]) -> None:
 	"""
 	Given a list of playbook paths, print a summary of the actions that will be performed
 
@@ -232,7 +232,8 @@ def ansible_get_inventory_dict(create_if_missing: bool = False) -> Dict:
 	return d
 
 def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
-				 include_groupvars: bool = False, include_hostvars: bool = False, include_hosts: bool = True) -> Union[List[str], List[List[ANSIThemeString]]]:
+				 include_groupvars: bool = False, include_hostvars: bool = False,
+				 include_hosts: bool = True) -> Union[List[str], List[List[ANSIThemeString]]]:
 	"""
         Get the Ansible inventory and return it neatly formatted
 
@@ -243,7 +244,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 			include_hostvars (bool): Should host variables be included
 			include_hosts (bool): Should hosts be included
 		Returns:
-			dump (list[themearray]): A list of themearrays
+			dump (list[str]): An unformatted list of strings or formatted list of themearrays
 	"""
 
 	tmp = {}
@@ -290,7 +291,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 					for host in tmp[group]["hosts"]:
 						tmp[group]["hosts"][host] = None
 
-	dump = yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", '').replace("null", "").replace("{}", "").splitlines()
+	dump: List[Union[List[ANSIThemeString], str]] = yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", '').replace("null", "").replace("{}", "").splitlines()
 
 	if highlight and len(dump) > 0:
 		i = 0
@@ -323,6 +324,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 
 			# Nope, then we will use default format
 			dump[i] = [ANSIThemeString(dump[i], "default")]
+			return dump
 
 	return dump
 

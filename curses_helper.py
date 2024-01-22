@@ -175,7 +175,7 @@ class ThemeRef:
 				selected = "selected"
 			else:
 				selected = "unselected"
-			array = deep_get(data, selected)
+			array = deep_get(data, DictPath(selected))
 		else:
 			array = data
 		for string_fragment, _attr in array:
@@ -203,7 +203,7 @@ class ThemeRef:
 				selected = "selected"
 			else:
 				selected = "unselected"
-			array = deep_get(data, selected)
+			array = deep_get(data, DictPath(selected))
 		else:
 			array = data
 		if array is None:

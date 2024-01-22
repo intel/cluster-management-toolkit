@@ -648,7 +648,7 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		groups = args[0].split(",")
 
 	for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_groupvars = include_groupvars, include_hostvars = include_hostvars):
-		ansithemeprint(item, color = color)
+		ansithemeprint(cast(list, item), color = color)
 
 	return 0
 
@@ -697,7 +697,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint(ansithemestring_join_tuple_list(sorted_groups, formatting = "hostname", separator = ANSIThemeString(separator, "separator")), color = color)
 	else:
 		for item in ansible_get_inventory_pretty(groups = None, highlight = True, include_groupvars = include_groupvars, include_hosts = False):
-			ansithemeprint(item, color = color)
+			ansithemeprint(cast(list, item), color = color)
 
 	return 0
 
@@ -753,7 +753,7 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint(ansithemestring_join_tuple_list(sorted_hosts, formatting = "hostname", separator = ANSIThemeString(separator, "separator")), color = color)
 	else:
 		for item in ansible_get_inventory_pretty(groups = groups, highlight = True, include_hostvars = include_hostvars):
-			ansithemeprint(item, color = color)
+			ansithemeprint(cast(list, item), color = color)
 
 	return 0
 
@@ -921,7 +921,9 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
 				row_array.append(ANSIThemeString("".ljust(maxlengths[i] - len(field) + 2), "default"))
 			ansithemeprint(row_array)
 	else:
-		ansithemeprint(ansithemestring_join_tuple_list(playbooks, formatting = "default", separator = ANSIThemeString(separator, "separator")), color = color)
+		ansithemeprint(ansithemestring_join_tuple_list(list(playbooks), formatting = "default", separator = ANSIThemeString(separator, "separator")), color = color)
+
+	return 0
 
 
 # pylint: disable-next=unused-argument
@@ -998,6 +1000,8 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("", "default")])
 
 	ansible_print_play_results(retval, ansible_results, verbose = verbose)
+
+	return 0
 
 def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""

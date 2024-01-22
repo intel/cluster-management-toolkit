@@ -111,7 +111,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 		lines = re.sub(r"<!--.*?-->", r"", lines, flags = re.DOTALL)
 		lines = split_msg(lines)
 
-	emptylines = []
+	emptylines: List[Union[ThemeRef, ThemeString]] = []
 	started = False
 	codeblock = ""
 	for line in lines:
@@ -153,11 +153,10 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 			tformat = ThemeAttr("types", "markdown_header_3")
 			line = line[len("### "):]
 		else:
-			tmpline = []
+			tmpline: List[Union[ThemeRef, ThemeString]] = []
 			if line.startswith("    "):
 				tformat = ThemeAttr("types", "markdown_code")
 				codeblock = "    "
-				tmpline = []
 
 			if line.lstrip().startswith("- "):
 				striplen = len(line) - len(line.lstrip())
@@ -210,7 +209,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 		dumps.append([ThemeString(line, tformat)])
 		continue
 
-	if not strip_empty_end:
+	if not strip_empty_end and len(emptylines) > 0:
 		dumps.append(emptylines)
 	return dumps
 
@@ -306,7 +305,7 @@ def format_diff_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 	]
 	return tmpline
 
-def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeString]]:
+def format_yaml_line(line: str, **kwargs: Dict) -> Tuple[List[Union[ThemeRef, ThemeString]], List[List[Union[ThemeRef, ThemeString]]]]:
 	"""
 	Formats a single line of YAML
 
@@ -324,7 +323,7 @@ def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 	expand_newline_fields: Tuple[str] = deep_get(kwargs, DictPath("expand_newline_fields"), ())
 	value_strip_ansicodes: bool = deep_get(kwargs, DictPath("value_strip_ansicodes"), True)
 	value_expand_tabs: bool = deep_get(kwargs, DictPath("value_expand_tabs"), False)
-	remnants = []
+	remnants: List[List[Union[ThemeRef, ThemeString]]] = []
 
 	if override_formatting is None:
 		override_formatting = {}
@@ -458,7 +457,7 @@ def format_yaml_line(line: str, **kwargs: Dict) -> List[Union[ThemeRef, ThemeStr
 
 	return tmpline, remnants
 
-def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	YAML formatter; returns the text with syntax highlighting for YAML
 
@@ -466,7 +465,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 			lines (list[str]): A list of strings
 			*or*
 			lines (str): A string with newlines that should be split
-			kwargs (dict): Additional parameters
+			kwargs (Any): Additional parameters
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -516,7 +515,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 			if len(line) == 0:
 				continue
 
-			kwargs["override_formatting"] =  override_formatting
+			kwargs["override_formatting"] = override_formatting
 			tmpline: List[Union[ThemeRef, ThemeString]] = []
 			remnants: List[List[Union[ThemeRef, ThemeString]]] = []
 			tmpline, remnants = format_yaml_line(line, **kwargs)
@@ -533,7 +532,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 
 	return dumps
 
-def reformat_json(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	kwargs["json"] = True
 	return format_yaml(lines, **kwargs)
 

@@ -86,7 +86,7 @@ def request_ansible_password() -> None:
 
 		ansible_configuration["ansible_password"] = ansible_password # type: ignore
 
-def get_latest_kubernetes_upstream_version() -> str:
+def get_latest_kubernetes_upstream_version() -> Optional[str]:
 	# We are OK with the file not existing
 	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -1308,7 +1308,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 							if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
 								# This is to handle systems that doesn't have the latest version of cryptography
 								# pylint: disable-next=import-outside-toplevel,no-name-in-module
-								from cryptography.hazmat.primitives import default_backend
+								from cryptography.hazmat.primitives import default_backend # type: ignore
 								x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 							else:
 								raise
@@ -2164,6 +2164,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 						sys.exit(f"View-file {view_file} is invalid; aborting.")
 			except NameError:
 				kind_tuple = None
+		if kind_tuple is None:
+			continue
 
 		if namespaced_only is not None and namespaced != namespaced_only:
 			continue
