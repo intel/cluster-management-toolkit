@@ -1,5 +1,6 @@
 yaml_dirs = parsers themes views playbooks docs/examples
-python_executables = cmt cmtadm cmt-install cmtinv cmu tests/validate_yaml tests/check_theme_use tests/iotests
+python_executables = cmt cmtadm cmt-install cmtinv cmu
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests
 test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py
 
 # Most of these are warnings/errors emitted due to coding style differences
@@ -20,6 +21,11 @@ checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 tests: iotests
 
 clean: remove_test_symlinks
+
+generate_helptexts:
+	for file in $(python_executables); do \
+		./$$file help --format markdown > docs/$${file}_helptext.md ;\
+	done
 
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
@@ -60,7 +66,7 @@ bandit:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning bandit to check for common security issues in Python code\n\n" ;\
-	$$cmd -c .bandit $(python_executables) *.py
+	$$cmd -c .bandit $(python_executables) $(python_test_executables) *.py
 
 pylint:
 	@cmd=pylint ;\
@@ -69,7 +75,7 @@ pylint:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
-	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
+	$$cmd --rcfile .pylint $(python_executables) $(python_test_executables) *.py || /bin/true
 
 flake8:
 	@cmd=flake8 ;\
@@ -78,7 +84,7 @@ flake8:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning flake8 to check Python code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py
+	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) $(python_test_executables) *.py
 
 regexploit:
 	@cmd=regexploit-py ;\
@@ -88,7 +94,7 @@ regexploit:
 	fi ;\
 	printf -- "\n\nRunning regexploit to check for ReDoS attacks\n\n" ;\
 	printf -- "Checking executables\n" ;\
-	$$cmd $(python_executables) &&\
+	$$cmd $(python_executables) $(python_test_executables) &&\
 	printf -- "\nChecking libraries\n" ;\
 	$$cmd *.py
 
@@ -113,7 +119,7 @@ mypy-strict:
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) *.py; do \
+	for file in $(python_executables) $(python_test_executables) *.py; do \
 		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
 	done
 
@@ -126,7 +132,7 @@ mypy:
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) *.py; do \
+	for file in $(python_executables) $(python_test_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
 	done
 
@@ -212,5 +218,5 @@ check_theme_use: setup_tests
 	for theme in themes/*.yaml; do \
 		printf -- "\nChecking against theme file $$theme:\n" ;\
 		printf -- "---\n" ;\
-		./tests/check_theme_use $$theme $(python_executables) *.py ;\
+		./tests/check_theme_use $$theme $(python_executables) $(python_test_executables) *.py ;\
 	done
