@@ -11,7 +11,7 @@ A checker that validates cmtio, cmtio_yaml, and networkio
 Usage: ./tests/iotests
 """
 
-from pathlib import Path
+from pathlib import Path, PurePath
 import re
 from types import GeneratorType
 from typing import cast, Dict, Tuple
@@ -24,8 +24,8 @@ from networkio import verify_checksum
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 
-CHECKSUMS_DIR = FilePath(str(Path.cwd().joinpath("checksums")))
-TEST_DIR = FilePath(str(Path.cwd().joinpath("testpaths")))
+CHECKSUMS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("checksums")))
+TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
 def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 	"""
