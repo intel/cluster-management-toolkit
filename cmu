@@ -59,7 +59,7 @@ except ModuleNotFoundError:
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from cmttypes import ProgrammingError
 from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
+from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
 from cmtio import execute_command, execute_command_with_response, expand_path, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
@@ -13515,7 +13515,9 @@ COMMANDLINE = {
 		[ANSIThemeString("", "separator")],
 		[ANSIThemeString("Note", "note"),
 		 ANSIThemeString(": ", "description"),
-		 ANSIThemeString(CMT_CONFIG_FILE, "path"),
+		 ANSIThemeString(CMT_CONFIG_FILENAME, "path"),
+		 ANSIThemeString(" or a file in ", "description"),
+		 ANSIThemeString(CMT_CONFIG_FILE_DIRNAME, "path"),
 		 ANSIThemeString(" can be used to set a ", "description"),
 		 ANSIThemeString("VIEW", "argument"),
 		 ANSIThemeString(" to use", "description")],
@@ -13524,7 +13526,7 @@ COMMANDLINE = {
 		[ANSIThemeString("simply use “", "description"),
 		 ANSIThemeString(about.UI_PROGRAM_NAME, "programname"),
 		 ANSIThemeString(" selector", "argument"),
-		 ANSIThemeString("“", "description")],
+		 ANSIThemeString("“.", "description")],
 	],
 	"spacer2": {
 		"command": [""],

@@ -14,8 +14,17 @@ import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 
-def format_special(string: str, selected: bool) -> Union[ThemeRef, ThemeString]:
-	formatted_string: Union[ThemeRef, ThemeString] = None
+def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeString]]:
+	"""
+	Given a string, substitute any special strings with their formatted version
+
+		Parameters:
+			string (str): The string to format
+			selected (bool): Is the string selected?
+		Returns:
+			union[ThemeRef, ThemeString]: The ThemeString
+	"""
+	formatted_string: Optional[Union[ThemeRef, ThemeString]] = None
 
 	if string in ("<none>", "<unknown>"):
 		fmt = ThemeAttr("types", "none")
@@ -122,7 +131,7 @@ def format_list(items: Any,
 					totallen += len(field_prefixes[i])
 					array.append(field_prefixes[i])
 				else:
-					for prefix in field_prefixes[i]:
+					for prefix in field_prefixes:
 						pref = prefix
 						pref.selected = selected
 						totallen += len(pref)
@@ -135,7 +144,7 @@ def format_list(items: Any,
 					totallen += len(field_suffixes[i])
 					array.append(field_suffixes[i])
 				else:
-					for suffix in field_suffixes[i]:
+					for suffix in field_suffixes:
 						suff = suffix
 						suff.selected = selected
 						totallen += len(suff)
