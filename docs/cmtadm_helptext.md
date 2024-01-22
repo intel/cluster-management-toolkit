@@ -18,7 +18,7 @@ _Note_: some of the listed software may not be relevant to the configuration in 
   
   
 
-If _CLUSTER_NAME_,_..._ is not specified all clusters in _/home/tao/.kube/config_ will be imported
+If _CLUSTER_NAME_,_..._ is not specified all clusters in _~/.kube/config_ will be imported
   
   
   __-Y__

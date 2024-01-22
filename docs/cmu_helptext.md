@@ -64,6 +64,6 @@ _THEME_ to use
 
 If _VIEW_ is not specified cmu will show a list with all available views
 
-_Note_: _/home/tao/.cmt/cmt.yaml_ can be used to set a _VIEW_ to use
+_Note_: _cmt.yaml_ or a file in _cmt.yaml.d_ can be used to set a _VIEW_ to use
 if no view is specified. To override this and open the selector instead,
-simply use “cmu _selector_“
+simply use “cmu _selector_“.
