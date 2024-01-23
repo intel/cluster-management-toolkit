@@ -3580,7 +3580,7 @@ class PoolManagerContext:
 					"key_file": self.key_file,
 				}
 		elif self.token is not None:
-			if not insecuretlsskipverify:
+			if not self.insecuretlsskipverify:
 				pool_manager_args = {
 					"cert_reqs": "CERT_REQUIRED",
 					"ca_certs": self.ca_certs_file,
