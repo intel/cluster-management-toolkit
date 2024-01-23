@@ -46,6 +46,7 @@ import socket
 import subprocess # nosec
 from subprocess import PIPE, STDOUT # nosec
 import sys
+import threading
 from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
 	import yaml
@@ -105,6 +106,8 @@ from kubernetes_helper import KubernetesHelper, get_image_version, get_node_stat
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
 
+import reexecutor
+
 import about
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
@@ -131,6 +134,9 @@ selected_namespace = ""
 defaultview = ""
 
 kh: KubernetesHelper = None # type: ignore
+
+executor = reexecutor.ReExecutor()
+async_data: Dict = {}
 
 def init_kubernetes_client() -> None:
 	"""
@@ -661,54 +667,10 @@ def listgetter_files(**kwargs):
 
 	return vlist, 200
 
-def setup_host_ping(inventory_dict: Dict, async_cb: Callable, ping_hosts: str = "Lazy") -> Tuple[Any, Callable]:
-	async_cookie = None
-
-	if ping_hosts in ("Always", "Lazy"):
-		# Trigger an asynchronous host ping
-		async_cookie = ansible_ping_async(None, inventory_dict)
-
-	return async_cookie, async_cb
-
 # pylint: disable-next=unused-argument
-def get_list_async_cb(vlist: List[Dict], async_cookie: Any, **kwargs: Dict) -> Tuple[List[Dict], Any, Dict]:
-	retrigger = deep_get(kwargs, DictPath("retrigger"), False)
-	inventory_dict = deep_get(kwargs, DictPath("inventory_dict"), None)
-
-	if async_cookie is None:
-		if retrigger:
-			async_cookie = ansible_ping_async(None, inventory_dict)
-		return vlist, async_cookie, kwargs
-
-	# If there is no new data yet (the run has not completed), return
-	results = ansible_async_get_data(async_cookie)
-	if results is None:
-		return vlist, async_cookie, kwargs
-
-	host_status = {}
-
-	for host, result in results.items():
-		for task in result:
-			unreachable = deep_get(task, DictPath("unreachable"))
-			skipped = deep_get(task, DictPath("skipped"))
-			stderr_lines = deep_get(task, DictPath("stderr_lines"))
-			retval = deep_get(task, DictPath("retval"))
-			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
-			host_status[host] = status
-
-	key = deep_get(kwargs, DictPath("key"), "name")
-
-	# Update status
-	for i, host in enumerate(vlist):
-		vlist[i]["status"] = deep_get(host_status, DictPath(host[key]), "UNKNOWN")
-	async_cookie = None
-
-	return vlist, async_cookie, kwargs
-
-# pylint: disable-next=unused-argument
-def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
+def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], List[str]]:
 	vlist = []
-	status = 200
+	hosts = []
 
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Context#ping_hosts"), "Lazy")
@@ -735,6 +697,8 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 		tmp = server_address_regex.match(server)
 		if tmp is not None:
 			server_address = tmp[2]
+			hosts.append(server_address)
+
 
 		vlist.append({
 			"current": current,
@@ -753,11 +717,9 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 			inventory_dict["all"]["hosts"][server_address]["status"] = "UNKNOWN"
 			inventory_dict["all"]["vars"] = {}
 
-	async_cookie, async_cb = setup_host_ping(inventory_dict, get_list_async_cb, ping_hosts)
 	key = deep_get(kwargs, DictPath("key"), "name")
-	retrigger_timeout = deep_get(kwargs, DictPath("retrigger_timeout"), 5)
 
-	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict, "retrigger_timeout": retrigger_timeout }
+	return vlist, hosts
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
 	"""
@@ -4794,125 +4756,49 @@ def get_pod_resource_list(obj, **kwargs):
 
 	return vlist, 200
 
-# pylint: disable-next=unused-argument
-def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
-	vlist: List[Dict] = []
-	nodes = []
+def get_host_ips(name: str) -> Dict:
+	ips = []
 
-	control_plane_node, control_plane_name = get_control_plane()
+	# XXX: We should probably rewrite this to use getaddrinfo() instead,
+	#      to handle IPv6
+	try:
+		ips = [socket.gethostbyname(name)]
+	except socket.gaierror as e:
+		if str(e).endswith("Name or service not known"):
+			pass
+		elif str(e).endswith("No address associated with hostname"):
+			pass
+		elif str(e).endswith("Temporary failure in name resolution"):
+			pass
+		else:
+			sys.exit(f"gethostbyname failed on {name}; {e}")
+	except OSError as e:
+		sys.exit(f"gethostbyname failed on {name}; {e}")
 
-	if kubernetes_support:
-		node_vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-		for node in node_vlist:
-			roles = kh.get_node_roles(node)
-			if "control-plane" in roles:
-				continue
-			nodes.append(deep_get(node, DictPath("metadata#name")))
-	else:
-		nodes = []
-		status = 200
-
-	if len(nodes) > 0:
-		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
-
-	# This returns a YAML tree with the inventory of nodes
-	inventory_dict = ansible_get_inventory_dict()
-
-	if deep_get(inventory_dict, DictPath("all#hosts")) == {}:
-		return vlist, status
-
-	# Before we ping the hosts their status is unknown
-	for host in deep_get(inventory_dict, DictPath("all#hosts"), []):
-		# We do not want to risk overwriting hostvars
-		if deep_get(inventory_dict, DictPath(f"all#hosts#{host}")) is None:
-			inventory_dict["all"]["hosts"][host] = {}
-		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
-
-	# Do we want to ping the hosts?
-	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Inventory#ping_hosts"), "Always")
-
-	async_cookie = None
-
-	if ping_hosts in ("Always", "Lazy"):
-		# Trigger an asynchronous host ping
-		async_cookie = ansible_ping_async(None)
-
-	for host in deep_get(inventory_dict, DictPath("all#hosts"), []):
-		# There's no point in trying gethostbyname() on hosts that cannot be resolved
-
-		# For now we do not do anything with external IPs; we should
-		name = host
+	# This only happens if you run the command on one of the hosts in the inventory
+	if ips != [] and ips[0].startswith("127."):
 		ips = []
 
-		# XXX: We should probably rewrite this to use getaddrinfo() instead,
-		#      to handle IPv6
-		try:
-			ips = [socket.gethostbyname(name)]
-		except socket.gaierror as e:
-			if str(e).endswith("Name or service not known"):
-				pass
-			elif str(e).endswith("No address associated with hostname"):
-				pass
-			elif str(e).endswith("Temporary failure in name resolution"):
-				pass
-			else:
-				sys.exit(f"gethostbyname failed on {name}; {e}")
-		except OSError as e:
-			sys.exit(f"gethostbyname failed on {name}; {e}")
+		# Get all interfaces with global scope
+		output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8", errors = "replace")
+		# Safe
+		iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
 
-		# This only happens if you run the command on one of the hosts in the inventory
-		if ips != [] and ips[0].startswith("127."):
-			ips = []
+		for line in output.splitlines():
+			tmp = iface_addr_regex.match(line)
+			if tmp is not None:
+				iface = tmp[1]
+				addr = tmp[2]
+				# There are probably a lot of other things we should exclude,
+				# but let's start with these
+				if iface.startswith(("docker", "weave", "vxlan.calico", "virbr")):
+					continue
+				ips.append(addr)
+	return ips
 
-			# Get all interfaces with global scope
-			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8", errors = "replace")
-			# Safe
-			iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
-
-			for line in output.splitlines():
-				tmp = iface_addr_regex.match(line)
-				if tmp is not None:
-					iface = tmp[1]
-					addr = tmp[2]
-					# There are probably a lot of other things we should exclude,
-					# but let's start with these
-					if iface.startswith(("docker", "weave", "vxlan.calico", "virbr")):
-						continue
-					ips.append(addr)
-
-		kubernetes_roles = []
-
-		# We do not have this information if the network is down
-		if host == control_plane_name:
-			kubernetes_roles.append("control-plane")
-
-		# We do not have this information if the network is down
-		if host in nodes:
-			kubernetes_roles.append("[node]")
-
-			node = kh.get_ref_by_kind_name_namespace(("Node", ""), host, "")
-			if node is not None:
-				roles = kh.get_node_roles(node)
-
-				for role in roles:
-					if len(role) > 0 and role not in ("control-plane", "node"):
-						kubernetes_roles.append(role)
-		ansible_groups = ansible_get_groups_by_host(inventory_dict, host)
-		_status = deep_get(inventory_dict, DictPath(f"all#hosts#{name}#status"), "UNKNOWN")
-		if control_plane_name == "":
-			kubernetes_roles = ["<unknown>"]
-		vlist.append({
-			"name": name,
-			"ref": name,
-			"ips": ips,
-			"kubernetes_roles": kubernetes_roles,
-			"ansible_groups": ansible_groups,
-			"status": _status,
-		})
-
-	async_cb = get_list_async_cb
-
-	return vlist, status, async_cookie, async_cb, {}
+# This function is really just used as a cookie at the moment
+def get_inventory_list() -> None:
+	return
 
 def get_node_addresses(name, addresses):
 	iips = []
@@ -5772,12 +5658,20 @@ def fieldgenerator(view, field_index: str, field_indexes, fields, denylist: List
 	return tmp_fields, field_names, sortcolumn, sortorder_reverse
 
 def genericlistloop(stdscr: curses.window, view) -> Retval:
+	global async_data # pylint: disable=global-statement
+	global executor # pylint: disable=global-statement
+
 	global selected_namespace # pylint: disable=global-statement
 	global initial_name # pylint: disable=global-statement
 	global initial_namespace # pylint: disable=global-statement
 	global latest_info # pylint: disable=global-statement
+
 	denylist = deep_get(views, DictPath(f"{view}#field_denylist"), [])
 	field_indexes = deep_get(views, DictPath(f"{view}#field_indexes"), {})
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	if len(field_indexes) == 0:
 		sys.exit(f"FIXME: field_indexes for view {view} is empty")
@@ -5831,43 +5725,78 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 	vlist = None
 
-	async_cookie = None
-	async_cb = None
-	async_cb_args = {}
-	async_retrigger_timeout = None
-	uip.list_needs_regeneration(True)
+	listgetter = deep_get(viewref, DictPath("listgetter"))
+	listgetter_async = deep_get(viewref, DictPath("listgetter_async"))
+
+	# Temporary workaround
+	if listgetter_async == get_inventory_list:
+		hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
+
+		# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
+		executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
+		async_data["hosts"] = []
+		async_data["hosts_lock"] = threading.Lock()
+		match_key = "name"
+	elif listgetter_async == get_context_list:
+		vlist, hosts = get_context_list()
+		match_key = "server_address"
+
+	if listgetter_async in (get_inventory_list, get_context_list):
+		# But the hosts can change status more frequently than that
+		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = hosts)
+		async_data["pings"] = []
+		async_data["pings_lock"] = threading.Lock()
 
 	while True:
-		if async_cb is not None:
-			if async_cookie is not None:
-				# Note: by default async_cb will be called every 100ms until it receives all data;
-				# make *SURE* that it only checks for new data and returns immediately if not
-				vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
-				if async_cookie is None:
-					uip.force_update()
-					# Retrigger every 5 seconds by default
-					async_retrigger_timeout = deep_get(async_cb_args, DictPath("retrigger_timeout"), 5)
-					async_time_start = datetime.now()
-			else:
-				if async_retrigger_timeout is not None and async_cb is not None:
-					diff = datetime.now() - async_time_start
-					seconds = diff.days * 24 * 60 * 60 + diff.seconds
+		if (result := executor.get("hosts")) != ([], []):
+			data, hosts_statuses = result
+			with deep_get(async_data, DictPath("hosts_lock")):
+				hosts = deep_get(data, DictPath("all#hosts"), {}).keys()
+				hosts_set = set(hosts)
+				async_data["hosts"] = list(hosts)
+				if vlist is not None:
+					vlist_hosts = [deep_get(item, DictPath("name")) for item in vlist]
+					vlist_hosts_set = set(vlist_hosts)
+				else:
+					vlist = []
+					vlist_hosts = []
+					vlist_hosts_set = set()
+				# Only add hosts that aren't part of vlist already
+				inventory_dict = ansible_get_inventory_dict()
+				for host in hosts_set - vlist_hosts_set:
+					ips = get_host_ips(host)
+					vlist.append({
+						"name": host,
+						"ref": host,
+						"ips": ips,
+						"ansible_groups": ansible_get_groups_by_host(inventory_dict, host),
+						"status": "UNKNOWN",
+						"__deleted": False,
+					})
+				# Tag hosts in vlist that are no longer part of hosts as deleted
+				for host in vlist_hosts_set - hosts_set:
+					for i, item in enumerate(vlist):
+						if deep_get(item, DictPath("name"), "") == host:
+							vlist[i]["__deleted"] = True
+			uip.force_update()
 
-					if seconds >= async_retrigger_timeout:
-						async_retrigger_timeout = None
-						async_cb_args["retrigger"] = True
-						vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
-
-		listgetter_async = None
+		if (result := executor.get("pings")) != ([], []):
+			ansible_results, ansible_status = result
+			for i, item in enumerate(vlist):
+				host = deep_get(item, DictPath(match_key))
+				for result in deep_get(ansible_results, f"{host}", []):
+					if deep_get(result, DictPath("task")) == "Ping":
+						status = deep_get(result, DictPath("status"))
+						vlist[i]["status"] = status
+			uip.force_update()
 
 		if uip.is_update_triggered():
 			uip.update_window()
 
-			if deep_get(viewref, DictPath("listgetter_async")) is not None:
-				listgetter_async = deep_get(viewref, DictPath("listgetter_async"))
-				listgetter = None
-			elif "listgetter" in viewref:
+			if "listgetter" in viewref:
 				listgetter = deep_get(viewref, DictPath("listgetter"))
+			elif "listgetter_async" in viewref:
+				pass
 			else:
 				listgetter = "kh.get_list_by_kind_namespace"
 
@@ -5895,10 +5824,9 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					else:
 						vlist, status = listgetter(deep_get(viewref, DictPath("kind")), selected_namespace, label_selector = label_selector)
 				infogetter_extra_vars["_vlist"] = vlist
-			elif listgetter_async is not None:
-				if async_cb is None:
-					vlist, status, async_cookie, async_cb, async_cb_args = listgetter_async(**listgetter_args)
+			elif listgetter_async:
 				infogetter_extra_vars["_vlist"] = vlist
+				status = "OK"
 			else:
 				status = "OK"
 			info = infogetter(**infogetter_extra_vars)
@@ -6024,10 +5952,6 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 		uip.stdscr.timeout(100)
 		c = uip.stdscr.getch()
-
-		# XXX: This is really ugly, but it is needed to ensure that we re-fetch all data when a force refresh is requested
-		if c == curses.KEY_F5:
-			async_cb = None
 
 		retval = uip.generic_keycheck(c)
 
@@ -6764,7 +6688,6 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 			if force_update:
 				uip.force_update()
-				async_cb = None
 
 def __switch_resource_map(**kwargs):
 	uip = deep_get(kwargs, DictPath("uip"))
@@ -7023,6 +6946,16 @@ clusteroverview_shortcuts = {
 	},
 }
 
+def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+	path = deep_get(kwargs, DictPath("path"))
+	filetype = deep_get(kwargs, DictPath("filetype"), "string")
+	if filetype == "string":
+		result = secure_read_string(path, directory_is_symlink = True)
+	elif filetype == "yaml":
+		result = secure_read_yaml(path, directory_is_symlink = True)
+	status = StatusGroup.OK
+	return result, status
+
 def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
 	playbook = deep_get(kwargs, DictPath("playbook"))
 	selection = deep_get(kwargs, DictPath("selection"))
@@ -7054,51 +6987,13 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 		vlist = vlist[:limit]
 	return vlist, extra_data
 
-class ReExecutor:
-	def __init__(self, max_workers = 1) -> None:
-		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
-		self.futures = {}
-
-	def __trigger(self, key: str) -> None:
-		data = self.futures[key]
-		data["triggered"] = True
-		data["future"] = self.executor.submit(data["function"], *data["args"], **data["kwargs"])
-		self.futures[key] = data
-
-	def trigger(self, key: str, interval: int, fn: Callable, /, *args, **kwargs) -> None:
-		if key not in self.futures:
-			data = {
-				"function": fn,
-				"args": args,
-				"kwargs": kwargs,
-				"last_update": datetime.now(),
-				"future": None,
-				"interval": interval,
-			}
-			self.futures[key] = data
-		self.__trigger(key)
-
-	def retrigger(self, key: str) -> None:
-		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
-
-	def get(self, key: str) -> Tuple[List[Type], List[Any]]:
-		info = []
-		status = []
-
-		if key in self.futures:
-			if self.futures[key]["triggered"] and self.futures[key]["future"].done():
-				self.futures[key]["last_update"] = datetime.now()
-				info, status = self.futures[key]["future"].result()
-				self.futures[key]["triggered"] = False
-				self.futures[key]["future"] = None
-			elif not self.futures[key]["triggered"] and (datetime.now() - self.futures[key]["last_update"]).seconds > self.futures[key]["interval"]:
-				self.retrigger(key)
-		return info, status
-
-	def shutdown(self) -> None:
-		self.executor.shutdown(wait = False, cancel_futures = True)
-
 def clusteroverviewloop(stdscr: curses.window, view):
+	global executor
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
+
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -7180,8 +7075,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	podinfo = []
 	pod_heatmap = []
 	events = []
-
-	executor = ReExecutor(max_workers = 5)
 
 	if not islocal:
 		executor.trigger("sysinfo", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml"))), selection = [control_plane_name])
@@ -7636,10 +7529,8 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		if retval == Retval.MATCH:
 			continue
 		if retval == Retval.RETURNONE:
-			executor.shutdown()
 			return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
-			executor.shutdown()
 			return retval
 
 # These are based on attributes of the name of the cmdata
@@ -7978,6 +7869,12 @@ cniloop_shortcuts = {
 }
 
 def cniloop(stdscr: curses.window, view):
+	global executor # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
+
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -8290,6 +8187,11 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 
 def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	global initial_container # pylint: disable=global-statement
+	global executor # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	# If obj is a tuple we got the object as obj[0]
 	# params as obj[1]
@@ -9362,7 +9264,12 @@ def log_add_line(timestamps, facilities, severities, messages, timestamp, facili
 	return timestamps, facilities, severities, messages
 
 def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
+	global executor # pylint: disable=global-statement
 	global override_tail_lines # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
 	multilog_containers = deep_get(kwargs, DictPath("multilog_containers"), [])
@@ -10865,7 +10772,7 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	namespace = deep_get(obj, DictPath("metadata#name"))
 
 	# 10 is randomly picked; this can be adjusted as we go along
-	executor = concurrent.futures.ThreadPoolExecutor(max_workers = 10)
+	executor = concurrent.futures.ThreadPoolExecutor()
 	executors = {}
 	for kind in namespaced_resources:
 		joined_kind = ".".join(kind)

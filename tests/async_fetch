@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 import about
 from cmttypes import deep_get, DictPath, StatusGroup
 from kubernetes_helper import KubernetesHelper
+import reexecutor
 
 kh: KubernetesHelper = None # type: ignore
 
@@ -48,56 +49,12 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 		vlist = vlist[:limit]
 	return vlist, extra_data
 
-class MyExecutor:
-	def __init__(self, max_workers = 1) -> None:
-		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
-		self.futures = {}
-
-	def __trigger(self, key: str) -> None:
-		data = self.futures[key]
-		data["triggered"] = True
-		data["future"] = self.executor.submit(data["function"], *data["args"], **data["kwargs"])
-		self.futures[key] = data
-
-	def trigger(self, key: str, interval: int, fn: Callable, /, *args, **kwargs) -> None:
-		if key not in self.futures:
-			data = {
-				"function": fn,
-				"args": args,
-				"kwargs": kwargs,
-				"last_update": datetime.now(),
-				"future": None,
-				"interval": interval,
-			}
-			self.futures[key] = data
-		self.__trigger(key)
-
-	def retrigger(self, key: str) -> None:
-		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
-
-	def get(self, key: str) -> Tuple[List[Type], List[Any]]:
-		info = []
-		status = []
-
-		if key in self.futures:
-			if self.futures[key]["triggered"] and self.futures[key]["future"].done():
-				self.futures[key]["last_update"] = datetime.now()
-				info, status = self.futures[key]["future"].result()
-				self.futures[key]["triggered"] = False
-				self.futures[key]["future"] = None
-			elif not self.futures[key]["triggered"] and (datetime.now() - self.futures[key]["last_update"]).seconds > self.futures[key]["interval"]:
-				self.retrigger(key)
-		return info, status
-
-	def shutdown(self) -> None:
-		self.executor.shutdown(wait = False, cancel_futures = True)
-
 def main() -> None:
 	global kh
 
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	executor = MyExecutor(max_workers = 6)
+	executor = reexecutor.ReExecutor(max_workers = 6)
 
 	fetches = 42
 
@@ -140,7 +97,7 @@ def main() -> None:
 			fetches -= 1
 
 		if fetches < 0:
-			return True
+			break
 
 if __name__ == "__main__":
 	main()
