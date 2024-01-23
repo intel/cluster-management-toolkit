@@ -6987,50 +6987,6 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 		vlist = vlist[:limit]
 	return vlist, extra_data
 
-class ReExecutor:
-	def __init__(self, max_workers = 1) -> None:
-		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
-		self.futures = {}
-
-	def __trigger(self, key: str) -> None:
-		data = self.futures[key]
-		data["triggered"] = True
-		data["future"] = self.executor.submit(data["function"], *data["args"], **data["kwargs"])
-		self.futures[key] = data
-
-	def trigger(self, key: str, interval: int, fn: Callable, /, *args, **kwargs) -> None:
-		if key not in self.futures:
-			data = {
-				"function": fn,
-				"args": args,
-				"kwargs": kwargs,
-				"last_update": datetime.now(),
-				"future": None,
-				"interval": interval,
-			}
-			self.futures[key] = data
-		self.__trigger(key)
-
-	def retrigger(self, key: str) -> None:
-		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
-
-	def get(self, key: str) -> Tuple[List[Type], List[Any]]:
-		info = []
-		status = []
-
-		if key in self.futures:
-			if self.futures[key]["triggered"] and self.futures[key]["future"].done():
-				self.futures[key]["last_update"] = datetime.now()
-				info, status = self.futures[key]["future"].result()
-				self.futures[key]["triggered"] = False
-				self.futures[key]["future"] = None
-			elif not self.futures[key]["triggered"] and (datetime.now() - self.futures[key]["last_update"]).seconds > self.futures[key]["interval"]:
-				self.retrigger(key)
-		return info, status
-
-	def shutdown(self) -> None:
-		self.executor.shutdown(wait = False, cancel_futures = True)
-
 def clusteroverviewloop(stdscr: curses.window, view):
 	global executor
 
@@ -7119,8 +7075,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	podinfo = []
 	pod_heatmap = []
 	events = []
-
-	executor = ReExecutor(max_workers = 5)
 
 	if not islocal:
 		executor.trigger("sysinfo", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml"))), selection = [control_plane_name])
@@ -7575,10 +7529,8 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		if retval == Retval.MATCH:
 			continue
 		if retval == Retval.RETURNONE:
-			executor.shutdown()
 			return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
-			executor.shutdown()
 			return retval
 
 # These are based on attributes of the name of the cmdata
