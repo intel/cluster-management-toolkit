@@ -11105,6 +11105,12 @@ def perform_action_on_configuration(uip: UIProps, items, action, values, kind, *
 	_retval = clear_screen()
 
 	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubectl_get_version()
+	if kubectl_major_version is None or kubectl_minor_version is None:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not extract ", "default"),
+				ANSIThemeString("kubectl", "programname"),
+				ANSIThemeString(" version; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 	args = [kubectl_path]
 	extra_options = []
 

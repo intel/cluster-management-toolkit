@@ -3641,7 +3641,7 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 	kubernetes_resources[kind]["info"] = infoview
 	kubernetes_resources[kind]["local"] = local
 
-def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
+def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[int], Optional[int], str]:
 	"""
 	Get kubectl & API-server version
 
@@ -3668,12 +3668,24 @@ def kubectl_get_version() -> Tuple[int, int, str, int, int, str]:
 	except yaml.scanner.ScannerError:
 		return -1, -1, "", -1, -1, ""
 
-	kubectl_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#major")))))
-	kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("clientVersion#minor")))))
-	server_major_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#major")))))
-	server_minor_version = int("".join(filter(str.isdigit, deep_get(version_data, DictPath("serverVersion#minor")))))
-	server_git_version = str(deep_get(version_data, DictPath("serverVersion#gitVersion")))
-	kubectl_git_version = str(deep_get(version_data, DictPath("clientVersion#gitVersion")))
+	kubectl_version = deep_get(version_data, DictPath("clientVersion"))
+	server_version = deep_get(version_data, DictPath("serverVersion"))
+	if kubectl_version is not None:
+		kubectl_major_version = int("".join(filter(str.isdigit, deep_get(kubectl_version, DictPath("major")))))
+		kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(kubectl_version, DictPath("minor")))))
+		kubectl_git_version = str(deep_get(kubectl_version, DictPath("gitVersion")))
+	else:
+		kubectl_major_version = None
+		kubectl_minor_version = None
+		kubectl_git_version = "<unavailable>"
+	if server_version is not None:
+		server_major_version = int("".join(filter(str.isdigit, deep_get(server_version, DictPath("major")))))
+		server_minor_version = int("".join(filter(str.isdigit, deep_get(server_version, DictPath("minor")))))
+		server_git_version = str(deep_get(server_version, DictPath("gitVersion")))
+	else:
+		server_major_version = None
+		server_minor_version = None
+		server_git_version = "<unavailable>"
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
 
