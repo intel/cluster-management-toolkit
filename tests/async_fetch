@@ -54,6 +54,10 @@ def main() -> None:
 
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
+	# Just to get coverage
+	executor = reexecutor.ReExecutor()
+	executor.shutdown()
+
 	executor = reexecutor.ReExecutor(max_workers = 6)
 
 	fetches = 42
@@ -98,6 +102,7 @@ def main() -> None:
 
 		if fetches < 0:
 			break
+	executor.shutdown()
 
 if __name__ == "__main__":
 	main()
