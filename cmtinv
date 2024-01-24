@@ -970,7 +970,7 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	if len(selection) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": no valid hosts or groups specified; aborting.", "default")], stderr = True)
+				ANSIThemeString(": No valid hosts or groups specified; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
 	playbooks = populate_playbooks()
@@ -1044,6 +1044,11 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 		selection = list(set(selection))
 	else:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+
+	if len(selection) == 0:
+		ansithemeprint([ANSIThemeString("Error", "error"),
+				ANSIThemeString(": No valid hosts or groups specified; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	print("Please stand by, attempting to ping hosts")
 	print()
@@ -1907,10 +1912,6 @@ def main() -> int:
 
 	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "inventory", theme = DEFAULT_THEME_FILE)
-
-	# cmtinv was called without any parameters; assuming inventory
-	if command is None:
-		command = inventory
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
