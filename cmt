@@ -2094,6 +2094,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	namespaced_header = ""
 	kind_header = ""
 	verbs_header = ""
+	cmt_support_header = ""
+	local_view_header = ""
 
 	if header:
 		name_header = "Name:"
@@ -2132,6 +2134,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 	sorted_list = sorted(sorted_list, key = itemgetter(sortkey2))
 
 	for name, shortnames, api_version, namespaced, kind, verbs in sorted_list:
+		kind_tuple = None
 		if kubernetes_resources is not None:
 			try:
 				api_group = ""
@@ -2164,8 +2167,6 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 						sys.exit(f"View-file {view_file} is invalid; aborting.")
 			except NameError:
 				kind_tuple = None
-		if kind_tuple is None:
-			continue
 
 		if namespaced_only is not None and namespaced != namespaced_only:
 			continue
