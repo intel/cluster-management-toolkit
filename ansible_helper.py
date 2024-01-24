@@ -299,7 +299,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
 		# Safe
 		key_value_regex = re.compile(r"^(.*?)(:)(.*)")
-		for i in range(0, len(dump)): # pylint: disable=consider-using-enumerate
+		for i, data in enumerate(dump):
 			# Is it a list?
 			tmp2 = list_regex.match(dump[i])
 			if tmp2 is not None:
@@ -324,7 +324,6 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 
 			# Nope, then we will use default format
 			dump[i] = [ANSIThemeString(dump[i], "default")]
-			return dump
 
 	return dump
 
