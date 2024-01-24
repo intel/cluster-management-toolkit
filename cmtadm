@@ -1045,6 +1045,12 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 					new_path = FilePath(str(PurePath(directory).joinpath(filename)))
 					args = [kubectl_path]
 					kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubernetes_helper.kubectl_get_version()
+					if kubectl_major_version is None or kubectl_minor_version is None:
+						ansithemeprint([ANSIThemeString("Critical", "critical"),
+								ANSIThemeString(": Could not extract ", "default"),
+								ANSIThemeString("kubectl", "programname"),
+								ANSIThemeString(" version; aborting.", "default")], stderr = True)
+						sys.exit(errno.ENOENT)
 					if kubectl_major_version <= 1 and kubectl_minor_version < 22:
 						args += ["create"]
 					else:
@@ -2590,6 +2596,12 @@ def __task_drain_control_planes(installation_info: Dict, verbose: bool = False) 
 		return
 
 	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubernetes_helper.kubectl_get_version()
+	if kubectl_major_version is None or kubectl_minor_version is None:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not extract ", "default"),
+				ANSIThemeString("kubectl", "programname"),
+				ANSIThemeString(" version; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	# Build the drain command line based on what version of kubectl is installed
 	args = ["/usr/bin/kubectl", "drain", "--ignore-daemonsets"]
@@ -5914,6 +5926,7 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 			clean_run (bool): True if nothing higher than "note" was returned, False otherwise
 	"""
 
+	abort: bool = False
 	critical: int = 0
 	error: int = 0
 	warning: int = 0
@@ -5948,7 +5961,9 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
-			critical, error, warning, note = call(cluster_name, kubeconfig, cmtlib.cmtconfig, user, critical, error, warning, note, **kwargs)
+			abort, critical, error, warning, note = call(cluster_name, kubeconfig, cmtlib.cmtconfig, user, critical, error, warning, note, **kwargs)
+			if abort:
+				break
 
 	ansithemeprint([ANSIThemeString("Summary:", "header")])
 	ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -5957,6 +5972,8 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 	ansithemeprint([ANSIThemeString(f"Warnings: {warning}", "warning")])
 	ansithemeprint([ANSIThemeString(f" Skipped: {skip}", "emphasis")])
 	ansithemeprint([ANSIThemeString(f"   Notes: {note}", "note")])
+	if abort:
+		ansithemeprint([ANSIThemeString("Testing aborted due to critical error.", "error")])
 
 	return critical + error + warning == 0
 

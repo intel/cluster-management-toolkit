@@ -530,6 +530,12 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 	# Check kubectl version
 	kubectl_major_version, kubectl_minor_version, _kubectl_git_version, _server_major_version, _server_minor_version, _server_git_version = kubectl_get_version()
+	if kubectl_major_version is None or kubectl_minor_version is None:
+		ansithemeprint([ANSIThemeString("Critical", "critical"),
+				ANSIThemeString(": Could not extract ", "default"),
+				ANSIThemeString("kubectl", "programname"),
+				ANSIThemeString(" version; aborting.", "default")], stderr = True)
+		sys.exit(errno.ENOENT)
 
 	_args = ["/usr/bin/kubectl", "drain"]
 
@@ -2183,7 +2189,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if kubernetes_resources is not None:
 			list_support = False
 			info_support = False
-			if kind_tuple in kubernetes_resources:
+			if kind_tuple is not None and kind_tuple in kubernetes_resources:
 				if "list" in kubernetes_resources[kind_tuple] and deep_get(kubernetes_resources[kind_tuple], DictPath("list")):
 					list_support = True
 					cmt_support.append("List")
