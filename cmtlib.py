@@ -102,7 +102,7 @@ def validate_name(rtype: str, name: str) -> bool:
 		return False
 
 	# Safe
-	name_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
+	name_regex = re.compile(r"^[a-z0-9]([-a-z0-9-]*[a-z0-9])?$")
 	# Safe
 	portname_regex = re.compile(r"^.*[a-z].*")
 

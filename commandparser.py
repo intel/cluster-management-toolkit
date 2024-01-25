@@ -188,7 +188,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 						ANSIThemeString("“ is not a valid path.", "default")], stderr = True)
 				sys.exit(errno.EINVAL)
 		elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
-			valid_dns_label = cmtlib.validate_name("dns-label", subarg)
+			valid_dns_label = cmtlib.validate_name("dns-subdomain", subarg)
 			if validators is not None:
 				valid_ipv4_address = validators.ipv4(subarg)
 				valid_ipv6_address = validators.ipv6(subarg)
@@ -197,7 +197,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				valid_ipv6_address = True
 
 			if validator in ("hostname", "hostname_or_path") and not valid_dns_label:
-				# If validation failed as subname we check if it's a valid path;
+				# If validation failed as subdomain we check if it's a valid path;
 				# this will need deeper checks in the main function
 				if validator == "hostname_or_path":
 					if Path(subarg).is_file():
