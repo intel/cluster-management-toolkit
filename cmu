@@ -5703,9 +5703,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 	if listgetter_async in (get_inventory_list, get_context_list):
 		# But the hosts can change status more frequently than that
-		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts)
-		async_data["pings"] = []
-		async_data["pings_lock"] = threading.Lock()
+		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, interval = -1)
 
 	while True:
 		if (result := executor.get("hosts")) != ([], []):
@@ -5736,6 +5734,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				for host in vlist_hosts_set - hosts_set:
 					for i, item in enumerate(vlist):
 						if deep_get(item, DictPath("name"), "") == host:
+							vlist[i]["status"] = "DELETED"
 							vlist[i]["__deleted"] = True
 			uip.force_update()
 
@@ -5745,14 +5744,18 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				host = deep_get(item, DictPath(match_key))
 				for result in deep_get(ansible_results, f"{host}", []):
 					if deep_get(result, DictPath("task")) == "Ping":
-						status = deep_get(result, DictPath("status"))
-						vlist[i]["status"] = status
+						if not deep_get(vlist[i], DictPath("__deleted"), False):
+							status = deep_get(result, DictPath("status"))
+							vlist[i]["status"] = status
 						ips = []
 						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv4#address"), "")) > 0:
 							ips.append(ip)
 						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv6#address"), "")) > 0:
 							ips.append(ip)
 						vlist[i]["ips"] = ips
+			with async_data["hosts_lock"]:
+				executor.update("pings", selection = async_data["hosts"])
+				executor.retrigger("pings")
 			uip.force_update()
 
 		if uip.is_update_triggered():
@@ -5817,9 +5820,9 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.statusbar.erase()
 
 			# if uip.continuous_log:
-			# 	interval = "Continuous"
+			#	interval = "Continuous"
 			# else:
-			# 	interval = "Manual"
+			#	interval = "Manual"
 
 			statusarray1: List[Union[ThemeRef, ThemeString]] = []
 
