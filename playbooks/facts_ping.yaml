@@ -1,0 +1,22 @@
+- hosts: "selection"
+  name: "Ping nodes by returning IPv4/IPv6-addresses"
+  vars:
+    metadata:
+      description: "Ping nodes by returning IPv4/IPv6-addresses"
+      summary:
+        "Other actions":
+          - description: "Ping nodes by returning IPv4/IPv6-addresses"
+      # playbook_types:
+      # - "internal"
+      category: "Information"
+      quiet: true
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Ping"
+      ansible.builtin.setup:
+        gather_subset:
+          - "!min"
+          - "!all"
+          - "all_ipv4_addresses"
+          - "all_ipv6_addresses"

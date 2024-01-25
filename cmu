@@ -4756,46 +4756,6 @@ def get_pod_resource_list(obj, **kwargs):
 
 	return vlist, 200
 
-def get_host_ips(name: str) -> Dict:
-	ips = []
-
-	# XXX: We should probably rewrite this to use getaddrinfo() instead,
-	#      to handle IPv6
-	try:
-		ips = [socket.gethostbyname(name)]
-	except socket.gaierror as e:
-		if str(e).endswith("Name or service not known"):
-			pass
-		elif str(e).endswith("No address associated with hostname"):
-			pass
-		elif str(e).endswith("Temporary failure in name resolution"):
-			pass
-		else:
-			sys.exit(f"gethostbyname failed on {name}; {e}")
-	except OSError as e:
-		sys.exit(f"gethostbyname failed on {name}; {e}")
-
-	# This only happens if you run the command on one of the hosts in the inventory
-	if ips != [] and ips[0].startswith("127."):
-		ips = []
-
-		# Get all interfaces with global scope
-		output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8", errors = "replace")
-		# Safe
-		iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
-
-		for line in output.splitlines():
-			tmp = iface_addr_regex.match(line)
-			if tmp is not None:
-				iface = tmp[1]
-				addr = tmp[2]
-				# There are probably a lot of other things we should exclude,
-				# but let's start with these
-				if iface.startswith(("docker", "weave", "vxlan.calico", "virbr")):
-					continue
-				ips.append(addr)
-	return ips
-
 # This function is really just used as a cookie at the moment
 def get_inventory_list() -> None:
 	return
@@ -5743,7 +5703,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 	if listgetter_async in (get_inventory_list, get_context_list):
 		# But the hosts can change status more frequently than that
-		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = hosts)
+		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts)
 		async_data["pings"] = []
 		async_data["pings_lock"] = threading.Lock()
 
@@ -5764,11 +5724,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				# Only add hosts that aren't part of vlist already
 				inventory_dict = ansible_get_inventory_dict()
 				for host in hosts_set - vlist_hosts_set:
-					ips = get_host_ips(host)
 					vlist.append({
 						"name": host,
 						"ref": host,
-						"ips": ips,
+						"ips": [],
 						"ansible_groups": ansible_get_groups_by_host(inventory_dict, host),
 						"status": "UNKNOWN",
 						"__deleted": False,
@@ -5788,6 +5747,12 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					if deep_get(result, DictPath("task")) == "Ping":
 						status = deep_get(result, DictPath("status"))
 						vlist[i]["status"] = status
+						ips = []
+						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv4#address"), "")) > 0:
+							ips.append(ip)
+						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv6#address"), "")) > 0:
+							ips.append(ip)
+						vlist[i]["ips"] = ips
 			uip.force_update()
 
 		if uip.is_update_triggered():
