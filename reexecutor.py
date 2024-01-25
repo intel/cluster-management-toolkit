@@ -7,6 +7,7 @@ A wrapper for using futures
 
 import concurrent.futures
 from datetime import datetime
+import sys
 import threading
 from typing import Any, Callable, List, Optional, Tuple, Type
 
@@ -78,6 +79,9 @@ class ReExecutor:
 		Shutdown the executor
 		"""
 		self.flush()
-		# Maybe check for python version and use:
-		# self.executor.shutdown(wait = False, cancel_futures = True)
-		self.executor.shutdown(wait = False)
+		version_tuple = sys.version_info
+		# If cancel_futures is supported we should use it
+		if sys.version_info[0:1] >= (3, 9):
+			self.executor.shutdown(wait = False, cancel_futures = True)
+		else:
+			self.executor.shutdown(wait = False)
