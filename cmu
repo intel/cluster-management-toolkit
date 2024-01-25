@@ -7388,7 +7388,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 		if len(nodeinfo) > 0 and len(podinfo) > 0:
 			node_heatmap_xpos = 0
-			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 3
+			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
 			selectednodetaints = generators.format_list(nodeinfo[selected_node].taints, node_heatmap_width, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
 
