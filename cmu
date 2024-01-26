@@ -47,7 +47,7 @@ import subprocess # nosec
 from subprocess import PIPE, STDOUT # nosec
 import sys
 import threading
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
 	import yaml
 except ModuleNotFoundError:
@@ -97,8 +97,6 @@ from formatter import formatter_allowlist # pylint: disable=wrong-import-order
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
-from ansible_helper import ansible_extract_failure
-from ansible_helper import ansible_async_get_data, ansible_ping_async, ansible_run_playbook_on_selection_async
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 

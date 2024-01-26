@@ -19,6 +19,9 @@
 
 """
 Log parsers for cmu
+
+unit-tests:
+	tests/logtests
 """
 
 # pylint: disable=line-too-long
@@ -171,15 +174,7 @@ def month_to_numerical(month: str) -> str:
 	"""
 
 	months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-	month = str(month.lower()[0:3]).zfill(2)
-
-	y = 1
-	for tmp in months:
-		if month == tmp:
-			return str(y).zfill(2)
-		y += 1
-
-	raise TypeError("No matching month")
+	return f"{months.index(month.lower()[0:3]):02}"
 
 # Mainly used by glog
 def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
@@ -195,7 +190,7 @@ def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optio
 
 	return severities.get(letter, default)
 
-# Used by Kiali; anything else?
+# Used by Kiali and kubeshark
 def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
 	severities = {
 		"ERR": LogLevel.ERR,
