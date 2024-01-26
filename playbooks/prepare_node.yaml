@@ -27,7 +27,7 @@
         # Disable swap during this boot
         swapoff -a
         # Disable swap entries in /etc/fstab
-        sed -i -e 's,^/swapfile,#&,;s,^/swap.img,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
+        sed -i -e 's,^/swapfile.*,#&,;s,^/swap.img.*,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
         # Disable swap units
         swapunits="$(systemctl --type swap -o json-pretty)"
         if [ $(echo "${swapunits}" | grep -c "0 loaded units listed") -eq 0 ]; then
