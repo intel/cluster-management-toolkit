@@ -1,0 +1,158 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+
+# unit-tests for logparser.py
+
+import sys
+from typing import Dict, Tuple
+
+from cmtio import execute_command, execute_command_with_response, expand_path, secure_read_string, secure_which, secure_write_string
+from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from cmttypes import LogLevel, loglevel_mappings
+import logparser as logparsers
+
+def test_get_loglevel_names_and_name_to_loglevel() -> Tuple[str, bool]:
+	verbose = False
+	message = ""
+	result = True
+	loglevels = []
+
+	tmp = logparsers.get_loglevel_names()
+	if verbose:
+		print(f"  loglevel_names: {tmp}")
+
+	if tmp is None:
+		message = "get_loglevel_names() returned None"
+		result = False
+	elif not isinstance(tmp, list):
+		message = f"get_loglevel_names() returned wrong type ({type(tmp)}), expected list"
+		result = False
+	elif len(tmp) == 0:
+		message = "get_loglevel_names() returned an empty list"
+		result = False
+	else:
+		loglevels = tmp
+		for loglevel in loglevels:
+			tmp = logparsers.name_to_loglevel(loglevel)
+			if tmp is None:
+				message = f"name_to_loglevel() returned None for valid indata {loglevel}"
+			elif not isinstance(tmp, LogLevel):
+				message = f"name_to_loglevel() returned wrong type ({type(tmp)}) for indata {loglevel}, expected LogLevel"
+				result = False
+				break
+			if verbose:
+				print(f"  <{tmp}>: {loglevel}")
+
+	if result:
+		try:
+			logparsers.name_to_loglevel("NOT A LOGLEVEL")
+			message = "name_to_loglevels() silently accepted invalid input"
+			result = False
+		except ValueError:
+			pass
+
+	return message, result
+
+def test_month_to_numerical() -> bool:
+	verbose = False
+	message = ""
+	result = True
+
+	for month in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
+		tmp = logparsers.month_to_numerical(month)
+		if tmp is None:
+			message = f"month_to_numerical() returned None with indata: {month}"
+			result = False
+		elif not isinstance(tmp, str):
+			message = f"month_to_numerical() returned wrong type ({type(tmp)}) for indata {month}, expected str"
+			result = False
+		else:
+			if verbose:
+				print(f"{tmp}: {month.capitalize()}")
+
+	if result:
+		try:
+			logparsers.month_to_numerical("NOT A MONTH")
+			message = "month_to_numerical() silently accepted invalid input (NOT A MONTH)"
+			result = False
+		except ValueError:
+			pass
+
+	return message, result
+
+def test_letter_to_severity() -> bool:
+	verbose = False
+	message = ""
+	result = True
+
+	for letter in ("F", "E", "W", "N", "C", "I", "D"):
+		tmp = logparsers.letter_to_severity(letter)
+		if tmp is None:
+			message = f"letter_to_severity() returned None with indata: {letter}"
+			result = False
+		elif not isinstance(tmp, LogLevel):
+			message = f"letter_to_severity() returned wrong type ({type(tmp)}) for indata {letter}, expected LogLevel"
+			result = False
+		else:
+			if verbose:
+				print(f"<{letter}>: {logparsers.letter_to_severity(letter)}")
+
+	if result:
+		# If we don't pass a default we should get None
+		tmp = logparsers.letter_to_severity("#")
+		if tmp is not None:
+			message = f"letter_to_severity(default = None) returned {tmp} with invalid indata: (#), expected: None"
+			result = False
+
+	if result:
+		# If we pass a default we should get that default back if the severity is invalid
+		tmp = logparsers.letter_to_severity("#", default = LogLevel.NOTICE)
+		if tmp is None:
+			message = f"letter_to_severity(default = LogLevel.NOTICE) returned None with invalid indata: (#), expected: LogLevel.NOTICE"
+			result = False
+		elif not isinstance(tmp, LogLevel):
+			message = f"letter_to_severity() returned wrong type ({type(tmp)}) for invalid indata {letter} with default LogLevel.NOTICE, expected LogLevel"
+			result = False
+		elif tmp != LogLevel.NOTICE:
+			message = f"letter_to_severity() returned value ({repr(tmp)}) for invalid indata {letter} with default LogLevel.NOTICE, expected LogLevel.NOTICE"
+			result = False
+
+	return message, result
+
+tests: Dict = {
+	("get_loglevel_names()", "name_to_loglevel()"): {
+		"callable": test_get_loglevel_names_and_name_to_loglevel,
+		"result": None,
+	},
+	("month_to_numerical()", ): {
+		"callable": test_month_to_numerical,
+		"result": None,
+	},
+	("letter_to_severity", ): {
+		"callable": test_letter_to_severity,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	fail = 0
+
+	for i, test in enumerate(tests):
+		print(f"[{i:03}/{len(tests) - 1:03}] {', '.join(test)}:")
+		message, result = tests[test]["callable"]()
+		if len(message) > 0:
+			print(f"  \033[1;31mFAIL\033[0m: {message}")
+		else:
+			print("  \033[1;32mPASS\033[0m")
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+
+	return fail
+
+if __name__ == "__main__":
+	main()

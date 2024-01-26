@@ -1,7 +1,7 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch
-test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py reexecutor.py
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests
+test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py reexecutor.py logparser.py formatter.py curses_helper.py
 
 # Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
@@ -143,7 +143,7 @@ nox: create_test_symlinks
 		exit 0; \
 	fi; \
 	printf -- "Running nox for unit testing\n\n"; \
-	$$cmd || true; \
+	$$cmd --no-reuse-existing-virtualenvs || true; \
 	printf -- "\n-----\n\n"
 
 validate_yaml:
@@ -209,9 +209,17 @@ setup_tests: create_test_symlinks
 	 chmod o+w 03-wrong_dir_permissions ;\
 	 chmod o+w 01-wrong_permissions )
 
+async_fetch: setup_tests
+	@printf -- "\n\nRunning async_fetch to check that reexecutor.py behaves as expected\n\n"; \
+	(cd tests && ./async_fetch)
+
 iotests: setup_tests
-	@printf -- "\n\nRunning iotests to check that the I/O-helpers in cmtio behave as expected\n\n"; \
+	@printf -- "\n\nRunning iotests to check that the cmtio.py behave as expected\n\n"; \
 	(cd tests && ./iotests)
+
+logtests: setup_tests
+	@printf -- "\n\nRunning logtests to check that the logparser.py behave as expected\n\n"; \
+	(cd tests && ./logtests)
 
 check_theme_use: setup_tests
 	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \
