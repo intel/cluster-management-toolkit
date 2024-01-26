@@ -178,6 +178,16 @@ def month_to_numerical(month: str) -> str:
 
 # Mainly used by glog
 def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 1-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 1-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"F": LogLevel.EMERG,
 		"E": LogLevel.ERR,
@@ -192,6 +202,16 @@ def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optio
 
 # Used by Kiali and kubeshark
 def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 3-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 3-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"ERR": LogLevel.ERR,
 		"WRN": LogLevel.WARNING,
@@ -200,6 +220,16 @@ def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 	return severities.get(string.upper(), default)
 
 def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 4-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 4-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"CRIT": LogLevel.CRIT,
 		"FATA": LogLevel.CRIT,
@@ -213,6 +243,16 @@ def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 	return severities.get(string.upper(), default)
 
 def str_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a severity string to a LogLevel
+
+		Parameters:
+			letter (str): A severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"fatal": LogLevel.CRIT,
 		"error": LogLevel.ERR,
@@ -229,6 +269,15 @@ def str_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional
 	return severities.get(string.lower(), default)
 
 def lvl_to_letter_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a 1-letter severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "C",
 		LogLevel.ERR: "E",
@@ -241,6 +290,15 @@ def lvl_to_letter_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def lvl_to_4letter_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a 4-letter severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "CRIT",
 		LogLevel.ERR: "ERRO",
@@ -253,6 +311,15 @@ def lvl_to_4letter_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def lvl_to_word_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "CRITICAL",
 		LogLevel.ERR: "ERROR",
@@ -265,6 +332,18 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+	"""
+	Remove a bracketed severity prefix from a string
+
+		Parameters:
+			message: A string to strip a severity prefix from
+			default: The default severity to use if no LogLevel prefix can be found
+		Returns:
+			(str, LogLevel):
+				str: The input string with the severity prefix removed
+				LogLevel: The extracted LogLevel
+	"""
+
 	severities = {
 		"[fatal]": LogLevel.CRIT,
 		# This is for ingress-nginx; while alert is higher than crit in syslog terms,
@@ -294,7 +373,19 @@ def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) ->
 
 	return message, severity
 
-def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+def split_colon_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+	"""
+	Remove a colon severity prefix from a string
+
+		Parameters:
+			message: A string to strip a severity prefix from
+			default: The default severity to use if no LogLevel prefix can be found
+		Returns:
+			(str, LogLevel):
+				str: The input string with the severity prefix removed
+				LogLevel: The extracted LogLevel
+	"""
+
 	severities = {
 		"CRITICAL:": LogLevel.CRIT,
 		"ERROR:": LogLevel.ERR,
@@ -308,10 +399,13 @@ def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tu
 	# Safe
 	tmp = re.match(r"^([A-Za-z]+?:) ?(.*)", message)
 	if tmp is not None:
-		_severity = severities.get(tmp[1].upper())
-		if _severity is not None:
+		severity = severities.get(tmp[1].upper())
+		if severity is not None:
 			message = tmp[2]
-			severity = _severity
+		else:
+			severity = default
+	else:
+		severity = default
 
 	return message, severity
 
