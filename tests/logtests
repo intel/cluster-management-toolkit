@@ -15,8 +15,7 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 from cmttypes import LogLevel, loglevel_mappings
 import logparser as logparsers
 
-def test_get_loglevel_names_and_name_to_loglevel() -> Tuple[str, bool]:
-	verbose = False
+def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 	loglevels = []
@@ -62,7 +61,7 @@ def test_get_loglevel_names_and_name_to_loglevel() -> Tuple[str, bool]:
 
 	return message, result
 
-def test_month_to_numerical() -> bool:
+def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 	verbose = False
 	message = ""
 	result = True
@@ -143,6 +142,43 @@ def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
 def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
 	return generic_str_to_severity(valid_strs = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
 
+def generic_lvl_to_severity(valid_lvls: Tuple[LogLevel], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	for indata in valid_lvls:
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, str):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
+			result = False
+		else:
+			if verbose:
+				print(f"<{indata}>: {fun(indata)}")
+
+	if result:
+		indata = -42
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			result = False
+		elif tmp != "!ERROR IN LOGPARSER!":
+			message = f"{fun_str}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			result = False
+
+	return message, result
+
+def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_letter_severity, fun_str = "logparsers.lvl_to_letter_severity")
+
+def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_4letter_severity, fun_str = "logparsers.lvl_to_4letter_severity")
+
+def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_word_severity, fun_str = "logparsers.lvl_to_word_severity")
+
 tests: Dict = {
 	("get_loglevel_names()", "name_to_loglevel()"): {
 		"callable": test_get_loglevel_names_and_name_to_loglevel,
@@ -168,14 +204,27 @@ tests: Dict = {
 		"callable": test_str_to_severity,
 		"result": None,
 	},
+	("lvl_to_letter_severity", ): {
+		"callable": test_lvl_to_letter_severity,
+		"result": None,
+	},
+	("lvl_to_4letter_severity", ): {
+		"callable": test_lvl_to_4letter_severity,
+		"result": None,
+	},
+	("lvl_to_word_severity", ): {
+		"callable": test_lvl_to_word_severity,
+		"result": None,
+	},
 }
 
 def main() -> int:
 	fail = 0
+	verbose = False
 
 	for i, test in enumerate(tests):
 		print(f"[{i:03}/{len(tests) - 1:03}] {', '.join(test)}:")
-		message, result = tests[test]["callable"]()
+		message, result = tests[test]["callable"](verbose = verbose)
 		if len(message) > 0:
 			print(f"  \033[1;31mFAIL\033[0m: {message}")
 		else:
