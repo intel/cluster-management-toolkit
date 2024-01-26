@@ -7,10 +7,10 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 import faulthandler
 faulthandler.enable()
 
-import concurrent.futures
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, List, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -37,14 +37,7 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
 	if len(sort_key) > 0:
 		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
-	if postprocess == "node":
-		vlist = get_node_info(vlist, extra_vars = {})
-		extra_data = [s.status_group for s in vlist]
-	elif postprocess == "pod":
-		vlist = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
-		extra_data = [s.status_group for s in vlist]
-	else:
-		extra_data = _status
+	extra_data = _status
 	if limit is not None:
 		vlist = vlist[:limit]
 	return vlist, extra_data

@@ -1,11 +1,13 @@
 import nox
 
 @nox.session
-def test_asynchronous_fetch(session):
-	session.install("cryptography")
+def test_reexecutor(session):
 	session.install("natsort")
-	session.install("ujson")
-	session.install("urllib3")
-	session.install("pyyaml")
 	session.run("tests/async_fetch", external = True)
 
+@nox.session
+def test_logparser(session):
+	session.install("natsort")
+	session.install("ujson")
+	session.install("pyyaml")
+	session.run("tests/logtests", external = True)
