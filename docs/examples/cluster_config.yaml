@@ -335,10 +335,8 @@ nodes:
             taints:
             - key: node.kubernetes.io/unschedulable
               effect: NoSchedule
-            unschedulable: true
           {% else %}
             taints: []
-            unschedulable: false
           {% endif %}
           discovery:
             bootstrapToken:
@@ -361,106 +359,104 @@ nodes:
     # <group name1>:
     # # A list of all nodes that belong to this group; leave empty
     # # if only configuring a control plane at this time
-    # nodes:
-    # - "<node 1>"
+    #   nodes:
+    #   - "<node 1>"
 
-    # # Group specific options
-    # options:
-    #   # CRI to use for the nodes in this group; valid options:
-    #   # containerd
-    #   # docker-shim [Kubernetes < 1.24]
-    #   # cri-o
-    #   # [optional; if not provided the cluster-wide default will be used]
-    #   # cri: "containerd"
+    #   # Group specific options
+    #   options:
+    #     # CRI to use for the nodes in this group; valid options:
+    #     # containerd
+    #     # docker-shim [Kubernetes < 1.24]
+    #     # cri-o
+    #     # [optional; if not provided the cluster-wide default will be used]
+    #     # cri: "containerd"
 
-    #   # Ansible parallelism:
-    #   # [optional; default: 5]
-    #   # forks: 5
+    #     # Ansible parallelism:
+    #     # [optional; default: 5]
+    #     # forks: 5
 
-    #   # Cordon nodes on join:
-    #   # [optional; default: false]
-    #   # cordonOnJoin: false
+    #     # Cordon nodes on join:
+    #     # [optional; default: false]
+    #     # cordonOnJoin: false
 
-    #   # Node configuration templates:
-    #   # The configuration templates can either be embedded in the data
-    #   # section, or provided via a path; Only one of data/path is valid for each type
-    #   # of configuration; providing both is NOT supported.
-    #   # The post-processed templates will be concatenated together before passing them
-    #   # to kubeadm. Currently only JoinConfiguration is supported for worker nodes.
-    #   # The templates will be processed by jinja; the following variables are available:
-    #   # cri_socket
-    #   # join_token
-    #   # ca_cert_hash
-    #   # control_plane_ip
-    #   # control_plane_port
-    #   # control_plane_path
-    #   # pod_network_cidr
-    #   configurationTemplates:
-    #     rke2Configuration:
-    #       # Embedded cluster configuration template:
-    #       data: |
-    #         # This will be auto-populated from the cluster settings
-    #         server: "https://{{ control_plane_ip }}:9345"
-    #         # This will be auto-populated from the cluster settings
-    #         container-runtime-endpoint: "{{ cri_socket }}"
-    #         # This will be auto-populated from the newly generated cluster
-    #         token: "{{ node_token }}"
-    #         kubelet-arg:
-    #         # feature-gates is a comma-separated string
-    #         # To Enable Dynamic Resource Allocations use the following:
-    #         # Note: also requires alpha APIs and the matching feature gates
-    #         # to be enabled for apiServer and scheduler in cluster_configuration,
-    #         # as well as in kube_proxy_configuration, and kubelet_configuration
-    #         # [optional; default: ""]
-    #         # - feature-gates=DynamicResourceAllocation=true
-    #         # The cgroup driver to use
-    #         - cgroup-driver=systemd
-    #         kube-proxy-arg:
-    #         # feature-gates is a comma-separated string
-    #         # To Enable Dynamic Resource Allocations use the following:
-    #         # Note: also requires alpha APIs and the matching feature gates
-    #         # to be enabled for apiServer and scheduler in cluster_configuration,
-    #         # as well as in kube_proxy_configuration, and kubelet_configuration
-    #         # [optional; default: ""]
-    #         # - feature-gates=DynamicResourceAllocation=true
+    #     # Node configuration templates:
+    #     # The configuration templates can either be embedded in the data
+    #     # section, or provided via a path; Only one of data/path is valid for each type
+    #     # of configuration; providing both is NOT supported.
+    #     # The post-processed templates will be concatenated together before passing them
+    #     # to kubeadm. Currently only JoinConfiguration is supported for worker nodes.
+    #     # The templates will be processed by jinja; the following variables are available:
+    #     # cri_socket
+    #     # join_token
+    #     # ca_cert_hash
+    #     # control_plane_ip
+    #     # control_plane_port
+    #     # control_plane_path
+    #     # pod_network_cidr
+    #     configurationTemplates:
+    #       rke2Configuration:
+    #         # Embedded cluster configuration template:
+    #         data: |
+    #           # This will be auto-populated from the cluster settings
+    #           server: "https://{{ control_plane_ip }}:9345"
+    #           # This will be auto-populated from the cluster settings
+    #           container-runtime-endpoint: "{{ cri_socket }}"
+    #           # This will be auto-populated from the newly generated cluster
+    #           token: "{{ node_token }}"
+    #           kubelet-arg:
+    #           # feature-gates is a comma-separated string
+    #           # To Enable Dynamic Resource Allocations use the following:
+    #           # Note: also requires alpha APIs and the matching feature gates
+    #           # to be enabled for apiServer and scheduler in cluster_configuration,
+    #           # as well as in kube_proxy_configuration, and kubelet_configuration
+    #           # [optional; default: ""]
+    #           # - feature-gates=DynamicResourceAllocation=true
+    #           # The cgroup driver to use
+    #           - cgroup-driver=systemd
+    #           kube-proxy-arg:
+    #           # feature-gates is a comma-separated string
+    #           # To Enable Dynamic Resource Allocations use the following:
+    #           # Note: also requires alpha APIs and the matching feature gates
+    #           # to be enabled for apiServer and scheduler in cluster_configuration,
+    #           # as well as in kube_proxy_configuration, and kubelet_configuration
+    #           # [optional; default: ""]
+    #           # - feature-gates=DynamicResourceAllocation=true
 
-    #       # Path to node configuration template, relative to the playbook directory:
-    #       # path: "templates/config/rke2_agent_configuration.yaml.j2"
+    #         # Path to node configuration template, relative to the playbook directory:
+    #         # path: "templates/config/rke2_agent_configuration.yaml.j2"
 
-    #     joinConfiguration:
-    #       # Embedded node configuration template:
-    #       data: |
-    #         apiVersion: kubeadm.k8s.io/v1beta3
-    #         kind: JoinConfiguration
-    #         nodeRegistration:
-    #           # This will be auto-populated from the node group settings; only change if you know what you're doing
-    #           criSocket: "{{ cri_socket }}"
-    #           # Use this to add labels to the nodes
-    #           # kubeletExtraArgs:
-    #           #   node-labels: "foo=bar"
-    #           # A list of taints; an empty list means no taints
-    #           # This will be auto-populated from the node group settings; add extra taints below if wanted
-    #         {% if cordon_nodes_on_join %}
-    #           taints:
-    #           - key: node.kubernetes.io/unschedulable
-    #             effect: NoSchedule
-    #           unschedulable: true
-    #         {% else %}
-    #           taints: []
-    #           unschedulable: false
-    #         {% endif %}
-    #         discovery:
-    #           bootstrapToken:
-    #             # This will be auto-populated; only change if you know what you're doing
-    #             token: "{{ join_token }}"
-    #             caCertHashes:
-    #             # This will be auto-populated; only change if you know what you're doing
-    #             - "sha256:{{ ca_cert_hash }}"
-    #             # This will be auto-populated; only change if you know what you're doing
-    #             apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+    #       joinConfiguration:
+    #         # Embedded node configuration template:
+    #         data: |
+    #           apiVersion: kubeadm.k8s.io/v1beta3
+    #           kind: JoinConfiguration
+    #           nodeRegistration:
+    #             # This will be auto-populated from the node group settings; only change if you know what you're doing
+    #             criSocket: "{{ cri_socket }}"
+    #             # Use this to add labels to the nodes
+    #             # kubeletExtraArgs:
+    #             #   node-labels: "foo=bar"
+    #             # A list of taints; an empty list means no taints
+    #             # This will be auto-populated from the node group settings; add extra taints below if wanted
+    #           {% if cordon_nodes_on_join %}
+    #             taints:
+    #             - key: node.kubernetes.io/unschedulable
+    #               effect: NoSchedule
+    #           {% else %}
+    #             taints: []
+    #           {% endif %}
+    #           discovery:
+    #             bootstrapToken:
+    #               # This will be auto-populated; only change if you know what you're doing
+    #               token: "{{ join_token }}"
+    #               caCertHashes:
+    #               # This will be auto-populated; only change if you know what you're doing
+    #               - "sha256:{{ ca_cert_hash }}"
+    #               # This will be auto-populated; only change if you know what you're doing
+    #               apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
 
-    #       # Path to node configuration template, relative to the playbook directory:
-    #       # path: "templates/config/join_configuration.yaml.j2"
+    #         # Path to node configuration template, relative to the playbook directory:
+    #         # path: "templates/config/join_configuration.yaml.j2"
 workloads:
   # The name of the workload
   # [mandatory]
@@ -518,7 +514,8 @@ workloads:
   - kubectl:
       method: "apply"
       type: "file"
-      uri: "https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.crds.yaml"
+      version: "v1.13.3"
+      uri: "https://github.com/cert-manager/cert-manager/releases/download/<<<version>>>/cert-manager.crds.yaml"
   - helm:
       # The name of the helm repo to add
       repoName: "jetstack"
@@ -533,9 +530,8 @@ workloads:
       # Create the namespace if it doesn't exist?
       createNamespace: true
       # The version to install
-      version: "v1.13.2"
+      version: "v1.13.3"
 - name: "intel-resource-drivers-for-kubernetes"
-  skip: true
   description: |
     Intel GPU resource driver is a better alternative for Intel GPU device plugin,
     facilitating workload offloading by providing GPU access on Kubernetes cluster worker nodes.
@@ -555,8 +551,8 @@ workloads:
       type: "file"
       # Multiple applies can be defined at once as long as they are the same type
       uri:
-      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/static/crds/"
-      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-class.yaml"
-      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver-namespace.yaml"
-      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-defaults.yaml"
-      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/resource-driver.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/gpu/static/crds/"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/gpu/resource-class.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/gpu/resource-driver-namespace.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/gpu/resource-defaults.yaml"
+      - "file://{HOME}/git/intel-resource-drivers-for-kubernetes/deployments/gpu/resource-driver.yaml"
