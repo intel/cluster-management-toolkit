@@ -60,6 +60,7 @@ def main() -> None:
 	executor.trigger("namespace", 2, get_kubernetes_list_async, kind = ("Namespace", ""))
 	executor.trigger("secret", 4, get_kubernetes_list_async, kind = ("Secret", ""))
 	executor.trigger("configmap", 5, get_kubernetes_list_async, kind = ("ConfigMap", ""))
+	executor.update("configmap", kind = ("ConfigMap", ""))
 	executor.trigger("service", 2, get_kubernetes_list_async, kind = ("Service", ""))
 
 	while True:
