@@ -4561,7 +4561,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						sys.exit(errno.EINVAL)
 
 
-					if wtype not in ("embedded", "file", "kustomization", "secret+tls"):
+					if wtype not in ("embedded", "file", "kustomization", "namespace", "secret+tls"):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The type ", "default"),
 								ANSIThemeString(f"{wtype}", "argument"),
@@ -4569,6 +4569,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(f"{name}", "argument"),
 								ANSIThemeString(" is invalid; only ", "default"),
 								ANSIThemeString("embedded", "emphasis"),
+								ANSIThemeString(", ", "default"),
+								ANSIThemeString("namespace", "emphasis"),
 								ANSIThemeString(", ", "default"),
 								ANSIThemeString("secret+tls", "emphasis"),
 								ANSIThemeString(", and ", "default"),
@@ -4601,7 +4603,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 								ANSIThemeString(" deployments; aborting.", "default")], stderr = True)
 						sys.exit(errno.EINVAL)
 
-					if wtype != "secret+tls" and (uris is None and data is None or uris is not None and data is not None):
+					if wtype not in ("namespace", "secret+tls") and (uris is None and data is None or uris is not None and data is not None):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
@@ -4652,6 +4654,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						args += ["-f"]
 					elif wtype == "kustomization":
 						args += ["-k"]
+					elif wtype == "namespace":
+						args = [kubectl_path, "create", "namespace", pname]
 					elif wtype == "secret+tls":
 						# secret + tls needs to run as sudo to be able to access /etc/kubernetes/pki
 						args = [sudo_path, kubectl_path, "create", "--kubeconfig", KUBE_CONFIG_FILE, "secret", "tls", pname, "--cert", cert, "--key", key]
@@ -4690,7 +4694,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							check_and_print_status(execute_command(args + [uri], env = env))
 						else:
 							check_and_print_status(execute_command_with_response(args + [uri], env = env))
-					if wtype == "secret+tls":
+					if wtype in ("namespace", "secret+tls"):
 						dry_run_result = execute_command_with_response(args + ["--dry-run=server"], env = env)
 						if not "already exists" in dry_run_result:
 							if verbose:
@@ -6189,7 +6193,7 @@ COMMANDLINE = {
 			 ANSIThemeString("...", "argument"),
 			 ANSIThemeString(" is not specified", "description")],
 			[ANSIThemeString("all clusters in ", "description"),
-			 ANSIThemeString(f"~/.kube/config", "path")],
+			 ANSIThemeString("~/.kube/config", "path")],
 			[ANSIThemeString("will be imported", "description")],
 		],
 		"options": {
