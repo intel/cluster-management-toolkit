@@ -8,7 +8,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # unit-tests for logparser.py
 
 import sys
-from typing import Dict, Tuple
+from typing import Callable, Dict, Tuple
 
 from cmtio import execute_command, execute_command_with_response, expand_path, secure_read_string, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
@@ -21,36 +21,41 @@ def test_get_loglevel_names_and_name_to_loglevel() -> Tuple[str, bool]:
 	result = True
 	loglevels = []
 
-	tmp = logparsers.get_loglevel_names()
+	fun = logparsers.get_loglevel_names
+	fun_str = "logparsers.get_loglevel_names"
+	tmp = fun()
 	if verbose:
 		print(f"  loglevel_names: {tmp}")
 
 	if tmp is None:
-		message = "get_loglevel_names() returned None"
+		message = f"{fun_str}() returned None"
 		result = False
 	elif not isinstance(tmp, list):
-		message = f"get_loglevel_names() returned wrong type ({type(tmp)}), expected list"
+		message = f"{fun_str}() returned wrong type ({type(tmp)}), expected list"
 		result = False
 	elif len(tmp) == 0:
-		message = "get_loglevel_names() returned an empty list"
+		message = "{fun_str}() returned an empty list"
 		result = False
 	else:
 		loglevels = tmp
-		for loglevel in loglevels:
-			tmp = logparsers.name_to_loglevel(loglevel)
+		fun_str = "logparsers.name_to_loglevel"
+		fun = logparsers.name_to_loglevel
+		for indata in loglevels:
+			tmp = fun(indata)
 			if tmp is None:
-				message = f"name_to_loglevel() returned None for valid indata {loglevel}"
+				message = f"{fun_str}() returned None for valid indata {indata}"
 			elif not isinstance(tmp, LogLevel):
-				message = f"name_to_loglevel() returned wrong type ({type(tmp)}) for indata {loglevel}, expected LogLevel"
+				message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected LogLevel"
 				result = False
 				break
 			if verbose:
-				print(f"  <{tmp}>: {loglevel}")
+				print(f"  <{tmp}>: {indata}")
 
 	if result:
 		try:
-			logparsers.name_to_loglevel("NOT A LOGLEVEL")
-			message = "name_to_loglevels() silently accepted invalid input"
+			indata = "NOT A LOGLEVEL"
+			fun(indata)
+			message = f"{fun_str}() silently accepted invalid indata {indata}"
 			result = False
 		except ValueError:
 			pass
@@ -62,66 +67,81 @@ def test_month_to_numerical() -> bool:
 	message = ""
 	result = True
 
-	for month in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
-		tmp = logparsers.month_to_numerical(month)
+	for indata in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
+		fun = logparsers.month_to_numerical
+		fun_str = "logparsers.month_to_numerical"
+		tmp = fun(indata)
 		if tmp is None:
-			message = f"month_to_numerical() returned None with indata: {month}"
+			message = f"{fun_str}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, str):
-			message = f"month_to_numerical() returned wrong type ({type(tmp)}) for indata {month}, expected str"
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected str"
 			result = False
 		else:
 			if verbose:
-				print(f"{tmp}: {month.capitalize()}")
+				print(f"{tmp}: {indata.capitalize()}")
 
 	if result:
 		try:
-			logparsers.month_to_numerical("NOT A MONTH")
-			message = "month_to_numerical() silently accepted invalid input (NOT A MONTH)"
+			indata = "NOT A MONTH"
+			fun(indata)
+			message = f"{fun_str}() silently accepted invalid indata ({indata})"
 			result = False
 		except ValueError:
 			pass
 
 	return message, result
 
-def test_letter_to_severity() -> bool:
-	verbose = False
+def generic_str_to_severity(valid_strs: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	for letter in ("F", "E", "W", "N", "C", "I", "D"):
-		tmp = logparsers.letter_to_severity(letter)
+	for indata in valid_strs:
+		tmp = fun(indata)
 		if tmp is None:
-			message = f"letter_to_severity() returned None with indata: {letter}"
+			message = f"{fun_str}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, LogLevel):
-			message = f"letter_to_severity() returned wrong type ({type(tmp)}) for indata {letter}, expected LogLevel"
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected LogLevel"
 			result = False
 		else:
 			if verbose:
-				print(f"<{letter}>: {logparsers.letter_to_severity(letter)}")
+				print(f"<{indata}>: {fun(indata)}")
 
 	if result:
 		# If we don't pass a default we should get None
-		tmp = logparsers.letter_to_severity("#")
+		indata = "#"
+		tmp = fun(indata)
 		if tmp is not None:
-			message = f"letter_to_severity(default = None) returned {tmp} with invalid indata: (#), expected: None"
+			message = f"{fun_str}(default = None) returned {tmp} with invalid indata ({indata}), expected None"
 			result = False
 
 	if result:
 		# If we pass a default we should get that default back if the severity is invalid
-		tmp = logparsers.letter_to_severity("#", default = LogLevel.NOTICE)
+		tmp = fun(indata, default = LogLevel.NOTICE)
 		if tmp is None:
-			message = f"letter_to_severity(default = LogLevel.NOTICE) returned None with invalid indata: (#), expected: LogLevel.NOTICE"
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned None with invalid indata ({indata}), expected LogLevel.NOTICE"
 			result = False
 		elif not isinstance(tmp, LogLevel):
-			message = f"letter_to_severity() returned wrong type ({type(tmp)}) for invalid indata {letter} with default LogLevel.NOTICE, expected LogLevel"
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned wrong type ({type(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel"
 			result = False
 		elif tmp != LogLevel.NOTICE:
-			message = f"letter_to_severity() returned value ({repr(tmp)}) for invalid indata {letter} with default LogLevel.NOTICE, expected LogLevel.NOTICE"
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel.NOTICE"
 			result = False
 
 	return message, result
+
+def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_strs = ("F", "E", "W", "N", "C", "I", "D"), fun = logparsers.letter_to_severity, fun_str = "logparsers.letter_to_severity")
+
+def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_strs = ("ERR", "WRN", "INF"), fun = logparsers.str_3letter_to_severity, fun_str = "logparsers.str_3letter_to_severity")
+
+def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_strs = ("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun = logparsers.str_4letter_to_severity, fun_str = "logparsers.str_4letter_to_severity")
+
+def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_strs = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
 
 tests: Dict = {
 	("get_loglevel_names()", "name_to_loglevel()"): {
@@ -134,6 +154,18 @@ tests: Dict = {
 	},
 	("letter_to_severity", ): {
 		"callable": test_letter_to_severity,
+		"result": None,
+	},
+	("str_3letter_to_severity", ): {
+		"callable": test_str_3letter_to_severity,
+		"result": None,
+	},
+	("str_4letter_to_severity", ): {
+		"callable": test_str_4letter_to_severity,
+		"result": None,
+	},
+	("str_to_severity", ): {
+		"callable": test_str_to_severity,
 		"result": None,
 	},
 }
