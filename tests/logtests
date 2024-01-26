@@ -91,11 +91,11 @@ def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
-def generic_str_to_severity(valid_strs: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	for indata in valid_strs:
+	for indata in valid_indata:
 		tmp = fun(indata)
 		if tmp is None:
 			message = f"{fun_str}() returned None with valid indata {indata}"
@@ -131,22 +131,22 @@ def generic_str_to_severity(valid_strs: Tuple[str], fun: Callable, fun_str: str,
 	return message, result
 
 def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_strs = ("F", "E", "W", "N", "C", "I", "D"), fun = logparsers.letter_to_severity, fun_str = "logparsers.letter_to_severity")
+	return generic_str_to_severity(valid_indata = ("F", "E", "W", "N", "C", "I", "D"), fun = logparsers.letter_to_severity, fun_str = "logparsers.letter_to_severity")
 
 def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_strs = ("ERR", "WRN", "INF"), fun = logparsers.str_3letter_to_severity, fun_str = "logparsers.str_3letter_to_severity")
+	return generic_str_to_severity(valid_indata = ("ERR", "WRN", "INF"), fun = logparsers.str_3letter_to_severity, fun_str = "logparsers.str_3letter_to_severity")
 
 def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_strs = ("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun = logparsers.str_4letter_to_severity, fun_str = "logparsers.str_4letter_to_severity")
+	return generic_str_to_severity(valid_indata = ("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun = logparsers.str_4letter_to_severity, fun_str = "logparsers.str_4letter_to_severity")
 
 def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_strs = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
+	return generic_str_to_severity(valid_indata = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
 
-def generic_lvl_to_severity(valid_lvls: Tuple[LogLevel], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	for indata in valid_lvls:
+	for indata in valid_indata:
 		tmp = fun(indata)
 		if tmp is None:
 			message = f"{fun_str}() returned None with valid indata {indata}"
@@ -171,13 +171,67 @@ def generic_lvl_to_severity(valid_lvls: Tuple[LogLevel], fun: Callable, fun_str:
 	return message, result
 
 def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_letter_severity, fun_str = "logparsers.lvl_to_letter_severity")
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_letter_severity, fun_str = "logparsers.lvl_to_letter_severity")
 
 def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_4letter_severity, fun_str = "logparsers.lvl_to_4letter_severity")
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_4letter_severity, fun_str = "logparsers.lvl_to_4letter_severity")
 
 def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_lvls = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_word_severity, fun_str = "logparsers.lvl_to_word_severity")
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_word_severity, fun_str = "logparsers.lvl_to_word_severity")
+
+def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+	default = LogLevel.INFO
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(message, default = default)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, tuple):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
+			result = False
+		elif len(tmp) != 2:
+			message = f"{fun_str}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
+			result = False
+		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
+			result = False
+		else:
+			if verbose:
+				print(f"<{indata}, default = {default}>: {fun(indata, default = default)}")
+
+	if result:
+		indata = "NOT A VALID PREFIX"
+		tmp = fun(indata, default = default)
+		if tmp is None:
+			message = f"{fun_str}() returned None for invalid indata {indata}, expected ({indata}, {default})"
+			result = False
+		elif not isinstance(tmp, tuple):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
+			result = False
+		elif len(tmp) != 2:
+			message = f"{fun_str}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
+			result = False
+		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
+			result = False
+		elif tmp[0] != indata or tmp[1] != default:
+			message = f"{fun_str}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
+			result = False
+
+	return message, result
+
+def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_split_severity(valid_indata = ("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]"),
+				      fun = logparsers.split_bracketed_severity, fun_str = "logparsers.split_bracketed_severity", verbose = verbose)
+
+def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:"),
+				      fun = logparsers.split_colon_severity, fun_str = "logparsers.split_colon_severity", verbose = verbose)
 
 tests: Dict = {
 	("get_loglevel_names()", "name_to_loglevel()"): {
@@ -214,6 +268,14 @@ tests: Dict = {
 	},
 	("lvl_to_word_severity", ): {
 		"callable": test_lvl_to_word_severity,
+		"result": None,
+	},
+	("split_bracketed_severity", ): {
+		"callable": test_split_bracketed_severity,
+		"result": None,
+	},
+	("split_colon_severity", ): {
+		"callable": test_split_colon_severity,
 		"result": None,
 	},
 }
