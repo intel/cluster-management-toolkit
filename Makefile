@@ -1,6 +1,6 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests
 test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py reexecutor.py logparser.py formatter.py curses_helper.py
 
 # Most of these are warnings/errors emitted due to coding style differences
@@ -26,6 +26,20 @@ generate_helptexts:
 	for file in $(python_executables); do \
 		./$$file help --format markdown > docs/$${file}_helptext.md ;\
 	done
+
+coverage: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	for test in tests/iotests tests/async_fetch tests/logtests tests/atptests; do \
+		printf -- "\n\nRunning: $$test\n\n" ;\
+		$$cmd run -a $$test ;\
+	done ;\
+	$$cmd report ;\
+	$$cmd html
 
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
@@ -214,12 +228,16 @@ async_fetch: setup_tests
 	(cd tests && ./async_fetch)
 
 iotests: setup_tests
-	@printf -- "\n\nRunning iotests to check that the cmtio.py behave as expected\n\n"; \
+	@printf -- "\n\nRunning iotests to check that cmtio.py behaves as expected\n\n"; \
 	(cd tests && ./iotests)
 
 logtests: setup_tests
-	@printf -- "\n\nRunning logtests to check that the logparser.py behave as expected\n\n"; \
+	@printf -- "\n\nRunning logtests to check that logparser.py behaves as expected\n\n"; \
 	(cd tests && ./logtests)
+
+atptests: setup_tests
+	@printf -- "\n\nRunning atptests to check that ansithemeprint.py behaves as expected\n\n"; \
+	(cd tests && ./atptests)
 
 check_theme_use: setup_tests
 	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \

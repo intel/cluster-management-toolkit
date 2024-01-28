@@ -7,6 +7,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 
 # unit-tests for logparser.py
 
+from datetime import datetime
 import sys
 from typing import Callable, Dict, Tuple
 
@@ -187,7 +188,7 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str
 	for indata in valid_indata:
 		# indata is just a prefix; we want to test with a string prefixed by that prefix"
 		indata = f"{indata} something or another"
-		tmp = fun(message, default = default)
+		tmp = fun(indata, default = default)
 		if tmp is None:
 			message = f"{fun_str}() returned None with valid indata {indata}"
 			result = False
@@ -233,6 +234,224 @@ def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
 	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:"),
 				      fun = logparsers.split_colon_severity, fun_str = "logparsers.split_colon_severity", verbose = verbose)
 
+def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"2020-02-20 13:47:41",
+		"2020-02-20 13.47.41",
+		"2020-02-20 13:47:41Z",
+		"2020-02-20 13.47.41Z",
+		"2020-02-20 13:47:41.224Z",
+		"2020-02-20 13:47:41,224Z",
+		"2020-02-20 13.47.41.224Z",
+		"2020-02-20 13.47.41,224Z",
+		"2020-02-20 13:47:41.22422424 +03:00",
+		"2020-02-20 13:47:41,22422424 +03:00",
+		"2020-02-20 13.47.41.22422424 +03:00",
+		"2020-02-20 13.47.41,22422424 +03:00",
+		"2020-02-20 13:47:41.22422424 -03:00",
+		"2020-02-20 13:47:41,22422424 -03:00",
+		"2020-02-20 13.47.41.22422424 -03:00",
+		"2020-02-20 13.47.41,22422424 -03:00",
+		"2020-02-20 13:47:41.22422424 +03.00",
+		"2020-02-20 13:47:41,22422424 +03.00",
+		"2020-02-20 13.47.41.22422424 +03.00",
+		"2020-02-20 13.47.41,22422424 +03.00",
+		"2020-02-20 13:47:41.22422424 -03.00",
+		"2020-02-20 13:47:41,22422424 -03.00",
+		"2020-02-20 13.47.41.22422424 -03.00",
+		"2020-02-20 13.47.41,22422424 -03.00",
+		"2020-02-20 13:47:41.224224 +03:00",
+		"2020-02-20 13:47:41,224224 +03:00",
+		"2020-02-20 13.47.41.224224 +03:00",
+		"2020-02-20 13.47.41,224224 +03:00",
+		"2020-02-20 13:47:41.224224 -03:00",
+		"2020-02-20 13:47:41,224224 -03:00",
+		"2020-02-20 13.47.41.224224 -03:00",
+		"2020-02-20 13.47.41,224224 -03:00",
+		"2020-02-20 13:47:41.224224 +03.00",
+		"2020-02-20 13:47:41,224224 +03.00",
+		"2020-02-20 13.47.41.224224 +03.00",
+		"2020-02-20 13.47.41,224224 +03.00",
+		"2020-02-20 13:47:41.224224 -03.00",
+		"2020-02-20 13:47:41,224224 -03.00",
+		"2020-02-20 13.47.41.224224 -03.00",
+		"2020-02-20 13.47.41,224224 -03.00",
+		"2020-02-20 13:47:41.224 +03:00",
+		"2020-02-20 13:47:41,224 +03:00",
+		"2020-02-20 13.47.41.224 +03:00",
+		"2020-02-20 13.47.41,224 +03:00",
+		"2020-02-20 13:47:41.224 -03:00",
+		"2020-02-20 13:47:41,224 -03:00",
+		"2020-02-20 13.47.41.224 -03:00",
+		"2020-02-20 13.47.41,224 -03:00",
+		"2020-02-20 13:47:41.224 +03.00",
+		"2020-02-20 13:47:41,224 +03.00",
+		"2020-02-20 13.47.41.224 +03.00",
+		"2020-02-20 13.47.41,224 +03.00",
+		"2020-02-20 13:47:41.224 -03.00",
+		"2020-02-20 13:47:41,224 -03.00",
+		"2020-02-20 13.47.41.224 -03.00",
+		"2020-02-20 13.47.41,224 -03.00",
+		"2020-02-20 13:47:41.224233",
+		"2020-02-20 13:47:41,224233",
+		"2020-02-20 13:47:41.224233Z",
+		"2020-02-20 13:47:41,224233Z",
+		"2020-02-20 13:47:41.22423343",
+		"2020-02-20 13:47:41,22423343",
+		"2020-02-20 13:47:41.22423343Z",
+		"2020-02-20 13:47:41,22423343Z",
+	)
+
+	invalid_indata = (
+		"2020%02%20 13:47:41",
+		"2020-02-20 113.47.41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.is_timestamp
+	fun_str = "logparsers.is_timestamp"
+
+	for indata in valid_indata:
+		tmp = fun(indata)
+		if not tmp:
+			message = f"{fun_str}() returned False with valid indata {indata}"
+			result = False
+			break
+
+	for indata in invalid_indata:
+		tmp = fun(indata)
+		if tmp:
+			message = f"{fun_str}() returned True with invalid indata {indata}"
+			result = False
+			break
+
+	return message, result
+
+def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"[2020-02-07 13:12:24.224]",
+		"[2020-02-07 13:12:24,224]",
+		"2020-02-07T13:12:24.224Z",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.18396709+03:00",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.183967091+03:00",
+		"2020-09-23T17:12:32.183967091-03:00",
+		"2020-02-13 12:06:18+03:00",
+		"2020-02-13 12:06:18-03:00",
+		"[2020-02-13 12:06:18 +03:00]",
+		"[2020-02-13 12:06:18 -03:00]",
+		"2020-02-13T12:06:18+0300",
+		"2020-02-13T12:06:18-0300",
+		"2020-02-20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416:",
+		"2020/02/20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416Z",
+		"[2021-12-18T20:15:36Z]",
+		"2021-12-18T20:15:36Z",
+		"2020-02-20 13:47:41",
+		"2020/02/20 13:47:41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.split_iso_timestamp
+	fun_str = "logparsers.split_iso_timestamp"
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata, timestamp = timestamp)
+		if tmp == (indata, timestamp):
+			message = f"{fun_str} failed to split timestamp from valid indata {indata}"
+			result = False
+			break
+
+	if result:
+		indata = f"something or another"
+		tmp = fun(indata, timestamp = timestamp)
+		if tmp != (indata, timestamp):
+			message = f"{fun_str} did not return the indata {indata} unmodified"
+			result = False
+
+	return message, result
+
+def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"[2020-02-07 13:12:24.224]",
+		"[2020-02-07 13:12:24,224]",
+		"2020-02-07T13:12:24.224Z",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.18396709+03:00",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.183967091+03:00",
+		"2020-09-23T17:12:32.183967091-03:00",
+		"2020-02-13 12:06:18+03:00",
+		"2020-02-13 12:06:18-03:00",
+		"[2020-02-13 12:06:18 +03:00]",
+		"[2020-02-13 12:06:18 -03:00]",
+		"2020-02-13T12:06:18+0300",
+		"2020-02-13T12:06:18-0300",
+		"2020-02-20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416:",
+		"2020/02/20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416Z",
+		"[2021-12-18T20:15:36Z]",
+		"2021-12-18T20:15:36Z",
+		"2020-02-20 13:47:41",
+		"2020/02/20 13:47:41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.strip_iso_timestamp
+	fun_str = "logparsers.strip_iso_timestamp"
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata)
+		if tmp == indata:
+			message = f"{fun_str} failed to strip timestamp from valid indata {indata}"
+			result = False
+			break
+
+	return message, result
+
+def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"2020-02-20 13:47:01.531 GMT",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.strip_iso_timestamp_with_tz
+	fun_str = "logparsers.strip_iso_timestamp_with_tz"
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata)
+		if tmp == indata:
+			message = f"{fun_str} failed to strip timestamp from valid indata {indata}"
+			result = False
+			break
+
+	return message, result
+
 tests: Dict = {
 	("get_loglevel_names()", "name_to_loglevel()"): {
 		"callable": test_get_loglevel_names_and_name_to_loglevel,
@@ -276,6 +495,22 @@ tests: Dict = {
 	},
 	("split_colon_severity", ): {
 		"callable": test_split_colon_severity,
+		"result": None,
+	},
+	("is_timestamp", ): {
+		"callable": test_is_timestamp,
+		"result": None,
+	},
+	("test_split_iso_timestamp", ): {
+		"callable": test_split_iso_timestamp,
+		"result": None,
+	},
+	("test_strip_iso_timestamp", ): {
+		"callable": test_strip_iso_timestamp,
+		"result": None,
+	},
+	("test_strip_iso_timestamp_with_tz", ): {
+		"callable": test_strip_iso_timestamp_with_tz,
 		"result": None,
 	},
 }
