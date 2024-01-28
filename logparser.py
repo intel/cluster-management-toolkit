@@ -428,40 +428,30 @@ def is_timestamp(message: str):
 	tmp = re.match(r"^\d{4}[/-]\d\d[/-]\d\d"
 		       r"[ T]"
 		       r"\d\d[\.:]\d\d[\.:]\d\d"
-		       r"([\.,]\d{8}Z|"
-		       r"[\.,]\d{8}|"
-		       r"[\.,]\d{8} [+-]\d\d(:|\.|\d\d)|"
-		       r"[\.,]\d{6}Z|"
-		       r"[\.,]\d{6}|"
-		       r"[\.,]\d{6} [+-]\d\d(:|\.|\d\d)|"
-		       r"\d{3}Z|"
-		       r"\d{3}|"
-		       r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|"
-		       r"[\.,]\d{3}Z|"
-		       r"Z|)$", message)
+		       r"([\.,]\d{8} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{6} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{3} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{8}Z?|"
+		        r"[\.,]\d{6}Z?|"
+		        r"[\.,]\d{3}Z?|"
+		        r"Z?)$", message)
 
 	if tmp is not None:
 		return True
 
 	return False
 
-# Will split timestamp from messages that begin with timestamps of the form:
-# 2020-02-07T13:12:24.224Z (Z = UTC)
-# 2020-02-13T12:06:18.011345 [+-]0000 (+/-timezone)
-# 2020-09-23T17:12:32.18396709[+-]03:00
-# 2020-02-13T12:06:18[+-]0000 (+/-timezone)
-# 2020-02-20 13:47:41,008 (assume UTC)
-# 2020-02-20 13:47:41.008416 (assume UTC)
-# 2020-02-20 13:47:41.008416Z (Z = UTC)
-# 2020-02-20 13:47:41 (assume UTC)
-# Technically not in ISO-8601/RFC 3339 format, but close enough;
-# at least the order is sensible
-# 2020/02/20 13:47:41.008416 (assume UTC)
-# 2020/02/20 13:47:41 (assume UTC)
-#
-# XXX: According to ISO-8601 timestamps that lack timezone should be assumed to be local timezone,
-#      NOT UTC. Does this make a difference though? Are these timestamps actually used anywhere?
 def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetime]:
+	"""
+	Split a message into timestamp and remaining message
+
+		Parameters:
+			message (str): The message to strip the timestamp from
+			timestmap (datetime): The datetime to return if the message doesn't have a timestamp
+		Returns:
+			(str, datetime): Return the remainder of the message and the datetime
+	"""
+
 	old_timestamp = timestamp
 	tmp_timestamp = ""
 
