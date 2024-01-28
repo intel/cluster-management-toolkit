@@ -12,7 +12,7 @@ import subprocess # nosec
 import sys
 from typing import List, Optional, Sequence, Union
 
-from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from cmttypes import FilePath, FilePathAuditError, ProgrammingError, SecurityChecks, SecurityPolicy, SecurityStatus
 import cmtio
 try:
 	# python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
@@ -33,35 +33,97 @@ class ANSIThemeString:
 	"""
 
 	def __init__(self, string: str, themeref: str) -> None:
+		"""
+		Initialize an ANSIThemeString
+
+			Parameters:
+				string (str): The string to format
+				themeref (str): The reference to the formatting to use
+		"""
 		if not isinstance(string, str) or not isinstance(themeref, str):
 			raise TypeError("ANSIThemeString only accepts (str, str)")
 		self.string = string
 		self.themeref = themeref
 
 	def __str__(self) -> str:
+		"""
+		Return the string part of the ANSIThemeString
+
+			Returns:
+				(str): The string part of the ANSIThemeString
+		"""
 		return self.string
 
 	def __len__(self) -> int:
+		"""
+		Return the length to the ANSIThemeString
+
+			Returns:
+				(int): The length of the ANSIThemeString
+		"""
 		return len(self.string)
 
 	def __repr__(self) -> str:
 		return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
 	def format(self, themeref: str) -> "ANSIThemeString":
+		"""
+		Apply new formatting to the ANSIThemeString
+
+			Parameters:
+				(str): The reference to the formatting part of the ANSIThemeString
+			Returns:
+				(ANSIThemeString): The ANSIThemeString with new formatting applied
+		"""
 		self.themeref = themeref
 		return self
 
 	def get_themeref(self) -> str:
+		"""
+		Return the reference to the formatting part of the ANSIThemeString
+
+			Returns:
+				(str): The reference to the formatting part of the ANSIThemeString
+		"""
 		return self.themeref
 
 	def upper(self) -> "ANSIThemeString":
+		"""
+		Return the upper-case version of the ANSIThemeString
+
+			Returns:
+				(ANSIThemeString): The upper-case version of the ANSIThemeString
+		"""
 		return ANSIThemeString(self.string.upper(), self.themeref)
 
 	def lower(self) -> "ANSIThemeString":
+		"""
+		Return the lower-case version of the ANSIThemeString
+
+			Returns:
+				(ANSIThemeString): The lower-case version of the ANSIThemeString
+		"""
 		return ANSIThemeString(self.string.upper(), self.themeref)
 
 	def capitalize(self) -> "ANSIThemeString":
+		"""
+		Return the capitalised version of the ANSIThemeString
+
+			Returns:
+				(ANSIThemeString): The capitalized version of the ANSIThemeString
+		"""
 		return ANSIThemeString(self.string.capitalize(), self.themeref)
+
+	def __eq__(self, themestring: "AnsiThemeString") -> bool:
+		"""
+		Compare two ANSIThemeStrings and return True if both string and formatting are identical
+
+			Parameters:
+				themestring (ANSIThemeString): The ANSIThemeString to compare to
+			Returns:
+				(bool): True if the strings match, False if not
+		"""
+		return self.string == themestring.string and self.themeref == themestring.themeref
 
 theme = None
 themepath = None
@@ -136,8 +198,7 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
 
 def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True) -> str:
 	if theme is None or themepath is None:
-		sys.exit("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
-
+		raise ProgrammingError("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
 	string: str = ""
 	for themestring in themearray:
 		if not isinstance(themestring, ANSIThemeString):
@@ -246,7 +307,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("ansithemeinput() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = color)
 	try:
@@ -274,7 +335,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("ansithemeinput_password() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeinput_password() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = color)
 	try:
@@ -302,7 +363,7 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	"""
 
 	if theme is None or themepath is None:
-		sys.exit("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
 
 	if color == "auto":
 		if stderr and not sys.stderr.isatty():
@@ -316,7 +377,7 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	elif color == "never":
 		use_color = False
 	else:
-		sys.exit("Incorrect value for color passed to ansithemeprint(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+		raise ValueError("Incorrect value for color passed to ansithemeprint(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = use_color)
 
@@ -325,7 +386,7 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	else:
 		print(string)
 
-def init_ansithemeprint(themefile: Optional[FilePath]) -> None:
+def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 	"""
 	Initialise ansithemeprint
 
