@@ -11,3 +11,10 @@ def test_logparser(session):
 	session.install("ujson")
 	session.install("pyyaml")
 	session.run("tests/logtests", external = True)
+
+@nox.session
+def test_logparser(session):
+	session.install("natsort")
+	session.install("ujson")
+	session.install("pyyaml")
+	session.run("tests/atptests", external = True)

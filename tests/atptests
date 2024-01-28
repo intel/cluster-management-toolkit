@@ -1,0 +1,233 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+
+import os
+import sys
+from typing import Callable, Dict, Tuple
+
+import ansithemeprint
+from ansithemeprint import ANSIThemeString
+
+from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
+from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+
+def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansithemeprint.__themearray_to_string
+	fun_str = f"ansithemeprint.__themearray_to_string"
+
+	try:
+		fun([ANSIThemeString("foo", "default")])
+		message = f"{fun_str} did not raise an exception even though theme or themepath are uninitialized"
+		result = False
+	except ProgrammingError:
+		pass
+
+	if result:
+		fun = ansithemeprint.ansithemeprint
+		fun_str = f"ansithemeprint.ansithemeprint"
+
+		try:
+			fun([ANSIThemeString("foo", "default")], stderr = False, color = "auto")
+			message = f"{fun_str} did not raise an exception even though theme or themepath are uninitialized"
+			result = False
+		except ProgrammingError:
+			pass
+
+	return message, result
+
+def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansithemeprint.init_ansithemeprint
+	fun_str = f"ansithemeprint.init_ansithemeprint"
+
+	try:
+		fun()
+	except (FilePathAuditError, FileNotFoundError):
+		message = f"{fun_str} did not use the fallback theme when no themepath was passed"
+		result = False
+
+	if result:
+		themepath = FilePath(os.path.join(THEME_DIR, "nonexistingtheme.yaml"))
+		try:
+			fun(themefile = themepath)
+			message = f"{fun_str} did not raise FilePathAuditError for a non-existing path"
+			result = False
+		except FilePathAuditError:
+			pass
+
+	if result:
+		themepath = DEFAULT_THEME_FILE
+		try:
+			fun(themefile = themepath)
+		except FilePathAuditError:
+			message = f"{fun_str} raised FilePathAuditError for a valid path"
+			result = False
+
+	return message, result
+
+def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansithemeprint.ansithemeprint
+	fun_str = f"ansithemeprint.ansithemeprint"
+
+	try:
+		indata = [ANSIThemeString("  Formatted message (theme: path, color: always)", "path")]
+		fun(indata, stderr = False, color = "auto")
+	except ProgrammingError:
+		message = f"{fun_str} raised an exception even though theme and themepath are initialized"
+		result = False
+
+	try:
+		indata = [ANSIThemeString("  Formatted message (theme: argument, color: always)", "argument")]
+		fun(indata, stderr = True, color = "always")
+	except ProgrammingError:
+		message = f"{fun_str} raised an exception even though theme and themepath are initialized"
+		result = False
+
+	try:
+		indata = [ANSIThemeString("  Formatted message (theme: error, color: never)", "never")]
+		fun(indata, stderr = False, color = "never")
+	except ProgrammingError:
+		message = f"{fun_str} raised an exception even though theme and themepath are initialized"
+		result = False
+
+	try:
+		fun(indata, stderr = False, color = "invalid value")
+		message = f"{fun_str} did not raise an exception for invalid input for color"
+		result = False
+	except ValueError:
+		pass
+
+	return message, result
+
+def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansithemeprint.ansithemestring_join_tuple_list
+	fun_str = f"ansithemeprint.ansithemestring_join_tuple_list"
+		
+	indata = ["one", ANSIThemeString("two", "warning"), "three"]
+	formatting = "error"
+
+	tmp = fun(indata, formatting)
+	expected_result = [ANSIThemeString(string="one", themeref="error"), ANSIThemeString(string=", ", themeref="separator"), ANSIThemeString(string="two", themeref="warning"), ANSIThemeString(string=", ", themeref="separator"), ANSIThemeString(string="three", themeref="error")]
+
+	for i, item in enumerate(tmp):
+		if tmp[i] != expected_result[i]:
+			message = f"{fun_str} did not yield a correctly formatted string from valid indata"
+			result = False
+
+	return message, result
+
+def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	indata = ANSIThemeString("mIxEd CAse", "warning")
+	expected_result_upper = ANSIThemeString("MIXED CASE", "warning")
+	expected_result_lower = ANSIThemeString("mixed case", "warning")
+	expected_result_capitalize = ANSIThemeString("Mixed case", "warning")
+
+	if (tmp := indata.upper()) != expected_result_upper:
+		fun_str = "ANSIThemeString.upper"
+		message = f"{fun_str}() did not give expected result; got {tmp}, expected {expected_result_upper}"
+		result = False
+	if result:
+		fun_str = "ANSIThemeString.lower"
+		if (tmp := indata.lower()) != expected_result_lower:
+			message = f"{fun_str}() did not give expected result; got {tmp}, expected {expected_result_upper}"
+			result = False
+	if result:
+		fun_str = "ANSIThemeString.capitalize"
+		if (tmp := indata.capitalize()) != expected_result_capitalize:
+			message = f"{fun_str}() did not give expected result; got {tmp}, expected {expected_result_upper}"
+			result = False
+	if result:
+		indata = ANSIThemeString("12345", "warning")
+		expected_result_len = 5
+		fun_str = "ANSIThemeString.len"
+		if (tmp := len(indata)) != expected_result_len:
+			message = f"{fun_str}() did not give expected result; got {tmp}, expected {expected_result_upper}"
+			result = False
+
+	return message, result
+
+tests: Dict = {
+	("uninitialized ansithemeprint functions", ): {
+		"callable": test_uninitialized_ansithemeprint_functions,
+		"result": None,
+	},
+	("init_ansithemeprint", ): {
+		"callable": test_init_ansithemeprint,
+		"result": None,
+	},
+	("ansithemeprint", ): {
+		"callable": test_ansithemeprint,
+		"result": None,
+	},
+	("ansithemestring_join_tuple_list", ): {
+		"callable": test_ansithemestring_join_tuple_list,
+		"result": None,
+	},
+	("ansithemestring basic methods", ): {
+		"callable": test_ansithemestring_basic_operations,
+		"result": None,
+	},
+########("themearray_ljust", ): {
+########	"callable": test_themearray_ljust,
+########	"result": None,
+########},
+########("themearray_len", ): {
+########	"callable": test_themearray_len,
+########	"result": None,
+########},
+########("themearray_override_formatting", ): {
+########	"callable": test_themearray_override_formatting,
+########	"result": None,
+########},
+########("__themearray_to_string", ): {
+########	"callable": test___themearray_to_string,
+########	"result": None,
+########},
+########("__themearray_to_raw_string", ): {
+########	"callable": test___themearray_to_raw_string,
+########	"result": None,
+########},
+########("clear_screen", ): {
+########	"callable": test_clear_screen,
+########	"result": None,
+########},
+}
+
+def main() -> int:
+	fail = 0
+	verbose = False
+
+	for i, test in enumerate(tests):
+		print(f"[{i:03}/{len(tests) - 1:03}] {', '.join(test)}:")
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			print(f"  \033[1;31mFAIL\033[0m: {message}")
+		else:
+			print("  \033[1;32mPASS\033[0m")
+		tests[test]["result"] = result
+		tests[test]["message"] = message
+		if not result:
+			fail += 1
+
+	return fail
+
+if __name__ == "__main__":
+	main()
