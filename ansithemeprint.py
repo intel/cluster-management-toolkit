@@ -103,7 +103,7 @@ class ANSIThemeString:
 			Returns:
 				(ANSIThemeString): The lower-case version of the ANSIThemeString
 		"""
-		return ANSIThemeString(self.string.upper(), self.themeref)
+		return ANSIThemeString(self.string.lower(), self.themeref)
 
 	def capitalize(self) -> "ANSIThemeString":
 		"""
