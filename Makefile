@@ -38,6 +38,24 @@ coverage: setup_tests
 		printf -- "\n\nRunning: $$test\n\n" ;\
 		$$cmd run -a $$test ;\
 	done ;\
+	printf -- "\n\nRunning: $$tests/atptests --include-clear\n\n" ;\
+	$$cmd run -a tests/atptests --include-clear ;\
+	$$cmd report ;\
+	$$cmd html
+
+coverage-manual: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	for test in tests/iotests tests/async_fetch tests/logtests tests/atptests; do \
+		printf -- "\n\nRunning: $$test\n\n" ;\
+		$$cmd run -a $$test ;\
+	done ;\
+	printf -- "\n\nRunning: $$tests/atptests --include-clear --include-input\n\n" ;\
+	$$cmd run -a tests/atptests --include-clear --include-input ;\
 	$$cmd report ;\
 	$$cmd html
 
@@ -236,8 +254,12 @@ logtests: setup_tests
 	(cd tests && ./logtests)
 
 atptests: setup_tests
-	@printf -- "\n\nRunning atptests to check that ansithemeprint.py behaves as expected\n\n"; \
-	(cd tests && ./atptests)
+	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
+	(cd tests && ./atptests --include-clear)
+
+atptests-manual: setup_tests
+	@printf -- "\n\nRunning atptests --include-clear ---include-input to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
+	(cd tests && ./atptests --include-clear --include-input)
 
 check_theme_use: setup_tests
 	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \
