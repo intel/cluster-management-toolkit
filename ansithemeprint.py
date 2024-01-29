@@ -7,21 +7,23 @@ Print themed strings to the console
 
 import errno
 from getpass import getpass
+import copy
 from pathlib import PurePath
 import subprocess # nosec
 import sys
-from typing import List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
-from cmttypes import FilePath, FilePathAuditError, ProgrammingError, SecurityChecks, SecurityPolicy, SecurityStatus
+from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 import cmtio
 try:
 	# python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
 	# pylint: disable-next=unused-import
 	import yaml # noqa
 	from cmtio_yaml import secure_read_yaml
-	use_fallback_theme = False
+	USE_FALLBACK_THEME = False
 except ModuleNotFoundError:
-	use_fallback_theme = True
+	USE_FALLBACK_THEME = True
 
 class ANSIThemeString:
 	"""
@@ -114,7 +116,7 @@ class ANSIThemeString:
 		"""
 		return ANSIThemeString(self.string.capitalize(), self.themeref)
 
-	def __eq__(self, themestring: "AnsiThemeString") -> bool:
+	def __eq__(self, themestring: Any) -> bool:
 		"""
 		Compare two ANSIThemeStrings and return True if both string and formatting are identical
 
@@ -125,16 +127,16 @@ class ANSIThemeString:
 		"""
 		return self.string == themestring.string and self.themeref == themestring.themeref
 
-theme = None
-themepath = None
+theme: Optional[Dict] = None
+themepath: Optional[FilePath] = None
 
-fallback_theme = {
+FALLBACK_THEME = {
 	"term": {
 		"default": "\033[0m",                           # reset
 		"programname": "\033[1;37m",                    # white + bright
 		"version": "\033[0;32m",                        # green
 		"candidateversion": "\033[1;36m",               # cyan + bright
-		# FIXME: having command the same colour as action is probably not a good choice
+		# Having command the same colour as action is probably not a good choice
 		"command": "\033[1;36m",                        # cyan + bright
 		"option": "\033[0;36m",                         # cyan
 		"argument": "\033[0;32m",                       # green
@@ -186,10 +188,19 @@ def clear_screen() -> int:
 	return subprocess.run([cpath], check = False).returncode
 
 def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
+	"""
+	Strip the formatting from an ANSIThemeArray (List[ANSIThemeString])
+
+		Parameters:
+			themearray ([ANSIThemeString]): The array to strip formatting from
+		Returns:
+			(str): The stripped string
+	"""
 	string: str = ""
 	for themestring in themearray:
 		if not isinstance(themestring, ANSIThemeString):
-			raise TypeError(f"__themarray_to_string() only accepts arrays of AnsiThemeString; this themearray consists of:\n{themearray}")
+			raise TypeError("__themarray_to_string() only accepts arrays "
+					f"of AnsiThemeString; this themearray consists of:\n{themearray}")
 
 		theme_string = str(themestring)
 		string += theme_string
@@ -197,12 +208,24 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
 	return string
 
 def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True) -> str:
+	"""
+	Convert an ANSIThemeArray (List[ANSIThemeString]) to a string,
+	conditionally with ANSI-formatting
+
+		Parameters:
+			themearray ([ANSIThemeString]): The array to strip formatting from
+			color (bool): True to emit ANSI-formatting, False to output a plain string
+		Returns:
+			(str): The string
+	"""
 	if theme is None or themepath is None:
-		raise ProgrammingError("__themearray_to_string() used without calling init_ansithemestring() first; this is a programming error.")
+		raise ProgrammingError("__themearray_to_string() used without calling "
+				       "init_ansithemestring() first; this is a programming error.")
 	string: str = ""
 	for themestring in themearray:
 		if not isinstance(themestring, ANSIThemeString):
-			raise TypeError(f"__themarray_to_string() only accepts arrays of AnsiThemeString; this themearray consists of:\n{themearray}")
+			raise TypeError("__themarray_to_string() only accepts arrays of AnsiThemeString; "
+					f"this themearray consists of:\n{themearray}")
 
 		theme_attr_ref = themestring.themeref
 		theme_string = str(themestring)
@@ -213,7 +236,8 @@ def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True
 				reset = theme["term"]["reset"]
 				string += f"{attr}{theme_string}{reset}"
 			else:
-				raise KeyError(f"attribute (“term“, “{theme_attr_ref}“) does not exist in {themepath}")
+				raise KeyError(f"attribute (\"term\", \"{theme_attr_ref}\") "
+					       f"does not exist in {themepath}")
 		else:
 			string += theme_string
 
@@ -222,13 +246,24 @@ def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True
 
 	return string
 
-def themearray_override_formatting(themearray: List[ANSIThemeString], formatting: Optional[str]) -> List[ANSIThemeString]:
+def themearray_override_formatting(themearray: List[ANSIThemeString],
+				   formatting: Optional[str]) -> List[ANSIThemeString]:
+	"""
+	Override the formatting of an ANSIThemeArray (List[ANSIThemeString])
+
+		Parameters:
+			themearray ([ANSIThemeString]): The themearray to reformat
+			formatting (str): The new formatting to apply
+		Return:
+			([ANSIThemeString]): The reformatted ANSIThemeArray
+	"""
 	new_themearray = []
 
 	for themestr in themearray:
+		new_themestr = copy.deepcopy(themestr)
 		if formatting is not None:
-			themestr = themestr.format(formatting)
-		new_themearray.append(themestr)
+			themestr = new_themestr.format(formatting)
+		new_themearray.append(new_themestr)
 
 	return new_themearray
 
@@ -237,7 +272,7 @@ def themearray_len(themearray: List[ANSIThemeString]) -> int:
 	Return the length of a themearray
 
 		Parameters:
-			themearray (list[ANSIThemeString]): The themearray to return the length of
+			themearray ([ANSIThemeString]): The themearray to return the length of
 		Return:
 			The length of the themearray
 	"""
@@ -249,7 +284,7 @@ def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSI
 	Return a ljust:ed themearray (will always pad with ANSIThemeString("", "default"))
 
 		Parameters:
-			themearray (list[ANSIThemeString]): The themearray to ljust
+			themearray ([ANSIThemeString]): The themearray to ljust
 		Return:
 			The ljust:ed themearray
 	"""
@@ -260,16 +295,17 @@ def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSI
 	return themearray
 
 def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]],
-				    formatting: str = "default", separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
+				    formatting: str = "default",
+				    separator: ANSIThemeString = ANSIThemeString(", ", "separator")) -> List[ANSIThemeString]:
 	"""
 	Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
 
 		Parameters:
-			items (list[Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
+			items ([Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
 			formatting (str): The formatting to use if the list is a string-list
 			separator (ANSIThemeString): The list separator to use
 		Return:
-			themearray (list[ANSIThemeString]): The resulting ANSIThemeString list
+			themearray ([ANSIThemeString]): The resulting ANSIThemeString list
 	"""
 
 	themearray = []
@@ -297,7 +333,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	(string, theme_attr_ref); context is implicitly understood to be term
 
 		Parameters:
-			themearray (list[(str, str)]): The themearray to print
+			themearray ([(str, str)]): The themearray to print
 			color (str):
 				"always": Always use ANSI-formatting
 				"never": Never use ANSI-formatting
@@ -309,7 +345,8 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	use_color = None
 
 	if theme is None or themepath is None:
-		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; "
+				       "this is a programming error.")
 
 	if color == "auto":
 		if not sys.stdout.isatty():
@@ -321,7 +358,9 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	elif color == "never":
 		use_color = False
 	else:
-		raise ValueError("Incorrect value for color passed to ansithemeinput(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+		raise ValueError("Incorrect value for color passed to ansithemeinput(); "
+				 "the only valid values are ”always”, ”auto”, and ”never”; "
+				 "this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
@@ -329,8 +368,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	except KeyboardInterrupt:
 		print()
 		sys.exit(errno.ECANCELED)
-	tmp = tmp.replace("\x00", "<NUL>")
-	return tmp
+	return tmp.replace("\x00", "<NUL>")
 
 def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "auto") -> str:
 	"""
@@ -339,7 +377,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	(string, theme_attr_ref); context is implicitly understood to be term
 
 		Parameters:
-			themearray (list[(str, str)]): The themearray to print
+			themearray ([(str, str)]): The themearray to print
 		Returns:
 			string (str): The inputted password
 			color (str):
@@ -351,7 +389,8 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	use_color = None
 
 	if theme is None or themepath is None:
-		raise ProgrammingError("ansithemeinput_password() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeinput_password() used without calling "
+				       "init_ansithemeprint() first; this is a programming error.")
 
 	if color == "auto":
 		if not sys.stdout.isatty():
@@ -363,7 +402,9 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	elif color == "never":
 		use_color = False
 	else:
-		raise ValueError("Incorrect value for color passed to ansithemeinput_password(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+		raise ValueError("Incorrect value for color passed to ansithemeinput_password(); "
+				 "the only valid values are ”always”, ”auto”, and ”never”; "
+				 "this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
@@ -371,18 +412,17 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	except KeyboardInterrupt:
 		print()
 		sys.exit(errno.ECANCELED)
-	if tmp is not None:
-		tmp = tmp.replace("\x00", "<NUL>")
-	return tmp
+	return tmp.replace("\x00", "<NUL>")
 
-def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, color: str = "auto") -> None:
+def ansithemeprint(themearray: List[ANSIThemeString],
+		   stderr: bool = False, color: str = "auto") -> None:
 	"""
 	Print a themearray;
 	a themearray is a list of format strings of the format:
 	(string, theme_attr_ref); context is implicitly understood to be term
 
 		Parameters:
-			themearray (list[ANSIThemeString]): The themearray to print
+			themearray ([ANSIThemeString]): The themearray to print
 			stderr (bool): True to print to stderr, False to print to stdout
 			color (str):
 				"always": Always use ANSI-formatting
@@ -393,7 +433,8 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	use_color = None
 
 	if theme is None or themepath is None:
-		raise ProgrammingError("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
+		raise ProgrammingError("ansithemeprint() used without calling init_ansithemeprint() first; "
+				       "this is a programming error.")
 
 	if color == "auto":
 		if stderr and not sys.stderr.isatty():
@@ -407,7 +448,9 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 	elif color == "never":
 		use_color = False
 	else:
-		raise ValueError("Incorrect value for color passed to ansithemeprint(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+		raise ValueError("Incorrect value for color passed to ansithemeprint(); "
+				 "the only valid values are ”always”, ”auto”, and ”never”; "
+				 "this is a programming error.")
 
 	string = __themearray_to_string(themearray, color = use_color)
 
@@ -429,13 +472,14 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 
 	# If we get None as theme we use the builtin fallback theme
 	if themefile is None:
-		theme = fallback_theme
+		theme = FALLBACK_THEME
 		themepath = FilePath("<built-in default>")
 		return
 
 	themepath = themefile
 
-	# The themes directory itself may be a symlink. This is expected behaviour when installing from a git repo,
+	# The themes directory itself may be a symlink.
+	# This is expected behaviour when installing from a git repo,
 	# but we only allow it if the rest of the path components are secure
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -467,16 +511,17 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	if use_fallback_theme:
-		theme = fallback_theme
+	if USE_FALLBACK_THEME:
+		theme = FALLBACK_THEME
 		themepath = FilePath("<built-in default>")
 	else:
 		try:
 			theme = secure_read_yaml(themefile, checks = checks)
 		except FileNotFoundError:
-			theme = fallback_theme
+			theme = FALLBACK_THEME
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": themefile ”", "default"),
 					ANSIThemeString(f"{themefile}", "path"),
-					ANSIThemeString("” does not exist; using built-in fallback theme.", "default")], stderr = True)
+					ANSIThemeString("” does not exist; "
+					"using built-in fallback theme.", "default")], stderr = True)
 			return
