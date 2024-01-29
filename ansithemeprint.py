@@ -301,15 +301,29 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 			color (str):
 				"always": Always use ANSI-formatting
 				"never": Never use ANSI-formatting
-				"auto": Use ANSI-formatting except when redirected (not implemented yet)
+				"auto": Use ANSI-formatting except when redirected
 		Returns:
 			string (str): The inputted string
 	"""
 
+	use_color = None
+
 	if theme is None or themepath is None:
 		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = color)
+	if color == "auto":
+		if not sys.stdout.isatty():
+			use_color = False
+		else:
+			use_color = True
+	elif color == "always":
+		use_color = True
+	elif color == "never":
+		use_color = False
+	else:
+		raise ValueError("Incorrect value for color passed to ansithemeinput(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+
+	string = __themearray_to_string(themearray, color = use_color)
 	try:
 		tmp = input(string) # nosec
 	except KeyboardInterrupt:
@@ -331,13 +345,27 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 			color (str):
 				"always": Always use ANSI-formatting
 				"never": Never use ANSI-formatting
-				"auto": Use ANSI-formatting except when redirected (not implemented yet)
+				"auto": Use ANSI-formatting except when redirected
 	"""
+
+	use_color = None
 
 	if theme is None or themepath is None:
 		raise ProgrammingError("ansithemeinput_password() used without calling init_ansithemeprint() first; this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = color)
+	if color == "auto":
+		if not sys.stdout.isatty():
+			use_color = False
+		else:
+			use_color = True
+	elif color == "always":
+		use_color = True
+	elif color == "never":
+		use_color = False
+	else:
+		raise ValueError("Incorrect value for color passed to ansithemeinput_password(); the only valid values are ”always”, ”auto”, and ”never”; this is a programming error.")
+
+	string = __themearray_to_string(themearray, color = use_color)
 	try:
 		tmp = getpass(string)
 	except KeyboardInterrupt:
@@ -359,8 +387,10 @@ def ansithemeprint(themearray: List[ANSIThemeString], stderr: bool = False, colo
 			color (str):
 				"always": Always use ANSI-formatting
 				"never": Never use ANSI-formatting
-				"auto": Use ANSI-formatting except when redirected (not implemented yet)
+				"auto": Use ANSI-formatting except when redirected
 	"""
+
+	use_color = None
 
 	if theme is None or themepath is None:
 		raise ProgrammingError("ansithemeprint() used without calling init_ansithemeprint() first; this is a programming error.")
