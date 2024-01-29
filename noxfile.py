@@ -13,8 +13,8 @@ def test_logparser(session):
 	session.run("tests/logtests", external = True)
 
 @nox.session
-def test_logparser(session):
+def test_ansithemeprint(session):
 	session.install("natsort")
 	session.install("ujson")
 	session.install("pyyaml")
-	session.run("tests/atptests", external = True)
+	session.run("tests/atptests", ["--include-clear"], external = True)
