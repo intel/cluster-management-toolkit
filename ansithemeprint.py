@@ -22,7 +22,7 @@ try:
 	import yaml # noqa
 	from cmtio_yaml import secure_read_yaml
 	USE_FALLBACK_THEME = False
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	USE_FALLBACK_THEME = True
 
 class ANSIThemeString:
@@ -182,7 +182,7 @@ def clear_screen() -> int:
 	try:
 		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [],
 					   security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	except FileNotFoundError:
+	except FileNotFoundError: # pragma: no cover
 		return errno.ENOENT
 
 	return subprocess.run([cpath], check = False).returncode
@@ -344,12 +344,12 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 
 	use_color = None
 
-	if theme is None or themepath is None:
+	if theme is None or themepath is None: # pragma: no cover
 		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; "
 				       "this is a programming error.")
 
 	if color == "auto":
-		if not sys.stdout.isatty():
+		if not sys.stdout.isatty(): # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -365,7 +365,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
 		tmp = input(string) # nosec
-	except KeyboardInterrupt:
+	except KeyboardInterrupt: # pragma: no cover
 		print()
 		sys.exit(errno.ECANCELED)
 	return tmp.replace("\x00", "<NUL>")
@@ -388,12 +388,12 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 
 	use_color = None
 
-	if theme is None or themepath is None:
+	if theme is None or themepath is None: # pragma: no cover
 		raise ProgrammingError("ansithemeinput_password() used without calling "
 				       "init_ansithemeprint() first; this is a programming error.")
 
 	if color == "auto":
-		if not sys.stdout.isatty():
+		if not sys.stdout.isatty(): # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -409,7 +409,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
 		tmp = getpass(string)
-	except KeyboardInterrupt:
+	except KeyboardInterrupt: # pragma: no cover
 		print()
 		sys.exit(errno.ECANCELED)
 	return tmp.replace("\x00", "<NUL>")
@@ -437,9 +437,9 @@ def ansithemeprint(themearray: List[ANSIThemeString],
 				       "this is a programming error.")
 
 	if color == "auto":
-		if stderr and not sys.stderr.isatty():
+		if stderr and not sys.stderr.isatty(): # pragma: no cover
 			use_color = False
-		elif not stderr and not sys.stdout.isatty():
+		elif not stderr and not sys.stdout.isatty(): # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -511,17 +511,20 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	if USE_FALLBACK_THEME:
+	if USE_FALLBACK_THEME: # pragma: no cover
 		theme = FALLBACK_THEME
 		themepath = FilePath("<built-in default>")
 	else:
 		try:
 			theme = secure_read_yaml(themefile, checks = checks)
-		except FileNotFoundError:
+		except (FileNotFoundError, FilePathAuditError) as e:
+			# This is equivalent to FileNotFoundError
+			if "SecurityStatus.DOES_NOT_EXIST" not in str(e):
+				raise
+			# In practice this shouldn't happen since check_path should cover this
 			theme = FALLBACK_THEME
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": themefile ”", "default"),
 					ANSIThemeString(f"{themefile}", "path"),
 					ANSIThemeString("” does not exist; "
 					"using built-in fallback theme.", "default")], stderr = True)
-			return
