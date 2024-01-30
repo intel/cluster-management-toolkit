@@ -52,12 +52,12 @@ class UnknownError(Exception):
 			self.function = str(frame.f_code.co_name) # type: ignore
 			self.lineno = int(frame.f_lineno) # type: ignore
 
-		self.exception = __class__.__name__
+		self.exception = __class__.__name__ # type: ignore
 		self.message = message
 		self.severity = severity
 		self.facility = facility
 		self.formatted_msg = formatted_msg
-		if timestamp is not None:
+		if timestamp is None:
 			self.timestamp = datetime.now()
 		else:
 			self.timestamp = timestamp
@@ -82,7 +82,7 @@ class UnknownError(Exception):
 
 		return message
 
-	def exception_dict(self) -> str:
+	def exception_dict(self) -> Dict:
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -133,12 +133,12 @@ class ProgrammingError(Exception):
 			self.function = str(frame.f_code.co_name) # type: ignore
 			self.lineno = int(frame.f_lineno) # type: ignore
 
-		self.exception = __class__.__name__
+		self.exception = __class__.__name__ # type: ignore
 		self.message = message
 		self.severity = severity
 		self.facility = facility
 		self.formatted_msg = formatted_msg
-		if timestamp is not None:
+		if timestamp is None:
 			self.timestamp = datetime.now()
 		else:
 			self.timestamp = timestamp
@@ -163,7 +163,7 @@ class ProgrammingError(Exception):
 
 		return message
 
-	def exception_dict(self) -> str:
+	def exception_dict(self) -> Dict:
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -216,7 +216,7 @@ class FilePathAuditError(Exception):
 			self.function = str(frame.f_code.co_name) # type: ignore
 			self.lineno = int(frame.f_lineno) # type: ignore
 
-		self.exception = __class__.__name__
+		self.exception = __class__.__name__ # type: ignore
 		self.message = message
 		self.path = path
 		self.severity = severity
@@ -253,7 +253,7 @@ class FilePathAuditError(Exception):
 
 		return msg
 
-	def exception_dict(self) -> str:
+	def exception_dict(self) -> Dict:
 		return {
 			"exception": self.exception,
 			"message": self.message,
