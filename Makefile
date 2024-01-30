@@ -36,13 +36,14 @@ coverage: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in tests/iotests tests/async_fetch tests/logtests tests/atptests; do \
 		printf -- "\n\nRunning: $$test\n\n" ;\
-		$$cmd run -a $$test ;\
+		$$cmd run --branch --append $$test ;\
 	done ;\
 	printf -- "\n\nRunning: $$tests/atptests --include-clear\n\n" ;\
-	$$cmd run -a tests/atptests --include-clear ;\
+	$$cmd run --branch --append tests/atptests --include-clear ;\
 	$$cmd report ;\
 	$$cmd html
 
+# Run this to augment existing coverage data with tests that require manual interaction
 coverage-manual: setup_tests
 	@cmd=python3-coverage ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
@@ -50,12 +51,8 @@ coverage-manual: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/iotests tests/async_fetch tests/logtests tests/atptests; do \
-		printf -- "\n\nRunning: $$test\n\n" ;\
-		$$cmd run -a $$test ;\
-	done ;\
 	printf -- "\n\nRunning: $$tests/atptests --include-clear --include-input\n\n" ;\
-	$$cmd run -a tests/atptests --include-clear --include-input ;\
+	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
 	$$cmd report ;\
 	$$cmd html
 
