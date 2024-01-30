@@ -490,14 +490,22 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	permissions = deep_get(checkdata, DictPath("permissions"))
+	replace_empty = deep_get(checkdata, DictPath("replace_empty"), False)
+	replace_null = deep_get(checkdata, DictPath("replace_null"), False)
 	expect = deep_get(checkdata, DictPath("expect"))
+	write_mode = deep_get(checkdata, DictPath("write_mode"), "w")
 
 	try:
 		data = {
 			"valid_yaml": True,
 		}
-		secure_write_yaml(path, data = data, permissions = permissions)
+		secure_write_yaml(path, data = data, permissions = permissions, write_mode = write_mode, replace_empty = replace_empty, replace_null = replace_null)
 		violations_set = {repr(SecurityStatus.OK)}
+	except ValueError as e:
+		if expect == type(e):
+			return 0, ""
+		else:
+			return 1, f"expected {expect}, got {e}"
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -529,12 +537,16 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 	"""
 
 	path = deep_get(checkdata, DictPath("path"), "")
+	filename = deep_get(checkdata, DictPath("filename"))
 	checksum_type = deep_get(checkdata, DictPath("hash"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
 	data = cast(bytearray, secure_read(path, read_mode = "rb"))
-	csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb"))
-	result = verify_checksum(csum, checksum_type, data, "testcase.txt")
+	if checksum_type is not None:
+		csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb"))
+	else:
+		csum = cast(bytes, secure_read(FilePath(f"{path}.md5"), read_mode = "rb"))
+	result = verify_checksum(checksum = csum, checksum_type = checksum_type, data = data, filename = filename)
 
 	if result != expect:
 		return 1, f"expected {expect}, got {result}"
@@ -1026,7 +1038,27 @@ testcases = {
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
 	},
-	"Deleting testfile.yaml (secure_rm)": {
+	"1. Deleting testfile.yaml (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": {SecurityStatus.OK},
+	},
+	"Writing YAML to a file, wrong write_mode (secure_write_yaml)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_write_yaml,
+		"permissions": 0o600,
+		"write_mode": "z",
+		"expect": ValueError,
+	},
+	"Writing YAML to a file, replace empty, replace null (secure_write_yaml)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_write_yaml,
+		"replace_empty": True,
+		"replace_null": True,
+		"permissions": 0o600,
+		"expect": {repr(SecurityStatus.OK)},
+	},
+	"2. Deleting testfile.yaml (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
@@ -1065,7 +1097,7 @@ testcases = {
 		"permissions": 0o600,
 		"expect": {SecurityStatus.PERMISSIONS},
 	},
-	"4. Deleting testfile.yaml (secure_rm)": {
+	"5. Deleting testfile.yaml (secure_rm)": {
 		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
@@ -1085,8 +1117,17 @@ testcases = {
 		"permissions": 0o600,
 		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
 	},
+	"verify_checksum() (None)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
+		"hash": None,
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": True,
+	},
 	"verify_checksum() (MD5)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "md5",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1094,6 +1135,7 @@ testcases = {
 	},
 	"verify_checksum() (SHA)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1101,6 +1143,7 @@ testcases = {
 	},
 	"verify_checksum() (SHA1)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha1",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1108,78 +1151,104 @@ testcases = {
 	},
 	"verify_checksum() (SHA224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha224",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha384",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha512",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
+	"verify_checksum() without filename (SHA512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"verify_checksum() wrong filename (SHA512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "nonexistingentry",
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
 	"verify_checksum() (Blake 2B)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2b",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (Blake 2S)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2s",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA3-224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_224",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA3-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA3-384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_384",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (SHA3-512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_512",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (Shake-128)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_128",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum() (Shake-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
 	"verify_checksum()--invalid (MD5)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "md5",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1187,6 +1256,7 @@ testcases = {
 	},
 	"verify_checksum()--invalid (SHA)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1194,6 +1264,7 @@ testcases = {
 	},
 	"verify_checksum()--invalid (SHA1)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha1",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
@@ -1201,72 +1272,84 @@ testcases = {
 	},
 	"verify_checksum()--invalid (SHA224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha224",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha256",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha384",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha512",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (Blake 2B)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2b",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (Blake 2S)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2s",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA3-224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_224",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA3-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_256",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA3-384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_384",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (SHA3-512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_512",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (Shake-128)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_128",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
 	"verify_checksum()--invalid (Shake-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_256",
 		"test": test_verify_checksum,
 		"expect": False,
