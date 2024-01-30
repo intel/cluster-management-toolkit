@@ -9,7 +9,7 @@ import concurrent.futures
 from datetime import datetime
 import sys
 import threading
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 class ReExecutor:
 	"""
@@ -26,7 +26,7 @@ class ReExecutor:
 			self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
 		else:
 			self.executor = concurrent.futures.ThreadPoolExecutor()
-		self.futures = {}
+		self.futures: Dict = {}
 		self.lock = threading.Lock()
 
 	def __trigger(self, key: str) -> None:
