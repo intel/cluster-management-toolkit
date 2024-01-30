@@ -475,7 +475,9 @@ tests: Dict = {
 
 def main() -> int:
 	fail = 0
+	success = 0
 	verbose = False
+	failed_testcases = []
 
 	if len(sys.argv) > 1:
 		if "--include-clear" in sys.argv:
@@ -490,16 +492,30 @@ def main() -> int:
 			}
 
 	for i, test in enumerate(tests):
-		print(f"[{i:03}/{len(tests) - 1:03}] {', '.join(test)}:")
+		print(f"\033[1;37m[{i:03}/{len(tests) - 1:03}]\033[0m {', '.join(test)}:")
 		message, result = tests[test]["callable"](verbose = verbose)
 		if len(message) > 0:
 			print(f"  \033[1;31mFAIL\033[0m: {message}")
 		else:
 			print("  \033[1;32mPASS\033[0m")
+			success += 1
 		tests[test]["result"] = result
 		tests[test]["message"] = message
 		if not result:
+			failed_testcases.append(f"{i}: {', '.join(test)}")
 			fail += 1
+
+	print("\n\033[0;4;37mSummary:\033[0m")
+	if fail > 0:
+		print(f"\033[1;31m  FAIL: {fail}\033[0m")
+	else:
+		print(f"\033[0;31m  FAIL: {fail}\033[0m")
+	print(f"\033[1;32m  PASS: {success}\033[0m")
+
+	if fail > 0:
+		print("\n\033[0;4;37mFailed testcases:\033[0m")
+		for testcase in failed_testcases:
+			print(f"\033[38;5;240m  • \033[0m{testcase}", file = sys.stderr)
 
 	return fail
 
