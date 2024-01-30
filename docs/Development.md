@@ -19,11 +19,36 @@ All contributions MUST be tested when applicable. Remember: tested contributions
 contributions that can be tested by others are better, but contributions that can be tested
 automatically are the best.
 
+### Unit-tests
+
+When adding new method or functions, or modifying existing ones, you should add
+or update the corresponding tests in the tests listed below.  All test-cases
+are expected to pass; please do not submit commits that causes them to fail,
+and definitely do not submit commits that modifies or disables tests just to
+get a perfect score.
+
+If the file you're modifying is not listed here you can either implement one
+(using either `tests/iotests` or `tests/logtests` as template) on your own,
+or ask for help.
+
+| File:               | Tests:               |
+| ------------------- | -------------------- |
+| `networkio.py`      | `tests/iotests`      |
+| `cmtio.py`          | `tests/iotests`      |
+| `cmtio\_yaml.py`    | `tests/iotests`      |
+| `logparser.py`      | `tests/logtests`     |
+| `reexecutor.py`     | `tests/fetch\_async` |
+| `ansithemeprint.py` | `tests/atptests`     |
+
 ### Adding New Testcases
 
-Please do. Unit-tests should be added in the tests-directory and should be written in Python.
-They should return 0 on success, non-zero on failure.  They may output useful information
-to the screen. Unit-tests must not require user input, but other tests may.
+Please do! Unit-tests should be added in the tests-directory and should be written in Python.
+They should return 0 on success, number of failed testcases on failure.
+They may output useful information to the screen.
+Unit-tests must not require user input by default, but may enable such tests
+with a flag for the purpose of coverage testing.
+
+`tests/iotests` or `tests/logtests` can serve as templates.
 
 ### Testing Python
 
@@ -42,9 +67,9 @@ You SHOULD also run:
 make tests
 ```
 
-If you modify `cmtio.py`, `cmtio_yaml.py`, or `networkio.py` you MUST run `make tests`.
+If you modify any of the files listed in the unit-test table, you _must_ run `make tests`.
 
-You SHOULD also check for code quality issues using:
+You _should_ also check for code quality issues using:
 
 ```
 make flake8 (should not report any issues)
@@ -99,7 +124,7 @@ as fixed until the Pull Request has been merged.  If possible mention the resolv
 
 ## Coding Standard
 
-Unlike many other Python project, __CMT__ currently uses tabs for indentation; space is only used to align indentation.
+Unlike many other Python project, __CMT__ currently uses tabs for indentation; spaces is only used to align indentation.
 Other than that the coding standard is very similar to the upstream Python coding standard as dictated by Pylint,
 Flake8, etc.
 
