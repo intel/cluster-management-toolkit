@@ -52,7 +52,7 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 			return 1, f"expected exception {expect_exception}, got {result}"
 	except Exception as e:
 		if expect_exception is not None:
-			if type(e) != expect_exception:
+			if type(e) != expect_exception: # noqa: E721
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
@@ -83,7 +83,7 @@ def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
 			return 1, f"expected exception {expect_exception}, got {result}"
 	except Exception as e:
 		if expect_exception is not None:
-			if type(e) != expect_exception:
+			if type(e) != expect_exception: # noqa: E721
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
@@ -113,7 +113,7 @@ def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
 			return 1, f"expected exception {expect_exception}, got {result}"
 	except Exception as e:
 		if expect_exception is not None:
-			if type(e) != expect_exception:
+			if type(e) != expect_exception: # noqa: E721
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
@@ -1091,7 +1091,7 @@ testcases = {
 	},
 	"Copying valid file to non-valid destination, verbose = True (secure_copy)": {
 		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
-		"path": FilePath(f"/etc/thisshouldnotwork"),
+		"path": FilePath("/etc/thisshouldnotwork"),
 		"test": test_secure_copy,
 		"verbose": True,
 		"permissions": 0o600,
@@ -1419,13 +1419,13 @@ testcases = {
 		"path": None,
 		"fallback": "",
 		"test": test_expand_path,
-		"expect": (FilePath(f""), False),
+		"expect": (FilePath(""), False),
 	},
 	"Empty path, no fallback (expand_path)": {
 		"path": "",
 		"fallback": "",
 		"test": test_expand_path,
-		"expect": (FilePath(f""), False),
+		"expect": (FilePath(""), False),
 	},
 	"None path, fallback (expand_path)": {
 		"path": None,
@@ -1464,7 +1464,7 @@ testcases = {
 		"fallback": "",
 		"suffixes": [".json"],
 		"test": test_expand_path,
-		"expect": (FilePath(f""), False),
+		"expect": (FilePath(""), False),
 	},
 	"Valid command, no env (execute_command)": {
 		"command": [FilePath("/bin/sleep"), "0"],
