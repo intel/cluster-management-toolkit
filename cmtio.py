@@ -49,6 +49,8 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: O
 		if search_paths is None:
 			return FilePath(fallback), False
 		for search_path in search_paths:
+			if search_path.startswith("{HOME}/"):
+				search_path = os.path.join(HOMEDIR, search_path[len("{HOME}/"):])
 			partial_paths.append(os.path.join(search_path, path))
 
 	for partial_path in partial_paths:
@@ -988,14 +990,25 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	# We do not need to inspect the content, so open it in binary mode
 	# We should not need "xb", since we have already checked that dst does not exist,
 	# but better be safe than sorry
-	if permissions is None:
-		with open(src, "rb") as fr, open(dst, "xb") as fw:
-			content = fr.read()
-			fw.write(content)
-	else:
-		with open(src, "rb") as fr, open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
-			content = fr.read()
-			fw.write(content)
+	try:
+		if permissions is None:
+			with open(src, "rb") as fr, open(dst, "xb") as fw:
+				content = fr.read()
+				fw.write(content)
+		else:
+			with open(src, "rb") as fr, open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
+				content = fr.read()
+				fw.write(content)
+	except PermissionError:
+		if verbose:
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Error", "error"),
+					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
+					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
+					   ansithemeprint.ANSIThemeString(" cannot be written to (Permission denied).", "default")], stderr = True)
+		if exit_on_failure:
+			sys.exit(errno.EINVAL)
+		return [SecurityStatus.PERMISSIONS]
+
 	return [SecurityStatus.OK]
 
 # pylint: disable-next=too-many-return-statements
