@@ -31,14 +31,14 @@ If the file you're modifying is not listed here you can either implement one
 (using either `tests/iotests` or `tests/logtests` as template) on your own,
 or ask for help.
 
-| File:               | Tests:               |
-| ------------------- | -------------------- |
-| `networkio.py`      | `tests/iotests`      |
-| `cmtio.py`          | `tests/iotests`      |
-| `cmtio\_yaml.py`    | `tests/iotests`      |
-| `logparser.py`      | `tests/logtests`     |
-| `reexecutor.py`     | `tests/fetch\_async` |
-| `ansithemeprint.py` | `tests/atptests`     |
+| File:               | Tests:              |
+| ------------------- | ------------------- |
+| `networkio.py`      | `tests/iotests`     |
+| `cmtio.py`          | `tests/iotests`     |
+| `cmtio_yaml.py`     | `tests/iotests`     |
+| `logparser.py`      | `tests/logtests`    |
+| `reexecutor.py`     | `tests/fetch_async` |
+| `ansithemeprint.py` | `tests/atptests`    |
 
 ### Adding New Testcases
 
