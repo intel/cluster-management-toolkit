@@ -5,8 +5,11 @@
 This file contains custom types used to define types used by CMT
 """
 
+from datetime import datetime
 from enum import auto, Enum, IntEnum
 from functools import reduce
+import os
+import sys
 from typing import Any, Dict, List, NewType, Optional, Union
 
 FilePath = NewType("FilePath", str)
@@ -15,13 +18,60 @@ DictPath = NewType("DictPath", str)
 class UnknownError(Exception):
 	"""
 	Exception raised when an error occurs that we have no further information about
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			message: Additional information about the error
+			message (str): Additional information about the error
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str) -> None:
+	def __init__(self,
+		     message: str,
+		     severity: Optional[Any] = None,
+		     facility: Optional[str] = None,
+		     formatted_msg: Optional[Any] = None,
+		     timestamp: Optional[datetime] = None,
+		     file: Optional[str] = None,
+		     function: Optional[str] = None,
+		     lineno: Optional[int] = None,
+		     ppid: Optional[int] = None) -> None:
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
+			self.file = str(frame.f_code.co_filename) # type: ignore
+			self.function = str(frame.f_code.co_name) # type: ignore
+			self.lineno = int(frame.f_lineno) # type: ignore
+
+		self.exception = __class__.__name__
 		self.message = message
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is not None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
@@ -31,17 +81,78 @@ class UnknownError(Exception):
 			message = self.message
 
 		return message
+
+	def exception_dict(self) -> str:
+		return {
+			"exception": self.exception,
+			"message": self.message,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+		}
 
 class ProgrammingError(Exception):
 	"""
 	Exception raised when a condition occured that is most likely caused by a programming error
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			message: Additional information about the error
+			message (str): Additional information about the error
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str) -> None:
+	def __init__(self,
+		     message: str,
+		     severity: Optional[Any] = None,
+		     facility: Optional[str] = None,
+		     formatted_msg: Optional[Any] = None,
+		     timestamp: Optional[datetime] = None,
+		     file: Optional[str] = None,
+		     function: Optional[str] = None,
+		     lineno: Optional[int] = None,
+		     ppid: Optional[int] = None) -> None:
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
+			self.file = str(frame.f_code.co_filename) # type: ignore
+			self.function = str(frame.f_code.co_name) # type: ignore
+			self.lineno = int(frame.f_lineno) # type: ignore
+
+		self.exception = __class__.__name__
 		self.message = message
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is not None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
@@ -52,18 +163,80 @@ class ProgrammingError(Exception):
 
 		return message
 
+	def exception_dict(self) -> str:
+		return {
+			"exception": self.exception,
+			"message": self.message,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+		}
+
 class FilePathAuditError(Exception):
 	"""
 	Exception raised when a security check fails on a FilePath
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			path: The path being audited
-			message: Additional information about the error
+			message (str): Additional information about the error
+			path (FilePath): The path being audited
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str, path: Optional[FilePath] = None) -> None:
-		self.path = path
+	def __init__(self,
+	             message: str,
+		     path: Optional[FilePath] = None,
+		     severity: Optional[Any] = None,
+		     facility: Optional[str] = None,
+		     formatted_msg: Optional[Any] = None,
+		     timestamp: Optional[datetime] = None,
+		     file: Optional[str] = None,
+		     function: Optional[str] = None,
+		     lineno: Optional[int] = None,
+		     ppid: Optional[int] = None) -> None:
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
+			self.file = str(frame.f_code.co_filename) # type: ignore
+			self.function = str(frame.f_code.co_name) # type: ignore
+			self.lineno = int(frame.f_lineno) # type: ignore
+
+		self.exception = __class__.__name__
 		self.message = message
+		self.path = path
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
@@ -79,6 +252,21 @@ class FilePathAuditError(Exception):
 		msg = f"Security policy violation for path {path}.  {message}"
 
 		return msg
+
+	def exception_dict(self) -> str:
+		return {
+			"exception": self.exception,
+			"message": self.message,
+			"path": self.path,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+		}
 
 class HostNameStatus(Enum):
 	"""
