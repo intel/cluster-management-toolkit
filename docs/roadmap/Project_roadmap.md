@@ -11,6 +11,7 @@ to distribute __CMT__ as a part of a Linux distribution
 ## Q1 roadmap
 * _General_:
     * Start writing release notes.
+    * tests: Achieve 25% test coverage for `*.py`.
 * _cmtadm_:
     * Support for virtualised nodes. It should be possible to create clusters
       with a combination of virtualised and bare metal hosts. It should also be
@@ -47,6 +48,7 @@ to distribute __CMT__ as a part of a Linux distribution
         * No circular dependencies.
         * No logging from libraries; raise custom exceptions that include extra exception data
           (formatted exception messages), no use of sys.exit() from libraries.
+    * tests: Achieve 40% test coverage for `*.py`.
 * _cmu_:
     * UI refactoring: data viewers (the logpad in genericinfoloop as well as
       the containerinfoloop log viewer) should be merged. Having two implementation
@@ -60,6 +62,7 @@ to distribute __CMT__ as a part of a Linux distribution
         * Debian package.
         * Possibly via PIP?
     * By this point we should be able to get the OpenSSF Best Practice passing badge.
+    * tests: Achieve 50% test coverage for `*.py`.
 * _cmu_:
     * UI refactoring: Use the generic input handler from curses helper for all input.
     * UI refactoring: Unified helptext generation.
@@ -80,6 +83,7 @@ to distribute __CMT__ as a part of a Linux distribution
       merge.
     * By the end of Q4 all functions, classes, and methods should have docstrings
       and type hints.
+    * tests: Achieve 60% test coverage for `*.py`.
 * _cmu_:
     * Continue, hopefully conclude, the general refactoring, enabling new _cmt_ functionality.
 * _cmt_:
