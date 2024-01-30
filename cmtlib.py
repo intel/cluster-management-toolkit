@@ -261,7 +261,7 @@ def read_cmtconfig() -> Dict:
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError:
+	except ModuleNotFoundError: # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	global cmtconfig # pylint: disable=global-statement
@@ -633,7 +633,7 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError:
+	except ModuleNotFoundError: # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	versions = []

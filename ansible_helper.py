@@ -13,7 +13,7 @@ import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 import cmtlib
@@ -38,7 +38,7 @@ ansible_configuration: Dict = {
 # Used by Ansible
 try:
 	import ansible_runner # type: ignore
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import ansible_runner; you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 # Exit if the ansible directory does not exist

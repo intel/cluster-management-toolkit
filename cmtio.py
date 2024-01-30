@@ -520,7 +520,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 
 		Parameters:
 			path (FilePath): The path to the directory to remove
-			ignore_non_existing
+			ignore_non_existing (bool): Ignore non-existing directories
 		Raises:
 			cmttypes.FilePathAuditError
 			FileNotFoundError

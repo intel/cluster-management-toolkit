@@ -16,7 +16,7 @@ try:
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	import json # type: ignore
 	DecodeException = json.decoder.JSONDecodeError # type: ignore
 import re
@@ -27,7 +27,7 @@ import threading
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
@@ -35,7 +35,7 @@ from cryptography.hazmat.primitives import serialization
 
 try:
 	import urllib3
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE

@@ -20,7 +20,7 @@ from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, T
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmtio import check_path, join_securitystatus_set
