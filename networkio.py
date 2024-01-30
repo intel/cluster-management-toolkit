@@ -30,7 +30,7 @@ from cmttypes import deep_get, DictPath, FilePath
 
 try:
 	import urllib3
-except ModuleNotFoundError:
+except ModuleNotFoundError: # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
@@ -119,6 +119,10 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	"""
 
 	if checksum_type is None:
+		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
+					       ANSIThemeString(": No checksum type provided; checksum ", "default"),
+					       ANSIThemeString("not", "emphasis"),
+					       ANSIThemeString(" verified", "default")], stderr = True)
 		return True
 
 	if checksum_type == "md5":
@@ -157,7 +161,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 		m = hashlib.shake_128() # type: ignore
 	elif checksum_type == "shake_256":
 		m = hashlib.shake_256() # type: ignore
-	else:
+	else: # pragma: no cover
 		return False
 
 	m.update(data)
@@ -170,13 +174,13 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	match_checksum = None
 
 	for line in checksum.decode("utf-8", errors = "replace").splitlines():
-		if filename is None:
+		if filename is None and not " " in line:
 			match_checksum = line
 			break
 
 		tmp = regex.match(line)
 		if tmp is not None:
-			if tmp[2] != filename:
+			if filename is not None and tmp[2] != filename:
 				continue
 			match_checksum = tmp[1]
 			break
