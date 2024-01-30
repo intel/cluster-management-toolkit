@@ -56,13 +56,28 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 		result = False
 
 	if result:
+		themepath = FilePath(os.path.join(THEME_DIR, "/etc/passwd/nonexistingtheme.yaml"))
+		try:
+			fun(themefile = themepath)
+			message = f"{fun_str} did not raise an exception for invalid path"
+			result = False
+		except FilePathAuditError as e:
+			pass
+		except Exception as e:
+			message = f"{fun_str} raised unexpected exception {e}"
+			result = False
+
+	if result:
 		themepath = FilePath(os.path.join(THEME_DIR, "nonexistingtheme.yaml"))
 		try:
 			fun(themefile = themepath)
-			message = f"{fun_str} did not raise FilePathAuditError for a non-existing path"
+		except FilePathAuditError as e:
+			if "SecurityStatus.DOES_NOT_EXIST" in str(e):
+				message = f"{fun_str} did not fallback to for a non-existing path"
+				result = False
+		except Exception as e:
+			message = f"{fun_str} raised unexpected exception {e}"
 			result = False
-		except FilePathAuditError:
-			pass
 
 	if result:
 		themepath = DEFAULT_THEME_FILE
@@ -187,6 +202,13 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
 		expected_result_len = 5
 		fun_str = "ANSIThemeString().len"
 		if (tmp := len(indata)) != expected_result_len:
+			message = f"{fun_str}() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_len)}"
+			result = False
+	if result:
+		indata = ANSIThemeString("12345", "warning")
+		expected_result = "warning"
+		fun_str = "ANSIThemeString().get_themeref"
+		if (tmp := indata.get_themeref()) != expected_result:
 			message = f"{fun_str}() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_len)}"
 			result = False
 
@@ -379,6 +401,15 @@ def test_ansithemeinput(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		try:
+			indata = [ANSIThemeString("  Please input the string \"test3\": ", "argument")]
+			tmp = fun(indata, color = "incorrect value")
+			message = f"{fun_str} did not raise an exception for invalid input for color:\n    input: \"incorrect_value\""
+			result = False
+		except ValueError:
+			pass
+
+	if result:
+		try:
 			fun = ansithemeprint.ansithemeinput_password
 			fun_str = "ansithemeprint.ansithemeinput_password"
 			indata = [ANSIThemeString("  Please input the password \"test4\": ", "option")]
@@ -414,6 +445,15 @@ def test_ansithemeinput(verbose: bool = False) -> Tuple[str, bool]:
 		except ProgrammingError:
 			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
 			result = False
+
+	if result:
+		try:
+			indata = [ANSIThemeString("  Please input the password \"test6\": ", "argument")]
+			tmp = fun(indata, color = "incorrect value")
+			message = f"{fun_str} did not raise an exception for invalid input for color:\n    input: \"incorrect_value\""
+			result = False
+		except ValueError:
+			pass
 
 	return message, result
 
