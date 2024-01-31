@@ -1,7 +1,7 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
 python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests
-test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py kubernetes_helper.py networkio.py reexecutor.py logparser.py formatter.py curses_helper.py
+test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py kubernetes_helper.py networkio.py reexecutor.py logparser.py formatter.py curses_helper.py
 
 # Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
@@ -18,7 +18,7 @@ code-checks-strict: flake8 mypy-strict pylint
 
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 
-tests: iotests
+tests: iotests logtests validatortests atptests
 
 clean: remove_test_symlinks
 
@@ -34,11 +34,11 @@ coverage: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/iotests tests/async_fetch tests/logtests tests/atptests; do \
+	for test in tests/iotests tests/validatortests tests/logtests tests/atptests; do \
 		printf -- "\n\nRunning: $$test\n\n" ;\
 		$$cmd run --branch --append $$test ;\
 	done ;\
-	printf -- "\n\nRunning: $$tests/atptests --include-clear\n\n" ;\
+	printf -- "\n\nRunning: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear ;\
 	$$cmd report ;\
 	$$cmd html
@@ -51,8 +51,21 @@ coverage-manual: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	printf -- "\n\nRunning: $$tests/atptests --include-clear --include-input\n\n" ;\
+	printf -- "\n\nRunning: tests/atptests --include-clear --include-input\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
+	$$cmd report ;\
+	$$cmd html
+
+# Run this to augment existing coverage data with tests that require a running cluster
+coverage-cluster: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
+	$$cmd run --branch --append tests/async_fetch ;\
 	$$cmd report ;\
 	$$cmd html
 
@@ -249,6 +262,10 @@ iotests: setup_tests
 logtests: setup_tests
 	@printf -- "\n\nRunning logtests to check that logparser.py behaves as expected\n\n"; \
 	(cd tests && ./logtests)
+
+validatortests: setup_tests
+	@printf -- "\n\nRunning validatortests to check that cmtvalidators.py behaves as expected\n\n"; \
+	(cd tests && ./validatortests)
 
 atptests: setup_tests
 	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
