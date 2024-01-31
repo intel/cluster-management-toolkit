@@ -42,10 +42,23 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	checks = deep_get(checkdata, DictPath("checks"), None)
+	message_on_error = True
 	expect = deep_get(checkdata, DictPath("expect"))
 	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
+	owner_allowlist = deep_get(checkdata, DictPath("owner_allowlist"))
+	parent_owner_allowlist = deep_get(checkdata, DictPath("parent_owner_allowlist"))
+
+	kwargs = {
+		"checks": checks,
+		"exit_on_critical": False,
+		"message_on_error": True,
+	}
+	if owner_allowlist is not None:
+		kwargs["owner_allowlist"] = owner_allowlist
+	if parent_owner_allowlist is not None:
+		kwargs["parent_owner_allowlist"] = parent_owner_allowlist
 	try:
-		result = check_path(path, checks = checks, exit_on_critical = False, message_on_error = False)
+		result = check_path(path, **kwargs)
 		if result != expect:
 			return 1, f"expected {expect}, got {result}"
 		if expect_exception is not None:
@@ -119,6 +132,45 @@ def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
 			return 1, f"expected {expect}, got {e}"
 	return 0, ""
 
+def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether cmtio.secure_read() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	kwargs = {
+		"directory_is_symlink": deep_get(checkdata, DictPath("directory_is_symlink"), False),
+		"checks": deep_get(checkdata, DictPath("checks")),
+		"read_mode": deep_get(checkdata, DictPath("read_mode"), "r"),
+	}
+
+	result = False
+
+	try:
+		string = secure_read(path, **kwargs)
+		if expect == "string" and isinstance(string, str):
+			result = True
+		elif expect == "�" and isinstance(string, str) and "�" in string:
+			result = True
+	except Exception as e: # pylint: disable=broad-except
+		# pylint: disable-next=unidiomatic-typecheck
+		if type(e) == expect: # noqa: E721
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if not result:
+		return 1, f"expected {expect}, got {string}"
+	return 0, ""
+
 def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether cmtio.secure_read_string() works correctly
@@ -133,10 +185,15 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	path = deep_get(checkdata, DictPath("path"), "")
 	expect = deep_get(checkdata, DictPath("expect"))
 
+	kwargs = {
+		"directory_is_symlink": deep_get(checkdata, DictPath("directory_is_symlink"), False),
+		"checks": deep_get(checkdata, DictPath("checks")),
+	}
+
 	result = False
 
 	try:
-		string = secure_read_string(path)
+		string = secure_read_string(path, **kwargs)
 		if expect == "string" and isinstance(string, str):
 			result = True
 		elif expect == "�" and isinstance(string, str) and "�" in string:
@@ -402,10 +459,14 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 
 	src = deep_get(checkdata, DictPath("src"), "")
 	path = deep_get(checkdata, DictPath("path"), "")
-	replace = deep_get(checkdata, DictPath("replace"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	violations = secure_symlink(src, path, replace_existing = replace)
+	kwargs = {
+		"replace_existing": deep_get(checkdata, DictPath("replace")),
+		"verbose": True,
+	}
+
+	violations = secure_symlink(src, path, **kwargs)
 	violations_set = set(violations)
 
 	if violations == [SecurityStatus.OK] and not Path(path).is_symlink():
@@ -553,6 +614,12 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 	return 0, ""
 
 testcases = {
+	"File permissions (default checks)": {
+		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
+		"test": test_check_path,
+		"checks": None,
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
 	"File permissions": {
 		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
 		"test": test_check_path,
@@ -781,6 +848,53 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PARENT_PERMISSIONS],
 	},
+	"Owner not in allowlist": {
+		"path": FilePath(f"/etc/passwd"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"owner_allowlist": [],
+		"expect": [SecurityStatus.OWNER_NOT_IN_ALLOWLIST],
+	},
+	"Parent owner not in allowlist": {
+		"path": FilePath(f"/etc/passwd"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"parent_owner_allowlist": [],
+		"expect": [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST],
+	},
+	"File not readable": {
+		"path": FilePath(f"/etc/shadow"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
 	"Parent directory is symlink": {
 		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_check_path,
@@ -832,12 +946,34 @@ testcases = {
 	"Valid UTF-8": {
 		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_string,
-		"expect": "string"
+		"expect": "string",
 	},
-	"Invalid UTF-8": {
-		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
+	"Valid Path, invalid read_mode": {
+		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
+		"test": test_secure_read,
+		"expect": ValueError,
+		"read_mode": "z",
+	},
+	"Valid Path, symlinked, directory_is_symlinked = True": {
+		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_secure_read_string,
-		"expect": "�",
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": "string",
+	},
+	"Non-readable path, directory_is_symlinked = True": {
+		"path": FilePath(f"/var/lib/private/foobar"),
+		"test": test_secure_read_string,
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": FilePathAuditError,
+	},
+	"Readable path, directory_is_symlinked = True": {
+		"path": FilePath(f"/var/lib/private/foobar"),
+		"test": test_secure_read_string,
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": FilePathAuditError,
 	},
 	"Invalid single YAML (secure_read_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
@@ -1012,6 +1148,20 @@ testcases = {
 		"test": test_secure_write_string,
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.OK)},
+	},
+	"Writing text to a file, write_mode = \"x\", file exists (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"write_mode": "x",
+		"expect": {repr(SecurityStatus.EXISTS)},
+	},
+	"Writing text to a file, write_mode = \"xb\", file exists (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"write_mode": "xb",
+		"expect": {repr(SecurityStatus.EXISTS)},
 	},
 	"Appending text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
