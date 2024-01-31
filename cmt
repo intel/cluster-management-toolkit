@@ -681,52 +681,16 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	selection = args[0].split(",")
 	taint = args[1]
 
-	if "=" not in taint:
-		ansithemeprint([ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(": invalid syntax; the correct syntax is either “", "default"),
-				ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(" taint ", "command"),
-				ANSIThemeString("NODE", "argument"),
-				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument"),
-				ANSIThemeString("|", "separator"),
-				ANSIThemeString("ALL ", "argument"),
-				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString("=", "separator"),
-				ANSIThemeString("EFFECT", "argument"),
-				ANSIThemeString("“ or “", "default"),
-				ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(" taint ", "command"),
-				ANSIThemeString("NODE", "argument"),
-				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument"),
-				ANSIThemeString("|", "separator"),
-				ANSIThemeString("ALL ", "argument"),
-				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString(":", "separator"),
-				ANSIThemeString("VALUE", "argument"),
-				ANSIThemeString("=", "separator"),
-				ANSIThemeString("EFFECT", "argument"),
-				ANSIThemeString("“; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	taint, taint_new_effect = taint.split("=")
 	if ":" in taint:
-		taint_key, taint_value = taint.split(":")
+		taint_key_value, taint_new_effect = taint.split(":")
 	else:
-		taint_key = taint
+		taint_key_value = taint
+		taint_new_effect = None
+	if "=" in taint_key_value:
+		taint_key, taint_value = taint_key_value.split("=")
+	else:
+		taint_key = taint_key_value
 		taint_value = None
-
-	if taint_new_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid effect; valid effects are: ", "default"),
-				ANSIThemeString("NoSchedule", "argument"),
-				ANSIThemeString(", ", "default"),
-				ANSIThemeString("PreferNoSchedule", "argument"),
-				ANSIThemeString(", and ", "default"),
-				ANSIThemeString("NoExecute", "argument"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	# It is OK to specify control planes individually
 	if "ALL" not in selection:
@@ -805,26 +769,17 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	selection = args[0].split(",")
 	taint = args[1]
 
-	if "=" in taint:
-		taint, taint_old_effect = taint.split("=")
-	else:
-		taint_old_effect = None
 	if ":" in taint:
-		taint_key, taint_value = taint.split(":")
+		taint_key_value, taint_old_effect = taint.split(":")
+	else:
+		taint_key_value = taint
+		taint_old_effect = None
+	if "=" in taint_key_value:
+		taint_key, taint_value = taint.split("=")
 	else:
 		taint_key = taint
 		taint_value = None
 
-	if taint_old_effect is not None and taint_old_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid effect; valid effects are: ", "default"),
-				ANSIThemeString("NoSchedule", "argument"),
-				ANSIThemeString(", ", "default"),
-				ANSIThemeString("PreferNoSchedule", "argument"),
-				ANSIThemeString(", and ", "default"),
-				ANSIThemeString("NoExecute", "argument"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	# It is OK to specify control planes individually
 	if "ALL" not in selection:
@@ -2661,13 +2616,13 @@ CMT_COMMANDLINE = {
 			   ANSIThemeString("|", "separator"),
 			   ANSIThemeString("ALL ", "argument"),
 			   ANSIThemeString("KEY", "argument"),
-			   ANSIThemeString("[:", "separator"),
+			   ANSIThemeString("[=", "separator"),
 			   ANSIThemeString("VALUE", "argument"),
-			   ANSIThemeString("]=", "separator"),
+			   ANSIThemeString("]:", "separator"),
 			   ANSIThemeString("EFFECT", "argument")],
 		"description": [ANSIThemeString("Add taint ", "description"),
 				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString("[:", "separator"),
+				ANSIThemeString("[=", "separator"),
 				ANSIThemeString("VALUE", "argument"),
 				ANSIThemeString("]", "separator"),
 				ANSIThemeString(" with ", "description"),
@@ -2713,9 +2668,9 @@ CMT_COMMANDLINE = {
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
-					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("[=", "separator"),
 					   ANSIThemeString("VALUE", "argument"),
-					   ANSIThemeString("]=", "separator"),
+					   ANSIThemeString("]:", "separator"),
 					   ANSIThemeString("EFFECT", "argument")],
 				"validation": {
 					"validator": "taint",
@@ -2732,9 +2687,9 @@ CMT_COMMANDLINE = {
 			   ANSIThemeString("|", "separator"),
 			   ANSIThemeString("ALL ", "argument"),
 			   ANSIThemeString("KEY", "argument"),
-			   ANSIThemeString("[:", "separator"),
+			   ANSIThemeString("[=", "separator"),
 			   ANSIThemeString("VALUE", "argument"),
-			   ANSIThemeString("][=", "separator"),
+			   ANSIThemeString("][:", "separator"),
 			   ANSIThemeString("EFFECT", "argument"),
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Remove taint ", "description"),
@@ -2779,9 +2734,9 @@ CMT_COMMANDLINE = {
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
-					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("[=", "separator"),
 					   ANSIThemeString("VALUE", "argument"),
-					   ANSIThemeString("]=[", "separator"),
+					   ANSIThemeString("]:[", "separator"),
 					   ANSIThemeString("EFFECT", "argument"),
 					   ANSIThemeString("]", "separator")],
 				"validation": {

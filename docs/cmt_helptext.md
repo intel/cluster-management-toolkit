@@ -41,8 +41,8 @@ When a node is force-drained, pods belonging to daemonsets are ignored, and __em
   
   __--include-control-planes__
   Include control planes when ALL is used  
-### taint __NODE_,_..._|_ALL_ _KEY_[:_VALUE_]=_EFFECT__
-#### Add taint _KEY_[:_VALUE_] with _EFFECT_ to _NODE_,_..._
+### taint __NODE_,_..._|_ALL_ _KEY_[=_VALUE_]:_EFFECT__
+#### Add taint _KEY_[=_VALUE_] with _EFFECT_ to _NODE_,_..._
   
   
 
@@ -53,7 +53,7 @@ Valid values for _EFFECT_ are: _NoSchedule_, _PreferNoSchedule_, and _NoExecute_
   Include control planes when ALL is used  
   __--overwrite__
   Allow taints to be overwritten  
-### untaint __NODE_,_..._|_ALL_ _KEY_[:_VALUE_][=_EFFECT_]_
+### untaint __NODE_,_..._|_ALL_ _KEY_[=_VALUE_][:_EFFECT_]_
 #### Remove taint _KEY_[:_VALUE_] with _EFFECT_ from _NODE_,_..._
   
   
