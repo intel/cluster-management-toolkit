@@ -48,8 +48,9 @@ def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
 			list[str]: The list of strings with substitutions performed
 	"""
 
-	for key, value in substitutions.items():
-		strlist = [s.replace(key, value) for s in strlist]
+	if strlist is not None:
+		for key, value in substitutions.items():
+			strlist = [s.replace(key, value) if (s is not None and value is not None) else s for s in strlist]
 	return strlist
 
 def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:

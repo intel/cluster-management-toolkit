@@ -1,0 +1,234 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+
+from typing import Dict, Tuple
+import yaml
+
+from cmttypes import deep_get, DictPath, ProgrammingError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+import cmtlib
+
+# unit-tests for cmtlib.py
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
+
+def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.substitute_string
+	fun_str = "cmtlib.substitute_string"
+
+	if result:
+		# Indata format:
+		# (string, substitutions, expected_result, expected_exception)
+		testdata = (
+			("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", }, "Kubernetes v1.29.2", None),
+			# The extra substitution should be ignored since it doesn't have a match
+			("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, "Kubernetes v1.29.2", None),
+			(None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
+			("Kubernetes <<<version>>>", { "<<<version>>>": None, }, "Kubernetes <<<version>>>", None),
+		)
+		for string, substitutions, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(string, substitutions)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n         output: {tmp}\n       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.substitute_list
+	fun_str = "cmtlib.substitute_list"
+
+	if result:
+		# Indata format:
+		# (strings, substitutions, expected_result, expected_exception)
+		testdata = (
+			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+			# The extra substitution should be ignored since it doesn't have a match
+			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+			(None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
+			([None], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, [None], None),
+			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": None, }, ["kubectl <<<version>>>", "kubeadm <<<version>>>"], None),
+		)
+		for strings, substitutions, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(strings, substitutions)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n         output: {tmp}\n       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.lstrip_count
+	fun_str = "cmtlib.lstrip_count"
+
+	if result:
+		# Indata format:
+		# (string, prefix, expected_result, expected_exception)
+		testdata = (
+			("   42", " ", ("42", 3), None),
+			("42", " ", ("42", 0), None),
+			("42   ", " ", ("42   ", 0), None),
+			("   42", "!", ("   42", 0), None),
+			("!!!42", "!", ("42", 3), None),
+		)
+		for string, prefix, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(string, prefix)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n         output: {tmp}\n       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.rstrip_count
+	fun_str = "cmtlib.rstrip_count"
+
+	if result:
+		# Indata format:
+		# (string, prefix, expected_result, expected_exception)
+		testdata = (
+			("42   ", " ", ("42", 3), None),
+			("42", " ", ("42", 0), None),
+			("   42", " ", ("   42", 0), None),
+			("42   ", "!", ("42   ", 0), None),
+			("42!!!", "!", ("42", 3), None),
+		)
+		for string, prefix, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(string, prefix)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n         output: {tmp}\n       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+tests: Dict = {
+	("substitute_string()", ): {
+		"callable": test_substitute_string,
+		"result": None,
+	},
+	("substitute_list()", ): {
+		"callable": test_substitute_list,
+		"result": None,
+	},
+	("lstrip_count()", ): {
+		"callable": test_lstrip_count,
+		"result": None,
+	},
+	("rstrip_count()", ): {
+		"callable": test_rstrip_count,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()
