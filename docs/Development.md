@@ -36,6 +36,7 @@ or ask for help.
 | `ansithemeprint.py` | `tests/atptests`       | Has optional manual tests  |
 | `cmtio.py`          | `tests/iotests`        |                            |
 | `cmtio_yaml.py`     | `tests/iotests`        |                            |
+| `cmtlib.py`         | `tests/cmtlibtests`    |                            |
 | `cmtvalidators.py`  | `tests/validatortests` |                            |
 | `cmttypes.py`       | `tests/typetests`      |                            |
 | `logparser.py`      | `tests/logtests`       |                            |

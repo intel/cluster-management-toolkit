@@ -18,7 +18,7 @@ code-checks-strict: flake8 mypy-strict pylint
 
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 
-tests: iotests logtests validatortests atptests
+tests: iotests logtests validatortests atptests cmtlibtests
 
 clean: remove_test_symlinks
 
@@ -34,7 +34,7 @@ coverage: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/iotests tests/validatortests tests/logtests tests/atptests; do \
+	for test in tests/iotests tests/validatortests tests/logtests tests/atptests tests/cmtlibtests; do \
 		printf -- "\n\nRunning: $$test\n\n" ;\
 		$$cmd run --branch --append $$test ;\
 	done ;\
@@ -266,6 +266,10 @@ logtests: setup_tests
 validatortests: setup_tests
 	@printf -- "\n\nRunning validatortests to check that cmtvalidators.py behaves as expected\n\n"; \
 	(cd tests && ./validatortests)
+
+cmtlibtests: setup_tests
+	@printf -- "\n\nRunning cmtlibtests to check that cmtlib.py behaves as expected\n\n"; \
+	(cd tests && ./cmtlibtests)
 
 atptests: setup_tests
 	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
