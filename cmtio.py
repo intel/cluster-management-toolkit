@@ -16,7 +16,7 @@ from subprocess import PIPE, STDOUT # nosec
 import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 
-from cmttypes import FilePath, HostNameStatus, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import HOMEDIR
 
 import ansithemeprint
@@ -90,133 +90,6 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 
 	return securitystatus_str
 
-# pylint: disable-next=too-many-return-statements
-def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
-	"""
-	Verifies that a FQDN / hostname is valid
-
-		Parameters:
-			fqdn (str): The FQDN / hostname to validate
-			message_on_error (bool): Should an error message be printed on error?
-		Returns:
-			result (HostNameStatus): The result of the validation; HostNameStatus.OK on success
-	"""
-
-	if fqdn is None or len(fqdn) == 0:
-		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": A FQDN or hostname cannot be empty.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
-		return HostNameStatus.DNS_SUBDOMAIN_EMPTY
-	if "\x00" in fqdn:
-		stripped_fqdn = fqdn.replace("\x00", "<NUL>")
-		msg = [ansithemeprint.ANSIThemeString("Critical", "critical"),
-		       ansithemeprint.ANSIThemeString(": the FQDN / hostname ", "default"),
-		       ansithemeprint.ANSIThemeString(stripped_fqdn, "hostname")]
-		msg += [ansithemeprint.ANSIThemeString(" contains NUL-bytes (replaced here);\n"
-					"this is either a programming error, a system error, file or memory corruption, "
-					"or a deliberate attempt to bypass security; aborting.", "default")]
-		ansithemeprint.ansithemeprint(msg, stderr = True)
-		sys.exit(errno.EINVAL)
-	if len(fqdn) > 253:
-		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Critical", "critical"),
-			       ansithemeprint.ANSIThemeString(": the FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname")]
-			msg = [ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN cannot be more than 253 characters long.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
-		return HostNameStatus.DNS_SUBDOMAIN_TOO_LONG
-	if fqdn != fqdn.lower():
-		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": The FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname"),
-			       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN / hostname must be lowercase.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
-		return HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE
-	if fqdn.startswith(".") or fqdn.endswith(".") or ".." in fqdn:
-		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": The FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname"),
-			       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN / hostname cannot begin or end with “.“, and must not have consecutive “.“.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
-		return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
-
-	dnslabels = fqdn.split(".")
-	dnslabel_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-
-	for dnslabel in dnslabels:
-		if dnslabel.startswith("xn--"):
-			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": The DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-				       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			               ansithemeprint.ANSIThemeString("a DNS label cannot start with the ACE prefix “xn--“.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
-			return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
-
-		# This indirectly checks non-IDNA labels for max length too
-		idna_dnslabel = dnslabel
-		try:
-			idna_dnslabel = dnslabel.encode("idna").decode("utf-8")
-		except UnicodeError as e:
-			if "label too long" in str(e):
-				if message_on_error:
-					msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-					       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-					       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-					       ansithemeprint.ANSIThemeString(" is invalid; ", "default")]
-					msg += [ansithemeprint.ANSIThemeString("a DNS label cannot be more than 63 characters long.", "default")]
-					ansithemeprint.ansithemeprint(msg, stderr = True)
-				return HostNameStatus.DNS_LABEL_TOO_LONG
-			if "label empty or too long" in str(e):
-				if message_on_error:
-					msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-					       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-					       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-					       ansithemeprint.ANSIThemeString(" is invalid; ", "default")]
-					msg += [ansithemeprint.ANSIThemeString("a decoded Punycode (IDNA) DNS label cannot be more than 63 characters long.", "default")]
-					ansithemeprint.ansithemeprint(msg, stderr = True)
-				return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
-			raise
-
-		tmp = dnslabel_regex.match(idna_dnslabel)
-
-		if tmp is None:
-			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname")]
-				if idna_dnslabel != dnslabel:
-					msg += [ansithemeprint.ANSIThemeString(" (Punycode: ", "default"),
-						ansithemeprint.ANSIThemeString(idna_dnslabel, "hostname"),
-						ansithemeprint.ANSIThemeString(")", "default")]
-				msg += [ansithemeprint.ANSIThemeString(" is invalid; a DNS label must be in the format ", "default"),
-				        ansithemeprint.ANSIThemeString("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
-				        ansithemeprint.ANSIThemeString(" after Punycode decoding.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
-			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
-
-		if dnslabel.startswith("-") or dnslabel.endswith("-"):
-			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": The DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname")]
-				if idna_dnslabel != dnslabel:
-					msg += [ansithemeprint.ANSIThemeString(" (Punycode: ", "default"),
-						ansithemeprint.ANSIThemeString(idna_dnslabel, "hostname"),
-						ansithemeprint.ANSIThemeString(")", "default")]
-				msg += [ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-					ansithemeprint.ANSIThemeString("a DNS label cannot begin or end with “-“.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
-			return HostNameStatus.DNS_LABEL_INVALID_FORMAT
-	return HostNameStatus.OK
-
 # pylint: disable=too-many-arguments,line-too-long
 def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = None, owner_allowlist: Optional[List[str]] = None,
 	       checks: Optional[List[SecurityChecks]] = None, exit_on_critical: bool = False, message_on_error: bool = False) -> List[SecurityStatus]:
@@ -277,7 +150,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" does not exist", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -291,7 +164,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -307,7 +180,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
 			      ansithemeprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -322,7 +195,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is world writable", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -342,7 +215,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -361,7 +234,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -383,7 +256,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
 			      ansithemeprint.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -398,7 +271,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is world writable", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -411,7 +284,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" cannot be read", "default")]
-			if exit_on_critical:
+			if exit_on_critical: # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
 				ansithemeprint.ansithemeprint(msg, stderr = True)
 				sys.exit(errno.EINVAL)
@@ -946,7 +819,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 					   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{src}", "path"),
 					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return violations
 
@@ -971,7 +844,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst_path_parent}", "path"),
 					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return violations
 
@@ -983,7 +856,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
 					   ansithemeprint.ANSIThemeString(" already exists; refusing to overwrite.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.EXISTS]
 
@@ -1005,7 +878,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
 					   ansithemeprint.ANSIThemeString(" cannot be written to (Permission denied).", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.PERMISSIONS]
 
@@ -1045,7 +918,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
 					   ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			if verbose:
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
@@ -1061,7 +934,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
 					   ansithemeprint.ANSIThemeString(" is not a directory.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			if verbose:
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
@@ -1079,7 +952,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ansithemeprint.ANSIThemeString(" or ", "default"),
 					   ansithemeprint.ANSIThemeString(user, "emphasis"),
 					   ansithemeprint.ANSIThemeString(".", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			if verbose:
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
@@ -1095,7 +968,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 				   ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 				   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
 				   ansithemeprint.ANSIThemeString(" is world writable.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			if verbose:
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
@@ -1123,7 +996,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{src}", "path"),
 					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
-		if exit_on_failure:
+		if exit_on_failure: # pragma: no cover
 			if verbose:
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
@@ -1139,7 +1012,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 						   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 						   ansithemeprint.ANSIThemeString(f"{src}", "path"),
 						   ansithemeprint.ANSIThemeString(" exists and replace_existing = False.", "default")], stderr = True)
-			if exit_on_failure:
+			if exit_on_failure: # pragma: no cover
 				if verbose:
 					ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
 			elif verbose:
