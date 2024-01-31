@@ -5,6 +5,7 @@ This module contains data validators, mainly for validating user input
 """
 
 import errno
+import os
 from pathlib import Path
 import re
 import sys
@@ -21,6 +22,76 @@ from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join
 from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError
 
 programname = None
+
+def validate_name(rtype: str, name: str) -> bool:
+	"""
+	Given a name validate whether it is valid for the given type
+
+		Parameters:
+			rtype (str): The resource type; valid types are:
+				dns-label
+				dns-subdomain
+				path-segment
+				port-name
+			name (str): The name to check for validity
+		Returns:
+			valid (bool): True if valid, False if invalid
+	"""
+
+	invalid = False
+	tmp = None
+	maxlen = -1
+
+	if name is None:
+		return False
+
+	# Safe
+	name_regex = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$")
+	# Safe
+	portname_regex = re.compile(r"^([a-z0-9]+[a-z0-9-].*[a-z0-9]|[a-z0-9])$")
+
+	if rtype in ("dns-subdomain", "dns-label"):
+		if rtype == "dns-label":
+			maxlen = 63
+			if "." in name:
+				invalid = True
+		else:
+			maxlen = 253
+
+		# A dns-subdomain can be at most 253 characters long
+		# and cannot start or end with "-"; it must be made up
+		# of valid dns-labels; each of which are separated by "."
+		# and have to meet the same standards as a dns-label
+		labels = name.lower().split(".")
+
+		for label in labels:
+			if len(label) == 0 or len(label) > 63:
+				invalid = True
+				break
+
+			tmp = name_regex.match(label)
+			if tmp is None:
+				invalid = True
+	elif rtype == "path-segment":
+		# XXX: Are there any other requirements? maxlen or similar?
+		if name in (".", "..") or "/" in name or "%" in name:
+			invalid = True
+		maxlen = os.pathconf("/", "PC_NAME_MAX")
+	elif rtype == "port-name":
+		# Any name containing adjacent "-" is invalid
+		if "--" in name:
+			invalid = True
+		# As is any port-name that does not contain any character in [a-z]
+		if portname_regex.match(name.lower()) is None:
+			invalid = True
+		# A portname can be at most 15 characters long
+		# and cannot start or end with "-"
+		tmp = name_regex.match(name.lower())
+		if tmp is None:
+			invalid = True
+		maxlen = 15
+
+	return not invalid and len(name) <= maxlen
 
 # pylint: disable-next=too-many-return-statements
 def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
@@ -287,7 +358,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				if validators is not None:
 					valid_ipv4_address = validators.ipv4(ip)
 					valid_ipv6_address = validators.ipv6(ip)
-				else:
+				else: # pragma: no cover
 					valid_ipv4_address = True
 					valid_ipv6_address = True
 				try:
@@ -320,11 +391,11 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				result = False
 				break
 		elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
-			valid_dns_label = cmtlib.validate_name("dns-subdomain", subarg)
+			valid_dns_label = validate_name("dns-subdomain", subarg)
 			if validators is not None:
 				valid_ipv4_address = validators.ipv4(subarg)
 				valid_ipv6_address = validators.ipv6(subarg)
-			else:
+			else: # pragma: no cover
 				valid_ipv4_address = True
 				valid_ipv6_address = True
 
@@ -365,21 +436,21 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 		elif validator in ("taint", "untaint"):
 			# Format: dns-subdomain[:dns-label]={NoSchedule,PreferNoSchedule,NoExecute}
 			valid = False
-			if "=" in subarg:
-				key_value, effect = subarg.split("=")
+			if ":" in subarg:
+				key_value, effect = subarg.split(":")
 			else:
 				key_value = subarg
 				effect = ""
 
-			if ":" in key_value:
-				key, value = key_value.split(":")
+			if "=" in key_value:
+				key, value = key_value.split("=")
 			else:
 				key = key_value
 				value = ""
 
-			valid_key = cmtlib.validate_name("dns-subdomain", key)
+			valid_key = validate_name("dns-subdomain", key)
 			if len(value) > 0:
-				valid_value = cmtlib.validate_name("dns-label", value)
+				valid_value = validate_name("dns-label", value)
 			else:
 				valid_value = True
 

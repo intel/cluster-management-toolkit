@@ -68,6 +68,8 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 # from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 from cmtlog import debuglog, CMTLogType, CMTLog
 
+from cmtvalidators import validate_name
+
 from commandparser import parse_commandline
 
 import logparser as logparsers
@@ -10954,7 +10956,7 @@ def create_namespace(stdscr: curses.window, **kwargs):
 	_retval = clear_screen()
 
 	# Verify that the name of the new namespace is valid
-	if not cmtlib.validate_name("dns-label", name):
+	if not validate_name("dns-label", name):
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("“", "default"),
 		       ANSIThemeString(name, "argument"),

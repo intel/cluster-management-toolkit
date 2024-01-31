@@ -23,7 +23,7 @@ tests: iotests logtests validatortests atptests
 clean: remove_test_symlinks
 
 generate_helptexts:
-	for file in $(python_executables); do \
+	@for file in $(python_executables); do \
 		./$$file help --format markdown > docs/$${file}_helptext.md ;\
 	done
 
