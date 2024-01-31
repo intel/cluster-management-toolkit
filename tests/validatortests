@@ -1,0 +1,373 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+
+from typing import Dict, Tuple
+import yaml
+
+from cmttypes import deep_get, DictPath, ProgrammingError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+import cmtvalidators
+
+# unit-tests for cmtvalidators.py
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
+
+def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtvalidators.validator_bool
+	fun_str = "logparsers.validator_bool"
+
+	if result:
+		valid_indata = (True, 1, "1", "y", "yes", "true")
+		expected_status = True
+		expected_result = True
+		for indata in valid_indata:
+			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			if status != expected_status:
+				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				result = False
+				break
+			if retval != expected_result:
+				message = f"{fun_str}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+				result = False
+				break
+	if result:
+		valid_indata = (False, 0, "0", "n", "no", "false")
+		expected_status = True
+		expected_result = False
+		for indata in valid_indata:
+			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			if status != expected_status:
+				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				result = False
+				break
+			if retval != expected_result:
+				message = f"{fun_str}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+				result = False
+				break
+	if result:
+		invalid_indata = (None, 2, "2", "f", "foo")
+		expected_status = False
+		for indata in invalid_indata:
+			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			if status != expected_status:
+				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				result = False
+				break
+	return message, result
+
+def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtvalidators.validator_int
+	fun_str = "logparsers.validator_int"
+
+	if result:
+		# Indata format:
+		# (indata, min, max, expected_status, expected_exception)
+		testdata = (
+			(1, 3, 2, True, ProgrammingError),
+			(1, 0, 2, True, None),
+			(-1, -2, 2, True, None),
+			(3, -2, None, True, None),
+			(-3, None, 2, True, None),
+			("a", 0, 2, False, None),
+			(3, 0, 2, False, None),
+			(-3, -2, 2, False, None),
+			(3, None, 2, False, None),
+			(-3, -2, None, False, None),
+		)
+		for indata, range_min, range_max, expected_status, expected_exception in testdata:
+			try:
+				status = fun(range_min, range_max, indata, error_on_failure = True, exit_on_failure = False)
+				if status != expected_status:
+					message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n      output: {status}\n    expected: {expected_status}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_status}"
+					result = False
+					break
+	return message, result
+
+def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtvalidators.validate_argument
+	fun_str = "cmtvalidators.validate_argument"
+
+	if result:
+		# Indata format:
+		# ({arg, arg_string, options: {validator, list_separator, valid_range, allowlist, validator_regex}}, expected_status, expected_exception)
+		testdata = (
+			(
+				{
+					"arg": "ok",
+					"arg_string": [ANSIThemeString("ok", "option"),
+						       ANSIThemeString("|", "separator"),
+						       ANSIThemeString("maybe", "option"),
+						       ANSIThemeString("|", "separator"),
+						       ANSIThemeString("nope", "option")],
+					"options": {
+						"validator": "allowlist",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": ["ok", "maybe", "nope"],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "not_ok",
+					"arg_string": [ANSIThemeString("ok", "option"),
+						       ANSIThemeString("|", "separator"),
+						       ANSIThemeString("maybe", "option"),
+						       ANSIThemeString("|", "separator"),
+						       ANSIThemeString("nope", "option")],
+					"options": {
+						"validator": "allowlist",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": ["ok", "maybe", "nope"],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
+					"arg": "true",
+					"arg_string": [ANSIThemeString("true", "option"),
+						       ANSIThemeString("|", "separator"),
+						       ANSIThemeString("false", "option")],
+					"options": {
+						"validator": "bool",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "1,2,3,4",
+					"arg_string": [ANSIThemeString("INTEGER", "option"),
+						       ANSIThemeString(",", "separator"),
+						       ANSIThemeString("...", "option")],
+					"options": {
+						"validator": "int",
+						"list_separator": ",",
+						"valid_range": (1, 50),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "1,2,4,3",
+					"arg_string": [ANSIThemeString("INTEGER", "option"),
+						       ANSIThemeString(",", "separator"),
+						       ANSIThemeString("...", "option")],
+					"options": {
+						"validator": "int",
+						"list_separator": ",",
+						"valid_range": (1, 3),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
+					"arg": "0xdeadbeef",
+					"arg_string": [ANSIThemeString("HEX", "option")],
+					"options": {
+						"validator": "regex",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"^0x[0-9a-f]+$",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "0xdeadbeefg",
+					"arg_string": [ANSIThemeString("HEX", "option")],
+					"options": {
+						"validator": "regex",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"^0x[0-9a-f]+$",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
+					"arg": "https://mirrors.edge.kernel.org/pub/",
+					"arg_string": [ANSIThemeString("URL", "option")],
+					"options": {
+						"validator": "url",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "mirrors.edge.kernel.org/pub/",
+					"arg_string": [ANSIThemeString("URL", "option")],
+					"options": {
+						"validator": "url",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "-mirrors.edge.kernel.org/pub/",
+					"arg_string": [ANSIThemeString("URL", "option")],
+					"options": {
+						"validator": "url",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+		)
+		for indata, expected_status, expected_exception in testdata:
+			arg = deep_get(indata, DictPath("arg"), {})
+			arg_string = deep_get(indata, DictPath("arg_string"), [])
+			options = deep_get(indata, DictPath("options"), {})
+			options["message_on_failure"] = True
+			options["exit_on_failure"] = False
+			import sys
+			try:
+				if (status := fun(arg = arg, arg_string = arg_string, options = options)) != expected_status:
+					message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n      output: {status}\n    expected: {expected_status}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_status}"
+					result = False
+					break
+	return message, result
+
+tests: Dict = {
+	("validator_bool()", ): {
+		"callable": test_validator_bool,
+		"result": None,
+	},
+	("validator_int()", ): {
+		"callable": test_validator_int,
+		"result": None,
+	},
+	("validate_argument()", ): {
+		"callable": test_validate_argument,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+	cmtvalidators.set_programname("validatortests")
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()
