@@ -1,0 +1,285 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+
+from datetime import datetime, timezone
+import sys
+from typing import Dict, Tuple
+import yaml
+
+from cmttypes import deep_get, DictPath, ProgrammingError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+import kubernetes_helper
+
+# unit-tests for kubernetes_helper.py
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
+
+def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = kubernetes_helper.kind_tuple_to_name
+	fun_str = "kubernetes_helper.kind_tuple_to_name"
+
+	if result:
+		# Indata format:
+		# (kind, expected_result, expected_exception)
+		testdata = (
+			(("Pod", ""), "pods", None),
+			(("CronJob", "batch"), "cronjobs.batch", None),
+			(("NonExistingAPI", ""), "", None),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"          output: {tmp}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: {indata}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = kubernetes_helper.guess_kind
+	fun_str = "kubernetes_helper.guess_kind"
+
+	if result:
+		# Indata format:
+		# (kind, expected_result, expected_exception)
+		testdata = (
+			(("Pod", ""), ("Pod", ""), None),
+			(("pods", ""), ("Pod", ""), None),
+			("pods", ("Pod", ""), None),
+			(("CronJob", "batch"), ("CronJob", "batch"), None),
+			(("cronjobs", "batch"), ("CronJob", "batch"), None),
+			(("CronJob", ""), ("CronJob", "batch"), None),
+			(("DaemonSet", ""), ("DaemonSet", "apps"), None),
+			("daemonsets.apps", ("DaemonSet", "apps"), None),
+			(("Workflow", ""), None, NameError),
+			(("__Log", ""), ("__Log", ""), None),
+			(None, None, TypeError),
+			(1, None, TypeError),
+			(("a",), None, TypeError),
+			(("a", "b", "c"), None, TypeError),
+			(("NonExistingAPI", ""), None, NameError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"          output: {tmp}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: {indata}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = kubernetes_helper.update_api_status
+	fun_str = "kubernetes_helper.update_api_status"
+
+	if result:
+		# Indata format:
+		# (kind, listview, infoview, local, expected_result, expected_exception)
+		testdata = (
+			(("Pod", ""), True, True, False, (True, True, False), None),
+			(("Pod", ""), True, True, True, (True, True, True), None),
+			("Pod", True, True, True, None, TypeError),
+			(None, True, True, True, None, TypeError),
+			(("Pod", ""), None, None, None, (None, None, None), None),
+		)
+		for indata, listview, infoview, local, expected_result, expected_exception in testdata:
+			try:
+				fun(indata, listview, infoview, local)
+				listview = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath(f"list"), None)
+				infoview = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath(f"info"), None)
+				local = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath(f"local"), None)
+
+				if (listview, infoview, local) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"        listview: {listview}\n" \
+						  f"        infoview: {infoview}\n" \
+						  f"           local: {local}\n" \
+						  f"          output: {(listview, infoview, local)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: {indata}\n" \
+							  f"        listview: {listview}\n" \
+							  f"        infoview: {infoview}\n" \
+							  f"           local: {local}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"        listview: {listview}\n" \
+						  f"        infoview: {infoview}\n" \
+						  f"           local: {local}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = kubernetes_helper.kubectl_get_version
+	fun_str = "kubernetes_helper.kubectl_get_version"
+
+	if result:
+		tmp = fun()
+		if not (isinstance(tmp, tuple) and len(tmp) == 6 and \
+			        isinstance(tmp[0], int) and isinstance(tmp[1], int) and \
+			        isinstance(tmp[2], str) and \
+			        isinstance(tmp[3], int) and isinstance(tmp[4], int) and \
+			        isinstance(tmp[5], str)):
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"          output: {tmp} (type: {type(tmp)}, len: {len(tmp)})\n" \
+				  f"        expected: (type: {tuple}, len: 6)"
+			result = False
+		else:
+			ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+
+			kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = tmp
+			ansithemeprint([ANSIThemeString("    kubectl major version: ", "emphasis"), ANSIThemeString(f"{kubectl_major_version}", "version")])
+			ansithemeprint([ANSIThemeString("    kubectl minor version: ", "emphasis"), ANSIThemeString(f"{kubectl_minor_version}", "version")])
+			ansithemeprint([ANSIThemeString("      kubectl git version: ", "emphasis"), ANSIThemeString(f"{kubectl_git_version}", "version")])
+			ansithemeprint([ANSIThemeString("     server major version: ", "emphasis"), ANSIThemeString(f"{server_major_version}", "version")])
+			ansithemeprint([ANSIThemeString("     server minor version: ", "emphasis"), ANSIThemeString(f"{server_minor_version}", "version")])
+			ansithemeprint([ANSIThemeString("       server git version: ", "emphasis"), ANSIThemeString(f"{server_git_version}", "version")])
+	return message, result
+
+tests: Dict = {
+	("kind_tuple_to_name()",): {
+		"callable": test_kind_tuple_to_name,
+		"result": None,
+	},
+	("kind_guess_kind()",): {
+		"callable": test_guess_kind,
+		"result": None,
+	},
+	("update_api_status()",): {
+		"callable": test_update_api_status,
+		"result": None,
+	},
+}
+
+tests_with_cluster = {
+	("kubectl_get_version()",): {
+		"callable": test_kubectl_get_version,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	global tests
+
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+
+	if "--include-cluster" in sys.argv:
+		tests = { **tests, **tests_with_cluster }
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()

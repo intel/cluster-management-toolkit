@@ -102,7 +102,7 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, 
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status
+from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
 
@@ -8526,7 +8526,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if _api_family is None:
 					_api_family = deep_get(obj, DictPath(_api_family_path), "")
 				if _kind is not None:
-					_kind = kh.guess_kind((_kind, _api_family))
+					_kind = guess_kind((_kind, _api_family))
 				_namespace = deep_get(listgetter_args, DictPath("namespace"))
 				_namespace_path = deep_get(listgetter_args, DictPath("_namespace_path"), "")
 				if _namespace is None:
@@ -8811,7 +8811,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						ikind = deep_get(viewref, DictPath("listpad#on_activation#kind"), "")
 						if isinstance(ikind, str):
 							iapi_family = deep_get(viewref, DictPath("listpad#on_activation#api_family"), "")
-							ikind = kh.guess_kind((ikind, iapi_family))
+							ikind = guess_kind((ikind, iapi_family))
 					else:
 						continue
 
@@ -9184,7 +9184,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							return retval
 					elif len(kind) > 0:
 						if isinstance(kind, str):
-							kind = kh.guess_kind(kind)
+							kind = guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
 						retval = call(uip.stdscr, ref, kind)
 						if retval is not None and retval == Retval.RETURNFULL:
@@ -10710,7 +10710,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
         # If the kind is unknown we will get NameError;
 	# in this case we probably do not want to crash
 	try:
-		kind = kh.guess_kind(kind)
+		kind = guess_kind(kind)
 	except NameError:
 		obj = None
 
@@ -11514,7 +11514,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 			_kind = deep_get(ref, DictPath("kind"), "")
 			_api_group = deep_get(ref, DictPath("api_group"), "")
 			try:
-				kind = kh.guess_kind((_kind, _api_group))
+				kind = guess_kind((_kind, _api_group))
 			except NameError:
 				# If we cannot guess the kind we return
 				return

@@ -3624,6 +3624,85 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 		name = name.rstrip(".")
 	return name
 
+def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
+	"""
+	Given a Kind without API-group, or (API-name, API-group)
+	return the (Kind, API-group) tuple
+
+		Parameters:
+			kind (str):
+				kind (str): The Kubernetes kind
+			kind ((str, str)):
+				kind (str): The API-name
+				api_group (str): The API-group
+		Returns:
+			kind (kind, api_group):
+				kind (str): The Kubernetes kind
+				api_group (str): The API-group
+		Raises:
+			NameError: No matching API could be found
+			TypeError: kind is not a str or (str, str) tuple
+	"""
+
+	if not isinstance(kind, (str, tuple)):
+		raise TypeError("kind must be str or (str, str)")
+	elif isinstance(kind, tuple) and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
+		raise TypeError("kind must be str or (str, str)")
+
+	if isinstance(kind, str):
+		if "." in kind:
+			kind = tuple(kind.split(".", maxsplit = 1))
+		else:
+			kind = (kind, "")
+
+	# If we already have a tuple, do not guess
+	if kind in kubernetes_resources:
+		return kind
+
+	if kind[0].startswith("__"):
+		return kind
+
+	guess = None
+
+	# If we have a tuple that didn't match we can try matching it against the api + api_group instead.
+	# To do that we need to scan.
+	for resource_kind, resource_data in kubernetes_resources.items():
+		api_name = deep_get(resource_data, DictPath("api"))
+		resource_name = resource_kind[0].lower()
+		resource_family = resource_kind[1].lower()
+		kind_name = kind[0].lower()
+		kind_family = kind[1].lower()
+		if resource_name == kind_name and resource_family == kind_family:
+			return resource_kind
+		if (api_name, resource_family) == kind:
+			return resource_kind
+		if resource_name == kind_name and kind_family == "":
+			# Special-case the built-in APIs
+			if resource_family in ("admissionregistration.k8s.io",
+					       "apiextensions.k8s.io",
+					       "apps",
+					       "autoscaling",
+					       "batch",
+					       "certificates.k8s.io",
+					       "coordination.k8s.io",
+					       "discovery.k8s.io",
+					       "events.k8s.io",
+					       "flowcontrol.apiserver.k8s.io",
+					       "internal.apiserver.k8s.io",
+					       "metacontroller.k8s.io"):
+				return resource_kind
+
+			if guess is None:
+				guess = resource_kind
+			else:
+				guess = None
+				break
+
+	if guess is not None:
+		return guess
+
+	raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
+
 def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False, local: bool = False) -> None:
 	"""
 	Update kubernetes_resources for a kind to indicate whether or not there are list and infoviews for them
@@ -3633,7 +3712,14 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 			listview (bool): Does this kind have a list view
 			infoview (bool): Does this kind have an info view
 			local (bool): The view is a local addition
+		Raises:
+			TypeError: kind is not a (str, str) tuple
 	"""
+
+	if not isinstance(kind, tuple) or isinstance(kind, tuple) and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
+		raise TypeError("kind must be (str, str)")
+	if not ((listview is None or isinstance(listview, bool)) and (infoview is None or isinstance(infoview, bool)) and (local is None or isinstance(local, bool))):
+		raise TypeError("listview, infoview, and local must be either None or bool")
 
 	# There are other kind of views than just Kubernetes APIs; just ignore them
 	if kind not in kubernetes_resources:
@@ -3658,7 +3744,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[i
 	# Check kubectl version
 	try:
 		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
-	except FileNotFoundError:
+	except FileNotFoundError:  # pragma: no cover
 		return -1, -1, "", -1, -1, ""
 
 	args = [kubectl_path, "version", "-oyaml"]
@@ -3666,7 +3752,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[i
 	try:
 		response = execute_command_with_response(args)
 		version_data = yaml.safe_load(response)
-	except yaml.scanner.ScannerError:
+	except yaml.scanner.ScannerError:  # pragma: no cover
 		return -1, -1, "", -1, -1, ""
 
 	kubectl_version = deep_get(version_data, DictPath("clientVersion"))
@@ -3675,7 +3761,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[i
 		kubectl_major_version = int("".join(filter(str.isdigit, deep_get(kubectl_version, DictPath("major")))))
 		kubectl_minor_version = int("".join(filter(str.isdigit, deep_get(kubectl_version, DictPath("minor")))))
 		kubectl_git_version = str(deep_get(kubectl_version, DictPath("gitVersion")))
-	else:
+	else:  # pragma: no cover
 		kubectl_major_version = None
 		kubectl_minor_version = None
 		kubectl_git_version = "<unavailable>"
@@ -3683,7 +3769,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[i
 		server_major_version = int("".join(filter(str.isdigit, deep_get(server_version, DictPath("major")))))
 		server_minor_version = int("".join(filter(str.isdigit, deep_get(server_version, DictPath("minor")))))
 		server_git_version = str(deep_get(server_version, DictPath("gitVersion")))
-	else:
+	else:  # pragma: no cover
 		server_major_version = None
 		server_minor_version = None
 		server_git_version = "<unavailable>"
@@ -4660,50 +4746,6 @@ class KubernetesHelper:
 			latest_api = latest_api[:-len("/")]
 		return latest_api
 
-	def guess_kind(self, kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
-		"""
-		Given a Kind without API-group, or (API-name, API-group)
-		return the (Kind, API-group) tuple
-
-			Parameters:
-				kind (str):
-					kind (str): The Kubernetes kind
-				kind ((str, str)):
-					kind (str): The API-name
-					api_group (str): The API-group
-			Returns:
-				kind (kind, api_group):
-					kind (str): The Kubernetes kind
-					api_group (str): The API-group
-		"""
-
-		# If we already have a tuple, do not guess
-		if isinstance(kind, tuple):
-			if kind in kubernetes_resources:
-				return kind
-
-			if (kind[0].capitalize(), kind[1]) in kubernetes_resources:
-				return (kind[0].capitalize(), kind[1])
-
-			if kind[0].startswith("__"):
-				return kind
-
-			# We have a tuple, but it did not have an entry in kubernetes_resources;
-			# it might be api + api_group instead though, but for that we need to scan
-			for resource_kind, resource_data in kubernetes_resources.items():
-				if deep_get(resource_data, DictPath("api")) == kind[0] and resource_kind[1] == kind[1]:
-					return resource_kind
-
-		# APIs are grouped in two: Kubernetes "native",
-		# and everything else, with native entries first.
-		# Thus we can iterate over the dict and stop as soon
-		# as we get a match.
-		for _kind, _api_group in kubernetes_resources.items():
-			if kind == _kind:
-				return str(_kind), str(_api_group)
-
-		raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
-
 	# pylint: disable=too-many-return-statements
 	def get_api_resources(self) -> Tuple[int, List[Tuple]]:
 		"""
@@ -5225,7 +5267,7 @@ class KubernetesHelper:
 		if kind is None:
 			raise ValueError("__rest_helper_post called with kind None; this is most likely a programming error")
 
-		kind = self.guess_kind(kind)
+		kind = guess_kind(kind)
 
 		if kind in kubernetes_resources:
 			api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
@@ -5285,7 +5327,7 @@ class KubernetesHelper:
 		if kind is None:
 			raise ValueError("__rest_helper_patch called with kind None; this is most likely a programming error")
 
-		kind = self.guess_kind(kind)
+		kind = guess_kind(kind)
 
 		if kind in kubernetes_resources:
 			api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
@@ -5332,7 +5374,7 @@ class KubernetesHelper:
 		if kind is None:
 			raise ValueError("__rest_helper_delete called with kind None; this is most likely a programming error")
 
-		kind = self.guess_kind(kind)
+		kind = guess_kind(kind)
 
 		if kind in kubernetes_resources:
 			api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
@@ -5396,7 +5438,7 @@ class KubernetesHelper:
 			namespace_part = f"namespaces/{namespace}/"
 
 		if raw_path is None:
-			kind = self.guess_kind(cast(Tuple[str, str], kind))
+			kind = guess_kind(cast(Tuple[str, str], kind))
 			if kind in kubernetes_resources:
 				api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
 				api = deep_get(kubernetes_resources[kind], DictPath("api"))

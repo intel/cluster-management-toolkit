@@ -762,7 +762,7 @@ def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 		name = deep_get(obj, DictPath(name_path))
 		namespace_path = deep_get(action_args, DictPath("namespace_path"))
 		namespace = deep_get(obj, DictPath(namespace_path), "")
-		kind = kh.guess_kind((kind, api_family))
+		kind = kubernetes_helper.guess_kind((kind, api_family))
 		columns = deep_get(item, DictPath("columns"), [])
 		args = deep_get(action_args, DictPath("args"), {})
 
