@@ -16,9 +16,9 @@ try:
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError: # pragma: no cover
-	import json # type: ignore
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+	import json  # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 import re
 import ssl
 import sys
@@ -27,7 +27,7 @@ import threading
 from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
@@ -35,7 +35,7 @@ from cryptography.hazmat.primitives import serialization
 
 try:
 	import urllib3
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
@@ -3599,8 +3599,9 @@ class PoolManagerContext:
 
 		return self.pool_manager
 
-	def __exit__(self, *args, **kwargs):
-		self.pool_manager.clear()
+	def __exit__(self, *args: List, **kwargs: Dict) -> None:
+		if self.pool_manager is not None:
+			self.pool_manager.clear()
 		self.pool_manager = None
 
 def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
@@ -4059,7 +4060,7 @@ class KubernetesHelper:
 
 			try:
 				with PoolManagerContext(cert_file = self.cert_file, key_file = self.key_file, ca_certs_file = self.ca_certs_file, token = self.token, insecuretlsskipverify = self.insecuretlsskipverify) as pool_manager:
-					result = pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False) # type: ignore
+					result = pool_manager.request("GET", url, headers = header_params, timeout = urllib3.Timeout(connect = connect_timeout), redirect = False)  # type: ignore
 					status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
@@ -4097,7 +4098,7 @@ class KubernetesHelper:
 		context_name = ""
 		cluster_name = ""
 		user_name = ""
-		namespace_name = "" # pylint: disable=unused-variable
+		namespace_name = ""  # pylint: disable=unused-variable
 
 		# If config_path is passed as a parameter, use it,
 		# else use the path used when initialising the class
@@ -4266,17 +4267,17 @@ class KubernetesHelper:
 
 		if not self.insecuretlsskipverify:
 			ca_certs = str(ca_certs)
-			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
+			self.tmp_ca_certs_file = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
 			self.ca_certs_file = self.tmp_ca_certs_file.name
 			self.tmp_ca_certs_file.write(ca_certs.encode("utf-8"))
 			self.tmp_ca_certs_file.flush()
 		else:
 			urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-		# If we have a cert we also have a key
-		if cert is not None:
-			self.tmp_cert_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
-			self.tmp_key_file = tempfile.NamedTemporaryFile() # pylint: disable=consider-using-with
+		# If we have a cert we also have a key, but check anyway, to make mypy happy
+		if cert is not None and key is not None:
+			self.tmp_cert_file = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
+			self.tmp_key_file = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
 			self.cert_file = self.tmp_cert_file.name
 			self.key_file = self.tmp_key_file.name
 
@@ -4592,7 +4593,7 @@ class KubernetesHelper:
 				if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
 					# This is to handle systems that doesn't have the latest version of cryptography
 					# pylint: disable-next=import-outside-toplevel,no-name-in-module
-					from cryptography.hazmat.primitives import default_backend # type: ignore
+					from cryptography.hazmat.primitives import default_backend  # type: ignore
 					x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 				else:
 					raise
@@ -5076,7 +5077,7 @@ class KubernetesHelper:
 		if retries == 0:
 			_retries = False
 		else:
-			_retries = urllib3.Retry(retries) # type: ignore
+			_retries = urllib3.Retry(retries)  # type: ignore
 
 		data = None
 		message = ""
@@ -5086,9 +5087,9 @@ class KubernetesHelper:
 		while reauth_retry > 0:
 			try:
 				if body is not None:
-					result = pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
+					result = pool_manager.request(method, url, headers = header_params, body = body, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)  # type: ignore
 				else:
-					result = pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries) # type: ignore
+					result = pool_manager.request(method, url, headers = header_params, fields = query_params, timeout = urllib3.Timeout(connect = connect_timeout), retries = _retries)  # type: ignore
 				status = result.status
 			except urllib3.exceptions.MaxRetryError as e:
 				# No route to host does not have a HTTP response; make one up...
@@ -5679,7 +5680,7 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
-		msg = []
+		msg: List[str] = []
 		status = 42503
 
 		if self.cluster_unreachable:
@@ -5756,7 +5757,7 @@ a				the return value from __rest_helper_patch
 		"""
 
 		msg = ""
-		status = "42503"
+		status = 42503
 
 		query_params: List[Optional[Tuple[str, Any]]] = []
 		if container is not None:
