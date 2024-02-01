@@ -385,8 +385,12 @@ def get_since(timestamp: Optional[Union[int, datetime]]) -> int:
 	"""
 
 	if timestamp is None:
-		since = 0
-	elif timestamp == -1 or timestamp == none_timestamp():
+		return 0
+
+	if not isinstance(timestamp, (int, datetime)):
+		raise TypeError(f"timestamp is type {type(timestamp)}, expected int or datetime")
+
+	if timestamp == -1 or timestamp == none_timestamp():
 		since = -1
 	# If the timestamp is an integer we assume it to already be in seconds
 	elif isinstance(timestamp, int):
