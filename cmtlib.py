@@ -6,7 +6,6 @@ Helpers used by various components of CMT
 
 from datetime import datetime, timezone, timedelta, date
 import errno
-import os
 from pathlib import Path, PurePath
 import re
 import sys
@@ -60,7 +59,7 @@ def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
 		Parameters:
 			string (str): The string to strip
 			prefix (str): The prefix to strip
-		Return:
+		Returns:
 			(string (str), count (int)): The stripped string and the count of stripped characters
 	"""
 
@@ -74,7 +73,7 @@ def rstrip_count(string: str, suffix: str) -> Tuple[str, int]:
 		Parameters:
 			string (str): The string to strip
 			suffix (str): The suffix to strip
-		Return:
+		Returns:
 			(string (str), count (int)): The stripped string and the count of stripped characters
 	"""
 
@@ -90,11 +89,20 @@ def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
 			chunksize (int): The chunksize
 		Returns:
 			chunk ([Any]): A generator for the chunked list
+		Raises:
+			TypeError: items is not a list or chunksize is not an integerg
+			ValueError: chunksize is < 1
 	"""
+	if not isinstance(items, list):
+		raise TypeError("items must be a list")
+	if not isinstance(chunksize, int):
+		raise TypeError("chunksize must by an integer > 0")
+	if chunksize < 1:
+		raise ValueError(f"Invalid chunksize {chunksize}; chunksize must be > 0")
 	for i in range(0, len(items), chunksize):
 		yield items[i:i + chunksize]
 
-def clamp(value: int, minval: int, maxval: int) -> int:
+def clamp(value: Union[int, float], minval: Union[int, float], maxval: Union[int, float]) -> Union[int, float]:
 	"""
 	Clamp value inside the range minval, maxval
 
@@ -106,6 +114,12 @@ def clamp(value: int, minval: int, maxval: int) -> int:
 			int: The clamped value
 	"""
 
+	if not isinstance(value, (int, float)):
+		raise TypeError("value must be an integer or float")
+	if not isinstance(minval, (int, float)) or not isinstance(maxval, (int, float)):
+		raise TypeError("maxval and minval must be integers or floats")
+	if minval > maxval:
+		raise ValueError(f"maxval ({maxval}) must be >= minval ({minval})")
 	return min(maxval, max(minval, value))
 
 def none_timestamp() -> datetime:
@@ -126,6 +140,9 @@ def disksize_to_human(size: int) -> str:
 			size (int): The disksize in bytes
 		Returns:
 			disksize (str): The human readable disksize with size suffix
+		Raises:
+			TypeError: size is not an integer
+			ValueError: size is not >= 0
 	"""
 
 	size_suffixes = [
@@ -137,8 +154,13 @@ def disksize_to_human(size: int) -> str:
 		"PiB",
 	]
 
+	if not isinstance(size, int):
+		raise TypeError("size must be an integer")
+	if size < 0:
+		raise ValueError("size must be >= 0")
+
 	for suffix in size_suffixes:
-		if size < 1024:
+		if size < 1024 or suffix == "PiB":
 			break
 		size = size // 1024
 	return f"{size}{suffix}"
@@ -153,6 +175,8 @@ def split_msg(rawmsg: str) -> List[str]:
 			list[str]: A list of split strings
 	"""
 
+	if not isinstance(rawmsg, str):
+		raise TypeError(f"rawmsg is type {type(rawmsg)}, expected str")
 	# We only want "\n" to represent newlines
 	tmp = rawmsg.replace("\r\n", "\n")
 	# We also replace all \x00 with <NUL>
@@ -165,6 +189,19 @@ def split_msg(rawmsg: str) -> List[str]:
 	return list(map(str.rstrip, tmp.splitlines()))
 
 def strip_ansicodes(message: str) -> str:
+	"""
+	Strip all ANSI-formatting from a string
+
+		Parameters:
+			message (str): The string to strip
+		Returns:
+			(str): The stripped string
+		Raises:
+			TypeError: The input was not a string
+	"""
+	if not isinstance(message, str):
+		raise TypeError(f"message is type {type(message)}, expected str")
+
 	message = message.replace("\\x1b", "\x1b").replace("\\u001b", "\x1b")
 	# Safe
 	tmp = re.findall(r"("
@@ -193,10 +230,10 @@ def read_cmtconfig() -> Dict:
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError: # pragma: no cover
+	except ModuleNotFoundError:  # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-	global cmtconfig # pylint: disable=global-statement
+	global cmtconfig  # pylint: disable=global-statement
 
 	if not Path(CMT_CONFIG_FILE).is_file():
 		return {}
@@ -235,9 +272,15 @@ def versiontuple(ver: str) -> Tuple[str, ...]:
 			ver (str): The version string to split
 		Returns:
 			result (tuple[str, ...]): A variable-length tuple with one string per version component
+		Raises:
+			TypeError: The input was not a string
 	"""
 
 	filled = []
+
+	if not isinstance(ver, str):
+		raise TypeError(f"ver is type {type(ver)}, expected str")
+
 	for point in ver.split("."):
 		filled.append(point.zfill(8))
 	return tuple(filled)
@@ -250,21 +293,26 @@ def age_to_seconds(age: str) -> int:
 			age (str): A string in age format
 		Returns:
 			seconds (int): The number of seconds
+		Raises:
+			TypeError: The input was not a string
+			ValueError: The input could not be parsed as an age string
 	"""
 
 	seconds = 0
 
+	if not isinstance(age, str):
+		raise TypeError(f"age is type {type(age)}, expected str")
+
+	if len(age) == 0:
+		return -1
 	# Safe
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
-	if tmp is not None:
-		if len(tmp[0]) == 0:
-			seconds = -1
-		else:
-			d = 0 if tmp[1] is None else int(tmp[1][:-1])
-			h = 0 if tmp[2] is None else int(tmp[2][:-1])
-			m = 0 if tmp[3] is None else int(tmp[3][:-1])
-			s = 0 if tmp[4] is None else int(tmp[4][:-1])
-			seconds = d * 24 * 60 * 60 + h * 60 * 60 + m * 60 + s
+	if tmp.span() != (0, 0):
+		d = 0 if tmp[1] is None else int(tmp[1][:-1])
+		h = 0 if tmp[2] is None else int(tmp[2][:-1])
+		m = 0 if tmp[3] is None else int(tmp[3][:-1])
+		s = 0 if tmp[4] is None else int(tmp[4][:-1])
+		seconds = d * 24 * 60 * 60 + h * 60 * 60 + m * 60 + s
 	else:
 		raise ValueError(f"age regex did not match; age: {age}")
 
@@ -279,13 +327,15 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
 			negative_is_skew (bool): Should a negative timestamp return a clock skew warning (default: -age)
 		Returns:
 			age (str): The age string
+		Raises:
+			TypeError: The input was not an integer
 	"""
+
+	if not isinstance(seconds, int):
+		raise TypeError(f"age is type {type(seconds)}, expected int")
 
 	age = ""
 	fields = 0
-
-	if not isinstance(seconds, int):
-		return ""
 
 	if seconds < -1:
 		sign = "-"
@@ -502,8 +552,8 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	"""
 
 	# pylint: disable-next=unused-import,import-outside-toplevel
-	import ansible_helper # noqa
-	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
+	import ansible_helper  # noqa
+	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path  # pylint: disable=import-outside-toplevel
 
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
@@ -565,7 +615,7 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError: # pragma: no cover
+	except ModuleNotFoundError:  # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	versions = []
@@ -700,8 +750,6 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 	# i | kubernetes1.28-kubeadm | package | 1.28.3-150400.5.1 | x86_64 | kubic
 	package_version = re.compile(r"^(.).? \| (\S+) +\| package +\| (\S+) +\|.*")
 
-	section = ""
-
 	for line in split_response:
 		if (tmp := package_version.match(line)):
 			if tmp is not None:
@@ -742,7 +790,7 @@ def identify_k8s_distro() -> str:
 	k8s_distro = None
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")

@@ -551,5 +551,13 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 	return result
 
 def set_programname(__programname: str) -> None:
+	"""
+	Set the name of the calling program, to ensure that error messages are correct
+	Note: This should be removed; libraries should not print error messages
+
+		Parameters:
+			__programname (str): The name of the program
+	"""
+
 	global programname
 	programname = __programname

@@ -88,6 +88,13 @@ def request_ansible_password() -> None:
 		ansible_configuration["ansible_password"] = ansible_password # type: ignore
 
 def get_latest_kubernetes_upstream_version() -> Optional[str]:
+	"""
+	Try to get the latest Kubernetes upstream version
+
+		Returns:
+			(str): The latest Kubernetes upstream version number on success, "" on failure
+	"""
+
 	# We are OK with the file not existing
 	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
