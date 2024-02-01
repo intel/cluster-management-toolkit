@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 from cmtlib import get_since, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
 import kubernetes_helper
-from kubernetes_helper import get_node_status, kind_tuple_to_name
+from kubernetes_helper import get_node_status, kind_tuple_to_name, guess_kind
 
 def get_container_status(src_statuses: List[Dict], container: str) -> Tuple[str, StatusGroup, int, str, int]:
 	"""
@@ -191,7 +191,7 @@ def datagetter_deprecated_api(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 	"""
 
 	result, extra_vars = datagetter_metrics(kh, obj, path, default)
-	kind, api_family = kh.guess_kind((result[0], result[1]))
+	kind, api_family = guess_kind((result[0], result[1]))
 	return (kind, api_family, result[2]), extra_vars
 
 def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[Tuple[str, str, str], Dict]:
@@ -220,7 +220,7 @@ def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 	kind = deep_get(obj, DictPath(path[0]))
 	api_family = deep_get(obj, DictPath(path[1]))
 	old_version = deep_get(obj, DictPath(path[2]))
-	kind = kh.guess_kind((kind, api_family))
+	kind = guess_kind((kind, api_family))
 
 	latest_api = kh.get_latest_api(kind)
 	if "/" in latest_api:
@@ -556,7 +556,7 @@ def datagetter_api_support(kh: kubernetes_helper.KubernetesHelper, obj: Dict, pa
 	available_views = []
 
 	try:
-		kind = kh.guess_kind((kind, api_family))
+		kind = guess_kind((kind, api_family))
 		available_views.append("Known")
 		if deep_get(available_apis[kind], DictPath("list"), False):
 			available_views.append("List")

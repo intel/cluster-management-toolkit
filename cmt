@@ -59,7 +59,7 @@ from cmtio import execute_command, secure_read_string
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
 
-from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context
+from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context, guess_kind
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint, ansithemeinput, ansithemeinput_password
 
@@ -2109,7 +2109,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				api_group = ""
 				if "/" in api_version:
 					api_group = api_version.split("/")[0]
-				kind_tuple = kh.guess_kind((name, api_group))
+				kind_tuple = guess_kind((name, api_group))
 
 				# OK, this is a kind known by CMT that is available in the cluster;
 				# now check whether there's a view file and where it has list/info views
@@ -2312,7 +2312,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				api_group = ""
 				if "/" in api_version:
 					api_group = api_version.split("/")[0]
-				kind_tuple = kh.guess_kind((name, api_group))
+				kind_tuple = guess_kind((name, api_group))
 			except NameError:
 				kind_tuple = None
 
