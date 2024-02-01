@@ -31,17 +31,18 @@ If the file you're modifying is not listed here you can either implement one
 (using either `tests/iotests` or `tests/logtests` as template) on your own,
 or ask for help.
 
-| File:               | Tests:                 | Notes:                     |
-| ------------------- | ---------------------- | -------------------------- |
-| `ansithemeprint.py` | `tests/atptests`       | Has optional manual tests  |
-| `cmtio.py`          | `tests/iotests`        |                            |
-| `cmtio_yaml.py`     | `tests/iotests`        |                            |
-| `cmtlib.py`         | `tests/cmtlibtests`    |                            |
-| `cmtvalidators.py`  | `tests/validatortests` |                            |
-| `cmttypes.py`       | `tests/typetests`      |                            |
-| `logparser.py`      | `tests/logtests`       |                            |
-| `networkio.py`      | `tests/iotests`        |                            |
-| `reexecutor.py`     | `tests/fetch_async`    | Requires a running cluster |
+| File:                 | Tests:                 | Notes:                     |
+| --------------------- | ---------------------- | -------------------------- |
+| `ansithemeprint.py`   | `tests/atptests`       | Has optional manual tests  |
+| `cmtio.py`            | `tests/iotests`        |                            |
+| `cmtio_yaml.py`       | `tests/iotests`        |                            |
+| `cmtlib.py`           | `tests/cmtlibtests`    |                            |
+| `cmtvalidators.py`    | `tests/validatortests` |                            |
+| `cmttypes.py`         | `tests/typetests`      |                            |
+| `kubernetes_helper.py`| `tests/khtests`        | Requires a running cluster |
+| `logparser.py`        | `tests/logtests`       |                            |
+| `networkio.py`        | `tests/iotests`        |                            |
+| `reexecutor.py`       | `tests/fetch_async`    | Requires a running cluster |
 
 ### Adding New Testcases
 
