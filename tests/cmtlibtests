@@ -5,6 +5,7 @@
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
 
+from datetime import datetime, timezone
 from typing import Dict, Tuple
 import yaml
 
@@ -41,7 +42,12 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
 		for string, substitutions, expected_result, expected_exception in testdata:
 			try:
 				if (tmp := fun(string, substitutions)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n         output: {tmp}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"  substitutions:\n" \
+						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
@@ -49,11 +55,21 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"  substitutions:\n" \
+							  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"  substitutions:\n" \
+						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 	return message, result
@@ -79,7 +95,11 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
 		for strings, substitutions, expected_result, expected_exception in testdata:
 			try:
 				if (tmp := fun(strings, substitutions)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n         output: {tmp}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {strings}\n  substitutions:\n" \
+						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
@@ -87,11 +107,21 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {strings}\n" \
+							  f"  substitutions:\n" \
+							  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n          input: {strings}\n  substitutions:\n{yaml_dump(substitutions, base_indent = 17)}\n      exception: {type(e)}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {strings}\n" \
+						  f"  substitutions:\n" \
+						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 	return message, result
@@ -116,7 +146,11 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
 		for string, prefix, expected_result, expected_exception in testdata:
 			try:
 				if (tmp := fun(string, prefix)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n         output: {tmp}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         prefix: {prefix}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
@@ -124,11 +158,19 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"         prefix: {prefix}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         prefix: {prefix}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 	return message, result
@@ -153,7 +195,11 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
 		for string, prefix, expected_result, expected_exception in testdata:
 			try:
 				if (tmp := fun(string, prefix)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n         output: {tmp}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         prefix: {prefix}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
@@ -161,30 +207,588 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_exception}"
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"         prefix: {prefix}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n          input: {string}\n         prefix: {prefix}\n      exception: {type(e)}\n       expected: {expected_result}"
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         prefix: {prefix}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.chunk_list
+	fun_str = "cmtlib.chunk_list"
+
+	if result:
+		# Indata format:
+		# (items, chunksize, expected_result, expected_exception)
+		testdata = (
+			# chunksize * n = len(items)
+			([1, 2, 3, 4, 5, 6, 7, 8], 2, [[1, 2], [3, 4], [5, 6], [7, 8]], None),
+			# chunksize * n = len(items)
+			([1, 2, 3, 4, 5, 6, 7, 8], 4, [[1, 2, 3, 4], [5, 6, 7, 8]], None),
+			# chunksize * n != len(items)
+			([1, 2, 3, 4, 5, 6, 7, 8], 3, [[1, 2, 3], [4, 5, 6], [7, 8]], None),
+			# chunksize == len(items)
+			([1, 2, 3, 4, 5, 6, 7, 8], 8, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
+			# chunksize > len(items)
+			([1, 2, 3, 4, 5, 6, 7, 8], 9, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
+			# Invalid chunksize
+			([1, 2, 3, 4, 5, 6, 7, 8], "a", None, TypeError),
+			# Invalid chunksize
+			([1, 2, 3, 4, 5, 6, 7, 8], -2, None, ValueError),
+			# Invalid chunksize
+			([1, 2, 3, 4, 5, 6, 7, 8], 0, None, ValueError),
+			# Invalid list
+			(None, 3, None, TypeError),
+			# Invalid list
+			(1, 3, None, TypeError),
+		)
+		for items, chunksize, expected_result, expected_exception in testdata:
+			try:
+				chunks = []
+				for chunk in fun(items, chunksize):
+					chunks.append(chunk)
+				if chunks != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {items}\n" \
+						  f"      chunksize: {chunksize}\n" \
+						  f"         output: {chunks}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {items}\n" \
+							  f"      chunksize: {chunksize}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {items}\n" \
+						  f"      chunksize: {chunksize}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.clamp
+	fun_str = "cmtlib.clamp"
+
+	if result:
+		# Indata format:
+		# (value, minval, maxval, expected_result, expected_exception)
+		testdata = (
+			(3, 0, 42, 3, None),
+			(42, 0, 3, 3, None),
+			(-1, 0, 3, 0, None),
+			(3.0, 0.1, 42.0, 3.0, None),
+			(3.0, -0.1, 42.0, 3.0, None),
+			(0.2, -0.1, 42.0, 0.2, None),
+			(-0.2, -0.1, 42.0, -0.1, None),
+			(42.1, -0.1, 42.0, 42.0, None),
+			("a", -0.1, 42.0, None, TypeError),
+			(42, "a", 42.0, None, TypeError),
+			(42, 1, 0, None, ValueError),
+			("a", 1, 0, None, TypeError),
+		)
+		for value, minval, maxval, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(value, minval, maxval)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {value}\n" \
+						  f"         minval: {minval}\n" \
+						  f"         maxval: {maxval}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {value}\n" \
+							  f"         minval: {minval}\n" \
+							  f"         maxval: {maxval}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {value}\n" \
+						  f"         minval: {minval}\n" \
+						  f"         maxval: {maxval}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.none_timestamp
+	fun_str = "cmtlib.none_timestamp"
+
+	tmp = fun()
+	if not isinstance(tmp, datetime):
+		message = f"{fun_str}() did not yield expected result:\n" \
+			  f"         output: {tmp} (type: {type(tmp)})\n" \
+			  f"       expected: {datetime}"
+		result = False
+
+	return message, result
+
+def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.disksize_to_human
+	fun_str = "cmtlib.disksize_to_human"
+
+	if result:
+		# Indata format:
+		# (size, expected_result, expected_exception)
+		testdata = (
+			(42, "42 bytes", None),
+			(1024 ** 1 - 1, "1023 bytes", None),
+			(1024 ** 1, "1kiB", None),
+			(1024 ** 2 - 1, "1023kiB", None),
+			(1024 ** 2, "1MiB", None),
+			(1024 ** 3 - 1, "1023MiB", None),
+			(1024 ** 3, "1GiB", None),
+			(1024 ** 4 - 1, "1023GiB", None),
+			(1024 ** 4, "1TiB", None),
+			(1024 ** 5 - 1, "1023TiB", None),
+			(1024 ** 5, "1PiB", None),
+			(1024 ** 6 - 1, "1023PiB", None),
+			(1024 ** 6, "1024PiB", None),
+			(None, None, TypeError),
+			("a", None, TypeError),
+			("2", None, TypeError),
+			(-(1024 ** 4), None, ValueError),
+		)
+		for size, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(size)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {size}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {size}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {size}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.split_msg
+	fun_str = "cmtlib.split_msg"
+
+	if result:
+		# Indata format:
+		# (string, expected_result, expected_exception)
+		testdata = (
+			("foo\nbar", ["foo", "bar"], None),
+			("foobar", ["foobar"], None),
+			("foo\x00bar", ["foo<NUL>bar"], None),
+			("foo\r\nbar", ["foo", "bar"], None),
+			("foo    \nbar", ["foo", "bar"], None),
+			("foo\xa0bar", ["foo bar"], None),
+			("foo\x1abar", ["foo\uFFFDbar"], None),
+			("", [], None),
+			("\n", [""], None),
+			("\n\n", ["", ""], None),
+			(1, None, TypeError),
+		)
+		for size, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(size)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {size}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {size}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {size}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.strip_ansicodes
+	fun_str = "cmtlib.strip_ansicodes"
+
+	if result:
+		# Indata format:
+		# (string, expected_result, expected_exception)
+		testdata = (
+			("foobar", "foobar", None),
+			("\n\033[0;4;37mSummary:\033[0m", "Summary:", None),
+			(None, None, TypeError),
+			(1, None, TypeError),
+		)
+		for size, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(size)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {size}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {size}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {size}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.versiontuple
+	fun_str = "cmtlib.versiontuple"
+
+	if result:
+		# Indata format:
+		# (string, expected_result, expected_exception)
+		testdata = (
+			("1.29.2", ("00000001", "00000029", "00000002"), None),
+			("a.bc.d", ("0000000a", "000000bc", "0000000d"), None),
+			("", ("00000000",), None),
+			(None, None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.read_cmtconfig
+	fun_str = "cmtlib.read_cmtconfig"
+
+	if result:
+		try:
+			tmp = fun()
+			if not isinstance(tmp, dict):
+				message = f"{fun_str}() did not yield expected result:\n" \
+					  f"    output type: {type(tmp)}\n" \
+					  f"  expected type: dict"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	return message, result
+
+def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.age_to_seconds
+	fun_str = "cmtlib.age_to_seconds"
+
+	if result:
+		# Indata format:
+		# (age, expected_result, expected_exception)
+		testdata = (
+			("6d5h43m21s", int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
+			("5h43m", int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
+			("", -1, None),
+			("notanumber", None, ValueError),
+			(None, None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.seconds_to_age
+	fun_str = "cmtlib.seconds_to_age"
+
+	if result:
+		# Indata format:
+		# (age, negative_is_skew, expected_result, expected_exception)
+		testdata = (
+			(int(f"{6*24*60*60+5*60*60+43*60+21}"), False, "6d5h", None),
+			(int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
+			(int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
+			(int(f"0"), False, "<unset>", None),
+			(int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
+			(None, False, None, TypeError),
+		)
+		for indata, negative_is_skew, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata, negative_is_skew)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"negative_is_skew: {negative_is_skew}\n" \
+						  f"          output: {tmp}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: {indata}\n" \
+							  f"negative_is_skew: {negative_is_skew}\n" \
+							  f"           input: {indata}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: {indata}\n" \
+						  f"negative_is_skew: {negative_is_skew}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.get_since
+	fun_str = "cmtlib.get_since"
+
+	if result:
+		# Indata format:
+		# (timestamp, expected_result, expected_exception)
+		testdata = (
+			(int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
+			(int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
+			(int(f"{0*24*60*60+0*60*60+43*60+1}"), None),
+			(datetime.now(timezone.utc), None),
+			(cmtlib.none_timestamp(), None),
+			(None, None),
+			("a", TypeError),
+		)
+		for indata, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, int):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+						  f"    output type: {type(tmp)}\n" \
+						  f"       expected: {int}"
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
 					result = False
 					break
 	return message, result
 
 tests: Dict = {
-	("substitute_string()", ): {
+	("substitute_string()",): {
 		"callable": test_substitute_string,
 		"result": None,
 	},
-	("substitute_list()", ): {
+	("substitute_list()",): {
 		"callable": test_substitute_list,
 		"result": None,
 	},
-	("lstrip_count()", ): {
+	("lstrip_count()",): {
 		"callable": test_lstrip_count,
 		"result": None,
 	},
-	("rstrip_count()", ): {
+	("rstrip_count()",): {
 		"callable": test_rstrip_count,
+		"result": None,
+	},
+	("chunk_list()",): {
+		"callable": test_chunk_list,
+		"result": None,
+	},
+	("clamp()",): {
+		"callable": test_clamp,
+		"result": None,
+	},
+	("none_timestamp()",): {
+		"callable": test_none_timestamp,
+		"result": None,
+	},
+	("disksize_to_human()",): {
+		"callable": test_disksize_to_human,
+		"result": None,
+	},
+	("split_msg()",): {
+		"callable": test_split_msg,
+		"result": None,
+	},
+	("strip_ansicodes()",): {
+		"callable": test_strip_ansicodes,
+		"result": None,
+	},
+	("read_cmtconfig()",): {
+		"callable": test_read_cmtconfig,
+		"result": None,
+	},
+	("versiontuple()",): {
+		"callable": test_versiontuple,
+		"result": None,
+	},
+	("age_to_seconds()",): {
+		"callable": test_age_to_seconds,
+		"result": None,
+	},
+	("seconds_to_age()",): {
+		"callable": test_seconds_to_age,
+		"result": None,
+	},
+	("get_since()",): {
+		"callable": test_get_since,
 		"result": None,
 	},
 }
