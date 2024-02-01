@@ -75,6 +75,13 @@ class UnknownError(Exception):
 		super().__init__(message)
 
 	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
 		if len(self.message) == 0:
 			message = "No further details were provided"
 		else:
@@ -83,6 +90,13 @@ class UnknownError(Exception):
 		return message
 
 	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -156,6 +170,13 @@ class ProgrammingError(Exception):
 		super().__init__(message)
 
 	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
 		if len(self.message) == 0:
 			message = "No further details were provided"
 		else:
@@ -164,6 +185,13 @@ class ProgrammingError(Exception):
 		return message
 
 	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -240,6 +268,13 @@ class FilePathAuditError(Exception):
 		super().__init__(message)
 
 	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
 		if self.path is None:
 			path = "<omitted>"
 		else:
@@ -254,6 +289,13 @@ class FilePathAuditError(Exception):
 		return msg
 
 	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
 		return {
 			"exception": self.exception,
 			"message": self.message,
