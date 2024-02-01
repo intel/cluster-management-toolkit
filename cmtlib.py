@@ -90,7 +90,7 @@ def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
 		Returns:
 			chunk ([Any]): A generator for the chunked list
 		Raises:
-			TypeError: items is not a list or chunksize is not an integerg
+			TypeError: items is not a list or chunksize is not an integer
 			ValueError: chunksize is < 1
 	"""
 	if not isinstance(items, list):
