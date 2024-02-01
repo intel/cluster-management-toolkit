@@ -66,6 +66,7 @@ coverage-cluster: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch ;\
+	$$cmd run --branch --append tests/khtests --include-cluster ;\
 	$$cmd report ;\
 	$$cmd html
 
