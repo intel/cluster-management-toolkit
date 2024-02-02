@@ -1596,7 +1596,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							if sortedvals[i] is None:
 								continue
 							# pylint: disable-next=unidiomatic-typecheck
-							if type(sortedvals[i]) == int: # noqa: E721
+							if type(sortedvals[i]) == int:  # noqa: E721
 								if firstnum is None:
 									firstnum = sortedvals[i]
 								else:
@@ -1850,7 +1850,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					val1 = deep_get(obj, DictPath(path[0]), _default1)
 					val2 = deep_get(obj, DictPath(path[1]), _default2)
 					# pylint: disable-next=unidiomatic-typecheck
-					if type(val1) != type(val2): # noqa: E721
+					if type(val1) != type(val2):  # noqa: E721
 						res = -2
 					elif val1 == val2:
 						res = 0
@@ -4994,7 +4994,7 @@ def filter_list_entry(obj, caller_obj, filters):
 							else:
 								target_value = deep_get(_dict, DictPath(key))
 							# pylint: disable-next=unidiomatic-typecheck
-							if type(value) == type(target_value) and value == target_value: # noqa: E721
+							if type(value) == type(target_value) and value == target_value:  # noqa: E721
 								matched = True
 							else:
 								# This particular dict did not fully match
@@ -8951,7 +8951,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
 					# pylint: disable-next=unidiomatic-typecheck
-					if w_items is not None and len(w_items) > 0 and (isinstance(w_items[0], dict) or isinstance(w_items[0], (list, tuple)) and type(w_items[0][0]) != int): # noqa: E721
+					if w_items is not None and len(w_items) > 0 and (isinstance(w_items[0], dict) or isinstance(w_items[0], (list, tuple)) and type(w_items[0][0]) != int):  # noqa: E721
 						tmp_items = []
 						w_formatting = deep_get(value, DictPath("formatting"), [ThemeAttr("windowwidget", "default")])
 						lineattrs = WidgetLineAttrs.NORMAL
@@ -9286,7 +9286,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pod#severity_prefix"), [])
 	# Backwards compatibility
 	# pylint: disable-next=unidiomatic-typecheck
-	if type(severity_prefix) == bool: # noqa: E721
+	if type(severity_prefix) == bool:  # noqa: E721
 		if not severity_prefix:
 			severity_prefix = []
 		else:
@@ -12006,7 +12006,7 @@ def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview, **extra_args)
 		if tmpselection is not None:
 			# pylint: disable-next=unidiomatic-typecheck
-			if type(tmpselection) == int and tmpselection < 0: # noqa: E721
+			if type(tmpselection) == int and tmpselection < 0:  # noqa: E721
 				if tmpselection == -curses.KEY_F6:
 					categorise = not categorise
 					deep_set(cmtlib.cmtconfig, DictPath("__Selector#categorise"), categorise, create_path = True)
@@ -13572,8 +13572,8 @@ def main() -> None:
 	"""
 	Main function for the program
 	"""
-	global auditlog
-	global debuglog
+	global auditlog  # pylint: disable=global-statement
+	global debuglog  # pylint: disable=global-statement
 
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:

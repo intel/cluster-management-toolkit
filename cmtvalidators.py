@@ -12,8 +12,8 @@ import sys
 from typing import Any, Dict, List, Tuple
 
 try:
-	import validators # type: ignore
-except ModuleNotFoundError: # pragma: no cover
+	import validators  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
 	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` "
 	      "or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
@@ -107,46 +107,46 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 
 	if fqdn is None or len(fqdn) == 0:
 		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": A FQDN or hostname cannot be empty.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			msg = [ANSIThemeString("Error", "error"),
+			       ANSIThemeString(": A FQDN or hostname cannot be empty.", "default")]
+			ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_EMPTY
 	if "\x00" in fqdn:
 		stripped_fqdn = fqdn.replace("\x00", "<NUL>")
-		msg = [ansithemeprint.ANSIThemeString("Critical", "critical"),
-		       ansithemeprint.ANSIThemeString(": the FQDN / hostname ", "default"),
-		       ansithemeprint.ANSIThemeString(stripped_fqdn, "hostname")]
-		msg += [ansithemeprint.ANSIThemeString(" contains NUL-bytes (replaced here);\n"
+		msg = [ANSIThemeString("Critical", "critical"),
+		       ANSIThemeString(": the FQDN / hostname ", "default"),
+		       ANSIThemeString(stripped_fqdn, "hostname")]
+		msg += [ANSIThemeString(" contains NUL-bytes (replaced here);\n"
 					"this is either a programming error, a system error, file or memory corruption, "
 					"or a deliberate attempt to bypass security; aborting.", "default")]
-		ansithemeprint.ansithemeprint(msg, stderr = True)
+		ansithemeprint(msg, stderr = True)
 		sys.exit(errno.EINVAL)
 	if len(fqdn) > 253:
 		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Critical", "critical"),
-			       ansithemeprint.ANSIThemeString(": the FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname")]
-			msg = [ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN cannot be more than 253 characters long.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			msg = [ANSIThemeString("Critical", "critical"),
+			       ANSIThemeString(": the FQDN / hostname ", "default"),
+			       ANSIThemeString(fqdn, "hostname")]
+			msg = [ANSIThemeString(" is invalid; ", "default"),
+			       ANSIThemeString("a FQDN cannot be more than 253 characters long.", "default")]
+			ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_TOO_LONG
 	if fqdn != fqdn.lower():
 		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": The FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname"),
-			       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN / hostname must be lowercase.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			msg = [ANSIThemeString("Error", "error"),
+			       ANSIThemeString(": The FQDN / hostname ", "default"),
+			       ANSIThemeString(fqdn, "hostname"),
+			       ANSIThemeString(" is invalid; ", "default"),
+			       ANSIThemeString("a FQDN / hostname must be lowercase.", "default")]
+			ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE
 	if fqdn.startswith(".") or fqdn.endswith(".") or ".." in fqdn:
 		if message_on_error:
-			msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-			       ansithemeprint.ANSIThemeString(": The FQDN / hostname ", "default"),
-			       ansithemeprint.ANSIThemeString(fqdn, "hostname"),
-			       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			       ansithemeprint.ANSIThemeString("a FQDN / hostname cannot begin or end with “.“, and must not have consecutive “.“.", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			msg = [ANSIThemeString("Error", "error"),
+			       ANSIThemeString(": The FQDN / hostname ", "default"),
+			       ANSIThemeString(fqdn, "hostname"),
+			       ANSIThemeString(" is invalid; ", "default"),
+			       ANSIThemeString("a FQDN / hostname cannot begin or end with “.“, and must not have consecutive “.“.", "default")]
+			ansithemeprint(msg, stderr = True)
 		return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
 
 	dnslabels = fqdn.split(".")
@@ -155,12 +155,12 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 	for dnslabel in dnslabels:
 		if dnslabel.startswith("xn--"):
 			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": The DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-				       ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-			               ansithemeprint.ANSIThemeString("a DNS label cannot start with the ACE prefix “xn--“.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				msg = [ANSIThemeString("Error", "error"),
+				       ANSIThemeString(": The DNS label ", "default"),
+				       ANSIThemeString(dnslabel, "hostname"),
+				       ANSIThemeString(" is invalid; ", "default"),
+			               ANSIThemeString("a DNS label cannot start with the ACE prefix “xn--“.", "default")]
+				ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
 
 		# This indirectly checks non-IDNA labels for max length too
@@ -170,21 +170,21 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 		except UnicodeError as e:
 			if "label too long" in str(e):
 				if message_on_error:
-					msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-					       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-					       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-					       ansithemeprint.ANSIThemeString(" is invalid; ", "default")]
-					msg += [ansithemeprint.ANSIThemeString("a DNS label cannot be more than 63 characters long.", "default")]
-					ansithemeprint.ansithemeprint(msg, stderr = True)
+					msg = [ANSIThemeString("Error", "error"),
+					       ANSIThemeString(": the DNS label ", "default"),
+					       ANSIThemeString(dnslabel, "hostname"),
+					       ANSIThemeString(" is invalid; ", "default")]
+					msg += [ANSIThemeString("a DNS label cannot be more than 63 characters long.", "default")]
+					ansithemeprint(msg, stderr = True)
 				return HostNameStatus.DNS_LABEL_TOO_LONG
 			if "label empty or too long" in str(e):
 				if message_on_error:
-					msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-					       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-					       ansithemeprint.ANSIThemeString(dnslabel, "hostname"),
-					       ansithemeprint.ANSIThemeString(" is invalid; ", "default")]
-					msg += [ansithemeprint.ANSIThemeString("a decoded Punycode (IDNA) DNS label cannot be more than 63 characters long.", "default")]
-					ansithemeprint.ansithemeprint(msg, stderr = True)
+					msg = [ANSIThemeString("Error", "error"),
+					       ANSIThemeString(": the DNS label ", "default"),
+					       ANSIThemeString(dnslabel, "hostname"),
+					       ANSIThemeString(" is invalid; ", "default")]
+					msg += [ANSIThemeString("a decoded Punycode (IDNA) DNS label cannot be more than 63 characters long.", "default")]
+					ansithemeprint(msg, stderr = True)
 				return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
 			raise
 
@@ -192,31 +192,31 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 
 		if tmp is None:
 			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": the DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname")]
+				msg = [ANSIThemeString("Error", "error"),
+				       ANSIThemeString(": the DNS label ", "default"),
+				       ANSIThemeString(dnslabel, "hostname")]
 				if idna_dnslabel != dnslabel:
-					msg += [ansithemeprint.ANSIThemeString(" (Punycode: ", "default"),
-						ansithemeprint.ANSIThemeString(idna_dnslabel, "hostname"),
-						ansithemeprint.ANSIThemeString(")", "default")]
-				msg += [ansithemeprint.ANSIThemeString(" is invalid; a DNS label must be in the format ", "default"),
-				        ansithemeprint.ANSIThemeString("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
-				        ansithemeprint.ANSIThemeString(" after Punycode decoding.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+					msg += [ANSIThemeString(" (Punycode: ", "default"),
+						ANSIThemeString(idna_dnslabel, "hostname"),
+						ANSIThemeString(")", "default")]
+				msg += [ANSIThemeString(" is invalid; a DNS label must be in the format ", "default"),
+				        ANSIThemeString("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
+				        ANSIThemeString(" after Punycode decoding.", "default")]
+				ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
 
 		if dnslabel.startswith("-") or dnslabel.endswith("-"):
 			if message_on_error:
-				msg = [ansithemeprint.ANSIThemeString("Error", "error"),
-				       ansithemeprint.ANSIThemeString(": The DNS label ", "default"),
-				       ansithemeprint.ANSIThemeString(dnslabel, "hostname")]
+				msg = [ANSIThemeString("Error", "error"),
+				       ANSIThemeString(": The DNS label ", "default"),
+				       ANSIThemeString(dnslabel, "hostname")]
 				if idna_dnslabel != dnslabel:
-					msg += [ansithemeprint.ANSIThemeString(" (Punycode: ", "default"),
-						ansithemeprint.ANSIThemeString(idna_dnslabel, "hostname"),
-						ansithemeprint.ANSIThemeString(")", "default")]
-				msg += [ansithemeprint.ANSIThemeString(" is invalid; ", "default"),
-					ansithemeprint.ANSIThemeString("a DNS label cannot begin or end with “-“.", "default")]
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+					msg += [ANSIThemeString(" (Punycode: ", "default"),
+						ANSIThemeString(idna_dnslabel, "hostname"),
+						ANSIThemeString(")", "default")]
+				msg += [ANSIThemeString(" is invalid; ", "default"),
+					ANSIThemeString("a DNS label cannot begin or end with “-“.", "default")]
+				ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_FORMAT
 	return HostNameStatus.OK
 
@@ -235,7 +235,7 @@ def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: b
 	"""
 
 	result = False
-	retval = None
+	retval = False
 
 	if isinstance(value, bool):
 		result = True
@@ -261,7 +261,7 @@ def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: b
 					ANSIThemeString(": “", "default"),
 					ANSIThemeString(f"{value}", "option"),
 					ANSIThemeString("“ is not a boolean.", "default")], stderr = True)
-		if exit_on_failure: # pragma: no cover
+		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 
 	return result, retval
@@ -289,7 +289,7 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 					ANSIThemeString(": “", "default"),
 					ANSIThemeString(f"{value}", "option"),
 					ANSIThemeString("“ is not an integer.", "default")], stderr = True)
-		if exit_on_failure: # pragma: no cover
+		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return False
 
@@ -318,7 +318,7 @@ def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool =
 					ANSIThemeString(", ", "default"),
 					ANSIThemeString(maxval_str, "emphasis"),
 					ANSIThemeString("].", "default")], stderr = True)
-		if exit_on_failure: # pragma: no cover
+		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return False
 	return True
@@ -358,7 +358,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 				if validators is not None:
 					valid_ipv4_address = validators.ipv4(ip)
 					valid_ipv6_address = validators.ipv6(ip)
-				else: # pragma: no cover
+				else:  # pragma: no cover
 					valid_ipv4_address = True
 					valid_ipv6_address = True
 				try:
@@ -375,7 +375,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is not a valid POD Network CIDR.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -386,7 +386,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is not a valid path.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -395,7 +395,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 			if validators is not None:
 				valid_ipv4_address = validators.ipv4(subarg)
 				valid_ipv6_address = validators.ipv6(subarg)
-			else: # pragma: no cover
+			else:  # pragma: no cover
 				valid_ipv4_address = True
 				valid_ipv6_address = True
 
@@ -410,7 +410,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is not a valid hostname or path.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 			if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
@@ -419,7 +419,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is not a valid IP-address.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -429,7 +429,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -464,7 +464,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{key}", "option"),
 							ANSIThemeString("“ is not a valid taint-key.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -474,7 +474,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{value}", "option"),
 							ANSIThemeString("“ is not a valid taint-value.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -487,20 +487,20 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 					ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
 					ansithemeprint(ansithemestring_join_tuple_list(["NoSchedule", "PreferNoSchedule", "NoExecute"],
 										       formatting = "argument", separator = ANSIThemeString(", ", "separator")), stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
 		elif validator == "bool":
 			result, _value = validator_bool(subarg, error_on_failure = error_on_failure, exit_on_failure = exit_on_failure)
 			if not result:
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				break
 		elif validator == "int":
 			result = validator_int(minval, maxval, subarg, error_on_failure = error_on_failure, exit_on_failure = exit_on_failure)
 			if not result:
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				break
 		elif validator == "allowlist":
@@ -515,7 +515,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 					ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
 					ansithemeprint(ansithemestring_join_tuple_list(allowlist, formatting = "argument",
 										       separator = ANSIThemeString(", ", "separator")), stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				break
 		elif validator == "regex":
@@ -527,7 +527,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(f"{subarg}", "argument"),
 							ANSIThemeString("“ is not a valid argument for ", "default"),
 						       ] + arg_string + [ANSIThemeString(".", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
@@ -543,21 +543,21 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 							ANSIThemeString(": “", "default"),
 							ANSIThemeString(f"{subarg}", "option"),
 							ANSIThemeString("“ is not a valid URL.", "default")], stderr = True)
-				if exit_on_failure: # pragma: no cover
+				if exit_on_failure:  # pragma: no cover
 					sys.exit(errno.EINVAL)
 				result = False
 				break
 
 	return result
 
-def set_programname(__programname: str) -> None:
+def set_programname(programname_: str) -> None:
 	"""
 	Set the name of the calling program, to ensure that error messages are correct
 	Note: This should be removed; libraries should not print error messages
 
 		Parameters:
-			__programname (str): The name of the program
+			programname_ (str): The name of the program
 	"""
 
-	global programname
-	programname = __programname
+	global programname  # pylint: disable=global-statement
+	programname = programname_

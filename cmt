@@ -44,7 +44,7 @@ except ModuleNotFoundError:
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus, SecurityChecks
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VERSION_CACHE_DIR, VIEW_DIR
-from cmtvalidators import validate_fqdn
+from cmtvalidators import validate_fqdn, validator_bool
 
 import commandparser
 from commandparser import parse_commandline
@@ -85,7 +85,7 @@ def request_ansible_password() -> None:
 					ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-		ansible_configuration["ansible_password"] = ansible_password # type: ignore
+		ansible_configuration["ansible_password"] = ansible_password  # type: ignore
 
 def get_latest_kubernetes_upstream_version() -> Optional[str]:
 	"""
@@ -245,7 +245,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 
 	controlplanes = []
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -418,7 +418,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 
 	# Kubernetes resources
 	if isinstance(kind, tuple):
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -502,7 +502,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Cordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -642,7 +642,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Uncordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -725,7 +725,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Tainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -814,7 +814,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Untainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -1213,7 +1213,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
 
 	# Get variables that need to be available when setting up nodes
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	join_token = None
@@ -1277,7 +1277,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 							if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
 								# This is to handle systems that doesn't have the latest version of cryptography
 								# pylint: disable-next=import-outside-toplevel,no-name-in-module
-								from cryptography.hazmat.primitives import default_backend # type: ignore
+								from cryptography.hazmat.primitives import default_backend  # type: ignore
 								x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 							else:
 								raise
@@ -2023,9 +2023,9 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--has-data":
 			has_data = True
 		elif opt == "--local":
-			_result, local_only = commandparser.validator_bool(optarg)
+			_result, local_only = validator_bool(optarg)
 		elif opt == "--namespaced":
-			_isbool, namespaced_only = commandparser.validator_bool(optarg)
+			_isbool, namespaced_only = validator_bool(optarg)
 		elif opt == "--no-header":
 			header = False
 		elif opt == "--sort-by":
@@ -2046,7 +2046,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--wide":
 			wide = True
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	result, api_resources = kh.get_api_resources()

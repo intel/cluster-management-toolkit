@@ -47,12 +47,12 @@ class UnknownError(Exception):
 			# This is to get the necessary stack info
 			raise UserWarning
 		except UserWarning:
-			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-			self.file = str(frame.f_code.co_filename) # type: ignore
-			self.function = str(frame.f_code.co_name) # type: ignore
-			self.lineno = int(frame.f_lineno) # type: ignore
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
 
-		self.exception = __class__.__name__ # type: ignore
+		self.exception = __class__.__name__  # type: ignore
 		self.message = message
 		self.severity = severity
 		self.facility = facility
@@ -142,12 +142,12 @@ class ProgrammingError(Exception):
 			# This is to get the necessary stack info
 			raise UserWarning
 		except UserWarning:
-			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-			self.file = str(frame.f_code.co_filename) # type: ignore
-			self.function = str(frame.f_code.co_name) # type: ignore
-			self.lineno = int(frame.f_lineno) # type: ignore
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
 
-		self.exception = __class__.__name__ # type: ignore
+		self.exception = __class__.__name__  # type: ignore
 		self.message = message
 		self.severity = severity
 		self.facility = facility
@@ -239,12 +239,12 @@ class FilePathAuditError(Exception):
 			# This is to get the necessary stack info
 			raise UserWarning
 		except UserWarning:
-			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-			self.file = str(frame.f_code.co_filename) # type: ignore
-			self.function = str(frame.f_code.co_name) # type: ignore
-			self.lineno = int(frame.f_lineno) # type: ignore
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
 
-		self.exception = __class__.__name__ # type: ignore
+		self.exception = __class__.__name__  # type: ignore
 		self.message = message
 		self.path = path
 		self.severity = severity

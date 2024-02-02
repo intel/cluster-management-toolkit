@@ -9,7 +9,7 @@ import errno
 from getpass import getpass
 import copy
 from pathlib import PurePath
-import subprocess # nosec
+import subprocess  # nosec
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Union
 
@@ -19,10 +19,10 @@ import cmtio
 try:
 	# python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
 	# pylint: disable-next=unused-import
-	import yaml # noqa
+	import yaml  # noqa
 	from cmtio_yaml import secure_read_yaml
 	USE_FALLBACK_THEME = False
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	USE_FALLBACK_THEME = True
 
 class ANSIThemeString:
@@ -182,7 +182,7 @@ def clear_screen() -> int:
 	try:
 		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [],
 					   security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	except FileNotFoundError: # pragma: no cover
+	except FileNotFoundError:  # pragma: no cover
 		return errno.ENOENT
 
 	return subprocess.run([cpath], check = False).returncode
@@ -344,12 +344,12 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 
 	use_color = None
 
-	if theme is None or themepath is None: # pragma: no cover
+	if theme is None or themepath is None:  # pragma: no cover
 		raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; "
 				       "this is a programming error.")
 
 	if color == "auto":
-		if not sys.stdout.isatty(): # pragma: no cover
+		if not sys.stdout.isatty():  # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -364,8 +364,8 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
-		tmp = input(string) # nosec
-	except KeyboardInterrupt: # pragma: no cover
+		tmp = input(string)  # nosec
+	except KeyboardInterrupt:  # pragma: no cover
 		print()
 		sys.exit(errno.ECANCELED)
 	return tmp.replace("\x00", "<NUL>")
@@ -388,12 +388,12 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 
 	use_color = None
 
-	if theme is None or themepath is None: # pragma: no cover
+	if theme is None or themepath is None:  # pragma: no cover
 		raise ProgrammingError("ansithemeinput_password() used without calling "
 				       "init_ansithemeprint() first; this is a programming error.")
 
 	if color == "auto":
-		if not sys.stdout.isatty(): # pragma: no cover
+		if not sys.stdout.isatty():  # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -409,7 +409,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 	string = __themearray_to_string(themearray, color = use_color)
 	try:
 		tmp = getpass(string)
-	except KeyboardInterrupt: # pragma: no cover
+	except KeyboardInterrupt:  # pragma: no cover
 		print()
 		sys.exit(errno.ECANCELED)
 	return tmp.replace("\x00", "<NUL>")
@@ -437,9 +437,9 @@ def ansithemeprint(themearray: List[ANSIThemeString],
 				       "this is a programming error.")
 
 	if color == "auto":
-		if stderr and not sys.stderr.isatty(): # pragma: no cover
+		if stderr and not sys.stderr.isatty():  # pragma: no cover
 			use_color = False
-		elif not stderr and not sys.stdout.isatty(): # pragma: no cover
+		elif not stderr and not sys.stdout.isatty():  # pragma: no cover
 			use_color = False
 		else:
 			use_color = True
@@ -467,8 +467,8 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 			themefile (str): Path to the theme to use
 	"""
 
-	global theme # pylint: disable=global-statement
-	global themepath # pylint: disable=global-statement
+	global theme  # pylint: disable=global-statement
+	global themepath  # pylint: disable=global-statement
 
 	# If we get None as theme we use the builtin fallback theme
 	if themefile is None:
@@ -511,7 +511,7 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	if USE_FALLBACK_THEME: # pragma: no cover
+	if USE_FALLBACK_THEME:  # pragma: no cover
 		theme = FALLBACK_THEME
 		themepath = FilePath("<built-in default>")
 	else:

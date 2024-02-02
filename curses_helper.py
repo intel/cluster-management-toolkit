@@ -20,7 +20,7 @@ from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, T
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmtio import check_path, join_securitystatus_set
@@ -374,7 +374,7 @@ def set_mousemask(mask: int) -> None:
 	Enable/disable mouse support
 	"""
 
-	global mousemask # pylint: disable=global-statement
+	global mousemask  # pylint: disable=global-statement
 	curses.mousemask(mask)
 	mousemask = mask
 
@@ -539,8 +539,8 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 			defaultthemefile (FilePath): The fallback if the other theme is not available
 	"""
 
-	global theme # pylint: disable=global-statement
-	global themefile # pylint: disable=global-statement
+	global theme  # pylint: disable=global-statement
+	global themefile  # pylint: disable=global-statement
 
 	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
 		if Path(item).is_file():
@@ -1077,7 +1077,7 @@ def inputwrapper(keypress: int) -> int:
 			keypress (int): The filtered keypress
 	"""
 
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	if keypress == 27:	# ESCAPE
 		ignoreinput = True
@@ -1088,7 +1088,7 @@ def inputwrapper(keypress: int) -> int:
 # and specified title in the middle of the screen
 # pylint: disable-next=too-many-arguments,unused-argument
 def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, title: str) -> str:
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	# Show the cursor
 	curses.curs_set(True)
@@ -1132,7 +1132,7 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 # Show a confirmation box centered around y and x
 # with the specified default value and title
 def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", default: bool = False) -> bool:
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	ignoreinput = False
 	retval = default
@@ -1568,7 +1568,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
 		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Dict):
 	stdscr.refresh()
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 	ignoreinput = False
 
 	padwidth = 2

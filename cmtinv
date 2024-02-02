@@ -475,7 +475,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
 	if cluster_name is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),

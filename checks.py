@@ -498,7 +498,7 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 			ANSIThemeString("kube-proxy", "programname"),
 			ANSIThemeString(" versions]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -820,7 +820,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 
 	ansithemeprint([ANSIThemeString("\n[Checking required pods]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	pods, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")

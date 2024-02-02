@@ -9,7 +9,7 @@ import sys
 from typing import Any, Dict, Iterator, List, Optional, Union
 try:
 	import yaml
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 import cmtio

@@ -27,7 +27,7 @@ import pwd
 import re
 import shutil
 import socket
-from subprocess import CalledProcessError # nosec
+from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
 from typing import Callable, cast, Dict, List, Optional, Set, Tuple, Union
@@ -323,7 +323,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 
 	if k8s_distro == "rke2":
 		# This will only work for running clusters
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -394,7 +394,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 	cri = "<none>"
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -1211,7 +1211,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cnis = kh.identify_cni()
@@ -1346,7 +1346,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if pod_network_cidr is None:
 		# If we have a running cluster and we are upgrading by CNI rather than through installation info we need to get the Pod CIDR
 		# by some other means; try this. If this fails we give up.
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		pod_network_cidr = kh.get_pod_network_cidr()
 		if pod_network_cidr is None:
@@ -1356,7 +1356,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if cni in ("", "<none>", "<unknown>"):
 		if kh is None:
-			from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+			from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 			kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		tmp_cni = kh.identify_cni()
 		if len(tmp_cni) == 0:
@@ -1435,7 +1435,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 				ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
@@ -1814,7 +1814,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	# Get the API-server version (if available)
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	_server_major_version, _server_minor_version, kubernetes_installed_version = kh.get_api_server_version()
@@ -2529,7 +2529,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 				# Try to figure out the internal IP of the control plane;
 				# this only works if we're running this on the control plane;
 				# we should probably do this while fetching the config-file instead
-				from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+				from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 				kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 				obj = kh.get_ref_by_kind_name_namespace(("Node", ""), control_plane_name, "")
@@ -2626,7 +2626,7 @@ def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = Fals
 
 	controlplanes = __selection_control_planes()
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for controlplane in controlplanes:
@@ -3219,7 +3219,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 			args (list[str]): Options to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 	confirm = True
 
 	# We do not need a cluster name for --list-tasks, so check this first of all
@@ -3423,7 +3423,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 
 	# default options
 	confirm = True
@@ -3434,7 +3434,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		elif opt == "--no-password":
 			no_password = True
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 	clusters = kh.list_clusters()
 	available_clusters = [tmp[0] for tmp in clusters]
@@ -3879,7 +3879,7 @@ def __get_configuration_data(configuration_file: str, configuration_type: str, c
 	return FilePath(path)
 
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cordon_on_join = False
@@ -4035,7 +4035,7 @@ def set_context(cluster_name: str, context_name: str) -> None:
 			context_name (str): The context to switch to
 	"""
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	if not kh.set_context(name = context_name, unchanged_is_success = True):
@@ -4266,7 +4266,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# We (hopefully) have a cluster now; change the context to that cluster
@@ -4820,7 +4820,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 			args (list[str]): Options to use when executing this action
 	"""
 
-	global setup_control_plane_tasks # pylint: disable=global-statement
+	global setup_control_plane_tasks  # pylint: disable=global-statement
 
 	confirm = True
 	override_cni = False
@@ -5210,7 +5210,7 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 	# The reason for importing inside the function is to avoid slow startup
 	# when we do not use the Kubernetes helper
 	if kh is None:
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# If kh is *still* None here something has gone wrong. It is time to exit.
@@ -6094,7 +6094,7 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): Options to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 
 	for opt, _optarg in options:
 		if opt == "--no-password":
