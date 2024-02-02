@@ -39,6 +39,7 @@ or ask for help.
 | `cmtlib.py`           | `tests/cmtlibtests`    |                            |
 | `cmtvalidators.py`    | `tests/validatortests` |                            |
 | `cmttypes.py`         | `tests/typetests`      |                            |
+| `formatter.py`        | `tests/fmttests`       |                            |
 | `kubernetes_helper.py`| `tests/khtests`        | Requires a running cluster |
 | `logparser.py`        | `tests/logtests`       |                            |
 | `networkio.py`        | `tests/iotests`        |                            |
