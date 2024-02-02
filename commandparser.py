@@ -11,7 +11,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import about
 
 import cmtlib
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust, ansithemestring_join_tuple_list
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust
 from cmttypes import deep_get, DictPath, FilePath
 import cmtvalidators
 

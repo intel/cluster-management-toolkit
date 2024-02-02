@@ -39,9 +39,9 @@ try:
 	# from what json raises
 	DecodeException = ValueError
 except ModuleNotFoundError:
-	import json # type: ignore
+	import json  # type: ignore
 	json_is_ujson = False
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 from pathlib import Path, PurePath
 import re
 import sys
@@ -57,7 +57,7 @@ except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
-	import validators # type: ignore
+	import validators  # type: ignore
 except ModuleNotFoundError:
 	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
@@ -70,7 +70,7 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 import cmtlib
 from cmtlib import none_timestamp, strip_ansicodes
 #from cmtlog import debuglog
-import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
+import formatter as formatters  # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
@@ -702,23 +702,23 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 	# Short format
 	if len(ipaddress) > 0:
 		# Safe
-		tmp = re.match(r"( - - )" # separator1
-			       r"(\[)" # separator2
-			       r"(\d\d)" # day
+		tmp = re.match(r"( - - )"			# separator1
+			       r"(\[)"				# separator2
+			       r"(\d\d)"			# day
 			       r"/"
-			       r"([A-Z][a-z][a-z])" # _month
+			       r"([A-Z][a-z][a-z])"		# _month
 			       r"/"
-			       r"(\d{4})" # year
+			       r"(\d{4})"			# year
 			       r" "
-			       r"(\d\d:\d\d:\d\d)" # hms
-			       r"(\])" # separator3
-			       r"(\s\")" # separator4
-			       r"([A-Z]*?\s)" # verb
-			       r"(\S*?)" # address3
-			       r"(\s\S*?)" # protocol
-			       r"(\"\s)" # separator5
-			       r"(\d+?)" # statuscode
-			       r"(\s+[\d-]+?$)", message) # separator6
+			       r"(\d\d:\d\d:\d\d)"		# hms
+			       r"(\])"				# separator3
+			       r"(\s\")"			# separator4
+			       r"([A-Z]*?\s)"			# verb
+			       r"(\S*?)"			# address3
+			       r"(\s\S*?)"			# protocol
+			       r"(\"\s)"			# separator5
+			       r"(\d+?)"			# statuscode
+			       r"(\s+[\d-]+?$)", message)	# separator6
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -851,17 +851,17 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 	# Alternate formats
 	# Safe
 	tmp = re.match(r"^\|\s+"
-		       r"(\d{3})" # statuscode
+		       r"(\d{3})"		# statuscode
 		       r"\s+\|\s+"
-		       r"([0-9.]+)" # duration
-		       r"([^ ]*)" # unit
+		       r"([0-9.]+)"		# duration
+		       r"([^ ]*)"		# unit
 		       r"\s+\|\s+"
-		       r"([^:^\s]*)" # hostname
-		       r":(\d+?)" # port
+		       r"([^:^\s]*)"		# hostname
+		       r":(\d+?)"		# port
 		       r"\s+\|\s+"
-		       r"([A-Z]+)" # verb
+		       r"([A-Z]+)"		# verb
 		       r"\s+"
-		       r"(.*)", message) # url
+		       r"(.*)", message)	# url
 
 	if tmp is not None:
 		statuscode = tmp[1]
@@ -1557,7 +1557,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 	indent = 2
 	depth = 0
 	escaped = False
-	quoted = False # pylint: disable=unused-variable
+	quoted = False  # pylint: disable=unused-variable
 	tmp = ""
 
 	for i, raw_msg in enumerate(raw_message):
@@ -2054,27 +2054,27 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 		return facility, severity, message, remnants
 
 	# Safe
-	tmp = re.match(r"^(.)" # etype
-		       r"(.{9})" # permissions
-		       r"(\+|\s)" # acl
-		       r"(\s+)" # space1
-		       r"(\d+)" # linkcount
-		       r"(\s+)" # space2
-		       r"([^\s]+)" # owner
-		       r"(\s+)" # space3
-		       r"([^\s]+)" # group
-		       r"(\s+)" # space4
-		       r"(\d+)" # size part1
-		       r"(,\s+\d+|)" # size part2
-		       r"(\s+)" # space5
-		       r"([^\s]+)" # month
-		       r"(\s+)" # space6
-		       r"(\d+)" # day
-		       r"(\s+)" # space7
-		       r"([^\s]+)" # yearortime
-		       r"(\s+)" # space8
-		       r"(.+?)" # name
-		       r"(=|\||/|)$", message) # suffix
+	tmp = re.match(r"^(.)"			# etype
+		       r"(.{9})"		# permissions
+		       r"(\+|\s)"		# acl
+		       r"(\s+)"			# space1
+		       r"(\d+)"			# linkcount
+		       r"(\s+)"			# space2
+		       r"([^\s]+)"		# owner
+		       r"(\s+)"			# space3
+		       r"([^\s]+)"		# group
+		       r"(\s+)"			# space4
+		       r"(\d+)"			# size part1
+		       r"(,\s+\d+|)"		# size part2
+		       r"(\s+)"			# space5
+		       r"([^\s]+)"		# month
+		       r"(\s+)"			# space6
+		       r"(\d+)"			# day
+		       r"(\s+)"			# space7
+		       r"([^\s]+)"		# yearortime
+		       r"(\s+)"			# space8
+		       r"(.+?)"			# name
+		       r"(=|\||/|)$", message)	# suffix
 	if tmp is None:
 		# This is unlikely to be a directory match
 		return facility, severity, message, remnants
@@ -2794,7 +2794,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				elif _filter == "sysctl":
 					facility, severity, message, remnants = sysctl(message, severity = severity, facility = facility, fold_msg = fold_msg)
 				# Timestamp formats
-				elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
+				elif _filter == "ts_8601":  # Anything that resembles ISO-8601 / RFC 3339
 					message = strip_iso_timestamp(message)
 				# Facility formats
 				elif _filter == "colon_facility":

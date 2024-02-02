@@ -11,8 +11,8 @@ from getpass import getuser
 import os
 from pathlib import Path, PurePath
 import re
-import subprocess # nosec
-from subprocess import PIPE, STDOUT # nosec
+import subprocess  # nosec
+from subprocess import PIPE, STDOUT  # nosec
 import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 

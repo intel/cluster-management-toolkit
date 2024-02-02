@@ -14,7 +14,7 @@ from typing import cast, Dict, List, Optional, Union
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmtpaths import CMT_LOGS_DIR, AUDIT_LOG_BASENAME, DEBUG_LOG_BASENAME
@@ -149,10 +149,10 @@ class CMTLog:
 			# This is to get the necessary stack info
 			raise UserWarning
 		except UserWarning:
-			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-			file = str(frame.f_code.co_filename) # type: ignore
-			function = str(frame.f_code.co_name) # type: ignore
-			lineno = int(frame.f_lineno) # type: ignore
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			file = str(frame.f_code.co_filename)  # type: ignore
+			function = str(frame.f_code.co_name)  # type: ignore
+			lineno = int(frame.f_lineno)  # type: ignore
 
 		if path == CMTLogType.DEBUG:
 			self.basename = DEBUG_LOG_BASENAME
@@ -202,10 +202,10 @@ class CMTLog:
 			# This is to get the necessary stack info
 			raise UserWarning
 		except UserWarning:
-			frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-			file = str(frame.f_code.co_filename) # type: ignore
-			function = str(frame.f_code.co_name) # type: ignore
-			lineno = int(frame.f_lineno) # type: ignore
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			file = str(frame.f_code.co_filename)  # type: ignore
+			function = str(frame.f_code.co_name)  # type: ignore
+			lineno = int(frame.f_lineno)  # type: ignore
 
 		log_entry = self.__format_entry(message, severity, timestamp, facility, file, function, lineno)
 
@@ -244,10 +244,10 @@ class CMTLog:
 				# This is to get the necessary stack info
 				raise UserWarning
 			except UserWarning:
-				frame = sys.exc_info()[2].tb_frame.f_back # type: ignore
-				file = str(frame.f_code.co_filename) # type: ignore
-				function = str(frame.f_code.co_name) # type: ignore
-				lineno = int(frame.f_lineno) # type: ignore
+				frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+				file = str(frame.f_code.co_filename)  # type: ignore
+				function = str(frame.f_code.co_name)  # type: ignore
+				lineno = int(frame.f_lineno)  # type: ignore
 
 			warning_log_entry = {
 				"timestamp": datetime.now(timezone.utc),

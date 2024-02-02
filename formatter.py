@@ -12,16 +12,16 @@ try:
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError: # pragma: no cover
-	import json # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+	import json  # type: ignore
 	json_is_ujson = False
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 import re
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cmttypes import deep_get, DictPath

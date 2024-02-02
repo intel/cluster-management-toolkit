@@ -13,7 +13,7 @@ import sys
 from typing import cast, Dict, List, Optional, Set, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError: # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 import cmtlib
@@ -37,8 +37,8 @@ ansible_configuration: Dict = {
 
 # Used by Ansible
 try:
-	import ansible_runner # type: ignore
-except ModuleNotFoundError: # pragma: no cover
+	import ansible_runner  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import ansible_runner; you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 # Exit if the ansible directory does not exist
@@ -1060,7 +1060,7 @@ def ansible_results_add(event: Dict) -> int:
 		Returns:
 			(int): 0 on success, -1 if host is unreachable, retval on other failure
 	"""
-	global ansible_results # pylint: disable=global-variable-not-assigned
+	global ansible_results  # pylint: disable=global-variable-not-assigned
 
 	host = deep_get(event, DictPath("event_data#host"), "")
 	__retval, d = ansible_results_extract(event)
@@ -1387,7 +1387,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 			(retval(int), ansible_results(dict)): The return value and results from the run
 	"""
 
-	global ansible_results # pylint: disable=global-statement
+	global ansible_results  # pylint: disable=global-statement
 
 	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
