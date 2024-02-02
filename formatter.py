@@ -99,9 +99,9 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 	}
 
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
-	start = deep_get(kwargs, DictPath("start"), "")
+	start = deep_get(kwargs, DictPath("start"), None)
 	include_start = deep_get(kwargs, DictPath("include_start"), False)
-	end = deep_get(kwargs, DictPath("end"), "")
+	end = deep_get(kwargs, DictPath("end"), None)
 	include_end = deep_get(kwargs, DictPath("include_end"), False)
 	strip_empty_start = deep_get(kwargs, DictPath("include_end"), False)
 	strip_empty_end = deep_get(kwargs, DictPath("include_end"), False)
@@ -117,14 +117,15 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 	for line in lines:
 		if codeblock != "~~~":
 			codeblock = ""
-		if not started and not line.startswith(start):
+		if not started and start is not None and not line.startswith(start):
 			continue
-		if line.startswith(end):
+		if end is not None and line.startswith(end):
 			break
-		started = True
 
-		if not include_start:
+		if start is not None and not include_start and not started:
 			continue
+
+		started = True
 
 		if len(line) == 0:
 			emptylines.append(ThemeString("", ThemeAttr("types", "generic")))
@@ -203,6 +204,8 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[U
 					italics = True
 					for k, italics_section in enumerate(italics_sections):
 						italics = not italics
+						if len(italics_section) == 0:
+							continue
 						tmpline.append(ThemeString(italics_section, format_lookup[(codeblock != "", bold, italics)]))
 			dumps.append(tmpline)
 			continue
@@ -1381,14 +1384,43 @@ def format_ini(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 				separator = tmp[3]
 				value = tmp[4]
 
-				tmpline = [
-					ThemeString(f"{indentation}", ThemeAttr("types", "generic")),
+				if len(indentation) > 0:
+					tmpline = [
+						ThemeString(f"{indentation}", ThemeAttr("types", "generic")),
+					]
+				else:
+					tmpline = []
+
+				tmpline += [
 					ThemeString(f"{key}", ThemeAttr("types", "ini_key")),
 					ThemeString(f"{separator}", ThemeAttr("types", "ini_key_separator")),
 					ThemeString(f"{value}", ThemeAttr("types", "ini_value")),
 				]
 		dumps.append(tmpline)
 	return dumps
+
+formatter_mapping = (
+	# (startswith, endswith, formatter)
+	("YAML", "YAML", format_yaml),
+	("JSON", "JSON", format_yaml),
+	("NDJSON", "NDJSON", format_yaml),
+	("", (".yml", ".yaml", ".json", ".ndjson"), format_yaml),
+	("TOML", "TOML", format_toml),
+	("", ".toml", format_toml),
+	("CRT", "CRT", format_crt),
+	("", (".crt", "tls.key", ".pem", "CAKey"), format_crt),
+	("XML", "XML", format_xml),
+	("", ".xml", format_xml),
+	("INI", "INI", format_ini),
+	("", ".ini", format_ini),
+	("JWS", "JWS", format_none),
+	("FluentBit", "FluentBit", format_fluentbit),
+	("HAProxy", "HAProxy", format_haproxy),
+	("haproxy.cfg", "haproxy.cfg", format_haproxy),
+	("CaddyFile", "CaddyFile", format_caddyfile),
+	("mosquitto", "", format_mosquitto),
+	("NGINX", "NGINX", format_nginx),
+)
 
 def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[List[Union[ThemeRef, ThemeString]]]]:
 	"""
@@ -1400,31 +1432,10 @@ def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Li
 			(function reference): The formatter to use
 	"""
 
-	if dataformat in {"YAML", "JSON", "NDJSON"} or dataformat.endswith((".yml", ".yaml", ".json", ".ndjson")):
-		formatter = format_yaml
-	elif dataformat == "TOML" or dataformat.endswith((".toml")):
-		formatter = format_toml
-	elif dataformat == "CRT" or dataformat.endswith((".crt", "tls.key", ".pem", "CAKey")):
-		formatter = format_crt
-	elif dataformat == "XML" or dataformat.endswith((".xml")):
-		formatter = format_xml
-	elif dataformat == "INI" or dataformat.endswith((".ini")):
-		formatter = format_ini
-	elif dataformat == "JWS":
-		formatter = format_none
-	elif dataformat == "FluentBit":
-		formatter = format_fluentbit
-	elif dataformat in {"HAProxy", "haproxy.cfg"}:
-		formatter = format_haproxy
-	elif dataformat == "CaddyFile":
-		formatter = format_caddyfile
-	elif dataformat == {"mosquitto", "mosquitto.conf"}:
-		formatter = format_mosquitto
-	elif dataformat == "NGINX":
-		formatter = format_nginx
-	else:
-		formatter = format_none
-	return formatter
+	for prefix, suffix, formatter_ in formatter_mapping:
+		if dataformat.startswith(prefix) and dataformat.endswith(suffix):
+			return formatter_
+	return format_none
 
 # Formatters acceptable for direct use in view files
 formatter_allowlist = {
