@@ -613,6 +613,27 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 		return 1, f"expected {expect}, got {result}"
 	return 0, ""
 
+def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether join_securitystatus_set() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	status_set = deep_get(checkdata, DictPath("status_set"), set())
+	separator = deep_get(checkdata, DictPath("separator"), ", ")
+	expect = deep_get(checkdata, DictPath("expect"), "")
+
+	result = join_securitystatus_set(separator = separator, securitystatuses = status_set)
+
+	if result != expect:
+		return 1, f"expected {expect}, got {result}"
+	return 0, ""
+
 testcases = {
 	"File permissions (default checks)": {
 		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
@@ -1654,6 +1675,12 @@ testcases = {
 		"env": { "PATH": "" },
 		"test": test_execute_command_with_response,
 		"expect": "foo\n",
+	},
+	"A valid set of SecurityStatus, separator \":\"": {
+		"status_set": {SecurityStatus.PERMISSIONS, SecurityStatus.IS_NOT_FILE},
+		"separator": ":",
+		"test": test_join_securitystatus_set,
+		"expect": f"<SecurityStatus.PERMISSIONS: {SecurityStatus.PERMISSIONS}>:<SecurityStatus.IS_NOT_FILE: {SecurityStatus.IS_NOT_FILE}>",
 	},
 }
 
