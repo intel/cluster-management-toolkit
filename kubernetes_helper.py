@@ -3867,7 +3867,7 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
 			image (str): The name of the image
 			default (str): The string to return if extracting the image version fails
 		Returns:
-			image_version (str): THe extracted image version
+			image_version (str): The extracted image version
 	"""
 
 	image_version = image.split("@")[0]
