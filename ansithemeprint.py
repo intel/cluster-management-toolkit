@@ -11,7 +11,7 @@ import copy
 from pathlib import PurePath
 import subprocess  # nosec
 import sys
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from cmttypes import FilePath, FilePathAuditError, ProgrammingError
 from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
@@ -126,6 +126,22 @@ class ANSIThemeString:
 				(bool): True if the strings match, False if not
 		"""
 		return self.string == themestring.string and self.themeref == themestring.themeref
+
+	@classmethod
+	def format_error_msg(cls, msg: Any) -> Tuple[str, List[List["ANSIThemeString"]]]:
+		joined_strings = []
+		themearray_list = []
+
+		for line in msg:
+			themearray = []
+			joined_string = ""
+			for string, formatting in line:
+				joined_string += string
+				themearray.append(ANSIThemeString(string, formatting))
+			themearray_list.append(copy.deepcopy(themearray))
+			joined_strings.append(joined_string)
+
+		return "\n".join(joined_strings), themearray
 
 theme: Optional[Dict] = None
 themepath: Optional[FilePath] = None
