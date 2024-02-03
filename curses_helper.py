@@ -15,7 +15,6 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-import traceback
 from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
 
 try:
@@ -25,7 +24,6 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
-# from cmtlog import debuglog
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
 from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
@@ -62,26 +60,39 @@ class ThemeString:
 	"""
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
-		if not isinstance(string, str):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeString()", "emphasis"),
-			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-			#		[ANSIThemeString("string (type: ", "error")],
-			#		[ANSIThemeString(f"{type(string)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{string}", "default")],
-			#		[ANSIThemeString("themeattr (type: ", "error")],
-			#		[ANSIThemeString(f"{type(themeattr)}", "argument")],
-			#		[ANSIThemeString(", expected ThemeAttr):", "error")],
-			#		[ANSIThemeString(f"{themeattr}", "default")],
-			#		[ANSIThemeString("selected (type: ", "error")],
-			#		[ANSIThemeString(f"{type(selected)}", "argument")],
-			#		[ANSIThemeString(", expected bool):", "error")],
-			#		[ANSIThemeString(f"{selected}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
+		if not (isinstance(string, str) and isinstance(themeattr, ThemeAttr) and (selected is None or isinstance(selected, bool))):
+			msg = [
+				[("ThemeString()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("string = ", "default"),
+				 (f"{string}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(string)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("themeattr = ", "default"),
+				 (f"{themeattr}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(themeattr)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeAttr", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.string = string
 		self.themeattr = themeattr
 		self.selected = selected
@@ -132,26 +143,38 @@ class ThemeRef:
 	"""
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
-		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeRef()", "emphasis"),
-			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-			#		[ANSIThemeString("context (type: ", "error")],
-			#		[ANSIThemeString(f"{type(context)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{context}", "default")],
-			#		[ANSIThemeString("key (type: ", "error")],
-			#		[ANSIThemeString(f"{type(key)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{key}", "default")],
-			#		[ANSIThemeString("selected (type: ", "error")],
-			#		[ANSIThemeString(f"{type(selected)}", "argument")],
-			#		[ANSIThemeString(", expected bool):", "error")],
-			#		[ANSIThemeString(f"{selected}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError("ThemeRef only accepts (str, str[, bool])")
+		if not (isinstance(context, str) and isinstance(key, str) and (selected is None or isinstance(selected, bool))):
+			msg = [
+				[("ThemeRef()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("context = ", "default"),
+				 (f"{context}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(context)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("key = ", "default"),
+				 (f"{key}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(key)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.context = context
 		self.key = key
 		self.selected = selected
@@ -160,16 +183,20 @@ class ThemeRef:
 		string = ""
 		data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if data is None:
-			#debuglog.add([
-			#		[ANSIThemeString("The ThemeRef(", "error")],
-			#		[ANSIThemeString(f"{self.context}", "argument")],
-			#		[ANSIThemeString(", ", "error")],
-			#		[ANSIThemeString(f"{self.key}", "argument")],
-			#		[ANSIThemeString(") does not exist.", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+			msg = [
+				[("The ThemeRef(", "error"),
+				 (f"{self.context}", "argument"),
+				 (", ", "error"),
+				 (f"{self.key}", "argument"),
+				 (") does not exist.", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		if isinstance(data, dict):
 			if self.selected:
 				selected = "selected"
@@ -207,16 +234,20 @@ class ThemeRef:
 		else:
 			array = data
 		if array is None:
-			#debuglog.add([
-			#		[ANSIThemeString("The ThemeRef(", "error")],
-			#		[ANSIThemeString(f"{self.context}", "argument")],
-			#		[ANSIThemeString(", ", "error")],
-			#		[ANSIThemeString(f"{self.key}", "argument")],
-			#		[ANSIThemeString(") does not exist.", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+			msg = [
+				[("The ThemeRef(", "error"),
+				 (f"{self.context}", "argument"),
+				 (", ", "error"),
+				 (f"{self.key}", "argument"),
+				 (") does not exist.", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		for string, themeattr in array:
 			themearray.append(ThemeString(string, ThemeAttr(themeattr[0], themeattr[1]), self.selected))
 		return themearray
@@ -248,25 +279,68 @@ class ThemeArray:
 
 	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
 		if array is None:
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeArray()", "emphasis"),
-			#		 ANSIThemeString(" initialised with an empty array:", "error")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError("A ThemeArray cannot be None")
+			msg = [
+				[("ThemeArray()", "emphasis"),
+				 (" initialised with an empty array", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
+
+		if not isinstance(array, list):
+			msg = [
+				[("ThemeArray()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("array = ", "default"),
+				 (f"{array}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(array)}", "argument"),
+				 (", expected: ", "default"),
+				 ("list", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 
 		newarray: List[Union[ThemeRef, ThemeString]] = []
 		for item in array:
 			if not isinstance(item, (ThemeRef, ThemeString)):
-				#debuglog.add([
-				#		[ANSIThemeString("ThemeArray()", "emphasis"),
-				#		 ANSIThemeString(" initialised with invalid type ", "error"),
-				#		 ANSIThemeString(f"{type(item)}", "argument"),
-				#		 ANSIThemeString("; substring:", "error")],
-				#		[ANSIThemeString(f"{item}", "default")],
-				#		[ANSIThemeString("Backtrace:", "error")],
-				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-				#       ], severity = LogLevel.ERR, facility = str(themefile))
-				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+				msg = [
+					[("ThemeArray()", "emphasis"),
+					 (" initialised with invalid argument(s):", "error")],
+					[("array element = ", "default"),
+					 (f"{item}", "argument"),
+					 (" (type: ", "default"),
+					 (f"{type(item)}", "argument"),
+					 (", expected: ", "default"),
+					 ("ThemeRef", "argument"),
+					 (" or ", "default"),
+					 ("ThemeString", "argument"),
+					 (")", "default")],
+				]
+
+				unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+				raise ProgrammingError(unformatted_msg,
+						       severity = LogLevel.ERR,
+						       facility = str(themefile),
+						       formatted_msg = formatted_msg)
 			if selected is None:
 				newarray.append(item)
 			elif isinstance(item, ThemeString):
@@ -285,16 +359,26 @@ class ThemeArray:
 		"""
 
 		if not isinstance(item, (ThemeRef, ThemeString)):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeArray.append()", "emphasis"),
-			#		 ANSIThemeString(" called with invalid type ", "error"),
-			#		 ANSIThemeString(f"{type(item)}", "argument"),
-			#		 ANSIThemeString("; substring:", "error")],
-			#		[ANSIThemeString(f"{item}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+			msg = [
+				[("ThemeArray.append()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("item = ", "default"),
+				 (f"{item}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(item)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeRef", "argument"),
+				 (" or ", "default"),
+				 ("ThemeString", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.array.append(item)
 
 	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> "ThemeArray":
@@ -490,8 +574,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			#		 ANSIThemeString(",", "error"),
 			#		 ANSIThemeString(f"{bg}", "argument"),
 			#		 ANSIThemeString(")", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
@@ -503,8 +585,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			#		 ANSIThemeString("-", "error"),
 			#		 ANSIThemeString("7", "argument"),
 			#		 ANSIThemeString(")", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			#       ], severity = LogLevel.DEBUG, facility = str(themefile))
 
 			# Most likely we failed due to the terminal only
@@ -522,8 +602,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				#		 ANSIThemeString(",", "error"),
 				#		 ANSIThemeString(f"{bg}", "argument"),
 				#		 ANSIThemeString(f"{bright_black_remapped}", "argument")],
-				#		[ANSIThemeString("Backtrace:", "error")],
-				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 				#       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})") from e
 			curses.init_pair(color_nr, fg & 7, bg & 7)
@@ -1420,8 +1498,6 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 #				[ANSIThemeString(", ", "error")],
 #				[ANSIThemeString(f"{selected}", "argument")],
 #				[ANSIThemeString(").", "error")],
-#				[ANSIThemeString("Backtrace:", "error")],
-#				[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 #		], severity = LogLevel.ERR, facility = str(themefile))
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
 	return curses_col, curses_attrs
@@ -1470,27 +1546,39 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 			selected (bool): [optional] True is selected, False otherwise
 		Returns:
 			themearray_flattened (ThemeArray): The flattened themearray
+		Raises:
+			ProgrammingError: themearray is not a themearray
 	"""
 
 	themearray_flattened = []
 
-	for substring in themearray:
-		if isinstance(substring, ThemeString):
-			themearray_flattened.append(substring)
-		elif isinstance(substring, ThemeRef):
-			themearray_flattened += substring.to_themearray()
+	for item in themearray:
+		if isinstance(item, ThemeString):
+			themearray_flattened.append(item)
+		elif isinstance(item, ThemeRef):
+			themearray_flattened += item.to_themearray()
 		else:
-			sys.exit(f"themearray_flatten() called with invalid type {type(substring)}; substring: {substring}\nBacktrace: {''.join(traceback.format_stack())}")
-			#debuglog.add([
-			#		[ANSIThemeString("themearray_flatten()", "emphasis"),
-			#		 ANSIThemeString(" called with invalid type ", "error"),
-			#		 ANSIThemeString(f"{type(substring)}", "argument"),
-			#		 ANSIThemeString("; substring:", "error")],
-			#		[ANSIThemeString(f"{substring}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#	      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError(f"themearray_flatten() called with invalid type {type(substring)}")
+			msg = [
+				[("themearray_flatten()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("item = ", "default"),
+				 (f"{item}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(item)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeRef", "argument"),
+				 (" or ", "default"),
+				 ("ThemeString", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
+
 	return themearray_flattened
 
 def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidth: int = -1, wrap_marker: bool = True, selected: Optional[bool] = None) ->\
