@@ -10,6 +10,7 @@ from enum import auto, Enum, IntEnum
 from functools import reduce
 import os
 import sys
+import traceback
 from typing import Any, Dict, List, NewType, Optional, Union
 
 FilePath = NewType("FilePath", str)
@@ -33,6 +34,8 @@ class UnknownError(Exception):
 			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
+	traceback: Optional[str] = None
+
 	def __init__(self,
 		     message: str,
 		     severity: Optional[Any] = None,
@@ -71,6 +74,7 @@ class UnknownError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
+		self.traceback = ''.join(traceback.format_stack())
 
 		super().__init__(message)
 
@@ -108,6 +112,7 @@ class UnknownError(Exception):
 			"function": self.function,
 			"lineno": self.lineno,
 			"ppid": self.ppid,
+			"traceback": self.traceback,
 		}
 
 class ProgrammingError(Exception):
@@ -128,6 +133,8 @@ class ProgrammingError(Exception):
 			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
+	traceback: Optional[str] = None
+
 	def __init__(self,
 		     message: str,
 		     severity: Optional[Any] = None,
@@ -166,6 +173,7 @@ class ProgrammingError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
+		self.traceback = ''.join(traceback.format_stack())
 
 		super().__init__(message)
 
@@ -203,6 +211,7 @@ class ProgrammingError(Exception):
 			"function": self.function,
 			"lineno": self.lineno,
 			"ppid": self.ppid,
+			"traceback": self.traceback,
 		}
 
 class FilePathAuditError(Exception):
@@ -223,6 +232,8 @@ class FilePathAuditError(Exception):
 			lineno (str): The line the error occurred on (optional; normally taken from the frame)
 			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
+
+	traceback: Optional[str] = None
 
 	def __init__(self,
 	             message: str,
@@ -264,6 +275,7 @@ class FilePathAuditError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
+		self.traceback = ''.join(traceback.format_stack())
 
 		super().__init__(message)
 
@@ -308,6 +320,7 @@ class FilePathAuditError(Exception):
 			"function": self.function,
 			"lineno": self.lineno,
 			"ppid": self.ppid,
+			"traceback": self.traceback,
 		}
 
 class HostNameStatus(Enum):
