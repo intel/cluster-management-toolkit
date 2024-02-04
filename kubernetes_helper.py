@@ -3540,6 +3540,120 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 }
 
+class KubernetesResourceCache:
+	"""
+	A class for caching Kubernetes resources
+	"""
+
+	updated = False
+	resource_cache: Dict = None
+
+	def __init__(self) -> None:
+		"""
+		Initialize the resource cache
+		"""
+		self.resource_cache = {}
+
+	def update_resource(self, kind: Tuple[str, str], resource: Dict) -> None:
+		"""
+		Add or update the cache entry for a resource
+
+			Parameters:
+				kind ((str, str)): The kind tuple for the resource
+				resource (dict): The resource data
+		"""
+		if kind not in self.resource_cache:
+			self.resource_cache[kind] = {
+				"resource_version": None,
+				"resources": {},
+			}
+
+		if len(uid := deep_get(resource, DictPath("metadata#uid"), "")) == 0:
+			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
+					       "Attempt to add a resource with empty or None uid was made")
+		resource_version := deep_get(resource, DictPath("metadata#resourceVersion"))
+		if resource_version is None:
+			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
+					       "Attempt to add a resource with empty or None resourceVersion was made")
+		if resource_version == "":
+			resource_version = "0"
+		if uid not in self.resource_cache[kind]:
+			self.resource_cache[kind]["resource_version"] = int(resource_version)
+			self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
+			updated = True
+		elif deep_get(resource_cache[kind], DictPath("uid#metadata#resourceVersion"), "0") < int(resource_version):
+			# Only update if the new version has a resource version strictly higher than the old version
+			self.resource_cache[kind]["resource_version"] = int(resource_version)
+			self.resource_cache[kind].pop(uid, None)
+			self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
+			updated = True
+
+	def update_resources(self, kind: Tuple[str, str], resources: List[Dict]) -> None:
+		"""
+		Add or update the cache entries for a resource kind
+
+			Parameters:
+				kind ((str, str)): The kind tuple for the resources
+				resources (dict): The resource data
+		"""
+		if resources is None or len(resources) == 0:
+			raise ProgrammingError("KubernetesResourceCache.update_resources(): "
+					       "resources is empty or None")
+
+		for resource in resources:
+			self.update(kind, resource = resource)
+
+	def get_resources(self, kind: Tuple[str, str]) -> Tuple[List[Dict], str]:
+		"""
+		Return a list with all resources of the specified kind
+
+			Parameters:
+				kind ((str, str)): The kind tuple for the resources
+			Returns:
+				([dict]): The list of cached resources of the specified kind
+		"""
+		if kind not in self.resource_cache:
+			return None
+		return [resource for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items()]
+
+	def index(self) -> List[str]:
+		"""
+		Return a list of all cached kinds
+
+			Returns:
+				([(str, str]): A list of kind tuples of all cached kinds
+		"""
+		if self.resource_cache is None:
+			return []
+		return deep_get(list(resource_cache.keys()))
+
+	def __len__(self) -> int:
+		"""
+		Return the number of cached kinds
+
+			Returns:
+				(int): The number of cached kinds
+		"""
+
+		if self.resource_cache is None:
+			return 0
+		return len(self.resource_cache)
+
+
+	def len(self, kind: Tuple[str, str]) -> int:
+		"""
+		Return the number of resources of the specified kind
+
+			Parameters:
+				kind ((str, str)): The kind tuple for the resources
+			Returns:
+				(int): The number of cached resources of the specified kind
+		"""
+		if self.resource_cache is None or kind not in self.resource_cache:
+			return 0
+
+		return len(deep_get(self.resource_cache[kind], DictPath("resources"), {}))
+
 class PoolManagerContext:
 	"""
 	A class for wrapping PoolManager/ProxyManager
