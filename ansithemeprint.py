@@ -13,7 +13,7 @@ import subprocess  # nosec
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+from cmttypes import FilePath, FilePathAuditError, ProgrammingError, LogLevel
 from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 import cmtio
 try:
@@ -128,20 +128,69 @@ class ANSIThemeString:
 		return self.string == themestring.string and self.themeref == themestring.themeref
 
 	@classmethod
-	def format_error_msg(cls, msg: Any) -> Tuple[str, List[List["ANSIThemeString"]]]:
+	def format_error_msg(cls, msg: List[Any]) -> Tuple[str, List[List["ANSIThemeString"]]]:
 		joined_strings = []
 		themearray_list = []
 
+		if not isinstance(msg, list):
+			raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
+					       f"msg = {msg} (type: {type(msg)}, expected: list)",
+					       severity = LogLevel.ERR,
+					       formatted_msg = [
+							[("ANSIThemeString.format_error_msg()", "emphasis"),
+							 (" called with invalid argument(s):", "error")],
+							[("msg = ", "default"),
+							 (f"{msg}", "argument"),
+							 (" (type: ", "default"),
+							 (f"{type(msg)}", "argument"),
+							 (", expected: ", "default"),
+							 ("list", "argument"),
+							 (")", "default")],
+					       ])
+
 		for line in msg:
+			if not isinstance(line, list):
+				raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
+						       f"line = {line} (type: {type(line)}, expected: list)",
+						       severity = LogLevel.ERR,
+						       formatted_msg = [
+								[("ANSIThemeString.format_error_msg()", "emphasis"),
+								 (" called with invalid argument(s):", "error")],
+								[("line = ", "default"),
+								 (f"{line}", "argument"),
+								 (" (type: ", "default"),
+								 (f"{type(line)}", "argument"),
+								 (", expected: ", "default"),
+								 ("list", "argument"),
+								 (")", "default")],
+						       ])
+
 			themearray = []
 			joined_string = ""
-			for string, formatting in line:
+			for items in line:
+				if not (isinstance(items, tuple) and len(items) == 2 and isinstance(items[0], str) and isinstance(items[1], str)):
+					raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
+							       f"items = {items} (type: {type(items)}, expected: tuple(str, str))",
+							       severity = LogLevel.ERR,
+							       formatted_msg = [
+									[("ANSIThemeString.format_error_msg()", "emphasis"),
+									 (" called with invalid argument(s):", "error")],
+									[("items = ", "default"),
+									 (f"{items}", "argument"),
+									 (" (type: ", "default"),
+									 (f"{type(items)}", "argument"),
+									 (", expected: ", "default"),
+									 ("tuple(str, str)", "argument"),
+									 (")", "default")],
+							       ])
+
+				string, formatting = items
 				joined_string += string
 				themearray.append(ANSIThemeString(string, formatting))
 			themearray_list.append(copy.deepcopy(themearray))
 			joined_strings.append(joined_string)
 
-		return "\n".join(joined_strings), themearray
+		return "\n".join(joined_strings), themearray_list
 
 theme: Optional[Dict] = None
 themepath: Optional[FilePath] = None
