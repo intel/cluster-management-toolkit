@@ -203,7 +203,6 @@ def strip_ansicodes(message: str) -> str:
 		raise TypeError(f"message is type {type(message)}, expected str")
 
 	message = message.replace("\\x1b", "\x1b").replace("\\u001b", "\x1b")
-	# Safe
 	tmp = re.findall(r"("
 	                 r"\x1b\[\d+m|"
 	                 r"\x1b\[\d+;\d+m|"
@@ -305,7 +304,6 @@ def age_to_seconds(age: str) -> int:
 
 	if len(age) == 0:
 		return -1
-	# Safe
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
 	if tmp.span() != (0, 0):
 		d = 0 if tmp[1] is None else int(tmp[1][:-1])
@@ -469,12 +467,10 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 	rtimestamp = timestamp
 
 	# Some timestamps are weird
-	# Safe
 	tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4}) [A-Z]{3}$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
 
-	# Safe
 	tmp = re.match(r"^(.+?) ?([+-]\d{4})$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
@@ -577,7 +573,6 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 
 	package_versions = []
 
-	# Safe
 	package_version_regex = re.compile(r"^(.*?): (.*)")
 
 	for line in tmp:
@@ -629,9 +624,7 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
 	args = [apt_cache_path, "policy"] + packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
-	# Safe
 	installed_regex = re.compile(r"^\s*Installed: (.*)")
-	# Safe
 	candidate_regex = re.compile(r"^\s*Candidate: (.*)")
 	for line in split_response:
 		if line.endswith(":"):

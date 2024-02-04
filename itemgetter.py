@@ -283,7 +283,6 @@ def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 
 	allowed_ips = []
 
-	# Safe
 	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
 
 	for addr in deep_get(obj, DictPath("spec#allowedIPs")):
@@ -646,7 +645,6 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 
 	for affinity in deep_get(obj, DictPath("spec#affinity"), []):
 		atype = affinity
-		# Safe
 		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
 
 		for policy in deep_get(obj, DictPath(f"spec#affinity#{atype}"), ""):

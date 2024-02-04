@@ -45,9 +45,7 @@ def validate_name(rtype: str, name: str) -> bool:
 	if name is None:
 		return False
 
-	# Safe
 	name_regex = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$")
-	# Safe
 	portname_regex = re.compile(r"^([a-z0-9]+[a-z0-9-].*[a-z0-9]|[a-z0-9])$")
 
 	if rtype in ("dns-subdomain", "dns-label"):

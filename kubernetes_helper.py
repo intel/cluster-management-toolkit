@@ -4247,7 +4247,6 @@ class KubernetesHelper:
 		ca_certs = None
 
 		# OK, we have a user and a cluster to look for
-		# Safe
 		host_port_path_regex = re.compile(r"^https?://(.*):(\d+)(.*)")
 
 		for cluster in deep_get(kubeconfig, DictPath("clusters"), []):
@@ -4527,7 +4526,6 @@ class KubernetesHelper:
 
 		roles: List[str] = []
 
-		# Safe
 		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
 
 		for label in deep_get(node, DictPath("metadata#labels"), {}).items():
@@ -4715,7 +4713,6 @@ class KubernetesHelper:
 
 		# The API-group is anything before /, or the empty string if there's no "/"
 		if api_version is not None and "/" in api_version:
-			# Safe
 			tmp = re.match(r"^(.*)/.*", api_version)
 			if tmp is None:
 				raise ValueError(f"Could not extract API-group from {api_version}", )
