@@ -10,7 +10,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 from datetime import datetime
 from typing import Callable, Dict, Tuple
 
-from cmttypes import deep_get, DictPath, LogLevel
+from cmttypes import deep_get, DictPath, LogLevel, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import logparser as logparsers
 
@@ -55,7 +55,7 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 			fun(indata)
 			message = f"{fun_str}() silently accepted invalid indata {indata}"
 			result = False
-		except ValueError:
+		except ProgrammingError:
 			pass
 
 	return message, result
@@ -225,11 +225,11 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str
 	return message, result
 
 def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata = ("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]"),
+	return generic_split_severity(valid_indata = ("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]", "[notavalidseverity]"),
 				      fun = logparsers.split_bracketed_severity, fun_str = "logparsers.split_bracketed_severity", verbose = verbose)
 
 def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:"),
+	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
 				      fun = logparsers.split_colon_severity, fun_str = "logparsers.split_colon_severity", verbose = verbose)
 
 def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
@@ -237,6 +237,7 @@ def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	valid_indata = (
+		"1.677757754464991e+09",
 		"2020-02-20 13:47:41",
 		"2020-02-20 13.47.41",
 		"2020-02-20 13:47:41Z",
@@ -431,22 +432,45 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	valid_indata = (
-		"2020-02-20 13:47:01.531 GMT",
-	)
-
-	timestamp = datetime.now()
 	fun = logparsers.strip_iso_timestamp_with_tz
 	fun_str = "logparsers.strip_iso_timestamp_with_tz"
 
-	for indata in valid_indata:
-		# indata is just a prefix; we want to test with a string prefixed by that prefix"
-		indata = f"{indata} something or another"
-		tmp = fun(indata)
-		if tmp == indata:
-			message = f"{fun_str} failed to strip timestamp from valid indata {indata}"
-			result = False
-			break
+	if result:
+		testdata = (
+			# Indata format:
+			# (string, expected_result, expected_exception)
+			("2020-02-20 13:47:01.531 GMT", "", None),
+			("2020-02-20 13:47:01.531 GMT with some other data", "with some other data", None),
+			("2020-02-20 13:47:01.531", "2020-02-20 13:47:01.531", None),
+		)
+
+		for string, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(string)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
 
 	return message, result
 
