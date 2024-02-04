@@ -89,6 +89,58 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ANSIThemeString.format_error_msg
+	fun_str = "ANSIThemeString.format_error_msg"
+
+	if result:
+		testdata = (
+			# Indata format:
+			# (indata, expected_result, expected_exception)
+			([[("This", "error"), (" is ", "warning"), ("a", "note")], [("new line", "default")]],
+			 ("This is a\nnew line",
+			  [[ANSIThemeString("This", "error"), ANSIThemeString(" is ", "warning"), ANSIThemeString("a", "note")],
+			   [ANSIThemeString("new line", "default")]]),
+			 None),
+			(1, None, ProgrammingError),
+			([1], None, ProgrammingError),
+			([[1]], None, ProgrammingError),
+			([[("1", "s", "foo")]], None, ProgrammingError),
+		)
+
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
 def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -477,6 +529,10 @@ tests: Dict = {
 	},
 	("init_ansithemeprint", ): {
 		"callable": test_init_ansithemeprint,
+		"result": None,
+	},
+	("format_error_msg", ): {
+		"callable": test_format_error_msg,
 		"result": None,
 	},
 	("ansithemeprint", ): {
