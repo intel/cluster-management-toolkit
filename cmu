@@ -541,7 +541,6 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
 	# apiserver_requested_deprecated_apis{group="autoscaling",removed_release="1.25",resource="horizontalpodautoscalers",subresource="",version="v2beta1"} 1
 
-	# Safe
 	metrics_regex = re.compile(r"^([^{]*){([^}]*)}\s\d+$")
 
 	for line in metrics:
@@ -733,7 +732,6 @@ def get_image_tuple(image: str) -> Tuple[str, str]:
 				version (str): The container version
 	"""
 
-	# Safe
 	tmp = re.match(r"^(.*):(.*)", image)
 	if tmp is not None:
 		image_name = f"{tmp[1]}"
@@ -3376,7 +3374,6 @@ def format_controller(controller, show_kind: str):
 def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
 	controller = (("", ""), "")
 	if owner_references is not None:
-		# Safe
 		api_group_regex = re.compile(r"^(.*)/.*")
 
 		for owr in owner_references:
@@ -5364,7 +5361,6 @@ builtin_fields = {
 	},
 	"mem": {
 		"header": "Mem% / Total:",
-		# Safe
 		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
 		"datagetter": datagetters.datagetter_regex_split_to_tuples,
 		"generator": generators.generator_mem,
@@ -6998,7 +6994,6 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	hostname = socket.gethostname()
 	islocal = (hostname == name)
 
-	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
 	loadavg_raw = []
@@ -7737,7 +7732,6 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 			if result is not None:
 				versionoutput = result.stdout.splitlines()
-				# Safe
 				version_regex = re.compile(r"^cilium image \(default\): (.*)")
 				for line in versionoutput:
 					tmp = version_regex.match(line)
@@ -9311,7 +9305,6 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	uip.refresh_statusbar()
 	curses.doupdate()
 
-	# Safe
 	facility_regex = re.compile(r"^.*/(.*)")
 
 	while True:
@@ -10405,7 +10398,6 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 						ANSIThemeString(": Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode("utf-8", errors = "replace")
-				# Safe
 				tmp = re.match(r"^Creating debugging pod (\S+) with container (\S+) .*", output)
 				if tmp is not None:
 					pod_name = tmp[1]
@@ -11153,7 +11145,6 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 	if len(result.stdout) == 0:
 		return Retval.MATCH
 
-	# Safe
 	diff_regex = re.compile(r"^(\s*)(.*)")
 
 	for line in result.stdout.splitlines():
@@ -11667,7 +11658,6 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 	if action_list is None:
 		action_list = {}
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in Path(path).iterdir():
@@ -12443,7 +12433,6 @@ def populate_views(force_refresh: bool = False) -> None:
 
 	view_files = []
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for view_dir in view_dirs:

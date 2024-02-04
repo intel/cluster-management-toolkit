@@ -95,7 +95,6 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 	playbooks = []
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in paths:
@@ -295,9 +294,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 
 	if highlight and len(dump) > 0:
 		i = 0
-		# Safe
 		list_regex = re.compile(r"^(\s*)((- )+)(.*)")
-		# Safe
 		key_value_regex = re.compile(r"^(.*?)(:)(.*)")
 		for i, data in enumerate(dump):
 			# Is it a list?
@@ -868,7 +865,6 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 
 	logs = []
 
-	# Safe
 	timestamp_regex = re.compile(r"^(\d{4}-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
 
 	for path in Path(ANSIBLE_LOG_DIR).iterdir():
@@ -1104,7 +1100,6 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 	playbook_name = playbook
 	if "/" in playbook_name:
 		tmp2 = str(PurePath(playbook_name).name)
-		# Safe
 		tmp = re.match(r"^(.*)\.ya?ml$", tmp2)
 		if tmp is not None:
 			playbook_name = tmp[1]

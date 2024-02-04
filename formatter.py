@@ -361,7 +361,6 @@ def format_yaml_line(line: str, **kwargs: Dict) -> Tuple[List[Union[ThemeRef, Th
 		]
 		return tmpline, remnants
 	if line.lstrip(" ").startswith("- "):
-		# Safe
 		tmp = re.match(r"^(\s*?)- (.*)", line)
 		if tmp is not None:
 			tmpline += [
@@ -382,7 +381,6 @@ def format_yaml_line(line: str, **kwargs: Dict) -> Tuple[List[Union[ThemeRef, Th
 			ThemeString(":", separator_format),
 		]
 	else:
-		# Safe
 		tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
 		# pylint: disable-next=line-too-long
 		if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
@@ -611,9 +609,7 @@ def format_haproxy(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Un
 	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
-	# Safe
 	haproxy_section_regex = re.compile(r"^(\s*)(global|defaults|frontend|backend|listen|resolvers|mailers|peers)(\s*)(.*)")
-	# Safe
 	haproxy_setting_regex = re.compile(r"^(\s*)(\S+)(\s+)(.+)")
 
 	for line in lines:
@@ -683,19 +679,12 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 	single_site = True
 	site = False
 
-	# Safe
 	block_open_regex = re.compile(r"^(\s*)({)(.*)")
-	# Safe
 	snippet_regex = re.compile(r"^(\s*)(\(.+?\))(.*)")
-	# Safe
 	site_regex = re.compile(r"^(\s*)(\S+?)(\s+{\s*$|$)")
-	# Safe
 	block_close_regex = re.compile(r"^(\s*)(}\s*$)")
-	# Safe
 	matcher_regex = re.compile(r"^(\s*)(@.*?|\*/.*?)(\s.*)")
-	# Safe
 	directive_regex = re.compile(r"^(\s*)(.+?)(\s.*|$)")
-	# Safe
 	argument_regex = re.compile(r"^(.*?)(\s{\s*$|$)")
 
 	for line in lines:
@@ -841,7 +830,6 @@ def format_mosquitto(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 	if deep_get(kwargs, DictPath("raw"), False):
 		return format_none(lines)
 
-	# Safe
 	mosquitto_variable_regex = re.compile(r"^(\S+)(\s)(.+)")
 
 	for line in lines:
@@ -895,7 +883,6 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Unio
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# Safe
 	key_regex = re.compile(r"^(\s*)(#.*$|}|\S+|$)(.+;|.+{|)(\s*#.*$|)")
 
 	for line in lines:
@@ -969,17 +956,11 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# Safe
 	escape_regex = re.compile(r"^(\s*)(&)(.+?)(;)(.*)")
-	# Safe
 	content_regex = re.compile(r"^(.*?)(<.*|&.*)")
-	# Safe
 	tag_open_regex = re.compile(r"^(\s*)(</|<!--|<\?|<)(.*)")
-	# Safe
 	tag_named_regex = re.compile(r"^(.+?)(\s*>|\s*\?>|\s*$|\s+.*)")
-	# Safe
 	tag_close_regex = re.compile(r"^(\s*)(/>|\?>|-->|--!>|>)(.*)")
-	# Safe
 	remainder_regex = re.compile(r"^(\s*\S+?)(=|)(\"[^\"]+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
 	i = 0
@@ -1218,9 +1199,7 @@ def format_toml(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# Safe
 	key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
-	# Safe
 	comment_end_regex = re.compile(r"^(.*)(#.*)")
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
@@ -1309,7 +1288,6 @@ def format_fluentbit(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# Safe
 	key_value_regex = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
 
 	for line in lines:
@@ -1363,7 +1341,6 @@ def format_ini(lines: Union[str, List[str]], **kwargs: Dict) -> List[List[Union[
 	if isinstance(lines, str):
 		lines = split_msg(lines)
 
-	# Safe
 	key_value_regex = re.compile(r"^(\s*)(\S+)(\s*=\s*)(\S+)")
 
 	for line in lines:

@@ -122,7 +122,6 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 
 	sudoer = True
 
-	# Safe
 	sudo_msg_regex = re.compile(r"^User ([^\s]+) is not allowed to run sudo on.*")
 
 	for line in result.splitlines():
@@ -155,7 +154,6 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 		result = execute_command_with_response(args)
 		passwordless_sudo = False
 
-		# Safe
 		sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
 
 		for line in result.splitlines():
@@ -215,7 +213,6 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, cmtconfig_dic
 	args = [SSH_BIN_PATH, "-G", "localhost"]
 	result = execute_command_with_response(args)
 
-	# Safe
 	hashknownhosts_regex = re.compile(r"^hashknownhosts\s+yes$")
 
 	for line in result.splitlines():
@@ -505,7 +502,6 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 	if vlist is None or _status != 200:
 		vlist = []
 
-	# Safe
 	version_regex = re.compile(r"^v(\d+)\.(\d+)\..*")
 
 	for node in vlist:

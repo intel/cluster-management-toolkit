@@ -362,7 +362,6 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 		if len(tmp) == 0:
 			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
 
-		# Safe
 		package_version_regex = re.compile(r"^(.*?): (.*)")
 
 		for line in tmp:
@@ -748,7 +747,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/antrea-io/antrea/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -762,10 +760,8 @@ cni_upgrade_data = {
 		"executable": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"version_command": ["kubectl", "calico", "version"],
-			# Safe
 			"version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -781,7 +777,6 @@ cni_upgrade_data = {
 			"version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -799,7 +794,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -813,10 +807,8 @@ cni_upgrade_data = {
 	"cilium": {
 		"executable": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"version_regex": r"^cilium-cli: (v)(\d+)(\.)(\d+)(\.)(\d+) .*$",
 			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -829,10 +821,8 @@ cni_upgrade_data = {
 		},
 		"CNI": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
 			"install": ["cilium", "--context", "<<<context>>>", "install"],
@@ -843,7 +833,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/flannel-io/flannel/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -858,7 +847,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -872,7 +860,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/weaveworks/weave/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -3584,7 +3571,6 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if len(tmp) == 0:
 			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
 
-		# Safe
 		package_version_regex = re.compile(r"^(.*?): (.*)")
 
 		for line in tmp:
