@@ -132,6 +132,117 @@ def none_timestamp() -> datetime:
 
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
+def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
+	"""
+	Given CPU usage information, convert it to CPU usage in millicores
+
+		Parameters:
+			cpu_usage(union(int, str)): The CPU usage
+		Returns:
+			cpu_usage_millicores (float): CPU usage in millicores
+	"""
+
+	cpu_usage_millicores: float = 0
+
+	if not isinstance(cpu_usage, str):
+		raise TypeError("cpu_usage must be a str")
+
+	if cpu_usage.isnumeric():
+		cpu_usage_millicores = int(cpu_usage) * 1000 ** 1
+	elif cpu_usage.endswith("m"):
+		cpu_usage_millicores = int(cpu_usage[0:-1])
+	elif cpu_usage.endswith("u"):
+		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000 ** 1
+	elif cpu_usage.endswith("n"):
+		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000 ** 2
+	else:
+		raise ValueError(f"Unknown unit for CPU usage in {cpu_usage}")
+	return cpu_usage_millicores
+
+def normalise_mem_to_bytes(mem_usage: str) -> int:
+	"""
+	Given a memory usage string, normalise it to bytes
+
+		Parameters:
+			mem_usage (str): The amount of memory used
+		Returns:
+			mem_usage_bytes (int): The amount of memory used in bytes
+	"""
+
+	mem = 0
+
+	unit_lookup = {
+		"Ki": 1024 ** 1,
+		"Mi": 1024 ** 2,
+		"Gi": 1024 ** 3,
+		"Ti": 1024 ** 4,
+		"Pi": 1024 ** 5,
+		"Ei": 1024 ** 6,
+		"Zi": 1024 ** 7,
+		"Yi": 1024 ** 8,
+	}
+
+	if not isinstance(mem_usage, (int, str)):
+		raise TypeError(f"mem_usage must be an integer-string (optionally with a valid unit) or int")
+
+	if isinstance(mem_usage, int) or isinstance(mem_usage, str) and mem_usage.isnumeric():
+		mem = int(mem_usage)
+	else:
+		for key, value in unit_lookup.items():
+			if mem_usage.endswith(key):
+				mem = int(mem_usage[0:-len(key)]) * value
+				break
+		else:
+			raise ValueError(f"Unknown unit for memory usage in {mem_usage}")
+
+	return mem
+
+def normalise_mem_bytes_to_str(mem_usage_bytes: int, fmt: str = "float") -> str:
+	"""
+	Given memory usage in bytes, convert it to a normalised string
+
+		Parameters:
+			mem_usage_bytes (int): The memory size in bytes
+			fmt (str): Format as float or integer
+		Returns:
+			(str): The human readable mem usage with size suffix
+		Raises:
+			TypeError: size is not an integer
+			ValueError: size is not >= 0
+	"""
+
+	suffix = ""
+	mem_usage: float = 0
+
+	suffixes = (
+		"",	# 1024 ** 1
+		"Ki",	# 1024 ** 2
+		"Mi",	# 1024 ** 3
+		"Gi",	# 1024 ** 4
+		"Ti",	# 1024 ** 5
+		"Pi",	# 1024 ** 6
+		"Ei",	# 1024 ** 7
+		"Zi",	# 1024 ** 8
+		"Yi",	# 1024 ** 9
+	)
+
+	if not isinstance(mem_usage_bytes, int):
+		raise TypeError("mem_usage_bytes must be an int")
+
+	mem_usage = float(mem_usage_bytes)
+
+	if mem_usage < 0:
+		raise ValueError("mem_usage_bytes must be >= 0")
+
+	for i, suffix in enumerate(suffixes):
+		if mem_usage < 1024 or i >= len(suffixes) - 1:
+			break
+		mem_usage /= 1024 ** 1
+
+	if fmt == "int":
+		return f"{int(mem_usage)}{suffix}B"
+	return f"{mem_usage:0.1f}{suffix}B"
+
 def disksize_to_human(size: int) -> str:
 	"""
 	Given a disksize in bytes, convert it to a more readable format with size suffix
@@ -145,25 +256,10 @@ def disksize_to_human(size: int) -> str:
 			ValueError: size is not >= 0
 	"""
 
-	size_suffixes = [
-		" bytes",
-		"kiB",
-		"MiB",
-		"GiB",
-		"TiB",
-		"PiB",
-	]
-
-	if not isinstance(size, int):
-		raise TypeError("size must be an integer")
-	if size < 0:
-		raise ValueError("size must be >= 0")
-
-	for suffix in size_suffixes:
-		if size < 1024 or suffix == "PiB":
-			break
-		size = size // 1024
-	return f"{size}{suffix}"
+	tmp = normalise_mem_bytes_to_str(size, fmt = "int")
+	if tmp[:-1].isnumeric():
+		tmp = f"{tmp[:-1]} bytes"
+	return tmp
 
 def split_msg(rawmsg: str) -> List[str]:
 	"""

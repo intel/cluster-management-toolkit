@@ -1,7 +1,22 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
 python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests
-test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py kubernetes_helper.py networkio.py reexecutor.py logparser.py formatter.py curses_helper.py
+test_lib_symlinks = \
+	about.py ansible_helper.py ansithemeprint.py \
+	checks.py \
+	cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py \
+	commandparser.py \
+	curses_helper.py \
+	datagetter.py \
+	formatter.py \
+	generator.py \
+	helptexts.py \
+	itemgetter.py \
+	kubernetes_helper.py \
+	logparser.py \
+	networkio.py \
+	objgetter.py \
+	reexecutor.py
 
 # Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
