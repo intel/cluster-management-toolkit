@@ -366,6 +366,164 @@ def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.normalise_cpu_usage_to_millicores
+	fun_str = "cmtlib.normalise_cpu_usage_to_millicores"
+
+	if result:
+		# Indata format:
+		# (cpu_usage, expected_result, expected_exception)
+		testdata = (
+			("512", 512000, None),
+			("10m", 10.0, None),
+			("200u", 0.2, None),
+			("541359378n", 541.359378, None),
+			("10NotAUnit", None, ValueError),
+			(None, None, TypeError),
+			("a", None, ValueError),
+			([], None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.normalise_mem_to_bytes
+	fun_str = "cmtlib.normalise_mem_to_bytes"
+
+	if result:
+		# Indata format:
+		# (mem_usage, expected_result, expected_exception)
+		testdata = (
+			(42, 42, None),
+			("42", 42, None),
+			("2Ki", 2048, None),
+			("3Mi", 3_145_728, None),
+			("4Gi", 4_294_967_296, None),
+			("5Ti", 5_497_558_138_880, None),
+			("6Pi", 6_755_399_441_055_744, None),
+			("7Ei", 8_070_450_532_247_928_832, None),
+			("8Zi", 9_444_732_965_739_290_427_392, None),
+			("9Yi", 10_880_332_376_531_662_572_355_584, None),
+			("10NotAUnit", None, ValueError),
+			(None, None, TypeError),
+			("a", None, ValueError),
+			([], None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.normalise_mem_bytes_to_str
+	fun_str = "cmtlib.normalise_mem_bytes_to_str"
+
+	if result:
+		# Indata format:
+		# (mem_usage_bytes, expected_result, expected_exception)
+		testdata = (
+			(42 * 1024 ** 0, f"{42:0.1f}B", None),
+			(2 * 1024 ** 1, f"{2:0.1f}KiB", None),
+			(3 * 1024 ** 2, f"{3:0.1f}MiB", None),
+			(4 * 1024 ** 3, f"{4:0.1f}GiB", None),
+			(5 * 1024 ** 4, f"{5:0.1f}TiB", None),
+			(6 * 1024 ** 5, f"{6:0.1f}PiB", None),
+			(7 * 1024 ** 6, f"{7:0.1f}EiB", None),
+			(8 * 1024 ** 7, f"{8:0.1f}ZiB", None),
+			(9 * 1024 ** 8, f"{9:0.1f}YiB", None),
+			(10 * 1024 ** 9, f"{10 * 1024:0.1f}YiB", None),
+			("a", None, TypeError),
+			(None, None, TypeError),
+			(-5 * 1024 ** 4, None, ValueError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
 def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -379,8 +537,8 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
 		testdata = (
 			(42, "42 bytes", None),
 			(1024 ** 1 - 1, "1023 bytes", None),
-			(1024 ** 1, "1kiB", None),
-			(1024 ** 2 - 1, "1023kiB", None),
+			(1024 ** 1, "1KiB", None),
+			(1024 ** 2 - 1, "1023KiB", None),
 			(1024 ** 2, "1MiB", None),
 			(1024 ** 3 - 1, "1023MiB", None),
 			(1024 ** 3, "1GiB", None),
@@ -388,8 +546,8 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
 			(1024 ** 4, "1TiB", None),
 			(1024 ** 5 - 1, "1023TiB", None),
 			(1024 ** 5, "1PiB", None),
-			(1024 ** 6 - 1, "1023PiB", None),
-			(1024 ** 6, "1024PiB", None),
+			(1024 ** 6 - 1024, "1023PiB", None),
+			(1024 ** 6, "1EiB", None),
 			(None, None, TypeError),
 			("a", None, TypeError),
 			("2", None, TypeError),
@@ -757,6 +915,18 @@ tests: Dict = {
 	},
 	("none_timestamp()",): {
 		"callable": test_none_timestamp,
+		"result": None,
+	},
+	("normalise_cpu_usage_to_millicores()",): {
+		"callable": test_normalise_cpu_usage_to_millicores,
+		"result": None,
+	},
+	("normalise_mem_to_bytes()",): {
+		"callable": test_normalise_mem_to_bytes,
+		"result": None,
+	},
+	("normalise_mem_bytes_to_str()",): {
+		"callable": test_normalise_mem_bytes_to_str,
 		"result": None,
 	},
 	("disksize_to_human()",): {

@@ -1,18 +1,22 @@
 #! /usr/bin/env python3
 
 """
-This generates elements for various more complex types
+This generates and post-processes elements for various more complex types
 """
 
 # pylint: disable=too-many-arguments
 
+import copy
 from datetime import datetime
 from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
+import yaml
 
-from curses_helper import color_status_group, themearray_len, ThemeAttr, ThemeRef, ThemeString
+from ansithemeprint import ANSIThemeString
+from curses_helper import color_status_group, themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString, get_theme_ref
 import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
+import datagetter as datagetters
 
 def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeString]]:
 	"""
@@ -831,6 +835,513 @@ def generator_value_mapper(obj: Dict,
 		formatted_string
 	]
 	return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+
+def processor_timestamp(obj: Dict, field: str) -> str:
+	value = getattr(obj, field)
+
+	if value is None:
+		return ""
+
+	if isinstance(value, str):
+		return value
+
+	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+	return string
+
+def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
+	values = getattr(obj, field)
+
+	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
+		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
+
+	if len(values) == 2:
+		if values[0] is None:
+			array: List[Union[ThemeRef, ThemeString]] = [
+				ThemeString("<none>", ThemeAttr("types", "none"))
+			]
+		else:
+			timestamp_string = datetime_to_timestamp(values[0])
+			array = generators.format_numerical_with_units(timestamp_string, "timestamp", False)
+			array += [
+				ThemeString(" (", ThemeAttr("types", "generic"))
+			]
+			array += generators.generator_age_raw(values[1], False)
+			array += [
+				ThemeString(")", ThemeAttr("types", "generic"))
+			]
+	else:
+		array = []
+
+		for i in range(0, len(values)):
+			# If there is no formatting for this field we assume that
+			# it is a generic string
+			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
+				fmt = ThemeAttr("types", "generic")
+				array += [
+					ThemeString(values[i], fmt)
+				]
+			elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
+				if values[i] is None:
+					array += [
+						ThemeString("<none>", ThemeAttr("types", "none"))
+					]
+				else:
+					# timestamp_string = datetime_to_timestamp(values[0])
+					array += generators.format_numerical_with_units(values[i], "timestamp", False)
+			elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
+				array += generators.generator_age_raw(values[i], False)
+			else:
+				array += [
+					ThemeString(values[i], formatting["field_colors"][i])
+				]
+
+	return themearray_to_string(array)
+
+# For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-arguments
+def processor_list(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
+		   ellipsise: bool, ellipsis: ThemeRef,
+		   field_prefixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]],
+		   field_suffixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]]) -> str:
+	items = getattr(obj, field)
+
+	strings: List[str] = []
+
+	elcount = 0
+	skip_separator = True
+
+	if isinstance(items, tuple):
+		items = [items]
+
+	for item in items:
+		if elcount == ellipsise:
+			strings.append(themearray_to_string([ellipsis]))
+			break
+
+		if not isinstance(item, tuple):
+			item = (item, None)
+
+		# Join all elements of the field into one string
+		string = ""
+
+		for i in range(0, len(item)):
+			if item[i] is None:
+				continue
+
+			tmp = str(item[i])
+
+			if len(tmp) == 0:
+				continue
+
+			if i > 0 and not skip_separator:
+				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
+
+			if field_prefixes is not None and i < len(field_prefixes):
+				if isinstance(field_prefixes[i], tuple):
+					string += themearray_to_string([field_prefixes[i]])
+				else:
+					for _item in field_prefixes[i]:
+						string += themearray_to_string([_item])
+			string += tmp
+			if field_suffixes is not None and i < len(field_suffixes):
+				if isinstance(field_suffixes[i], tuple):
+					string += themearray_to_string([field_suffixes[i]])
+				else:
+					for _item in field_suffixes[i]:
+						string += themearray_to_string([_item])
+			skip_separator = False
+
+		strings.append(string)
+		elcount += 1
+
+	vstring = themearray_to_string([item_separator]).join(strings)
+
+	return vstring
+
+# For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-arguments
+
+def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
+			       ellipsise: bool, ellipsis: ThemeRef, field_prefixes: List[ThemeString], field_suffixes: List[ThemeString]) -> str:
+	items = getattr(obj, field)
+
+	strings = []
+
+	elcount = 0
+	skip_separator = True
+
+	newitems = []
+	for item in items:
+		newitems.append(item[0])
+
+	for item in newitems:
+		if elcount == ellipsise:
+			strings.append(themearray_to_string([ellipsis]))
+			break
+
+		if not isinstance(item, tuple):
+			item = (item, None)
+
+		# Join all elements of the field into one string
+		string = ""
+
+		for i in range(0, len(item)):
+			if item[i] is None:
+				continue
+
+			tmp = str(item[i])
+
+			if len(tmp) == 0:
+				continue
+
+			if i > 0 and not skip_separator:
+				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
+
+			if field_prefixes is not None and i < len(field_prefixes):
+				string += themearray_to_string([field_prefixes[i]])
+			string += tmp
+			if field_suffixes is not None and i < len(field_suffixes):
+				string += themearray_to_string([field_suffixes[i]])
+			skip_separator = False
+
+		strings.append(string)
+		elcount += 1
+
+	vstring = themearray_to_string([item_separator]).join(strings)
+
+	return vstring
+
+def processor_age(obj: Dict, field: str) -> str:
+	seconds = getattr(obj, field)
+	return cmtlib.seconds_to_age(seconds, negative_is_skew = True)
+
+def processor_mem(obj: Dict, field: str) -> str:
+	free, total = getattr(obj, field)
+
+	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
+	string += str(ThemeRef("separators", "percentage"))
+	string += " "
+	string += str(ThemeRef("separators", "fraction"))
+	string += " "
+	string += f"{int(total) / (1024 * 1024):0.1f}"
+	string += "GiB"
+
+	return string
+
+default_processor = {
+	generator_age: processor_age,
+	generator_list: processor_list,
+	generator_list_with_status: processor_list_with_status,
+	generator_mem: processor_mem,
+	generator_timestamp: processor_timestamp,
+}
+
+# The return type of the formatting will be the same
+# as the type of the default, so default == None is a programming error
+def get_formatting(field: str, formatting: str, default: Union[Union[dict, ThemeAttr, ThemeRef, ThemeString], List[dict]]):
+	result = []
+	items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
+
+	if items is None:
+		return default
+
+	if not isinstance(items, (dict, list)):
+		raise TypeError(f"Formatting must be either list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; is type: {type(items)}")
+
+	if default is None:
+		raise ValueError(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
+
+	if len(items) < 1:
+		raise ValueError(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
+
+	if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
+		default_context = "separators"
+	elif formatting == "field_colors":
+		default_context = "types"
+
+	if isinstance(items, dict):
+		context = deep_get(items, DictPath("context"), default_context)
+		key = deep_get(items, DictPath("type"))
+		return ThemeRef(context, key)
+
+	for item in items:
+		# field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeString]] or Union[ThemeRef, ThemeString]; in the latter case turn it into a list
+		if isinstance(item, (ThemeAttr, ThemeRef, ThemeString)):
+			result.append(item)
+		elif isinstance(item, dict):
+			context = deep_get(item, DictPath("context"), default_context)
+			key = deep_get(item, DictPath("type"))
+			if formatting in ("field_separators", "field_prefixes", "field_suffixes"):
+				result.append(ThemeRef(context, key))
+			elif formatting == "field_colors":
+				result.append(ThemeAttr(context, key))
+			else:
+				raise TypeError(f"Unknown formatting type {formatting}")
+		else:
+			raise TypeError(f"Formatting is of invalid type {type(item)}")
+
+	return result
+
+formatter_to_generator_and_processor = {
+	"mem": {
+		"generator": generator_mem_single,
+		"processor": None,
+	},
+	"float": {
+		# The generator is the same, but the name is unfortunate
+		"generator": generator_mem_single,
+		"processor": None,
+	},
+	"list": {
+		"generator": generator_list,
+		"processor": processor_list,
+	},
+	"list_with_status": {
+		"generator": generator_list_with_status,
+		"processor": processor_list_with_status,
+	},
+	"hex": {
+		"generator": generator_hex,
+		"processor": None,
+	},
+	"numerical": {
+		"generator": generator_numerical,
+		"processor": None,
+	},
+	"numerical_with_units": {
+		"generator": generator_numerical_with_units,
+		"processor": None,
+	},
+	"address": {
+		"generator": generator_address,
+		"processor": None,
+		"field_separators_default": [],
+	},
+	"timestamp": {
+		"generator": generator_timestamp,
+		"processor": processor_timestamp,
+	},
+	"timestamp_with_age": {
+		"generator": generator_timestamp_with_age,
+		"processor": processor_timestamp_with_age,
+	},
+	"age": {
+		"generator": generator_age,
+		"processor": processor_age,
+	},
+	"value_mapper": {
+		"generator": generator_value_mapper,
+		"processor": None,
+	},
+}
+
+# This generates old-style fields from new-style fields
+def get_formatter(field: Dict) -> Dict:
+	tmp_field = {}
+
+	formatter = deep_get(field, DictPath("formatter"))
+	generator = deep_get(field, DictPath("generator"), generator_basic)
+	if isinstance(generator, str):
+		generator = deep_get(generator_allowlist, DictPath(generator), generator_basic)
+	processor = deep_get(field, DictPath("processor"))
+
+	field_separators_default = [ThemeRef("separators", "field")]
+
+	if formatter is not None:
+		if formatter not in formatter_to_generator_and_processor:
+			msg = [
+				[("get_formatter()", "emphasis"),
+				 (" called with invalid argument(s):" "error")],
+				[("field = ", "default"),
+				 (yaml.dump(field), "argument"),
+				 (" has an invalid ", "default"),
+				 ("formatter", "argument")]
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       formatted_msg = formatted_msg)
+
+		generator = deep_get(formatter_to_generator_and_processor[formatter], DictPath("generator"), None)
+		processor = deep_get(formatter_to_generator_and_processor[formatter], DictPath("processor"), None)
+		field_separators_default = deep_get(formatter_to_generator_and_processor[formatter], DictPath("field_separators_default"), field_separators_default)
+
+	theme = get_theme_ref()
+	if deep_get(field, DictPath("formatting#field_colors")) is None:
+		if "type" in field and field["type"] in theme["types"]:
+			field_colors = [ThemeAttr("types", deep_get(field, DictPath("type")))]
+		else:
+			field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
+	else:
+		field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
+
+	field_prefixes = get_formatting(field, "field_prefixes", [])
+	field_suffixes = get_formatting(field, "field_suffixes", [])
+	field_separators = get_formatting(field, "field_separators", field_separators_default)
+	ellipsise = deep_get(field, DictPath("formatting#ellipsise"), -1)
+	ellipsis = get_formatting(field, "ellipsis", ThemeRef("separators", "ellipsis"))
+	item_separator = get_formatting(field, "item_separator", ThemeRef("separators", "list"))
+	mapping = deep_get(field, DictPath("formatting#mapping"), {})
+
+	tmp_field["generator"] = generator
+	tmp_field["processor"] = processor
+	# Fix all of these to use the new format
+	tmp_field["field_colors"] = field_colors
+	tmp_field["field_prefixes"] = field_prefixes
+	tmp_field["field_suffixes"] = field_suffixes
+	tmp_field["field_separators"] = field_separators
+	tmp_field["ellipsise"] = ellipsise
+	tmp_field["ellipsis"] = ellipsis
+	tmp_field["item_separator"] = item_separator
+	tmp_field["mapping"] = mapping
+	if "align" in field:
+		align = deep_get(field, DictPath("align"), "left")
+		tmp_field["ralign"] = align == "right"
+
+	formatting = {
+		"item_separator": item_separator,
+		"field_separators": field_separators,
+		"field_colors": field_colors,
+		"ellipsise": ellipsise,
+		"ellipsis": ellipsis,
+		"field_prefixes": field_prefixes,
+		"field_suffixes": field_suffixes,
+		"mapping": mapping,
+	}
+
+	tmp_field["formatting"] = formatting
+
+	return tmp_field
+
+builtin_fields = {
+	"age": {
+		"header": "Age:",
+		"paths": [{
+			"path": ["metadata#creationTimestamp"],
+			"type": "timestamp",
+			"default": -1,
+		}],
+		"formatter": "age",
+		"align": "right",
+	},
+	"api_support": {
+		"header": "API Support:",
+		"datagetter": datagetters.datagetter_api_support,
+		"formatter": "list",
+	},
+	"mem": {
+		"header": "Mem% / Total:",
+		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
+		"datagetter": datagetters.datagetter_regex_split_to_tuples,
+		"generator": generator_mem,
+		"ralign": True,
+	},
+	"name": {
+		"header": "Name:",
+		"path": "metadata#name",
+		"type": "str",
+	},
+	"namespace": {
+		"header": "Namespace:",
+		"path": "metadata#namespace",
+		"type": "str",
+		"formatting": {
+			"field_colors": [
+				{
+					"type": "namespace",
+				},
+			],
+		},
+	},
+	"pod_status": {
+		"header": "Status:",
+		"datagetter": datagetters.datagetter_pod_status,
+		"generator": generator_status,
+	},
+}
+
+def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Dict) -> Tuple[Dict, List[str], str, bool]:
+	"""
+	Generate a dict with the fields necessary for a view
+
+		Parameters:
+			view (str): The view to generate the dict for
+			field_index (str): The field_index to use
+			field_indexes (dict): A dict with the field indexes to choose between
+			fields (dict): The fields to available to the field indexes
+			denylist (list[str]): Fields to exclude
+		Returns:
+			(field_dict, field_names, sortcolumn, sortorder_reverse):
+				field_dict (dict): The generated dict
+				field_names (list[str]): The fields after pruning using the denylist
+				sortcolumn (str): The column to use when sorting
+				sortorder_reverse (bool): Should the list be sorted in reverse order
+	"""
+
+	fields = deep_get(kwargs, DictPath("fields"))
+	field_index = deep_get(kwargs, DictPath("field_index"))
+	field_indexes = deep_get(kwargs, DictPath("field_indexes"))
+
+	if field_indexes is None or len(field_indexes) == 0:
+		return None, None, None, False
+
+	field_names = deep_get(field_indexes, DictPath(f"{field_index}#fields"), [])
+	sortcolumn = deep_get(field_indexes, DictPath(f"{field_index}#sortcolumn"))
+	sortorder_reverse = deep_get(field_indexes, DictPath(f"{field_index}#sortorder_reverse"), False)
+
+	denylist = deep_get(kwargs, DictPath("denylist"), [])
+
+	if selected_namespace != "" and "namespace" not in denylist:
+		denylist.append("namespace")
+
+	# delete all denylisted fields
+	for field in denylist:
+		try:
+			field_names.remove(field)
+		except ValueError:
+			pass
+
+	# OK, we've pruned the denylisted fields; now we need to check
+	# whether the sort column still applies, and if not try to pick
+	# another sortcolumn
+	if sortcolumn is None or sortcolumn not in field_names:
+		if "name" in field_names:
+			sortcolumn = "name"
+		elif "namespace" in field_names:
+			sortcolumn = "namespace"
+		else:
+			sortcolumn = field_names[0]
+
+	field_dict = {}
+	for field in field_names:
+		if field in fields:
+			field_dict[field] = deep_get(fields, DictPath(field), {})
+		elif field in builtin_fields:
+			field_dict[field] = deep_get(builtin_fields, DictPath(field), {})
+		else:
+			sys.exit(f"View {view}: field “{field}“ cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
+
+	tmp_fields = {}
+
+	for field_name in field_dict:
+		field = deep_get(field_dict, DictPath(field_name))
+
+		# This is a custom field, so we need to construct one that's usable here
+		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
+
+		tmp_field = get_formatter(field)
+		if tmp_field is None:
+			continue
+
+		for key, value in tmp_field.items():
+			tmp_fields[field_name][key] = value
+		tmp_fields[field_name]["sortkey1"] = field_name
+		# If sortkey1 == sortcolumn this "fails", but it is good enough
+		tmp_fields[field_name]["sortkey2"] = sortcolumn
+
+	return tmp_fields, field_names, sortcolumn, sortorder_reverse
 
 # Generators acceptable for direct use in view files
 generator_allowlist = {
