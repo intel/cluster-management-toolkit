@@ -3571,7 +3571,7 @@ class KubernetesResourceCache:
 		if len(uid := deep_get(resource, DictPath("metadata#uid"), "")) == 0:
 			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
 					       "Attempt to add a resource with empty or None uid was made")
-		resource_version := deep_get(resource, DictPath("metadata#resourceVersion"))
+		resource_version = deep_get(resource, DictPath("metadata#resourceVersion"))
 		if resource_version is None:
 			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
 					       "Attempt to add a resource with empty or None resourceVersion was made")
