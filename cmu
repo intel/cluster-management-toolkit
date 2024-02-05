@@ -8896,7 +8896,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 				# We probably need a progress bar once we reach this many lines
 				if linecount > 1000 and (i % linepercent) == 0:
-					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) / linecount))
+					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) // linecount))
 					progressbar.timeout(10)
 					c = progressbar.getch()
 					if c == 27:	# ESCAPE
