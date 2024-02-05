@@ -116,6 +116,16 @@ class ThemeString:
 
 		return self.themeattr
 
+	def set_themeattr(self, themeattr: ThemeAttr) -> None:
+		"""
+		Replace the ThemeAttr attribute of the ThemeString
+
+			Parameters:
+				themeattr (ThemeAttr): The new ThemeAttr attribute for the ThemeString
+		"""
+
+		self.themeattr = themeattr
+
 	def get_selected(self) -> bool:
 		"""
 		Return the selected attribute of the ThemeString
@@ -1107,12 +1117,83 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 			win (curses.window): A reference to the progress bar window
 	"""
 
+	if not (isinstance(y, int) and isinstance(minx, int) and isinstance(maxx, int) and isinstance(progress, int) and (title is None or isinstance(title, str))):
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" initialised with invalid argument(s):", "error")],
+			[("y = ", "default"),
+			 (f"{y}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(y)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("minx = ", "default"),
+			 (f"{minx}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(minx)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("maxx = ", "default"),
+			 (f"{maxx}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(maxx)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(progress)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("title = ", "default"),
+			 (f"{title}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(title)}", "argument"),
+			 (", expected: ", "default"),
+			 ("str or None", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
 	width = maxx - minx + 1
 
 	if progress < 0:
-		sys.exit("You cannot use a progress bar with negative progress; this is not a regression bar.")
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" called with progress < 0:", "error")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument")],
+			[("Negative progress is not supported; this is not a regression bar.", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 	elif progress > 100:
-		sys.exit("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" called with progress > 100:", "error")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument")],
+			[("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
 	if win is None:
 		win = curses.newwin(3, width, y, minx)
@@ -1291,7 +1372,7 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
 	"""
 	Add a ThemeArray to a curses window
 
@@ -1301,6 +1382,7 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 			y (int): The y-coordinate (-1 to start from current cursor position)
 			x (int): The x-coordinate (-1 to start from current cursor position)
 			selected (bool): Should the selected version of the ThemeArray be used
+			deleted (bool): Should the theme be overridden as deleted?
 		Returns:
 			(y, x):
 				y (int): The new y-coordinate
@@ -1308,6 +1390,8 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 	"""
 
 	for item in themearray_flatten(array):
+		if deleted:
+			item.set_themeattr(ThemeAttr("types", "deleted"))
 		string, attr = themestring_to_cursestuple(item)
 		# If there still are remaining <NUL> occurences, replace them
 		string = string.replace("\x00", "<NUL>")
@@ -2824,7 +2908,7 @@ class UIProps:
 
 	# pylint: disable-next=too-many-arguments
 	def addthemearray(self, win: curses.window,
-			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
 		"""
 		Add a ThemeArray to a curses window
 
@@ -2834,6 +2918,7 @@ class UIProps:
 				y (int): The y-coordinate (-1 to start from current cursor position)
 				x (int): The x-coordinate (-1 to start from current cursor position)
 				selected (bool): Should the selected version of the ThemeArray be used
+				deleted (bool): Should the theme be overridden as deleted?
 			Returns:
 				(y, x):
 					y (int): The new y-coordinate
@@ -2841,6 +2926,8 @@ class UIProps:
 		"""
 
 		for item in themearray_flatten(array):
+			if deleted:
+				item.set_themeattr(ThemeAttr("types", "deleted"))
 			string, attr = themestring_to_cursestuple(item)
 			# If there still are remaining <NUL> occurences, replace them
 			string = string.replace("\x00", "<NUL>")

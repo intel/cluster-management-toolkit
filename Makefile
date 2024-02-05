@@ -49,7 +49,7 @@ coverage: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/iotests tests/validatortests tests/logtests tests/atptests tests/cmtlibtests; do \
+	for test in tests/atptests tests/cmtlibtests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
 		printf -- "\n\nRunning: $$test\n\n" ;\
 		$$cmd run --branch --append $$test ;\
 	done ;\
