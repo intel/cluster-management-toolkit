@@ -19,7 +19,7 @@ except ModuleNotFoundError:  # pragma: no cover
 	validators = None
 
 from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list
-from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError
+from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError, LogLevel
 
 programname = None
 
@@ -88,6 +88,20 @@ def validate_name(rtype: str, name: str) -> bool:
 		if tmp is None:
 			invalid = True
 		maxlen = 15
+	else:
+		msg = [
+			[("validate_name()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("Unknown value for ", "default"),
+			 ("rtype = ", "default"),
+			 (f"{rtype}", "argument")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
 	return not invalid and len(name) <= maxlen
 
@@ -202,20 +216,17 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 				        ANSIThemeString(" after Punycode decoding.", "default")]
 				ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
+	if (dnslabels == 1) or not (dnslabels[-1:][0][0].isascii() and dnslabels[-1:][0][0].isalpha() and len(dnslabels[-1:][0]) > 1):
+		# The dnslabel is OK if either of these apply:
+		# * It only has one field (it doesn't have a tld)
+		# * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
+		msg = [ANSIThemeString("Error", "error"),
+		       ANSIThemeString(": The DNS label ", "default"),
+		       ANSIThemeString(dnslabel, "hostname"),
+		       ANSIThemeString(" is invalid; ", "default"),
+		       ANSIThemeString("the TLD must start with [a-z].", "default")]
+		return HostNameStatus.DNS_TLD_INVALID
 
-		if dnslabel.startswith("-") or dnslabel.endswith("-"):
-			if message_on_error:
-				msg = [ANSIThemeString("Error", "error"),
-				       ANSIThemeString(": The DNS label ", "default"),
-				       ANSIThemeString(dnslabel, "hostname")]
-				if idna_dnslabel != dnslabel:
-					msg += [ANSIThemeString(" (Punycode: ", "default"),
-						ANSIThemeString(idna_dnslabel, "hostname"),
-						ANSIThemeString(")", "default")]
-				msg += [ANSIThemeString(" is invalid; ", "default"),
-					ANSIThemeString("a DNS label cannot begin or end with “-“.", "default")]
-				ansithemeprint(msg, stderr = True)
-			return HostNameStatus.DNS_LABEL_INVALID_FORMAT
 	return HostNameStatus.OK
 
 def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> Tuple[bool, bool]:
@@ -396,6 +407,10 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 			else:  # pragma: no cover
 				valid_ipv4_address = True
 				valid_ipv6_address = True
+			if not (valid_ipv4_address or valid_ipv6_address):
+				# If the DNS-label is not an IP-address it cannot end with a fully numerical dns-subdomain
+				if "." in subarg and subarg.split(".")[-1:][0].isnumeric():
+					valid_dns_label = False
 
 			if validator in ("hostname", "hostname_or_path") and not valid_dns_label:
 				# If validation failed as subdomain we check if it's a valid path;
@@ -545,6 +560,20 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 					sys.exit(errno.EINVAL)
 				result = False
 				break
+		else:
+			msg = [
+				[("validate_argument()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("Unknown value for ", "default"),
+				 ("validator = ", "default"),
+				 (f"{validator}", "argument")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       formatted_msg = formatted_msg)
 
 	return result
 
