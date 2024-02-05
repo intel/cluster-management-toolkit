@@ -5283,6 +5283,10 @@ class KubernetesHelper:
 			# Created
 			# (Assuming we tried to create something this means success
 			data = result.data
+		elif status == 202:
+			# Accepted
+			# (Operation queued for batch processing; no further status available; returned when deleting things with a finalizer)
+			pass
 		elif status == 204:
 			# No Content
 			pass
@@ -5513,7 +5517,7 @@ class KubernetesHelper:
 			for api_path in api_paths:
 				url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
 				_data, message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url, query_params = query_params)
-				if status in (200, 204, 42503):
+				if status in (200, 202, 204, 42503):
 					break
 
 		return message, status

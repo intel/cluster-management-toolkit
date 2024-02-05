@@ -1196,7 +1196,7 @@ def transform_list(vlist, transform):
 	return result
 
 # pylint: disable-next=too-many-arguments
-def get_obj(obj, field_dict, field_names, field_index, view, filters):
+def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: str, view: str, filters: Dict, deleted: bool = False):
 	d = {}
 
 	# fields both specify formatting and where to get the data from; here we are only concerned with the data
@@ -1864,6 +1864,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		entry = None
 	else:
 		d["ref"] = obj
+		d["__deleted"] = deleted
 		entry = type("InfoClass", (), d)
 
 	return entry
@@ -1891,7 +1892,10 @@ def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	for obj in vlist:
 		if len(extra_data) > 0:
 			obj["_extra_data"] = extra_data
-		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters)
+		deleted = False
+		if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
+			deleted = True
+		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters, deleted = deleted)
 		if tmp is None:
 			continue
 
@@ -4992,7 +4996,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 	uip.tabstops = tabstops
 
 # pylint: disable-next=too-many-arguments
-def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int, is_selected: bool, is_taggable: bool = False, is_tagged: bool = False) -> None:
+def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int, is_selected: bool, is_taggable: bool = False, is_tagged: bool = False, is_deleted: bool = False) -> None:
 	first = True
 
 	i = 0
@@ -5043,10 +5047,10 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
 		pos = field_list[field]["pos"]
 
 		if first and is_taggable:
-			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos)
+			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos, deleted = is_deleted)
 			first = False
 
-		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected)
+		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected, deleted = is_deleted)
 
 def genericlistloop(stdscr: curses.window, view) -> Retval:
 	global async_data  # pylint: disable=global-statement
@@ -5337,7 +5341,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				item = uip.sorted_list[y]
 				uip.select_if_y(y, item)
 				is_tagged = item in tagged_items
-				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
+				is_deleted = getattr(item, "__deleted", False)
+				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged, is_deleted = is_deleted)
 			uip.list_needs_regeneration(False)
 
 		uip.refresh_window()
