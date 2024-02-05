@@ -8,7 +8,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 from typing import Dict, Tuple
 import yaml
 
-from cmttypes import deep_get, DictPath, ProgrammingError
+from cmttypes import deep_get, DictPath, ProgrammingError, HostNameStatus
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import cmtvalidators
 
@@ -394,6 +394,21 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			),
 			(
 				{
+					"arg": "10.0.0.0",
+					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"options": {
+						"validator": "cidr",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334/24",
 					"arg_string": [ANSIThemeString("CIDR", "option")],
 					"options": {
@@ -514,10 +529,85 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			),
 			(
 				{
+					"arg": "10.0.0.0",
+					"arg_string": [ANSIThemeString("IP", "option")],
+					"options": {
+						"validator": "hostname_or_ip",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "484.0.0.0",
+					"arg_string": [ANSIThemeString("IP", "option")],
+					"options": {
+						"validator": "hostname_or_ip",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
+					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+					"arg_string": [ANSIThemeString("IP", "option")],
+					"options": {
+						"validator": "hostname_or_ip",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				True,
+				None,
+			),
+			(
+				{
+					"arg": "20001:0db8:85a3:0000:0000:8a2e:0370:7334",
+					"arg_string": [ANSIThemeString("IP", "option")],
+					"options": {
+						"validator": "hostname_or_ip",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
 					"arg": "/etc/hostname",
 					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
 					"options": {
 						"validator": "hostname",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
+				None,
+			),
+			(
+				{
+					"arg": "/etc/hostname",
+					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
+					"options": {
+						"validator": "hostname_or_ip",
 						"list_separator": None,
 						"valid_range": (None, None),
 						"allowlist": [],
@@ -574,6 +664,25 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 					},
 				},
 				True,
+				None,
+			),
+			(
+				{
+					"arg": "node=#:NoSchedule",
+					"arg_string": [ANSIThemeString("KEY", "argument"),
+						       ANSIThemeString("[=", "separator"),
+						       ANSIThemeString("VALUE", "argument"),
+						       ANSIThemeString("]:", "separator"),
+						       ANSIThemeString("EFFECT", "argument")],
+					"options": {
+						"validator": "taint",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				False,
 				None,
 			),
 			(
@@ -652,6 +761,21 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 				False,
 				None,
 			),
+			(
+				{
+					"arg": "foobar",
+					"arg_string": [ANSIThemeString("ARGUMENT", "argument")],
+					"options": {
+						"validator": "not-a-valid-validator",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				None,
+				ProgrammingError,
+			),
 		)
 		for indata, expected_status, expected_exception in testdata:
 			arg = deep_get(indata, DictPath("arg"), {})
@@ -687,32 +811,132 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		# Indata format:
-		# (rtype, name)
+		# (rtype, name, expected_status, expected_exception)
 		testdata = (
-			("dns-label", None, False),
-			("dns-label", f"{'1'.ljust(63, 'a')}", True),
-			("dns-label", f"{'2'.ljust(64, 'a')}", False),
-			("dns-label", f"{'3'.ljust(62, 'a')}.", False),
-			("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(62, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", True),
-			("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False),
-			("dns-subdomain", f"{'1'.ljust(62, 'a')}..{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False),
-			("path-segment", "passwd", True),
-			("path-segment", "/etc/passwd", False),
-			("path-segment", ".", False),
-			("path-segment", "..", False),
-			("path-segment", "%foo", False),
-			("port-name", "http", True),
-			("port-name", "dns-tcp", True),
-			("port-name", "dns3", True),
-			("port-name", "-dns3", False),
-			("port-name", "dns3-", False),
-			("port-name", f"{'1'.ljust(63, 'a')}", False),
+			("dns-label", None, False, None),
+			("dns-label", f"{'1'.ljust(63, 'a')}", True, None),
+			("dns-label", f"{'2'.ljust(64, 'a')}", False, None),
+			("dns-label", f"{'3'.ljust(62, 'a')}.", False, None),
+			("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(62, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", True, None),
+			("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
+			("dns-subdomain", f"{'1'.ljust(62, 'a')}..{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
+			("path-segment", "passwd", True, None),
+			("path-segment", "/etc/passwd", False, None),
+			("path-segment", ".", False, None),
+			("path-segment", "..", False, None),
+			("path-segment", "%foo", False, None),
+			("port-name", "http", True, None),
+			("port-name", "dns-tcp", True, None),
+			("port-name", "dns3", True, None),
+			("port-name", "-dns3", False, None),
+			("port-name", "dns3-", False, None),
+			("port-name", "dns3--foo", False, None),
+			("port-name", f"{'1'.ljust(63, 'a')}", False, None),
+			("invalid-rtype", f"{'1'.ljust(63, 'a')}", None, ProgrammingError),
 		)
-		for rtype, name, expected_status in testdata:
-			if (status := fun(rtype = rtype, name = name)) != expected_status:
-				message = f"{fun_str}() did not yield expected status:\n       input: {name}\n       rtype: {rtype}\n      output: {status}\n    expected: {expected_status}"
-				result = False
-				break
+		for rtype, indata, expected_status, expected_exception in testdata:
+			try:
+				if (status := fun(rtype = rtype, name = indata)) != expected_status:
+					message = f"{fun_str}() did not yield expected status:\n" \
+						  f"       input: {indata}\n" \
+						  f"       rtype: {rtype}\n" \
+						  f"      output: {status}\n" \
+						  f"    expected: {expected_status}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected status:\n" \
+							  f"       input: {indata}\n" \
+							  f"       rtype: {rtype}\n" \
+							  f"   exception: {type(e)}\n" \
+							  f"    expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected status:\n" \
+						  f"       input: {indata}\n" \
+						  f"       rtype: {rtype}\n" \
+						  f"   exception: {type(e)}\n" \
+						  f"    expected: {expected_status}"
+					result = False
+					break
+	return message, result
+
+def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtvalidators.validate_fqdn
+	fun_str = "cmtvalidators.validate_fqdn"
+
+	if result:
+		# Indata format:
+		# (fqdn, message_on_error, expected_status, expected_exception)
+		testdata = (
+			("intel.com", False, HostNameStatus.OK, None),
+			(f"{''.ljust(63, 'a')}.com", False, HostNameStatus.OK, None),
+			(f"{''.ljust(63, 'a')}.com", True, HostNameStatus.OK, None),
+			(f"{''.ljust(64, 'a')}.com", False, HostNameStatus.DNS_LABEL_TOO_LONG, None),
+			(f"{''.ljust(64, 'a')}.com", True, HostNameStatus.DNS_LABEL_TOO_LONG, None),
+			(f"-com", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+			(f"-com", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+			(f"com-", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+			(f"com-", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+			(f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.OK, None),
+			(f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
+			(f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
+			(f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
+			(f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
+			(f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			(f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			(f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com.", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			(f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com.", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			(f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			(f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+			("foo", False, HostNameStatus.OK, None),
+			("foo.123", False, HostNameStatus.DNS_TLD_INVALID, None),
+			("foo.123", True, HostNameStatus.DNS_TLD_INVALID, None),
+			(f"fooåäöpad1{''.ljust(43, 'a')}", False, HostNameStatus.OK, None),
+			(f"fooåäöpad1{''.ljust(44, 'a')}", False, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
+			(f"fooåäöpad1{''.ljust(44, 'a')}", True, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
+			("xn--", False, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
+			("xn--", True, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
+			("\x81", False, None, UnicodeError),
+			("\x81", True, None, UnicodeError),
+			("", False, HostNameStatus.DNS_SUBDOMAIN_EMPTY, None),
+			("", True, HostNameStatus.DNS_SUBDOMAIN_EMPTY, None),
+		)
+		for indata, message_on_error, expected_status, expected_exception in testdata:
+			try:
+				if (status := fun(fqdn = indata, message_on_error = message_on_error)) != expected_status:
+					message = f"{fun_str}() did not yield expected status:\n" \
+						  f"       input: {indata}\n" \
+						  f"      output: {status}\n" \
+						  f"    expected: {expected_status}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected status:\n" \
+							  f"       input: {indata}\n" \
+							  f"   exception: {type(e)}\n" \
+							  f"    expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected status:\n" \
+						  f"       input: {indata}\n" \
+						  f"   exception: {type(e)}\n" \
+						  f"    expected: {expected_status}"
+					result = False
+					break
 	return message, result
 
 tests: Dict = {
@@ -730,6 +954,10 @@ tests: Dict = {
 	},
 	("validate_name()", ): {
 		"callable": test_validate_name,
+		"result": None,
+	},
+	("validate_fqdn()", ): {
+		"callable": test_validate_fqdn,
 		"result": None,
 	},
 }
