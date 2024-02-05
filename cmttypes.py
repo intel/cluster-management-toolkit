@@ -338,6 +338,7 @@ class HostNameStatus(Enum):
 	DNS_LABEL_TOO_LONG = auto()
 	DNS_LABEL_PUNYCODE_TOO_LONG = auto()
 	DNS_LABEL_INVALID_CHARACTERS = auto()
+	DNS_TLD_INVALID = auto()
 
 class SecurityStatus(IntEnum):
 	"""
