@@ -16,7 +16,7 @@ from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
 import about
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy, ProgrammingError, LogLevel
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
 import cmtio
 
@@ -509,9 +509,30 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
 			string (str): The timestamp in string format
 	"""
 
+	if not (timestamp is None or isinstance(timestamp, datetime)):
+		msg = [
+			[("datetime_to_timestamp()", "emphasis"),
+			 (" initialised with invalid argument(s):", "error")],
+			[("timestamp = ", "default"),
+			 (f"{timestamp}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(timestamp)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{datetime}", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
 	if timestamp is None or timestamp == none_timestamp():
 		string = ""
 	elif timestamp == datetime.fromtimestamp(0).astimezone():
+		# Replace epoch with an empty string
+		# with the same length as a timestamp
 		string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
 	else:
 		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")

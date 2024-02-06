@@ -854,7 +854,7 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		# Indata format:
-		# (timestamp, expected_result, expected_exception)
+		# (timestamp, expected_exception)
 		testdata = (
 			(int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
 			(int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
@@ -871,7 +871,197 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
 					message = f"{fun_str}() did not yield expected type:\n" \
 					          f"          input: {indata}\n" \
 						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: {int}"
+						  f"       expected: int"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.datetime_to_timestamp
+	fun_str = "cmtlib.datetime_to_timestamp"
+
+	if result:
+		# Indata format:
+		# (timestamp, expected_result, expected_exception)
+		testdata = (
+			(datetime(2024, 1, 1, 0, 42, 42, 0), "2024-01-01 0:42:42", None),
+			(datetime(1970, 1, 1, 2, 0), "                         ", None),
+			(cmtlib.none_timestamp(), "", None),
+			(None, "", None),
+			("a", None, ProgrammingError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, str):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: “{expected_result}“\n" \
+						  f"    output type: {type(tmp)}\n" \
+						  f"       expected: str"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.reformat_timestamp
+	fun_str = "cmtlib.reformat_timestamp"
+
+	if result:
+		# Indata format:
+		# (timestamp, expected_result, expected_exception)
+		testdata = (
+			("2024-01-01 00:42:42.011345+0100", None, None),
+			("2020-02-13T12:06:18-0100", None, None),
+			("2024-01-01 00:42:42.011345+0100", None, None),
+			("2020-02-13T12:06:18-0100", None, None),
+			(None, None, ValueError),
+			("a", None, ValueError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, str):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: “{expected_result}“\n" \
+						  f"    output type: {type(tmp)}\n" \
+						  f"       expected: str"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.timestamp_to_datetime
+	fun_str = "cmtlib.timestamp_to_datetime"
+
+	if result:
+		# Indata format:
+		# (timestamp, expected_result, expected_exception)
+		testdata = (
+			("2024-01-01 00:42:42.011345+0100", None, None),
+			("2020-02-13T12:06:18-0100", None, None),
+			("2024-01-01 00:42:42.011345+0100", None, None),
+			("2020-02-13T12:06:18-0100", None, None),
+			(None, None, None),
+			("a", None, ValueError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, datetime):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {expected_result}\n" \
+						  f"    output type: {type(tmp)}\n" \
+						  f"       expected: {datetime}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.make_set_expression_list
+	fun_str = "cmtlib.make_set_expression_list"
+
+	if result:
+		# Indata format:
+		# (expression_list, expected_result, expected_exception)
+		testdata = (
+#			({"operator": "", "key": "", "values": []}, [(,,)], None),
+			(None, None, None),
+			("a", None, ValueError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, datetime):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {expected_result}\n" \
+						  f"    output type: {type(tmp)}\n" \
+						  f"       expected: {datetime}"
+					result = False
+					break
 			except Exception as e:
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
@@ -964,6 +1154,22 @@ tests: Dict = {
 		"callable": test_get_since,
 		"result": None,
 	},
+	("datetime_to_timestamp()",): {
+		"callable": test_datetime_to_timestamp,
+		"result": None,
+	},
+	("reformat_timestamp()",): {
+		"callable": test_reformat_timestamp,
+		"result": None,
+	},
+	("timestamp_to_datetime()",): {
+		"callable": test_timestamp_to_datetime,
+		"result": None,
+	},
+########("make_set_expression_list()",): {
+########	"callable": test_make_set_expression_list,
+########	"result": None,
+########},
 }
 
 def main() -> int:
