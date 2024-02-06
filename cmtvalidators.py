@@ -21,7 +21,7 @@ except ModuleNotFoundError:  # pragma: no cover
 	      "or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
 
-from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list
+from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list, ansithemearray_to_str
 from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError, LogLevel
 
 programname = None
@@ -563,6 +563,16 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 					sys.exit(errno.EINVAL)
 				result = False
 				break
+		elif validator == "":
+			# We cannot use format_error_msg() here since we'd lose the formatting for arg_string
+			unformatted_msg = f"{programname}: no validator defined for argument " + ansithemearray_to_str(arg_string) + "."
+			formatted_msg = [[ANSIThemeString(f"{programname}", "emphasis"),
+					  ANSIThemeString(": no validator defined for argument ", "default"),
+					 ] + arg_string + [ANSIThemeString(".", "default")]]
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       formatted_msg = formatted_msg)
 		else:
 			msg = [
 				[("validate_argument()", "emphasis"),

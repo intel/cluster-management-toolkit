@@ -654,11 +654,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 							sys.exit(errno.EINVAL)
 						arg = argv[i]
 
-					# Validate the option argument
-					validator_options = deep_get(commandline, DictPath(f"{__key}#options#{option}#validation"), {})
+						# Validate the option argument
+						validator_options = deep_get(commandline, DictPath(f"{__key}#options#{option}#validation"), {})
 
-					# validate_argument() will terminate by default if validation fails
-					_result = cmtvalidators.validate_argument(arg, [ANSIThemeString(f"{option}", "option")], validator_options)
+						# validate_argument() will terminate by default if validation fails
+						_result = cmtvalidators.validate_argument(arg, [ANSIThemeString(f"{option}", "option")], validator_options)
 					options.append((option, arg))
 		else:
 			args.append(argv[i])
