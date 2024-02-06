@@ -275,7 +275,7 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
 
 	return string
 
-def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True) -> str:
+def ansithemearray_to_str(themearray: List[ANSIThemeString], color: bool = True) -> str:
 	"""
 	Convert an ANSIThemeArray (List[ANSIThemeString]) to a string,
 	conditionally with ANSI-formatting
@@ -287,7 +287,7 @@ def __themearray_to_string(themearray: List[ANSIThemeString], color: bool = True
 			(str): The string
 	"""
 	if theme is None or themepath is None:
-		raise ProgrammingError("__themearray_to_string() used without calling "
+		raise ProgrammingError("ansithemearray_to_str() used without calling "
 				       "init_ansithemestring() first; this is a programming error.")
 	string: str = ""
 	for themestring in themearray:
@@ -430,7 +430,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], color: str = "auto") -> st
 				 "the only valid values are ”always”, ”auto”, and ”never”; "
 				 "this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = use_color)
+	string = ansithemearray_to_str(themearray, color = use_color)
 	try:
 		tmp = input(string)  # nosec
 	except KeyboardInterrupt:  # pragma: no cover
@@ -474,7 +474,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 				 "the only valid values are ”always”, ”auto”, and ”never”; "
 				 "this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = use_color)
+	string = ansithemearray_to_str(themearray, color = use_color)
 	try:
 		tmp = getpass(string)
 	except KeyboardInterrupt:  # pragma: no cover
@@ -520,7 +520,7 @@ def ansithemeprint(themearray: List[ANSIThemeString],
 				 "the only valid values are ”always”, ”auto”, and ”never”; "
 				 "this is a programming error.")
 
-	string = __themearray_to_string(themearray, color = use_color)
+	string = ansithemearray_to_str(themearray, color = use_color)
 
 	if stderr:
 		print(string, file = sys.stderr)
