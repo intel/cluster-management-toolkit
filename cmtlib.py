@@ -307,8 +307,7 @@ def strip_ansicodes(message: str) -> str:
 	                 r"\x1b\[\d+;\d+m|"
 			 r"\x1b\[\d+;\d+;\d+m|"
 			 r".*?)", message)
-	if tmp is not None:
-		message = "".join(item for item in tmp if not item.startswith("\x1b"))
+	message = "".join(item for item in tmp if not item.startswith("\x1b"))
 
 	return message
 
