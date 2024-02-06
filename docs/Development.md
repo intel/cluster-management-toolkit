@@ -45,15 +45,22 @@ or ask for help.
 | `networkio.py`        | `tests/iotests`        |                            |
 | `reexecutor.py`       | `tests/fetch_async`    | Requires a running cluster |
 
+### Manual tests
+
+Some of the more complex functionality, especially in `cmu`,
+may require a lot of state and many steps, making manual testing a good complement
+to unit-tests.  For such tests a step-by-step description should be provided.
+
 ### Adding New Testcases
 
 Please do! Unit-tests should be added in the tests-directory and should be written in Python.
 They should return 0 on success, number of failed testcases on failure.
 They may output useful information to the screen.
 Unit-tests must not require user input by default, but may enable such tests
-with a flag for the purpose of coverage testing.
+with a flag for the purpose of coverage testing.  The same goes for unit-tests
+that would require a functional cluster.
 
-`tests/iotests` or `tests/logtests` can serve as templates.
+`tests/logtests` can serve as a template.
 
 ### Testing Python
 
@@ -114,6 +121,11 @@ If you modify other YAML-files, you can use:
 ```
 make yamllint (should not report any issues)
 ```
+
+## New Functionality
+
+Any new major functionality __must__ have unit-tests. Additionally it is recommended
+that any complex features should  include steps for manual testing.
 
 ## New Dependencies
 
