@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 Datagetters are used for data extraction that's too complex to be expressed by parameters to generic_infogetter

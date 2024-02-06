@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # The parser takes one line of input at a time;
 # for messages that need multi-line parsing you need to

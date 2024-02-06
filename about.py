@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This module holds version strings, copyright info, and license info
