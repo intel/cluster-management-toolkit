@@ -14,6 +14,7 @@ from typing import cast, Dict, List, Optional, Set, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
+	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 import cmtlib
@@ -39,14 +40,17 @@ ansible_configuration: Dict = {
 try:
 	import ansible_runner  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover
+	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit("ModuleNotFoundError: Could not import ansible_runner; you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 # Exit if the ansible directory does not exist
 if not Path(ANSIBLE_DIR).exists():
+	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running cmt-install")
 
 # Exit if the ansible log directory does not exist
 if not Path(ANSIBLE_LOG_DIR).exists():
+	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running cmt-install")
 
 def get_playbook_path(playbook: FilePath) -> FilePath:
@@ -484,9 +488,11 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 	changed = False
 
 	if group is None or group == "":
+		# XXX: Should be an exception
 		sys.exit("ansible_set_vars: group is empty or None; this is a programming error")
 
 	if values is None or values == {}:
+		# XXX: Should be an exception
 		sys.exit("ansible_set_vars: values is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
