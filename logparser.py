@@ -2294,8 +2294,34 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	facility = ""
 	severity = LogLevel.INFO
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
+	matched = True
 
-	if message == "}".rstrip():
+	# If no block end is defined we continue until EOF
+	block_end = deep_get(options, DictPath("block_end"))
+
+	format_block_end = False
+	process_block_end = True
+
+	for _be in block_end:
+		matchtype = deep_get(_be, DictPath("matchtype"))
+		matchkey = deep_get(_be, DictPath("matchkey"))
+		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
+		if matchtype == "empty":
+			if len(message.strip()) == 0:
+				matched = False
+		elif matchtype == "exact":
+			if message == matchkey:
+				matched = False
+		elif matchtype == "startswith":
+			if message.startswith(matchkey):
+				matched = False
+		elif matchtype == "regex":
+			tmp = matchkey.match(message)
+			if tmp is not None:
+				matched = False
+
+	if message == "}".rstrip() or not matched:
 		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("end_block", None, {})
 	elif message.lstrip() != message or message == "{":
