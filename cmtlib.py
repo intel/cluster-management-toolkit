@@ -701,6 +701,9 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	import ansible_helper  # noqa
 	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path  # pylint: disable=import-outside-toplevel
 
+	if not isinstance(hostname, str):
+		raise TypeError(f"hostname {hostname} is type: {type(hostname)}, expected str")
+
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
@@ -740,6 +743,9 @@ def __extract_version(line: str) -> str:
 		Returns:
 			(str): A version number
 	"""
+
+	if not isinstance(line, str):
+		raise TypeError(f"{line} is type: {type}; expected str")
 
 	tmp = line.split("|")
 	if len(tmp) != 3:
@@ -1040,7 +1046,7 @@ def identify_distro() -> str:
 						 fallback_allowlist = ["/usr/lib", "/lib"],
 						 security_policy = SecurityPolicy.ALLOWLIST_STRICT,
 						 executable = False)
-	except FileNotFoundError:
+	except FileNotFoundError:  # pragma: no cover
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" Cannot find an “", "default"),
 				ANSIThemeString("os-release", "path"),

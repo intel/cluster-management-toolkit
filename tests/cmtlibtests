@@ -9,6 +9,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timezone
+import sys
 from typing import Dict, Tuple
 import yaml
 
@@ -1195,6 +1196,134 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.get_package_versions
+	fun_str = "cmtlib.get_package_versions"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Warning", "warning"), ANSIThemeString(": This unit-test is slow:\n", "default")])
+
+		# Indata format:
+		# (hostname, expected_result, expected_exception)
+		testdata = (
+			("localhost", None),
+			("NonExistingHostname", ValueError),
+			(1, TypeError),
+			(None, TypeError),
+		)
+		for indata, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not (isinstance(tmp, list) and len(tmp) > 0 and isinstance(tmp[0], tuple) and len(tmp[0]) == 2 and isinstance(tmp[0][0], str) and isinstance(tmp[0][1], str)):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {tmp}\n" \
+						  f"       expected: [(str, str), ...]"
+					result = False
+					break
+				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				maxlen = 0
+				for name, _version in tmp:
+					maxlen = max(len(name), maxlen)
+
+				for name, version in tmp:
+					ansithemeprint([ANSIThemeString(f"    {name}", "default"),
+							ANSIThemeString("".ljust(maxlen - len(name) + 2), "default"),
+							ANSIThemeString(f"{version}", "version")])
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.__extract_version
+	fun_str = "cmtlib.__extract_version"
+
+	if result:
+		# Indata format:
+		# (hostname, expected_result, expected_exception)
+		testdata = (
+			("   kubectl |  1.28.2-00 | https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
+			("   kubectl ", None, ValueError),
+			(1, None, TypeError),
+			(None, None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if tmp != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.identify_distro
+	fun_str = "cmtlib.identify_distro"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+
+		try:
+			tmp = fun()
+			if not isinstance(tmp, str):
+				message = f"{fun_str}() did not yield expected type:\n" \
+				          f"         output: {tmp}\n" \
+					  f"       expected: str"
+				result = False
+			else:
+				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				ansithemeprint([ANSIThemeString("    Identified distro: ", "default"),
+						ANSIThemeString(f"{tmp}", "programname")])
+		except Exception as e:
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	return message, result
+
 tests: Dict = {
 	("substitute_string()",): {
 		"callable": test_substitute_string,
@@ -1288,15 +1417,35 @@ tests: Dict = {
 		"callable": test_make_set_expression,
 		"result": None,
 	},
+	("__extract_version()",): {
+		"callable": test___extract_version,
+		"result": None,
+	},
+	("identify_distro()",): {
+		"callable": test_identify_distro,
+		"result": None,
+	},
+}
+
+tests_with_ansible: Dict = {
+	("get_package_versions()",): {
+		"callable": test_get_package_versions,
+		"result": None,
+	},
 }
 
 def main() -> int:
+	global tests
+
 	fail = 0
 	success = 0
 	verbose = False
 	failed_testcases = []
 
 	init_ansithemeprint(themefile = None)
+
+	if "--include-ansible" in sys.argv:
+		tests = { **tests, **tests_with_ansible }
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
