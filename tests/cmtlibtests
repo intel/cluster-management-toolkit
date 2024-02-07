@@ -905,7 +905,7 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 		# (timestamp, expected_result, expected_exception)
 		testdata = (
 			(datetime(2024, 1, 1, 0, 42, 42, 0), "2024-01-01 0:42:42", None),
-			(datetime(1970, 1, 1, 2, 0), "                         ", None),
+			(datetime(1970, 1, 1, 2, 0).astimezone(), "                         ", None),
 			(cmtlib.none_timestamp(), "", None),
 			(None, "", None),
 			("a", None, ProgrammingError),
@@ -916,7 +916,7 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 				if not isinstance(tmp, str):
 					message = f"{fun_str}() did not yield expected type:\n" \
 					          f"          input: {indata}\n" \
-					          f"         output: “{expected_result}“\n" \
+					          f"         output: “{tmp}“\n" \
 						  f"    output type: {type(tmp)}\n" \
 						  f"       expected: str"
 					result = False
@@ -964,7 +964,7 @@ def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 				if not isinstance(tmp, str):
 					message = f"{fun_str}() did not yield expected type:\n" \
 					          f"          input: {indata}\n" \
-					          f"         output: “{expected_result}“\n" \
+					          f"         output: “{tmp}“\n" \
 						  f"    output type: {type(tmp)}\n" \
 						  f"       expected: str"
 					result = False
@@ -999,10 +999,12 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
 		# Indata format:
 		# (timestamp, expected_result, expected_exception)
 		testdata = (
+			("2024-01-01 00:42:42Z", None, None),
 			("2024-01-01 00:42:42.011345+0100", None, None),
 			("2020-02-13T12:06:18-0100", None, None),
 			("2024-01-01 00:42:42.011345+0100", None, None),
 			("2020-02-13T12:06:18-0100", None, None),
+			(-1, None, None),
 			(None, None, None),
 			("a", None, ValueError),
 		)
@@ -1012,7 +1014,7 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
 				if not isinstance(tmp, datetime):
 					message = f"{fun_str}() did not yield expected type:\n" \
 					          f"          input: {indata}\n" \
-					          f"         output: {expected_result}\n" \
+					          f"         output: {tmp}\n" \
 						  f"    output type: {type(tmp)}\n" \
 						  f"       expected: {datetime}"
 					result = False
@@ -1047,19 +1049,131 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
 		# Indata format:
 		# (expression_list, expected_result, expected_exception)
 		testdata = (
-#			({"operator": "", "key": "", "values": []}, [(,,)], None),
-			(None, None, None),
-			("a", None, ValueError),
+			# Valid
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Exists", "")], None),
+			# Too many values
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+			# Valid
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Does Not Exist", "")], None),
+			# Too many values
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+			# Valid
+			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+			# Too few values
+			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+			# Valid
+			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "Not In ", "[foo,bar,baz]")], None),
+			# Too few values
+			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+			# Valid
+			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], [("node-role.kubernetes.io/control-plane", "> ", "1")], None),
+			# Too many values
+			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+			# Valid
+			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], [("node-role.kubernetes.io/control-plane", "< ", "42")], None),
+			# Too many values
+			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+			# Multiple valid set expressions
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
+			  {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
+			 ], [("node-role.kubernetes.io/control-plane", "Does Not Exist", ""),
+			     ("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+			# Invalid type for operator
+			([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+			# Invalid type for operator
+			([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+			# Invalid type for values
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+			(None, [], None),
+			# Incorrect type
+			("a", None, TypeError),
 		)
 		for indata, expected_result, expected_exception in testdata:
 			try:
 				tmp = fun(indata)
-				if not isinstance(tmp, datetime):
+				if tmp != expected_result:
 					message = f"{fun_str}() did not yield expected type:\n" \
 					          f"          input: {indata}\n" \
-					          f"         output: {expected_result}\n" \
-						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: {datetime}"
+					          f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.make_set_expression
+	fun_str = "cmtlib.make_set_expression"
+
+	if result:
+		# Indata format:
+		# (expression_list, expected_result, expected_exception)
+		testdata = (
+			# Valid
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Exists", None),
+			# Too many values
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+			# Valid
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Does Not Exist", None),
+			# Too many values
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+			# Valid
+			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+			# Too few values
+			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+			# Valid
+			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane Not In [foo,bar,baz]", None),
+			# Too few values
+			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+			# Valid
+			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], "node-role.kubernetes.io/control-plane > 1", None),
+			# Too many values
+			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+			# Valid
+			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], "node-role.kubernetes.io/control-plane < 42", None),
+			# Too many values
+			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+			# Multiple valid set expressions
+			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
+			  {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
+			 ], "node-role.kubernetes.io/control-plane Does Not Exist, node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+			# Invalid type for operator
+			([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+			# Invalid type for operator
+			([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+			# Invalid type for values
+			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+			(None, "", None),
+			# Incorrect type
+			("a", None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if tmp != expected_result:
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
@@ -1166,10 +1280,14 @@ tests: Dict = {
 		"callable": test_timestamp_to_datetime,
 		"result": None,
 	},
-########("make_set_expression_list()",): {
-########	"callable": test_make_set_expression_list,
-########	"result": None,
-########},
+	("make_set_expression_list()",): {
+		"callable": test_make_set_expression_list,
+		"result": None,
+	},
+	("make_set_expression()",): {
+		"callable": test_make_set_expression,
+		"result": None,
+	},
 }
 
 def main() -> int:

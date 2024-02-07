@@ -22,8 +22,8 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
 	message = ""
 	result = True
 
-	fun = ansithemeprint.__themearray_to_string
-	fun_str = "ansithemeprint.__themearray_to_string"
+	fun = ansithemeprint.ansithemearray_to_str
+	fun_str = "ansithemeprint.ansithemearray_to_str"
 
 	try:
 		fun([ANSIThemeString("foo", "default")])
@@ -353,14 +353,14 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
-def test___themearray_to_string(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
 	indata = [ANSIThemeString("1", "default"), ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
 
-	fun = ansithemeprint.__themearray_to_string
-	fun_str = "ansithemeprint.__themearray_to_string"
+	fun = ansithemeprint.ansithemearray_to_str
+	fun_str = "ansithemeprint.ansithemearray_to_str"
 
 	# When color in ("always", "auto") we cannot predict the expected outcome since the the output is themed
 	try:
@@ -562,8 +562,8 @@ tests: Dict = {
 		"callable": test_themearray_override_formatting,
 		"result": None,
 	},
-	("__themearray_to_string", ): {
-		"callable": test___themearray_to_string,
+	("themearray_to_string", ): {
+		"callable": test_ansithemearray_to_str,
 		"result": None,
 	},
 	("__themearray_to_raw_string", ): {
