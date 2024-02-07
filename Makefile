@@ -71,6 +71,19 @@ coverage-manual: setup_tests
 	$$cmd report ;\
 	$$cmd html
 
+# Run this to augment existing coverage data with tests that require an ansible inventory
+coverage-ansible: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
+	$$cmd report ;\
+	$$cmd html
+
 # Run this to augment existing coverage data with tests that require a running cluster
 coverage-cluster: setup_tests
 	@cmd=python3-coverage ;\
@@ -81,6 +94,7 @@ coverage-cluster: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch ;\
+	printf -- "\n\nRunning: tests/khtests\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster ;\
 	$$cmd report ;\
 	$$cmd html
