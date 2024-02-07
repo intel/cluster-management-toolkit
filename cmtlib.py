@@ -607,12 +607,12 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 			pass
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
-def make_set_expression_list(expression_list: Dict, key: str = "") -> List[Tuple[str, str, str]]:
+def make_set_expression_list(expression_list: List[Dict], key: str = "") -> List[Tuple[str, str, str]]:
 	"""
 	Create a list of set expressions (key, operator, values)
 
 		Parameters:
-			expression_list (dict): The dict to extract the data from
+			expression_list ([dict]): A list of dicts to extract extract the data from
 		Returns:
 			expressions (list[(key, operator, values)])
 	"""
@@ -620,28 +620,55 @@ def make_set_expression_list(expression_list: Dict, key: str = "") -> List[Tuple
 	expressions = []
 
 	if expression_list is not None:
+		if not isinstance(expression_list, list):
+			raise TypeError("expression_list must be a list")
 		for expression in expression_list:
 			operator = deep_get_with_fallback(expression, [DictPath("operator"), DictPath("op")], "")
+			requires_values = None
+			if not isinstance(operator, str):
+				raise TypeError("operator must be a str")
 			if operator == "In":
-				operator = "In "
+				new_operator = "In "
+				requires_values = "1+"
 			elif operator == "NotIn":
-				operator = "Not In "
+				new_operator = "Not In "
+				requires_values = "1+"
 			elif operator == "Exists":
-				operator = "Exists"
+				new_operator = "Exists"
+				requires_values = "0"
 			elif operator == "DoesNotExist":
-				operator = "Does Not Exist"
+				new_operator = "Does Not Exist"
+				requires_values = "0"
 			elif operator == "Gt":
-				operator = "> "
+				new_operator = "> "
+				requires_values = True
+				requires_values = "1"
 			elif operator == "Lt":
-				operator = "< "
+				new_operator = "< "
+				requires_values = "1"
+			else:
+				raise ValueError(f"Unknown operator {operator}")
 			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], key)
+			if not isinstance(key, str):
+				raise TypeError("key must be a str")
 
 			tmp = deep_get_with_fallback(expression, [DictPath("values"), DictPath("value")], [])
+			if not isinstance(tmp, list):
+				raise TypeError("values must be a list")
+
+			if requires_values == "0" and len(tmp) != 0 and len(max(tmp, key = len)) > 0:
+				# Exists and DoesNotExist do no accept values;
+				# for the sake of convenience we still accept empty values
+				raise ValueError(f"operator {operator} does not accept values; values {tmp}")
+			if requires_values == "1" and len(tmp) != 1:
+				raise ValueError(f"operator {operator} requires exactly 1 value; values {tmp}")
+			if requires_values == "1+" and len(tmp) < 1:
+				raise ValueError(f"operator {operator} requires at least 1 value; values {tmp}")
 			values = ",".join(tmp)
-			if len(values) > 0 and operator not in ("Gt", "Lt"):
+			if requires_values != "0" and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"
 
-			expressions.append((str(key), str(operator), values))
+			expressions.append((str(key), str(new_operator), values))
 	return expressions
 
 def make_set_expression(expression_list: Dict) -> str:
