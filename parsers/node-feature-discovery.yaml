@@ -8,6 +8,18 @@
   parser_rules:
   - name: "ts_8601"
   - name: "glog"
+  - name: "json_line"
+    options:
+      block_start:
+      - matchtype: "endswith"
+        matchkey: "Resolver state updated: {"
+        matchline: "any"
+        format_block_start: false
+      block_end:
+      - matchtype: "startswith"
+        matchkey: "}"
+        format_block_end: false
+        process_block_end: false
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
