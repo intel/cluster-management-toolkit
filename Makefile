@@ -50,10 +50,10 @@ coverage: setup_tests
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in tests/atptests tests/cmtlibtests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
-		printf -- "\n\nRunning: $$test\n\n" ;\
+		printf -- "\n\n  Running: $$test\n\n" ;\
 		$$cmd run --branch --append $$test ;\
 	done ;\
-	printf -- "\n\nRunning: tests/atptests --include-clear\n\n" ;\
+	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear ;\
 	$$cmd report ;\
 	$$cmd html
@@ -66,7 +66,7 @@ coverage-manual: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	printf -- "\n\nRunning: tests/atptests --include-clear --include-input\n\n" ;\
+	printf -- "\n\n  Running: tests/atptests --include-clear --include-input\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
 	$$cmd report ;\
 	$$cmd html
@@ -79,7 +79,7 @@ coverage-ansible: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
+	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
 	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
 	$$cmd report ;\
 	$$cmd html
@@ -92,10 +92,12 @@ coverage-cluster: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	printf -- "\n\nRunning: tests/async_fetch\n\n" ;\
+	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch ;\
-	printf -- "\n\nRunning: tests/khtests\n\n" ;\
+	printf -- "\n\n  Running: tests/khtests\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster ;\
+	printf -- "\n\n  Running: tests/khtests\n\n" ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
 	$$cmd report ;\
 	$$cmd html
 
