@@ -31,19 +31,37 @@ If the file you're modifying is not listed here you can either implement one
 (using either `tests/iotests` or `tests/logtests` as template) on your own,
 or ask for help.
 
-| File:                 | Tests:                 | Notes:                     |
-| --------------------- | ---------------------- | -------------------------- |
-| `ansithemeprint.py`   | `tests/atptests`       | Has optional manual tests  |
-| `cmtio.py`            | `tests/iotests`        |                            |
-| `cmtio_yaml.py`       | `tests/iotests`        |                            |
-| `cmtlib.py`           | `tests/cmtlibtests`    |                            |
-| `cmtvalidators.py`    | `tests/validatortests` |                            |
-| `cmttypes.py`         | `tests/typetests`      |                            |
-| `formatter.py`        | `tests/fmttests`       |                            |
-| `kubernetes_helper.py`| `tests/khtests`        | Requires a running cluster |
-| `logparser.py`        | `tests/logtests`       |                            |
-| `networkio.py`        | `tests/iotests`        |                            |
-| `reexecutor.py`       | `tests/fetch_async`    | Requires a running cluster |
+| File:                 | Tests:                 | Notes:                               |
+| --------------------- | ---------------------- | ------------------------------------ |
+| `ansithemeprint.py`   | `tests/atptests`       | Optional manual tests                |
+| `ansible_helper.py`   | `tests/ansibletests`   | Ansible setup required               |
+| `cmtio.py`            | `tests/iotests`        |                                      |
+| `cmtio_yaml.py`       | `tests/iotests`        |                                      |
+| `cmtlib.py`           | `tests/cmtlibtests`    | Ansible & cluster setup optional     |
+| `cmtvalidators.py`    | `tests/validatortests` |                                      |
+| `cmttypes.py`         | `tests/typetests`      |                                      |
+| `formatter.py`        | `tests/fmttests`       |                                      |
+| `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |
+| `logparser.py`        | `tests/logtests`       |                                      |
+| `networkio.py`        | `tests/iotests`        |                                      |
+| `reexecutor.py`       | `tests/fetch_async`    | Cluster setup mandatory              |
+
+_Note_:
+
+* Optional manual tests mean that there are optional testcases that require manual input
+* Ansible setup optional means that there are optional testcases that require cmt to
+  be installed and configured with an inventory
+* Ansible setup required means that all or almost all testcases require cmt to
+  be installed and configured with an inventory
+* Cluster setup optional means that there are optional testcases that require access
+  to a cluster
+* Cluster setup required means that all or almost all testcases require access
+  to a cluster
+
+At some point this might be revisited; ideally most most functions that only rely
+indirectly on a working cluster or Ansible setup should be passed dummy data instead.
+That would also allow us to test rare conditions that would not be observed
+under normal conditions, such as errors, unresponsive nodes, etc.
 
 ### Manual tests
 

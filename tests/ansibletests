@@ -1,0 +1,191 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from datetime import datetime, timezone
+import os
+import sys
+from typing import Dict, Tuple
+import yaml
+
+import cmtlib
+from cmtpaths import ANSIBLE_PLAYBOOK_DIR
+from cmttypes import deep_get, deep_set, DictPath, ProgrammingError, FilePathAuditError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
+import ansible_helper
+
+# unit-tests for ansible_helper.py
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
+
+def test_get_playbook_path(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.get_playbook_path
+	fun_str = "ansible_helper.get_playbook_path"
+
+	# Add non-existing local paths to cmtconfig
+	deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"),
+		 ["/NONEXISTINGPATH", "{HOME}/NONEXISTINGPATH2", "/etc/hosts", ANSIBLE_PLAYBOOK_DIR], create_path = True)
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+
+		# Indata format:
+		# (playbook, expected_result, expected_exception)
+		testdata = (
+			("get_versions.yaml", os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml"), None),
+			("NONEXISTINGPLAYBOOK.yaml", os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yaml"), None),
+			("", None, ValueError),
+			(None, None, TypeError),
+			(1, None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.populate_playbooks_from_paths
+	fun_str = "ansible_helper.populate_playbooks_from_paths"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+
+		# Indata format:
+		# (playbook, expected_result, expected_exception)
+		testdata = (
+			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")],
+			 [([ANSIThemeString(string="  • ", themeref="separator"),
+			    ANSIThemeString(string="Get package versions", themeref="play")],
+			   "/home/dweineha/.cmt/playbooks/get_versions.yaml")], None),
+			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
+			([""], None, ValueError),
+			(None, None, TypeError),
+			(1, None, TypeError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+tests: Dict = {
+	("get_playbook_path()",): {
+		"callable": test_get_playbook_path,
+		"result": None,
+	},
+	("populate_playbooks_from_paths()",): {
+		"callable": test_populate_playbooks_from_paths,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	global tests
+
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+	cmtlib.read_cmtconfig()
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()
