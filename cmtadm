@@ -1791,12 +1791,12 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		pkg_versions = check_versions_apt(pkg_packages)
-	elif os_distro in ("fedora", "rhel"):
-		pkg_versions = check_versions_yum(pkg_packages)
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		pkg_versions = check_versions_zypper(pkg_packages)
+	elif os_distro in ("fedora", "rhel",):
+		pkg_versions = check_versions_yum(pkg_packages)
 
 	kubernetes_installed_version = "<unknown>"
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
@@ -2131,13 +2131,13 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages_held"), [])
 
@@ -2184,13 +2184,13 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict, verbose: 
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2289,13 +2289,13 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages_held"), [])
 
@@ -2326,13 +2326,13 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict, verbos
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2672,13 +2672,13 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verb
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2874,13 +2874,13 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbos
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -3114,12 +3114,12 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		# If version is an exact match for a package version, use it.
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			versions = check_versions_apt(["kubeadm"])
-		elif os_distro in ("fedora", "rhel"):
-			versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse", ):
+		elif os_distro in ("suse",):
 			versions = check_versions_zypper([f"kubernetes{version}-kubeadm"])
+		elif os_distro in ("fedora", "rhel",):
+			versions = check_versions_yum(["kubeadm"])
 
 		if len(versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -3620,11 +3620,11 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			ANSIThemeString(": Currently only local versions are checked.", "default")])
 
 	if update_cache:
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating APT cache", "action")])
 			check_and_print_status(update_apt_cache())
-		elif os_distro in ("suse", ):
+		elif os_distro in ("suse",):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating Zypper cache", "action")])
 			check_and_print_status(update_zypper_cache())
@@ -5625,12 +5625,12 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			ANSIThemeString("Running sanity checks", "action")])
 
 	if k8s_distro == "kubeadm":
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			pkg_versions = check_versions_apt(["kubeadm"])
-		elif os_distro in ("fedora", "rhel"):
-			pkg_versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse", ):
+		elif os_distro in ("suse",):
 			versions = check_versions_zypper(["kubeadm"])
+		elif os_distro in ("fedora", "rhel",):
+			pkg_versions = check_versions_yum(["kubeadm"])
 
 		if len(pkg_versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
