@@ -771,6 +771,9 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
 
 	versions = []
 
+	if not isinstance(packages, (list, tuple)):
+		raise TypeError(f"packages must be a list or tuple, got {type(packages)}")
+
 	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"],
 					    security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [apt_cache_path, "policy"] + packages

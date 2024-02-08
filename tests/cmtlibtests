@@ -14,7 +14,7 @@ from typing import Dict, Tuple
 import yaml
 
 from cmttypes import deep_get, DictPath, ProgrammingError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import cmtlib
 
 # unit-tests for cmtlib.py
@@ -1326,6 +1326,121 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 	return message, result
 
+def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	distro = cmtlib.identify_distro()
+
+	if distro in ("debian",):
+		fun = cmtlib.check_versions_apt
+		fun_str = "cmtlib.check_versions_apt"
+	elif distro in ("suse",):
+		fun = cmtlib.check_versions_zypper
+		fun_str = "cmtlib.check_versions_zypper"
+	elif distro in ("fedora", "rhel",):
+		fun = cmtlib.check_versions_yum
+		fun_str = "cmtlib.check_versions_yum"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+
+		# Indata format:
+		# (package, checker, checker_str, expected_exception)
+		# Output is distro-dependent
+		testdata = (
+			# abiword was randomly picked as existing, but non-installed package; there's no guarantee that it is,
+			# and there are no guaranteed packages that can be used instead.
+			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_apt, "cmtlib.check_versions_apt", None),
+			(1, cmtlib.check_versions_apt, "cmtlib.check_versions_apt", TypeError),
+			(None, cmtlib.check_versions_apt, "cmtlib.check_versions_apt", TypeError),
+			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_zypper, "cmtlib.check_versions_zypper", None),
+			(1, cmtlib.check_versions_zypper, "cmtlib.check_versions_zypper", TypeError),
+			(None, cmtlib.check_versions_zypper, "cmtlib.check_versions_zypper", TypeError),
+			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_yum, "cmtlib.check_versions_yum", None),
+			(1, cmtlib.check_versions_yum, "cmtlib.check_versions_yum", TypeError),
+			(None, cmtlib.check_versions_yum, "cmtlib.check_versions_yum", TypeError),
+		)
+		for indata, fun, fun_str, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+				if not isinstance(tmp, list):
+					message = f"{fun_str}() did not yield expected type:\n" \
+					          f"          input: {indata}\n" \
+					          f"         output: {tmp}\n" \
+						  f"    output type: {type(tmp)}" \
+						  f"       expected: {list}"
+					result = False
+					break
+				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				maxlens = [0, 0, 0]
+				for package, installed_version, candidate_version, _natsorted_versions in tmp:
+					maxlens[0] = max(len(package), maxlens[0])
+					maxlens[1] = max(len(installed_version), maxlens[1])
+					maxlens[2] = max(len(candidate_version), maxlens[2])
+
+				for package, installed_version, candidate_version, natsorted_versions in tmp:
+					joined_versions = ansithemestring_join_tuple_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
+					ansithemeprint([ANSIThemeString(f"    {package}", "default"),
+							ANSIThemeString("".ljust(maxlens[0] - len(package) + 2), "default"),
+							ANSIThemeString(f"    {installed_version}", "default"),
+							ANSIThemeString("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
+							ANSIThemeString(f"    {candidate_version}", "default"),
+							ANSIThemeString("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
+							+ joined_versions)
+			except FileNotFoundError as e:
+				if "secure_which() could not find an acceptable match for apt" in str(e) or \
+				   "secure_which() could not find an acceptable match for zypper" in str(e) or \
+				   "secure_which() could not find an acceptable match for yum" in str(e):
+					pass
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+						          f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+					          f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+
+	return message, result
+
+def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = cmtlib.identify_k8s_distro
+	fun_str = "cmtlib.identify_k8s_distro"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
+		k8s_distros = ("k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "rke2", "talos", "vcluster")
+		try:
+			tmp = fun()
+			if tmp not in k8s_distros:
+				message = f"{fun_str}() did not yield expected type:\n" \
+				          f"         output: {tmp}\n" \
+					  f"       expected: one of {', '.join(k8s_distros)}"
+				result = False
+			else:
+				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				ansithemeprint([ANSIThemeString("    Identified k8s distro: ", "default"),
+						ANSIThemeString(f"{tmp}", "programname")])
+		except Exception as e:
+			raise
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	return message, result
+
 tests: Dict = {
 	("substitute_string()",): {
 		"callable": test_substitute_string,
@@ -1427,11 +1542,27 @@ tests: Dict = {
 		"callable": test_identify_distro,
 		"result": None,
 	},
+	# This will only work if identify_distro() works,
+	# so it makes sense to put it after that test.
+	# Also this test will quite naturally only give full coverage
+	# for one of the three functions, and just coverage for
+	# the negative code paths for the other two.
+	("check_versions_apt()", "check_versions_yum", "check_versions_zypper",): {
+		"callable": test_check_versions,
+		"result": None,
+	},
 }
 
 tests_with_ansible: Dict = {
 	("get_package_versions()",): {
 		"callable": test_get_package_versions,
+		"result": None,
+	},
+}
+
+tests_with_cluster = {
+	("identify_k8s_distro()",): {
+		"callable": test_identify_k8s_distro,
 		"result": None,
 	},
 }
@@ -1448,6 +1579,8 @@ def main() -> int:
 
 	if "--include-ansible" in sys.argv:
 		tests = { **tests, **tests_with_ansible }
+	if "--include-cluster" in sys.argv:
+		tests = { **tests, **tests_with_cluster }
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
