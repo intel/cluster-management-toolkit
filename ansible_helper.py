@@ -176,6 +176,15 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 			playbook (str): The name of the playbook to print a summary for
 	"""
 
+	if not isinstance(playbooks, list):
+		raise TypeError(f"playbooks is type: {type(playbooks)}, expected: {list}")
+
+	if len(playbooks) == 0:
+		raise ValueError(f"playbooks is empty")
+
+	if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2 and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
+		raise TypeError(f"playbooks[] is wrong type; expected: [([{ANSIThemeString}], {FilePath})]")
+
 	# We do not want to check that parent resolves to itself,
 	# because when we have an installation with links directly to the git repo
 	# the playbooks directory will be a symlink
@@ -211,12 +220,10 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 				description = deep_get(section_item, DictPath("description"), "")
 				ansithemeprint([ANSIThemeString(f"        {description}", "default")])
 
-def ansible_get_inventory_dict(create_if_missing: bool = False) -> Dict:
+def ansible_get_inventory_dict() -> Dict:
 	"""
         Get the Ansible inventory and return it as a dict
 
-		Parameters:
-			create_if_missing (bool): Create an empty inventory if no inventory file exists
 		Returns:
 			d (dict): A dictionary with an Ansible inventory
 	"""
