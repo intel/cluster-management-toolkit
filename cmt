@@ -34,7 +34,7 @@ import sys
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
@@ -42,7 +42,7 @@ from cryptography.hazmat.primitives import serialization
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus, SecurityChecks
