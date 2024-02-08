@@ -70,6 +70,11 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 
 	path = ""
 
+	if not isinstance(playbook, str):
+		raise TypeError(f"playbook is type: {type(playbook)}, expected str")
+	if len(playbook) == 0:
+		raise ValueError(f"len(playbook) == 0; expected a filename")
+
 	# Check if there's a local playbook overriding this one
 	local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
 	for playbook_path in local_playbooks:
