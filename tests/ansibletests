@@ -132,6 +132,73 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
 					break
 	return message, result
 
+def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_print_action_summary
+	fun_str = "ansible_helper.ansible_print_action_summary"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden.", "default")])
+		ansithemeprint([ANSIThemeString("      ", "note"), ANSIThemeString("  Manual sanity checking is necessary for these test results.\n", "default")])
+
+		# Indata format:
+		# (playbook, expected_result, expected_exception)
+		testdata = (
+			(ansible_helper.populate_playbooks_from_paths([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")]), None),
+			([], ValueError),
+			([1], TypeError),
+			(None, TypeError),
+			(1, TypeError),
+		)
+		for indata, expected_exception in testdata:
+			try:
+				tmp = fun(indata)
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_inventory_dict
+	fun_str = "ansible_helper.ansible_get_inventory_dict"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if there is a valid inventory.", "default")])
+		ansithemeprint([ANSIThemeString("      ", "note"), ANSIThemeString("  Manual sanity checking is necessary for these test results.\n", "default")])
+		try:
+			tmp = fun()
+			if not (isinstance(tmp, dict) and len(tmp) > 0):
+				message = f"{fun_str}() did not yield expected result:\n" \
+					  f"         output: {tmp} (type: {type(tmp)}\n" \
+					  f"       expected: {dict}"
+				result = False
+			print(yaml_dump(tmp, base_indent = 17))
+		except Exception as e:
+			raise
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	return message, result
+
 tests: Dict = {
 	("get_playbook_path()",): {
 		"callable": test_get_playbook_path,
@@ -139,6 +206,14 @@ tests: Dict = {
 	},
 	("populate_playbooks_from_paths()",): {
 		"callable": test_populate_playbooks_from_paths,
+		"result": None,
+	},
+	("ansible_print_action_summary()",): {
+		"callable": test_ansible_print_action_summary,
+		"result": None,
+	},
+	("ansible_get_inventory_dict()",): {
+		"callable": test_ansible_get_inventory_dict,
 		"result": None,
 	},
 }
