@@ -97,7 +97,7 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")],
 			 [([ANSIThemeString(string="  • ", themeref="separator"),
 			    ANSIThemeString(string="Get package versions", themeref="play")],
-			   "/home/dweineha/.cmt/playbooks/get_versions.yaml")], None),
+			   f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml")], None),
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
 			([""], None, ValueError),
 			(None, None, TypeError),
