@@ -20,7 +20,7 @@ from cmttypes import FilePath, SecurityChecks
 
 # pylint: disable-next=too-many-arguments
 def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions: Optional[int] = None,
-		      replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w", tempfile: bool = False) -> None:
+		      replace_empty: bool = False, replace_null: bool = False, sort_keys: bool = True, write_mode: str = "w", temporary: bool = False) -> None:
 	"""
 	Dump a dict to a file in YAML-format in a safe manner
 
@@ -31,7 +31,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 			replace_empty (bool): True strips empty strings
 			replace_null (bool): True strips null
 			write_mode (str): [w, a, x] Write, Append, Exclusive Write
-			tempfile (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
@@ -44,15 +44,16 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], permissions
 		yaml_str = yaml_str.replace(r"''", "")
 	if replace_null:
 		yaml_str = yaml_str.replace(r"null", "")
-	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode, tempfile = tempfile)
+	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode, temporary = temporary)
 
-def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Any:
+def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, temporary: bool = False) -> Any:
 	"""
 	Read data in YAML-format from a file in a safe manner
 
 		Parameters:
 			path (FilePath): The path to read from
 			directory_is_symlink (bool): The directory that the path points to is a symlink
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			yaml_data (any): The read YAML-data
 		Raises:
@@ -62,7 +63,7 @@ def secure_read_yaml(path: FilePath, checks: Optional[List[SecurityChecks]] = No
 			cmttypes.FilePathAuditError
 	"""
 
-	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink)
+	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink, temporary = temporary)
 	return yaml.safe_load(string)
 
 def secure_read_yaml_all(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> Iterator[Any]:

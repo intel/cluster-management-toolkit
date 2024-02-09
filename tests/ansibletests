@@ -11,11 +11,13 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 from datetime import datetime, timezone
 import os
 import sys
+import tempfile
 from typing import Dict, Tuple
 import yaml
 
 import cmtlib
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR
+from cmtio_yaml import secure_read_yaml
+from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 from cmttypes import deep_get, deep_set, DictPath, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import ansible_helper
@@ -193,10 +195,301 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
 				result = False
 			print(yaml_dump(tmp, base_indent = 17))
 		except Exception as e:
-			raise
 			message = f"{fun_str}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
+	return message, result
+
+def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_inventory_pretty
+	fun_str = "ansible_helper.ansible_get_inventory_pretty"
+
+	if result:
+		# Indata format:
+		# (groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception)
+		testdata = (
+			(["all"], False, False, False, False, None),
+			(["all"], False, False, False, True, None),
+			([], True, True, True, True, None),
+			([], True, True, False, True, None),
+			([], True, True, False, True, None),
+			(["NotAnExistingGroup"], False, False, False, True, None),
+			("a", True, True, False, True, TypeError),
+			(1, True, True, False, True, TypeError),
+			(None, False, False, False, False, None),
+		)
+		for indata in testdata:
+			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
+			try:
+				tmp = fun(groups, highlight, include_groupvars, include_hostvars, include_hosts)
+				if not (isinstance(tmp, list) and len(tmp) > 0 and (isinstance(tmp[0], str) or len(tmp[0]) > 0 and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"  expected type: [str|[ANSIThemeString]]"
+						result = False
+						break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_ansible_get_hosts_by_group(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_hosts_by_group
+	fun_str = "ansible_helper.ansible_get_hosts_by_group"
+
+	if result:
+		# Indata format:
+		# (inventory, group)
+		testdata = (
+			(ANSIBLE_INVENTORY, "all", None),
+			(ANSIBLE_INVENTORY, "NonExistingGroup", None),
+			("NonExistingPath", "all", None),
+			(ANSIBLE_INVENTORY, 1, TypeError),
+			(ANSIBLE_INVENTORY, None, TypeError),
+			(None, "all", TypeError),
+			(1, "all", TypeError),
+		)
+		for indata in testdata:
+			inventory_path, group, expected_exception = indata
+			try:
+				tmp = fun(inventory_path, group)
+				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f" inventory path: {inventory_path}\n" \
+							  f"          group: {group}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"  expected type: [str]"
+						result = False
+						break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f" inventory path: {inventory_path}\n" \
+							  f"          group: {group}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f" inventory path: {inventory_path}\n" \
+						  f"          group: {group}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_ansible_get_groups(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_groups
+	fun_str = "ansible_helper.ansible_get_groups"
+
+	if result:
+		# Indata format:
+		# (inventory, group)
+		testdata = (
+			(ANSIBLE_INVENTORY, None),
+			("NonExistingPath", None),
+			(None, TypeError),
+			(1, TypeError),
+		)
+		for indata in testdata:
+			inventory_path, expected_exception = indata
+			try:
+				tmp = fun(inventory_path)
+				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f" inventory path: {inventory_path}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"  expected type: [str]"
+						result = False
+						break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f" inventory path: {inventory_path}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f" inventory path: {inventory_path}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test_ansible_get_groups_by_host(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_groups_by_host
+	fun_str = "ansible_helper.ansible_get_groups_by_host"
+
+	if result:
+		d = ansible_helper.ansible_get_inventory_dict()
+		# Indata format:
+		# (inventory, group)
+		testdata = (
+			(d, "localhost", None),
+			(d, "NonExistingHost", None),
+			(d, 1, TypeError),
+			(d, None, TypeError),
+			(None, "localhost", TypeError),
+			(1, "localhost", TypeError),
+		)
+		for indata in testdata:
+			inventory_dict, host, expected_exception = indata
+			try:
+				tmp = fun(inventory_dict, host)
+				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   " inventory dict:\n" \
+							  f"{yaml_dump(inventory_dict, base_indent = 17)}\n" \
+							  f"          group: {host}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"  expected type: [str]"
+						result = False
+						break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   " inventory dict:\n" \
+							  f"{yaml_dump(inventory_dict, base_indent = 17)}\n" \
+							  f"          group: {host}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						   " inventory dict:\n" \
+						  f"{yaml_dump(inventory_dict, base_indent = 17)}\n" \
+						  f"          group: {host}\n" \
+						  f"      exception: {type(e)}\n"
+					result = False
+					break
+	return message, result
+
+def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.__ansible_create_inventory
+	fun_str = "ansible_helper.__ansible_create_inventory"
+
+	if result:
+		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
+			# __ansible_create_inventory() will open the file
+			tf.close()
+
+			d = {
+				"all": {
+					"hosts": {},
+					"vars": {
+						"ansible_python_interpreter": "/usr/bin/python3",
+					},
+				}
+			}
+
+			if (ansible_user := deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))) is not None:
+				deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path = True)
+			if (ansible_password := deep_get(ansible_helper.ansible_configuration, DictPath("ansible_password"))) is not None:
+				deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_user, create_path = True)
+			if (disable_strict_host_key_checking := deep_get(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), False)):
+				deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path = True)
+			# Indata format:
+			# (path, overwrite, expected_result, expected_content, expected_exception)
+			testdata = (
+				(f"{td}/TemporaryFile", False, True, d, None),
+				# The file should exist now; so write should fail
+				(tf.name, False, False, None, None),
+				# The file should exist now; write should succeed
+				(tf.name, True, True, d, None),
+				(None, True, None, None, TypeError),
+				(1, True, None, None, TypeError),
+				(tf.name, None, None, None, TypeError),
+				(tf.name, 1, None, None, TypeError),
+			)
+			for indata in testdata:
+				path, overwrite, expected_result, expected_content, expected_exception = indata
+				try:
+					if (tmp := fun(path, overwrite, temporary = True)) != expected_result:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path}\n" \
+							  f"      overwrite: {overwrite}\n" \
+							  f"         output: {tmp}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+					# We expect not to write anything, we didn't, so we continue
+					if not expected_result:
+						continue
+					output_d = secure_read_yaml(path, temporary = True)
+					if not (output_d is not None and output_d.items() == expected_content.items()):
+						if output_d is not None:
+							print(output_d.items())
+							print(expected_content.items())
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   " inventory dict:\n" \
+							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
+							  f"       expected:\n" \
+							  f"{yaml_dump(expected_content, base_indent = 17)}"
+						result = False
+						break
+				except Exception as e:
+					if expected_exception is not None:
+						if isinstance(e, expected_exception):
+							pass
+						else:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								  f"           path: {path}\n" \
+								  f"      overwrite: {overwrite}\n" \
+								  f"         output: {tmp}\n" \
+								  f"       expected: {expected_exception}"
+							result = False
+							break
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path}\n" \
+							  f"      overwrite: {overwrite}\n" \
+							  f"      exception: {type(e)}\n"
+						result = False
+						break
+	os.unlink(tf.name)
 	return message, result
 
 tests: Dict = {
@@ -214,6 +507,26 @@ tests: Dict = {
 	},
 	("ansible_get_inventory_dict()",): {
 		"callable": test_ansible_get_inventory_dict,
+		"result": None,
+	},
+	("ansible_get_inventory_pretty()",): {
+		"callable": test_ansible_get_inventory_pretty,
+		"result": None,
+	},
+	("ansible_get_hosts_by_group()",): {
+		"callable": test_ansible_get_hosts_by_group,
+		"result": None,
+	},
+	("ansible_get_groups()",): {
+		"callable": test_ansible_get_groups,
+		"result": None,
+	},
+	("ansible_get_groups_by_host()",): {
+		"callable": test_ansible_get_groups_by_host,
+		"result": None,
+	},
+	("__ansible_create_inventory()",): {
+		"callable": test___ansible_create_inventory,
 		"result": None,
 	},
 }
