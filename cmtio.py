@@ -443,7 +443,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
 			raise OSError from e
 
-def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False, tempfile: bool = False) -> None:
+def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False, temporary: bool = False) -> None:
 	"""
 	Write a string to a file in a safe manner
 
@@ -453,7 +453,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 			permissions (int): File permissions (None uses system defaults)
 			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
 			allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
-			tempfile (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
@@ -465,11 +465,12 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PERMISSIONS,
+		SecurityChecks.PARENT_PERMISSIONS,
 		SecurityChecks.IS_FILE,
 	]
 
-	if not tempfile:
-		checks.append(SecurityChecks.PARENT_PERMISSIONS)
+	if temporary:
+		checks.remove(SecurityChecks.PARENT_PERMISSIONS)
 
 	if not allow_relative_path:
 		checks += [
@@ -518,7 +519,7 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 			if write_mode == "x":
 				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path = path) from e
 
-def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r") -> Union[str, bytes]:
+def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r", temporary: bool = False) -> Union[str, bytes]:
 	"""
 	Read the content of a file in a safe manner
 
@@ -527,6 +528,7 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 			checks (list[SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 			read_mode (str): [r, rb] Read text or binary
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			string (union[str, bytes]): The read string
 		Raises:
@@ -551,6 +553,9 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 				SecurityChecks.EXISTS,
 				SecurityChecks.IS_DIR,
 			]
+
+			if temporary:
+				checks.remove(SecurityChecks.PARENT_PERMISSIONS)
 
 			violations = check_path(parent_dir, checks = checks)
 			if violations != [SecurityStatus.OK]:
@@ -581,6 +586,12 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 				SecurityChecks.IS_FILE,
 			]
 
+	if temporary:
+		try:
+			checks.remove(SecurityChecks.PARENT_PERMISSIONS)
+		except ValueError:
+			pass
+
 	violations = check_path(path, checks = checks)
 
 	if violations != [SecurityStatus.OK]:
@@ -598,7 +609,7 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 
 	return string
 
-def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False) -> str:
+def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, temporary: bool = False) -> str:
 	"""
 	Read a string from a file in a safe manner
 
@@ -606,13 +617,14 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 			path (FilePath): The path to read from
 			checks (list[SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			string (str): The read string
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
 
-	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r"))
+	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r", temporary = temporary))
 
 def secure_which(path: FilePath, fallback_allowlist: List[str],
 			security_policy: SecurityPolicy = SecurityPolicy.STRICT, executable: bool = True) -> FilePath:

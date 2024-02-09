@@ -276,6 +276,8 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 	if groups is None or groups == []:
 		tmp = d
 	else:
+		if not (isinstance(groups, list) and len(groups) > 0 and isinstance(groups[0], str)):
+			raise TypeError(f"groups is type: {type(groups)}, expected {list}")
 		for group in groups:
 			item = d.pop(group, None)
 			if item is not None:
@@ -402,27 +404,41 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 
 	groups = []
 
+	if not isinstance(inventory_dict, dict):
+		raise TypeError(f"inventory dict is type: {type(inventory_dict)}, expected {dict}")
+
+	if not isinstance(host, str):
+		raise TypeError(f"host is type: {type(host)}, expected str")
+
 	for group in inventory_dict:
 		if inventory_dict[group].get("hosts") and host in inventory_dict[group]["hosts"]:
 			groups.append(group)
 
 	return groups
 
-def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> None:
+def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, temporary: bool = False) -> bool:
 	"""
 	Create a new inventory at the path given if no inventory exists
 
 		Parameters:
 			inventory (FilePath): A path where to create a new inventory (if non-existing)
 			overwrite (bool): True: Overwrite the existing inventory
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+		Return:
+			(bool): True if inventory was created, False if nothing was done
 	"""
+
+	if not isinstance(inventory, str):
+		raise TypeError(f"inventory is type: {type(inventory)}, expected str")
+	if not isinstance(overwrite, bool):
+		raise TypeError(f"inventory is type: {type(overwrite)}, expected bool")
 
 	disable_strict_host_key_checking = deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)
 
 	# Do not create anything if the inventory exists;
 	# unless overwrite is set
 	if Path(inventory).exists() and not overwrite:
-		return
+		return False
 
 	# If the ansible directory does not exist, create it
 	secure_mkdir(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
@@ -439,17 +455,18 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False) -> 
 		}
 	}
 
-	if deep_get(ansible_configuration, DictPath("ansible_user")) is not None:
-		d["all"]["vars"]["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
+	if (ansible_user := deep_get(ansible_configuration, DictPath("ansible_user"))) is not None:
+		deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path = True)
 
-	if deep_get(ansible_configuration, DictPath("ansible_password")) is not None:
-		d["all"]["vars"]["ansible_ssh_pass"] = deep_get(ansible_configuration, DictPath("ansible_password"))
+	if (ansible_password := deep_get(ansible_configuration, DictPath("ansible_password"))) is not None:
+		deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_password, create_path = True)
 
-	disable_strict_host_key_checking = deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)
-	if disable_strict_host_key_checking:
-		d["all"]["vars"]["ansible_ssh_common_args"] = "-o StrictHostKeyChecking=no"
+	if (disable_strict_host_key_checking := deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)):
+		deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path = True)
 
-	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True)
+	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, temporary = temporary)
+
+	return True
 
 def ansible_create_groups(inventory: FilePath, groups: List[str]) -> bool:
 	"""
