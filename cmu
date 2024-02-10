@@ -5403,7 +5403,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			fieldgenerator_args = {
 				"field_index": field_index,
 				"field_indexes": field_indexes,
-				"fields": deep_get(views, DictPath(f"fields")),
+				"fields": deep_get(viewref, DictPath(f"fields")),
 				"denylist": denylist,
 			}
 			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
@@ -5581,7 +5581,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			fieldgenerator_args = {
 				"field_index": field_index,
 				"field_indexes": field_indexes,
-				"fields": deep_get(views, DictPath(f"fields")),
+				"fields": deep_get(viewref, DictPath(f"fields")),
 				"denylist": denylist,
 			}
 			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
