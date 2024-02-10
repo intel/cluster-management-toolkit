@@ -27,7 +27,7 @@ from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, ProgrammingError
 
 ansible_results: Dict = {}
 
@@ -510,7 +510,7 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], temporary: boo
 
 	return True
 
-def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
+def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: bool = False) -> bool:
 	"""
 	Set one or several values for a group
 
@@ -518,24 +518,84 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 			inventory (FilePath): The path to the inventory
 			group (str): The group to set variables for
 			values (dict): The values to set
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
 
 	changed = False
 
-	if group is None or group == "":
-		# XXX: Should be an exception
-		sys.exit("ansible_set_vars: group is empty or None; this is a programming error")
+	if not (isinstance(inventory, str) and isinstance(group, str) and isinstance(values, dict) and isinstance(temporary, bool)):
+		msg = [
+			[("ansible_set_vars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("group = ", "default"),
+			 (f"“{group}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(group)}", "argument"),
+			 (", expected: ", "default"),
+			 ("str", "argument"),
+			 (")", "default")],
+			[("values = ", "default"),
+			 (f"{values}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(values)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{dict}", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
 
-	if values is None or values == {}:
-		# XXX: Should be an exception
-		sys.exit("ansible_set_vars: values is empty or None; this is a programming error")
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
+
+	if not (len(inventory) > 0 and len(group) > 0 and len(values) > 0):
+		msg = [
+			[("ansible_set_vars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(inventory)}", "argument"),
+			 (")", "default")],
+			[("group = ", "default"),
+			 (f"“{group}“", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(group)}", "argument"),
+			 (")", "default")],
+			[("values = ", "default"),
+			 (f"{values}", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(values)}", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = ValueError,
+				       formatted_msg = formatted_msg)
 
 	if not Path(inventory).is_file():
-		__ansible_create_inventory(inventory, overwrite = False)
+		__ansible_create_inventory(inventory, overwrite = False, temporary = temporary)
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	# If the group does not exist we create it
 	if d.get(group) is None:
@@ -553,7 +613,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict) -> bool:
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 

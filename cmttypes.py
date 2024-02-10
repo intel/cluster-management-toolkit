@@ -126,6 +126,7 @@ class ProgrammingError(Exception):
 
 		Attributes:
 			message (str): Additional information about the error
+			subexception (Exception): Related standard exception
 			severity (any): The severity
 			facility (str): A facility
 			formatted_msg (any); A formatted version of the message
@@ -140,6 +141,7 @@ class ProgrammingError(Exception):
 
 	def __init__(self,
 		     message: str,
+		     subexception: Exception = None,
 		     severity: Optional[Any] = None,
 		     facility: Optional[str] = None,
 		     formatted_msg: Optional[Any] = None,
@@ -158,6 +160,7 @@ class ProgrammingError(Exception):
 			self.lineno = int(frame.f_lineno)  # type: ignore
 
 		self.exception = __class__.__name__  # type: ignore
+		self.subexception = subexception
 		self.message = message
 		self.severity = severity
 		self.facility = facility
@@ -189,9 +192,9 @@ class ProgrammingError(Exception):
 		"""
 
 		if len(self.message) == 0:
-			message = "No further details were provided"
+			message = "({self.subexception}): No further details were provided"
 		else:
-			message = self.message
+			message = f"({self.subexception}): {self.message}"
 
 		return message
 
@@ -205,6 +208,7 @@ class ProgrammingError(Exception):
 
 		return {
 			"exception": self.exception,
+			"subexception": self.subexception,
 			"message": self.message,
 			"severity": self.severity,
 			"facility": self.facility,
