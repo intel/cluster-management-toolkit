@@ -617,30 +617,110 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: b
 
 	return True
 
-def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: List[Tuple[str, str]]) -> bool:
+def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: List[Tuple[str, Union[str, int]]], temporary: bool = False) -> bool:
 	"""
 	Set one or several vars for the specified groups
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to set variables for
-			groupvars (list[(str, str)]): The values to set
+			groupvars (list[(str, str|int)]): The values to set
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
 
 	changed = False
 
-	if groups is None or len(groups) == 0:
-		raise ValueError("ansible_set_vars: groups is empty or groups; this is a programming error")
+	if not (isinstance(inventory, str)
+	        and isinstance(groups, list)
+		and len(groups) > 0 and isinstance(groups[0], str)
+		and isinstance(groupvars, list)
+		and len(groupvars) > 0 and isinstance(groupvars[0], tuple)
+		and len(groupvars[0]) == 2 and isinstance(groupvars[0][0], str) and isinstance(groupvars[0][1], (str, int))
+		and isinstance(temporary, bool)):
+		msg = [
+			[("ansible_set_groupvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("groups = ", "default"),
+			 (f"“{groups}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(groups)}", "argument"),
+			 (", expected: ", "default"),
+			 ("{list}", "argument"),
+			 (")", "default")],
+			[("groupvars = ", "default"),
+			 (f"{groupvars}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(groupvars)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{[(str, str)]}", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
 
-	if groupvars is None or groupvars == []:
-		raise ValueError("ansible_set_vars: groupvars is empty or None; this is a programming error")
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
+
+	if not (len(inventory) > 0 and len(groupvars) > 0):
+		msg = [
+			[("ansible_set_groupvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(inventory)}", "argument"),
+			 (")", "default")],
+			[("groups = ", "default"),
+			 (f"“{groups}“", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(groups)}", "argument"),
+			 (")", "default")],
+			[("groupvars = ", "default"),
+			 (f"{groupvars}", "argument"),
+			 (" (len: ", "default"),
+			 (f"{len(groupvars)}", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = ValueError,
+				       formatted_msg = formatted_msg)
 
 	if not Path(inventory).is_file():
-		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
+		msg = [
+			[("ansible_set_groupvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (f" does not exist.", "argument")],
+		]
 
-	d = secure_read_yaml(inventory)
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = FileNotFoundError,
+				       formatted_msg = formatted_msg)
+
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -659,7 +739,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
