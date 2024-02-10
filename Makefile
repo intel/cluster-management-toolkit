@@ -79,8 +79,10 @@ coverage-ansible: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
+	printf -- "\n\n  Running: tests/cmtlibtests --include-ansible\n\n" ;\
 	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
+	printf -- "\n\n  Running: tests/ansibletests\n\n" ;\
+	$$cmd run --branch --append tests/ansibletests ;\
 	$$cmd report ;\
 	$$cmd html
 
@@ -94,9 +96,9 @@ coverage-cluster: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch ;\
-	printf -- "\n\n  Running: tests/khtests\n\n" ;\
+	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster ;\
-	printf -- "\n\n  Running: tests/khtests\n\n" ;\
+	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
 	$$cmd report ;\
 	$$cmd html
