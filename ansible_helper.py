@@ -468,15 +468,18 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, tem
 
 	return True
 
-def ansible_create_groups(inventory: FilePath, groups: List[str]) -> bool:
+def ansible_create_groups(inventory: FilePath, groups: List[str], temporary: bool = False) -> bool:
 	"""
 	Create new groups
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to create
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			TypeError: group is not a str
 	"""
 
 	changed: bool = False
@@ -485,23 +488,25 @@ def ansible_create_groups(inventory: FilePath, groups: List[str]) -> bool:
 		return True
 
 	if not Path(inventory).is_file():
-		__ansible_create_inventory(inventory, overwrite = False)
+		__ansible_create_inventory(inventory, overwrite = False, temporary = temporary)
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for group in groups:
+		if not isinstance(group, str):
+			raise TypeError(f"group is type: {type(group)}; expected str")
 		# Group already exists; ignore
 		if group in d:
 			continue
 
 		d[group] = {
-			"hosts": "",
+			"hosts": {},
 		}
 
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
@@ -788,7 +793,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 				d["all"]["hosts"] = {}
 			if host not in cast(List, d["all"]["hosts"]):
 				d = cast(Dict, d)
-				d["all"]["hosts"][host] = ""
+				d["all"]["hosts"][host] = {}
 				changed = True
 
 		# If the group does not exist,
@@ -806,7 +811,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 				d[group]["hosts"] = {}
 
 			if not host in d[group]["hosts"]:
-				d[group]["hosts"][host] = ""
+				d[group]["hosts"][host] = {}
 				changed = True
 
 	if changed:
@@ -847,8 +852,6 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 			if host in d[group]["hosts"]:
 				d[group]["hosts"].pop(host, None)
 				changed = True
-			if len(d[group]["hosts"]) == 0:
-				d[group]["hosts"] = None
 
 	if changed:
 		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
@@ -1522,7 +1525,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	}
 
 	for host in selection:
-		d["selection"]["hosts"][host] = ""
+		d["selection"]["hosts"][host] = {}
 
 	return ansible_run_playbook(playbook, d, verbose)
 
@@ -1578,7 +1581,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 	}
 
 	for host in selection:
-		d["selection"]["hosts"][host] = ""
+		d["selection"]["hosts"][host] = {}
 
 	return ansible_run_playbook_async(playbook, d, verbose)
 

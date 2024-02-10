@@ -492,6 +492,75 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 	os.unlink(tf.name)
 	return message, result
 
+def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_create_groups
+	fun_str = "ansible_helper.ansible_create_groups"
+
+	if result:
+		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
+			# __ansible_create_inventory() will open the file
+			tf.close()
+			tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite = True, temporary = True)
+			d = secure_read_yaml(tf.name, temporary = True)
+
+			# Indata format:
+			# (path, groups, expected_content, expected_result, expected_exception)
+			testdata = (
+				(f"{td}/TemporaryFile", ["group1", "group2", "group3"], ["group1", "group2", "group3"], True, None),
+				# Pre-existing groups are ignored
+				(tf.name, ["group1", "group2", "group3"], ["group1", "group2", "group3"], True, None),
+				# Empty lists are ignored
+				(tf.name, [], None, True, None),
+				# None is ignored
+				(tf.name, None, None, True, None),
+				(tf.name, [1], None, None, TypeError),
+				(tf.name, [None], None, None, TypeError),
+			)
+			for indata in testdata:
+				path, groups, expected_content, expected_result, expected_exception = indata
+				try:
+					if (tmp := fun(path, groups, temporary = True)) != expected_result:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"         output: {tmp}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+					# We expect not to write anything, we didn't, so we continue
+					if not expected_result or groups is None or len(groups) == 0:
+						continue
+					output_d = secure_read_yaml(path, temporary = True)
+					for group in expected_content:
+						if group not in output_d:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								   "      inventory:\n" \
+								  f"{yaml_dump(output_d, base_indent = 17)}\n" \
+								  f" should include: {expected_content}"
+							result = False
+							break
+				except Exception as e:
+					if expected_exception is not None:
+						if isinstance(e, expected_exception):
+							pass
+						else:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								  f"           path: {path} (tempfile)\n" \
+								  f"         output: {tmp}\n" \
+								  f"       expected: {expected_exception}"
+							result = False
+							break
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"      exception: {type(e)}\n"
+						result = False
+						break
+	os.unlink(tf.name)
+	return message, result
+
 tests: Dict = {
 	("get_playbook_path()",): {
 		"callable": test_get_playbook_path,
@@ -527,6 +596,10 @@ tests: Dict = {
 	},
 	("__ansible_create_inventory()",): {
 		"callable": test___ansible_create_inventory,
+		"result": None,
+	},
+	("ansible_create_groups()",): {
+		"callable": test_ansible_create_groups,
 		"result": None,
 	},
 }
