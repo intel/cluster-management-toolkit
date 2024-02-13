@@ -191,10 +191,15 @@ class ProgrammingError(Exception):
 				(str): The string representation of the exception
 		"""
 
-		if len(self.message) == 0:
-			message = "({self.subexception}): No further details were provided"
+		if self.subexception is None:
+			message = ""
 		else:
-			message = f"({self.subexception}): {self.message}"
+			message = f"({self.subexception}): "
+
+		if len(self.message) == 0:
+			message += "No further details were provided"
+		else:
+			message += f"{self.message}"
 
 		return message
 

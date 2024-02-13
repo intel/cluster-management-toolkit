@@ -864,11 +864,11 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
 			]
 		else:
 			timestamp_string = datetime_to_timestamp(values[0])
-			array = generators.format_numerical_with_units(timestamp_string, "timestamp", False)
+			array = format_numerical_with_units(timestamp_string, "timestamp", False)
 			array += [
 				ThemeString(" (", ThemeAttr("types", "generic"))
 			]
-			array += generators.generator_age_raw(values[1], False)
+			array += generator_age_raw(values[1], False)
 			array += [
 				ThemeString(")", ThemeAttr("types", "generic"))
 			]
@@ -890,9 +890,9 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
 					]
 				else:
 					# timestamp_string = datetime_to_timestamp(values[0])
-					array += generators.format_numerical_with_units(values[i], "timestamp", False)
+					array += format_numerical_with_units(values[i], "timestamp", False)
 			elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
-				array += generators.generator_age_raw(values[i], False)
+				array += generator_age_raw(values[i], False)
 			else:
 				array += [
 					ThemeString(values[i], formatting["field_colors"][i])
@@ -1290,11 +1290,11 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Dict) -> T
 	if field_indexes is None or len(field_indexes) == 0:
 		return None, None, None, False
 
-	field_names = deep_get(field_indexes, DictPath(f"{field_index}#fields"), [])
+	field_names = copy.deepcopy(deep_get(field_indexes, DictPath(f"{field_index}#fields"), []))
 	sortcolumn = deep_get(field_indexes, DictPath(f"{field_index}#sortcolumn"))
 	sortorder_reverse = deep_get(field_indexes, DictPath(f"{field_index}#sortorder_reverse"), False)
 
-	denylist = deep_get(kwargs, DictPath("denylist"), [])
+	denylist = copy.deepcopy(deep_get(kwargs, DictPath("denylist"), []))
 
 	if selected_namespace != "" and "namespace" not in denylist:
 		denylist.append("namespace")

@@ -148,3 +148,23 @@ class ReExecutor:
 			self.executor.shutdown(wait = False, cancel_futures = True)
 		else:
 			self.executor.shutdown(wait = False)
+
+	def __len__(self) -> int:
+		"""
+		Returns the number of items in the executor pool
+
+			Returns:
+				(int): The number of items in the executor pool
+		"""
+		return len(self.futures)
+
+	def __contains__(self, future: str) -> bool:
+		"""
+		Check whether a resource is a part of the executor pool
+
+			Parameters:
+				future (str): The resource to check for
+			Returns:
+				(bool): True if the resource is in the pool, False otherwise
+		"""
+		return future in self.futures

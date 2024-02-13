@@ -2196,6 +2196,15 @@ class UIProps:
 		# Helptext
 		self.helptext = None
 
+		# The UID of the selected object (if applicable)
+		self.selected_uid = None
+
+		# Remember position by UID (if False we remember by cursor position)
+		self.remember_uid = True
+
+		# The timestamp
+		self.last_timestamp_update = None
+
 		# Info to use for populating lists, etc.
 		self.sorted_list: List[Type] = []
 		self.sortorder_reverse = False
@@ -2318,13 +2327,23 @@ class UIProps:
 		if self.logpad is not None:
 			del self.logpad
 
+	def reselect_uid(self) -> None:
+		pos = self.curypos + self.yoffset
+		if len(self.sorted_list) > pos:
+			try:
+				self.selected_uid = getattr(self.sorted_list[pos], "__uid")
+			except (AttributeError, IndexError):
+				self.selected_uid = None
+		
 	def update_sorted_list(self) -> None:
+		if self.curypos == -1 or self.yoffset == -1:
+			self.curypos = 0
+			self.yoffset = 0
+
 		if not self.sort_triggered:
 			return
 		self.sort_triggered = False
 		self.list_needs_regeneration(True)
-		self.yoffset = 0
-		self.curypos = 0
 
 		sortkey1, sortkey2 = self.get_sortkeys()
 		try:
@@ -2332,6 +2351,21 @@ class UIProps:
 		except TypeError:
 			# We could not sort the list; we should log and just keep the current sort order
 			pass
+
+		pos = self.curypos + self.yoffset
+
+		# If self.remember_uid is set we (try to) follow the item; else we remain at the cursor position (if possible)
+		if self.remember_uid:
+			for y, item in enumerate(self.sorted_list):
+				try:
+					uid = getattr(item, DictPath("__uid"))
+				except AttributeError:
+					# If the first element lacks "__uid" all elemenets will lack it
+					break
+				if self.selected_uid is None and y == pos:
+					self.selected_uid = uid
+				if uid == self.selected_uid:
+					self.move_cur_with_offset(y - pos)
 
 	def update_info(self, info: List[Type]) -> int:
 		self.info = info
@@ -2354,6 +2388,7 @@ class UIProps:
 
 	def force_update(self) -> None:
 		self.update_triggered = True
+		self.update_forced = True
 		self.refresh = True
 		self.sort_triggered = True
 		self.list_needs_regeneration(True)
@@ -2387,6 +2422,9 @@ class UIProps:
 	def list_needs_regeneration(self, regenerate_list: bool) -> None:
 		self.regenerate_list = regenerate_list
 
+	def is_idle(self) -> bool:
+		return (datetime.now() - self.last_action).seconds > self.idle_timeout
+
 	def is_list_regenerated(self) -> bool:
 		return not self.regenerate_list
 
@@ -2396,6 +2434,12 @@ class UIProps:
 	def select_if_y(self, y: int, selection: Type) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
+
+	def refresh_selected(self) -> None:
+		if not self.sorted_list or self.yoffset + self.curypos >= self.listlen:
+			self.selected = None
+		else:
+			self.selected = self.sorted_list[self.yoffset + self.curypos]
 
 	def is_selected(self, selected: Union[None, Type]) -> bool:
 		if selected is None:
@@ -2447,7 +2491,7 @@ class UIProps:
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 		self.resize_window()
 
-	def update_window(self) -> None:
+	def update_window(self, update: str = "true") -> None:
 		hline = deep_get(theme, DictPath("boxdrawing#hline"))
 
 		maxyx = self.stdscr.getmaxyx()
@@ -2462,7 +2506,7 @@ class UIProps:
 				self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = y, x = self.maxx)
 
 		self.draw_winheader()
-		self.update_timestamp(0, self.maxx)
+		self.update_timestamp(update = update)
 
 		if self.headerpad is not None:
 			self.headerpad.clear()
@@ -2496,9 +2540,12 @@ class UIProps:
 		self.reset_update_delay()
 
 	# pylint: disable-next=unused-argument
-	def update_timestamp(self, ypos: int, xpos: int) -> None:
-		# Elsewhere we use now(timezone.utc), but here we want the local timezone
-		lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	def update_timestamp(self, ypos: int = 0, xpos: int = -1, update: str = "true") -> None:
+		if xpos == -1:
+			xpos = self.maxx
+		if update == "true" or self.last_timestamp_update is None:
+			# Elsewhere we use now(timezone.utc), but here we want the local timezone
+			self.last_timestamp_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 
@@ -2511,8 +2558,12 @@ class UIProps:
 				ThemeString(self.helpstring, ThemeAttr("main", "statusbar")),
 				ThemeRef("separators", "statusbar"),
 			]
+		if update == "pending":
+			timestamparray += [
+				ThemeRef("separators", "statusbar_pending"),
+			]
 		timestamparray += [
-			ThemeString(lastupdate, ThemeAttr("main", "last_update")),
+			ThemeString(self.last_timestamp_update, ThemeAttr("main", "last_update")),
 		]
 
 		if self.borders:
@@ -2595,12 +2646,14 @@ class UIProps:
 		self.curypos = self.mincurypos
 		# offset relative pad
 		self.yoffset = 0
+		self.selected_uid = None
 		self.maxyoffset = 0
 		self.xoffset = 0
 		self.maxxoffset = 0
 
 		self.resize_statusbar()
 		self.force_update()
+		self.reselect_uid()
 
 	def refresh_all(self) -> None:
 		self.stdscr.touchwin()
@@ -2715,6 +2768,7 @@ class UIProps:
 			self.listpad.resize(max(self.listpadheight, self.maxy), self.listpadwidth)
 		self.curypos = min(self.curypos, self.maxcurypos)
 		self.yoffset = min(self.yoffset, self.maxyoffset)
+		self.reselect_uid()
 
 	def refresh_listpad(self) -> None:
 		xpos = self.listpadxpos
@@ -2990,6 +3044,7 @@ class UIProps:
 			self.yoffset = max(0, position)
 			self.yoffset = min(self.yoffset, self.maxyoffset)
 		self.refresh = True
+		self.reselect_uid()
 
 	def move_xoffset_rel(self, movement: int) -> None:
 		if self.borders:
@@ -3004,6 +3059,7 @@ class UIProps:
 		self.yoffset = max(0, self.yoffset + movement)
 		self.yoffset = min(self.maxyoffset, self.yoffset)
 		self.refresh = True
+		self.reselect_uid()
 
 	def move_cur_abs(self, position: int) -> None:
 		if position == -1:
@@ -3015,8 +3071,12 @@ class UIProps:
 		else:
 			raise ProgrammingError("FIXME")
 		self.list_needs_regeneration(True)
+		self.reselect_uid()
 
 	def move_cur_with_offset(self, movement: int) -> None:
+		if self.curypos == -1 or self.yoffset == -1:
+			self.curypos = 0
+			self.yoffset = 0
 		newcurypos = self.curypos + movement
 		newyoffset = self.yoffset
 
@@ -3038,17 +3098,18 @@ class UIProps:
 			self.curypos = newcurypos
 			self.yoffset = newyoffset
 			self.list_needs_regeneration(True)
+		self.reselect_uid()
 
 	def find_all_matches_by_searchkey(self, messages, searchkey: str) -> None:
 		self.match_index = None
 		self.search_matches.clear()
 
-		if len(searchkey) == 0:
+		if not searchkey:
 			return
 
 		for y, msg in enumerate(messages):
 			# The messages can either be raw strings,
-			# or themearrays, so we need to flatten them to just text first
+			# or themearrays, so we need to flatten them first
 			message = themearray_to_string(msg)
 			if searchkey in message:
 				self.search_matches.add(y)
@@ -3063,6 +3124,7 @@ class UIProps:
 					self.match_index = y
 					self.yoffset = min(y, self.maxyoffset)
 					break
+		self.reselect_uid()
 
 	def find_prev_match(self) -> None:
 		end = self.match_index
@@ -3075,6 +3137,7 @@ class UIProps:
 					self.match_index = y
 					self.yoffset = min(y, self.maxyoffset)
 					break
+		self.reselect_uid()
 
 	# Find the next line that has severity > NOTICE
 	def next_line_by_severity(self, severities: Optional[List[LogLevel]]) -> None:
@@ -3114,7 +3177,7 @@ class UIProps:
 		self.refresh = True
 
 	def next_by_sortkey(self, info: List[Type]) -> None:
-		if self.sortkey1 is None:
+		if not self.sortkey1:
 			return
 
 		pos = self.curypos + self.yoffset
@@ -3409,6 +3472,7 @@ class UIProps:
 					return Retval.NOMATCH
 				self.select(selected)
 				self.curypos = ypos
+				self.reselect_uid()
 
 				if selected.ref is not None:
 					if extraref is not None:
@@ -3444,6 +3508,7 @@ class UIProps:
 				if selected is None or here is None or selected != here:
 					self.select(new_here)
 					self.curypos = ypos
+					self.reselect_uid()
 				else:
 					# If we click an already selected item we open it
 					if selected.ref is not None and activatedfun is not None:
@@ -3551,6 +3616,10 @@ class UIProps:
 
 	# pylint: disable-next=too-many-return-statements
 	def generic_keycheck(self, c: int) -> Retval:
+		# We got some type of keypress; postpone idle
+		if c != -1:
+			self.last_action = datetime.now()
+
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
 			return Retval.MATCH
