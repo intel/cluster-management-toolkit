@@ -131,7 +131,18 @@ class ANSIThemeString:
 		return self.string == themestring.string and self.themeref == themestring.themeref
 
 	@classmethod
-	def format_error_msg(cls, msg: List[Any]) -> Tuple[str, List[List["ANSIThemeString"]]]:
+	def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> Tuple[str, List[List["ANSIThemeString"]]]:
+		"""
+		Given a structured error message return both its string and ANSIThemeArray representations;
+		the main use-case for this is to feed into enhanced exceptions that accept
+		both formatted and plaintext strings.
+
+			Parameters:
+				msg ([[(str, str)]]): A structured message for format
+			Returns:
+				(str, ANSIThemeArray): The string and ANSIThemeArray representations of the message
+		"""
+
 		joined_strings = []
 		themearray_list = []
 
