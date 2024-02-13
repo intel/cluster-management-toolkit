@@ -66,35 +66,42 @@ def main() -> None:
 	executor.update("configmap", kind = ("ConfigMap", ""))
 	executor.trigger("service", 2, get_kubernetes_list_async, kind = ("Service", ""))
 
+	print(f"executor pool length: {len(executor)}")
+
+	if "foo" in executor:
+		print("Error: executor doesn't contain 'foo', but claims that it does")
+	if "node" not in executor:
+		print("Error: executor contain 'node', but claims that it doesn't")
+
 	while True:
 		time.sleep(1)
 		if (result := executor.get("node")) != ([], []):
 			nodeinfo, node_statuses = result
-			print(f"got nodeinfo: {len(nodeinfo)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got nodeinfo: len: {len(nodeinfo)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("pod")) != ([], []):
 			podinfo, pod_statuses = result
-			print(f"got podinfo: {len(podinfo)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got podinfo: len: {len(podinfo)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("event")) != ([], []):
 			events, _status = result
-			print(f"got events: {len(events)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got events: len: {len(events)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("namespace")) != ([], []):
 			namespaces, _status = result
-			print(f"got namespaces: {len(namespaces)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got namespaces: len: {len(namespaces)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("secret")) != ([], []):
 			secrets, _status = result
-			print(f"got secrets: {len(secrets)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got secrets: len: {len(secrets)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("configmap")) != ([], []):
 			configmaps, _status = result
-			print(f"got configmaps: {len(configmaps)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got configmaps: len: {len(configmaps)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 		if (result := executor.get("service")) != ([], []):
 			services, _status = result
-			print(f"got services: {len(services)=}; timestamp: {datetime.now().strftime('%S')}")
+			print(f"got services: len: {len(services)}; timestamp: {datetime.now().strftime('%S')}")
 			fetches -= 1
 
 		if fetches < 0:
