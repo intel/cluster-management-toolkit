@@ -12,7 +12,7 @@ Curses-based User Interface helpers
 import copy
 import curses
 import curses.textpad
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntFlag
 import errno
 from operator import attrgetter
@@ -2388,7 +2388,6 @@ class UIProps:
 
 	def force_update(self) -> None:
 		self.update_triggered = True
-		self.update_forced = True
 		self.refresh = True
 		self.sort_triggered = True
 		self.list_needs_regeneration(True)
@@ -2423,7 +2422,22 @@ class UIProps:
 		self.regenerate_list = regenerate_list
 
 	def is_idle(self) -> bool:
+		"""
+		Check whether the UI is considered idle;
+		The UI is idle if nothing has updated last_action within
+		the last idle_timeout seconds
+
+			Returns:
+				(bool): True if idle, False if not idle
+		"""
 		return (datetime.now() - self.last_action).seconds > self.idle_timeout
+
+	def force_idle(self) -> None:
+		"""
+		Set last_action far enough back so that the system is considered idle;
+		this should be done when doing a force reload
+		"""
+		self.last_action = datetime.now() + timedelta(seconds = -self.idle_timeout)
 
 	def is_list_regenerated(self) -> bool:
 		return not self.regenerate_list
@@ -2738,6 +2752,8 @@ class UIProps:
 		self.listpadheight = self.maxy - 2 - self.listpadypos
 		self.listpadwidth = max(width, self.listpadminwidth)
 		self.listpad = curses.newpad(self.listpadheight, self.listpadwidth)
+		self.curypos = 0
+		self.yoffset = 0
 		self.select(None)
 
 		return self.headerpad, self.listpad
@@ -2757,7 +2773,7 @@ class UIProps:
 		if self.borders:
 			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
 		else:
-			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
+			self.maxcurypos = min(self.listpadheight, self.listlen - 1)
 		self.maxyoffset = self.listlen - (self.maxcurypos - self.mincurypos) - 1
 		self.headerpadwidth = self.listpadwidth
 		self.maxxoffset = max(0, self.listpadwidth - self.listpadminwidth)
@@ -2793,7 +2809,7 @@ class UIProps:
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 			else:
 				try:
-					self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
+					self.listpad.noutrefresh(0, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 				except curses.error:
 					pass
 
@@ -2925,6 +2941,7 @@ class UIProps:
 			self.borders = borders
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
+		self.resize_listpad(-1)
 
 	def init_statusbar(self) -> curses.window:
 		"""
@@ -3658,6 +3675,8 @@ class UIProps:
 		if c == curses.KEY_F5:
 			# We need to rate limit this somehow
 			self.force_update()
+			self.update_forced = True
+			self.force_idle()
 			return Retval.MATCH
 		if c == ord("r"):
 			# Reverse the sort order

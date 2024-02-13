@@ -5344,8 +5344,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			if unique_match is not None:
 				selected = uip.get_selected()
 				if uip.activatedfun is not None:
-					retval = uip.activatedfun(uip.stdscr, unique_match, kind)
-					if retval == Retval.RETURNFULL:
+					if (retval := uip.activatedfun(uip.stdscr, unique_match, kind)) == Retval.RETURNFULL:
 						return retval
 				uip.force_update()
 				uip.refresh_all()
@@ -7935,6 +7934,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	wrap_lines = False
 	raw_output = False
 
+	first_fetch = True
+
 	while True:
 		# Output listpad if we have one
 		if uip.is_update_triggered():
@@ -8041,17 +8042,19 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if "_pass_obj" in listgetter_args:
 					listgetter_args["_obj"] = obj
 
-
 				# pylint: disable-next=comparison-with-callable
 				uip.refresh_window()
 				uip.refresh_statusbar()
-				fetch_message = deep_get(listgetter_args, DictPath("message"), "Fetching data")
-				win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = fetch_message)
-				curses.doupdate()
-				if listgetter == generic_listgetter:
-					vlist, status = listgetter(**listgetter_args)
-				else:
-					vlist, status = listgetter(obj, **listgetter_args)
+				if first_fetch or uip.update_forced:
+					fetch_message = deep_get(listgetter_args, DictPath("message"), "Fetching data")
+					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = fetch_message)
+					curses.doupdate()
+					if listgetter == generic_listgetter:
+						vlist, status = listgetter(**listgetter_args)
+					else:
+						vlist, status = listgetter(obj, **listgetter_args)
+					first_fetch = False
+					uip.update_forced = False
 
 				infogetter = deep_get(viewref, DictPath("listpad#infogetter"))
 				infogetter_filters = deep_get(viewref, DictPath("listpad#infogetter_filters"), None)
@@ -8187,9 +8190,9 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
 		# Output listpad if we have one
+		remember_uid = uip.remember_uid
+		uip.remember_uid = False
 		if listpad is not None:
-			y = 0
-
 			uip.update_sorted_list()
 			if not uip.is_list_regenerated():
 				generate_list_header(uip, headerpad, field_dict)
@@ -8200,6 +8203,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					uip.select_if_y(y, item)
 					generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item))
 				uip.list_needs_regeneration(False)
+		uip.remember_uid = remember_uid
 
 		# Output logpad if we have one
 		if logpad is not None and uip.refresh:
