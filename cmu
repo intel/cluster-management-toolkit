@@ -5365,7 +5365,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 		uip.refresh_listpad()
 		uip.refresh_statusbar()
 		if first_fetch:
-			win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "checking for data")
+			win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Checking for data")
 		curses.doupdate()
 
 		uip.stdscr.timeout(100)
@@ -7935,8 +7935,6 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	wrap_lines = False
 	raw_output = False
 
-	first_fetch = True
-
 	while True:
 		# Output listpad if we have one
 		if uip.is_update_triggered():
@@ -8045,20 +8043,15 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 
 				# pylint: disable-next=comparison-with-callable
+				uip.refresh_window()
+				uip.refresh_statusbar()
+				fetch_message = deep_get(listgetter_args, DictPath("message"), "Fetching data")
+				win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = fetch_message)
+				curses.doupdate()
 				if listgetter == generic_listgetter:
-					uip.refresh_window()
-					uip.refresh_statusbar()
-					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Fetching data")
-					curses.doupdate()
 					vlist, status = listgetter(**listgetter_args)
-					first_fetch = False
 				else:
-					uip.refresh_window()
-					uip.refresh_statusbar()
-					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Fetching data")
-					curses.doupdate()
 					vlist, status = listgetter(obj, **listgetter_args)
-					first_fetch = False
 
 				infogetter = deep_get(viewref, DictPath("listpad#infogetter"))
 				infogetter_filters = deep_get(viewref, DictPath("listpad#infogetter_filters"), None)
@@ -10237,7 +10230,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 		obj = None
 
         # If the kind is unknown we will get NameError;
-	# in this case we probably don not want to crash
+	# in this case we probably do not want to crash
 	try:
 		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	except NameError:
@@ -10261,7 +10254,6 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	kind = ("Namespace", "")
 	namespace = deep_get(obj, DictPath("metadata#name"))
 
-	# 10 is randomly picked; this can be adjusted as we go along
 	executor = concurrent.futures.ThreadPoolExecutor()
 	executors = {}
 	for kind in namespaced_resources:
