@@ -5185,7 +5185,7 @@ class KubernetesHelper:
 
 	def get_list_of_namespaced_resources(self) -> List[Tuple[str, str]]:
 		"""
-		Returns a list of all namespaced resources
+		Returns a list of all namespaced resources that are available in the cluster
 
 			Returns:
 				vlist (List[(kind, api_group)]): A list of namespaced kinds
@@ -5194,7 +5194,8 @@ class KubernetesHelper:
 		vlist = []
 
 		for resource_kind, resource_data in kubernetes_resources.items():
-			if deep_get(resource_data, DictPath("namespaced"), True):
+			if deep_get(resource_data, DictPath("namespaced"), True) \
+			   and deep_get(resource_data, DictPath("available"), True):
 				vlist.append(resource_kind)
 		return vlist
 
