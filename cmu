@@ -795,8 +795,6 @@ def get_sidecar_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 def __get_timestamp_with_fallback(obj: Dict, paths: List[DictPath]) -> datetime:
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
 
-latest_info = None
-
 def __process_string(value: str, replace_quotes: str) -> str:
 	# We do not want any newlines, and extra trailing whitespace
 	if value is None:
@@ -1868,6 +1866,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 	else:
 		d["ref"] = obj
 		d["__deleted"] = deleted
+		d["__uid"] = deep_get(obj, DictPath("metadata#uid"))
 		entry = type("InfoClass", (), d)
 
 	return entry
@@ -4932,7 +4931,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 
 	return info
 
-def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_taggable: bool = False) -> None:
+def generate_list_header(uip: UIProps, headerpad: curses.window, field_dict: Dict, is_taggable: bool = False) -> None:
 	headerarray: List[Union[ThemeRef, ThemeString]] = []
 	first = True
 
@@ -4946,8 +4945,8 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		headerarray.append(ThemeRef("separators", "tag"))
 		tabstop = themearray_len(headerarray)
 
-	for field in field_list:
-		generator = field_list[field].get("generator")
+	for field in field_dict:
+		generator = field_dict[field].get("generator")
 		if generator is None:
 			continue
 
@@ -4975,9 +4974,9 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		tabstop = themearray_len(headerarray)
 
 		# This tells the length of the alignment of the header
-		fieldlen = deep_get(field_list, DictPath(f"{field}#fieldlen"))
-		header = deep_get(field_list, DictPath(f"{field}#header"))
-		ralign = deep_get(field_list, DictPath(f"{field}#ralign"), False)
+		fieldlen = deep_get(field_dict, DictPath(f"{field}#fieldlen"))
+		header = deep_get(field_dict, DictPath(f"{field}#header"))
+		ralign = deep_get(field_dict, DictPath(f"{field}#ralign"), False)
 
 		# We cannot use ljust/rjust on the string,
 		# because we want the string and arrow in different colours,
@@ -4991,7 +4990,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		first = False
 
 	# We've got to account for the last entry
-	if len(field_list) > 0:
+	if len(field_dict) > 0:
 		tabstops.append(tabstop)
 
 	# We've processed all fields, time to output the header
@@ -5055,24 +5054,76 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
 
 		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected, deleted = is_deleted)
 
-def genericlistloop(stdscr: curses.window, view) -> Retval:
+def genericlistloop(stdscr: curses.window, view: str) -> Retval:
+	"""
+	Generic main loop for listviews
+
+		Parameters:
+			stdscr (curses.window): The curses window to operate on
+			view (str): The view to show
+		Returns:
+			Retval
+		Raises:
+			ProgrammingError (view is invalid)
+	"""
 	global async_data  # pylint: disable=global-statement
 	global executor  # pylint: disable=global-statement
 
 	global selected_namespace  # pylint: disable=global-statement
 	global initial_name  # pylint: disable=global-statement
 	global initial_namespace  # pylint: disable=global-statement
-	global latest_info  # pylint: disable=global-statement
+
+	if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
+		msg = [
+			[("genericlistloop()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("stdscr = ", "default"),
+			 (f"{stdscr}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(stdscr)}", "argument"),
+			 (", expected: ", "default"),
+			 ("{curses.window}", "argument"),
+			 (")", "default")],
+			[("view = ", "default"),
+			 (f"{yaml.dump(view)}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(view)}", "argument"),
+			 (", expected: ", "default"),
+			 ("str", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
 	denylist = deep_get(views, DictPath(f"{view}#field_denylist"), [])
 	field_indexes = deep_get(views, DictPath(f"{view}#field_indexes"), {})
 
+	if not (isinstance(field_indexes, dict) and field_indexes):
+		msg = [
+			[("genericlistloop()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("field_indexes = ", "default")],
+			[(f"{yaml.dump(field_indexes)}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(field_indexes)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{dict}", "argument"),
+			 (") with at least one element", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
 	# Just in case there are leftover futures from other views
 	executor.shutdown()
 	executor = reexecutor.ReExecutor()
-
-	if len(field_indexes) == 0:
-		sys.exit(f"FIXME: field_indexes for view {view} is empty")
 
 	if "Custom" in field_indexes:
 		field_index = "Custom"
@@ -5093,8 +5144,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 	uip = UIProps(stdscr)
 
-	viewref = views[view]
-	kind = viewref["kind"]
+	kind = deep_get(views, DictPath(f"{view}#kind"))
 
 	windowheader = view
 
@@ -5103,21 +5153,22 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	else:
 		is_namespaced = kh.is_kind_namespaced(kind)
 
-	if "helptext" in views[view]:
-		helptext = viewref["helptext"]
-	else:
-		helptext = generate_helptext(view, "listview", [], [])
-	if "activatedfun" in viewref:
-		activatedfun = viewref["activatedfun"]
-	else:
-		activatedfun = genericinfoloop
-	on_activation = deep_get(viewref, DictPath("on_activation"), {})
-	update_delay = deep_get(viewref, DictPath("update_delay"), -1)
+	helptext = generate_helptext(view, "listview", [], [])
+	activatedfun = deep_get(views, DictPath(f"{view}#activatedfun"), genericinfoloop)
+	on_activation = deep_get(views, DictPath(f"{view}#on_activation"), {})
+	# This is the timeout before starting a new fetch *once the old one has completed*.
+	# In other words we're not spamming constant requests--there'll be at least update_delay
+	# seconds between each request
+	async_update_delay = deep_get(views, DictPath("{view}#async_update_delay"), 5)
+	# This is the timeout before forcing a UI refresh
+	update_delay = deep_get(views, DictPath("{view}#update_delay"), -1)
 
-	is_taggable = deep_get(viewref, DictPath("is_taggable"), True) and "actions" in viewref
-	extra_vars = deep_get(viewref, DictPath("extra_vars"), {})
+	is_taggable = deep_get(views, DictPath("{view}#is_taggable"), True) and deep_get(views, DictPath(f"{view}#actions")) is not None
+	extra_vars = deep_get(views, DictPath("{view}#extra_vars"), {})
 
-	uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
+	uip.init_window(field_dict, view = kind, windowheader = windowheader,
+			update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse,
+			helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 
 	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
 	statusbar = uip.init_statusbar()
@@ -5128,123 +5179,60 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	label_selector = ""
 
 	# These values can be toggled, so we need to read them first
-	listview_args = copy.deepcopy(viewref.get("listview_args", {}))
+	listview_args = copy.deepcopy(deep_get(views, DictPath(f"{view}#listview_args"), {}))
 
-	vlist = None
+	listgetter = deep_get(views, DictPath(f"{view}#listgetter"))
+	listgetter_async = deep_get(views, DictPath("{view}#listgetter_async"))
+	listgetter_args = deep_get(views, DictPath("{view}#listgetter_args"), {})
+	listgetter_args["label_selector"] = label_selector
 
-	listgetter = deep_get(viewref, DictPath("listgetter"))
-	listgetter_async = deep_get(viewref, DictPath("listgetter_async"))
+	infogetter = deep_get(views, DictPath(f"{view}#infogetter"), generic_infogetter)
+	infogetter_extra_vars = deep_get(views, DictPath(f"{view}#extra_vars#infogetter"), { "_view": view.strip("*") })
+	infogetter_extra_vars["_field_index"] = field_index.lower()
+	infogetter_extra_vars["_field_names"] = field_names
+	infogetter_extra_vars["_field_dict"] = field_dict
+	if "filters" in listview_args:
+		infogetter_extra_vars["_filters"] = deep_get(listview_args, DictPath("filters"))
 
-	# Temporary workaround
-	if listgetter_async == get_inventory_list:
-		hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
+	uip.last_action = datetime.now()
+	uip.idle_timeout = 5
+	tagged_items = set()
+	serverstatus = "ok"
 
-		# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
-		executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
-		async_data["hosts"] = []
-		async_data["hosts_lock"] = threading.Lock()
-		match_key = "name"
-	elif listgetter_async == get_context_list:
-		vlist, hosts = get_context_list()
-		match_key = "server_address"
-
-	if listgetter_async in (get_inventory_list, get_context_list):
-		# But the hosts can change status more frequently than that
-		executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, interval = -1)
+	first_fetch = True
 
 	while True:
-		if (result := executor.get("hosts")) != ([], []):
-			data, hosts_statuses = result
-			with deep_get(async_data, DictPath("hosts_lock")):
-				hosts = deep_get(data, DictPath("all#hosts"), {}).keys()
-				hosts_set = set(hosts)
-				async_data["hosts"] = list(hosts)
-				if vlist is not None:
-					vlist_hosts = [deep_get(item, DictPath("name")) for item in vlist]
-					vlist_hosts_set = set(vlist_hosts)
-				else:
-					vlist = []
-					vlist_hosts = []
-					vlist_hosts_set = set()
-				# Only add hosts that aren't part of vlist already
-				inventory_dict = ansible_get_inventory_dict()
-				for host in hosts_set - vlist_hosts_set:
-					vlist.append({
-						"name": host,
-						"ref": host,
-						"ips": [],
-						"ansible_groups": ansible_get_groups_by_host(inventory_dict, host),
-						"status": "UNKNOWN",
-						"__deleted": False,
-					})
-				# Tag hosts in vlist that are no longer part of hosts as deleted
-				for host in vlist_hosts_set - hosts_set:
-					for i, item in enumerate(vlist):
-						if deep_get(item, DictPath("name"), "") == host:
-							vlist[i]["status"] = "DELETED"
-							vlist[i]["__deleted"] = True
+		if len(executor) == 0:
+			new_data = "false"
 			uip.force_update()
+			uip.listlen = 0
+			# Temporary workaround
+			if listgetter_async == get_inventory_list:
+				hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
+				# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
+				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
+				async_data["hosts"] = []
+				async_data["hosts_lock"] = threading.Lock()
+				match_key = "name"
+			elif listgetter_async == get_context_list:
+				vlist, hosts = get_context_list()
+				match_key = "server_address"
+			elif listgetter in (generic_listgetter, get_kubernetes_list_async):
+				executor.trigger(".".join(kind), 5, get_kubernetes_list_async, get_kubernetes_list_async, kind = kind, namespace = selected_namespace, **listgetter_args)
+			if listgetter_async in (get_inventory_list, get_context_list):
+				# But the hosts can change status more frequently than that
+				executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, interval = -1)
 
-		if (result := executor.get("pings")) != ([], []):
-			ansible_results, ansible_status = result
-			for i, item in enumerate(vlist):
-				host = deep_get(item, DictPath(match_key))
-				for result in deep_get(ansible_results, f"{host}", []):
-					if deep_get(result, DictPath("task")) == "Ping":
-						if not deep_get(vlist[i], DictPath("__deleted"), False):
-							status = deep_get(result, DictPath("status"))
-							vlist[i]["status"] = status
-						ips = []
-						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv4#address"), "")) > 0:
-							ips.append(ip)
-						if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv6#address"), "")) > 0:
-							ips.append(ip)
-						vlist[i]["ips"] = ips
-			with async_data["hosts_lock"]:
-				executor.update("pings", selection = async_data["hosts"])
-				executor.retrigger("pings")
-			uip.force_update()
-
-		if uip.is_update_triggered():
-			uip.update_window()
-
-			if "listgetter" in viewref:
-				listgetter = deep_get(viewref, DictPath("listgetter"))
-			elif "listgetter_async" in viewref:
-				pass
-			else:
-				listgetter = "kh.get_list_by_kind_namespace"
-
-			infogetter = deep_get(viewref, DictPath("infogetter"), generic_infogetter)
-			infogetter_extra_vars = deep_get(viewref, DictPath("extra_vars#infogetter"), { "_view": view.strip("*") })
-			infogetter_extra_vars["_field_index"] = field_index.lower()
-			infogetter_extra_vars["_field_names"] = field_names
-			infogetter_extra_vars["_field_dict"] = field_dict
-			if "filters" in listview_args:
-				infogetter_extra_vars["_filters"] = deep_get(listview_args, DictPath("filters"))
-
-			listgetter_args = deep_get(viewref, DictPath("listgetter_args"), {})
-			listgetter_args["label_selector"] = label_selector
-
-			if listgetter is not None:
-				if isinstance(listgetter, str):
-					listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
-
-				# pylint: disable-next=comparison-with-callable
-				if listgetter == generic_listgetter:
-					vlist, status = listgetter(deep_get(viewref, DictPath("kind")), selected_namespace, **listgetter_args)
-				else:
-					if kind[0].startswith("__"):
-						vlist, status = listgetter(**listgetter_args)
-					else:
-						vlist, status = listgetter(deep_get(viewref, DictPath("kind")), selected_namespace, label_selector = label_selector)
-				infogetter_extra_vars["_vlist"] = vlist
-			elif listgetter_async:
-				infogetter_extra_vars["_vlist"] = vlist
-				status = "OK"
-			else:
-				status = "OK"
-			info = infogetter(**infogetter_extra_vars)
+		# The asynchronous UI follows these rules:
+		# Idle:
+		#   No user activity within the last idle_timeout seconds
+		# Force refresh:
+		#   User pressed [F5], changed sort column, or opened/closed a dialog ([F1], [F2], [F8], etc)
+		# Additional blockers:
+		#   Items are tagged, menus are open, etc.
+		if (result := executor.get(".".join(kind))) != ([], []):
+			vlist, status = result
+			infogetter_extra_vars["_vlist"] = vlist
 
 			if status == 42503:
 				serverstatus = "Server Unavailable"
@@ -5252,28 +5240,40 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				serverstatus = "Connection Timeout"
 			else:
 				serverstatus = str(status)
+			if not uip.listlen:
+				uip.force_update()
+			new_data = "pending"
+			uip.update_timestamp(update = new_data)
+			first_fetch = False
+			win = None
 
-			latest_info = view
-			listlen = uip.update_info(info)
+		if uip.is_idle() or uip.is_update_triggered():
+			# We need to generate the list info even if the list is empty,
+			# otherwise we'll crash elsewhere
+			if not uip.listlen or new_data == "pending" and (uip.update_forced or not tagged_items):
+				vinfo = infogetter(**infogetter_extra_vars)
+				uip.update_info(vinfo)
+				uip.force_update()
+				new_data = "true"
+				tagged_items = set()
+				uip.update_forced = False
+		if uip.is_update_triggered():
 			linelen = update_field_widths(field_dict, field_names, uip.info)
 			if is_taggable:
 				linelen += len("✓ ")
 			uip.resize_listpad(linelen)
-
-			tagged_items = set()
+			uip.list_needs_regeneration(True)
+			uip.update_window(update = new_data)
+			if new_data == "true":
+				new_data = "false"
 
 		if uip.refresh:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
-			# if uip.continuous_log:
-			#	interval = "Continuous"
-			# else:
-			#	interval = "Manual"
-
 			statusarray1: List[Union[ThemeRef, ThemeString]] = []
 
-			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
+			if view != "Contexts" and selected_namespace:
 				statusarray1 += [ThemeString("Namespace: ", ThemeAttr("statusbar", "infoheader")),
 						 ThemeString(f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ThemeAttr("statusbar", "highlight"))]
 
@@ -5303,7 +5303,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				ThemeString(f"{serverstatus}", ThemeAttr("statusbar", "default")),
 			]
 
-			for status_data in deep_get(viewref, DictPath("statusmsg"), []):
+			for status_data in deep_get(views, DictPath(f"{view}#statusmsg"), []):
 				if len(status_data) == 2:
 					key, path = status_data
 					default_status = "<unset>"
@@ -5336,13 +5336,26 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
 
 		uip.update_sorted_list()
+
+		if uip.info:
+			unique_match = uip.goto_first_match_by_name_namespace(initial_name, initial_namespace)
+			initial_name = None
+			initial_namespace = None
+			if unique_match is not None:
+				selected = uip.get_selected()
+				if uip.activatedfun is not None:
+					retval = uip.activatedfun(uip.stdscr, unique_match, kind)
+					if retval == Retval.RETURNFULL:
+						return retval
+				uip.force_update()
+				uip.refresh_all()
+				continue
+
+		uip.refresh_selected()
 		if not uip.is_list_regenerated():
 			generate_list_header(uip, headerpad, field_dict, is_taggable = is_taggable)
-			# Output the visible part of the list
-			uip.selected = None
 			for y in range(uip.yoffset, min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
 				item = uip.sorted_list[y]
-				uip.select_if_y(y, item)
 				is_tagged = item in tagged_items
 				is_deleted = getattr(item, "__deleted", False)
 				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged, is_deleted = is_deleted)
@@ -5351,20 +5364,9 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 		uip.refresh_window()
 		uip.refresh_listpad()
 		uip.refresh_statusbar()
+		if first_fetch:
+			win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "checking for data")
 		curses.doupdate()
-
-		unique_match = uip.goto_first_match_by_name_namespace(initial_name, initial_namespace)
-		initial_name = None
-		initial_namespace = None
-		if unique_match is not None:
-			selected = uip.get_selected()
-			if uip.activatedfun is not None:
-				retval = uip.activatedfun(uip.stdscr, unique_match, kind)
-				if retval == Retval.RETURNFULL:
-					return retval
-			uip.force_update()
-			uip.refresh_all()
-			continue
 
 		uip.stdscr.timeout(100)
 		c = uip.stdscr.getch()
@@ -5374,7 +5376,18 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 		if retval == Retval.MATCH:
 			continue
 		if retval == Retval.RETURNONE:
-			return Retval.RETURNDONE
+			try:
+				# This is to get the necessary stack info
+				raise UserWarning
+			except UserWarning:
+				# Calling function; if we're at the top level view we shouldn't return further,
+				# but we should clear selections
+				caller = sys.exc_info()[2].tb_frame.f_back.f_code.co_name
+				if caller in ("setupui",):
+					tagged_items = set()
+					uip.force_refresh()
+				else:
+					return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
 			return retval
 
@@ -5392,6 +5405,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.toggle_borders()
 			uip.refresh_all()
 			uip.force_update()
+			uip.update_window(update = False)
 		elif c == ord("W"):
 			if len(field_indexes) == 0:
 				continue
@@ -5403,17 +5417,18 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			fieldgenerator_args = {
 				"field_index": field_index,
 				"field_indexes": field_indexes,
-				"fields": deep_get(viewref, DictPath(f"fields")),
+				"fields": deep_get(views, DictPath(f"{view}#fields")),
 				"denylist": denylist,
 			}
 			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
 													   selected_namespace = selected_namespace,
 													   **fieldgenerator_args)
-
+			update_field_widths(field_dict, field_names, uip.info)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(width = -1)
 			uip.refresh_all()
 			uip.force_update()
+			uip.update_window(update = False)
 		elif c == curses.KEY_F7:
 			action_title = "Perform cluster-wide actions"
 			action_src_list = listviewactions
@@ -5581,18 +5596,25 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			fieldgenerator_args = {
 				"field_index": field_index,
 				"field_indexes": field_indexes,
-				"fields": deep_get(viewref, DictPath(f"fields")),
+				"fields": deep_get(views, DictPath(f"{view}#fields")),
 				"denylist": denylist,
 			}
 			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
 													   selected_namespace = selected_namespace,
 													   **fieldgenerator_args)
 
-			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
-			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
-
-			# For the status bar; position is always at the bottom of the screen and the entire width of the screen
-			statusbar = uip.init_statusbar()
+			update_field_widths(field_dict, field_names, uip.info)
+			tagged_items.clear()
+			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
+			uip.resize_listpad(width = -1)
+			uip.refresh_all()
+			uip.update_info([])
+			uip.force_update()
+			if ".".join(kind) in executor:
+				executor.update(".".join(kind), namespace = selected_namespace)
+			uip.update_window(update = False)
+			uip.list_needs_regeneration(True)
+			infogetter_extra_vars["_vlist"] = []
 		elif (c == ord("t") or c == ord(" ")) and is_taggable:
 			selected = uip.get_selected()
 
@@ -5644,7 +5666,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 						uip.list_needs_regeneration(True)
 				except re.error:
 					continue
-		elif c == ord("l") and is_taggable and vlist is not None and listlen > 0:
+		elif c == ord("l") and is_taggable and vlist is not None and uip.listlen > 0:
 			# List the union of all labels of the tagged objects (if the objects support labels)
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
@@ -5687,10 +5709,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.list_needs_regeneration(True)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord("f") and is_taggable and vlist is not None and listlen > 0:
+		elif c == ord("f") and is_taggable and vlist is not None and uip.listlen > 0:
 			# List the union of all labels of the tagged objects and create a label selector
 			# from the choices made by the user (if the objects support labels)
-			if len(tagged_items) == 0:
+			if not tagged_items:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
 				uip.list_needs_regeneration(True)
@@ -5702,7 +5724,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			else:
 				itemlist = [ item.name for item in tagged_items ]
 
-			if len(itemlist) == 0:
+			if not itemlist:
 				continue
 
 			for obj in vlist:
@@ -5717,7 +5739,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				for key in labelref:
 					if (key, labelref[key]) not in labels:
 						labels.append((key, labelref[key]))
-			if len(labels) == 0:
+			if not labels:
 				continue
 			for key, value in labels:
 				labellist.append({
@@ -5734,9 +5756,13 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				label_selector = make_selector(selectors)
 				uip.force_update()
 			tagged_items.clear()
+			uip.update_info([])
+			uip.force_update()
+			if ".".join(kind) in executor:
+				executor.update(".".join(kind), label_selector = label_selector)
+			uip.update_window(update = False)
 			uip.list_needs_regeneration(True)
-			uip.refresh_all()
-			curses.doupdate()
+			infogetter_extra_vars["_vlist"] = []
 		elif c == ord("A") and view == "Inventory" and len(tagged_items) == 0:
 			selected = uip.get_selected()
 			groups = ansible_get_groups(ANSIBLE_INVENTORY)
@@ -5782,11 +5808,19 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			curses.doupdate()
 		elif c == ord("F") and is_taggable:
 			# Clear the label selector
-			if len(label_selector) > 0:
+			if label_selector:
 				label_selector = ""
 				uip.force_update()
 				uip.refresh_all()
 				curses.doupdate()
+				tagged_items.clear()
+				uip.update_info([])
+				uip.force_update()
+				if ".".join(kind) in executor:
+					executor.update(".".join(kind), label_selector = label_selector)
+				uip.update_window(update = False)
+				uip.list_needs_regeneration(True)
+				infogetter_extra_vars["_vlist"] = []
 		elif c == ord("L") and is_taggable:
 			# List tagged items
 			taggeditemlist = []
@@ -5802,7 +5836,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord(";") and is_taggable and listlen > 0:
+		elif c == ord(";") and is_taggable and uip.listlen > 0:
 			cluster_available = True
 			items = []
 			autoitem = False
@@ -5834,8 +5868,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				uip.list_needs_regeneration(True)
 				continue
 
-			action_title = deep_get(viewref, DictPath("actions#title"), "Perform action on tagged items")
-			tmp_action_src_list = deep_get(viewref, DictPath("actions#actionlist"), {})
+			action_title = deep_get(views, DictPath(f"{view}#actions#title"), "Perform action on tagged items")
+			tmp_action_src_list = deep_get(views, DictPath(f"{view}#actions#actionlist"), {})
 
 			action_src_list = {
 			}
@@ -5848,12 +5882,12 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					action_src_list[action] = tmp_action_src_list[action]
 
 			# Populate the list of actions
-			action_context = deep_get(viewref, DictPath("actions#actionlist#context"), None)
+			action_context = deep_get(views, DictPath(f"{view}#actions#actionlist#context"), None)
 			actions, actionlist = populate_actionlist(context = action_context, action_list = action_src_list, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
 			# If there are playbook actions, add those too
-			if len(deep_get(viewref, DictPath("actions#playbooklist"), {})) > 0:
-				playbook_context = deep_get(viewref, DictPath("actions#playbooklist#context"), None)
+			if len(deep_get(views, DictPath(f"{view}#actions#playbooklist"), {})) > 0:
+				playbook_context = deep_get(views, DictPath(f"{view}#actions#playbooklist#context"), None)
 				actions, actionlist = populate_playbooklist(context = playbook_context, actions = [], action_list = actionlist, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
 			if len(actions) == 0:
@@ -5993,10 +6027,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			tagged_items.clear()
 			uip.list_needs_regeneration(True)
 
-		shortcuts = deep_get(viewref, DictPath("shortcuts"), {})
+		shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
 
 		# Always include the shortcut for YAML dump, unless overridden
-		if deep_get(viewref, DictPath("shortcuts#View YAML dump")) is None:
+		if deep_get(views, DictPath(f"{view}#shortcuts#View YAML dump")) is None:
 			shortcuts["View YAML dump of resource"] = {
 				"shortcut": ord("y"),
 				"read_only": True,
@@ -6012,7 +6046,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				"force_refresh": True,
 			}
 		# Always include the shortcut for edit resource, unless overridden
-		if deep_get(viewref, DictPath("shortcuts#Edit resource")) is None:
+		if deep_get(views, DictPath(f"{view}#shortcuts#Edit resource")) is None:
 			shortcuts["Edit resource"] = {
 				"shortcut": ord("e"),
 				"read_only": False,
@@ -6397,6 +6431,8 @@ def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup
 def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
 	kind = deep_get(kwargs, DictPath("kind"))
 	namespace = deep_get(kwargs, DictPath("namespace"), "")
+	label_selector = deep_get(kwargs, DictPath("label_selector"), "")
+	field_selector = deep_get(kwargs, DictPath("field_selector"), "")
 	fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
 	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
 	sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
@@ -6404,7 +6440,7 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 	limit = deep_get(fetch_args, DictPath("limit"))
 	extra_data = []
 
-	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector)
 	if len(sort_key) > 0:
 		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
 	if postprocess == "node":
@@ -6414,7 +6450,7 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 		vlist = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
 		extra_data = [s.status_group for s in vlist]
 	else:
-		extra_data = _status
+		extra_data = status
 	if limit is not None:
 		vlist = vlist[:limit]
 	return vlist, extra_data
@@ -7899,6 +7935,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	wrap_lines = False
 	raw_output = False
 
+	first_fetch = True
+
 	while True:
 		# Output listpad if we have one
 		if uip.is_update_triggered():
@@ -8005,11 +8043,22 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if "_pass_obj" in listgetter_args:
 					listgetter_args["_obj"] = obj
 
+
 				# pylint: disable-next=comparison-with-callable
 				if listgetter == generic_listgetter:
+					uip.refresh_window()
+					uip.refresh_statusbar()
+					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Fetching data")
+					curses.doupdate()
 					vlist, status = listgetter(**listgetter_args)
+					first_fetch = False
 				else:
+					uip.refresh_window()
+					uip.refresh_statusbar()
+					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Fetching data")
+					curses.doupdate()
 					vlist, status = listgetter(obj, **listgetter_args)
+					first_fetch = False
 
 				infogetter = deep_get(viewref, DictPath("listpad#infogetter"))
 				infogetter_filters = deep_get(viewref, DictPath("listpad#infogetter_filters"), None)
@@ -11773,6 +11822,7 @@ listgetter_allowlist = {
 # Asynchronous listgetters acceptable for direct use in view files
 listgetter_async_allowlist = {
 	# Used by listpad
+	"get_kubernetes_list_async": get_kubernetes_list_async,
 	"get_context_list": get_context_list,
 	"get_inventory_list": get_inventory_list,
 }
