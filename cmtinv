@@ -761,6 +761,12 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	return 0
 
 def populate_playbooks() -> Dict:
+	"""
+	Populate the list of playbooks runnable from the command line
+
+		Returns:
+			(dict): The dict of playbooks
+	"""
 	playbook_dirs = []
 	playbooks = {}
 
@@ -871,8 +877,6 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# ssv = Space-separated values
 	# tsv = Tab-separated values
 	output_format = "default"
-
-	include_groupvars = False
 
 	for opt, optarg in options:
 		if opt == "--color":

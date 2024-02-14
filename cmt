@@ -49,7 +49,6 @@ from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameS
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VERSION_CACHE_DIR, VIEW_DIR
 from cmtvalidators import validate_fqdn, validator_bool
 
-import commandparser
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
@@ -153,7 +152,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		sys.exit(errno.ENOENT)
 
 	# Split the version tuple
-	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
@@ -463,7 +462,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -531,7 +530,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -603,7 +602,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -671,7 +670,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -762,7 +761,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -846,7 +845,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1021,7 +1020,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1072,6 +1071,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString("RKE2", "argument"),
 				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
+
+	selection = []
 
 	if from_file:
 		hostfile = args[0]
@@ -1461,7 +1462,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1620,7 +1621,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1755,7 +1756,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1835,7 +1836,7 @@ def get_contexts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1914,7 +1915,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1970,7 +1971,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
