@@ -13,7 +13,6 @@ from functools import partial
 from getpass import getuser
 import os
 from pathlib import Path, PurePath
-import re
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys

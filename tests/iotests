@@ -873,7 +873,7 @@ testcases = {
 		"expect": [SecurityStatus.PARENT_PERMISSIONS],
 	},
 	"Owner not in allowlist": {
-		"path": FilePath(f"/etc/passwd"),
+		"path": FilePath("/etc/passwd"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -889,7 +889,7 @@ testcases = {
 		"expect": [SecurityStatus.OWNER_NOT_IN_ALLOWLIST],
 	},
 	"Parent owner not in allowlist": {
-		"path": FilePath(f"/etc/passwd"),
+		"path": FilePath("/etc/passwd"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -905,7 +905,7 @@ testcases = {
 		"expect": [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST],
 	},
 	"File not readable": {
-		"path": FilePath(f"/etc/shadow"),
+		"path": FilePath("/etc/shadow"),
 		"test": test_check_path,
 		"checks": [
 			SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -986,14 +986,14 @@ testcases = {
 		"expect": "string",
 	},
 	"Non-readable path, directory_is_symlinked = True": {
-		"path": FilePath(f"/var/lib/private/foobar"),
+		"path": FilePath("/var/lib/private/foobar"),
 		"test": test_secure_read_string,
 		"directory_is_symlink": True,
 		"checks": None,
 		"expect": FilePathAuditError,
 	},
 	"Readable path, directory_is_symlinked = True": {
-		"path": FilePath(f"/var/lib/private/foobar"),
+		"path": FilePath("/var/lib/private/foobar"),
 		"test": test_secure_read_string,
 		"directory_is_symlink": True,
 		"checks": None,

@@ -81,7 +81,7 @@ from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_wo
 import curses_helper
 import cmtlib
 from cmtlib import clamp, disksize_to_human, get_package_versions, identify_k8s_distro, make_set_expression_list
-from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since
+from cmtlib import none_timestamp, timestamp_to_datetime, get_since
 from cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
 from cmtlib import normalise_cpu_usage_to_millicores, normalise_mem_to_bytes, normalise_mem_bytes_to_str
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
@@ -7678,7 +7678,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	fieldgenerator_args = {
 		"field_index": field_index,
 		"field_indexes": field_indexes,
-		"fields": deep_get(viewref, DictPath(f"fields")),
+		"fields": deep_get(viewref, DictPath("fields")),
 		"denylist": field_denylist,
 	}
 	field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
@@ -8382,7 +8382,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			fieldgenerator_args = {
 				"field_index": field_index,
 				"field_indexes": field_indexes,
-				"fields": deep_get(viewref, DictPath(f"fields")),
+				"fields": deep_get(viewref, DictPath("fields")),
 				"denylist": [],
 			}
 			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,

@@ -27,7 +27,7 @@ from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, ProgrammingError
+from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, ProgrammingError
 
 ansible_results: Dict = {}
 
@@ -72,8 +72,8 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 
 	if not isinstance(playbook, str):
 		raise TypeError(f"playbook is type: {type(playbook)}, expected str")
-	if len(playbook) == 0:
-		raise ValueError(f"len(playbook) == 0; expected a filename")
+	if not playbook:
+		raise ValueError("len(playbook) == 0; expected a filename")
 
 	# Check if there's a local playbook overriding this one
 	local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
@@ -90,7 +90,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 		if Path(f"{playbook_path}/{playbook}").is_file():
 			path = f"{playbook_path}/{playbook}"
 			break
-	if len(path) == 0:
+	if not path:
 		path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
 	return FilePath(path)
 
@@ -157,7 +157,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 		d = secure_read_yaml(playbookpath, checks = checks)
 		description = [ANSIThemeString(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
 
-		if description is None or len(description) == 0:
+		if description is None or not description:
 			description = [ANSIThemeString("Running “", "play"),
 				       ANSIThemeString(playbookname, "programname"),
 				       ANSIThemeString("“", "play")]
@@ -179,8 +179,8 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 	if not isinstance(playbooks, list):
 		raise TypeError(f"playbooks is type: {type(playbooks)}, expected: {list}")
 
-	if len(playbooks) == 0:
-		raise ValueError(f"playbooks is empty")
+	if not playbooks:
+		raise ValueError("playbooks is empty")
 
 	if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2 and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
 		raise TypeError(f"playbooks[] is wrong type; expected: [([{ANSIThemeString}], {FilePath})]")
@@ -210,7 +210,7 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 			        ANSIThemeString(")", "default")])
 		# None of our playbooks have more than one play per file
 		summary = deep_get(playbook_data[0], DictPath("vars#metadata#summary"), {})
-		if len(summary) == 0:
+		if not summary:
 			ansithemeprint([ANSIThemeString("      Error", "error"),
 					ANSIThemeString(": playbook lacks a summary; please file a bug report if this isn't a locally modified playbook!", "default")],
 				       stderr = True)
@@ -273,7 +273,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
 
 	# We want the entire inventory
-	if groups is None or groups == []:
+	if groups is None or not groups:
 		tmp = d
 	else:
 		if not (isinstance(groups, list) and len(groups) > 0 and isinstance(groups[0], str)):
@@ -484,7 +484,7 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], temporary: boo
 
 	changed: bool = False
 
-	if groups is None or len(groups) == 0:
+	if groups is None or not groups:
 		return True
 
 	if not Path(inventory).is_file():
@@ -632,13 +632,13 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 
 	changed = False
 
-	if not (isinstance(inventory, str)
-	        and isinstance(groups, list)
-		and len(groups) > 0 and isinstance(groups[0], str)
-		and isinstance(groupvars, list)
-		and len(groupvars) > 0 and isinstance(groupvars[0], tuple)
-		and len(groupvars[0]) == 2 and isinstance(groupvars[0][0], str) and isinstance(groupvars[0][1], (str, int))
-		and isinstance(temporary, bool)):
+	if not (isinstance(inventory, str) and
+	        isinstance(groups, list) and
+		groups and isinstance(groups[0], str) and
+		isinstance(groupvars, list) and
+		groupvars and isinstance(groupvars[0], tuple) and
+		len(groupvars[0]) == 2 and isinstance(groupvars[0][0], str) and isinstance(groupvars[0][1], (str, int)) and
+		isinstance(temporary, bool)):
 		msg = [
 			[("ansible_set_groupvars()", "emphasis"),
 			 (" called with invalid argument(s):", "error")],
@@ -711,7 +711,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			 (" called with invalid argument(s):", "error")],
 			[("inventory = ", "default"),
 			 (f"“{inventory}“", "argument"),
-			 (f" does not exist.", "argument")],
+			 (" does not exist.", "argument")],
 		]
 
 		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
@@ -758,10 +758,10 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 
 	changed = False
 
-	if hosts is None or len(hosts) == 0:
+	if hosts is None or not hosts:
 		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
 
-	if hostvars is None or hostvars == []:
+	if hostvars is None or not hostvars:
 		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
@@ -802,10 +802,10 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 
 	changed = False
 
-	if groups is None or len(groups) == 0:
+	if groups is None or not groups:
 		raise ValueError("ansible_set_vars: groups is empty or groups; this is a programming error")
 
-	if groupvars is None or groupvars == []:
+	if groupvars is None or not groupvars:
 		raise ValueError("ansible_set_vars: groupvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
@@ -831,7 +831,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 
 		# If the group no longer has any vars set,
 		# remove vars
-		if len(d[group]["vars"]) == 0:
+		if not d[group]["vars"]:
 			d[group].pop("vars", None)
 
 	if changed:
@@ -854,10 +854,10 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 
 	changed = False
 
-	if hosts is None or len(hosts) == 0:
+	if hosts is None or not hosts:
 		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
 
-	if hostvars is None or hostvars == []:
+	if hostvars is None or not hostvars:
 		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
 
 	if not Path(inventory).is_file():
@@ -878,7 +878,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 			d["all"]["hosts"][host].pop(key, None)
 			changed = True
 
-		if len(d["all"]["hosts"][host]) == 0:
+		if not d["all"]["hosts"][host]:
 			d["all"]["hosts"][host] = None
 
 	if changed:
@@ -901,7 +901,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 
 	changed = False
 
-	if hosts == []:
+	if not hosts:
 		return True
 
 	d: Dict = {}
