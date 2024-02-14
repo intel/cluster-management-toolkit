@@ -11,6 +11,7 @@ Kubernetes helpers used by CMT
 # pylint: disable=line-too-long
 
 import base64
+import copy
 import hashlib
 # ujson is much faster than json,
 # but it might not be available
@@ -3584,7 +3585,7 @@ class KubernetesResourceCache:
 			self.resource_cache[kind]["resource_version"] = int(resource_version)
 			self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
 			updated = True
-		elif deep_get(resource_cache[kind], DictPath("uid#metadata#resourceVersion"), "0") < int(resource_version):
+		elif deep_get(self.resource_cache[kind], DictPath("uid#metadata#resourceVersion"), "0") < int(resource_version):
 			# Only update if the new version has a resource version strictly higher than the old version
 			self.resource_cache[kind]["resource_version"] = int(resource_version)
 			self.resource_cache[kind].pop(uid, None)
@@ -3628,7 +3629,7 @@ class KubernetesResourceCache:
 		"""
 		if self.resource_cache is None:
 			return []
-		return deep_get(list(resource_cache.keys()))
+		return list(self.resource_cache.keys())
 
 	def __len__(self) -> int:
 		"""

@@ -18,7 +18,7 @@ from ansithemeprint import ANSIThemeString
 from curses_helper import color_status_group, themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString, get_theme_ref
 import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup, LogLevel, ProgrammingError
 import datagetter as datagetters
 
 def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeString]]:
@@ -1324,7 +1324,23 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Dict) -> T
 		elif field in builtin_fields:
 			field_dict[field] = deep_get(builtin_fields, DictPath(field), {})
 		else:
-			sys.exit(f"View {view}: field “{field}“ cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
+			msg = [
+				[("fieldgenerator()", "emphasis"),
+				 (" called with invalid argument(s):" "error")],
+				[("View ", "default"),
+				 (f"{view}", "argument"),
+				 (": field “", "default"),
+				 (f"{field}", "argument"),
+				 ("“ cannot be found in view or builtin_fields", "default")],
+				[(f"View fields: {fields}", "default")],
+				[(f"field_names: {field_names}", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       formatted_msg = formatted_msg)
 
 	tmp_fields = {}
 

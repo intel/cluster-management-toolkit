@@ -186,7 +186,7 @@ def normalise_mem_to_bytes(mem_usage: str) -> int:
 	}
 
 	if not isinstance(mem_usage, (int, str)):
-		raise TypeError(f"mem_usage must be an integer-string (optionally with a valid unit) or int")
+		raise TypeError("mem_usage must be an integer-string (optionally with a valid unit) or int")
 
 	if isinstance(mem_usage, int) or isinstance(mem_usage, str) and mem_usage.isnumeric():
 		mem = int(mem_usage)

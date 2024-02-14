@@ -1507,7 +1507,7 @@ def custom_override_severity(message: Union[str, List], severity: Optional[LogLe
 		else:
 			msg = [
 				[("Unknown override_type “", "error"),
-				 (f"{overide_type}", "argument"),
+				 (f"{override_type}", "argument"),
 				 ("“")]
 			]
 
