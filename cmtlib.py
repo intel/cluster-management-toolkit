@@ -656,7 +656,7 @@ def make_set_expression_list(expression_list: List[Dict], key: str = "") -> List
 			if not isinstance(tmp, list):
 				raise TypeError("values must be a list")
 
-			if requires_values == "0" and len(tmp) != 0 and len(max(tmp, key = len)) > 0:
+			if requires_values == "0" and tmp and len(max(tmp, key = len)):
 				# Exists and DoesNotExist do no accept values;
 				# for the sake of convenience we still accept empty values
 				raise ValueError(f"operator {operator} does not accept values; values {tmp}")

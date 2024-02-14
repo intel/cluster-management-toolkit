@@ -311,7 +311,8 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 					for host in tmp[group]["hosts"]:
 						tmp[group]["hosts"][host] = None
 
-	dump: List[Union[List[ANSIThemeString], str]] = yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", '').replace("null", "").replace("{}", "").splitlines()
+	dump: List[Union[List[ANSIThemeString], str]] = \
+		yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines()
 
 	if highlight and len(dump) > 0:
 		i = 0
@@ -319,7 +320,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 		key_value_regex = re.compile(r"^(.*?)(:)(.*)")
 		for i, data in enumerate(dump):
 			# Is it a list?
-			tmp2 = list_regex.match(dump[i])
+			tmp2 = list_regex.match(data)
 			if tmp2 is not None:
 				indent = tmp2[1]
 				listmarker = tmp2[2]
@@ -330,7 +331,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				continue
 
 			# Is it key: value?
-			tmp2 = key_value_regex.match(dump[i])
+			tmp2 = key_value_regex.match(data)
 			if tmp2 is not None:
 				key = tmp2[1]
 				separator = tmp2[2]
@@ -433,8 +434,6 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, tem
 	if not isinstance(overwrite, bool):
 		raise TypeError(f"inventory is type: {type(overwrite)}, expected bool")
 
-	disable_strict_host_key_checking = deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)
-
 	# Do not create anything if the inventory exists;
 	# unless overwrite is set
 	if Path(inventory).exists() and not overwrite:
@@ -461,7 +460,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, tem
 	if (ansible_password := deep_get(ansible_configuration, DictPath("ansible_password"))) is not None:
 		deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_password, create_path = True)
 
-	if (disable_strict_host_key_checking := deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False)):
+	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False):
 		deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path = True)
 
 	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, temporary = temporary)

@@ -1343,9 +1343,10 @@ def check_file_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: 
 
 	usergroup = deep_get(kwargs, DictPath("usergroup"), "")
 
-	abort, issue, critical, error, warning, note = __check_permissions(recommended_directory_permissions, "directory", user, usergroup, critical, error, warning, note)
-
-	abort, issue, critical, error, warning, note = __check_permissions(recommended_file_permissions, "file", user, usergroup, critical, error, warning, note)
+	abort, issue, critical, error, warning, note = \
+		__check_permissions(recommended_directory_permissions, "directory", user, usergroup, critical, error, warning, note)
+	abort, issue, critical, error, warning, note = \
+		__check_permissions(recommended_file_permissions, "file", user, usergroup, critical, error, warning, note)
 
 	if not issue:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])

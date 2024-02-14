@@ -1874,10 +1874,8 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	info = []
 
-	vlist = deep_get(kwargs, DictPath("_vlist"), [])
-
 	# Generate an empty entry
-	if vlist == []:
+	if not (vlist := deep_get(kwargs, DictPath("_vlist"), [])):
 		return []
 
 	field_dict = deep_get(kwargs, DictPath("_field_dict"), {})
@@ -4458,10 +4456,10 @@ def get_node_addresses(name, addresses):
 		else:
 			continue
 
-	if iips == []:
+	if not iips:
 		iips = ["<unset>"]
 		eips = ["<unset>"]
-	if eips == []:
+	if not eips:
 		eips = ["<none>"]
 	if new_name is None:
 		new_name = "<unset>"
@@ -4480,7 +4478,7 @@ def get_node_info(vlist, extra_vars) -> List[Type]:
 	"""
 	info: List[Type] = []
 
-	if vlist == []:
+	if not vlist:
 		return []
 
 	for obj in vlist:
@@ -4810,13 +4808,12 @@ def get_pod_info(**kwargs) -> List[Type]:
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
-	vlist = deep_get(kwargs, DictPath("_vlist"))
 	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
 	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
 	filters = deep_get(kwargs, DictPath("filters"), [])
 	info: List[Type] = []
 
-	if vlist == []:
+	if not (vlist := deep_get(kwargs, DictPath("_vlist"))):
 		return []
 
 	for obj in vlist:
@@ -9308,7 +9305,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			# This is needed in case we get a resize event or toggle borders
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			new_date = False
-			if timestamps is not None and len(timestamps) > 0:
+			if timestamps is not None and timestamps:
 				current_datestamp = str(timestamps[0])[0:len("YYYY-MM-DD")]
 				new_date = True
 			yadd = 0
@@ -9402,7 +9399,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					else:
 						_severity_str = f"{_prefix}{_severity_str.lower()}{_suffix}"
 
-					if len(timestamp.strip()) != 0 or y >= len(timestamps):
+					if timestamp.strip() or y >= len(timestamps):
 						msgstrarray.append(ThemeString(f"{_severity_str}", color_log_severity(severity)))
 					else:
 						msgstrarray.append(ThemeString("".ljust(len(f"{_severity_str}")), color_log_severity(severity)))
