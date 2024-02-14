@@ -3629,6 +3629,12 @@ def get_pod_resource_list(obj, **kwargs):
 
 	pod_name = deep_get(obj, DictPath("metadata#name"))
 	pod_namespace = deep_get(obj, DictPath("metadata#namespace"))
+	app_selector = f"app={deep_get(obj, DictPath('metadata#labels#apps'))}"
+	# We'll be one-shotting all of these, so we won't use reexecutor
+	executor_ = concurrent.futures.ThreadPoolExecutor()
+	executors = {}
+
+	filter_resources = deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), [])
 
 	container_resources = []
 	if init_containers:
@@ -3667,7 +3673,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": age,
 		})
 
-	if "node" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if "node" not in filter_resources:
 		kind = ("Node", "")
 		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, DictPath("spec#nodeName"))
@@ -3713,15 +3719,15 @@ def get_pod_resource_list(obj, **kwargs):
 		if is_controller:
 			controller_name = owr_name
 			controller_kind = owr_kind[0]
-			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "controller" in filter_resources:
 				continue
 			rtype = "[controller]"
 		elif owr_kind == ("CronJob", "batch"):
-			if "cronjob" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "cronjob" in filter_resources:
 				continue
 			rtype = "[cronjob]"
 		else:
-			if "owner_reference" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "owner_reference" in filter_resources:
 				continue
 			rtype = "[owner_reference]"
 
@@ -3762,7 +3768,49 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
-	if "persistent_volume_claim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if controller_kind == "Node":
+		trivy_kind = "Pod"
+		trivy_name = pod_name
+	else:
+		trivy_kind = controller_kind
+		trivy_name = controller_name
+	selector_dict = {
+		"trivy-operator.resource.kind": trivy_kind,
+		"trivy-operator.resource.name": trivy_name,
+	}
+	trivy_selector = make_selector(selector_dict)
+
+	# OK, we have the controller kind (and thus trivy_selector); time to fire off the requests for lists
+	for resource, kwargs in (("event",
+				  {"kind": ("Event", ""), "namespace": pod_namespace, "field_selector": make_selector({"involvedObject.name": pod_name, "involvedObject.namespace": pod_namespace})}),
+				 ("pod_disruption_budget",
+				  {"kind": ("PodDisruptionBudget", "policy"), "namespace": pod_namespace}),
+				 ("pod_metrics",
+				  {"kind": ("PodMetrics", "metrics.k8s.io")}),
+				 ("config_audit_report",
+				  {"kind": ("ConfigAuditReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("infra_assessment_report",
+				  {"kind": ("InfraAssessmentReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("vulnerability_report",
+				  {"kind": ("VulnerabilityReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("exposed_secret_report",
+				  {"kind": ("ExposedSecretReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("sbom_report",
+				  {"kind": ("SbomReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("antrea_agent",
+				  {"kind": ("AntreaAgentInfo", "crd.antrea.io")}),
+				 ("antrea_controller",
+				  {"kind": ("AntreaControllerInfo", "crd.antrea.io")}),
+				 ("service",
+				  {"kind": ("Service", ""), "namespace": pod_namespace}),
+				 ("resourceclaim",
+				  {"kind": ("ResourceClaim", "resource.k8s.io"), "namespace": pod_namespace}),
+				):
+		kind = deep_get(kwargs, DictPath("kind"))
+		if resource not in filter_resources and kh.is_kind_available(kind):
+			executors[kind] = executor_.submit(get_kubernetes_list_async, **kwargs)
+
+	if "persistent_volume_claim" not in filter_resources:
 		for volume in deep_get(obj, DictPath("spec#volumes"), []):
 			if deep_get(volume, DictPath("persistentVolumeClaim")) is None:
 				continue
@@ -3794,7 +3842,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service_account" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
+	if "service_account" not in filter_resources and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -3818,7 +3866,7 @@ def get_pod_resource_list(obj, **kwargs):
 	for vol in deep_get(obj, DictPath("spec#volumes"), []):
 		status = ""
 
-		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		if deep_get(vol, DictPath("secret")) is not None and "secret" not in filter_resources:
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
@@ -3844,7 +3892,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in filter_resources:
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, DictPath("configMap#name"))
@@ -3873,8 +3921,8 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
-		if "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if "secret" not in filter_resources:
+		for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
@@ -3894,17 +3942,80 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "event" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		#kind = ("Event", "events.k8s.io")
-		kind = ("Event", "")
+	if "pod_metrics" not in filter_resources:
+		kind = ("PodMetrics", "metrics.k8s.io")
+		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if podmetrics is not None:
+			ref = podmetrics
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", pod_name)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	if "cilium_endpoint" not in filter_resources:
+		# Check if there's a matching cilium endpoint
+		kind = ("CiliumEndpoint", "cilium.io")
+		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", pod_name)
+			status = deep_get(ref, DictPath("status#state"), "Unknown")
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status.capitalize(),
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	if "runtimeclass" not in filter_resources:
+		kind = ("RuntimeClass", "node.k8s.io")
+		name = deep_get(obj, DictPath("spec#runtimeClassName"))
+		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", name)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	for kind, ex in executors.items():
+		vlist_, status_ = ex.result()
+		# We ignore failures
+		if status_ != 200 or not vlist_:
+			continue
 		rtype = resource_kind_to_rtype(kind)
 
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		tmp_vlist = []
-		for event in _vlist:
-			event_involved_object_name = deep_get_with_fallback(event, [DictPath("regarding#name"), DictPath("involvedObject#name")])
-			event_involved_object_namespace = deep_get_with_fallback(event, [DictPath("regarding#namespace"), DictPath("involvedObject#namespace")])
-			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
+		if kind == ("Event", ""):
+			tmp_vlist = []
+			for event in vlist_:
 				ref = event
 				# For kind we do not want the api_family
 				event_name = deep_get(event, DictPath("metadata#name"))
@@ -3933,20 +4044,21 @@ def get_pod_resource_list(obj, **kwargs):
 					"message": message,
 					"age": seen,
 				})
-		for event in natsorted(tmp_vlist, key = itemgetter("age")):
-			vlist.append(event)
+			for event in natsorted(tmp_vlist, key = itemgetter("age")):
+				vlist.append(event)
+			continue
 
-	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
-		if "app" in deep_get(obj, DictPath("metadata#labels"), {}):
-			kind = ("PodDisruptionBudget", "policy")
-			_vlist, status = kh.get_list_by_kind_namespace(kind, "", label_selector = f"app={deep_get(obj, DictPath('metadata#labels'))['app']}")
-			for pdb in _vlist:
-				rtype = resource_kind_to_rtype(kind)
+		if kind == ("PodDisruptionBudget", "policy"):
+			for pdb in vlist_:
 				pdb_name = deep_get(pdb, DictPath("metadata#name"))
 				pdb_namespace = deep_get(pdb, DictPath("metadata#namespace"))
+				pdb_selector = deep_get(pdb, DictPath("spec#selector#matchLabels"))
+				obj_labels = deep_get(obj, DictPath("metadata#labels"), {})
+				# If the selector matches we're happy
+				if pdb_selector.items() & obj_labels.items() != pdb_selector.items():
+					continue
 				resource_tuple = ("", "", pdb_name)
-				ref = kh.get_ref_by_kind_name_namespace(kind, pdb_name, pdb_namespace)
+				ref = pdb
 				vlist.append({
 					"ref": ref,
 					"namespace": pdb_namespace,
@@ -3960,51 +4072,15 @@ def get_pod_resource_list(obj, **kwargs):
 					"message": "",
 					"age": -1,
 				})
+			continue
 
-	if "pod_metrics" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("PodMetrics", "metrics.k8s.io")
-		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
-		if podmetrics is not None:
-			ref = podmetrics
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", pod_name)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": pod_name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": "",
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
+		if kind == ("ConfigAuditReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-	if "config_audit_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ConfigAuditReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
-
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4047,30 +4123,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "infra_assessment_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("InfraAssessmentReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("InfraAssessmentReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4113,30 +4174,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "vulnerability_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("VulnerabilityReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("VulnerabilityReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4183,30 +4229,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "exposed_secret_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ExposedSecretReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("ExposedSecretReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4249,30 +4280,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "sbom_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("SbomReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("SbomReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			message = ""
@@ -4295,162 +4311,87 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "antrea_agent" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
-		kind = ("AntreaAgentInfo", "crd.antrea.io")
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in _vlist:
-			if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				status = "Unknown"
-				for condition in deep_get(item, DictPath("agentConditions"), {}):
-					if deep_get(condition, DictPath("type")) == "AgentHealthy":
-						healthy = deep_get(condition, DictPath("status"), "Unknown")
-						if healthy == "True":
-							status = "Healthy"
-						elif healthy == "False":
-							status = "Unhealthy"
-				rtype = resource_kind_to_rtype(kind)
-				resource_tuple = ("", "", name)
-
-				vlist.append({
-					"ref": ref,
-					"namespace": pod_namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": status,
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-				break
-
-	if "antrea_controller" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
-		# OK, this pod is an antrea-agent, so we should look for one that matches it
-		kind = ("AntreaControllerInfo", "crd.antrea.io")
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in _vlist:
-			if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				status = "Unknown"
-				for condition in deep_get(item, DictPath("controllerConditions"), {}):
-					if deep_get(condition, DictPath("type")) == "ControllerHealthy":
-						healthy = deep_get(condition, DictPath("status"), "Unknown")
-						if healthy == "True":
-							status = "Healthy"
-						elif healthy == "False":
-							status = "Unhealthy"
-				rtype = resource_kind_to_rtype(kind)
-				resource_tuple = ("", "", name)
-				vlist.append({
-					"ref": ref,
-					"namespace": pod_namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": status,
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-				break
-
-	if "cilium_endpoint" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# Check if there's a matching cilium endpoint
-		kind = ("CiliumEndpoint", "cilium.io")
-		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
-		if ref is not None:
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", pod_name)
-			status = deep_get(ref, DictPath("status#state"), "Unknown")
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": pod_name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": status.capitalize(),
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
-
-	if "service" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# Find service(s) that has a selector that points to this pod
-		kind = ("Service", "")
-		rtype = resource_kind_to_rtype(kind)
-		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		for item in _vlist:
-			selector = deep_get(item, DictPath("spec#selector"), {})
-			if len(selector) == 0:
-				continue
-			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
-			if len(_vlist2) > 0:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				namespace = deep_get(item, DictPath("metadata#namespace"))
-				resource_tuple = ("", "", name)
-				vlist.append({
-					"ref": ref,
-					"namespace": namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": "",
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-
-	if "runtimeclass" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("RuntimeClass", "node.k8s.io")
-		name = deep_get(obj, DictPath("spec#runtimeClassName"))
-		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
-		if ref is not None:
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", name)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": "",
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
-
-	if "resourceclaim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ResourceClaim", "resource.k8s.io")
-		rtype = resource_kind_to_rtype(kind)
-
-		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		for item in _vlist:
-			owr = deep_get(item, DictPath("metadata#ownerReferences"), [])
-			for owner_reference in owr:
-				if deep_get(owner_reference, DictPath("controller"), False) and \
-				   deep_get(owner_reference, DictPath("kind"), "") == "Pod" and \
-				   deep_get(owner_reference, DictPath("name"), "") == pod_name:
+		if kind == ("AntreaAgentInfo", "crd.antrea.io"):
+			for item in vlist_:
+				if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
+					ref = item
 					name = deep_get(item, DictPath("metadata#name"))
+					status = "Unknown"
+					for condition in deep_get(item, DictPath("agentConditions"), {}):
+						if deep_get(condition, DictPath("type")) == "AgentHealthy":
+							healthy = deep_get(condition, DictPath("status"), "Unknown")
+							if healthy == "True":
+								status = "Healthy"
+							elif healthy == "False":
+								status = "Unhealthy"
+					resource_tuple = ("", "", name)
+
+					vlist.append({
+						"ref": ref,
+						"namespace": pod_namespace,
+						"name": name,
+						"kind": kind[0],
+						"api_group": kind[1],
+						"type": rtype,
+						"resource_tuple": resource_tuple,
+						"status": status,
+						"restarts": "",
+						"message": "",
+						"age": -1,
+					})
+					break
+			continue
+
+		# OK, this pod is an antrea-agent, so we should look for one that matches it
+		if kind == ("AntreaControllerInfo", "crd.antrea.io"):
+			for item in vlist_:
+				if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
+					ref = item
+					name = deep_get(item, DictPath("metadata#name"))
+					status = "Unknown"
+					for condition in deep_get(item, DictPath("controllerConditions"), {}):
+						if deep_get(condition, DictPath("type")) == "ControllerHealthy":
+							healthy = deep_get(condition, DictPath("status"), "Unknown")
+							if healthy == "True":
+								status = "Healthy"
+							elif healthy == "False":
+								status = "Unhealthy"
+					rtype = resource_kind_to_rtype(kind)
 					resource_tuple = ("", "", name)
 					vlist.append({
-						"ref": item,
+						"ref": ref,
 						"namespace": pod_namespace,
+						"name": name,
+						"kind": kind[0],
+						"api_group": kind[1],
+						"type": rtype,
+						"resource_tuple": resource_tuple,
+						"status": status,
+						"restarts": "",
+						"message": "",
+						"age": -1,
+					})
+					break
+			continue
+
+		# Find service(s) that has a selector that points to this pod
+		if kind == ("Service", ""):
+			for item in vlist_:
+				selector = deep_get(item, DictPath("spec#selector"), {})
+				if len(selector) == 0:
+					continue
+				_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
+				if len(_vlist2) > 0:
+					ref = item
+					name = deep_get(item, DictPath("metadata#name"))
+					namespace = deep_get(item, DictPath("metadata#namespace"))
+					resource_tuple = ("", "", name)
+					vlist.append({
+						"ref": ref,
+						"namespace": namespace,
 						"name": name,
 						"kind": kind[0],
 						"api_group": kind[1],
@@ -4461,6 +4402,31 @@ def get_pod_resource_list(obj, **kwargs):
 						"message": "",
 						"age": -1,
 					})
+			continue
+
+		if kind == ("ResourceClaim", "resource.k8s.io"):
+			for item in vlist_:
+				owr = deep_get(item, DictPath("metadata#ownerReferences"), [])
+				for owner_reference in owr:
+					if deep_get(owner_reference, DictPath("controller"), False) and \
+					   deep_get(owner_reference, DictPath("kind"), "") == "Pod" and \
+					   deep_get(owner_reference, DictPath("name"), "") == pod_name:
+						name = deep_get(item, DictPath("metadata#name"))
+						resource_tuple = ("", "", name)
+						vlist.append({
+							"ref": item,
+							"namespace": pod_namespace,
+							"name": name,
+							"kind": kind[0],
+							"api_group": kind[1],
+							"type": rtype,
+							"resource_tuple": resource_tuple,
+							"status": "",
+							"restarts": "",
+							"message": "",
+							"age": -1,
+						})
+			continue
 
 	return vlist, 200
 
@@ -7997,6 +7963,67 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 			uip.update_window()
 
+			if infopad is not None:
+				y = 0
+				if name_path is not None and len(name_path) > 0:
+					fieldarray: List[Union[ThemeRef, ThemeString]] = [
+						ThemeString("Name:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
+					]
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+					y += 1
+
+				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
+					fieldarray = [
+						ThemeString("N", ThemeAttr("main", "infoheader_shortcut")),
+						ThemeString("amespace:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(namespace_path))}", ThemeAttr("types", "namespace"))
+					]
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+					y += 1
+
+				for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
+					# If there is a header field, this is from a view file; otherwise it is an old-style field
+					fieldarray = []
+					header = deep_get(value, DictPath("header"))
+
+					if header is not None:
+						fieldarray += header
+						# Only add stuff if there's a path
+						if "path" in value or "paths" in value:
+							# Use generic_infogetter for this
+							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
+							_formatter = {key: generators.get_formatter(value)}
+							_generator = deep_get(_formatter, DictPath(f"{key}#generator"))
+							if _generator is not None:
+								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
+								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
+								fieldarray += [ThemeString(" ", ThemeAttr("types", "generic"))]
+								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
+						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+
+						y += 1
+						continue
+
+				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
+					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
+
+					if timestamp is None:
+						field = [ThemeRef("strings", "unset")]
+					elif isinstance(timestamp, datetime):
+						field = format_timestamp(timestamp)
+					else:
+						timestamp = timestamp_to_datetime(timestamp)
+						field = format_timestamp(timestamp, localtimezone = True)
+					fieldarray = [
+						ThemeString("Created: ", ThemeAttr("main", "infoheader")),
+					]
+					fieldarray += field
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+			uip.refresh_window()
+			uip.refresh_infopad()
+			curses.doupdate()
+
 			if listpad is not None:
 				listgetter = deep_get(viewref, DictPath("listpad#listgetter"))
 				listgetter_args = deep_get(viewref, DictPath("listpad#listgetter_args"), {})
@@ -8130,64 +8157,6 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						messages = tmp
 					uip.update_log_info(timestamps, facilities, severities, messages)
 					uip.loglen = len(messages)
-
-			if infopad is not None:
-				y = 0
-				if name_path is not None and len(name_path) > 0:
-					fieldarray: List[Union[ThemeRef, ThemeString]] = [
-						ThemeString("Name:", ThemeAttr("main", "infoheader")),
-						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
-					]
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-					y += 1
-
-				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
-					fieldarray = [
-						ThemeString("N", ThemeAttr("main", "infoheader_shortcut")),
-						ThemeString("amespace:", ThemeAttr("main", "infoheader")),
-						ThemeString(f" {deep_get(obj, DictPath(namespace_path))}", ThemeAttr("types", "namespace"))
-					]
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-					y += 1
-
-				for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
-					# If there is a header field, this is from a view file; otherwise it is an old-style field
-					fieldarray = []
-					header = deep_get(value, DictPath("header"))
-
-					if header is not None:
-						fieldarray += header
-						# Only add stuff if there's a path
-						if "path" in value or "paths" in value:
-							# Use generic_infogetter for this
-							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
-							_formatter = {key: generators.get_formatter(value)}
-							_generator = deep_get(_formatter, DictPath(f"{key}#generator"))
-							if _generator is not None:
-								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
-								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
-								fieldarray += [ThemeString(" ", ThemeAttr("types", "generic"))]
-								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
-						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-
-						y += 1
-						continue
-
-				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
-					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
-
-					if timestamp is None:
-						field = [ThemeRef("strings", "unset")]
-					elif isinstance(timestamp, datetime):
-						field = format_timestamp(timestamp)
-					else:
-						timestamp = timestamp_to_datetime(timestamp)
-						field = format_timestamp(timestamp, localtimezone = True)
-					fieldarray = [
-						ThemeString("Created: ", ThemeAttr("main", "infoheader")),
-					]
-					fieldarray += field
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
 
 		# Output listpad if we have one
 		remember_uid = uip.remember_uid
@@ -9084,7 +9053,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
-				timestamps, facilities, severities, messages =\
+				timestamps, facilities, severities, messages = \
 					log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity,
 						     [ThemeString("[previous message repeated ", color_log_severity(prev_severity)),
 						      ThemeString(f"{repeat_count}", ThemeAttr("logview", "repeat_count")),
@@ -10258,24 +10227,25 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	kind = ("Namespace", "")
 	namespace = deep_get(obj, DictPath("metadata#name"))
 
-	executor = concurrent.futures.ThreadPoolExecutor()
+	# We'll be one-shotting all of these, so we won't use reexecutor
+	executor_ = concurrent.futures.ThreadPoolExecutor()
 	executors = {}
 	for kind in namespaced_resources:
 		joined_kind = ".".join(kind)
-		executors[kind] = executor.submit(get_kubernetes_list_async, kind = kind, namespace = namespace)
+		executors[kind] = executor_.submit(get_kubernetes_list_async, kind = kind, namespace = namespace)
 	for kind, ex in executors.items():
-		_vlist, _status = ex.result()
-		if _status != 200:
-			status = _status
+		vlist_, status_ = ex.result()
+		if status != 200:
+			status = status_
 			continue
-		if len(_vlist) == 0:
+		if not vlist_:
 			continue
 		# We are (potentially) listing a lot of different types of resources,
 		# and they do not contain kind/apiVersion, so it will be tricky to tell them apart...
-		for obj in _vlist:
+		for obj in vlist_:
 			obj["__kind_tuple"] = kind
-		vlist += _vlist
-	executor.shutdown()
+		vlist += vlist_
+	executor_.shutdown()
 	return vlist, status
 
 # Iterate over the list of items and execute command on all of them

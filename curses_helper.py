@@ -2205,6 +2205,8 @@ class UIProps:
 		# The timestamp
 		self.last_timestamp_update = None
 
+		self.idle_timeout = 5
+
 		# Info to use for populating lists, etc.
 		self.sorted_list: List[Type] = []
 		self.sortorder_reverse = False
@@ -2334,7 +2336,7 @@ class UIProps:
 				self.selected_uid = getattr(self.sorted_list[pos], "__uid")
 			except (AttributeError, IndexError):
 				self.selected_uid = None
-		
+
 	def update_sorted_list(self) -> None:
 		if self.curypos == -1 or self.yoffset == -1:
 			self.curypos = 0
@@ -2437,7 +2439,7 @@ class UIProps:
 		Set last_action far enough back so that the system is considered idle;
 		this should be done when doing a force reload
 		"""
-		self.last_action = datetime.now() + timedelta(seconds = -self.idle_timeout)
+		self.last_action = datetime.now() - timedelta(seconds = self.idle_timeout)
 
 	def is_list_regenerated(self) -> bool:
 		return not self.regenerate_list

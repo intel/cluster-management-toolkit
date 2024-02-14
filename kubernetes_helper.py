@@ -5183,6 +5183,21 @@ class KubernetesHelper:
 		modified = True
 		return kubernetes_resources, status, modified
 
+	def is_kind_available(self, kind: Tuple[str, str]) -> bool:
+		"""
+		Checks whether a kind tuple is available or not
+
+			Parameters:
+				kind ((str, str)): The kind tuple
+			Returns:
+				(bool): True if the kind is available, False if not
+		"""
+		try:
+			available = deep_get(kubernetes_resources[kind], DictPath("available"), False)
+		except NameError:
+			available = False
+		return available
+
 	def get_list_of_namespaced_resources(self) -> List[Tuple[str, str]]:
 		"""
 		Returns a list of all namespaced resources that are available in the cluster
