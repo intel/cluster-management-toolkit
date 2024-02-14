@@ -6084,6 +6084,12 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 preflight_checks = [
 	{
+		"description": "Check whether permissions for .netrc are strict enough",
+		"call": checks.check_netrc_permissions,
+		"preconditions": [
+			"user",
+		],
+	}, {
 		"description": "Check whether the user can sudo without a password on localhost",
 		"call": checks.check_sudo_configuration,
 		"preconditions": [

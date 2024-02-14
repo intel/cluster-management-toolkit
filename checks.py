@@ -28,7 +28,7 @@ from cmttypes import deep_get, DictPath, FilePath
 from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH
+from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH, NETRC_PATH
 import cmtlib
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint
 
@@ -174,6 +174,65 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 					ANSIThemeString(user, "path"),
 					ANSIThemeString(" cannot perform passwordless sudo.\n", "default")], stderr = True)
 			error += 1
+
+	return abort, critical, error, warning, note
+
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
+			    critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+	"""
+	This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
+
+		Parameters:
+			cluster_name (str): The name of the cluster
+			kubeconfig (dict)): The kubeconfig file
+			cmtconfig_dict (dict): The cmtconfig file
+			critical (int): The current count of critical severity security issues
+			error (int): The current count of error severity security issues
+			warning (int): The current count of warning severity security issues
+			note (int): The current count of note severity security issues
+			kwargs (dict): Additional parameters
+		Returns:
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
+	"""
+
+	abort = False
+
+	ansithemeprint([ANSIThemeString("[Checking whether permissions for ", "phase"),
+			ANSIThemeString(".netrc", "path"),
+			ANSIThemeString(" are sufficiently strict on ", "phase"),
+			ANSIThemeString("localhost", "hostname"),
+			ANSIThemeString("]", "phase")])
+
+	path_entry = Path(NETRC_PATH)
+	path_stat = path_entry.stat()
+	path_permissions = path_stat.st_mode & 0o777
+
+	if path_permissions not in (0o600, 0o400):
+		ansithemeprint([ANSIThemeString("  ", "default"),
+				ANSIThemeString(f"Critical", "critical"),
+				ANSIThemeString(":", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString(f"    The permissions for ", "default"),
+				ANSIThemeString(f"{NETRC_PATH}", "path"),
+				ANSIThemeString(" are ", "default"),
+				ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
+				ANSIThemeString(";", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("    the recommended permissions are ", "default"),
+				ANSIThemeString(f"{0o600:03o}", "emphasis"),
+				ANSIThemeString(" (or stricter).", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("  ", "default"),
+				ANSIThemeString("Justification", "emphasis"),
+				ANSIThemeString(": ", "default")], stderr = True)
+		ansithemeprint([ANSIThemeString("    Ansible will refuse to fetch files if the permissions for ", "default"),
+				ANSIThemeString(f"{NETRC_PATH}", "path"),
+				ANSIThemeString(" are not sufficiently strict\n", "default")], stderr = True)
+		critical += 1
+	else:
+		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return abort, critical, error, warning, note
 

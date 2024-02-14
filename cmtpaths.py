@@ -80,6 +80,8 @@ KUBE_CREDENTIALS_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "credentials"))
 SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
 SSH_BIN_PATH = FilePath("/usr/bin/ssh")
 
+NETRC_PATH = FilePath(os.path.join(HOMEDIR, ".netrc"))
+
 # Accepted cryptos
 SSH_ARGS_STRICT_CRYPTOS = \
 	"aes256-gcm@openssh.com," \
