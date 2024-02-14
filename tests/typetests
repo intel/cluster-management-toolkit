@@ -216,7 +216,7 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
 			message = ""
 			for key, value in exception_dict.items():
 				# These are populated by the exception
-				if key in ("message", "exception"):
+				if key in ("message", "exception", "traceback"):
 					continue
 				expected_value = deep_get(expected_data, DictPath(key), "")
 				if value != expected_value:
@@ -264,6 +264,7 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
 	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
 	indata = {
+		"subexception": ValueError,
 		"severity": LogLevel.ERR,
 		"facility": "facility",
 		"formatted_msg": [ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")],
@@ -287,7 +288,7 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
 			message = ""
 			for key, value in exception_dict.items():
 				# These are populated by the exception
-				if key in ("message", "exception"):
+				if key in ("message", "exception", "traceback"):
 					continue
 				expected_value = deep_get(expected_data, DictPath(key), "")
 				if value != expected_value:
@@ -297,8 +298,8 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
 					diff = True
 					result = False
 			try:
-				if (tmp := str(e)) != "message1":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"message1\""
+				if (tmp := str(e)) != "(<class 'ValueError'>): message1":
+					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): message1\""
 					result = False
 			except Exception as e:
 				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
@@ -359,7 +360,7 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
 			message = ""
 			for key, value in exception_dict.items():
 				# These are populated by the exception
-				if key in ("message", "exception"):
+				if key in ("message", "exception", "traceback"):
 					continue
 				expected_value = deep_get(expected_data, DictPath(key), "")
 				if value != expected_value:
