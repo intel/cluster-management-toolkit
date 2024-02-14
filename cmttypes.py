@@ -100,7 +100,8 @@ class UnknownError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
-		self.traceback = ''.join(traceback.format_stack())
+		self.traceback = "".join(traceback.format_stack())
+		return
 
 		super().__init__(message)
 
@@ -202,7 +203,7 @@ class ProgrammingError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
-		self.traceback = ''.join(traceback.format_stack())
+		self.traceback = "".join(traceback.format_stack())
 
 		super().__init__(message)
 
@@ -310,7 +311,7 @@ class FilePathAuditError(Exception):
 			self.ppid = ppid
 		else:
 			self.ppid = os.getppid()
-		self.traceback = ''.join(traceback.format_stack())
+		self.traceback = "".join(traceback.format_stack())
 
 		super().__init__(message)
 
