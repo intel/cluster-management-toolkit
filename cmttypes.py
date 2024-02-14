@@ -19,6 +19,29 @@ from typing import Any, Dict, List, NewType, Optional, Union
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
 
+# Keep this first so we can use it in the exceptions
+def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
+	"""
+	Given a dictionary and a path into that dictionary, get the value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			path (DictPath): A dict path
+			default (Any): The default value to return if the dictionary, path is None, or result is None
+		Returns:
+			result (Any): The value from the path
+	"""
+
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+	if result is None:
+		result = default
+	return result
+
+# pylint: disable-next=too-many-instance-attributes
 class UnknownError(Exception):
 	"""
 	Exception raised when an error occurs that we have no further information about
@@ -39,16 +62,16 @@ class UnknownError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self,
-		     message: str,
-		     severity: Optional[Any] = None,
-		     facility: Optional[str] = None,
-		     formatted_msg: Optional[Any] = None,
-		     timestamp: Optional[datetime] = None,
-		     file: Optional[str] = None,
-		     function: Optional[str] = None,
-		     lineno: Optional[int] = None,
-		     ppid: Optional[int] = None) -> None:
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
+
 		try:
 			# This is to get the necessary stack info
 			raise UserWarning
@@ -118,6 +141,7 @@ class UnknownError(Exception):
 			"traceback": self.traceback,
 		}
 
+# pylint: disable-next=too-many-instance-attributes
 class ProgrammingError(Exception):
 	"""
 	Exception raised when a condition occured that is most likely caused by a programming error
@@ -139,17 +163,16 @@ class ProgrammingError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self,
-		     message: str,
-		     subexception: Exception = None,
-		     severity: Optional[Any] = None,
-		     facility: Optional[str] = None,
-		     formatted_msg: Optional[Any] = None,
-		     timestamp: Optional[datetime] = None,
-		     file: Optional[str] = None,
-		     function: Optional[str] = None,
-		     lineno: Optional[int] = None,
-		     ppid: Optional[int] = None) -> None:
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		subexception: Optional[Exception] = deep_get(kwargs, DictPath("subexception"))
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
 		try:
 			# This is to get the necessary stack info
 			raise UserWarning
@@ -226,6 +249,7 @@ class ProgrammingError(Exception):
 			"traceback": self.traceback,
 		}
 
+# pylint: disable-next=too-many-instance-attributes
 class FilePathAuditError(Exception):
 	"""
 	Exception raised when a security check fails on a FilePath
@@ -247,17 +271,16 @@ class FilePathAuditError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self,
-	             message: str,
-		     path: Optional[FilePath] = None,
-		     severity: Optional[Any] = None,
-		     facility: Optional[str] = None,
-		     formatted_msg: Optional[Any] = None,
-		     timestamp: Optional[datetime] = None,
-		     file: Optional[str] = None,
-		     function: Optional[str] = None,
-		     lineno: Optional[int] = None,
-		     ppid: Optional[int] = None) -> None:
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		path: Optional[FilePath] = deep_get(kwargs, DictPath("path"))
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
 		try:
 			# This is to get the necessary stack info
 			raise UserWarning
@@ -504,47 +527,26 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 	ref = dictionary
 	pathsplit = path.split("#")
 
-	for i in range(0, len(pathsplit)):
+	for i, pathsegment in enumerate(pathsplit):
+		# Note that we're (potentially) updating ref every iteration
 		if ref is None or not isinstance(ref, dict):
 			raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 
-		if pathsplit[i] not in ref or ref[pathsplit[i]] is None:
+		if pathsegment not in ref or ref[pathsegment] is None:
 			if create_path:
-				ref[pathsplit[i]] = {}
+				ref[pathsegment] = {}
 
 		if i == len(pathsplit) - 1:
-			ref[pathsplit[i]] = value
+			ref[pathsegment] = value
 			break
 
-		ref = deep_get(ref, DictPath(pathsplit[i]))
-
-def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
-	"""
-	Given a dictionary and a path into that dictionary, get the value
-
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			path (DictPath): A dict path
-			default (Any): The default value to return if the dictionary, path is None, or result is None
-		Returns:
-			result (Any): The value from the path
-	"""
-
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
-	if result is None:
-		result = default
-	return result
+		ref = deep_get(ref, DictPath(pathsegment))
 
 def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Union[List, None] = None) -> Optional[List[Any]]:
 	if result is None:
 		result = []
 
-	for i in range(0, len(path_fragments)):
-		path_fragment = DictPath(path_fragments[i])
+	for i, path_fragment in enumerate(path_fragments):
 		tmp = deep_get(dictionary, path_fragment)
 		if i + 1 == len(path_fragments):
 			if tmp is None:

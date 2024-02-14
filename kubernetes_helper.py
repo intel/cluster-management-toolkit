@@ -3584,13 +3584,13 @@ class KubernetesResourceCache:
 		if uid not in self.resource_cache[kind]:
 			self.resource_cache[kind]["resource_version"] = int(resource_version)
 			self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
-			updated = True
+			self.updated = True
 		elif deep_get(self.resource_cache[kind], DictPath("uid#metadata#resourceVersion"), "0") < int(resource_version):
 			# Only update if the new version has a resource version strictly higher than the old version
 			self.resource_cache[kind]["resource_version"] = int(resource_version)
 			self.resource_cache[kind].pop(uid, None)
 			self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
-			updated = True
+			self.updated = True
 
 	def update_resources(self, kind: Tuple[str, str], resources: List[Dict]) -> None:
 		"""
@@ -3605,7 +3605,7 @@ class KubernetesResourceCache:
 					       "resources is empty or None")
 
 		for resource in resources:
-			self.update(kind, resource = resource)
+			self.update_resource(kind, resource = resource)
 
 	def get_resources(self, kind: Tuple[str, str]) -> Tuple[List[Dict], str]:
 		"""
@@ -3663,6 +3663,7 @@ class PoolManagerContext:
 	A class for wrapping PoolManager/ProxyManager
 	"""
 
+	# pylint: disable-next=too-many-arguments
 	def __init__(self,
 		     cert_file: Optional[str] = None, key_file: Optional[str] = None, ca_certs_file: Optional[str] = None,
 		     token: Optional[str] = None, insecuretlsskipverify: bool = False) -> None:
@@ -3764,7 +3765,7 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 
 	if not isinstance(kind, (str, tuple)):
 		raise TypeError("kind must be str or (str, str)")
-	elif isinstance(kind, tuple) and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
+	if isinstance(kind, tuple) and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
 		raise TypeError("kind must be str or (str, str)")
 
 	if isinstance(kind, str):
@@ -4405,9 +4406,8 @@ class KubernetesHelper:
 		cert = None
 		key = None
 		self.token = None
-		userindex = None
 
-		for userindex, user in enumerate(deep_get(kubeconfig, DictPath("users"), [])):
+		for _userindex, user in enumerate(deep_get(kubeconfig, DictPath("users"), [])):
 			if deep_get(user, DictPath("name")) == user_name:
 				if len(deep_get(user, DictPath("user"), {})) == 0:
 					# We didn't get any user data at all;

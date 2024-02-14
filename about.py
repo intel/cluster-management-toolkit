@@ -36,4 +36,7 @@ INVENTORY_PROGRAM_VERSION = "0.4.4"
 # We don't support Python-versions older than 3.8
 version_info = sys.version_info
 if version_info.major < 3 or version_info.minor < 8:  # pragma: no cover
-	sys.exit("Critical: Minimum supported Python-version is 3.8.0; installed version is " + str(version_info.major) + "." + str(version_info.minor) + "." + str(version_info.micro) + "; aborting.")
+	sys.exit("Critical: Minimum supported Python-version is 3.8.0; installed version is "
+		 + str(version_info.major) + "."
+		 + str(version_info.minor) + "."
+		 + str(version_info.micro) + "; aborting.")
