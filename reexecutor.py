@@ -142,7 +142,6 @@ class ReExecutor:
 		Shutdown the executor
 		"""
 		self.flush()
-		version_tuple = sys.version_info
 		# If cancel_futures is supported we should use it
 		if sys.version_info[0:2] >= (3, 9):
 			self.executor.shutdown(wait = False, cancel_futures = True)

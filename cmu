@@ -10242,7 +10242,11 @@ def listgetter_namespaced_resources(obj, **kwargs):
 		for obj in vlist_:
 			obj["__kind_tuple"] = kind
 		vlist += vlist_
-	executor_.shutdown()
+	# If cancel_futures is supported we should use it
+	if sys.version_info[0:2] >= (3, 9):
+		executor_.shutdown(wait = False, cancel_futures = True)
+	else:
+		executor_.shutdown(wait = False)
 	return vlist, status
 
 # Iterate over the list of items and execute command on all of them
