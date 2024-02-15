@@ -33,7 +33,7 @@
             conditions:
               - "SUSE and derivatives"
         "Downloaded files":
-          - description: "https://download.opensuse.org/repositories/devel:/kubic/15.4/repodata/repomd.xml.key"
+          - description: "https://ftp.lysator.liu.se/pub/opensuse/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.28/Debian_11/Release.key"
             conditions:
               - "Debian and derivatives"
               - "SUSE and derivatives"
@@ -88,7 +88,7 @@
       register: "tempdir"
     - name: "Fetching CRI-O repository key"
       ansible.builtin.get_url:
-        url: "https://download.opensuse.org/repositories/devel:/kubic/15.4/repodata/repomd.xml.key"
+        url: "https://ftp.lysator.liu.se/pub/opensuse/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.28/Debian_11/Release.key"
         dest: "{{ tempdir.path }}/kubic.key"
         mode: "0644"
         force: true
@@ -109,7 +109,7 @@
     - name: "Copying CRI-O key to /etc/apt/keyrings"
       ansible.builtin.copy:
         remote_src: true
-        src: "{{ tempdir.path }}/kubic.key.gpg"
+        src: "{{ tempdir.path }}/kubic.key"
         dest: "/etc/apt/keyrings/cri-o-keyring.asc"
         mode: "0644"
       when: "ansible_os_family == 'Debian'"
