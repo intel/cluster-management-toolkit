@@ -214,9 +214,9 @@ def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict:
 
 	if path_permissions not in (0o600, 0o400):
 		ansithemeprint([ANSIThemeString("  ", "default"),
-				ANSIThemeString(f"Critical", "critical"),
+				ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(":", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString(f"    The permissions for ", "default"),
+		ansithemeprint([ANSIThemeString("    The permissions for ", "default"),
 				ANSIThemeString(f"{NETRC_PATH}", "path"),
 				ANSIThemeString(" are ", "default"),
 				ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
