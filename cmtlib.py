@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 Helpers used by various components of CMT
@@ -6,7 +9,6 @@ Helpers used by various components of CMT
 
 from datetime import datetime, timezone, timedelta, date
 import errno
-import os
 from pathlib import Path, PurePath
 import re
 import sys
@@ -14,7 +16,7 @@ from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
 import about
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy, ProgrammingError, LogLevel
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
 import cmtio
 
@@ -48,8 +50,9 @@ def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
 			list[str]: The list of strings with substitutions performed
 	"""
 
-	for key, value in substitutions.items():
-		strlist = [s.replace(key, value) for s in strlist]
+	if strlist is not None:
+		for key, value in substitutions.items():
+			strlist = [s.replace(key, value) if (s is not None and value is not None) else s for s in strlist]
 	return strlist
 
 def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
@@ -59,7 +62,7 @@ def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
 		Parameters:
 			string (str): The string to strip
 			prefix (str): The prefix to strip
-		Return:
+		Returns:
 			(string (str), count (int)): The stripped string and the count of stripped characters
 	"""
 
@@ -73,81 +76,12 @@ def rstrip_count(string: str, suffix: str) -> Tuple[str, int]:
 		Parameters:
 			string (str): The string to strip
 			suffix (str): The suffix to strip
-		Return:
+		Returns:
 			(string (str), count (int)): The stripped string and the count of stripped characters
 	"""
 
 	stripped = string.rstrip(suffix)
 	return stripped, len(string) - len(stripped)
-
-def validate_name(rtype: str, name: str) -> bool:
-	"""
-	Given a name validate whether it is valid for the given type
-
-		Parameters:
-			rtype (str): The resource type; valid types are:
-				dns-label
-				dns-subdomain
-				path-segment
-				port-name
-			name (str): The name to check for validity
-		Returns:
-			valid (bool): True if valid, False if invalid
-	"""
-
-	invalid = False
-	tmp = None
-
-	if name is None:
-		return False
-
-	# Safe
-	name_regex = re.compile(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$")
-	# Safe
-	portname_regex = re.compile(r"^.*[a-z].*")
-
-	if rtype in ("dns-subdomain", "dns-label"):
-		if rtype == "dns-label":
-			maxlen = 63
-			if "." in name:
-				invalid = True
-		else:
-			maxlen = 253
-
-		# A dns-subdomain can be at most 253 characters long
-		# and cannot start or end with "-"; it must be made up
-		# of valid dns-labels; each of which are separated by "."
-		# and have to meet the same standards as a dns-label
-		labels = name.lower().split(".")
-
-		for label in labels:
-			if len(label) > 63:
-				invalid = True
-				break
-
-			tmp = name_regex.match(label)
-			if tmp is None:
-				invalid = True
-	elif rtype == "path-segment":
-		# XXX: Are there any other requirements? maxlen or similar?
-		if name in (".", "..") or "/" in name or "%" in name:
-			invalid = True
-		maxlen = os.pathconf("/", "PC_NAME_MAX")
-	elif rtype == "port-name":
-		# Any name containing adjacent "-" is invalid
-		if "--" in name:
-			invalid = True
-		# As is any port-name that does not contain any character in [a-z]
-		if portname_regex.match(name.lower()) is None:
-			invalid = True
-		# A portname can be at most 15 characters long
-		# and cannot start or end with "-"
-		tmp = name_regex.match(name.lower())
-		if tmp is None:
-			invalid = True
-		maxlen = 15
-
-	return not invalid and len(name) <= maxlen
 
 def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
 	"""
@@ -158,11 +92,20 @@ def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
 			chunksize (int): The chunksize
 		Returns:
 			chunk ([Any]): A generator for the chunked list
+		Raises:
+			TypeError: items is not a list or chunksize is not an integer
+			ValueError: chunksize is < 1
 	"""
+	if not isinstance(items, list):
+		raise TypeError("items must be a list")
+	if not isinstance(chunksize, int):
+		raise TypeError("chunksize must by an integer > 0")
+	if chunksize < 1:
+		raise ValueError(f"Invalid chunksize {chunksize}; chunksize must be > 0")
 	for i in range(0, len(items), chunksize):
 		yield items[i:i + chunksize]
 
-def clamp(value: int, minval: int, maxval: int) -> int:
+def clamp(value: Union[int, float], minval: Union[int, float], maxval: Union[int, float]) -> Union[int, float]:
 	"""
 	Clamp value inside the range minval, maxval
 
@@ -174,6 +117,12 @@ def clamp(value: int, minval: int, maxval: int) -> int:
 			int: The clamped value
 	"""
 
+	if not isinstance(value, (int, float)):
+		raise TypeError("value must be an integer or float")
+	if not isinstance(minval, (int, float)) or not isinstance(maxval, (int, float)):
+		raise TypeError("maxval and minval must be integers or floats")
+	if minval > maxval:
+		raise ValueError(f"maxval ({maxval}) must be >= minval ({minval})")
 	return min(maxval, max(minval, value))
 
 def none_timestamp() -> datetime:
@@ -186,6 +135,117 @@ def none_timestamp() -> datetime:
 
 	return (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
 
+def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
+	"""
+	Given CPU usage information, convert it to CPU usage in millicores
+
+		Parameters:
+			cpu_usage(union(int, str)): The CPU usage
+		Returns:
+			cpu_usage_millicores (float): CPU usage in millicores
+	"""
+
+	cpu_usage_millicores: float = 0
+
+	if not isinstance(cpu_usage, str):
+		raise TypeError("cpu_usage must be a str")
+
+	if cpu_usage.isnumeric():
+		cpu_usage_millicores = int(cpu_usage) * 1000 ** 1
+	elif cpu_usage.endswith("m"):
+		cpu_usage_millicores = int(cpu_usage[0:-1])
+	elif cpu_usage.endswith("u"):
+		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000 ** 1
+	elif cpu_usage.endswith("n"):
+		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000 ** 2
+	else:
+		raise ValueError(f"Unknown unit for CPU usage in {cpu_usage}")
+	return cpu_usage_millicores
+
+def normalise_mem_to_bytes(mem_usage: str) -> int:
+	"""
+	Given a memory usage string, normalise it to bytes
+
+		Parameters:
+			mem_usage (str): The amount of memory used
+		Returns:
+			mem_usage_bytes (int): The amount of memory used in bytes
+	"""
+
+	mem = 0
+
+	unit_lookup = {
+		"Ki": 1024 ** 1,
+		"Mi": 1024 ** 2,
+		"Gi": 1024 ** 3,
+		"Ti": 1024 ** 4,
+		"Pi": 1024 ** 5,
+		"Ei": 1024 ** 6,
+		"Zi": 1024 ** 7,
+		"Yi": 1024 ** 8,
+	}
+
+	if not isinstance(mem_usage, (int, str)):
+		raise TypeError("mem_usage must be an integer-string (optionally with a valid unit) or int")
+
+	if isinstance(mem_usage, int) or isinstance(mem_usage, str) and mem_usage.isnumeric():
+		mem = int(mem_usage)
+	else:
+		for key, value in unit_lookup.items():
+			if mem_usage.endswith(key):
+				mem = int(mem_usage[0:-len(key)]) * value
+				break
+		else:
+			raise ValueError(f"Unknown unit for memory usage in {mem_usage}")
+
+	return mem
+
+def normalise_mem_bytes_to_str(mem_usage_bytes: int, fmt: str = "float") -> str:
+	"""
+	Given memory usage in bytes, convert it to a normalised string
+
+		Parameters:
+			mem_usage_bytes (int): The memory size in bytes
+			fmt (str): Format as float or integer
+		Returns:
+			(str): The human readable mem usage with size suffix
+		Raises:
+			TypeError: size is not an integer
+			ValueError: size is not >= 0
+	"""
+
+	suffix = ""
+	mem_usage: float = 0
+
+	suffixes = (
+		"",	# 1024 ** 1
+		"Ki",	# 1024 ** 2
+		"Mi",	# 1024 ** 3
+		"Gi",	# 1024 ** 4
+		"Ti",	# 1024 ** 5
+		"Pi",	# 1024 ** 6
+		"Ei",	# 1024 ** 7
+		"Zi",	# 1024 ** 8
+		"Yi",	# 1024 ** 9
+	)
+
+	if not isinstance(mem_usage_bytes, int):
+		raise TypeError("mem_usage_bytes must be an int")
+
+	mem_usage = float(mem_usage_bytes)
+
+	if mem_usage < 0:
+		raise ValueError("mem_usage_bytes must be >= 0")
+
+	for i, suffix in enumerate(suffixes):
+		if mem_usage < 1024 or i >= len(suffixes) - 1:
+			break
+		mem_usage /= 1024 ** 1
+
+	if fmt == "int":
+		return f"{int(mem_usage)}{suffix}B"
+	return f"{mem_usage:0.1f}{suffix}B"
+
 def disksize_to_human(size: int) -> str:
 	"""
 	Given a disksize in bytes, convert it to a more readable format with size suffix
@@ -194,22 +254,15 @@ def disksize_to_human(size: int) -> str:
 			size (int): The disksize in bytes
 		Returns:
 			disksize (str): The human readable disksize with size suffix
+		Raises:
+			TypeError: size is not an integer
+			ValueError: size is not >= 0
 	"""
 
-	size_suffixes = [
-		" bytes",
-		"kiB",
-		"MiB",
-		"GiB",
-		"TiB",
-		"PiB",
-	]
-
-	for suffix in size_suffixes:
-		if size < 1024:
-			break
-		size = size // 1024
-	return f"{size}{suffix}"
+	tmp = normalise_mem_bytes_to_str(size, fmt = "int")
+	if tmp[:-1].isnumeric():
+		tmp = f"{tmp[:-1]} bytes"
+	return tmp
 
 def split_msg(rawmsg: str) -> List[str]:
 	"""
@@ -221,6 +274,8 @@ def split_msg(rawmsg: str) -> List[str]:
 			list[str]: A list of split strings
 	"""
 
+	if not isinstance(rawmsg, str):
+		raise TypeError(f"rawmsg is type {type(rawmsg)}, expected str")
 	# We only want "\n" to represent newlines
 	tmp = rawmsg.replace("\r\n", "\n")
 	# We also replace all \x00 with <NUL>
@@ -233,15 +288,26 @@ def split_msg(rawmsg: str) -> List[str]:
 	return list(map(str.rstrip, tmp.splitlines()))
 
 def strip_ansicodes(message: str) -> str:
+	"""
+	Strip all ANSI-formatting from a string
+
+		Parameters:
+			message (str): The string to strip
+		Returns:
+			(str): The stripped string
+		Raises:
+			TypeError: The input was not a string
+	"""
+	if not isinstance(message, str):
+		raise TypeError(f"message is type {type(message)}, expected str")
+
 	message = message.replace("\\x1b", "\x1b").replace("\\u001b", "\x1b")
-	# Safe
 	tmp = re.findall(r"("
 	                 r"\x1b\[\d+m|"
 	                 r"\x1b\[\d+;\d+m|"
 			 r"\x1b\[\d+;\d+;\d+m|"
 			 r".*?)", message)
-	if tmp is not None:
-		message = "".join(item for item in tmp if not item.startswith("\x1b"))
+	message = "".join(item for item in tmp if not item.startswith("\x1b"))
 
 	return message
 
@@ -261,10 +327,10 @@ def read_cmtconfig() -> Dict:
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError:
+	except ModuleNotFoundError:  # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-	global cmtconfig # pylint: disable=global-statement
+	global cmtconfig  # pylint: disable=global-statement
 
 	if not Path(CMT_CONFIG_FILE).is_file():
 		return {}
@@ -303,9 +369,15 @@ def versiontuple(ver: str) -> Tuple[str, ...]:
 			ver (str): The version string to split
 		Returns:
 			result (tuple[str, ...]): A variable-length tuple with one string per version component
+		Raises:
+			TypeError: The input was not a string
 	"""
 
 	filled = []
+
+	if not isinstance(ver, str):
+		raise TypeError(f"ver is type {type(ver)}, expected str")
+
 	for point in ver.split("."):
 		filled.append(point.zfill(8))
 	return tuple(filled)
@@ -318,21 +390,25 @@ def age_to_seconds(age: str) -> int:
 			age (str): A string in age format
 		Returns:
 			seconds (int): The number of seconds
+		Raises:
+			TypeError: The input was not a string
+			ValueError: The input could not be parsed as an age string
 	"""
 
 	seconds = 0
 
-	# Safe
+	if not isinstance(age, str):
+		raise TypeError(f"age is type {type(age)}, expected str")
+
+	if len(age) == 0:
+		return -1
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
-	if tmp is not None:
-		if len(tmp[0]) == 0:
-			seconds = -1
-		else:
-			d = 0 if tmp[1] is None else int(tmp[1][:-1])
-			h = 0 if tmp[2] is None else int(tmp[2][:-1])
-			m = 0 if tmp[3] is None else int(tmp[3][:-1])
-			s = 0 if tmp[4] is None else int(tmp[4][:-1])
-			seconds = d * 24 * 60 * 60 + h * 60 * 60 + m * 60 + s
+	if tmp.span() != (0, 0):
+		d = 0 if tmp[1] is None else int(tmp[1][:-1])
+		h = 0 if tmp[2] is None else int(tmp[2][:-1])
+		m = 0 if tmp[3] is None else int(tmp[3][:-1])
+		s = 0 if tmp[4] is None else int(tmp[4][:-1])
+		seconds = d * 24 * 60 * 60 + h * 60 * 60 + m * 60 + s
 	else:
 		raise ValueError(f"age regex did not match; age: {age}")
 
@@ -347,13 +423,15 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
 			negative_is_skew (bool): Should a negative timestamp return a clock skew warning (default: -age)
 		Returns:
 			age (str): The age string
+		Raises:
+			TypeError: The input was not an integer
 	"""
+
+	if not isinstance(seconds, int):
+		raise TypeError(f"age is type {type(seconds)}, expected int")
 
 	age = ""
 	fields = 0
-
-	if not isinstance(seconds, int):
-		return ""
 
 	if seconds < -1:
 		sign = "-"
@@ -403,8 +481,12 @@ def get_since(timestamp: Optional[Union[int, datetime]]) -> int:
 	"""
 
 	if timestamp is None:
-		since = 0
-	elif timestamp == -1 or timestamp == none_timestamp():
+		return 0
+
+	if not isinstance(timestamp, (int, datetime)):
+		raise TypeError(f"timestamp is type {type(timestamp)}, expected int or datetime")
+
+	if timestamp == -1 or timestamp == none_timestamp():
 		since = -1
 	# If the timestamp is an integer we assume it to already be in seconds
 	elif isinstance(timestamp, int):
@@ -427,9 +509,30 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
 			string (str): The timestamp in string format
 	"""
 
+	if not (timestamp is None or isinstance(timestamp, datetime)):
+		msg = [
+			[("datetime_to_timestamp()", "emphasis"),
+			 (" initialised with invalid argument(s):", "error")],
+			[("timestamp = ", "default"),
+			 (f"{timestamp}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(timestamp)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{datetime}", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
 	if timestamp is None or timestamp == none_timestamp():
 		string = ""
 	elif timestamp == datetime.fromtimestamp(0).astimezone():
+		# Replace epoch with an empty string
+		# with the same length as a timestamp
 		string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
 	else:
 		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
@@ -483,12 +586,10 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 	rtimestamp = timestamp
 
 	# Some timestamps are weird
-	# Safe
 	tmp = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6})\d* ([+-]\d{4}) [A-Z]{3}$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
 
-	# Safe
 	tmp = re.match(r"^(.+?) ?([+-]\d{4})$", timestamp)
 	if tmp is not None:
 		timestamp = f"{tmp[1]}{tmp[2]}"
@@ -506,12 +607,12 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 			pass
 	raise ValueError(f"Could not parse timestamp: {rtimestamp}")
 
-def make_set_expression_list(expression_list: Dict, key: str = "") -> List[Tuple[str, str, str]]:
+def make_set_expression_list(expression_list: List[Dict], key: str = "") -> List[Tuple[str, str, str]]:
 	"""
 	Create a list of set expressions (key, operator, values)
 
 		Parameters:
-			expression_list (dict): The dict to extract the data from
+			expression_list ([dict]): A list of dicts to extract extract the data from
 		Returns:
 			expressions (list[(key, operator, values)])
 	"""
@@ -519,28 +620,55 @@ def make_set_expression_list(expression_list: Dict, key: str = "") -> List[Tuple
 	expressions = []
 
 	if expression_list is not None:
+		if not isinstance(expression_list, list):
+			raise TypeError("expression_list must be a list")
 		for expression in expression_list:
 			operator = deep_get_with_fallback(expression, [DictPath("operator"), DictPath("op")], "")
+			requires_values = None
+			if not isinstance(operator, str):
+				raise TypeError("operator must be a str")
 			if operator == "In":
-				operator = "In "
+				new_operator = "In "
+				requires_values = "1+"
 			elif operator == "NotIn":
-				operator = "Not In "
+				new_operator = "Not In "
+				requires_values = "1+"
 			elif operator == "Exists":
-				operator = "Exists"
+				new_operator = "Exists"
+				requires_values = "0"
 			elif operator == "DoesNotExist":
-				operator = "Does Not Exist"
+				new_operator = "Does Not Exist"
+				requires_values = "0"
 			elif operator == "Gt":
-				operator = "> "
+				new_operator = "> "
+				requires_values = True
+				requires_values = "1"
 			elif operator == "Lt":
-				operator = "< "
+				new_operator = "< "
+				requires_values = "1"
+			else:
+				raise ValueError(f"Unknown operator {operator}")
 			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], key)
+			if not isinstance(key, str):
+				raise TypeError("key must be a str")
 
 			tmp = deep_get_with_fallback(expression, [DictPath("values"), DictPath("value")], [])
+			if not isinstance(tmp, list):
+				raise TypeError("values must be a list")
+
+			if requires_values == "0" and tmp and len(max(tmp, key = len)):
+				# Exists and DoesNotExist do no accept values;
+				# for the sake of convenience we still accept empty values
+				raise ValueError(f"operator {operator} does not accept values; values {tmp}")
+			if requires_values == "1" and len(tmp) != 1:
+				raise ValueError(f"operator {operator} requires exactly 1 value; values {tmp}")
+			if requires_values == "1+" and len(tmp) < 1:
+				raise ValueError(f"operator {operator} requires at least 1 value; values {tmp}")
 			values = ",".join(tmp)
-			if len(values) > 0 and operator not in ("Gt", "Lt"):
+			if requires_values != "0" and operator not in ("Gt", "Lt"):
 				values = f"[{values}]"
 
-			expressions.append((str(key), str(operator), values))
+			expressions.append((str(key), str(new_operator), values))
 	return expressions
 
 def make_set_expression(expression_list: Dict) -> str:
@@ -570,8 +698,11 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	"""
 
 	# pylint: disable-next=unused-import,import-outside-toplevel
-	import ansible_helper # noqa
-	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path # pylint: disable=import-outside-toplevel
+	import ansible_helper  # noqa
+	from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path  # pylint: disable=import-outside-toplevel
+
+	if not isinstance(hostname, str):
+		raise TypeError(f"hostname {hostname} is type: {type(hostname)}, expected str")
 
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
@@ -591,7 +722,6 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 
 	package_versions = []
 
-	# Safe
 	package_version_regex = re.compile(r"^(.*?): (.*)")
 
 	for line in tmp:
@@ -614,6 +744,9 @@ def __extract_version(line: str) -> str:
 			(str): A version number
 	"""
 
+	if not isinstance(line, str):
+		raise TypeError(f"{line} is type: {type}; expected str")
+
 	tmp = line.split("|")
 	if len(tmp) != 3:
 		raise ValueError("Error: Failed to extract a version; this is (most likely) a programming error.")
@@ -633,19 +766,20 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
 		# This is for the benefit of avoiding dependency cycles
 		# pylint: disable-next=import-outside-toplevel
 		from natsort import natsorted
-	except ModuleNotFoundError:
+	except ModuleNotFoundError:  # pragma: no cover
 		sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 	versions = []
+
+	if not isinstance(packages, (list, tuple)):
+		raise TypeError(f"packages must be a list or tuple, got {type(packages)}")
 
 	apt_cache_path = cmtio.secure_which(FilePath("apt-cache"), fallback_allowlist = ["/bin", "/usr/bin"],
 					    security_policy = SecurityPolicy.ALLOWLIST_STRICT)
 	args = [apt_cache_path, "policy"] + packages
 	response = cmtio.execute_command_with_response(args)
 	split_response = response.splitlines()
-	# Safe
 	installed_regex = re.compile(r"^\s*Installed: (.*)")
-	# Safe
 	candidate_regex = re.compile(r"^\s*Candidate: (.*)")
 	for line in split_response:
 		if line.endswith(":"):
@@ -768,8 +902,6 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 	# i | kubernetes1.28-kubeadm | package | 1.28.3-150400.5.1 | x86_64 | kubic
 	package_version = re.compile(r"^(.).? \| (\S+) +\| package +\| (\S+) +\|.*")
 
-	section = ""
-
 	for line in split_response:
 		if (tmp := package_version.match(line)):
 			if tmp is not None:
@@ -810,7 +942,7 @@ def identify_k8s_distro() -> str:
 	k8s_distro = None
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -917,7 +1049,7 @@ def identify_distro() -> str:
 						 fallback_allowlist = ["/usr/lib", "/lib"],
 						 security_policy = SecurityPolicy.ALLOWLIST_STRICT,
 						 executable = False)
-	except FileNotFoundError:
+	except FileNotFoundError:  # pragma: no cover
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" Cannot find an “", "default"),
 				ANSIThemeString("os-release", "path"),

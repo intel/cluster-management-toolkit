@@ -8,6 +8,9 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Requires: python3-natsort
 # Requires: python3-openssl
 # Recommends: python3-ujson
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # pylint: disable=line-too-long
 
@@ -31,7 +34,7 @@ import sys
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
@@ -39,13 +42,13 @@ from cryptography.hazmat.primitives import serialization
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, HostNameStatus, SecurityChecks
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VERSION_CACHE_DIR, VIEW_DIR
+from cmtvalidators import validate_fqdn, validator_bool
 
-import commandparser
 from commandparser import parse_commandline
 
 from ansible_helper import ansible_configuration, ansible_run_playbook_on_selection, ansible_get_hosts_by_group, ansible_add_hosts, ansible_remove_hosts
@@ -54,11 +57,11 @@ from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import cmtlib
 from cmtlib import chunk_list, identify_distro, read_cmtconfig
-from cmtio import execute_command, secure_read_string, validate_fqdn
+from cmtio import execute_command, secure_read_string
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
 
-from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context
+from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context, guess_kind
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint, ansithemeinput, ansithemeinput_password
 
@@ -84,9 +87,16 @@ def request_ansible_password() -> None:
 					ANSIThemeString(": Empty password; aborting.", "default")], stderr = True)
 			sys.exit(errno.EINVAL)
 
-		ansible_configuration["ansible_password"] = ansible_password # type: ignore
+		ansible_configuration["ansible_password"] = ansible_password  # type: ignore
 
 def get_latest_kubernetes_upstream_version() -> Optional[str]:
+	"""
+	Try to get the latest Kubernetes upstream version
+
+		Returns:
+			(str): The latest Kubernetes upstream version number on success, "" on failure
+	"""
+
 	# We are OK with the file not existing
 	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -142,7 +152,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		sys.exit(errno.ENOENT)
 
 	# Split the version tuple
-	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
@@ -237,7 +247,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 
 	controlplanes = []
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -410,7 +420,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 
 	# Kubernetes resources
 	if isinstance(kind, tuple):
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -452,7 +462,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -494,7 +504,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Cordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -520,7 +530,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -592,7 +602,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -634,7 +644,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Uncordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -660,7 +670,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -680,52 +690,16 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	selection = args[0].split(",")
 	taint = args[1]
 
-	if "=" not in taint:
-		ansithemeprint([ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(": invalid syntax; the correct syntax is either “", "default"),
-				ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(" taint ", "command"),
-				ANSIThemeString("NODE", "argument"),
-				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument"),
-				ANSIThemeString("|", "separator"),
-				ANSIThemeString("ALL ", "argument"),
-				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString("=", "separator"),
-				ANSIThemeString("EFFECT", "argument"),
-				ANSIThemeString("“ or “", "default"),
-				ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
-				ANSIThemeString(" taint ", "command"),
-				ANSIThemeString("NODE", "argument"),
-				ANSIThemeString(",", "separator"),
-				ANSIThemeString("...", "argument"),
-				ANSIThemeString("|", "separator"),
-				ANSIThemeString("ALL ", "argument"),
-				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString(":", "separator"),
-				ANSIThemeString("VALUE", "argument"),
-				ANSIThemeString("=", "separator"),
-				ANSIThemeString("EFFECT", "argument"),
-				ANSIThemeString("“; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
-
-	taint, taint_new_effect = taint.split("=")
 	if ":" in taint:
-		taint_key, taint_value = taint.split(":")
+		taint_key_value, taint_new_effect = taint.split(":")
 	else:
-		taint_key = taint
+		taint_key_value = taint
+		taint_new_effect = None
+	if "=" in taint_key_value:
+		taint_key, taint_value = taint_key_value.split("=")
+	else:
+		taint_key = taint_key_value
 		taint_value = None
-
-	if taint_new_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid effect; valid effects are: ", "default"),
-				ANSIThemeString("NoSchedule", "argument"),
-				ANSIThemeString(", ", "default"),
-				ANSIThemeString("PreferNoSchedule", "argument"),
-				ANSIThemeString(", and ", "default"),
-				ANSIThemeString("NoExecute", "argument"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	# It is OK to specify control planes individually
 	if "ALL" not in selection:
@@ -753,7 +727,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Tainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -787,7 +761,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -804,26 +778,17 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	selection = args[0].split(",")
 	taint = args[1]
 
-	if "=" in taint:
-		taint, taint_old_effect = taint.split("=")
-	else:
-		taint_old_effect = None
 	if ":" in taint:
-		taint_key, taint_value = taint.split(":")
+		taint_key_value, taint_old_effect = taint.split(":")
+	else:
+		taint_key_value = taint
+		taint_old_effect = None
+	if "=" in taint_key_value:
+		taint_key, taint_value = taint.split("=")
 	else:
 		taint_key = taint
 		taint_value = None
 
-	if taint_old_effect is not None and taint_old_effect not in ("NoSchedule", "PreferNoSchedule", "NoExecute"):
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Invalid effect; valid effects are: ", "default"),
-				ANSIThemeString("NoSchedule", "argument"),
-				ANSIThemeString(", ", "default"),
-				ANSIThemeString("PreferNoSchedule", "argument"),
-				ANSIThemeString(", and ", "default"),
-				ANSIThemeString("NoExecute", "argument"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
 
 	# It is OK to specify control planes individually
 	if "ALL" not in selection:
@@ -851,7 +816,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Untainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
@@ -880,7 +845,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1055,7 +1020,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1106,6 +1071,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 				ANSIThemeString("RKE2", "argument"),
 				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOTSUP)
+
+	selection = []
 
 	if from_file:
 		hostfile = args[0]
@@ -1250,7 +1217,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
 
 	# Get variables that need to be available when setting up nodes
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	join_token = None
@@ -1314,7 +1281,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 							if "load_pem_x509_certificate() missing 1 required positional argument: 'backend'" in str(e):
 								# This is to handle systems that doesn't have the latest version of cryptography
 								# pylint: disable-next=import-outside-toplevel,no-name-in-module
-								from cryptography.hazmat.primitives import default_backend # type: ignore
+								from cryptography.hazmat.primitives import default_backend  # type: ignore
 								x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend = default_backend)
 							else:
 								raise
@@ -1357,7 +1324,6 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 			sys.exit(errno.EBADMSG)
 
 		kubeadm_version = ""
-		# Safe
 		kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
 
 		for line in tmp:
@@ -1496,7 +1462,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1655,7 +1621,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1790,7 +1756,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1870,7 +1836,7 @@ def get_contexts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -1949,7 +1915,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -2005,7 +1971,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 		Returns:
 			0 on success, exits with errno on failure
 	"""
@@ -2060,9 +2026,9 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--has-data":
 			has_data = True
 		elif opt == "--local":
-			_result, local_only = commandparser.validator_bool(optarg)
+			_result, local_only = validator_bool(optarg)
 		elif opt == "--namespaced":
-			_isbool, namespaced_only = commandparser.validator_bool(optarg)
+			_isbool, namespaced_only = validator_bool(optarg)
 		elif opt == "--no-header":
 			header = False
 		elif opt == "--sort-by":
@@ -2083,7 +2049,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--wide":
 			wide = True
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	result, api_resources = kh.get_api_resources()
@@ -2146,7 +2112,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				api_group = ""
 				if "/" in api_version:
 					api_group = api_version.split("/")[0]
-				kind_tuple = kh.guess_kind((name, api_group))
+				kind_tuple = guess_kind((name, api_group))
 
 				# OK, this is a kind known by CMT that is available in the cluster;
 				# now check whether there's a view file and where it has list/info views
@@ -2349,7 +2315,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 				api_group = ""
 				if "/" in api_version:
 					api_group = api_version.split("/")[0]
-				kind_tuple = kh.guess_kind((name, api_group))
+				kind_tuple = guess_kind((name, api_group))
 			except NameError:
 				kind_tuple = None
 
@@ -2660,13 +2626,13 @@ CMT_COMMANDLINE = {
 			   ANSIThemeString("|", "separator"),
 			   ANSIThemeString("ALL ", "argument"),
 			   ANSIThemeString("KEY", "argument"),
-			   ANSIThemeString("[:", "separator"),
+			   ANSIThemeString("[=", "separator"),
 			   ANSIThemeString("VALUE", "argument"),
-			   ANSIThemeString("]=", "separator"),
+			   ANSIThemeString("]:", "separator"),
 			   ANSIThemeString("EFFECT", "argument")],
 		"description": [ANSIThemeString("Add taint ", "description"),
 				ANSIThemeString("KEY", "argument"),
-				ANSIThemeString("[:", "separator"),
+				ANSIThemeString("[=", "separator"),
 				ANSIThemeString("VALUE", "argument"),
 				ANSIThemeString("]", "separator"),
 				ANSIThemeString(" with ", "description"),
@@ -2712,9 +2678,9 @@ CMT_COMMANDLINE = {
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
-					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("[=", "separator"),
 					   ANSIThemeString("VALUE", "argument"),
-					   ANSIThemeString("]=", "separator"),
+					   ANSIThemeString("]:", "separator"),
 					   ANSIThemeString("EFFECT", "argument")],
 				"validation": {
 					"validator": "taint",
@@ -2731,9 +2697,9 @@ CMT_COMMANDLINE = {
 			   ANSIThemeString("|", "separator"),
 			   ANSIThemeString("ALL ", "argument"),
 			   ANSIThemeString("KEY", "argument"),
-			   ANSIThemeString("[:", "separator"),
+			   ANSIThemeString("[=", "separator"),
 			   ANSIThemeString("VALUE", "argument"),
-			   ANSIThemeString("][=", "separator"),
+			   ANSIThemeString("][:", "separator"),
 			   ANSIThemeString("EFFECT", "argument"),
 			   ANSIThemeString("]", "separator")],
 		"description": [ANSIThemeString("Remove taint ", "description"),
@@ -2778,9 +2744,9 @@ CMT_COMMANDLINE = {
 			}, {
 				"name": "taint",
 				"string": [ANSIThemeString("KEY", "argument"),
-					   ANSIThemeString("[:", "separator"),
+					   ANSIThemeString("[=", "separator"),
 					   ANSIThemeString("VALUE", "argument"),
-					   ANSIThemeString("]=[", "separator"),
+					   ANSIThemeString("]:[", "separator"),
 					   ANSIThemeString("EFFECT", "argument"),
 					   ANSIThemeString("]", "separator")],
 				"validation": {

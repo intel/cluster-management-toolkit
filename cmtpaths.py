@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This file contains paths used by CMT
@@ -76,6 +79,8 @@ KUBE_CREDENTIALS_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "credentials"))
 
 SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
 SSH_BIN_PATH = FilePath("/usr/bin/ssh")
+
+NETRC_PATH = FilePath(os.path.join(HOMEDIR, ".netrc"))
 
 # Accepted cryptos
 SSH_ARGS_STRICT_CRYPTOS = \

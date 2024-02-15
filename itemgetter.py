@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 Get items from lists for use in windowwidget
@@ -10,7 +13,7 @@ from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
@@ -283,7 +286,6 @@ def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 
 	allowed_ips = []
 
-	# Safe
 	ip_mask_regex = re.compile(r"^(\d+\.\d+\.\d+\.\d+)\/(\d+)")
 
 	for addr in deep_get(obj, DictPath("spec#allowedIPs")):
@@ -646,7 +648,6 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 
 	for affinity in deep_get(obj, DictPath("spec#affinity"), []):
 		atype = affinity
-		# Safe
 		policy_regex = re.compile(r"^(ignored|preferred|required)DuringScheduling(Ignored|Preferred|Required)DuringExecution$")
 
 		for policy in deep_get(obj, DictPath(f"spec#affinity#{atype}"), ""):
@@ -762,7 +763,7 @@ def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 		name = deep_get(obj, DictPath(name_path))
 		namespace_path = deep_get(action_args, DictPath("namespace_path"))
 		namespace = deep_get(obj, DictPath(namespace_path), "")
-		kind = kh.guess_kind((kind, api_family))
+		kind = kubernetes_helper.guess_kind((kind, api_family))
 		columns = deep_get(item, DictPath("columns"), [])
 		args = deep_get(action_args, DictPath("args"), {})
 

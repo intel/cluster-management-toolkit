@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 Network I/O helpers
@@ -30,7 +33,7 @@ from cmttypes import deep_get, DictPath, FilePath
 
 try:
 	import urllib3
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
@@ -119,16 +122,20 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	"""
 
 	if checksum_type is None:
+		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
+					       ANSIThemeString(": No checksum type provided; checksum ", "default"),
+					       ANSIThemeString("not", "emphasis"),
+					       ANSIThemeString(" verified", "default")], stderr = True)
 		return True
 
 	if checksum_type == "md5":
-		m = hashlib.md5() # nosec
+		m = hashlib.md5()  # nosec
 		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
 					       ANSIThemeString(": Use of MD5 checksums is ", "default"),
 					       ANSIThemeString("strongly", "emphasis"),
 					       ANSIThemeString(" discouraged", "default")], stderr = True)
 	elif checksum_type in ("sha", "sha1"):
-		m = hashlib.sha1() # nosec nosem
+		m = hashlib.sha1()  # nosec nosem
 		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
 					       ANSIThemeString(": Use of SHA1 checksums is ", "default"),
 					       ANSIThemeString("strongly", "emphasis"),
@@ -154,10 +161,10 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	elif checksum_type == "sha3_512":
 		m = hashlib.sha3_512()
 	elif checksum_type == "shake_128":
-		m = hashlib.shake_128() # type: ignore
+		m = hashlib.shake_128()  # type: ignore
 	elif checksum_type == "shake_256":
-		m = hashlib.shake_256() # type: ignore
-	else:
+		m = hashlib.shake_256()  # type: ignore
+	else:  # pragma: no cover
 		return False
 
 	m.update(data)
@@ -165,18 +172,17 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	# If filename is supplied it is expected that the checksum file can contain
 	# more than one checksum, or at least that it contains a filename;
 	# if so we find the matching entry
-	# Safe
 	regex = re.compile(r"^([0-9a-f]+)\s+(\S+)$")
 	match_checksum = None
 
 	for line in checksum.decode("utf-8", errors = "replace").splitlines():
-		if filename is None:
+		if filename is None and not " " in line:
 			match_checksum = line
 			break
 
 		tmp = regex.match(line)
 		if tmp is not None:
-			if tmp[2] != filename:
+			if filename is not None and tmp[2] != filename:
 				continue
 			match_checksum = tmp[1]
 			break
@@ -187,7 +193,7 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	if checksum_type in ("shake_128", "shake_256"):
 		shake_length = len(match_checksum) // 2
 		# pylint: disable-next=too-many-function-args
-		if m.hexdigest(shake_length) != match_checksum: # type: ignore
+		if m.hexdigest(shake_length) != match_checksum:  # type: ignore
 			return False
 	else:
 		if m.hexdigest() != match_checksum:
@@ -271,11 +277,11 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 	if http_proxy is not None and http_proxy != "":
 		pm = urllib3.ProxyManager(http_proxy)
 	else:
-		pm = urllib3.PoolManager() # type: ignore
+		pm = urllib3.PoolManager()  # type: ignore
 	if https_proxy is not None and https_proxy != "":
 		spm = urllib3.ProxyManager(https_proxy)
 	else:
-		spm = urllib3.PoolManager() # type: ignore
+		spm = urllib3.PoolManager()  # type: ignore
 
 	for url, filename, checksum_url, checksum_type in fetch_urls:
 		# In case we're downloading heaps of files it's good manners to rate-limit our requests
@@ -286,9 +292,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 
 		if checksum_url is not None:
 			if checksum_url.startswith("http://"):
-				r1 = pm.request("GET", checksum_url) # type: ignore
+				r1 = pm.request("GET", checksum_url)  # type: ignore
 			elif checksum_url.startswith("https://"):
-				r1 = spm.request("GET", checksum_url) # type: ignore
+				r1 = spm.request("GET", checksum_url)  # type: ignore
 			else:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 							       ANSIThemeString(": Unknown or missing protocol; Checksum URL ", "default"),
@@ -303,9 +309,9 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 				break
 
 		if url.startswith("http://"):
-			r1 = pm.request("GET", url) # type: ignore
+			r1 = pm.request("GET", url)  # type: ignore
 		elif url.startswith("https://"):
-			r1 = spm.request("GET", url) # type: ignore
+			r1 = spm.request("GET", url)  # type: ignore
 		else:
 			ansithemeprint.ansithemeprint([ANSIThemeString("Error", "error"),
 						       ANSIThemeString(": Unknown or missing protocol; URL ", "default"),
@@ -350,7 +356,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 							sys.exit(errno.ENOENT)
 
 						with tempfile.NamedTemporaryFile(delete = False) as f2:
-							with tf.extractfile(filename) as tff: # type: ignore
+							with tf.extractfile(filename) as tff:  # type: ignore
 								f2.write(tff.read())
 
 							# Here we change to the permissions we are supposed to use
@@ -371,7 +377,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 						       ANSIThemeString(f"{r1.status}", "errorvalue")], stderr = True)
 			retval = False
 			continue
-	pm.clear() # type: ignore
-	spm.clear() # type: ignore
+	pm.clear()  # type: ignore
+	spm.clear()  # type: ignore
 
 	return retval

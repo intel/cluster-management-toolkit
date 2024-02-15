@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # The parser takes one line of input at a time;
 # for messages that need multi-line parsing you need to
@@ -19,6 +22,9 @@
 
 """
 Log parsers for cmu
+
+unit-tests:
+	tests/logtests
 """
 
 # pylint: disable=line-too-long
@@ -29,49 +35,49 @@ from datetime import datetime
 import difflib
 # ujson is much faster than json,
 # but it might not be available
-try:
+try:  # pragma: no cover
 	import ujson as json
 	json_is_ujson = True
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:
-	import json # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+	import json  # type: ignore
 	json_is_ujson = False
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 from pathlib import Path, PurePath
 import re
 import sys
 from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
-	import validators # type: ignore
-except ModuleNotFoundError:
+	import validators  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
 	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
 
 from cmtpaths import HOMEDIR, PARSER_DIR
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ProgrammingError
 
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 
 import cmtlib
 from cmtlib import none_timestamp, strip_ansicodes
 #from cmtlog import debuglog
-import formatter as formatters # pylint: disable=wrong-import-order,deprecated-module
+import formatter as formatters  # pylint: disable=wrong-import-order,deprecated-module
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
-#from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeString
 
 class logparser_configuration:
 	"""
@@ -158,7 +164,18 @@ def name_to_loglevel(severity: str) -> LogLevel:
 	for _severity, _severity_string in loglevel_mappings.items():
 		if _severity_string.lower() == severity.lower():
 			return _severity
-	raise ValueError(f"Programming error! Loglevel {severity} does not exist!")
+
+	msg = [
+		[("Loglevel ", "error"),
+		 (f"{severity}", "argument"),
+		 (" does not exist!", "error")]
+	]
+
+	unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+	raise ProgrammingError(unformatted_msg,
+			       severity = LogLevel.ERR,
+			       formatted_msg = formatted_msg)
 
 def month_to_numerical(month: str) -> str:
 	"""
@@ -171,18 +188,20 @@ def month_to_numerical(month: str) -> str:
 	"""
 
 	months = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-	month = str(month.lower()[0:3]).zfill(2)
-
-	y = 1
-	for tmp in months:
-		if month == tmp:
-			return str(y).zfill(2)
-		y += 1
-
-	raise TypeError("No matching month")
+	return f"{months.index(month.lower()[0:3]):02}"
 
 # Mainly used by glog
 def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 1-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 1-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"F": LogLevel.EMERG,
 		"E": LogLevel.ERR,
@@ -195,8 +214,18 @@ def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optio
 
 	return severities.get(letter, default)
 
-# Used by Kiali; anything else?
+# Used by Kiali and kubeshark
 def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 3-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 3-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"ERR": LogLevel.ERR,
 		"WRN": LogLevel.WARNING,
@@ -205,6 +234,16 @@ def str_3letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 	return severities.get(string.upper(), default)
 
 def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a 4-letter severity string to a LogLevel
+
+		Parameters:
+			letter (str): A 4-letter severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"CRIT": LogLevel.CRIT,
 		"FATA": LogLevel.CRIT,
@@ -218,6 +257,16 @@ def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 	return severities.get(string.upper(), default)
 
 def str_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional[LogLevel]:
+	"""
+	Convert a severity string to a LogLevel
+
+		Parameters:
+			letter (str): A severity string
+			default (LogLevel): The loglevel to return if the input is invalid
+		Returns:
+			LogLevel: The corresponding LogLevel
+	"""
+
 	severities = {
 		"fatal": LogLevel.CRIT,
 		"error": LogLevel.ERR,
@@ -234,6 +283,15 @@ def str_to_severity(string: str, default: Optional[LogLevel] = None) -> Optional
 	return severities.get(string.lower(), default)
 
 def lvl_to_letter_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a 1-letter severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "C",
 		LogLevel.ERR: "E",
@@ -246,6 +304,15 @@ def lvl_to_letter_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def lvl_to_4letter_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a 4-letter severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "CRIT",
 		LogLevel.ERR: "ERRO",
@@ -258,6 +325,15 @@ def lvl_to_4letter_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def lvl_to_word_severity(lvl: LogLevel) -> str:
+	"""
+	Convert a LogLevel to a severity string
+
+		Parameters:
+			lvl (LogLevel): A LogLevel
+		Returns:
+			str: The corresponding severity string
+	"""
+
 	severities = {
 		LogLevel.CRIT: "CRITICAL",
 		LogLevel.ERR: "ERROR",
@@ -270,6 +346,18 @@ def lvl_to_word_severity(lvl: LogLevel) -> str:
 	return severities.get(lvl, "!ERROR IN LOGPARSER!")
 
 def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+	"""
+	Remove a bracketed severity prefix from a string
+
+		Parameters:
+			message: A string to strip a severity prefix from
+			default: The default severity to use if no LogLevel prefix can be found
+		Returns:
+			(str, LogLevel):
+				str: The input string with the severity prefix removed
+				LogLevel: The extracted LogLevel
+	"""
+
 	severities = {
 		"[fatal]": LogLevel.CRIT,
 		# This is for ingress-nginx; while alert is higher than crit in syslog terms,
@@ -286,11 +374,9 @@ def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) ->
 		"[debug]": LogLevel.DEBUG,
 	}
 
-	# Safe
 	tmp = re.match(r"^(\[[A-Za-z]+?\]) ?(.*)", message)
 	if tmp is not None:
-		severity = severities.get(tmp[1].lower())
-		if severity is not None:
+		if (severity := severities.get(tmp[1].lower())) is not None:
 			message = tmp[2]
 		else:
 			severity = default
@@ -299,7 +385,19 @@ def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) ->
 
 	return message, severity
 
-def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+def split_colon_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tuple[str, LogLevel]:
+	"""
+	Remove a colon severity prefix from a string
+
+		Parameters:
+			message: A string to strip a severity prefix from
+			default: The default severity to use if no LogLevel prefix can be found
+		Returns:
+			(str, LogLevel):
+				str: The input string with the severity prefix removed
+				LogLevel: The extracted LogLevel
+	"""
+
 	severities = {
 		"CRITICAL:": LogLevel.CRIT,
 		"ERROR:": LogLevel.ERR,
@@ -310,13 +408,15 @@ def split_colon_severity(message: str, severity: LogLevel = LogLevel.INFO) -> Tu
 		"DEBUG:": LogLevel.DEBUG,
 	}
 
-	# Safe
 	tmp = re.match(r"^([A-Za-z]+?:) ?(.*)", message)
 	if tmp is not None:
-		_severity = severities.get(tmp[1].upper())
-		if _severity is not None:
+		severity = severities.get(tmp[1].upper())
+		if severity is not None:
 			message = tmp[2]
-			severity = _severity
+		else:
+			severity = default
+	else:
+		severity = default
 
 	return message, severity
 
@@ -330,108 +430,89 @@ def is_timestamp(message: str):
 			(bool): True if the string is a timestamp, False if not
 	"""
 
-	# Safe
 	tmp = re.match(r"^\d\.\d+e\+09", message)
 	if tmp is not None:
 		return True
 
-	# Safe
 	tmp = re.match(r"^\d{4}[/-]\d\d[/-]\d\d"
 		       r"[ T]"
 		       r"\d\d[\.:]\d\d[\.:]\d\d"
-		       r"([\.,]\d{8}Z|"
-		       r"[\.,]\d{8}|"
-		       r"[\.,]\d{8} [+-]\d\d(:|\.|\d\d)"
-		       r"[\.,]\d{6}Z|"
-		       r"[\.,]\d{6}"
-		       r"[\.,]\d{6} [+-]\d\d(:|\.|\d\d)"
-		       r"\d{3}Z|"
-		       r"\d{3}|"
-		       r"[\.,]\d{3} [+-]\d\d(:|\.|\d\d)|"
-		       r"[\.,]\d{3}Z|"
-		       r"Z|)$", message)
+		       r"([\.,]\d{8} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{6} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{3} [+-]\d\d[:\.]\d\d|"
+		        r"[\.,]\d{8}Z?|"
+		        r"[\.,]\d{6}Z?|"
+		        r"[\.,]\d{3}Z?|"
+		        r"Z?)$", message)
 
 	if tmp is not None:
 		return True
 
 	return False
 
-# Will split timestamp from messages that begin with timestamps of the form:
-# 2020-02-07T13:12:24.224Z (Z = UTC)
-# 2020-02-13T12:06:18.011345 [+-]0000 (+/-timezone)
-# 2020-09-23T17:12:32.18396709[+-]03:00
-# 2020-02-13T12:06:18[+-]0000 (+/-timezone)
-# 2020-02-20 13:47:41,008 (assume UTC)
-# 2020-02-20 13:47:41.008416 (assume UTC)
-# 2020-02-20 13:47:41.008416Z (Z = UTC)
-# 2020-02-20 13:47:41 (assume UTC)
-# Technically not in ISO-8601/RFC 3339 format, but close enough;
-# at least the order is sensible
-# 2020/02/20 13:47:41.008416 (assume UTC)
-# 2020/02/20 13:47:41 (assume UTC)
-#
-# XXX: According to ISO-8601 timestamps that lack timezone should be assumed to be local timezone,
-#      NOT UTC. Does this make a difference though? Are these timestamps actually used anywhere?
 def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetime]:
+	"""
+	Split a message into timestamp and remaining message
+
+		Parameters:
+			message (str): The message to strip the timestamp from
+			timestmap (datetime): The datetime to return if the message doesn't have a timestamp
+		Returns:
+			(str, datetime): Return the remainder of the message and the datetime
+	"""
+
 	old_timestamp = timestamp
 	tmp_timestamp = ""
 
+	# This while loop is merely to allow for breaking out anywhere
 	while True:
 		# 2020-02-07 13:12:24.224
 		# 2020-02-07 13:12:24,224
 		# [2020-02-07 13:12:24.224]
 		# [2020-02-07 13:12:24,224]
-		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				ymd = tmp[1]
-				hms = tmp[2]
-				_sep = tmp[3]
-				ms = tmp[4]
-				tmp_timestamp = f"{ymd} {hms}.{ms}+0000"
+			ymd = tmp[1]
+			hms = tmp[2]
+			_sep = tmp[3]
+			ms = tmp[4]
+			tmp_timestamp = f"{ymd} {hms}.{ms}+0000"
 			message = tmp[5]
 			break
 
 		# 2020-02-07T13:12:24.224Z (Z = UTC)
-		# Safe
 		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				ymd = tmp[1]
-				hmsms = tmp[2][0:len("HH:MM:SS.sss")]
-				tmp_timestamp = f"{ymd} {hmsms}+0000"
+			ymd = tmp[1]
+			hmsms = tmp[2][0:len("HH:MM:SS.sss")]
+			tmp_timestamp = f"{ymd} {hmsms}+0000"
 			message = tmp[3]
 			break
 
 		# 2020-02-13T12:06:18.011345 [+-]00:00 (+timezone)
 		# 2020-09-23T17:12:32.183967091[+-]03:00
-		# Safe
 		tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):(\d\d) ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				ymd = tmp[1]
-				hmsms = tmp[2][0:len("HH:MM:SS.sss")]
-				tzsign = tmp[3]
-				tzhour = tmp[4]
-				tzmin = tmp[5]
-				tmp_timestamp = f"{ymd} {hmsms}{tzsign}{tzhour}{tzmin}"
+			ymd = tmp[1]
+			hmsms = tmp[2][0:len("HH:MM:SS.sss")]
+			tzsign = tmp[3]
+			tzhour = tmp[4]
+			tzmin = tmp[5]
+			tmp_timestamp = f"{ymd} {hmsms}{tzsign}{tzhour}{tzmin}"
 			message = tmp[6]
 			break
 
 		# 2020-02-13 12:06:18[+-]00:00 (+timezone)
 		# [2020-02-13 12:06:18 [+-]00:00] (+timezone)
 		# 2020-02-13T12:06:18[+-]0000 (+timezone)
-		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d) ?([\+-])(\d\d):?(\d\d)\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				ymd = tmp[1]
-				hms = tmp[2]
-				tzsign = tmp[3]
-				tzhour = tmp[4]
-				tzmin = tmp[5]
-				tmp_timestamp = f"{ymd} {hms}.000{tzsign}{tzhour}{tzmin}"
+			ymd = tmp[1]
+			hms = tmp[2]
+			tzsign = tmp[3]
+			tzhour = tmp[4]
+			tzmin = tmp[5]
+			tmp_timestamp = f"{ymd} {hms}.000{tzsign}{tzhour}{tzmin}"
 			message = tmp[6]
 			break
 
@@ -439,42 +520,35 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 		# 2020-02-20 13:47:41.008416: (assume UTC)
 		# 2020/02/20 13:47:41.008416 (assume UTC)
 		# 2020-02-20 13:47:41.008416Z (Z = UTC)
-		# Safe
 		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d\.\d+)[Z:]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				year = tmp[1]
-				month = tmp[2]
-				day = tmp[3]
-				hmsms = tmp[4][0:len("HH:MM:SS.sss")]
-				tmp_timestamp = f"{year}-{month}-{day} {hmsms}+0000"
+			year = tmp[1]
+			month = tmp[2]
+			day = tmp[3]
+			hmsms = tmp[4][0:len("HH:MM:SS.sss")]
+			tmp_timestamp = f"{year}-{month}-{day} {hmsms}+0000"
 			message = tmp[5]
 			break
 
 		# [2021-12-18T20:15:36Z]
 		# 2021-12-18T20:15:36Z
-		# Safe
 		tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d)Z\]? ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				ymd = tmp[1]
-				hms = tmp[2]
-				tmp_timestamp = f"{ymd} {hms}.000+0000"
+			ymd = tmp[1]
+			hms = tmp[2]
+			tmp_timestamp = f"{ymd} {hms}.000+0000"
 			message = tmp[3]
 			break
 
-
 		# 2020-02-20 13:47:41 (assume UTC)
 		# 2020/02/20 13:47:41 (assume UTC)
-		# Safe
 		tmp = re.match(r"^(\d{4})[-/](\d\d)[-/](\d\d) (\d\d:\d\d:\d\d) ?(.*)", message)
 		if tmp is not None:
-			if tmp_timestamp == "":
-				year = tmp[1]
-				month = tmp[2]
-				day = tmp[3]
-				hms = tmp[4]
-				tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
+			year = tmp[1]
+			month = tmp[2]
+			day = tmp[3]
+			hms = tmp[4]
+			tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
 			message = tmp[5]
 			break
 
@@ -510,7 +584,6 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 			stripped_message (str): The stripped message
 	"""
 
-	# Safe
 	tmp = re.match(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d\d [A-Z]{3}(\s+?|$)(.*)", message)
 	if tmp is not None:
 		message = tmp[2]
@@ -610,7 +683,6 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 	# If the message starts with a timestamp without a leading IP-address, skip this
 	if not message.startswith("["):
 		# First try to check if it's an IP-address
-		# Safe
 		tmp = re.match(r"^([a-f0-9:][a-f0-9:.]+[a-f0-9])( - - .*)", message)
 		if tmp is not None:
 			# Just pass-through if validators isn't installed;
@@ -622,24 +694,23 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	# Short format
 	if len(ipaddress) > 0:
-		# Safe
-		tmp = re.match(r"( - - )" # separator1
-			       r"(\[)" # separator2
-			       r"(\d\d)" # day
+		tmp = re.match(r"( - - )"			# separator1
+			       r"(\[)"				# separator2
+			       r"(\d\d)"			# day
 			       r"/"
-			       r"([A-Z][a-z][a-z])" # _month
+			       r"([A-Z][a-z][a-z])"		# _month
 			       r"/"
-			       r"(\d{4})" # year
+			       r"(\d{4})"			# year
 			       r" "
-			       r"(\d\d:\d\d:\d\d)" # hms
-			       r"(\])" # separator3
-			       r"(\s\")" # separator4
-			       r"([A-Z]*?\s)" # verb
-			       r"(\S*?)" # address3
-			       r"(\s\S*?)" # protocol
-			       r"(\"\s)" # separator5
-			       r"(\d+?)" # statuscode
-			       r"(\s+[\d-]+?$)", message) # separator6
+			       r"(\d\d:\d\d:\d\d)"		# hms
+			       r"(\])"				# separator3
+			       r"(\s\")"			# separator4
+			       r"([A-Z]*?\s)"			# verb
+			       r"(\S*?)"			# address3
+			       r"(\s\S*?)"			# protocol
+			       r"(\"\s)"			# separator5
+			       r"(\d+?)"			# statuscode
+			       r"(\s+[\d-]+?$)", message)	# separator6
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -685,7 +756,6 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			return new_message, severity, facility
 
 	if len(ipaddress) > 0:
-		# Safe
 		tmp = re.match(r"( - - )"
 			       r"(\[)"
 			       r"(\d\d)"
@@ -770,19 +840,18 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 			return new_message, severity, facility
 
 	# Alternate formats
-	# Safe
 	tmp = re.match(r"^\|\s+"
-		       r"(\d{3})" # statuscode
+		       r"(\d{3})"		# statuscode
 		       r"\s+\|\s+"
-		       r"([0-9.]+)" # duration
-		       r"([^ ]*)" # unit
+		       r"([0-9.]+)"		# duration
+		       r"([^ ]*)"		# unit
 		       r"\s+\|\s+"
-		       r"([^:^\s]*)" # hostname
-		       r":(\d+?)" # port
+		       r"([^:^\s]*)"		# hostname
+		       r":(\d+?)"		# port
 		       r"\s+\|\s+"
-		       r"([A-Z]+)" # verb
+		       r"([A-Z]+)"		# verb
 		       r"\s+"
-		       r"(.*)", message) # url
+		       r"(.*)", message)	# url
 
 	if tmp is not None:
 		statuscode = tmp[1]
@@ -816,7 +885,6 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 		]
 		return new_message, severity, facility
 
-	# Safe
 	tmp = re.match(r"^\["
 		       r"(\d{4}-\d\d-\d\d)"
 		       r"T"
@@ -930,12 +998,10 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 		loggingerror = message[0:len("ERROR: logging before flag.Parse")]
 		message = message[len("ERROR: logging before flag.Parse: "):]
 
-	# Safe
 	tmp = re.match(r"^([A-Z]\d{4} \d\d:\d\d:\d\d\.\d)\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{9}Z (.*)", message)
 	if tmp is not None:
 		message = f"{tmp[1]}{tmp[2]}"
 
-	# Safe
 	tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\](.*)", message)
 	if tmp is not None:
 		severity = letter_to_severity(tmp[1])
@@ -1035,7 +1101,6 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 
 # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
 def __split_severity_facility_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "") -> Tuple[str, Optional[LogLevel], str]:
-	# Safe
 	tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
 	if tmp is not None:
 		severity = str_to_severity(tmp[1], default = severity)
@@ -1342,7 +1407,6 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 			new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
 				       ThemeString(" [No changes]", ThemeAttr("logview", "unchanged"))]
 	elif event in ("UpdatePod", "UpdateNamespace"):
-		# Safe
 		tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
 		if tmp2 is not None:
 			try:
@@ -1386,7 +1450,6 @@ def json_event(message: str, severity: LogLevel = LogLevel.INFO, facility: str =
 	return new_message, severity, facility, remnants
 
 def split_angle_bracketed_facility(message: str, facility: str = "") -> Tuple[str, str]:
-	# Safe
 	tmp = re.match(r"^<(.+?)>\s?(.*)", message)
 	if tmp is not None:
 		facility = tmp[1]
@@ -1394,7 +1457,6 @@ def split_angle_bracketed_facility(message: str, facility: str = "") -> Tuple[st
 	return message, facility
 
 def split_colon_facility(message: str, facility: str = "") -> Tuple[str, str]:
-	# Safe
 	tmp = re.match(r"^(\S+?):\s?(.*)", message)
 	if tmp is not None:
 		facility = tmp[1]
@@ -1405,7 +1467,6 @@ def split_bracketed_timestamp_severity_facility(message: str, default: LogLevel 
 	severity = default
 	facility = ""
 
-	# Safe
 	tmp = re.match(r"^\[([^ ]+) ([^ ]+) (.+?)\]: (.+)", message)
 
 	if tmp is not None:
@@ -1444,7 +1505,17 @@ def custom_override_severity(message: Union[str, List], severity: Optional[LogLe
 			if tmp is None:
 				continue
 		else:
-			raise ValueError(f"Unknown override_type '{override_type}'; this is a programming error.")
+			msg = [
+				[("Unknown override_type “", "error"),
+				 (f"{override_type}", "argument"),
+				 ("“")]
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       formatted_msg = formatted_msg)
 
 		severity = override_loglevel
 
@@ -1478,7 +1549,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 	indent = 2
 	depth = 0
 	escaped = False
-	quoted = False # pylint: disable=unused-variable
+	quoted = False  # pylint: disable=unused-variable
 	tmp = ""
 
 	for i, raw_msg in enumerate(raw_message):
@@ -1568,7 +1639,6 @@ def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple
 	message = raw_message[0:eventstart]
 	indent = 2
 	# Try to extract an embedded severity; use it if higher than severity
-	# Safe
 	tmp = re.match(r"^.*type: '([A-Z][a-z]+)' reason:", raw_message)
 	if tmp is not None:
 		if tmp[1] == "Normal":
@@ -1659,9 +1729,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 	message = message.replace("\\\"", "”")
 
 	# split all key=value pairs
-	# Safe
 	key_value_regex = re.compile(r"^(.*?)=(.*)")
-	# Safe
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	# pylint: disable-next=too-many-nested-blocks
 	if tmp is not None:
@@ -1737,7 +1805,6 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 			if err.startswith("\"") and err.endswith("\""):
 				err = err[1:-1]
 			message = f"{msg}"
-			# Safe
 			tmp = re.match(r"^(\d+ errors? occurred:)(.*)", err)
 			if tmp is not None:
 				remnants.append(([ThemeString(tmp[1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
@@ -1887,7 +1954,6 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 		return facility, severity, message, remnants
 
 	# Split into substrings based on spaces
-	# Safe
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
 	if tmp is not None and len(tmp) > 0:
 		if "=" in tmp[0]:
@@ -1931,7 +1997,6 @@ def modinfo(message: str, fold_msg: bool = True) ->\
 	severity = LogLevel.INFO
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-	# Safe
 	tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
 	if tmp is not None:
 		key = tmp[1]
@@ -1969,33 +2034,31 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 					Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], LogLevel, Union[str, List[Union[ThemeRef, ThemeString]]], List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-	# Safe
 	tmp = re.match(r"^(total)\s+(\d+)$", message)
 	if tmp is not None:
 		return facility, severity, message, remnants
 
-	# Safe
-	tmp = re.match(r"^(.)" # etype
-		       r"(.{9})" # permissions
-		       r"(\+|\s)" # acl
-		       r"(\s+)" # space1
-		       r"(\d+)" # linkcount
-		       r"(\s+)" # space2
-		       r"([^\s]+)" # owner
-		       r"(\s+)" # space3
-		       r"([^\s]+)" # group
-		       r"(\s+)" # space4
-		       r"(\d+)" # size part1
-		       r"(,\s+\d+|)" # size part2
-		       r"(\s+)" # space5
-		       r"([^\s]+)" # month
-		       r"(\s+)" # space6
-		       r"(\d+)" # day
-		       r"(\s+)" # space7
-		       r"([^\s]+)" # yearortime
-		       r"(\s+)" # space8
-		       r"(.+?)" # name
-		       r"(=|\||/|)$", message) # suffix
+	tmp = re.match(r"^(.)"			# etype
+		       r"(.{9})"		# permissions
+		       r"(\+|\s)"		# acl
+		       r"(\s+)"			# space1
+		       r"(\d+)"			# linkcount
+		       r"(\s+)"			# space2
+		       r"([^\s]+)"		# owner
+		       r"(\s+)"			# space3
+		       r"([^\s]+)"		# group
+		       r"(\s+)"			# space4
+		       r"(\d+)"			# size part1
+		       r"(,\s+\d+|)"		# size part2
+		       r"(\s+)"			# space5
+		       r"([^\s]+)"		# month
+		       r"(\s+)"			# space6
+		       r"(\d+)"			# day
+		       r"(\s+)"			# space7
+		       r"([^\s]+)"		# yearortime
+		       r"(\s+)"			# space8
+		       r"(.+?)"			# name
+		       r"(=|\||/|)$", message)	# suffix
 	if tmp is None:
 		# This is unlikely to be a directory match
 		return facility, severity, message, remnants
@@ -2068,7 +2131,6 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 		]
 	# symbolic link
 	elif etype == "l":
-		# Safe
 		tmp2 = re.match(r"^(.+?)( -> )(.+)", name)
 		if tmp2 is None:
 			_message += [
@@ -2137,7 +2199,6 @@ def seconds_severity_facility(message: str, fold_msg: bool = True) ->\
 	severity = LogLevel.INFO
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-	# Safe
 	tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
 	if tmp is not None:
 		severity = cast(LogLevel, str_to_severity(tmp[2], default = severity))
@@ -2179,7 +2240,6 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 		ThemeString(message, ThemeAttr("logview", "severity_info")),
 	]
 
-	# Safe
 	if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
 		remnants = [
 			ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
@@ -2190,7 +2250,6 @@ def python_traceback_scanner(message: str, fold_msg: bool = True, options: Optio
 			ThemeString(tmp[6], ThemeAttr("types", "path")),
 		]
 	else:
-		# Safe
 		if (tmp := re.match(r"(^\S+?Error:|"
 				    r"^\S+?Exception:|"
 				    r"GeneratorExit:|"
@@ -2235,8 +2294,34 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	facility = ""
 	severity = LogLevel.INFO
 	message, _timestamp = split_iso_timestamp(message, none_timestamp())
+	matched = True
 
-	if message == "}".rstrip():
+	# If no block end is defined we continue until EOF
+	block_end = deep_get(options, DictPath("block_end"))
+
+	format_block_end = False
+	process_block_end = True
+
+	for _be in block_end:
+		matchtype = deep_get(_be, DictPath("matchtype"))
+		matchkey = deep_get(_be, DictPath("matchkey"))
+		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
+		if matchtype == "empty":
+			if len(message.strip()) == 0:
+				matched = False
+		elif matchtype == "exact":
+			if message == matchkey:
+				matched = False
+		elif matchtype == "startswith":
+			if message.startswith(matchkey):
+				matched = False
+		elif matchtype == "regex":
+			tmp = matchkey.match(message)
+			if tmp is not None:
+				matched = False
+
+	if message == "}".rstrip() or not matched:
 		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor: Tuple[str, Optional[Callable], Dict] = ("end_block", None, {})
 	elif message.lstrip() != message or message == "{":
@@ -2365,7 +2450,6 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "regex",
-		# Safe
 		"matchkey": re.compile(r"^\S+?: \S.*$|^\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
@@ -2464,7 +2548,6 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 
 	block_start = deep_get(options, DictPath("block_start"), [{
 		"matchtype": "regex",
-		# Safe
 		"matchkey": re.compile(r"^\S+?: \S.*$|^\S+?:$"),
 		"matchline": "any",
 		"format_block_start": False,
@@ -2521,7 +2604,6 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 		processor = ("end_block", None, {})
 	else:
 		if "final_block" in options:
-			# Safe
 			tmp = re.match(r"^.+?:\sok=(\d+)\s+changed=(\d+)\s+unreachable=(\d+)\s+failed=(\d+)\s+skipped=(\d+)\s+rescued=(\d+)\s+ignored=(\d+)$", message)
 			if tmp is not None:
 				ok = int(tmp[1])
@@ -2715,7 +2797,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 				elif _filter == "sysctl":
 					facility, severity, message, remnants = sysctl(message, severity = severity, facility = facility, fold_msg = fold_msg)
 				# Timestamp formats
-				elif _filter == "ts_8601": # Anything that resembles ISO-8601 / RFC 3339
+				elif _filter == "ts_8601":  # Anything that resembles ISO-8601 / RFC 3339
 					message = strip_iso_timestamp(message)
 				# Facility formats
 				elif _filter == "colon_facility":

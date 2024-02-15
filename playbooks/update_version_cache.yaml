@@ -39,7 +39,8 @@
             msg: "The version cache is up to date"
         - name: "Exit the play"
           ansible.builtin.meta: "end_play"
-    - name: "Fetching version information from upstream projects"
+    # This needs to succeed; version info for other projects might be optional--that's to be decided elsewhere
+    - name: "Fetching upstream version information for Kubernetes"
       ansible.builtin.get_url:
         url: "{{ item.url }}"
         dest: "~/.cmt/version-cache/{{ item.dest }}"
@@ -53,8 +54,6 @@
           dest: "kubernetes_past.yaml"
       environment:
         https_proxy: "{{ https_proxy | default('') }}"
-      # We might not be able to update the version cache for all projects; this is acceptable
-      failed_when: false
     - name: "Load version info"
       ansible.builtin.set_fact:
         d: "{{ lookup('ansible.builtin.file', '~/.cmt/version-cache/kubernetes_current.yaml') | ansible.builtin.from_yaml_all | first | ansible.builtin.from_yaml }}"

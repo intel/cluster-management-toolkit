@@ -5,6 +5,9 @@
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
 # Requires: python3-natsort
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This program is used to query or modify the Ansible inventory
@@ -21,12 +24,12 @@ import sys
 from typing import cast, Dict, List, Optional, Tuple
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, ProgrammingError, UnknownError
@@ -475,7 +478,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
 	if cluster_name is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -758,6 +761,12 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	return 0
 
 def populate_playbooks() -> Dict:
+	"""
+	Populate the list of playbooks runnable from the command line
+
+		Returns:
+			(dict): The dict of playbooks
+	"""
 	playbook_dirs = []
 	playbooks = {}
 
@@ -772,7 +781,6 @@ def populate_playbooks() -> Dict:
 		playbook_dirs.append(playbook_dir)
 	playbook_dirs.append(ANSIBLE_PLAYBOOK_DIR)
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	# This should be moved to ansible_helper and generalised to be usable both in cmu and cmtinv
@@ -869,8 +877,6 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# ssv = Space-separated values
 	# tsv = Tab-separated values
 	output_format = "default"
-
-	include_groupvars = False
 
 	for opt, optarg in options:
 		if opt == "--color":

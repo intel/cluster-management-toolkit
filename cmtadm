@@ -6,6 +6,9 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Requires: python3 (>= 3.8)
 # Requires: python3-natsort
 # Requires: python3-paramiko
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # pylint: disable=line-too-long
 
@@ -27,14 +30,14 @@ import pwd
 import re
 import shutil
 import socket
-from subprocess import CalledProcessError # nosec
+from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
 from typing import Callable, cast, Dict, List, Optional, Set, Tuple, Union
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
@@ -323,7 +326,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 
 	if k8s_distro == "rke2":
 		# This will only work for running clusters
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -362,7 +365,6 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 		if len(tmp) == 0:
 			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
 
-		# Safe
 		package_version_regex = re.compile(r"^(.*?): (.*)")
 
 		for line in tmp:
@@ -394,7 +396,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 	cri = "<none>"
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
@@ -543,12 +545,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
 
 	return info
 
-# pylint: disable-next=too-many-arguments
-def update_installation_info(installation_target: Optional[str] = None, cluster_name: Optional[str] = None,
-			     distro: Optional[str] = None, version: Optional[str] = None, requested_version: Optional[str] = None,
-			     state: Optional[str] = None, phase: Optional[Union[int, str]] = None, phase_skiplist: Optional[List[str]] = None,
-			     cni: Optional[str] = None, pod_network_cidr: Optional[str] = None, cri: Optional[str] = None,
-			     control_planes: Optional[List[str]] = None, nodes: Optional[List[str]] = None) -> Dict:
+def update_installation_info(**kwargs) -> Dict:
 	"""
 	Update installation info for a cluster
 
@@ -569,6 +566,19 @@ def update_installation_info(installation_target: Optional[str] = None, cluster_
 		Returns:
 			info (dict): The updated installation info
 	"""
+	installation_target: Optional[str] = deep_get(kwargs, DictPath("installation_target"))
+	cluster_name: Optional[str] = deep_get(kwargs, DictPath("cluster_name"))
+	distro: Optional[str] = deep_get(kwargs, DictPath("distro"))
+	version: Optional[str] = deep_get(kwargs, DictPath("version"))
+	requested_version: Optional[str] = deep_get(kwargs, DictPath("requested_version"))
+	state: Optional[str] = deep_get(kwargs, DictPath("state"))
+	phase: Optional[Union[int, str]] = deep_get(kwargs, DictPath("phase"))
+	phase_skiplist: Optional[List[str]] = deep_get(kwargs, DictPath("phase_skiplist"))
+	cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
+	pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))
+	cri: Optional[str] = deep_get(kwargs, DictPath("cri"))
+	control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
+	nodes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
 
 	info = get_installation_info(cluster_name = cluster_name)
 
@@ -748,7 +758,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/antrea-io/antrea/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -762,10 +771,8 @@ cni_upgrade_data = {
 		"executable": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"version_command": ["kubectl", "calico", "version"],
-			# Safe
 			"version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -781,7 +788,6 @@ cni_upgrade_data = {
 			"version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -799,7 +805,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -813,10 +818,8 @@ cni_upgrade_data = {
 	"cilium": {
 		"executable": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"version_regex": r"^cilium-cli: (v)(\d+)(\.)(\d+)(\.)(\d+) .*$",
 			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -829,10 +832,8 @@ cni_upgrade_data = {
 		},
 		"CNI": {
 			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			# Safe
 			"candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
 			"install": ["cilium", "--context", "<<<context>>>", "install"],
@@ -843,7 +844,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/flannel-io/flannel/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -858,7 +858,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -872,7 +871,6 @@ cni_upgrade_data = {
 		"CNI": {
 			"candidate_version_function": get_github_version,
 			"candidate_version_url": "https://api.github.com/repos/weaveworks/weave/releases/latest",
-			# Safe
 			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
 			"urls": [
 				{
@@ -1134,7 +1132,6 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	installation_info = get_installation_info()
 	cluster_name = installation_info["installation_target"]
 	cni = deep_get(installation_info, DictPath(f"{cluster_name}#cni"))
-	pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
@@ -1169,7 +1166,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			sys.exit(errno.EINTR)
 
 	ansithemeprint([ANSIThemeString("\n[Installing and configuring CNI]", "phase")])
-	result = __setup_cni(cni, pod_network_cidr, context_name, cluster_name, verbose = verbose)
+	result = __setup_cni(cni, context_name, cluster_name, verbose = verbose)
 	if result:
 		update_installation_info(cluster_name = cluster_name, cni = cni)
 
@@ -1211,7 +1208,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cnis = kh.identify_cni()
@@ -1222,7 +1219,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		installed_cni = "<unknown>"
 		installed_cni_version = "<unknown>"
 
-	if installed_cni != cni and installed_cni != "<unknown>":
+	if installed_cni not in (cni, "<unknown>"):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
@@ -1346,7 +1343,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if pod_network_cidr is None:
 		# If we have a running cluster and we are upgrading by CNI rather than through installation info we need to get the Pod CIDR
 		# by some other means; try this. If this fails we give up.
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		pod_network_cidr = kh.get_pod_network_cidr()
 		if pod_network_cidr is None:
@@ -1356,7 +1353,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if cni in ("", "<none>", "<unknown>"):
 		if kh is None:
-			from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+			from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 			kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		tmp_cni = kh.identify_cni()
 		if len(tmp_cni) == 0:
@@ -1399,13 +1396,12 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	else:
 		ansithemeprint([ANSIThemeString("\nCNI upgrade successful", "success")])
 
-def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name: str, **kwargs) -> bool:
+def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs) -> bool:
 	"""
 	Setup a CNI
 
 		Parameters:
 			cni (str): The CNI to configure and install
-			pod_network_cidr (str): The CIDR of the pod network
 			context_name (str): The name of the cluster context
 			cluster_name (str): The name of the cluster
 		Returns:
@@ -1435,7 +1431,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 				ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
@@ -1453,7 +1449,7 @@ def __setup_cni(cni: str, pod_network_cidr: str, context_name: str, cluster_name
 	# upgrade_cni() will assume that the cluster is functional if run with a CNI, and thus tries to get
 	# all information from the cluster. This will most likely fail during installation, since the cluster
 	# hasn't started fully yet and thus cannot provide the necessary information
-	upgrade_cni(options = [("install", ""), ("--verbose", "")], args = pass_cni)
+	upgrade_cni(options = [("install", ""), ("--verbose", verbose)], args = pass_cni)
 	# FIXME
 	return True
 
@@ -1689,7 +1685,7 @@ def update_version_cache() -> bool:
 	"""
 
 	update_version_cache_path = get_playbook_path(FilePath("update_version_cache.yaml"))
-	retval, ansible_results = run_playbook(update_version_cache_path, hosts = ["localhost"])
+	_retval, ansible_results = run_playbook(update_version_cache_path, hosts = ["localhost"])
 
 	if len(ansible_results) == 0:
 		return False
@@ -1755,6 +1751,13 @@ def __get_theme(string: str, default: str) -> str:
 	return translation.get(string, default)
 
 def get_latest_kubernetes_upstream_version() -> str:
+	"""
+	Fetch the upstream version for Kubernetes
+
+		Returns:
+			(str): The latest upstream Kubernetes version
+	"""
+
 	# We are OK with the file not existing
 	security_checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -1801,12 +1804,12 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	other_versions: List[Tuple[str, str, str, List[str]]] = []
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		pkg_versions = check_versions_apt(pkg_packages)
-	elif os_distro in ("fedora", "rhel"):
-		pkg_versions = check_versions_yum(pkg_packages)
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		pkg_versions = check_versions_zypper(pkg_packages)
+	elif os_distro in ("fedora", "rhel",):
+		pkg_versions = check_versions_yum(pkg_packages)
 
 	kubernetes_installed_version = "<unknown>"
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
@@ -1814,7 +1817,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	# Get the API-server version (if available)
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	_server_major_version, _server_minor_version, kubernetes_installed_version = kh.get_api_server_version()
@@ -2136,18 +2139,18 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 		sys.exit(errno.ENOENT)
 
 	# Split the version tuple
-	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(prepare_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(prepare_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath("localhost#fedora_packages_held"), [])
 
@@ -2189,18 +2192,18 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict, verbose: 
 		sys.exit(errno.ENOENT)
 
 	# Split the version tuple
-	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
 	for minor_version in range(28, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(prepare_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2299,13 +2302,13 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], setup_control_plane_targets["localhost"]["playbooks"]))
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath("localhost#fedora_packages_held"), [])
 
@@ -2336,13 +2339,13 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict, verbos
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_setup = deep_get(setup_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(setup_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2529,7 +2532,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 				# Try to figure out the internal IP of the control plane;
 				# this only works if we're running this on the control plane;
 				# we should probably do this while fetching the config-file instead
-				from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+				from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 				kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 				obj = kh.get_ref_by_kind_name_namespace(("Node", ""), control_plane_name, "")
@@ -2562,12 +2565,11 @@ def __task_setup_cni(installation_info: Dict, verbose: bool = False) -> None:
 
 	cluster_name = installation_info["installation_target"]
 	cni = installation_info[cluster_name]["cni"]
-	pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
 	# If everything is successful so far we deploy the pod network
-	__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+	__setup_cni(cni, context_name, cluster_name)
 
 # pylint: disable-next=unused-argument
 def __task_drain_control_planes(installation_info: Dict, verbose: bool = False) -> None:
@@ -2626,7 +2628,7 @@ def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = Fals
 
 	controlplanes = __selection_control_planes()
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for controlplane in controlplanes:
@@ -2682,13 +2684,13 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict, verb
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 	extra_values_upgrade = deep_get(upgrade_control_plane_targets[k8s_distro], DictPath("extra_values"), {})
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(upgrade_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -2884,13 +2886,13 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict, verbos
 	selection = __selection_control_planes()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], purge_control_plane_targets[k8s_distro]["playbooks"]))
 
-	if os_distro in ("debian", ):
+	if os_distro in ("debian",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#deb_packages_held"), [])
-	elif os_distro in ("suse", ):
+	elif os_distro in ("suse",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#suse_packages_held"), [])
-	elif os_distro in ("fedora", "rhel"):
+	elif os_distro in ("fedora", "rhel",):
 		packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages"), [])
 		held_packages = deep_get(purge_control_plane_targets, DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
@@ -3124,12 +3126,12 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		# If version is an exact match for a package version, use it.
 		# If version is a match for a package version with the package revision ("-nn") removed, use the latest matching package revision.
 		# If no version is specified, use the latest package revision.
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			versions = check_versions_apt(["kubeadm"])
-		elif os_distro in ("fedora", "rhel"):
-			versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse", ):
+		elif os_distro in ("suse",):
 			versions = check_versions_zypper([f"kubernetes{version}-kubeadm"])
+		elif os_distro in ("fedora", "rhel",):
+			versions = check_versions_yum(["kubeadm"])
 
 		if len(versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -3216,10 +3218,10 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 	confirm = True
 
 	# We do not need a cluster name for --list-tasks, so check this first of all
@@ -3250,7 +3252,6 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 	phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
 	verbose = False
 	hide_next_step = False
-	control_planes = []
 	nodes = []
 
 	if state is not None and state not in ("<none>", "preparing", "prepared", "torn_down"):
@@ -3330,7 +3331,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 		if requested_version in ("kubeadm", "rke2"):
 			k8s_distro = requested_version
-			requested__version = None
+			requested_version = None
 		elif "=" in requested_version:
 			k8s_distro, requested_version = requested_version.split("=")
 			if k8s_distro not in ("kubeadm", "rke2"):
@@ -3420,10 +3421,10 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 
 	# default options
 	confirm = True
@@ -3434,7 +3435,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		elif opt == "--no-password":
 			no_password = True
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 	clusters = kh.list_clusters()
 	available_clusters = [tmp[0] for tmp in clusters]
@@ -3584,7 +3585,6 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		if len(tmp) == 0:
 			raise ValueError(f"Error: Received empty version data from {controlplane} (retval: {retval}); aborting.")
 
-		# Safe
 		package_version_regex = re.compile(r"^(.*?): (.*)")
 
 		for line in tmp:
@@ -3614,7 +3614,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	os_distro = identify_distro()
@@ -3631,11 +3631,11 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			ANSIThemeString(": Currently only local versions are checked.", "default")])
 
 	if update_cache:
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating APT cache", "action")])
 			check_and_print_status(update_apt_cache())
-		elif os_distro in ("suse", ):
+		elif os_distro in ("suse",):
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
 					ANSIThemeString("Updating Zypper cache", "action")])
 			check_and_print_status(update_zypper_cache())
@@ -3668,7 +3668,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if os_distro == "suse":
 		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is not None:
-			upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
+			_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 
 			for package in ("client", "kubeadm", "kubelet"):
 				for i in range(17, int(upstream_minor) + 1):
@@ -3686,6 +3686,10 @@ def show_configuration(action: str,
 		       tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]]) -> None:
 	"""
 	Show cluster configuration
+
+		Parameters:
+			action (str): The action to take
+			tasks ([([ANSIThemeString], callable, args)])): The tasks list
 	"""
 
 	installation_info = get_installation_info()
@@ -3736,7 +3740,7 @@ def show_configuration(action: str,
 	if len(failures) > 0:
 		ansithemeprint([ANSIThemeString("Errors", "error"),
 				ANSIThemeString(":", "default")], stderr = True)
-	for error, hosts in failures.items():
+	for _error, hosts in failures.items():
 		hosts = ansithemestring_join_tuple_list(hosts, formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
 		ansithemeprint([ANSIThemeString(f"  {tmp[2]} (hosts: ", "default")] +
 				hosts +
@@ -3872,20 +3876,26 @@ def __get_configuration_data(configuration_file: str, configuration_type: str, c
 		sys.exit(errno.EINVAL)
 
 	if data is not None:
+		# pylint: disable-next=consider-using-with
 		tf = tempfile.NamedTemporaryFile(suffix = ".yaml.j2", delete = False)
 		path = FilePath(tf.name)
-		secure_write_string(path, data, tempfile = True)
+		secure_write_string(path, data, temporary = True)
 
 	return FilePath(path)
 
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	"""
+	Add nodes to the cluster
+
+		Parameters:
+			options (list[(opt, optarg)]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
+	"""
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cordon_on_join = False
 	cri = "containerd"
-	forks = 5
-	context_name = None
 
 	installation_info = get_installation_info()
 	cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -3945,14 +3955,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
 	elif cri == "cri-o":
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
-		# cri-o is built/distributed using OBS, hence we need to know the major.minor version
-		# Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
-		# and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
-		tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
-		if requested_major < tmp[0] or requested_major == tmp[0] and requested_minor < tmp[1]:
-			crio_version = f"{requested_major}.{requested_minor}"
-		else:
-			crio_version = f"{tmp[0]}.{tmp[1]}"
+		crio_version = get_crio_version((int(requested_major), int(requested_minor)))
 
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
@@ -4035,7 +4038,7 @@ def set_context(cluster_name: str, context_name: str) -> None:
 			context_name (str): The context to switch to
 	"""
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	if not kh.set_context(name = context_name, unchanged_is_success = True):
@@ -4053,7 +4056,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
@@ -4072,7 +4075,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	confirm = True
 	redeploy = False
 
-	for opt, optarg in options:
+	for opt, _optarg in options:
 		if opt == "-Y":
 			confirm = False
 		elif opt == "--redeploy":
@@ -4180,7 +4183,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	nodes = []
 
 	# Get a list of all nodes in the cluster
-	for node_group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
+	for _node_group, data in deep_get(cd, DictPath("nodes#groups"), {}).items():
 		nodes += deep_get(data, DictPath("nodes"), [])
 
 	prepare_options = [
@@ -4266,7 +4269,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# We (hopefully) have a cluster now; change the context to that cluster
@@ -4374,7 +4377,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	context_name = f"{admin_name}@{cluster_name}"
 
 	if state == "setup_cni":
-		__setup_cni(cni, pod_network_cidr, context_name, cluster_name)
+		__setup_cni(cni, context_name, cluster_name)
 		phase = 0
 		state = "deploy_workloads"
 		installation_info = update_installation_info(cluster_name = cluster_name, state = state, phase = phase, cni = cni)
@@ -4401,7 +4404,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 				continue
 			description = deep_get(workload, DictPath("description"), "")
 			split_description = description.splitlines()
-			error_policy = deep_get(workload, DictPath("errorPolicy"), "ignore")
+			# For now this is unused
+			_error_policy = deep_get(workload, DictPath("errorPolicy"), "ignore")
 
 			if name is None:
 				ansithemeprint([ANSIThemeString("Error", "error"),
@@ -4488,7 +4492,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						sys.exit(errno.EINVAL)
 
 
-					checks = [
+					security_checks = [
 						SecurityChecks.PARENT_RESOLVES_TO_SELF,
 						SecurityChecks.OWNER_IN_ALLOWLIST,
 						SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
@@ -4497,7 +4501,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 						SecurityChecks.EXISTS,
 						SecurityChecks.IS_DIR,
 					]
-					retval = check_path(destination, checks = checks)
+					retval = check_path(destination, checks = security_checks)
 
 					if check_path(destination) == [SecurityStatus.OK]:
 						if fetch:
@@ -4508,13 +4512,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							args = [git_path, "-C", destination, "checkout", f"tags/{branch}"]
 							check_and_print_status(execute_command(args, env = env))
 					elif retval == [SecurityStatus.DOES_NOT_EXIST]:
-						checks = [
+						security_checks = [
 							SecurityChecks.PARENT_RESOLVES_TO_SELF,
 							SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 							SecurityChecks.PARENT_PERMISSIONS,
 						]
 
-						if check_path(destination, checks = checks) != [SecurityStatus.OK]:
+						if check_path(destination, checks = security_checks) != [SecurityStatus.OK]:
 							ansithemeprint([ANSIThemeString("Error", "error"),
 									ANSIThemeString(": The workload ", "default"),
 									ANSIThemeString(f"{name}", "argument"),
@@ -4682,11 +4686,11 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							uri = uri[len("file://"):]
 							if uri.startswith("{HOME}"):
 								uri = uri.replace("{HOME}", HOMEDIR, 1)
-							uri_type = "file"
+							_uri_type = "file"
 						elif uri.startswith("http://"):
-							uri_type = "http"
+							_uri_type = "http"
 						elif uri.startswith("https://"):
-							uri_type = "https"
+							_uri_type = "https"
 						if version is not None:
 							uri = uri.replace("<<<version>>>", version)
 
@@ -4702,9 +4706,10 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 							else:
 								check_and_print_status(execute_command_with_response(args, env = env))
 					if data is not None:
+						# pylint: disable-next=consider-using-with
 						tf = tempfile.NamedTemporaryFile(delete = True)
 						path = FilePath(tf.name)
-						secure_write_string(path, data, tempfile = True)
+						secure_write_string(path, data, temporary = True)
 						if verbose:
 							check_and_print_status(execute_command(args + [path], env = env))
 						else:
@@ -4728,7 +4733,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 					repo_name = deep_get(deployment, DictPath("repoName"))
 					version = deep_get(deployment, DictPath("version"))
 
-					if hname is None or chart is None or namespace is None or repo_url is None or repo_name is None or version is None:
+					if None in (hname, chart, namespace, repo_url, repo_name, version):
 						ansithemeprint([ANSIThemeString("Error", "error"),
 								ANSIThemeString(": The workload ", "default"),
 								ANSIThemeString(f"{name}", "argument"),
@@ -4791,7 +4796,7 @@ def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
 			configuration_paths ([str]): A list of paths to configuration files
 	"""
 
-	checks = [
+	security_checks = [
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
 		SecurityChecks.OWNER_IN_ALLOWLIST,
 		SecurityChecks.PERMISSIONS,
@@ -4799,17 +4804,45 @@ def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
 	]
 
 	configurations = ""
+	# pylint: disable-next=consider-using-with
 	tf = tempfile.NamedTemporaryFile(suffix = ".yaml.j2", delete = False)
 
 	for path in configuration_paths:
-		configuration = secure_read_string(path, checks = checks)
+		configuration = secure_read_string(path, checks = security_checks)
 		if len(configurations) > 0:
 			configurations += "---\n"
 		configurations += configuration
 
-	secure_write_string(tf.name, configurations, tempfile = tempfile)
+	secure_write_string(tf.name, configurations, temporary = True)
 
 	return tf.name
+
+def get_crio_version(kubernetes_version: Tuple[int, int]) -> str:
+	"""
+	Given a Kubernetes version, return the matching cri-o version
+
+		Parameters:
+			kubernetes_version ((int, int)): A version tuple (major, minor)
+		Returns:
+			(str): The cri-o version
+	"""
+
+	# cri-o is built/distributed using OBS, hence we need to know the major.minor version
+	# Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
+	# and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
+	#
+	# XXX: For now it seems that there are no stable deb packages in the new repository
+	# so let's cap the version at 1.28 for the time being
+
+	crio_version = f"1.{min(kubernetes_version[1], 28)}"
+
+	#tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
+	#if requested_major < tmp[0] or requested_major == tmp[0] and requested_minor < tmp[1]:
+	#	crio_version = f"{requested_major}.{requested_minor}"
+	#else:
+	#	crio_version = f"{tmp[0]}.{tmp[1]}"
+
+	return crio_version
 
 def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -4817,10 +4850,10 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
-	global setup_control_plane_tasks # pylint: disable=global-statement
+	global setup_control_plane_tasks  # pylint: disable=global-statement
 
 	confirm = True
 	override_cni = False
@@ -5057,14 +5090,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
 	elif cri == "cri-o":
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
-		# cri-o is built/distributed using OBS, hence we need to know the major.minor version
-		# Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
-		# and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
-		tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
-		if requested_major < tmp[0] or requested_major == tmp[0] and requested_minor < tmp[1]:
-			crio_version = f"{requested_major}.{requested_minor}"
-		else:
-			crio_version = f"{tmp[0]}.{tmp[1]}"
+		crio_version = get_crio_version((int(requested_major), int(requested_minor)))
 		setup_control_plane_targets[k8s_distro]["extra_values"]["crio_version"] = crio_version
 
 	if cni is None or cni == "<none>":
@@ -5210,7 +5236,7 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 	# The reason for importing inside the function is to avoid slow startup
 	# when we do not use the Kubernetes helper
 	if kh is None:
-		from kubernetes_helper import KubernetesHelper # pylint: disable=import-outside-toplevel
+		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# If kh is *still* None here something has gone wrong. It is time to exit.
@@ -5299,7 +5325,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	confirm = True
@@ -5394,7 +5420,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	confirm = True
@@ -5488,7 +5514,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	confirm = True
@@ -5616,8 +5642,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating Kubernetes repository files on localhost and controlplane(s)", "action")])
 		selection = __selection_control_planes() + ["localhost"]
-		retval, ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
-						       hosts = selection, extra_values = extra_values, quiet = True)
+		retval, _ansible_results = run_playbook(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
+							hosts = selection, extra_values = extra_values, quiet = True)
 
 		if os_distro == "debian" and update_cache:
 			ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -5636,12 +5662,12 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			ANSIThemeString("Running sanity checks", "action")])
 
 	if k8s_distro == "kubeadm":
-		if os_distro in ("debian", ):
+		if os_distro in ("debian",):
 			pkg_versions = check_versions_apt(["kubeadm"])
-		elif os_distro in ("fedora", "rhel"):
+		elif os_distro in ("suse",):
+			pkg_versions = check_versions_zypper(["kubeadm"])
+		elif os_distro in ("fedora", "rhel",):
 			pkg_versions = check_versions_yum(["kubeadm"])
-		elif os_distro in ("suse", ):
-			versions = check_versions_zypper(["kubeadm"])
 
 		if len(pkg_versions) == 0:
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -5815,7 +5841,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	node_statuses, kh = __get_node_info()
@@ -5870,7 +5896,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	node_statuses, kh = __get_node_info()
@@ -6008,7 +6034,7 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	usergroup = ""
@@ -6071,6 +6097,12 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 preflight_checks = [
 	{
+		"description": "Check whether permissions for .netrc are strict enough",
+		"call": checks.check_netrc_permissions,
+		"preconditions": [
+			"user",
+		],
+	}, {
 		"description": "Check whether the user can sudo without a password on localhost",
 		"call": checks.check_sudo_configuration,
 		"preconditions": [
@@ -6091,10 +6123,10 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
-	global no_password # pylint: disable=global-statement
+	global no_password  # pylint: disable=global-statement
 
 	for opt, _optarg in options:
 		if opt == "--no-password":
@@ -6149,7 +6181,7 @@ def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		Parameters:
 			options (list[(opt, optarg)]): Options to use when executing this action
-			args (list[str]): Options to use when executing this action
+			args (list[str]): Arguments to use when executing this action
 	"""
 
 	clean_run = run_checks(troubleshoot_checks)

@@ -1,0 +1,585 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+# unit-tests for logparser.py
+
+from datetime import datetime
+from typing import Callable, Dict, Tuple
+
+from cmttypes import deep_get, DictPath, LogLevel, ProgrammingError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+import logparser as logparsers
+
+def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+	loglevels = []
+
+	fun = logparsers.get_loglevel_names
+	fun_str = "logparsers.get_loglevel_names"
+	tmp = fun()
+	if verbose:
+		print(f"  loglevel_names: {tmp}")
+
+	if tmp is None:
+		message = f"{fun_str}() returned None"
+		result = False
+	elif not isinstance(tmp, list):
+		message = f"{fun_str}() returned wrong type ({type(tmp)}), expected list"
+		result = False
+	elif len(tmp) == 0:
+		message = "{fun_str}() returned an empty list"
+		result = False
+	else:
+		loglevels = tmp
+		fun_str = "logparsers.name_to_loglevel"
+		fun = logparsers.name_to_loglevel
+		for indata in loglevels:
+			tmp = fun(indata)
+			if tmp is None:
+				message = f"{fun_str}() returned None for valid indata {indata}"
+			elif not isinstance(tmp, LogLevel):
+				message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected LogLevel"
+				result = False
+				break
+			if verbose:
+				print(f"  <{tmp}>: {indata}")
+
+	if result:
+		try:
+			indata = "NOT A LOGLEVEL"
+			fun(indata)
+			message = f"{fun_str}() silently accepted invalid indata {indata}"
+			result = False
+		except ProgrammingError:
+			pass
+
+	return message, result
+
+def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
+	verbose = False
+	message = ""
+	result = True
+
+	for indata in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
+		fun = logparsers.month_to_numerical
+		fun_str = "logparsers.month_to_numerical"
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, str):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected str"
+			result = False
+		else:
+			if verbose:
+				print(f"{tmp}: {indata.capitalize()}")
+
+	if result:
+		try:
+			indata = "NOT A MONTH"
+			fun(indata)
+			message = f"{fun_str}() silently accepted invalid indata ({indata})"
+			result = False
+		except ValueError:
+			pass
+
+	return message, result
+
+def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	for indata in valid_indata:
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, LogLevel):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected LogLevel"
+			result = False
+		else:
+			if verbose:
+				print(f"<{indata}>: {fun(indata)}")
+
+	if result:
+		# If we don't pass a default we should get None
+		indata = "#"
+		tmp = fun(indata)
+		if tmp is not None:
+			message = f"{fun_str}(default = None) returned {tmp} with invalid indata ({indata}), expected None"
+			result = False
+
+	if result:
+		# If we pass a default we should get that default back if the severity is invalid
+		tmp = fun(indata, default = LogLevel.NOTICE)
+		if tmp is None:
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned None with invalid indata ({indata}), expected LogLevel.NOTICE"
+			result = False
+		elif not isinstance(tmp, LogLevel):
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned wrong type ({type(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel"
+			result = False
+		elif tmp != LogLevel.NOTICE:
+			message = f"{fun_str}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel.NOTICE"
+			result = False
+
+	return message, result
+
+def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_indata = ("F", "E", "W", "N", "C", "I", "D"), fun = logparsers.letter_to_severity, fun_str = "logparsers.letter_to_severity")
+
+def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_indata = ("ERR", "WRN", "INF"), fun = logparsers.str_3letter_to_severity, fun_str = "logparsers.str_3letter_to_severity")
+
+def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_indata = ("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun = logparsers.str_4letter_to_severity, fun_str = "logparsers.str_4letter_to_severity")
+
+def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_str_to_severity(valid_indata = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
+
+def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	for indata in valid_indata:
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, str):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
+			result = False
+		else:
+			if verbose:
+				print(f"<{indata}>: {fun(indata)}")
+
+	if result:
+		indata = -42
+		tmp = fun(indata)
+		if tmp is None:
+			message = f"{fun_str}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			result = False
+		elif tmp != "!ERROR IN LOGPARSER!":
+			message = f"{fun_str}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			result = False
+
+	return message, result
+
+def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_letter_severity, fun_str = "logparsers.lvl_to_letter_severity")
+
+def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_4letter_severity, fun_str = "logparsers.lvl_to_4letter_severity")
+
+def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_word_severity, fun_str = "logparsers.lvl_to_word_severity")
+
+def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+	default = LogLevel.INFO
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata, default = default)
+		if tmp is None:
+			message = f"{fun_str}() returned None with valid indata {indata}"
+			result = False
+		elif not isinstance(tmp, tuple):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
+			result = False
+		elif len(tmp) != 2:
+			message = f"{fun_str}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
+			result = False
+		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
+			result = False
+		else:
+			if verbose:
+				print(f"<{indata}, default = {default}>: {fun(indata, default = default)}")
+
+	if result:
+		indata = "NOT A VALID PREFIX"
+		tmp = fun(indata, default = default)
+		if tmp is None:
+			message = f"{fun_str}() returned None for invalid indata {indata}, expected ({indata}, {default})"
+			result = False
+		elif not isinstance(tmp, tuple):
+			message = f"{fun_str}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
+			result = False
+		elif len(tmp) != 2:
+			message = f"{fun_str}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
+			result = False
+		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
+			result = False
+		elif tmp[0] != indata or tmp[1] != default:
+			message = f"{fun_str}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
+			result = False
+
+	return message, result
+
+def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_split_severity(valid_indata = ("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]", "[notavalidseverity]"),
+				      fun = logparsers.split_bracketed_severity, fun_str = "logparsers.split_bracketed_severity", verbose = verbose)
+
+def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
+	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
+				      fun = logparsers.split_colon_severity, fun_str = "logparsers.split_colon_severity", verbose = verbose)
+
+def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"1.677757754464991e+09",
+		"2020-02-20 13:47:41",
+		"2020-02-20 13.47.41",
+		"2020-02-20 13:47:41Z",
+		"2020-02-20 13.47.41Z",
+		"2020-02-20 13:47:41.224Z",
+		"2020-02-20 13:47:41,224Z",
+		"2020-02-20 13.47.41.224Z",
+		"2020-02-20 13.47.41,224Z",
+		"2020-02-20 13:47:41.22422424 +03:00",
+		"2020-02-20 13:47:41,22422424 +03:00",
+		"2020-02-20 13.47.41.22422424 +03:00",
+		"2020-02-20 13.47.41,22422424 +03:00",
+		"2020-02-20 13:47:41.22422424 -03:00",
+		"2020-02-20 13:47:41,22422424 -03:00",
+		"2020-02-20 13.47.41.22422424 -03:00",
+		"2020-02-20 13.47.41,22422424 -03:00",
+		"2020-02-20 13:47:41.22422424 +03.00",
+		"2020-02-20 13:47:41,22422424 +03.00",
+		"2020-02-20 13.47.41.22422424 +03.00",
+		"2020-02-20 13.47.41,22422424 +03.00",
+		"2020-02-20 13:47:41.22422424 -03.00",
+		"2020-02-20 13:47:41,22422424 -03.00",
+		"2020-02-20 13.47.41.22422424 -03.00",
+		"2020-02-20 13.47.41,22422424 -03.00",
+		"2020-02-20 13:47:41.224224 +03:00",
+		"2020-02-20 13:47:41,224224 +03:00",
+		"2020-02-20 13.47.41.224224 +03:00",
+		"2020-02-20 13.47.41,224224 +03:00",
+		"2020-02-20 13:47:41.224224 -03:00",
+		"2020-02-20 13:47:41,224224 -03:00",
+		"2020-02-20 13.47.41.224224 -03:00",
+		"2020-02-20 13.47.41,224224 -03:00",
+		"2020-02-20 13:47:41.224224 +03.00",
+		"2020-02-20 13:47:41,224224 +03.00",
+		"2020-02-20 13.47.41.224224 +03.00",
+		"2020-02-20 13.47.41,224224 +03.00",
+		"2020-02-20 13:47:41.224224 -03.00",
+		"2020-02-20 13:47:41,224224 -03.00",
+		"2020-02-20 13.47.41.224224 -03.00",
+		"2020-02-20 13.47.41,224224 -03.00",
+		"2020-02-20 13:47:41.224 +03:00",
+		"2020-02-20 13:47:41,224 +03:00",
+		"2020-02-20 13.47.41.224 +03:00",
+		"2020-02-20 13.47.41,224 +03:00",
+		"2020-02-20 13:47:41.224 -03:00",
+		"2020-02-20 13:47:41,224 -03:00",
+		"2020-02-20 13.47.41.224 -03:00",
+		"2020-02-20 13.47.41,224 -03:00",
+		"2020-02-20 13:47:41.224 +03.00",
+		"2020-02-20 13:47:41,224 +03.00",
+		"2020-02-20 13.47.41.224 +03.00",
+		"2020-02-20 13.47.41,224 +03.00",
+		"2020-02-20 13:47:41.224 -03.00",
+		"2020-02-20 13:47:41,224 -03.00",
+		"2020-02-20 13.47.41.224 -03.00",
+		"2020-02-20 13.47.41,224 -03.00",
+		"2020-02-20 13:47:41.224233",
+		"2020-02-20 13:47:41,224233",
+		"2020-02-20 13:47:41.224233Z",
+		"2020-02-20 13:47:41,224233Z",
+		"2020-02-20 13:47:41.22423343",
+		"2020-02-20 13:47:41,22423343",
+		"2020-02-20 13:47:41.22423343Z",
+		"2020-02-20 13:47:41,22423343Z",
+	)
+
+	invalid_indata = (
+		"2020%02%20 13:47:41",
+		"2020-02-20 113.47.41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.is_timestamp
+	fun_str = "logparsers.is_timestamp"
+
+	for indata in valid_indata:
+		tmp = fun(indata)
+		if not tmp:
+			message = f"{fun_str}() returned False with valid indata {indata}"
+			result = False
+			break
+
+	for indata in invalid_indata:
+		tmp = fun(indata)
+		if tmp:
+			message = f"{fun_str}() returned True with invalid indata {indata}"
+			result = False
+			break
+
+	return message, result
+
+def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"[2020-02-07 13:12:24.224]",
+		"[2020-02-07 13:12:24,224]",
+		"2020-02-07T13:12:24.224Z",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.18396709+03:00",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.183967091+03:00",
+		"2020-09-23T17:12:32.183967091-03:00",
+		"2020-02-13 12:06:18+03:00",
+		"2020-02-13 12:06:18-03:00",
+		"[2020-02-13 12:06:18 +03:00]",
+		"[2020-02-13 12:06:18 -03:00]",
+		"2020-02-13T12:06:18+0300",
+		"2020-02-13T12:06:18-0300",
+		"2020-02-20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416:",
+		"2020/02/20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416Z",
+		"[2021-12-18T20:15:36Z]",
+		"2021-12-18T20:15:36Z",
+		"2020-02-20 13:47:41",
+		"2020/02/20 13:47:41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.split_iso_timestamp
+	fun_str = "logparsers.split_iso_timestamp"
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata, timestamp = timestamp)
+		if tmp == (indata, timestamp):
+			message = f"{fun_str} failed to split timestamp from valid indata {indata}"
+			result = False
+			break
+
+	if result:
+		indata = "something or another"
+		tmp = fun(indata, timestamp = timestamp)
+		if tmp != (indata, timestamp):
+			message = f"{fun_str} did not return the indata {indata} unmodified"
+			result = False
+
+	return message, result
+
+def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	valid_indata = (
+		"[2020-02-07 13:12:24.224]",
+		"[2020-02-07 13:12:24,224]",
+		"2020-02-07T13:12:24.224Z",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.18396709+03:00",
+		"2020-02-13T12:06:18.011345 +03:00",
+		"2020-02-13T12:06:18.011345 -03:00",
+		"2020-09-23T17:12:32.183967091+03:00",
+		"2020-09-23T17:12:32.183967091-03:00",
+		"2020-02-13 12:06:18+03:00",
+		"2020-02-13 12:06:18-03:00",
+		"[2020-02-13 12:06:18 +03:00]",
+		"[2020-02-13 12:06:18 -03:00]",
+		"2020-02-13T12:06:18+0300",
+		"2020-02-13T12:06:18-0300",
+		"2020-02-20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416:",
+		"2020/02/20 13:47:41.008416",
+		"2020-02-20 13:47:41.008416Z",
+		"[2021-12-18T20:15:36Z]",
+		"2021-12-18T20:15:36Z",
+		"2020-02-20 13:47:41",
+		"2020/02/20 13:47:41",
+	)
+
+	timestamp = datetime.now()
+	fun = logparsers.strip_iso_timestamp
+	fun_str = "logparsers.strip_iso_timestamp"
+
+	for indata in valid_indata:
+		# indata is just a prefix; we want to test with a string prefixed by that prefix"
+		indata = f"{indata} something or another"
+		tmp = fun(indata)
+		if tmp == indata:
+			message = f"{fun_str} failed to strip timestamp from valid indata {indata}"
+			result = False
+			break
+
+	return message, result
+
+def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = logparsers.strip_iso_timestamp_with_tz
+	fun_str = "logparsers.strip_iso_timestamp_with_tz"
+
+	if result:
+		testdata = (
+			# Indata format:
+			# (string, expected_result, expected_exception)
+			("2020-02-20 13:47:01.531 GMT", "", None),
+			("2020-02-20 13:47:01.531 GMT with some other data", "with some other data", None),
+			("2020-02-20 13:47:01.531", "2020-02-20 13:47:01.531", None),
+		)
+
+		for string, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(string)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
+tests: Dict = {
+	("get_loglevel_names()", "name_to_loglevel()"): {
+		"callable": test_get_loglevel_names_and_name_to_loglevel,
+		"result": None,
+	},
+	("month_to_numerical()", ): {
+		"callable": test_month_to_numerical,
+		"result": None,
+	},
+	("letter_to_severity", ): {
+		"callable": test_letter_to_severity,
+		"result": None,
+	},
+	("str_3letter_to_severity", ): {
+		"callable": test_str_3letter_to_severity,
+		"result": None,
+	},
+	("str_4letter_to_severity", ): {
+		"callable": test_str_4letter_to_severity,
+		"result": None,
+	},
+	("str_to_severity", ): {
+		"callable": test_str_to_severity,
+		"result": None,
+	},
+	("lvl_to_letter_severity", ): {
+		"callable": test_lvl_to_letter_severity,
+		"result": None,
+	},
+	("lvl_to_4letter_severity", ): {
+		"callable": test_lvl_to_4letter_severity,
+		"result": None,
+	},
+	("lvl_to_word_severity", ): {
+		"callable": test_lvl_to_word_severity,
+		"result": None,
+	},
+	("split_bracketed_severity", ): {
+		"callable": test_split_bracketed_severity,
+		"result": None,
+	},
+	("split_colon_severity", ): {
+		"callable": test_split_colon_severity,
+		"result": None,
+	},
+	("is_timestamp", ): {
+		"callable": test_is_timestamp,
+		"result": None,
+	},
+	("test_split_iso_timestamp", ): {
+		"callable": test_split_iso_timestamp,
+		"result": None,
+	},
+	("test_strip_iso_timestamp", ): {
+		"callable": test_strip_iso_timestamp,
+		"result": None,
+	},
+	("test_strip_iso_timestamp_with_tz", ): {
+		"callable": test_strip_iso_timestamp_with_tz,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()

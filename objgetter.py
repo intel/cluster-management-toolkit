@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This file contains helpers that provide an obj for use in info views,
@@ -16,13 +19,13 @@ try:
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:
-	import json # type: ignore
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+	import json  # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus

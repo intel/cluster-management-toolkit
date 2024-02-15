@@ -8,6 +8,9 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Requires: python3-natsort
 # Requires: python3-openssl
 # Recommends: python3-ujson
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # pylint: disable=line-too-long
 
@@ -18,6 +21,7 @@ A curses-based UI for Cluster Management
 import ast
 import base64
 import binascii
+import concurrent.futures
 import copy
 import csv
 import curses
@@ -29,31 +33,32 @@ import http.client
 from itertools import zip_longest
 # ujson is much faster than json,
 # but it might not be available
-try:
+try:  # pragma: no cover
 	import ujson as json
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:
-	import json # type: ignore
-	DecodeException = json.decoder.JSONDecodeError # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+	import json  # type: ignore
+	DecodeException = json.decoder.JSONDecodeError  # type: ignore
 from operator import itemgetter
 import os
 from pathlib import Path, PurePath
 import re
 import socket
-import subprocess # nosec
+import subprocess  # nosec
 from subprocess import PIPE, STDOUT # nosec
 import sys
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+import threading
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
 	import yaml
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
@@ -66,6 +71,8 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 # from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 from cmtlog import debuglog, CMTLogType, CMTLog
 
+from cmtvalidators import validate_name
+
 from commandparser import parse_commandline
 
 import logparser as logparsers
@@ -74,8 +81,9 @@ from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_wo
 import curses_helper
 import cmtlib
 from cmtlib import clamp, disksize_to_human, get_package_versions, identify_k8s_distro, make_set_expression_list
-from cmtlib import none_timestamp, timestamp_to_datetime, datetime_to_timestamp, get_since
+from cmtlib import none_timestamp, timestamp_to_datetime, get_since
 from cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
+from cmtlib import normalise_cpu_usage_to_millicores, normalise_mem_to_bytes, normalise_mem_bytes_to_str
 from curses_helper import curses_configuration, color_log_severity, format_helptext, get_mousemask, color_status_group
 from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
 from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len, themearray_truncate, ThemeAttr, ThemeRef, ThemeString
@@ -83,26 +91,26 @@ from curses_helper import themearray_wrap_line, themearray_to_string, themearray
 import datagetter as datagetters
 from datagetter import datagetter_allowlist
 import generator as generators
-from generator import generator_allowlist
+from generator import generator_allowlist, default_processor
 import itemgetter as itemgetters
 from itemgetter import itemgetter_allowlist
 from objgetter import objgetter_allowlist
 # pylint: disable=deprecated-module
-import formatter as formatters # pylint: disable=wrong-import-order
+import formatter as formatters  # pylint: disable=wrong-import-order
 # pylint: disable=deprecated-module
-from formatter import formatter_allowlist # pylint: disable=wrong-import-order
+from formatter import formatter_allowlist  # pylint: disable=wrong-import-order
 
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
 from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
-from ansible_helper import ansible_extract_failure
-from ansible_helper import ansible_async_get_data, ansible_ping_async, ansible_run_playbook_on_selection_async
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status
+from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
 
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
+
+import reexecutor
 
 import about
 
@@ -129,14 +137,17 @@ selected_namespace = ""
 # defaults
 defaultview = ""
 
-kh: KubernetesHelper = None # type: ignore
+kh: KubernetesHelper = None  # type: ignore
+
+executor = reexecutor.ReExecutor()
+async_data: Dict = {}
 
 def init_kubernetes_client() -> None:
 	"""
 	Initialise the Kubernetes client
 	"""
 
-	global kh # pylint: disable=global-statement
+	global kh  # pylint: disable=global-statement
 
 	if kubernetes_support:
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, config_path = kube_config_file)
@@ -222,206 +233,6 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[U
 
 	return array
 
-def processor_timestamp(obj: Dict, field: str) -> str:
-	value = getattr(obj, field)
-
-	if value is None:
-		return ""
-
-	if isinstance(value, str):
-		return value
-
-	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
-	return string
-
-def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
-	values = getattr(obj, field)
-
-	if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
-		raise ValueError("Received more than 2 fields for timestamp_with_age but no formatting to specify what the values signify")
-
-	if len(values) == 2:
-		if values[0] is None:
-			array: List[Union[ThemeRef, ThemeString]] = [
-				ThemeString("<none>", ThemeAttr("types", "none"))
-			]
-		else:
-			timestamp_string = datetime_to_timestamp(values[0])
-			array = generators.format_numerical_with_units(timestamp_string, "timestamp", False)
-			array += [
-				ThemeString(" (", ThemeAttr("types", "generic"))
-			]
-			array += generators.generator_age_raw(values[1], False)
-			array += [
-				ThemeString(")", ThemeAttr("types", "generic"))
-			]
-	else:
-		array = []
-
-		for i in range(0, len(values)):
-			# If there is no formatting for this field we assume that
-			# it is a generic string
-			if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
-				fmt = ThemeAttr("types", "generic")
-				array += [
-					ThemeString(values[i], fmt)
-				]
-			elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
-				if values[i] is None:
-					array += [
-						ThemeString("<none>", ThemeAttr("types", "none"))
-					]
-				else:
-					# timestamp_string = datetime_to_timestamp(values[0])
-					array += generators.format_numerical_with_units(values[i], "timestamp", False)
-			elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
-				array += generators.generator_age_raw(values[i], False)
-			else:
-				array += [
-					ThemeString(values[i], formatting["field_colors"][i])
-				]
-
-	return themearray_to_string(array)
-
-# For the list processor to work we need to know the length of all the separators
-# pylint: disable-next=too-many-arguments
-def processor_list(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
-		   ellipsise: bool, ellipsis: ThemeRef,
-		   field_prefixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]],
-		   field_suffixes: List[Union[Tuple[str, str], ThemeString, List[Union[Tuple[str, str], ThemeString]]]]) -> str:
-	items = getattr(obj, field)
-
-	strings: List[str] = []
-
-	elcount = 0
-	skip_separator = True
-
-	if isinstance(items, tuple):
-		items = [items]
-
-	for item in items:
-		if elcount == ellipsise:
-			strings.append(themearray_to_string([ellipsis]))
-			break
-
-		if not isinstance(item, tuple):
-			item = (item, None)
-
-		# Join all elements of the field into one string
-		string = ""
-
-		for i in range(0, len(item)):
-			if item[i] is None:
-				continue
-
-			tmp = str(item[i])
-
-			if len(tmp) == 0:
-				continue
-
-			if i > 0 and not skip_separator:
-				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
-
-			if field_prefixes is not None and i < len(field_prefixes):
-				if isinstance(field_prefixes[i], tuple):
-					string += themearray_to_string([field_prefixes[i]])
-				else:
-					for _item in field_prefixes[i]:
-						string += themearray_to_string([_item])
-			string += tmp
-			if field_suffixes is not None and i < len(field_suffixes):
-				if isinstance(field_suffixes[i], tuple):
-					string += themearray_to_string([field_suffixes[i]])
-				else:
-					for _item in field_suffixes[i]:
-						string += themearray_to_string([_item])
-			skip_separator = False
-
-		strings.append(string)
-		elcount += 1
-
-	vstring = themearray_to_string([item_separator]).join(strings)
-
-	return vstring
-
-# For the list processor to work we need to know the length of all the separators
-# pylint: disable-next=too-many-arguments
-
-def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef, field_separators: List[Union[ThemeRef, ThemeString]],
-			       ellipsise: bool, ellipsis: ThemeRef, field_prefixes: List[ThemeString], field_suffixes: List[ThemeString]) -> str:
-	items = getattr(obj, field)
-
-	strings = []
-
-	elcount = 0
-	skip_separator = True
-
-	newitems = []
-	for item in items:
-		newitems.append(item[0])
-
-	for item in newitems:
-		if elcount == ellipsise:
-			strings.append(themearray_to_string([ellipsis]))
-			break
-
-		if not isinstance(item, tuple):
-			item = (item, None)
-
-		# Join all elements of the field into one string
-		string = ""
-
-		for i in range(0, len(item)):
-			if item[i] is None:
-				continue
-
-			tmp = str(item[i])
-
-			if len(tmp) == 0:
-				continue
-
-			if i > 0 and not skip_separator:
-				string += themearray_to_string([field_separators[min(i - 1, len(field_separators) - 1)]])
-
-			if field_prefixes is not None and i < len(field_prefixes):
-				string += themearray_to_string([field_prefixes[i]])
-			string += tmp
-			if field_suffixes is not None and i < len(field_suffixes):
-				string += themearray_to_string([field_suffixes[i]])
-			skip_separator = False
-
-		strings.append(string)
-		elcount += 1
-
-	vstring = themearray_to_string([item_separator]).join(strings)
-
-	return vstring
-
-def processor_age(obj: Dict, field: str) -> str:
-	seconds = getattr(obj, field)
-	return cmtlib.seconds_to_age(seconds, negative_is_skew = True)
-
-def processor_mem(obj: Dict, field: str) -> str:
-	free, total = getattr(obj, field)
-
-	string = f"{100 - (100 * int(free)) / int(total):0.1f}"
-	string += str(ThemeRef("separators", "percentage"))
-	string += " "
-	string += str(ThemeRef("separators", "fraction"))
-	string += " "
-	string += f"{int(total) / (1024 * 1024):0.1f}"
-	string += "GiB"
-
-	return string
-
-default_processor = {
-	generators.generator_age: processor_age,
-	generators.generator_list: processor_list,
-	generators.generator_list_with_status: processor_list_with_status,
-	generators.generator_mem: processor_mem,
-	generators.generator_timestamp: processor_timestamp,
-}
-
 def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[Type]) -> int:
 	linelen = 0
 	pos = 0
@@ -449,10 +260,10 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 				processor = default_processor.get(generator)
 
 			if processor is not None:
-				if processor in (processor_list, processor_list_with_status):
+				if processor in (generators.processor_list, generators.processor_list_with_status):
 					tmp = processor(obj, field_name, item_separator = item_separator, field_separators = field_separators, ellipsise = ellipsise, ellipsis = ellipsis, field_prefixes = field_prefixes, field_suffixes = field_suffixes)
 				# pylint: disable-next=comparison-with-callable
-				elif processor == processor_timestamp_with_age:
+				elif processor == generators.processor_timestamp_with_age:
 					tmp = processor(obj, field_name, formatting)
 				else:
 					tmp = processor(obj, field_name)
@@ -534,7 +345,6 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 	# aggregator_openapi_v2_regeneration_count{apiservice="*",reason="startup"} 0
 	# apiserver_requested_deprecated_apis{group="autoscaling",removed_release="1.25",resource="horizontalpodautoscalers",subresource="",version="v2beta1"} 1
 
-	# Safe
 	metrics_regex = re.compile(r"^([^{]*){([^}]*)}\s\d+$")
 
 	for line in metrics:
@@ -660,54 +470,10 @@ def listgetter_files(**kwargs):
 
 	return vlist, 200
 
-def setup_host_ping(inventory_dict: Dict, async_cb: Callable, ping_hosts: str = "Lazy") -> Tuple[Any, Callable]:
-	async_cookie = None
-
-	if ping_hosts in ("Always", "Lazy"):
-		# Trigger an asynchronous host ping
-		async_cookie = ansible_ping_async(None, inventory_dict)
-
-	return async_cookie, async_cb
-
 # pylint: disable-next=unused-argument
-def get_list_async_cb(vlist: List[Dict], async_cookie: Any, **kwargs: Dict) -> Tuple[List[Dict], Any, Dict]:
-	retrigger = deep_get(kwargs, DictPath("retrigger"), False)
-	inventory_dict = deep_get(kwargs, DictPath("inventory_dict"), None)
-
-	if async_cookie is None:
-		if retrigger:
-			async_cookie = ansible_ping_async(None, inventory_dict)
-		return vlist, async_cookie, kwargs
-
-	# If there is no new data yet (the run has not completed), return
-	results = ansible_async_get_data(async_cookie)
-	if results is None:
-		return vlist, async_cookie, kwargs
-
-	host_status = {}
-
-	for host, result in results.items():
-		for task in result:
-			unreachable = deep_get(task, DictPath("unreachable"))
-			skipped = deep_get(task, DictPath("skipped"))
-			stderr_lines = deep_get(task, DictPath("stderr_lines"))
-			retval = deep_get(task, DictPath("retval"))
-			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
-			host_status[host] = status
-
-	key = deep_get(kwargs, DictPath("key"), "name")
-
-	# Update status
-	for i, host in enumerate(vlist):
-		vlist[i]["status"] = deep_get(host_status, DictPath(host[key]), "UNKNOWN")
-	async_cookie = None
-
-	return vlist, async_cookie, kwargs
-
-# pylint: disable-next=unused-argument
-def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
+def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], List[str]]:
 	vlist = []
-	status = 200
+	hosts = []
 
 	# Do we want to ping the hosts?
 	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Context#ping_hosts"), "Lazy")
@@ -734,6 +500,8 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 		tmp = server_address_regex.match(server)
 		if tmp is not None:
 			server_address = tmp[2]
+			hosts.append(server_address)
+
 
 		vlist.append({
 			"current": current,
@@ -752,11 +520,9 @@ def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Di
 			inventory_dict["all"]["hosts"][server_address]["status"] = "UNKNOWN"
 			inventory_dict["all"]["vars"] = {}
 
-	async_cookie, async_cb = setup_host_ping(inventory_dict, get_list_async_cb, ping_hosts)
 	key = deep_get(kwargs, DictPath("key"), "name")
-	retrigger_timeout = deep_get(kwargs, DictPath("retrigger_timeout"), 5)
 
-	return vlist, status, async_cookie, async_cb, { "key": key, "inventory_dict": inventory_dict, "retrigger_timeout": retrigger_timeout }
+	return vlist, hosts
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
 	"""
@@ -770,7 +536,6 @@ def get_image_tuple(image: str) -> Tuple[str, str]:
 				version (str): The container version
 	"""
 
-	# Safe
 	tmp = re.match(r"^(.*):(.*)", image)
 	if tmp is not None:
 		image_name = f"{tmp[1]}"
@@ -1027,106 +792,8 @@ def get_sidecar_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, 200
 
-def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
-	"""
-	Given CPU usage information, convert it to CPU usage in millicores
-
-		Parameters:
-			cpu_usage(union(int, str)): The CPU usage
-		Returns:
-			cpu_usage_millicores (float): CPU usage in millicores
-	"""
-
-	cpu_usage_millicores: float = 0
-
-	if cpu_usage.isnumeric():
-		cpu_usage_millicores = int(cpu_usage) * 1000
-	elif cpu_usage.endswith("m"):
-		cpu_usage_millicores = int(cpu_usage[0:-1])
-	elif cpu_usage.endswith("u"):
-		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000
-	elif cpu_usage.endswith("n"):
-		cpu_usage_millicores = int(cpu_usage[0:-1]) / 1000000
-	else:
-		raise ValueError(f"Unknown unit for CPU usage in {cpu_usage}")
-	return cpu_usage_millicores
-
-def normalise_mem_to_bytes(mem_usage: str) -> int:
-	"""
-	Given a memory usage string, normalise it to bytes
-
-		Parameters:
-			mem_usage (str): The amount of memory used
-		Returns:
-			mem_usage_bytes (int): The amount of memory used in bytes
-	"""
-
-	mem = 0
-
-	if mem_usage.isnumeric():
-		mem = int(mem_usage)
-	elif mem_usage.endswith("Ki"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 1
-	elif mem_usage.endswith("Mi"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 2
-	elif mem_usage.endswith("Gi"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 3
-	elif mem_usage.endswith("Ti"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 4
-	elif mem_usage.endswith("Pi"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 5
-	elif mem_usage.endswith("Ei"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 6
-	elif mem_usage.endswith("Zi"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 7
-	elif mem_usage.endswith("Yi"):
-		mem = int(mem_usage[0:-2]) * 1024 ** 8
-	else:
-		raise ValueError(f"Unknown unit for memory usage in {mem_usage}")
-
-	return mem
-
-def normalise_mem_bytes_to_str(mem_usage_bytes: int) -> str:
-	"""
-	Given memory usage in bytes, convert it to a normalised string
-	"""
-
-	suffix = ""
-	mem_usage: float = 0
-
-	if mem_usage_bytes < 1024 ** 1:
-		mem_usage = mem_usage_bytes
-	elif mem_usage_bytes < 1024 ** 2:
-		mem_usage = mem_usage_bytes / 1024 ** 1
-		suffix = "Ki"
-	elif mem_usage_bytes < 1024 ** 3:
-		mem_usage = mem_usage_bytes / 1024 ** 2
-		suffix = "Mi"
-	elif mem_usage_bytes < 1024 ** 4:
-		mem_usage = mem_usage_bytes / 1024 ** 3
-		suffix = "Gi"
-	elif mem_usage_bytes < 1024 ** 5:
-		mem_usage = mem_usage_bytes / 1024 ** 4
-		suffix = "Ti"
-	elif mem_usage_bytes < 1024 ** 6:
-		mem_usage = mem_usage_bytes / 1024 ** 5
-		suffix = "Pi"
-	elif mem_usage_bytes < 1024 ** 7:
-		mem_usage = mem_usage_bytes / 1024 ** 6
-		suffix = "Ei"
-	elif mem_usage_bytes < 1024 ** 8:
-		mem_usage = mem_usage_bytes / 1024 ** 7
-		suffix = "Zi"
-	else:
-		mem_usage = mem_usage_bytes / 1024 ** 8
-		suffix = "Yi"
-
-	return f"{mem_usage:0.1f}{suffix}B"
-
 def __get_timestamp_with_fallback(obj: Dict, paths: List[DictPath]) -> datetime:
 	return timestamp_to_datetime(deep_get_with_fallback(obj, paths))
-
-latest_info = None
 
 def __process_string(value: str, replace_quotes: str) -> str:
 	# We do not want any newlines, and extra trailing whitespace
@@ -1530,7 +1197,7 @@ def transform_list(vlist, transform):
 	return result
 
 # pylint: disable-next=too-many-arguments
-def get_obj(obj, field_dict, field_names, field_index, view, filters):
+def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: str, view: str, filters: Dict, deleted: bool = False):
 	d = {}
 
 	# fields both specify formatting and where to get the data from; here we are only concerned with the data
@@ -1633,7 +1300,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 							if sortedvals[i] is None:
 								continue
 							# pylint: disable-next=unidiomatic-typecheck
-							if type(sortedvals[i]) == int: # noqa: E721
+							if type(sortedvals[i]) == int:  # noqa: E721
 								if firstnum is None:
 									firstnum = sortedvals[i]
 								else:
@@ -1887,7 +1554,7 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 					val1 = deep_get(obj, DictPath(path[0]), _default1)
 					val2 = deep_get(obj, DictPath(path[1]), _default2)
 					# pylint: disable-next=unidiomatic-typecheck
-					if type(val1) != type(val2): # noqa: E721
+					if type(val1) != type(val2):  # noqa: E721
 						res = -2
 					elif val1 == val2:
 						res = 0
@@ -2198,6 +1865,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 		entry = None
 	else:
 		d["ref"] = obj
+		d["__deleted"] = deleted
+		d["__uid"] = deep_get(obj, DictPath("metadata#uid"))
 		entry = type("InfoClass", (), d)
 
 	return entry
@@ -2205,10 +1874,8 @@ def get_obj(obj, field_dict, field_names, field_index, view, filters):
 def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	info = []
 
-	vlist = deep_get(kwargs, DictPath("_vlist"), [])
-
 	# Generate an empty entry
-	if vlist == []:
+	if not (vlist := deep_get(kwargs, DictPath("_vlist"), [])):
 		return []
 
 	field_dict = deep_get(kwargs, DictPath("_field_dict"), {})
@@ -2225,7 +1892,10 @@ def generic_infogetter(**kwargs: Dict) -> List[Dict]:
 	for obj in vlist:
 		if len(extra_data) > 0:
 			obj["_extra_data"] = extra_data
-		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters)
+		deleted = False
+		if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
+			deleted = True
+		tmp = get_obj(obj, field_dict = field_dict, field_names = field_names, field_index = field_index, view = view, filters = filters, deleted = deleted)
 		if tmp is None:
 			continue
 
@@ -3413,7 +3083,6 @@ def format_controller(controller, show_kind: str):
 def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
 	controller = (("", ""), "")
 	if owner_references is not None:
-		# Safe
 		api_group_regex = re.compile(r"^(.*)/.*")
 
 		for owr in owner_references:
@@ -3958,6 +3627,12 @@ def get_pod_resource_list(obj, **kwargs):
 
 	pod_name = deep_get(obj, DictPath("metadata#name"))
 	pod_namespace = deep_get(obj, DictPath("metadata#namespace"))
+	app_selector = f"app={deep_get(obj, DictPath('metadata#labels#apps'))}"
+	# We'll be one-shotting all of these, so we won't use reexecutor
+	executor_ = concurrent.futures.ThreadPoolExecutor()
+	executors = {}
+
+	filter_resources = deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), [])
 
 	container_resources = []
 	if init_containers:
@@ -3996,7 +3671,7 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": age,
 		})
 
-	if "node" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if "node" not in filter_resources:
 		kind = ("Node", "")
 		rtype = resource_kind_to_rtype(kind)
 		name = deep_get(obj, DictPath("spec#nodeName"))
@@ -4042,15 +3717,15 @@ def get_pod_resource_list(obj, **kwargs):
 		if is_controller:
 			controller_name = owr_name
 			controller_kind = owr_kind[0]
-			if "controller" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "controller" in filter_resources:
 				continue
 			rtype = "[controller]"
 		elif owr_kind == ("CronJob", "batch"):
-			if "cronjob" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "cronjob" in filter_resources:
 				continue
 			rtype = "[cronjob]"
 		else:
-			if "owner_reference" in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+			if "owner_reference" in filter_resources:
 				continue
 			rtype = "[owner_reference]"
 
@@ -4091,7 +3766,49 @@ def get_pod_resource_list(obj, **kwargs):
 			"age": -1,
 		})
 
-	if "persistent_volume_claim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if controller_kind == "Node":
+		trivy_kind = "Pod"
+		trivy_name = pod_name
+	else:
+		trivy_kind = controller_kind
+		trivy_name = controller_name
+	selector_dict = {
+		"trivy-operator.resource.kind": trivy_kind,
+		"trivy-operator.resource.name": trivy_name,
+	}
+	trivy_selector = make_selector(selector_dict)
+
+	# OK, we have the controller kind (and thus trivy_selector); time to fire off the requests for lists
+	for resource, kwargs in (("event",
+				  {"kind": ("Event", ""), "namespace": pod_namespace, "field_selector": make_selector({"involvedObject.name": pod_name, "involvedObject.namespace": pod_namespace})}),
+				 ("pod_disruption_budget",
+				  {"kind": ("PodDisruptionBudget", "policy"), "namespace": pod_namespace}),
+				 ("pod_metrics",
+				  {"kind": ("PodMetrics", "metrics.k8s.io")}),
+				 ("config_audit_report",
+				  {"kind": ("ConfigAuditReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("infra_assessment_report",
+				  {"kind": ("InfraAssessmentReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("vulnerability_report",
+				  {"kind": ("VulnerabilityReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("exposed_secret_report",
+				  {"kind": ("ExposedSecretReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("sbom_report",
+				  {"kind": ("SbomReport", "aquasecurity.github.io"), "namespace": pod_namespace, "label_selector": trivy_selector}),
+				 ("antrea_agent",
+				  {"kind": ("AntreaAgentInfo", "crd.antrea.io")}),
+				 ("antrea_controller",
+				  {"kind": ("AntreaControllerInfo", "crd.antrea.io")}),
+				 ("service",
+				  {"kind": ("Service", ""), "namespace": pod_namespace}),
+				 ("resourceclaim",
+				  {"kind": ("ResourceClaim", "resource.k8s.io"), "namespace": pod_namespace}),
+				):
+		kind = deep_get(kwargs, DictPath("kind"))
+		if resource not in filter_resources and kh.is_kind_available(kind):
+			executors[kind] = executor_.submit(get_kubernetes_list_async, **kwargs)
+
+	if "persistent_volume_claim" not in filter_resources:
 		for volume in deep_get(obj, DictPath("spec#volumes"), []):
 			if deep_get(volume, DictPath("persistentVolumeClaim")) is None:
 				continue
@@ -4123,7 +3840,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "service_account" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
+	if "service_account" not in filter_resources and deep_get(obj, DictPath("spec#serviceAccountName")) is not None:
 		kind = ("ServiceAccount", "")
 		rtype = resource_kind_to_rtype(kind)
 
@@ -4147,7 +3864,7 @@ def get_pod_resource_list(obj, **kwargs):
 	for vol in deep_get(obj, DictPath("spec#volumes"), []):
 		status = ""
 
-		if deep_get(vol, DictPath("secret")) is not None and "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		if deep_get(vol, DictPath("secret")) is not None and "secret" not in filter_resources:
 			kind = ("Secret", "")
 			rtype = resource_kind_to_rtype(kind)
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
@@ -4173,7 +3890,7 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+		if deep_get(vol, DictPath("configMap")) is not None and "config_map" not in filter_resources:
 			kind = ("ConfigMap", "")
 			rtype = resource_kind_to_rtype(kind)
 			cm_name = deep_get(vol, DictPath("configMap#name"))
@@ -4202,8 +3919,8 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
-		if "secret" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
+	if "secret" not in filter_resources:
+		for vol in deep_get(obj, DictPath("spec#imagePullSecrets"), []):
 			kind = ("Secret", "")
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
@@ -4223,17 +3940,80 @@ def get_pod_resource_list(obj, **kwargs):
 				"age": -1,
 			})
 
-	if "event" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		#kind = ("Event", "events.k8s.io")
-		kind = ("Event", "")
+	if "pod_metrics" not in filter_resources:
+		kind = ("PodMetrics", "metrics.k8s.io")
+		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if podmetrics is not None:
+			ref = podmetrics
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", pod_name)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	if "cilium_endpoint" not in filter_resources:
+		# Check if there's a matching cilium endpoint
+		kind = ("CiliumEndpoint", "cilium.io")
+		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", pod_name)
+			status = deep_get(ref, DictPath("status#state"), "Unknown")
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": pod_name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": status.capitalize(),
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	if "runtimeclass" not in filter_resources:
+		kind = ("RuntimeClass", "node.k8s.io")
+		name = deep_get(obj, DictPath("spec#runtimeClassName"))
+		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
+		if ref is not None:
+			rtype = resource_kind_to_rtype(kind)
+			resource_tuple = ("", "", name)
+			vlist.append({
+				"ref": ref,
+				"namespace": pod_namespace,
+				"name": name,
+				"kind": kind[0],
+				"api_group": kind[1],
+				"type": rtype,
+				"resource_tuple": resource_tuple,
+				"status": "",
+				"restarts": "",
+				"message": "",
+				"age": -1,
+			})
+
+	for kind, ex in executors.items():
+		vlist_, status_ = ex.result()
+		# We ignore failures
+		if status_ != 200 or not vlist_:
+			continue
 		rtype = resource_kind_to_rtype(kind)
 
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		tmp_vlist = []
-		for event in _vlist:
-			event_involved_object_name = deep_get_with_fallback(event, [DictPath("regarding#name"), DictPath("involvedObject#name")])
-			event_involved_object_namespace = deep_get_with_fallback(event, [DictPath("regarding#namespace"), DictPath("involvedObject#namespace")])
-			if event_involved_object_name == pod_name and event_involved_object_namespace == pod_namespace:
+		if kind == ("Event", ""):
+			tmp_vlist = []
+			for event in vlist_:
 				ref = event
 				# For kind we do not want the api_family
 				event_name = deep_get(event, DictPath("metadata#name"))
@@ -4262,20 +4042,21 @@ def get_pod_resource_list(obj, **kwargs):
 					"message": message,
 					"age": seen,
 				})
-		for event in natsorted(tmp_vlist, key = itemgetter("age")):
-			vlist.append(event)
+			for event in natsorted(tmp_vlist, key = itemgetter("age")):
+				vlist.append(event)
+			continue
 
-	if "pod_disruption_budget" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# XXX: Are there are other means of specifying what pod to apply the PDB to than this?
-		if "app" in deep_get(obj, DictPath("metadata#labels"), {}):
-			kind = ("PodDisruptionBudget", "policy")
-			_vlist, status = kh.get_list_by_kind_namespace(kind, "", label_selector = f"app={deep_get(obj, DictPath('metadata#labels'))['app']}")
-			for pdb in _vlist:
-				rtype = resource_kind_to_rtype(kind)
+		if kind == ("PodDisruptionBudget", "policy"):
+			for pdb in vlist_:
 				pdb_name = deep_get(pdb, DictPath("metadata#name"))
 				pdb_namespace = deep_get(pdb, DictPath("metadata#namespace"))
+				pdb_selector = deep_get(pdb, DictPath("spec#selector#matchLabels"))
+				obj_labels = deep_get(obj, DictPath("metadata#labels"), {})
+				# If the selector matches we're happy
+				if pdb_selector.items() & obj_labels.items() != pdb_selector.items():
+					continue
 				resource_tuple = ("", "", pdb_name)
-				ref = kh.get_ref_by_kind_name_namespace(kind, pdb_name, pdb_namespace)
+				ref = pdb
 				vlist.append({
 					"ref": ref,
 					"namespace": pdb_namespace,
@@ -4289,51 +4070,15 @@ def get_pod_resource_list(obj, **kwargs):
 					"message": "",
 					"age": -1,
 				})
+			continue
 
-	if "pod_metrics" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("PodMetrics", "metrics.k8s.io")
-		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
-		if podmetrics is not None:
-			ref = podmetrics
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", pod_name)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": pod_name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": "",
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
+		if kind == ("ConfigAuditReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-	if "config_audit_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ConfigAuditReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
-
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4376,30 +4121,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "infra_assessment_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("InfraAssessmentReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("InfraAssessmentReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4442,30 +4172,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "vulnerability_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("VulnerabilityReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("VulnerabilityReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4512,30 +4227,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "exposed_secret_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ExposedSecretReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("ExposedSecretReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			critical = deep_get(ref, DictPath("report#summary#criticalCount"), 0)
@@ -4578,30 +4278,15 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "sbom_report" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("SbomReport", "aquasecurity.github.io")
-		if controller_kind == "Node":
-			trivy_kind = "Pod"
-			trivy_name = pod_name
-		else:
-			trivy_kind = controller_kind
-			trivy_name = controller_name
-		selector = {
-			"trivy-operator.resource.kind": trivy_kind,
-			"trivy-operator.resource.name": trivy_name,
-		}
-		lref, status = kh.get_list_by_kind_namespace(kind, pod_namespace, label_selector = make_selector(selector))
+		if kind == ("SbomReport", "aquasecurity.github.io"):
+			ref = vlist_[0]
+			if ref is None:
+				continue
 
-		if len(lref) == 0 or status != 200:
-			ref = None
-		else:
-			ref = lref[0]
-
-		if ref is not None:
 			report_name = deep_get(ref, DictPath("metadata#name"))
 
-			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = (kind[0], "", report_name)
 
 			message = ""
@@ -4624,162 +4309,87 @@ def get_pod_resource_list(obj, **kwargs):
 				"message": message,
 				"age": -1,
 			})
+			continue
 
-	if "antrea_agent" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-agent":
 		# OK, this pod is an antrea-agent, so we should look for one that matches it
-		kind = ("AntreaAgentInfo", "crd.antrea.io")
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in _vlist:
-			if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				status = "Unknown"
-				for condition in deep_get(item, DictPath("agentConditions"), {}):
-					if deep_get(condition, DictPath("type")) == "AgentHealthy":
-						healthy = deep_get(condition, DictPath("status"), "Unknown")
-						if healthy == "True":
-							status = "Healthy"
-						elif healthy == "False":
-							status = "Unhealthy"
-				rtype = resource_kind_to_rtype(kind)
-				resource_tuple = ("", "", name)
-
-				vlist.append({
-					"ref": ref,
-					"namespace": pod_namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": status,
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-				break
-
-	if "antrea_controller" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []) and deep_get(obj, DictPath("metadata#labels#component"), "") == "antrea-controller":
-		# OK, this pod is an antrea-agent, so we should look for one that matches it
-		kind = ("AntreaControllerInfo", "crd.antrea.io")
-		_vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		for item in _vlist:
-			if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				status = "Unknown"
-				for condition in deep_get(item, DictPath("controllerConditions"), {}):
-					if deep_get(condition, DictPath("type")) == "ControllerHealthy":
-						healthy = deep_get(condition, DictPath("status"), "Unknown")
-						if healthy == "True":
-							status = "Healthy"
-						elif healthy == "False":
-							status = "Unhealthy"
-				rtype = resource_kind_to_rtype(kind)
-				resource_tuple = ("", "", name)
-				vlist.append({
-					"ref": ref,
-					"namespace": pod_namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": status,
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-				break
-
-	if "cilium_endpoint" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# Check if there's a matching cilium endpoint
-		kind = ("CiliumEndpoint", "cilium.io")
-		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
-		if ref is not None:
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", pod_name)
-			status = deep_get(ref, DictPath("status#state"), "Unknown")
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": pod_name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": status.capitalize(),
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
-
-	if "service" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		# Find service(s) that has a selector that points to this pod
-		kind = ("Service", "")
-		rtype = resource_kind_to_rtype(kind)
-		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		for item in _vlist:
-			selector = deep_get(item, DictPath("spec#selector"), {})
-			if len(selector) == 0:
-				continue
-			_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
-			if len(_vlist2) > 0:
-				ref = item
-				name = deep_get(item, DictPath("metadata#name"))
-				namespace = deep_get(item, DictPath("metadata#namespace"))
-				resource_tuple = ("", "", name)
-				vlist.append({
-					"ref": ref,
-					"namespace": namespace,
-					"name": name,
-					"kind": kind[0],
-					"api_group": kind[1],
-					"type": rtype,
-					"resource_tuple": resource_tuple,
-					"status": "",
-					"restarts": "",
-					"message": "",
-					"age": -1,
-				})
-
-	if "runtimeclass" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("RuntimeClass", "node.k8s.io")
-		name = deep_get(obj, DictPath("spec#runtimeClassName"))
-		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
-		if ref is not None:
-			rtype = resource_kind_to_rtype(kind)
-			resource_tuple = ("", "", name)
-			vlist.append({
-				"ref": ref,
-				"namespace": pod_namespace,
-				"name": name,
-				"kind": kind[0],
-				"api_group": kind[1],
-				"type": rtype,
-				"resource_tuple": resource_tuple,
-				"status": "",
-				"restarts": "",
-				"message": "",
-				"age": -1,
-			})
-
-	if "resourceclaim" not in deep_get(cmtlib.cmtconfig, DictPath("Pod#filter_resources"), []):
-		kind = ("ResourceClaim", "resource.k8s.io")
-		rtype = resource_kind_to_rtype(kind)
-
-		_vlist, status = kh.get_list_by_kind_namespace(kind, pod_namespace)
-		for item in _vlist:
-			owr = deep_get(item, DictPath("metadata#ownerReferences"), [])
-			for owner_reference in owr:
-				if deep_get(owner_reference, DictPath("controller"), False) and \
-				   deep_get(owner_reference, DictPath("kind"), "") == "Pod" and \
-				   deep_get(owner_reference, DictPath("name"), "") == pod_name:
+		if kind == ("AntreaAgentInfo", "crd.antrea.io"):
+			for item in vlist_:
+				if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
+					ref = item
 					name = deep_get(item, DictPath("metadata#name"))
+					status = "Unknown"
+					for condition in deep_get(item, DictPath("agentConditions"), {}):
+						if deep_get(condition, DictPath("type")) == "AgentHealthy":
+							healthy = deep_get(condition, DictPath("status"), "Unknown")
+							if healthy == "True":
+								status = "Healthy"
+							elif healthy == "False":
+								status = "Unhealthy"
+					resource_tuple = ("", "", name)
+
+					vlist.append({
+						"ref": ref,
+						"namespace": pod_namespace,
+						"name": name,
+						"kind": kind[0],
+						"api_group": kind[1],
+						"type": rtype,
+						"resource_tuple": resource_tuple,
+						"status": status,
+						"restarts": "",
+						"message": "",
+						"age": -1,
+					})
+					break
+			continue
+
+		# OK, this pod is an antrea-agent, so we should look for one that matches it
+		if kind == ("AntreaControllerInfo", "crd.antrea.io"):
+			for item in vlist_:
+				if deep_get(item, DictPath("podRef#namespace"), "") == pod_namespace and deep_get(item, DictPath("podRef#name"), "") == pod_name:
+					ref = item
+					name = deep_get(item, DictPath("metadata#name"))
+					status = "Unknown"
+					for condition in deep_get(item, DictPath("controllerConditions"), {}):
+						if deep_get(condition, DictPath("type")) == "ControllerHealthy":
+							healthy = deep_get(condition, DictPath("status"), "Unknown")
+							if healthy == "True":
+								status = "Healthy"
+							elif healthy == "False":
+								status = "Unhealthy"
+					rtype = resource_kind_to_rtype(kind)
 					resource_tuple = ("", "", name)
 					vlist.append({
-						"ref": item,
+						"ref": ref,
 						"namespace": pod_namespace,
+						"name": name,
+						"kind": kind[0],
+						"api_group": kind[1],
+						"type": rtype,
+						"resource_tuple": resource_tuple,
+						"status": status,
+						"restarts": "",
+						"message": "",
+						"age": -1,
+					})
+					break
+			continue
+
+		# Find service(s) that has a selector that points to this pod
+		if kind == ("Service", ""):
+			for item in vlist_:
+				selector = deep_get(item, DictPath("spec#selector"), {})
+				if len(selector) == 0:
+					continue
+				_vlist2, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace, label_selector = make_selector(selector), field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
+				if len(_vlist2) > 0:
+					ref = item
+					name = deep_get(item, DictPath("metadata#name"))
+					namespace = deep_get(item, DictPath("metadata#namespace"))
+					resource_tuple = ("", "", name)
+					vlist.append({
+						"ref": ref,
+						"namespace": namespace,
 						"name": name,
 						"kind": kind[0],
 						"api_group": kind[1],
@@ -4790,128 +4400,37 @@ def get_pod_resource_list(obj, **kwargs):
 						"message": "",
 						"age": -1,
 					})
+			continue
+
+		if kind == ("ResourceClaim", "resource.k8s.io"):
+			for item in vlist_:
+				owr = deep_get(item, DictPath("metadata#ownerReferences"), [])
+				for owner_reference in owr:
+					if deep_get(owner_reference, DictPath("controller"), False) and \
+					   deep_get(owner_reference, DictPath("kind"), "") == "Pod" and \
+					   deep_get(owner_reference, DictPath("name"), "") == pod_name:
+						name = deep_get(item, DictPath("metadata#name"))
+						resource_tuple = ("", "", name)
+						vlist.append({
+							"ref": item,
+							"namespace": pod_namespace,
+							"name": name,
+							"kind": kind[0],
+							"api_group": kind[1],
+							"type": rtype,
+							"resource_tuple": resource_tuple,
+							"status": "",
+							"restarts": "",
+							"message": "",
+							"age": -1,
+						})
+			continue
 
 	return vlist, 200
 
-# pylint: disable-next=unused-argument
-def get_inventory_list(**kwargs: Dict) -> Tuple[List[Dict], int, Any, Callable, Dict]:
-	vlist: List[Dict] = []
-	nodes = []
-
-	control_plane_node, control_plane_name = get_control_plane()
-
-	if kubernetes_support:
-		node_vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
-		for node in node_vlist:
-			roles = kh.get_node_roles(node)
-			if "control-plane" in roles:
-				continue
-			nodes.append(deep_get(node, DictPath("metadata#name")))
-	else:
-		nodes = []
-		status = 200
-
-	if len(nodes) > 0:
-		ansible_add_hosts(ANSIBLE_INVENTORY, nodes, group = "nodes")
-
-	# This returns a YAML tree with the inventory of nodes
-	inventory_dict = ansible_get_inventory_dict()
-
-	if deep_get(inventory_dict, DictPath("all#hosts")) == {}:
-		return vlist, status
-
-	# Before we ping the hosts their status is unknown
-	for host in deep_get(inventory_dict, DictPath("all#hosts"), []):
-		# We do not want to risk overwriting hostvars
-		if deep_get(inventory_dict, DictPath(f"all#hosts#{host}")) is None:
-			inventory_dict["all"]["hosts"][host] = {}
-		inventory_dict["all"]["hosts"][host]["status"] = "UNKNOWN"
-
-	# Do we want to ping the hosts?
-	ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Inventory#ping_hosts"), "Always")
-
-	async_cookie = None
-
-	if ping_hosts in ("Always", "Lazy"):
-		# Trigger an asynchronous host ping
-		async_cookie = ansible_ping_async(None)
-
-	for host in deep_get(inventory_dict, DictPath("all#hosts"), []):
-		# There's no point in trying gethostbyname() on hosts that cannot be resolved
-
-		# For now we do not do anything with external IPs; we should
-		name = host
-		ips = []
-
-		# XXX: We should probably rewrite this to use getaddrinfo() instead,
-		#      to handle IPv6
-		try:
-			ips = [socket.gethostbyname(name)]
-		except socket.gaierror as e:
-			if str(e).endswith("Name or service not known"):
-				pass
-			elif str(e).endswith("No address associated with hostname"):
-				pass
-			elif str(e).endswith("Temporary failure in name resolution"):
-				pass
-			else:
-				sys.exit(f"gethostbyname failed on {name}; {e}")
-		except OSError as e:
-			sys.exit(f"gethostbyname failed on {name}; {e}")
-
-		# This only happens if you run the command on one of the hosts in the inventory
-		if ips != [] and ips[0].startswith("127."):
-			ips = []
-
-			# Get all interfaces with global scope
-			output = subprocess.check_output(["/usr/sbin/ip", "-o", "addr", "show", "scope", "global"]).decode("utf-8", errors = "replace")
-			# Safe
-			iface_addr_regex = re.compile(r"^\d+:\s+([^\s]+)\s+inet6?\s+([^/]*)/")
-
-			for line in output.splitlines():
-				tmp = iface_addr_regex.match(line)
-				if tmp is not None:
-					iface = tmp[1]
-					addr = tmp[2]
-					# There are probably a lot of other things we should exclude,
-					# but let's start with these
-					if iface.startswith(("docker", "weave", "vxlan.calico", "virbr")):
-						continue
-					ips.append(addr)
-
-		kubernetes_roles = []
-
-		# We do not have this information if the network is down
-		if host == control_plane_name:
-			kubernetes_roles.append("control-plane")
-
-		# We do not have this information if the network is down
-		if host in nodes:
-			kubernetes_roles.append("[node]")
-
-			node = kh.get_ref_by_kind_name_namespace(("Node", ""), host, "")
-			if node is not None:
-				roles = kh.get_node_roles(node)
-
-				for role in roles:
-					if len(role) > 0 and role not in ("control-plane", "node"):
-						kubernetes_roles.append(role)
-		ansible_groups = ansible_get_groups_by_host(inventory_dict, host)
-		_status = deep_get(inventory_dict, DictPath(f"all#hosts#{name}#status"), "UNKNOWN")
-		if control_plane_name == "":
-			kubernetes_roles = ["<unknown>"]
-		vlist.append({
-			"name": name,
-			"ref": name,
-			"ips": ips,
-			"kubernetes_roles": kubernetes_roles,
-			"ansible_groups": ansible_groups,
-			"status": _status,
-		})
-
-	async_cb = get_list_async_cb
-
-	return vlist, status, async_cookie, async_cb, {}
+# This function is really just used as a cookie at the moment
+def get_inventory_list() -> None:
+	return
 
 def get_node_addresses(name, addresses):
 	iips = []
@@ -4937,10 +4456,10 @@ def get_node_addresses(name, addresses):
 		else:
 			continue
 
-	if iips == []:
+	if not iips:
 		iips = ["<unset>"]
 		eips = ["<unset>"]
-	if eips == []:
+	if not eips:
 		eips = ["<none>"]
 	if new_name is None:
 		new_name = "<unset>"
@@ -4959,7 +4478,7 @@ def get_node_info(vlist, extra_vars) -> List[Type]:
 	"""
 	info: List[Type] = []
 
-	if vlist == []:
+	if not vlist:
 		return []
 
 	for obj in vlist:
@@ -5049,7 +4568,7 @@ def get_pod_restarts_total(pod):
 
 # pylint: disable-next=unused-argument
 def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
-	global force_refresh_apis # pylint: disable=global-statement
+	global force_refresh_apis  # pylint: disable=global-statement
 
 	selected = deep_get(kwargs, DictPath("selected"))
 	name = getattr(selected, "name")
@@ -5147,7 +4666,7 @@ def filter_list_entry(obj, caller_obj, filters):
 							else:
 								target_value = deep_get(_dict, DictPath(key))
 							# pylint: disable-next=unidiomatic-typecheck
-							if type(value) == type(target_value) and value == target_value: # noqa: E721
+							if type(value) == type(target_value) and value == target_value:  # noqa: E721
 								matched = True
 							else:
 								# This particular dict did not fully match
@@ -5289,13 +4808,12 @@ def get_pod_info(**kwargs) -> List[Type]:
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
-	vlist = deep_get(kwargs, DictPath("_vlist"))
 	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
 	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
 	filters = deep_get(kwargs, DictPath("filters"), [])
 	info: List[Type] = []
 
-	if vlist == []:
+	if not (vlist := deep_get(kwargs, DictPath("_vlist"))):
 		return []
 
 	for obj in vlist:
@@ -5376,7 +4894,7 @@ def get_pod_info(**kwargs) -> List[Type]:
 
 	return info
 
-def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_taggable: bool = False) -> None:
+def generate_list_header(uip: UIProps, headerpad: curses.window, field_dict: Dict, is_taggable: bool = False) -> None:
 	headerarray: List[Union[ThemeRef, ThemeString]] = []
 	first = True
 
@@ -5390,8 +4908,8 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		headerarray.append(ThemeRef("separators", "tag"))
 		tabstop = themearray_len(headerarray)
 
-	for field in field_list:
-		generator = field_list[field].get("generator")
+	for field in field_dict:
+		generator = field_dict[field].get("generator")
 		if generator is None:
 			continue
 
@@ -5419,9 +4937,9 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		tabstop = themearray_len(headerarray)
 
 		# This tells the length of the alignment of the header
-		fieldlen = deep_get(field_list, DictPath(f"{field}#fieldlen"))
-		header = deep_get(field_list, DictPath(f"{field}#header"))
-		ralign = deep_get(field_list, DictPath(f"{field}#ralign"), False)
+		fieldlen = deep_get(field_dict, DictPath(f"{field}#fieldlen"))
+		header = deep_get(field_dict, DictPath(f"{field}#header"))
+		ralign = deep_get(field_dict, DictPath(f"{field}#ralign"), False)
 
 		# We cannot use ljust/rjust on the string,
 		# because we want the string and arrow in different colours,
@@ -5435,7 +4953,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 		first = False
 
 	# We've got to account for the last entry
-	if len(field_list) > 0:
+	if len(field_dict) > 0:
 		tabstops.append(tabstop)
 
 	# We've processed all fields, time to output the header
@@ -5443,7 +4961,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window, field_list, is_
 	uip.tabstops = tabstops
 
 # pylint: disable-next=too-many-arguments
-def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int, is_selected: bool, is_taggable: bool = False, is_tagged: bool = False) -> None:
+def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int, is_selected: bool, is_taggable: bool = False, is_tagged: bool = False, is_deleted: bool = False) -> None:
 	first = True
 
 	i = 0
@@ -5494,292 +5012,81 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
 		pos = field_list[field]["pos"]
 
 		if first and is_taggable:
-			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos)
+			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos, deleted = is_deleted)
 			first = False
 
-		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected)
+		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected, deleted = is_deleted)
 
-builtin_fields = {
-	"age": {
-		"header": "Age:",
-		"paths": [{
-			"path": ["metadata#creationTimestamp"],
-			"type": "timestamp",
-			"default": -1,
-		}],
-		"formatter": "age",
-		"align": "right",
-	},
-	"api_support": {
-		"header": "API Support:",
-		"datagetter": datagetters.datagetter_api_support,
-		"formatter": "list",
-	},
-	"mem": {
-		"header": "Mem% / Total:",
-		# Safe
-		"path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
-		"datagetter": datagetters.datagetter_regex_split_to_tuples,
-		"generator": generators.generator_mem,
-		"ralign": True,
-	},
-	"name": {
-		"header": "Name:",
-		"path": "metadata#name",
-		"type": "str",
-	},
-	"namespace": {
-		"header": "Namespace:",
-		"path": "metadata#namespace",
-		"type": "str",
-		"formatting": {
-			"field_colors": [
-				{
-					"type": "namespace",
-				},
-			],
-		},
-	},
-	"pod_status": {
-		"header": "Status:",
-		"datagetter": datagetters.datagetter_pod_status,
-		"generator": generators.generator_status,
-	},
-}
-
-# The return type of the formatting will be the same
-# as the type of the default, so default == None is a programming error
-def get_formatting(field: str, formatting: str, default: Union[Union[dict, ThemeAttr, ThemeRef, ThemeString], List[dict]]):
-	result = []
-	items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
-
-	if items is None:
-		return default
-
-	if not isinstance(items, (dict, list)):
-		raise TypeError(f"Formatting must be either list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; is type: {type(items)}")
-
-	if default is None:
-		raise ValueError(f"default cannot be None for field {field}, formatting {formatting}; this is a programming error")
-
-	if len(items) < 1:
-		raise ValueError(f"field {field}, formatting {formatting}: format list item is empty; this is likely an error in the view file")
-
-	if formatting in ("item_separator", "field_separators", "ellipsis", "field_prefixes", "field_suffixes"):
-		default_context = "separators"
-	elif formatting == "field_colors":
-		default_context = "types"
-
-	if isinstance(items, dict):
-		context = deep_get(items, DictPath("context"), default_context)
-		key = deep_get(items, DictPath("type"))
-		return ThemeRef(context, key)
-
-	for item in items:
-		# field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeString]] or Union[ThemeRef, ThemeString]; in the latter case turn it into a list
-		if isinstance(item, (ThemeAttr, ThemeRef, ThemeString)):
-			result.append(item)
-		elif isinstance(item, dict):
-			context = deep_get(item, DictPath("context"), default_context)
-			key = deep_get(item, DictPath("type"))
-			if formatting in ("field_separators", "field_prefixes", "field_suffixes"):
-				result.append(ThemeRef(context, key))
-			elif formatting == "field_colors":
-				result.append(ThemeAttr(context, key))
-			else:
-				raise TypeError(f"Unknown formatting type {formatting}")
-		else:
-			raise TypeError(f"Formatting is of invalid type {type(item)}")
-
-	return result
-
-# This generates old-style fields from new-style fields
-def get_formatter(field):
-	tmp_field = {}
-
-	formatter = deep_get(field, DictPath("formatter"))
-	generator = deep_get(field, DictPath("generator"), generators.generator_basic)
-	if isinstance(generator, str):
-		generator = deep_get(generator_allowlist, DictPath(generator), generators.generator_basic)
-	processor = deep_get(field, DictPath("processor"))
-
-	field_separators_default = [ThemeRef("separators", "field")]
-
-	if formatter is None:
-		pass
-	elif formatter == "mem":
-		generator = generators.generator_mem_single
-		processor = None
-	elif formatter == "float":
-		# The generator is the same, but the name is unfortunate
-		generator = generators.generator_mem_single
-		processor = None
-	elif formatter == "list":
-		generator = generators.generator_list
-		processor = processor_list
-	elif formatter == "list_with_status":
-		generator = generators.generator_list_with_status
-		processor = processor_list_with_status
-	elif formatter == "hex":
-		generator = generators.generator_hex
-		processor = None
-	elif formatter == "numerical":
-		generator = generators.generator_numerical
-		processor = None
-	elif formatter == "numerical_with_units":
-		generator = generators.generator_numerical_with_units
-		processor = None
-	elif formatter == "address":
-		generator = generators.generator_address
-		processor = None
-		field_separators_default = []
-	elif formatter == "timestamp":
-		generator = generators.generator_timestamp
-		processor = processor_timestamp
-	elif formatter == "timestamp_with_age":
-		generator = generators.generator_timestamp_with_age
-		processor = processor_timestamp_with_age
-	elif formatter == "age":
-		generator = generators.generator_age
-		processor = processor_age
-	elif formatter == "value_mapper":
-		generator = generators.generator_value_mapper
-		processor = None
-	else:
-		raise ValueError(f"Unknown formatter {formatter}")
-
-	theme = get_theme_ref()
-	if deep_get(field, DictPath("formatting#field_colors")) is None:
-		if "type" in field and field["type"] in theme["types"]:
-			field_colors = [ThemeAttr("types", deep_get(field, DictPath("type")))]
-		else:
-			field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
-	else:
-		field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
-
-	field_prefixes = get_formatting(field, "field_prefixes", [])
-	field_suffixes = get_formatting(field, "field_suffixes", [])
-	field_separators = get_formatting(field, "field_separators", field_separators_default)
-	ellipsise = deep_get(field, DictPath("formatting#ellipsise"), -1)
-	ellipsis = get_formatting(field, "ellipsis", ThemeRef("separators", "ellipsis"))
-	item_separator = get_formatting(field, "item_separator", ThemeRef("separators", "list"))
-	mapping = deep_get(field, DictPath("formatting#mapping"), {})
-
-	tmp_field["generator"] = generator
-	tmp_field["processor"] = processor
-	# Fix all of these to use the new format
-	tmp_field["field_colors"] = field_colors
-	tmp_field["field_prefixes"] = field_prefixes
-	tmp_field["field_suffixes"] = field_suffixes
-	tmp_field["field_separators"] = field_separators
-	tmp_field["ellipsise"] = ellipsise
-	tmp_field["ellipsis"] = ellipsis
-	tmp_field["item_separator"] = item_separator
-	tmp_field["mapping"] = mapping
-	if "align" in field:
-		align = deep_get(field, DictPath("align"), "left")
-		tmp_field["ralign"] = align == "right"
-
-	formatting = {
-		"item_separator": item_separator,
-		"field_separators": field_separators,
-		"field_colors": field_colors,
-		"ellipsise": ellipsise,
-		"ellipsis": ellipsis,
-		"field_prefixes": field_prefixes,
-		"field_suffixes": field_suffixes,
-		"mapping": mapping,
-	}
-
-	tmp_field["formatting"] = formatting
-
-	return tmp_field
-
-def fieldgenerator(view, field_index: str, field_indexes, fields, denylist: List[str]):
+def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 	"""
-	Generate a dict with the fields necessary for a view
+	Generic main loop for listviews
 
 		Parameters:
-			view (str): The view to generate the dict for
-			field_index (str): The field_index to use
-			field_indexes (dict): A dict with the field indexes to choose between
-			fields (dict): The fields to available to the field indexes
-			denylist (list[str]): Fields to exclude
+			stdscr (curses.window): The curses window to operate on
+			view (str): The view to show
 		Returns:
-			(field_dict, field_names, sortcolumn, sortorder_reverse):
-				field_dict (dict): The generated dict
-				field_names (list[str]): The fields after pruning using the denylist
-				sortcolumn (str): The column to use when sorting
-				sortorder_reverse (bool): Should the list be sorted in reverse order
+			Retval
+		Raises:
+			ProgrammingError (view is invalid)
 	"""
+	global async_data  # pylint: disable=global-statement
+	global executor  # pylint: disable=global-statement
 
-	if field_indexes is None or len(field_indexes) == 0:
-		return None, None, None, False
+	global selected_namespace  # pylint: disable=global-statement
+	global initial_name  # pylint: disable=global-statement
+	global initial_namespace  # pylint: disable=global-statement
 
-	if selected_namespace != "" and "namespace" not in denylist:
-		denylist.append("namespace")
+	if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
+		msg = [
+			[("genericlistloop()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("stdscr = ", "default"),
+			 (f"{stdscr}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(stdscr)}", "argument"),
+			 (", expected: ", "default"),
+			 ("{curses.window}", "argument"),
+			 (")", "default")],
+			[("view = ", "default"),
+			 (f"{yaml.dump(view)}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(view)}", "argument"),
+			 (", expected: ", "default"),
+			 ("str", "argument"),
+			 (")", "default")],
+		]
 
-	field_names = deep_get(field_indexes, DictPath(f"{field_index}#fields"), [])
-	sortcolumn = deep_get(field_indexes, DictPath(f"{field_index}#sortcolumn"))
-	sortorder_reverse = deep_get(field_indexes, DictPath(f"{field_index}#sortorder_reverse"), False)
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
 
-	# delete all denylisted fields
-	for field in denylist:
-		try:
-			field_names.remove(field)
-		except ValueError:
-			pass
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
-	# OK, we've pruned the denylisted fields; now we need to check
-	# whether the sort column still applies, and if not try to pick
-	# another sortcolumn
-	if sortcolumn is None or sortcolumn not in field_names:
-		if "name" in field_names:
-			sortcolumn = "name"
-		elif "namespace" in field_names:
-			sortcolumn = "namespace"
-		else:
-			sortcolumn = field_names[0]
-
-	field_dict = {}
-	for field in field_names:
-		if field in fields:
-			field_dict[field] = deep_get(fields, DictPath(field), {})
-		elif field in builtin_fields:
-			field_dict[field] = deep_get(builtin_fields, DictPath(field), {})
-		else:
-			sys.exit(f"View {view}: field “{field}“ cannot be found in view or builtin_fields\nView fields: {fields}\nfield_names: {field_names}")
-
-	tmp_fields = {}
-
-	for field_name in field_dict:
-		field = deep_get(field_dict, DictPath(field_name))
-
-		# This is a custom field, so we need to construct one that's usable here
-		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
-
-		tmp_field = get_formatter(field)
-		if tmp_field is None:
-			continue
-
-		for key, value in tmp_field.items():
-			tmp_fields[field_name][key] = value
-		tmp_fields[field_name]["sortkey1"] = field_name
-		# If sortkey1 == sortcolumn this "fails", but it is good enough
-		tmp_fields[field_name]["sortkey2"] = sortcolumn
-
-	return tmp_fields, field_names, sortcolumn, sortorder_reverse
-
-def genericlistloop(stdscr: curses.window, view) -> Retval:
-	global selected_namespace # pylint: disable=global-statement
-	global initial_name # pylint: disable=global-statement
-	global initial_namespace # pylint: disable=global-statement
-	global latest_info # pylint: disable=global-statement
 	denylist = deep_get(views, DictPath(f"{view}#field_denylist"), [])
 	field_indexes = deep_get(views, DictPath(f"{view}#field_indexes"), {})
 
-	if len(field_indexes) == 0:
-		sys.exit(f"FIXME: field_indexes for view {view} is empty")
+	if not (isinstance(field_indexes, dict) and field_indexes):
+		msg = [
+			[("genericlistloop()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("field_indexes = ", "default")],
+			[(f"{yaml.dump(field_indexes)}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(field_indexes)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{dict}", "argument"),
+			 (") with at least one element", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	if "Custom" in field_indexes:
 		field_index = "Custom"
@@ -5788,11 +5095,19 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	else:
 		field_index = list(field_indexes.keys())[0]
 
-	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
+	fieldgenerator_args = {
+		"field_index": field_index,
+		"field_indexes": field_indexes,
+		"fields": deep_get(views, DictPath(f"{view}#fields")),
+		"denylist": denylist,
+	}
+	field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
+											   selected_namespace = selected_namespace,
+											   **fieldgenerator_args)
+
 	uip = UIProps(stdscr)
 
-	viewref = views[view]
-	kind = viewref["kind"]
+	kind = deep_get(views, DictPath(f"{view}#kind"))
 
 	windowheader = view
 
@@ -5801,21 +5116,22 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	else:
 		is_namespaced = kh.is_kind_namespaced(kind)
 
-	if "helptext" in views[view]:
-		helptext = viewref["helptext"]
-	else:
-		helptext = generate_helptext(view, "listview", [], [])
-	if "activatedfun" in viewref:
-		activatedfun = viewref["activatedfun"]
-	else:
-		activatedfun = genericinfoloop
-	on_activation = deep_get(viewref, DictPath("on_activation"), {})
-	update_delay = deep_get(viewref, DictPath("update_delay"), -1)
+	helptext = generate_helptext(view, "listview", [], [])
+	activatedfun = deep_get(views, DictPath(f"{view}#activatedfun"), genericinfoloop)
+	on_activation = deep_get(views, DictPath(f"{view}#on_activation"), {})
+	# This is the timeout before starting a new fetch *once the old one has completed*.
+	# In other words we're not spamming constant requests--there'll be at least update_delay
+	# seconds between each request
+	async_update_delay = deep_get(views, DictPath("{view}#async_update_delay"), 5)
+	# This is the timeout before forcing a UI refresh
+	update_delay = deep_get(views, DictPath("{view}#update_delay"), -1)
 
-	is_taggable = deep_get(viewref, DictPath("is_taggable"), True) and "actions" in viewref
-	extra_vars = deep_get(viewref, DictPath("extra_vars"), {})
+	is_taggable = deep_get(views, DictPath("{view}#is_taggable"), True) and deep_get(views, DictPath(f"{view}#actions")) is not None
+	extra_vars = deep_get(views, DictPath("{view}#extra_vars"), {})
 
-	uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
+	uip.init_window(field_dict, view = kind, windowheader = windowheader,
+			update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse,
+			helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
 
 	# For the status bar; position is always at the bottom of the screen and the entire width of the screen
 	statusbar = uip.init_statusbar()
@@ -5826,81 +5142,60 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 	label_selector = ""
 
 	# These values can be toggled, so we need to read them first
-	listview_args = copy.deepcopy(viewref.get("listview_args", {}))
+	listview_args = copy.deepcopy(deep_get(views, DictPath(f"{view}#listview_args"), {}))
 
-	vlist = None
+	listgetter = deep_get(views, DictPath(f"{view}#listgetter"))
+	listgetter_async = deep_get(views, DictPath("{view}#listgetter_async"))
+	listgetter_args = deep_get(views, DictPath("{view}#listgetter_args"), {})
+	listgetter_args["label_selector"] = label_selector
 
-	async_cookie = None
-	async_cb = None
-	async_cb_args = {}
-	async_retrigger_timeout = None
-	uip.list_needs_regeneration(True)
+	infogetter = deep_get(views, DictPath(f"{view}#infogetter"), generic_infogetter)
+	infogetter_extra_vars = deep_get(views, DictPath(f"{view}#extra_vars#infogetter"), { "_view": view.strip("*") })
+	infogetter_extra_vars["_field_index"] = field_index.lower()
+	infogetter_extra_vars["_field_names"] = field_names
+	infogetter_extra_vars["_field_dict"] = field_dict
+	if "filters" in listview_args:
+		infogetter_extra_vars["_filters"] = deep_get(listview_args, DictPath("filters"))
+
+	uip.last_action = datetime.now()
+	uip.idle_timeout = 5
+	tagged_items = set()
+	serverstatus = "ok"
+
+	first_fetch = True
 
 	while True:
-		if async_cb is not None:
-			if async_cookie is not None:
-				# Note: by default async_cb will be called every 100ms until it receives all data;
-				# make *SURE* that it only checks for new data and returns immediately if not
-				vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
-				if async_cookie is None:
-					uip.force_update()
-					# Retrigger every 5 seconds by default
-					async_retrigger_timeout = deep_get(async_cb_args, DictPath("retrigger_timeout"), 5)
-					async_time_start = datetime.now()
-			else:
-				if async_retrigger_timeout is not None and async_cb is not None:
-					diff = datetime.now() - async_time_start
-					seconds = diff.days * 24 * 60 * 60 + diff.seconds
+		if len(executor) == 0:
+			new_data = "false"
+			uip.force_update()
+			uip.listlen = 0
+			# Temporary workaround
+			if listgetter_async == get_inventory_list:
+				hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
+				# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
+				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
+				async_data["hosts"] = []
+				async_data["hosts_lock"] = threading.Lock()
+				match_key = "name"
+			elif listgetter_async == get_context_list:
+				vlist, hosts = get_context_list()
+				match_key = "server_address"
+			elif listgetter in (generic_listgetter, get_kubernetes_list_async):
+				executor.trigger(".".join(kind), 5, get_kubernetes_list_async, get_kubernetes_list_async, kind = kind, namespace = selected_namespace, **listgetter_args)
+			if listgetter_async in (get_inventory_list, get_context_list):
+				# But the hosts can change status more frequently than that
+				executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, interval = -1)
 
-					if seconds >= async_retrigger_timeout:
-						async_retrigger_timeout = None
-						async_cb_args["retrigger"] = True
-						vlist, async_cookie, async_cb_args = async_cb(vlist, async_cookie, **async_cb_args)
-
-		listgetter_async = None
-
-		if uip.is_update_triggered():
-			uip.update_window()
-
-			if deep_get(viewref, DictPath("listgetter_async")) is not None:
-				listgetter_async = deep_get(viewref, DictPath("listgetter_async"))
-				listgetter = None
-			elif "listgetter" in viewref:
-				listgetter = deep_get(viewref, DictPath("listgetter"))
-			else:
-				listgetter = "kh.get_list_by_kind_namespace"
-
-			infogetter = deep_get(viewref, DictPath("infogetter"), generic_infogetter)
-			infogetter_extra_vars = deep_get(viewref, DictPath("extra_vars#infogetter"), { "_view": view.strip("*") })
-			infogetter_extra_vars["_field_index"] = field_index.lower()
-			infogetter_extra_vars["_field_names"] = field_names
-			infogetter_extra_vars["_field_dict"] = field_dict
-			if "filters" in listview_args:
-				infogetter_extra_vars["_filters"] = deep_get(listview_args, DictPath("filters"))
-
-			listgetter_args = deep_get(viewref, DictPath("listgetter_args"), {})
-			listgetter_args["label_selector"] = label_selector
-
-			if listgetter is not None:
-				if isinstance(listgetter, str):
-					listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
-
-				# pylint: disable-next=comparison-with-callable
-				if listgetter == generic_listgetter:
-					vlist, status = listgetter(deep_get(viewref, DictPath("kind")), selected_namespace, **listgetter_args)
-				else:
-					if kind[0].startswith("__"):
-						vlist, status = listgetter(**listgetter_args)
-					else:
-						vlist, status = listgetter(deep_get(viewref, DictPath("kind")), selected_namespace, label_selector = label_selector)
-				infogetter_extra_vars["_vlist"] = vlist
-			elif listgetter_async is not None:
-				if async_cb is None:
-					vlist, status, async_cookie, async_cb, async_cb_args = listgetter_async(**listgetter_args)
-				infogetter_extra_vars["_vlist"] = vlist
-			else:
-				status = "OK"
-			info = infogetter(**infogetter_extra_vars)
+		# The asynchronous UI follows these rules:
+		# Idle:
+		#   No user activity within the last idle_timeout seconds
+		# Force refresh:
+		#   User pressed [F5], changed sort column, or opened/closed a dialog ([F1], [F2], [F8], etc)
+		# Additional blockers:
+		#   Items are tagged, menus are open, etc.
+		if (result := executor.get(".".join(kind))) != ([], []):
+			vlist, status = result
+			infogetter_extra_vars["_vlist"] = vlist
 
 			if status == 42503:
 				serverstatus = "Server Unavailable"
@@ -5908,28 +5203,40 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				serverstatus = "Connection Timeout"
 			else:
 				serverstatus = str(status)
+			if not uip.listlen:
+				uip.force_update()
+			new_data = "pending"
+			uip.update_timestamp(update = new_data)
+			first_fetch = False
+			win = None
 
-			latest_info = view
-			listlen = uip.update_info(info)
+		if uip.is_idle() or uip.is_update_triggered():
+			# We need to generate the list info even if the list is empty,
+			# otherwise we'll crash elsewhere
+			if not uip.listlen or new_data == "pending" and (uip.update_forced or not tagged_items):
+				vinfo = infogetter(**infogetter_extra_vars)
+				uip.update_info(vinfo)
+				uip.force_update()
+				new_data = "true"
+				tagged_items = set()
+				uip.update_forced = False
+		if uip.is_update_triggered():
 			linelen = update_field_widths(field_dict, field_names, uip.info)
 			if is_taggable:
 				linelen += len("✓ ")
 			uip.resize_listpad(linelen)
-
-			tagged_items = set()
+			uip.list_needs_regeneration(True)
+			uip.update_window(update = new_data)
+			if new_data == "true":
+				new_data = "false"
 
 		if uip.refresh:
 			# The data in some fields might become shorter, so we need to trigger a clear
 			uip.statusbar.erase()
 
-			# if uip.continuous_log:
-			# 	interval = "Continuous"
-			# else:
-			# 	interval = "Manual"
-
 			statusarray1: List[Union[ThemeRef, ThemeString]] = []
 
-			if view != "Contexts" and ("namespace" in denylist or "namespace" in field_names):
+			if view != "Contexts" and selected_namespace:
 				statusarray1 += [ThemeString("Namespace: ", ThemeAttr("statusbar", "infoheader")),
 						 ThemeString(f"{selected_namespace if len(selected_namespace) > 0 else '<All>'}", ThemeAttr("statusbar", "highlight"))]
 
@@ -5959,7 +5266,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				ThemeString(f"{serverstatus}", ThemeAttr("statusbar", "default")),
 			]
 
-			for status_data in deep_get(viewref, DictPath("statusmsg"), []):
+			for status_data in deep_get(views, DictPath(f"{view}#statusmsg"), []):
 				if len(status_data) == 2:
 					key, path = status_data
 					default_status = "<unset>"
@@ -5992,48 +5299,58 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.addthemearray(statusbar, statusarray2, y = 1, x = 0)
 
 		uip.update_sorted_list()
+
+		if uip.info:
+			unique_match = uip.goto_first_match_by_name_namespace(initial_name, initial_namespace)
+			initial_name = None
+			initial_namespace = None
+			if unique_match is not None:
+				selected = uip.get_selected()
+				if uip.activatedfun is not None:
+					if (retval := uip.activatedfun(uip.stdscr, unique_match, kind)) == Retval.RETURNFULL:
+						return retval
+				uip.force_update()
+				uip.refresh_all()
+				continue
+
+		uip.refresh_selected()
 		if not uip.is_list_regenerated():
 			generate_list_header(uip, headerpad, field_dict, is_taggable = is_taggable)
-			# Output the visible part of the list
-			uip.selected = None
 			for y in range(uip.yoffset, min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
 				item = uip.sorted_list[y]
-				uip.select_if_y(y, item)
 				is_tagged = item in tagged_items
-				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged)
+				is_deleted = getattr(item, "__deleted", False)
+				generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item), is_taggable = is_taggable, is_tagged = is_tagged, is_deleted = is_deleted)
 			uip.list_needs_regeneration(False)
 
 		uip.refresh_window()
 		uip.refresh_listpad()
 		uip.refresh_statusbar()
+		if first_fetch:
+			win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = "Checking for data")
 		curses.doupdate()
-
-		unique_match = uip.goto_first_match_by_name_namespace(initial_name, initial_namespace)
-		initial_name = None
-		initial_namespace = None
-		if unique_match is not None:
-			selected = uip.get_selected()
-			if uip.activatedfun is not None:
-				retval = uip.activatedfun(uip.stdscr, unique_match, kind)
-				if retval == Retval.RETURNFULL:
-					return retval
-			uip.force_update()
-			uip.refresh_all()
-			continue
 
 		uip.stdscr.timeout(100)
 		c = uip.stdscr.getch()
-
-		# XXX: This is really ugly, but it is needed to ensure that we re-fetch all data when a force refresh is requested
-		if c == curses.KEY_F5:
-			async_cb = None
 
 		retval = uip.generic_keycheck(c)
 
 		if retval == Retval.MATCH:
 			continue
 		if retval == Retval.RETURNONE:
-			return Retval.RETURNDONE
+			try:
+				# This is to get the necessary stack info
+				raise UserWarning
+			except UserWarning:
+				# Calling function; if we're at the top level view we shouldn't return further,
+				# but we should clear selections
+				caller = sys.exc_info()[2].tb_frame.f_back.f_code.co_name
+				if caller in ("setupui",):
+					if tagged_items:
+						tagged_items = set()
+						uip.list_needs_regeneration(True)
+				else:
+					return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
 			return retval
 
@@ -6051,6 +5368,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.toggle_borders()
 			uip.refresh_all()
 			uip.force_update()
+			uip.update_window(update = False)
 		elif c == ord("W"):
 			if len(field_indexes) == 0:
 				continue
@@ -6059,13 +5377,21 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			_index = _list.index(field_index)
 			field_index = _list[(_index + 1) % len(field_indexes)]
 
-			# Toggle field width
-			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
-												fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
+			fieldgenerator_args = {
+				"field_index": field_index,
+				"field_indexes": field_indexes,
+				"fields": deep_get(views, DictPath(f"{view}#fields")),
+				"denylist": denylist,
+			}
+			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
+													   selected_namespace = selected_namespace,
+													   **fieldgenerator_args)
+			update_field_widths(field_dict, field_names, uip.info)
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(width = -1)
 			uip.refresh_all()
 			uip.force_update()
+			uip.update_window(update = False)
 		elif c == curses.KEY_F7:
 			action_title = "Perform cluster-wide actions"
 			action_src_list = listviewactions
@@ -6230,12 +5556,28 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				else:
 					selected_namespace = selection
 
-			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes, fields = deep_get(views, DictPath(f"{view}#fields")), denylist = denylist)
-			uip.init_window(field_dict, view = kind, windowheader = windowheader, update_delay = update_delay, sortcolumn = sortcolumn, sortorder_reverse = sortorder_reverse, helptext = helptext, activatedfun = activatedfun, on_activation = on_activation)
-			headerpad, listpad = uip.init_listpad(listheight = 1, width = -1, ypos = 1, xpos = 1)
+			fieldgenerator_args = {
+				"field_index": field_index,
+				"field_indexes": field_indexes,
+				"fields": deep_get(views, DictPath(f"{view}#fields")),
+				"denylist": denylist,
+			}
+			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
+													   selected_namespace = selected_namespace,
+													   **fieldgenerator_args)
 
-			# For the status bar; position is always at the bottom of the screen and the entire width of the screen
-			statusbar = uip.init_statusbar()
+			update_field_widths(field_dict, field_names, uip.info)
+			tagged_items.clear()
+			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
+			uip.resize_listpad(width = -1)
+			uip.refresh_all()
+			uip.update_info([])
+			uip.force_update()
+			if ".".join(kind) in executor:
+				executor.update(".".join(kind), namespace = selected_namespace)
+			uip.update_window(update = False)
+			uip.list_needs_regeneration(True)
+			infogetter_extra_vars["_vlist"] = []
 		elif (c == ord("t") or c == ord(" ")) and is_taggable:
 			selected = uip.get_selected()
 
@@ -6287,7 +5629,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 						uip.list_needs_regeneration(True)
 				except re.error:
 					continue
-		elif c == ord("l") and is_taggable and vlist is not None and listlen > 0:
+		elif c == ord("l") and is_taggable and vlist is not None and uip.listlen > 0:
 			# List the union of all labels of the tagged objects (if the objects support labels)
 			if len(tagged_items) == 0:
 				selected = uip.get_selected()
@@ -6330,10 +5672,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			uip.list_needs_regeneration(True)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord("f") and is_taggable and vlist is not None and listlen > 0:
+		elif c == ord("f") and is_taggable and vlist is not None and uip.listlen > 0:
 			# List the union of all labels of the tagged objects and create a label selector
 			# from the choices made by the user (if the objects support labels)
-			if len(tagged_items) == 0:
+			if not tagged_items:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
 				uip.list_needs_regeneration(True)
@@ -6345,7 +5687,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			else:
 				itemlist = [ item.name for item in tagged_items ]
 
-			if len(itemlist) == 0:
+			if not itemlist:
 				continue
 
 			for obj in vlist:
@@ -6360,7 +5702,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				for key in labelref:
 					if (key, labelref[key]) not in labels:
 						labels.append((key, labelref[key]))
-			if len(labels) == 0:
+			if not labels:
 				continue
 			for key, value in labels:
 				labellist.append({
@@ -6377,9 +5719,13 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				label_selector = make_selector(selectors)
 				uip.force_update()
 			tagged_items.clear()
+			uip.update_info([])
+			uip.force_update()
+			if ".".join(kind) in executor:
+				executor.update(".".join(kind), label_selector = label_selector)
+			uip.update_window(update = False)
 			uip.list_needs_regeneration(True)
-			uip.refresh_all()
-			curses.doupdate()
+			infogetter_extra_vars["_vlist"] = []
 		elif c == ord("A") and view == "Inventory" and len(tagged_items) == 0:
 			selected = uip.get_selected()
 			groups = ansible_get_groups(ANSIBLE_INVENTORY)
@@ -6425,11 +5771,19 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			curses.doupdate()
 		elif c == ord("F") and is_taggable:
 			# Clear the label selector
-			if len(label_selector) > 0:
+			if label_selector:
 				label_selector = ""
 				uip.force_update()
 				uip.refresh_all()
 				curses.doupdate()
+				tagged_items.clear()
+				uip.update_info([])
+				uip.force_update()
+				if ".".join(kind) in executor:
+					executor.update(".".join(kind), label_selector = label_selector)
+				uip.update_window(update = False)
+				uip.list_needs_regeneration(True)
+				infogetter_extra_vars["_vlist"] = []
 		elif c == ord("L") and is_taggable:
 			# List tagged items
 			taggeditemlist = []
@@ -6445,7 +5799,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, taggeditemlist, title = "Tagged items", cursor = False)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord(";") and is_taggable and listlen > 0:
+		elif c == ord(";") and is_taggable and uip.listlen > 0:
 			cluster_available = True
 			items = []
 			autoitem = False
@@ -6477,8 +5831,8 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				uip.list_needs_regeneration(True)
 				continue
 
-			action_title = deep_get(viewref, DictPath("actions#title"), "Perform action on tagged items")
-			tmp_action_src_list = deep_get(viewref, DictPath("actions#actionlist"), {})
+			action_title = deep_get(views, DictPath(f"{view}#actions#title"), "Perform action on tagged items")
+			tmp_action_src_list = deep_get(views, DictPath(f"{view}#actions#actionlist"), {})
 
 			action_src_list = {
 			}
@@ -6491,12 +5845,12 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 					action_src_list[action] = tmp_action_src_list[action]
 
 			# Populate the list of actions
-			action_context = deep_get(viewref, DictPath("actions#actionlist#context"), None)
+			action_context = deep_get(views, DictPath(f"{view}#actions#actionlist#context"), None)
 			actions, actionlist = populate_actionlist(context = action_context, action_list = action_src_list, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
 			# If there are playbook actions, add those too
-			if len(deep_get(viewref, DictPath("actions#playbooklist"), {})) > 0:
-				playbook_context = deep_get(viewref, DictPath("actions#playbooklist#context"), None)
+			if len(deep_get(views, DictPath(f"{view}#actions#playbooklist"), {})) > 0:
+				playbook_context = deep_get(views, DictPath(f"{view}#actions#playbooklist#context"), None)
 				actions, actionlist = populate_playbooklist(context = playbook_context, actions = [], action_list = actionlist, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
 			if len(actions) == 0:
@@ -6636,10 +5990,10 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 			tagged_items.clear()
 			uip.list_needs_regeneration(True)
 
-		shortcuts = deep_get(viewref, DictPath("shortcuts"), {})
+		shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
 
 		# Always include the shortcut for YAML dump, unless overridden
-		if deep_get(viewref, DictPath("shortcuts#View YAML dump")) is None:
+		if deep_get(views, DictPath(f"{view}#shortcuts#View YAML dump")) is None:
 			shortcuts["View YAML dump of resource"] = {
 				"shortcut": ord("y"),
 				"read_only": True,
@@ -6655,7 +6009,7 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 				"force_refresh": True,
 			}
 		# Always include the shortcut for edit resource, unless overridden
-		if deep_get(viewref, DictPath("shortcuts#Edit resource")) is None:
+		if deep_get(views, DictPath(f"{view}#shortcuts#Edit resource")) is None:
 			shortcuts["Edit resource"] = {
 				"shortcut": ord("e"),
 				"read_only": False,
@@ -6763,7 +6117,6 @@ def genericlistloop(stdscr: curses.window, view) -> Retval:
 
 			if force_update:
 				uip.force_update()
-				async_cb = None
 
 def __switch_resource_map(**kwargs):
 	uip = deep_get(kwargs, DictPath("uip"))
@@ -6777,8 +6130,16 @@ def __resource_map_cursor(**kwargs):
 	keypress = deep_get(kwargs, DictPath("__keypress"))
 	selected = deep_get(kwargs, DictPath("selected"))
 	info = deep_get(kwargs, DictPath("info"))
+	if info is None:
+		return Retval.MATCH, {
+			"selected": 0,
+			"ypos": 0,
+			"xpos": 0,
+		}
+
 	status_len = len(info)
 	heatmap_width = deep_get(kwargs, DictPath("heatmap_width"))
+	stride = deep_get(kwargs, DictPath("stride"), 1)
 
 	maxval = status_len - 1
 	oldval = selected
@@ -6795,6 +6156,12 @@ def __resource_map_cursor(**kwargs):
 	elif keypress == curses.KEY_DOWN:
 		if (oldval + heatmap_width + 1) <= maxval:
 			selected = oldval + heatmap_width + 1
+	elif keypress == curses.KEY_PPAGE:
+		if (oldval - ((heatmap_width + 1) * stride)) >= 0:
+			selected = oldval - (heatmap_width + 1) * stride
+	elif keypress == curses.KEY_NPAGE:
+		if (oldval + ((heatmap_width + 1) * stride)) <= maxval:
+			selected = oldval + (heatmap_width + 1) * stride
 	elif keypress == curses.KEY_HOME:
 		selected = max((oldval // (heatmap_width + 1)) * (heatmap_width + 1), 0)
 	elif keypress == curses.KEY_END:
@@ -6934,6 +6301,16 @@ clusteroverview_shortcuts = {
 		"action": "key_callback",
 		"action_call": __resource_map_cursor,
 	},
+	"Move cursor 10 rows up / down within resource map": {
+		"helptext": ("[Page Up]", "Move cursor 10 rows up / down within resource map"),
+		"shortcut": [curses.KEY_PPAGE, curses.KEY_NPAGE],
+		"helpgroup": 3,
+		"action": "key_callback",
+		"action_call": __resource_map_cursor,
+		"action_args": {
+			"stride": 10,
+		}
+	},
 	"Switch to previous resource map": {
 		"shortcut": curses.KEY_SLEFT,
 		"helptext": ("[Shift] + [Left]", "Switch to previous resource map"),
@@ -6998,7 +6375,56 @@ clusteroverview_shortcuts = {
 	},
 }
 
+def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+	path = deep_get(kwargs, DictPath("path"))
+	filetype = deep_get(kwargs, DictPath("filetype"), "string")
+	if filetype == "string":
+		result = secure_read_string(path, directory_is_symlink = True)
+	elif filetype == "yaml":
+		result = secure_read_yaml(path, directory_is_symlink = True)
+	status = StatusGroup.OK
+	return result, status
+
+def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+	playbook = deep_get(kwargs, DictPath("playbook"))
+	selection = deep_get(kwargs, DictPath("selection"))
+	status, result = ansible_run_playbook_on_selection(playbook = playbook, selection = selection, verbose = False)
+	return result, status
+
+def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
+	kind = deep_get(kwargs, DictPath("kind"))
+	namespace = deep_get(kwargs, DictPath("namespace"), "")
+	label_selector = deep_get(kwargs, DictPath("label_selector"), "")
+	field_selector = deep_get(kwargs, DictPath("field_selector"), "")
+	fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
+	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
+	sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
+	postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
+	limit = deep_get(fetch_args, DictPath("limit"))
+	extra_data = []
+
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector)
+	if len(sort_key) > 0:
+		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
+	if postprocess == "node":
+		vlist = get_node_info(vlist, extra_vars = {})
+		extra_data = [s.status_group for s in vlist]
+	elif postprocess == "pod":
+		vlist = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
+		extra_data = [s.status_group for s in vlist]
+	else:
+		extra_data = status
+	if limit is not None:
+		vlist = vlist[:limit]
+	return vlist, extra_data
+
 def clusteroverviewloop(stdscr: curses.window, view):
+	global executor
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
+
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -7027,31 +6453,22 @@ def clusteroverviewloop(stdscr: curses.window, view):
 	selected_node = 0
 	selected_pod = 0
 
-	nodeinfo = None
-
 	# Get control plane node
 	control_plane_node, control_plane_name = get_control_plane()
 	control_plane_addresses = deep_get(control_plane_node, DictPath("status#addresses"), [])
 	name, iips, eips = get_node_addresses(control_plane_name, control_plane_addresses)
 
 	hostname = socket.gethostname()
-	islocal = hostname == name
-	data_available = False
-	async_cookie = None
-	# Retrigger every 5 seconds by default
-	async_retrigger_timeout = 5
-	async_time_start = datetime.now()
+	islocal = (hostname == name)
 
-	# Safe
 	stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) (\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
 	loadavg_raw = []
 	meminfo_raw = []
 	stat_raw = []
 
-	prev = datetime.now()
-	podinfo = None
-	nodeinfo = None
+	podinfo = []
+	nodeinfo = []
 
 	pod_curypos = 0
 	pod_curxpos = 0
@@ -7078,36 +6495,42 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 	swaptotal = 0
 
-	# To inject node and pod data from a file (for testing purposes),
-	# read them here; this will override the Kubernetes requests
-	node_vlist = None
-	pod_vlist = None
+	node_vlist = []
+	pod_vlist = []
+	event_vlist = []
+	node_statuses = []
+	node_heatmap = []
+	nodeinfo = []
+	pod_statuses = []
+	podinfo = []
+	pod_heatmap = []
+	events = []
+
+	if not islocal:
+		executor.trigger("sysinfo", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml"))), selection = [control_plane_name])
+	executor.trigger("node", 5, get_kubernetes_list_async, kind = ("Node", ""), namespace = "", fetch_args = { "sort_key": "metadata#name", "postprocess": "node" })
+	executor.trigger("pod", 5, get_kubernetes_list_async, kind = ("Pod", ""), namespace = "", fetch_args = { "postprocess": "pod" })
+	executor.trigger("event", 5, get_kubernetes_list_async, kind = ("Event", ""), namespace = "", fetch_args = { "sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5 })
 
 	while True:
-		if async_cookie is not None:
-			# We are waiting for results
-			async_results = ansible_async_get_data(async_cookie)
-			if async_results is not None:
-				async_time_start = datetime.now()
-				for async_result in deep_get(async_results, DictPath(control_plane_name), []):
-					task = deep_get(async_result, DictPath("task"), "")
+		if (result := executor.get("sysinfo")) != ([], []):
+			ansible_results, ansible_status = result
+			if ansible_status == 0:
+				for ansible_result in deep_get(ansible_results, DictPath(control_plane_name), []):
+					task = deep_get(ansible_result, DictPath("task"), "")
 					if task == "Fetching /proc/loadavg":
-						loadavg_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+						loadavg_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
 					elif task == "Fetching /proc/meminfo":
-						meminfo_raw = deep_get(async_result, DictPath("stdout_lines"), [])
+						meminfo_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
 					elif task == "Fetching /proc/stat":
-						stat_raw = deep_get(async_result, DictPath("stdout_lines"), [])
-				async_cookie = None
-				uip.force_update()
-		else:
-			if not islocal:
-				diff = datetime.now() - async_time_start
-				seconds = diff.days * 24 * 60 * 60 + diff.seconds
-
-				if seconds >= async_retrigger_timeout:
-					ping_path = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml")))
-					async_cookie = ansible_run_playbook_on_selection_async(ping_path, selection = [control_plane_name])
-					async_time_start = datetime.now()
+						stat_raw = deep_get(ansible_result, DictPath("stdout_lines"), [])
+					uip.force_update()
+		if (result := executor.get("node")) != ([], []):
+			nodeinfo, node_statuses = result
+		if (result := executor.get("pod")) != ([], []):
+			podinfo, pod_statuses = result
+		if (result := executor.get("event")) != ([], []):
+			events, _status = result
 
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
@@ -7189,33 +6612,10 @@ def clusteroverviewloop(stdscr: curses.window, view):
 				else:
 					stat_raw = []
 
-			# Get the list of all nodes
-			if node_vlist is None:
-				vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
-			else:
-				vlist = node_vlist
-			# We want the nodes to be sorted by name
-			vlist = natsorted(vlist, key = lambda x: x.get("metadata", {}).get("name", ""))
-			nodeinfo = get_node_info(vlist, extra_vars = {})
-			node_statuses = [s.status_group for s in nodeinfo]
-
-			# Get the list of all pods
-			if pod_vlist is None:
-				vlist, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
-			else:
-				vlist = pod_vlist
-			podinfo = get_pod_info(**{"_vlist": vlist, "in_depth_node_status": False})
-			pod_statuses = [s.status_group for s in podinfo]
-
-			# Get the 5 most recent events
-			vlist, _status = kh.get_list_by_kind_namespace(("Event", ""), "")
-			vlist = natsorted(vlist, key = lambda x: x.get("lastTimestamp", ""), reverse = True)
-			events = vlist[:5]
-
 			# We most likely have far more nodes than pods, so give the nodes 20% of the width and the pods 80% of the width;
 			# even this is probably too much for the nodes, but we can adjust that later
 			node_heatmap_width = ((uip.maxx - uip.minx - 1) // 5) - 2
-			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 2
+			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 1
 
 		k8s_distro = identify_k8s_distro()
 
@@ -7413,9 +6813,12 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		y += i + 1
 		curses_helper.window_tee_hline(uip.stdscr, y = y, start = 0, end = uip.maxx)
 
-		if len(nodeinfo) > 0:
+		selected_pod = min(selected_pod, len(podinfo))
+		selected_node = min(selected_node, len(nodeinfo))
+
+		if len(nodeinfo) > 0 and len(podinfo) > 0:
 			node_heatmap_xpos = 0
-			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 3
+			pod_heatmap_xpos = uip.maxx - pod_heatmap_width - 2
 
 			selectednodetaints = generators.format_list(nodeinfo[selected_node].taints, node_heatmap_width, 0, False, False, field_colors = [ThemeAttr("types", "key"), ThemeAttr("types", "value")], field_separators = [ThemeRef("separators", "keyvalue_taint")])
 
@@ -7504,20 +6907,27 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		uip.refresh_statusbar()
 		curses.doupdate()
 
-		if selected_heatmap == "Pod":
+		if len(podinfo) > 0 and selected_heatmap == "Pod":
 			__node_name = podinfo[selected_pod].node
 			__pod_name = podinfo[selected_pod].name
 			__namespace = podinfo[selected_pod].namespace
 			__info = podinfo
 			__selected = selected_pod
 			heatmap_width = pod_heatmap_width
-		else:
+		elif len(nodeinfo) > 0:
 			__node_name = nodeinfo[selected_node].name
 			__namespace = None
 			__pod_name = None
-			__info = nodeinfo
+			__info = copy.deepcopy(nodeinfo)
 			__selected = selected_node
 			heatmap_width = node_heatmap_width
+		else:
+			__node_name = None
+			__namespace = None
+			__pod_name = None
+			__info = None
+			__selected = None
+			heatmap_width = 0
 
 		# These are arguments that *might* be needed by the callbacks
 		input_args = {
@@ -7789,7 +7199,6 @@ def check_cni_updates(cni: str, current_version: str) -> str:
 			result = subprocess.run(args, stdout = PIPE, stderr = PIPE, universal_newlines = True, check = False)
 			if result is not None:
 				versionoutput = result.stdout.splitlines()
-				# Safe
 				version_regex = re.compile(r"^cilium image \(default\): (.*)")
 				for line in versionoutput:
 					tmp = version_regex.match(line)
@@ -7889,6 +7298,12 @@ cniloop_shortcuts = {
 }
 
 def cniloop(stdscr: curses.window, view):
+	global executor  # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
+
 	field_list, sortcolumn = (None, None)
 	uip = UIProps(stdscr)
 
@@ -8200,7 +7615,12 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
 	return format_helptext(helptext)
 
 def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
-	global initial_container # pylint: disable=global-statement
+	global initial_container  # pylint: disable=global-statement
+	global executor  # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	# If obj is a tuple we got the object as obj[0]
 	# params as obj[1]
@@ -8253,8 +7673,15 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	field_index = "Normal"
 
 	field_denylist = deep_get(viewref, DictPath("field_denylist"), [])
-	field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
-										fields = deep_get(viewref, DictPath("fields")), denylist = field_denylist)
+	fieldgenerator_args = {
+		"field_index": field_index,
+		"field_indexes": field_indexes,
+		"fields": deep_get(viewref, DictPath("fields")),
+		"denylist": field_denylist,
+	}
+	field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
+											   selected_namespace = selected_namespace,
+											   **fieldgenerator_args)
 
 	windowheader = deep_get(viewref, DictPath("windowheader"), f"{view[0]} Info")
 
@@ -8471,6 +7898,8 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	wrap_lines = False
 	raw_output = False
 
+	first_fetch = True
+
 	while True:
 		# Output listpad if we have one
 		if uip.is_update_triggered():
@@ -8532,6 +7961,67 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 			uip.update_window()
 
+			if infopad is not None:
+				y = 0
+				if name_path is not None and len(name_path) > 0:
+					fieldarray: List[Union[ThemeRef, ThemeString]] = [
+						ThemeString("Name:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
+					]
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+					y += 1
+
+				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
+					fieldarray = [
+						ThemeString("N", ThemeAttr("main", "infoheader_shortcut")),
+						ThemeString("amespace:", ThemeAttr("main", "infoheader")),
+						ThemeString(f" {deep_get(obj, DictPath(namespace_path))}", ThemeAttr("types", "namespace"))
+					]
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+					y += 1
+
+				for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
+					# If there is a header field, this is from a view file; otherwise it is an old-style field
+					fieldarray = []
+					header = deep_get(value, DictPath("header"))
+
+					if header is not None:
+						fieldarray += header
+						# Only add stuff if there's a path
+						if "path" in value or "paths" in value:
+							# Use generic_infogetter for this
+							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
+							_formatter = {key: generators.get_formatter(value)}
+							_generator = deep_get(_formatter, DictPath(f"{key}#generator"))
+							if _generator is not None:
+								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
+								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
+								fieldarray += [ThemeString(" ", ThemeAttr("types", "generic"))]
+								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
+						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+
+						y += 1
+						continue
+
+				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
+					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
+
+					if timestamp is None:
+						field = [ThemeRef("strings", "unset")]
+					elif isinstance(timestamp, datetime):
+						field = format_timestamp(timestamp)
+					else:
+						timestamp = timestamp_to_datetime(timestamp)
+						field = format_timestamp(timestamp, localtimezone = True)
+					fieldarray = [
+						ThemeString("Created: ", ThemeAttr("main", "infoheader")),
+					]
+					fieldarray += field
+					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
+			uip.refresh_window()
+			uip.refresh_infopad()
+			curses.doupdate()
+
 			if listpad is not None:
 				listgetter = deep_get(viewref, DictPath("listpad#listgetter"))
 				listgetter_args = deep_get(viewref, DictPath("listpad#listgetter_args"), {})
@@ -8567,7 +8057,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if _api_family is None:
 					_api_family = deep_get(obj, DictPath(_api_family_path), "")
 				if _kind is not None:
-					_kind = kh.guess_kind((_kind, _api_family))
+					_kind = guess_kind((_kind, _api_family))
 				_namespace = deep_get(listgetter_args, DictPath("namespace"))
 				_namespace_path = deep_get(listgetter_args, DictPath("_namespace_path"), "")
 				if _namespace is None:
@@ -8578,10 +8068,18 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					listgetter_args["_obj"] = obj
 
 				# pylint: disable-next=comparison-with-callable
-				if listgetter == generic_listgetter:
-					vlist, status = listgetter(**listgetter_args)
-				else:
-					vlist, status = listgetter(obj, **listgetter_args)
+				uip.refresh_window()
+				uip.refresh_statusbar()
+				if first_fetch or uip.update_forced:
+					fetch_message = deep_get(listgetter_args, DictPath("message"), "Fetching data")
+					win = curses_helper.notice(uip.listpad, uip.maxy // 2, uip.maxx // 2, message = fetch_message)
+					curses.doupdate()
+					if listgetter == generic_listgetter:
+						vlist, status = listgetter(**listgetter_args)
+					else:
+						vlist, status = listgetter(obj, **listgetter_args)
+					first_fetch = False
+					uip.update_forced = False
 
 				infogetter = deep_get(viewref, DictPath("listpad#infogetter"))
 				infogetter_filters = deep_get(viewref, DictPath("listpad#infogetter_filters"), None)
@@ -8658,68 +8156,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					uip.update_log_info(timestamps, facilities, severities, messages)
 					uip.loglen = len(messages)
 
-			if infopad is not None:
-				y = 0
-				if name_path is not None and len(name_path) > 0:
-					fieldarray: List[Union[ThemeRef, ThemeString]] = [
-						ThemeString("Name:", ThemeAttr("main", "infoheader")),
-						ThemeString(f" {deep_get(obj, DictPath(name_path))}", ThemeAttr("types", "generic"))
-					]
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-					y += 1
-
-				if namespace_path is not None and len(namespace_path) > 0 and deep_get(obj, DictPath(namespace_path)) is not None:
-					fieldarray = [
-						ThemeString("N", ThemeAttr("main", "infoheader_shortcut")),
-						ThemeString("amespace:", ThemeAttr("main", "infoheader")),
-						ThemeString(f" {deep_get(obj, DictPath(namespace_path))}", ThemeAttr("types", "namespace"))
-					]
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-					y += 1
-
-				for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
-					# If there is a header field, this is from a view file; otherwise it is an old-style field
-					fieldarray = []
-					header = deep_get(value, DictPath("header"))
-
-					if header is not None:
-						fieldarray += header
-						# Only add stuff if there's a path
-						if "path" in value or "paths" in value:
-							# Use generic_infogetter for this
-							data = get_obj(obj = obj, field_dict = {key: value}, field_names = [key], field_index = "Normal", view = "", filters = {})
-							_formatter = {key: get_formatter(value)}
-							_generator = deep_get(_formatter, DictPath(f"{key}#generator"))
-							if _generator is not None:
-								ralign = deep_get(_formatter, DictPath(f"{key}#ralign"))
-								formatting = deep_get(_formatter, DictPath(f"{key}#formatting"))
-								fieldarray += [ThemeString(" ", ThemeAttr("types", "generic"))]
-								fieldarray += _generator(data, key, fieldlen = 0, pad = 0, ralign = ralign, selected = False, **formatting)
-						uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-
-						y += 1
-						continue
-
-				if creation_timestamp_path is not None and len(creation_timestamp_path) > 0 and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
-					timestamp = deep_get(obj, DictPath(creation_timestamp_path))
-
-					if timestamp is None:
-						field = [ThemeRef("strings", "unset")]
-					elif isinstance(timestamp, datetime):
-						field = format_timestamp(timestamp)
-					else:
-						timestamp = timestamp_to_datetime(timestamp)
-						field = format_timestamp(timestamp, localtimezone = True)
-					fieldarray = [
-						ThemeString("Created: ", ThemeAttr("main", "infoheader")),
-					]
-					fieldarray += field
-					uip.addthemearray(infopad, fieldarray, y = y, x = 0)
-
 		# Output listpad if we have one
+		remember_uid = uip.remember_uid
+		uip.remember_uid = False
 		if listpad is not None:
-			y = 0
-
 			uip.update_sorted_list()
 			if not uip.is_list_regenerated():
 				generate_list_header(uip, headerpad, field_dict)
@@ -8730,6 +8170,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					uip.select_if_y(y, item)
 					generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset, uip.is_selected(item))
 				uip.list_needs_regeneration(False)
+		uip.remember_uid = remember_uid
 
 		# Output logpad if we have one
 		if logpad is not None and uip.refresh:
@@ -8852,7 +8293,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						ikind = deep_get(viewref, DictPath("listpad#on_activation#kind"), "")
 						if isinstance(ikind, str):
 							iapi_family = deep_get(viewref, DictPath("listpad#on_activation#api_family"), "")
-							ikind = kh.guess_kind((ikind, iapi_family))
+							ikind = guess_kind((ikind, iapi_family))
 					else:
 						continue
 
@@ -8936,10 +8377,16 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			_index = _list.index(field_index)
 			field_index = _list[(_index + 1) % len(field_indexes)]
 
-			# Toggle field width
-			denylist: List[str] = []
-			field_dict, field_names, sortcolumn, sortorder_reverse = fieldgenerator(view, field_index = field_index, field_indexes = field_indexes,
-											        fields = deep_get(viewref, DictPath("fields")), denylist = denylist)
+			fieldgenerator_args = {
+				"field_index": field_index,
+				"field_indexes": field_indexes,
+				"fields": deep_get(viewref, DictPath("fields")),
+				"denylist": [],
+			}
+			field_dict, field_names, sortcolumn, sortorder_reverse = generators.fieldgenerator(view = view,
+													   selected_namespace = selected_namespace,
+													   **fieldgenerator_args)
+
 			uip.reinit_window(field_dict, sortcolumn = sortcolumn)
 			uip.resize_listpad(width = -1)
 			uip.refresh_all()
@@ -8992,7 +8439,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					# a pre-formatted list. Otherwise we apply formatting if available.
 					# If not available we try to provide some sensible defaults.
 					# pylint: disable-next=unidiomatic-typecheck
-					if w_items is not None and len(w_items) > 0 and (isinstance(w_items[0], dict) or isinstance(w_items[0], (list, tuple)) and type(w_items[0][0]) != int): # noqa: E721
+					if w_items is not None and len(w_items) > 0 and (isinstance(w_items[0], dict) or isinstance(w_items[0], (list, tuple)) and type(w_items[0][0]) != int):  # noqa: E721
 						tmp_items = []
 						w_formatting = deep_get(value, DictPath("formatting"), [ThemeAttr("windowwidget", "default")])
 						lineattrs = WidgetLineAttrs.NORMAL
@@ -9225,7 +8672,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							return retval
 					elif len(kind) > 0:
 						if isinstance(kind, str):
-							kind = kh.guess_kind(kind)
+							kind = guess_kind(kind)
 						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
 						retval = call(uip.stdscr, ref, kind)
 						if retval is not None and retval == Retval.RETURNFULL:
@@ -9273,7 +8720,12 @@ def log_add_line(timestamps, facilities, severities, messages, timestamp, facili
 	return timestamps, facilities, severities, messages
 
 def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
-	global override_tail_lines # pylint: disable=global-statement
+	global executor  # pylint: disable=global-statement
+	global override_tail_lines  # pylint: disable=global-statement
+
+	# Just in case there are leftover futures from other views
+	executor.shutdown()
+	executor = reexecutor.ReExecutor()
 
 	multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
 	multilog_containers = deep_get(kwargs, DictPath("multilog_containers"), [])
@@ -9322,7 +8774,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pod#severity_prefix"), [])
 	# Backwards compatibility
 	# pylint: disable-next=unidiomatic-typecheck
-	if type(severity_prefix) == bool: # noqa: E721
+	if type(severity_prefix) == bool:  # noqa: E721
 		if not severity_prefix:
 			severity_prefix = []
 		else:
@@ -9347,7 +8799,6 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 	uip.refresh_statusbar()
 	curses.doupdate()
 
-	# Safe
 	facility_regex = re.compile(r"^.*/(.*)")
 
 	while True:
@@ -9466,7 +8917,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 				# We probably need a progress bar once we reach this many lines
 				if linecount > 1000 and (i % linepercent) == 0:
-					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) / linecount))
+					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) // linecount))
 					progressbar.timeout(10)
 					c = progressbar.getch()
 					if c == 27:	# ESCAPE
@@ -9600,7 +9051,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 
 			# If the last message in the log is a repeat we need to add the repeat signature
 			if repeat_count > 0 and merge_repeats:
-				timestamps, facilities, severities, messages =\
+				timestamps, facilities, severities, messages = \
 					log_add_line(timestamps, facilities, severities, messages, prev_timestamp, prev_facility, prev_severity,
 						     [ThemeString("[previous message repeated ", color_log_severity(prev_severity)),
 						      ThemeString(f"{repeat_count}", ThemeAttr("logview", "repeat_count")),
@@ -9855,7 +9306,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 			# This is needed in case we get a resize event or toggle borders
 			uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
 			new_date = False
-			if timestamps is not None and len(timestamps) > 0:
+			if timestamps is not None and timestamps:
 				current_datestamp = str(timestamps[0])[0:len("YYYY-MM-DD")]
 				new_date = True
 			yadd = 0
@@ -9949,7 +9400,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs):
 					else:
 						_severity_str = f"{_prefix}{_severity_str.lower()}{_suffix}"
 
-					if len(timestamp.strip()) != 0 or y >= len(timestamps):
+					if timestamp.strip() or y >= len(timestamps):
 						msgstrarray.append(ThemeString(f"{_severity_str}", color_log_severity(severity)))
 					else:
 						msgstrarray.append(ThemeString("".ljust(len(f"{_severity_str}")), color_log_severity(severity)))
@@ -10441,7 +9892,6 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 						ANSIThemeString(": Failed to create debug image", "default")], stderr = True)
 			else:
 				output = result.stdout.decode("utf-8", errors = "replace")
-				# Safe
 				tmp = re.match(r"^Creating debugging pod (\S+) with container (\S+) .*", output)
 				if tmp is not None:
 					pod_name = tmp[1]
@@ -10746,12 +10196,12 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
         # If the kind is unknown we will get NameError;
 	# in this case we probably do not want to crash
 	try:
-		kind = kh.guess_kind(kind)
+		kind = guess_kind(kind)
 	except NameError:
 		obj = None
 
         # If the kind is unknown we will get NameError;
-	# in this case we probably don not want to crash
+	# in this case we probably do not want to crash
 	try:
 		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
 	except NameError:
@@ -10775,18 +10225,29 @@ def listgetter_namespaced_resources(obj, **kwargs):
 	kind = ("Namespace", "")
 	namespace = deep_get(obj, DictPath("metadata#name"))
 
+	# We'll be one-shotting all of these, so we won't use reexecutor
+	executor_ = concurrent.futures.ThreadPoolExecutor()
+	executors = {}
 	for kind in namespaced_resources:
-		_vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
-		if _status != 200:
-			status = _status
+		joined_kind = ".".join(kind)
+		executors[kind] = executor_.submit(get_kubernetes_list_async, kind = kind, namespace = namespace)
+	for kind, ex in executors.items():
+		vlist_, status_ = ex.result()
+		if status != 200:
+			status = status_
 			continue
-		if len(_vlist) == 0:
+		if not vlist_:
 			continue
 		# We are (potentially) listing a lot of different types of resources,
 		# and they do not contain kind/apiVersion, so it will be tricky to tell them apart...
-		for obj in _vlist:
+		for obj in vlist_:
 			obj["__kind_tuple"] = kind
-		vlist += _vlist
+		vlist += vlist_
+	# If cancel_futures is supported we should use it
+	if sys.version_info[0:2] >= (3, 9):
+		executor_.shutdown(wait = False, cancel_futures = True)
+	else:
+		executor_.shutdown(wait = False)
 	return vlist, status
 
 # Iterate over the list of items and execute command on all of them
@@ -10985,7 +10446,7 @@ def create_namespace(stdscr: curses.window, **kwargs):
 	_retval = clear_screen()
 
 	# Verify that the name of the new namespace is valid
-	if not cmtlib.validate_name("dns-label", name):
+	if not validate_name("dns-label", name):
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("“", "default"),
 		       ANSIThemeString(name, "argument"),
@@ -11182,7 +10643,6 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 	if len(result.stdout) == 0:
 		return Retval.MATCH
 
-	# Safe
 	diff_regex = re.compile(r"^(\s*)(.*)")
 
 	for line in result.stdout.splitlines():
@@ -11543,7 +11003,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 			_kind = deep_get(ref, DictPath("kind"), "")
 			_api_group = deep_get(ref, DictPath("api_group"), "")
 			try:
-				kind = kh.guess_kind((_kind, _api_group))
+				kind = guess_kind((_kind, _api_group))
 			except NameError:
 				# If we cannot guess the kind we return
 				return
@@ -11696,7 +11156,6 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 	if action_list is None:
 		action_list = {}
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for playbookpath in Path(path).iterdir():
@@ -11895,7 +11354,7 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 force_refresh_apis = False
 
 def format_selection_list(uip: UIProps, refresh_apis = False):
-	global force_refresh_apis # pylint: disable=global-statement
+	global force_refresh_apis  # pylint: disable=global-statement
 
 	if force_refresh_apis:
 		force_refresh_apis = False
@@ -12020,7 +11479,7 @@ def format_selection_list(uip: UIProps, refresh_apis = False):
 
 def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 	# Ideally we want to return to the same selection
-	global defaultview # pylint: disable=global-statement
+	global defaultview  # pylint: disable=global-statement
 
 	uip.refresh_all()
 	items = format_selection_list(uip, refresh_apis)
@@ -12035,7 +11494,7 @@ def selectwindow(uip: UIProps, refresh_apis = False) -> Retval:
 		tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, items, title = title, preselection = defaultview, **extra_args)
 		if tmpselection is not None:
 			# pylint: disable-next=unidiomatic-typecheck
-			if type(tmpselection) == int and tmpselection < 0: # noqa: E721
+			if type(tmpselection) == int and tmpselection < 0:  # noqa: E721
 				if tmpselection == -curses.KEY_F6:
 					categorise = not categorise
 					deep_set(cmtlib.cmtconfig, DictPath("__Selector#categorise"), categorise, create_path = True)
@@ -12331,6 +11790,7 @@ listgetter_allowlist = {
 # Asynchronous listgetters acceptable for direct use in view files
 listgetter_async_allowlist = {
 	# Used by listpad
+	"get_kubernetes_list_async": get_kubernetes_list_async,
 	"get_context_list": get_context_list,
 	"get_inventory_list": get_inventory_list,
 }
@@ -12445,7 +11905,7 @@ def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str
 	return shortcut_key, help_key
 
 def populate_views(force_refresh: bool = False) -> None:
-	global views # pylint: disable=global-statement
+	global views  # pylint: disable=global-statement
 
 	if kubernetes_support:
 		tmp_available_api_families, _status, _modified = kh.get_available_kinds(force_refresh = force_refresh)
@@ -12472,7 +11932,6 @@ def populate_views(force_refresh: bool = False) -> None:
 
 	view_files = []
 
-	# Safe
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
 
 	for view_dir in view_dirs:
@@ -12997,7 +12456,7 @@ def setupui(stdscr: curses.window) -> None:
 						ANSIThemeString(": The requested view “", "default"),
 						ANSIThemeString(defaultview, "argument"),
 						ANSIThemeString("“ is not available; ", "default"),
-						ANSIThemeString("the cluster may be offline or the API disabled.", "default")], stderr = True)
+						ANSIThemeString("the cluster may be offline or the API disabled.", "default")])
 				sys.exit(errno.ENOTSUP)
 			viewfunc(stdscr, defaultview)
 		else:
@@ -13231,13 +12690,13 @@ def customise_listviews() -> None:
 		viewref["field_denylist"] = ["status"]
 
 def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
-	global initial_name # pylint: disable=global-statement
-	global initial_namespace # pylint: disable=global-statement
-	global initial_container # pylint: disable=global-statement
-	global read_only_mode # pylint: disable=global-statement
-	global selected_namespace # pylint: disable=global-statement
-	global defaultview # pylint: disable=global-statement
-	global kubernetes_support # pylint: disable=global-statement
+	global initial_name  # pylint: disable=global-statement
+	global initial_namespace  # pylint: disable=global-statement
+	global initial_container  # pylint: disable=global-statement
+	global read_only_mode  # pylint: disable=global-statement
+	global selected_namespace  # pylint: disable=global-statement
+	global defaultview  # pylint: disable=global-statement
+	global kubernetes_support  # pylint: disable=global-statement
 
 	tmpdefaultview = deep_get(cmtlib.cmtconfig, DictPath("Global#defaultview"), "")
 
@@ -13601,8 +13060,8 @@ def main() -> None:
 	"""
 	Main function for the program
 	"""
-	global auditlog
-	global debuglog
+	global auditlog  # pylint: disable=global-statement
+	global debuglog  # pylint: disable=global-statement
 
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:

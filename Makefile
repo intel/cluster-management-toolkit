@@ -1,7 +1,22 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests
-test_lib_symlinks = about.py ansible_helper.py ansithemeprint.py cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py networkio.py
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests
+test_lib_symlinks = \
+	about.py ansible_helper.py ansithemeprint.py \
+	checks.py \
+	cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py \
+	commandparser.py \
+	curses_helper.py \
+	datagetter.py \
+	formatter.py \
+	generator.py \
+	helptexts.py \
+	itemgetter.py \
+	kubernetes_helper.py \
+	logparser.py \
+	networkio.py \
+	objgetter.py \
+	reexecutor.py
 
 # Most of these are warnings/errors emitted due to coding style differences
 FLAKE8_IGNORE := W191,E501,E305,E251,E302,E261,E101,E126,E128,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E231,E221,E116,E129,E127,E124
@@ -18,14 +33,75 @@ code-checks-strict: flake8 mypy-strict pylint
 
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 
-tests: iotests
+tests: iotests logtests validatortests atptests cmtlibtests
 
 clean: remove_test_symlinks
 
 generate_helptexts:
-	for file in $(python_executables); do \
+	@for file in $(python_executables); do \
 		./$$file help --format markdown > docs/$${file}_helptext.md ;\
 	done
+
+coverage: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	for test in tests/atptests tests/cmtlibtests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
+		printf -- "\n\n  Running: $$test\n\n" ;\
+		$$cmd run --branch --append $$test ;\
+	done ;\
+	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
+	$$cmd run --branch --append tests/atptests --include-clear ;\
+	$$cmd report ;\
+	$$cmd html
+
+# Run this to augment existing coverage data with tests that require manual interaction
+coverage-manual: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	printf -- "\n\n  Running: tests/atptests --include-clear --include-input\n\n" ;\
+	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
+	$$cmd report ;\
+	$$cmd html
+
+# Run this to augment existing coverage data with tests that require an ansible inventory
+coverage-ansible: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	printf -- "\n\n  Running: tests/cmtlibtests --include-ansible\n\n" ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
+	printf -- "\n\n  Running: tests/ansibletests\n\n" ;\
+	$$cmd run --branch --append tests/ansibletests ;\
+	$$cmd report ;\
+	$$cmd html
+
+# Run this to augment existing coverage data with tests that require a running cluster
+coverage-cluster: setup_tests
+	@cmd=python3-coverage ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
+	$$cmd run --branch --append tests/async_fetch ;\
+	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
+	$$cmd run --branch --append tests/khtests --include-cluster ;\
+	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
+	$$cmd report ;\
+	$$cmd html
 
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
@@ -136,6 +212,16 @@ mypy:
 		$$cmd --ignore-missing-imports $$file || true; \
 	done
 
+nox: create_test_symlinks
+	@cmd=nox ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "Running nox for unit testing\n\n"; \
+	$$cmd --no-reuse-existing-virtualenvs || true; \
+	printf -- "\n-----\n\n"
+
 validate_yaml:
 	@printf -- "\n\nRunning validate_yaml to check that all view-files/parser-files/theme-files are valid\n\n"; \
 	./tests/validate_yaml
@@ -199,9 +285,33 @@ setup_tests: create_test_symlinks
 	 chmod o+w 03-wrong_dir_permissions ;\
 	 chmod o+w 01-wrong_permissions )
 
+async_fetch: setup_tests
+	@printf -- "\n\nRunning async_fetch to check that reexecutor.py behaves as expected\n\n"; \
+	(cd tests && ./async_fetch)
+
 iotests: setup_tests
-	@printf -- "\n\nRunning iotests to check that the I/O-helpers in cmtio behave as expected\n\n"; \
+	@printf -- "\n\nRunning iotests to check that cmtio.py behaves as expected\n\n"; \
 	(cd tests && ./iotests)
+
+logtests: setup_tests
+	@printf -- "\n\nRunning logtests to check that logparser.py behaves as expected\n\n"; \
+	(cd tests && ./logtests)
+
+validatortests: setup_tests
+	@printf -- "\n\nRunning validatortests to check that cmtvalidators.py behaves as expected\n\n"; \
+	(cd tests && ./validatortests)
+
+cmtlibtests: setup_tests
+	@printf -- "\n\nRunning cmtlibtests to check that cmtlib.py behaves as expected\n\n"; \
+	(cd tests && ./cmtlibtests)
+
+atptests: setup_tests
+	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
+	(cd tests && ./atptests --include-clear)
+
+atptests-manual: setup_tests
+	@printf -- "\n\nRunning atptests --include-clear ---include-input to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
+	(cd tests && ./atptests --include-clear --include-input)
 
 check_theme_use: setup_tests
 	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \

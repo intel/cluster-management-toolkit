@@ -4,6 +4,9 @@
 ''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 A checker that validates cmtio, cmtio_yaml, and networkio
@@ -17,12 +20,14 @@ from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
 
-from cmtio import check_path, join_securitystatus_set
+from cmtio import check_path, expand_path, join_securitystatus_set, execute_command, execute_command_with_response
 from cmtio import secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from networkio import verify_checksum
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
+
+from cmtpaths import HOMEDIR
 
 CHECKSUMS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("checksums")))
 TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
@@ -40,10 +45,133 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	checks = deep_get(checkdata, DictPath("checks"), None)
+	message_on_error = True
 	expect = deep_get(checkdata, DictPath("expect"))
-	result = check_path(path, checks = checks, exit_on_critical = False, message_on_error = False)
-	if result != expect:
-		return 1, f"expected {expect}, got {result}"
+	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
+	owner_allowlist = deep_get(checkdata, DictPath("owner_allowlist"))
+	parent_owner_allowlist = deep_get(checkdata, DictPath("parent_owner_allowlist"))
+
+	kwargs = {
+		"checks": checks,
+		"exit_on_critical": False,
+		"message_on_error": True,
+	}
+	if owner_allowlist is not None:
+		kwargs["owner_allowlist"] = owner_allowlist
+	if parent_owner_allowlist is not None:
+		kwargs["parent_owner_allowlist"] = parent_owner_allowlist
+	try:
+		result = check_path(path, **kwargs)
+		if result != expect:
+			return 1, f"expected {expect}, got {result}"
+		if expect_exception is not None:
+			return 1, f"expected exception {expect_exception}, got {result}"
+	except Exception as e:
+		if expect_exception is not None:
+			if type(e) != expect_exception: # noqa: E721
+				return 1, f"expected exception {expect_exception}, got {e}"
+		else:
+			return 1, f"expected {expect}, got {e}"
+	return 0, ""
+
+def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether cmtio.secure_read_string() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	command = deep_get(checkdata, DictPath("command"), None)
+	env = deep_get(checkdata, DictPath("env"), None)
+	comparison = deep_get(checkdata, DictPath("comparison"), 0)
+	expect = deep_get(checkdata, DictPath("expect"))
+	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
+
+	try:
+		result = execute_command(command, env = env, comparison = comparison)
+		if result != expect:
+			return 1, f"expected {expect}, got {result}"
+		if expect_exception is not None:
+			return 1, f"expected exception {expect_exception}, got {result}"
+	except Exception as e:
+		if expect_exception is not None:
+			if type(e) != expect_exception: # noqa: E721
+				return 1, f"expected exception {expect_exception}, got {e}"
+		else:
+			return 1, f"expected {expect}, got {e}"
+	return 0, ""
+
+def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether cmtio.secure_read_string() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	command = deep_get(checkdata, DictPath("command"), None)
+	env = deep_get(checkdata, DictPath("env"), None)
+	expect = deep_get(checkdata, DictPath("expect"))
+	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
+
+	try:
+		result = execute_command_with_response(command, env = env)
+		if result != expect:
+			return 1, f"expected {expect}, got {result}"
+		if expect_exception is not None:
+			return 1, f"expected exception {expect_exception}, got {result}"
+	except Exception as e:
+		if expect_exception is not None:
+			if type(e) != expect_exception: # noqa: E721
+				return 1, f"expected exception {expect_exception}, got {e}"
+		else:
+			return 1, f"expected {expect}, got {e}"
+	return 0, ""
+
+def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether cmtio.secure_read() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	kwargs = {
+		"directory_is_symlink": deep_get(checkdata, DictPath("directory_is_symlink"), False),
+		"checks": deep_get(checkdata, DictPath("checks")),
+		"read_mode": deep_get(checkdata, DictPath("read_mode"), "r"),
+	}
+
+	result = False
+
+	try:
+		string = secure_read(path, **kwargs)
+		if expect == "string" and isinstance(string, str):
+			result = True
+		elif expect == "�" and isinstance(string, str) and "�" in string:
+			result = True
+	except Exception as e: # pylint: disable=broad-except
+		# pylint: disable-next=unidiomatic-typecheck
+		if type(e) == expect: # noqa: E721
+			result = True
+		else:
+			string = f"{type(e)}"
+
+	if not result:
+		return 1, f"expected {expect}, got {string}"
 	return 0, ""
 
 def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
@@ -60,10 +188,15 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	path = deep_get(checkdata, DictPath("path"), "")
 	expect = deep_get(checkdata, DictPath("expect"))
 
+	kwargs = {
+		"directory_is_symlink": deep_get(checkdata, DictPath("directory_is_symlink"), False),
+		"checks": deep_get(checkdata, DictPath("checks")),
+	}
+
 	result = False
 
 	try:
-		string = secure_read_string(path)
+		string = secure_read_string(path, **kwargs)
 		if expect == "string" and isinstance(string, str):
 			result = True
 		elif expect == "�" and isinstance(string, str) and "�" in string:
@@ -157,13 +290,14 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	expect = deep_get(checkdata, DictPath("expect"))
+	executable = deep_get(checkdata, DictPath("executable"), True)
 	fallback_allowlist = deep_get(checkdata, DictPath("fallback_allowlist"))
 	security_policy = deep_get(checkdata, DictPath("security_policy"))
 
 	result = False
 
 	try:
-		string = str(secure_which(path, fallback_allowlist = fallback_allowlist, security_policy = security_policy))
+		string = str(secure_which(path, fallback_allowlist = fallback_allowlist, security_policy = security_policy, executable = executable))
 		if expect == "string" and isinstance(string, str):
 			result = True
 	except Exception as e: # pylint: disable=broad-except
@@ -264,16 +398,18 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 	permissions = deep_get(checkdata, DictPath("permissions"))
 	exist_ok = deep_get(checkdata, DictPath("exist_ok"))
 	expect = deep_get(checkdata, DictPath("expect"))
+	verbose = deep_get(checkdata, DictPath("verbose"), False)
 
-	violations = secure_mkdir(path, permissions = permissions, exist_ok = exist_ok)
+	violations = secure_mkdir(path, permissions = permissions, exist_ok = exist_ok, verbose = verbose)
 	violations_set = set(violations)
 
-	if not Path(path).is_dir():
-		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
-	else:
-		path_stat = Path(path).stat()
-		if path_stat.st_mode & 0o777 != permissions:
-			violations_set.add(SecurityStatus.PERMISSIONS)
+	if SecurityStatus.PERMISSIONS not in violations_set and SecurityStatus.PARENT_IS_NOT_DIR not in violations_set and SecurityStatus.PARENT_DOES_NOT_EXIST not in violations_set:
+		if not Path(path).is_dir():
+			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
+		else:
+			path_stat = Path(path).stat()
+			if path_stat.st_mode & 0o777 != permissions:
+				violations_set.add(SecurityStatus.PERMISSIONS)
 
 	if violations_set != expect:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
@@ -294,18 +430,20 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 	path = deep_get(checkdata, DictPath("path"), "")
 	permissions = deep_get(checkdata, DictPath("permissions"))
 	expect = deep_get(checkdata, DictPath("expect"))
+	verbose = deep_get(checkdata, DictPath("verbose"), False)
 
-	violations = secure_copy(src, path, permissions = permissions)
+	violations = secure_copy(src, path, permissions = permissions, verbose = verbose)
 	violations_set = set(violations)
 
-	if not Path(path).is_file():
-		violations_set.add(SecurityStatus.DOES_NOT_EXIST)
-		violations_set.discard(SecurityStatus.OK)
-	else:
-		path_stat = Path(path).stat()
-		if path_stat.st_mode & 0o777 != permissions:
-			violations_set.add(SecurityStatus.PERMISSIONS)
+	if SecurityStatus.PERMISSIONS not in violations_set and SecurityStatus.EXISTS not in violations_set and SecurityStatus.PARENT_IS_NOT_DIR not in violations_set and SecurityStatus.PARENT_DOES_NOT_EXIST not in violations_set:
+		if not Path(path).is_file():
+			violations_set.add(SecurityStatus.DOES_NOT_EXIST)
 			violations_set.discard(SecurityStatus.OK)
+		else:
+			path_stat = Path(path).stat()
+			if permissions is not None and path_stat.st_mode & 0o777 != permissions:
+				violations_set.add(SecurityStatus.PERMISSIONS)
+				violations_set.discard(SecurityStatus.OK)
 
 	if violations_set != expect:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
@@ -324,10 +462,14 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 
 	src = deep_get(checkdata, DictPath("src"), "")
 	path = deep_get(checkdata, DictPath("path"), "")
-	replace = deep_get(checkdata, DictPath("replace"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	violations = secure_symlink(src, path, replace_existing = replace)
+	kwargs = {
+		"replace_existing": deep_get(checkdata, DictPath("replace")),
+		"verbose": True,
+	}
+
+	violations = secure_symlink(src, path, **kwargs)
 	violations_set = set(violations)
 
 	if violations == [SecurityStatus.OK] and not Path(path).is_symlink():
@@ -336,6 +478,29 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 
 	if violations_set != expect:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
+	return 0, ""
+
+def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether cmtio.expand_path() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	path = deep_get(checkdata, DictPath("path"), "")
+	search_paths = deep_get(checkdata, DictPath("search_paths"), None)
+	fallback = deep_get(checkdata, DictPath("fallback"), "")
+	suffixes = deep_get(checkdata, DictPath("suffixes"), None)
+	expect = deep_get(checkdata, DictPath("expect"))
+
+	result, status = expand_path(path, fallback = fallback, search_paths = search_paths, suffixes = suffixes)
+
+	if (result, status) != expect:
+		return 1, f"expected {expect}, got ({result}, {status})"
 	return 0, ""
 
 def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
@@ -389,14 +554,22 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	permissions = deep_get(checkdata, DictPath("permissions"))
+	replace_empty = deep_get(checkdata, DictPath("replace_empty"), False)
+	replace_null = deep_get(checkdata, DictPath("replace_null"), False)
 	expect = deep_get(checkdata, DictPath("expect"))
+	write_mode = deep_get(checkdata, DictPath("write_mode"), "w")
 
 	try:
 		data = {
 			"valid_yaml": True,
 		}
-		secure_write_yaml(path, data = data, permissions = permissions)
+		secure_write_yaml(path, data = data, permissions = permissions, write_mode = write_mode, replace_empty = replace_empty, replace_null = replace_null)
 		violations_set = {repr(SecurityStatus.OK)}
+	except ValueError as e:
+		if expect == type(e):
+			return 0, ""
+		else:
+			return 1, f"expected {expect}, got {e}"
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -428,19 +601,50 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 	"""
 
 	path = deep_get(checkdata, DictPath("path"), "")
+	filename = deep_get(checkdata, DictPath("filename"))
 	checksum_type = deep_get(checkdata, DictPath("hash"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
 	data = cast(bytearray, secure_read(path, read_mode = "rb"))
-	csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb"))
-	result = verify_checksum(csum, checksum_type, data, "testcase.txt")
+	if checksum_type is not None:
+		csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb"))
+	else:
+		csum = cast(bytes, secure_read(FilePath(f"{path}.md5"), read_mode = "rb"))
+	result = verify_checksum(checksum = csum, checksum_type = checksum_type, data = data, filename = filename)
+
+	if result != expect:
+		return 1, f"expected {expect}, got {result}"
+	return 0, ""
+
+def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
+	"""
+	Test whether join_securitystatus_set() works correctly
+
+		Parameters:
+			testcase (str): The name of the testcase
+			checkdata (dict): Parameters used by the test
+		Returns:
+			retval (int): 0 on success, 1 on failure
+	"""
+
+	status_set = deep_get(checkdata, DictPath("status_set"), set())
+	separator = deep_get(checkdata, DictPath("separator"), ", ")
+	expect = deep_get(checkdata, DictPath("expect"), "")
+
+	result = join_securitystatus_set(separator = separator, securitystatuses = status_set)
 
 	if result != expect:
 		return 1, f"expected {expect}, got {result}"
 	return 0, ""
 
 testcases = {
-	"01: File permissions": {
+	"File permissions (default checks)": {
+		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
+		"test": test_check_path,
+		"checks": None,
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
+	"File permissions": {
 		"path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
 		"test": test_check_path,
 		"checks": [
@@ -456,7 +660,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PERMISSIONS],
 	},
-	"02: File path resolution": {
+	"File path resolution": {
 		"path": FilePath(f"{TEST_DIR}/02-symlink"),
 		"test": test_check_path,
 		"checks": [
@@ -472,7 +676,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF],
 	},
-	"03: Directory permissions": {
+	"Directory permissions": {
 		"path": FilePath(f"{TEST_DIR}/03-wrong_dir_permissions"),
 		"test": test_check_path,
 		"checks": [
@@ -487,7 +691,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PERMISSIONS],
 	},
-	"04: Directory path resolution and destination permissions": {
+	"Directory path resolution and destination permissions": {
 		"path": FilePath(f"{TEST_DIR}/04-dir_symlink"),
 		"test": test_check_path,
 		"checks": [
@@ -502,7 +706,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PATH_NOT_RESOLVING_TO_SELF, SecurityStatus.PERMISSIONS],
 	},
-	"05: Wrong type (Expected file)": {
+	"Wrong type (Expected file)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_check_path,
 		"checks": [
@@ -518,7 +722,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_NOT_FILE],
 	},
-	"06: Correct type (Expected file)": {
+	"Correct type (Expected file)": {
 		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
@@ -534,7 +738,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.OK],
 	},
-	"07: Wrong type (Expected directory)": {
+	"Wrong type (Expected directory)": {
 		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
@@ -549,7 +753,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_NOT_DIR],
 	},
-	"08: Correct type (Expected directory)": {
+	"Correct type (Expected directory)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_check_path,
 		"checks": [
@@ -564,7 +768,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.OK],
 	},
-	"09: Wrong type (Expected symlink)": {
+	"Wrong type (Expected symlink)": {
 		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_check_path,
 		"checks": [
@@ -578,7 +782,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_NOT_SYMLINK],
 	},
-	"10: Correct type (Expected symlink)": {
+	"Correct type (Expected symlink)": {
 		"path": FilePath(f"{TEST_DIR}/02-symlink"),
 		"test": test_check_path,
 		"checks": [
@@ -592,7 +796,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.OK],
 	},
-	"11: Not executable (should be)": {
+	"Not executable (should be)": {
 		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"test": test_check_path,
 		"checks": [
@@ -608,7 +812,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_NOT_EXECUTABLE],
 	},
-	"12: Executable (shouldn't be)": {
+	"Executable (shouldn't be)": {
 		"path": FilePath(f"{TEST_DIR}/06-executable.sh"),
 		"test": test_check_path,
 		"checks": [
@@ -624,7 +828,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_EXECUTABLE],
 	},
-	"13: Dangling symlink": {
+	"Dangling symlink": {
 		"path": FilePath(f"{TEST_DIR}/07-dangling_symlink"),
 		"test": test_check_path,
 		"checks": [
@@ -637,7 +841,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.DOES_NOT_EXIST],
 	},
-	"14: Non-existing path": {
+	"Non-existing path": {
 		"path": FilePath(f"{TEST_DIR}/this path does not exist/not this either"),
 		"test": test_check_path,
 		"checks": [
@@ -653,7 +857,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PARENT_DOES_NOT_EXIST],
 	},
-	"15: Parent has incorrect permissions": {
+	"Parent has incorrect permissions": {
 		"path": FilePath(f"{TEST_DIR}/03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory"),
 		"test": test_check_path,
 		"checks": [
@@ -668,7 +872,54 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PARENT_PERMISSIONS],
 	},
-	"16: Parent directory is symlink": {
+	"Owner not in allowlist": {
+		"path": FilePath("/etc/passwd"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"owner_allowlist": [],
+		"expect": [SecurityStatus.OWNER_NOT_IN_ALLOWLIST],
+	},
+	"Parent owner not in allowlist": {
+		"path": FilePath("/etc/passwd"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"parent_owner_allowlist": [],
+		"expect": [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST],
+	},
+	"File not readable": {
+		"path": FilePath("/etc/shadow"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_FILE,
+		],
+		"expect": [SecurityStatus.PERMISSIONS],
+	},
+	"Parent directory is symlink": {
 		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_check_path,
 		"checks": [
@@ -684,7 +935,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF],
 	},
-	"17: Valid path": {
+	"Valid path": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_check_path,
 		"checks": [
@@ -700,437 +951,739 @@ testcases = {
 		],
 		"expect": [SecurityStatus.OK],
 	},
-	"18: Valid UTF-8": {
+	"Invalid path (embedded <NUL>)": {
+		"path": FilePath(f"{TEST_DIR}/13-correct_directory/16-correct_file_in_correct_permission_directory\x00"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_NOT_EXECUTABLE,
+			SecurityChecks.IS_FILE,
+		],
+		"expect_exception": ValueError,
+	},
+	"Valid UTF-8": {
 		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_string,
-		"expect": "string"
+		"expect": "string",
 	},
-	"19: Invalid UTF-8": {
-		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
+	"Valid Path, invalid read_mode": {
+		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
+		"test": test_secure_read,
+		"expect": ValueError,
+		"read_mode": "z",
+	},
+	"Valid Path, symlinked, directory_is_symlinked = True": {
+		"path": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"test": test_secure_read_string,
-		"expect": "�",
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": "string",
 	},
-	"20: Invalid single YAML (secure_read_yaml)": {
+	"Non-readable path, directory_is_symlinked = True": {
+		"path": FilePath("/var/lib/private/foobar"),
+		"test": test_secure_read_string,
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": FilePathAuditError,
+	},
+	"Readable path, directory_is_symlinked = True": {
+		"path": FilePath("/var/lib/private/foobar"),
+		"test": test_secure_read_string,
+		"directory_is_symlink": True,
+		"checks": None,
+		"expect": FilePathAuditError,
+	},
+	"Invalid single YAML (secure_read_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": yaml.parser.ParserError,
 	},
-	"21: Valid single YAML (secure_read_yaml)": {
+	"Valid single YAML (secure_read_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": "dict",
 	},
-	"22: Valid multi YAML (secure_read_yaml)": {
+	"Valid multi YAML (secure_read_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"test": test_secure_read_yaml,
 		"expect": yaml.composer.ComposerError,
 	},
-	"23: Valid multi YAML (secure_read_yaml_all)": {
+	"Valid multi YAML (secure_read_yaml_all)": {
 		"path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
 	# Note: yaml.safe_load_all() yields a generator; this means that the data is validated when iterated over,
 	#       NOT when loaded
-	"24: Invalid YAML (secure_read_yaml_all)": {
+	"Invalid YAML (secure_read_yaml_all)": {
 		"path": FilePath(f"{TEST_DIR}/12-valid_yaml_followed_by_invalid_yaml.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
-	"25: Valid single YAML (secure_read_yaml_all)": {
+	"Valid single YAML (secure_read_yaml_all)": {
 		"path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
 		"test": test_secure_read_yaml_all,
 		"expect": "generator",
 	},
-	"26: /bin/ssh [fallback=[], STRICT] (secure_which)": {
+	"/bin/ssh [fallback=[], STRICT] (secure_which)": {
 		"path": FilePath("/bin/ssh"),
 		"test": test_secure_which,
 		"fallback_allowlist": [],
 		"security_policy": SecurityPolicy.STRICT,
 		"expect": "string",
 	},
-	"27: /usr/local/bin/ssh [fallback=[], STRICT] (secure_which)": {
+	"/bin/ssh [fallback=[], STRICT], executable = False, executable (secure_which)": {
+		"path": FilePath("/bin/ssh"),
+		"test": test_secure_which,
+		"executable": False,
+		"fallback_allowlist": [],
+		"security_policy": SecurityPolicy.STRICT,
+		"expect": "string",
+	},
+	"/bin/ssh [fallback=[], STRICT], executable = True, non-executable (secure_which)": {
+		"path": FilePath("/etc/hosts"),
+		"test": test_secure_which,
+		"executable": False,
+		"fallback_allowlist": [],
+		"security_policy": SecurityPolicy.STRICT,
+		"expect": "string",
+	},
+	"/bin/ssh [fallback=[], STRICT], executable = False, non-executable (secure_which)": {
+		"path": FilePath("/etc/hosts"),
+		"test": test_secure_which,
+		"executable": False,
+		"fallback_allowlist": [],
+		"security_policy": SecurityPolicy.STRICT,
+		"expect": "string",
+	},
+	"/usr/local/bin/ssh [fallback=[], STRICT] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
 		"fallback_allowlist": [],
 		"security_policy": SecurityPolicy.STRICT,
 		"expect": FileNotFoundError,
 	},
-	"28: /usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\"], ALLOWLIST_STRICT] (secure_which)": {
+	"/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\"], ALLOWLIST_STRICT] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
 		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin"],
 		"security_policy": SecurityPolicy.ALLOWLIST_STRICT,
 		"expect": "string",
 	},
-	"29: /usr/local/bin/ssh [fallback=[\"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
+	"/usr/local/bin/ssh [fallback=[\"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
 		"fallback_allowlist": [f"{TEST_DIR}/ssh"],
 		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
 		"expect": FileNotFoundError,
 	},
-	"30: /usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
+	"/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
 		"path": FilePath("/usr/local/bin/ssh"),
 		"test": test_secure_which,
 		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin", f"{TEST_DIR}/ssh"],
 		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
 		"expect": "string",
 	},
+	"/usr/local/bin/doesnotexist [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
+		"path": FilePath("/usr/local/bin/doesnotexist"),
+		"test": test_secure_which,
+		"fallback_allowlist": ["/bin", "/sbin", "/usr/bin", "/usr/sbin", f"{TEST_DIR}/ssh"],
+		"security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
+		"expect": FileNotFoundError,
+	},
 	# This is not meant as a test; it prepares for the next test
-	"--: Deleting testdir as preparation (secure_rmdir)": {
+	"0. Deleting testdir as preparation (secure_rmdir)": {
+		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testdir"),
 		"test": test_secure_rmdir,
 		"expect": None,
 	},
-	"31: Deleting non-empty directory (secure_rmdir)": {
+	"Deleting non-empty directory (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_secure_rmdir,
 		"expect": {repr(SecurityStatus.DIR_NOT_EMPTY)},
 	},
-	"32: Deleting non-directory (secure_rmdir)": {
+	"Deleting non-directory (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
 		"test": test_secure_rmdir,
 		"expect": {repr(SecurityStatus.IS_NOT_DIR)},
 	},
-	"33: Creating testdir; exist_ok = True (secure_mkdir)": {
+	"Creating testdir; exist_ok = True (secure_mkdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
 		"test": test_secure_mkdir,
 		"exist_ok": True,
 		"permissions": 0o700,
 		"expect": set(),
 	},
-	"34: Creating testdir; exist_ok = False (secure_mkdir)": {
+	"Creating testdir; exist_ok = False (secure_mkdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
 		"test": test_secure_mkdir,
 		"exist_ok": False,
 		"permissions": 0o700,
 		"expect": {SecurityStatus.EXISTS},
 	},
-	"35: Deleting testdir (secure_rmdir)": {
+	"Creating testdir; parent is not dir (secure_mkdir)": {
+		"path": FilePath(f"{TEST_DIR}/08-not_utf8.txt/testdir"),
+		"test": test_secure_mkdir,
+		"exist_ok": False,
+		"permissions": 0o700,
+		"expect": {SecurityStatus.PARENT_IS_NOT_DIR},
+	},
+	"Creating testdir; verbose = True, non-existing parent (secure_mkdir)": {
+		"path": FilePath(f"{TEST_DIR}/nonexistingdir/testdir"),
+		"verbose": True,
+		"test": test_secure_mkdir,
+		"exist_ok": False,
+		"permissions": 0o700,
+		"expect": {SecurityStatus.PARENT_DOES_NOT_EXIST},
+	},
+	"Deleting testdir (secure_rmdir)": {
 		"path": FilePath(f"{TEST_DIR}/testdir"),
 		"test": test_secure_rmdir,
 		"expect": None,
 	},
 	# This is not meant as a test; it prepares for the next test
-	"--: Deleting testfile as preparation (secure_rm)": {
+	"1. Deleting testfile as preparation (secure_rm)": {
+		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_rm,
 		"expect": None,
 	},
 	# This is not meant as a test; it prepares for the next test
-	"--: Deleting testfile.yaml as preparation (secure_rm)": {
+	"2. Deleting testfile.yaml as preparation (secure_rm)": {
+		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
 		"expect": None,
 	},
-	"36: Deleting directory (secure_rm)": {
+	"Deleting directory (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
 		"test": test_secure_rm,
 		"expect": {repr(SecurityStatus.IS_NOT_FILE)},
 	},
-	"37: Writing text to a file (secure_write_string)": {
+	"Writing text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.OK)},
 	},
-	"38: Appending text to a file (secure_write_string)": {
+	"Writing text to a file, write_mode = \"x\", file exists (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"write_mode": "x",
+		"expect": {repr(SecurityStatus.EXISTS)},
+	},
+	"Writing text to a file, write_mode = \"xb\", file exists (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"permissions": 0o600,
+		"write_mode": "xb",
+		"expect": {repr(SecurityStatus.EXISTS)},
+	},
+	"Appending text to a file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "a",
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.OK)},
 	},
-	"39: Writing string to existing file (secure_write_string)": {
+	"Writing string to existing file (secure_write_string)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"write_mode": "x",
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.EXISTS)},
 	},
-	"40: Writing YAML to a file (secure_write_yaml)": {
+	"Writing YAML to a file (secure_write_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_write_yaml,
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.OK)},
 	},
-	"41: Deleting testfile (secure_rm)": {
+	"Deleting testfile (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
 	},
-	"42: Deleting testfile.yaml (secure_rm)": {
+	"1. Deleting testfile.yaml (secure_rm)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
 		"expect": {SecurityStatus.OK},
 	},
-	"43: Copying valid file to valid destination (secure_copy)": {
+	"Writing YAML to a file, wrong write_mode (secure_write_yaml)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_write_yaml,
+		"permissions": 0o600,
+		"write_mode": "z",
+		"expect": ValueError,
+	},
+	"Writing YAML to a file, replace empty, replace null (secure_write_yaml)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_write_yaml,
+		"replace_empty": True,
+		"replace_null": True,
+		"permissions": 0o600,
+		"expect": {repr(SecurityStatus.OK)},
+	},
+	"2. Deleting testfile.yaml (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": {SecurityStatus.OK},
+	},
+	"Copying valid file to valid destination (secure_copy)": {
 		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
 		"permissions": 0o600,
 		"expect": {SecurityStatus.OK},
 	},
-	"44: Copying valid file to non-valid destination (secure_copy)": {
+	"3. Deleting testfile.yaml (secure_rm)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_rm,
+		"expect": {SecurityStatus.OK},
+	},
+	"Copying valid file to valid destination, default permissions (secure_copy)": {
 		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
+		"expect": {SecurityStatus.OK},
+	},
+	"Copying valid file to non-valid destination (secure_copy)": {
+		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
+		"test": test_secure_copy,
+		"verbose": True,
 		"permissions": 0o600,
 		"expect": {SecurityStatus.EXISTS},
 	},
-	"--: Deleting testfile.yaml (secure_rm)": {
+	"Copying valid file to non-valid destination, verbose = True (secure_copy)": {
+		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+		"path": FilePath("/etc/thisshouldnotwork"),
+		"test": test_secure_copy,
+		"verbose": True,
+		"permissions": 0o600,
+		"expect": {SecurityStatus.PERMISSIONS},
+	},
+	"5. Deleting testfile.yaml (secure_rm)": {
+		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_rm,
 		"expect": None,
 	},
-	"45: Copying symlinked file (secure_copy)": {
+	"Copying symlinked file (secure_copy)": {
 		"src": FilePath(f"{TEST_DIR}/02-symlink"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
 		"permissions": 0o600,
 		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PATH_NOT_RESOLVING_TO_SELF},
 	},
-	"46: Copying file to symlinked directory (secure_copy)": {
+	"Copying file to symlinked directory (secure_copy)": {
 		"src": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
 		"permissions": 0o600,
 		"expect": {SecurityStatus.DOES_NOT_EXIST, SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
 	},
-	"47: verify_checksum() (MD5)": {
+	"verify_checksum() (None)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
+		"hash": None,
+		"test": test_verify_checksum,
+		# A warning about weak checksum is also expected
+		"expect": True,
+	},
+	"verify_checksum() (MD5)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "md5",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": True,
 	},
-	"48: verify_checksum() (SHA)": {
+	"verify_checksum() (SHA)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": True,
 	},
-	"49: verify_checksum() (SHA1)": {
+	"verify_checksum() (SHA1)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha1",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": True,
 	},
-	"50: verify_checksum() (SHA224)": {
+	"verify_checksum() (SHA224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha224",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"51: verify_checksum() (SHA256)": {
+	"verify_checksum() (SHA256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"52: verify_checksum() (SHA384)": {
+	"verify_checksum() (SHA384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha384",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"53: verify_checksum() (SHA512)": {
+	"verify_checksum() (SHA512)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": True,
+	},
+	"verify_checksum() without filename (SHA512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
 		"hash": "sha512",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"54: verify_checksum() (Blake 2B)": {
+	"verify_checksum() wrong filename (SHA512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "nonexistingentry",
+		"hash": "sha512",
+		"test": test_verify_checksum,
+		"expect": False,
+	},
+	"verify_checksum() (Blake 2B)": {
+		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2b",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"55: verify_checksum() (Blake 2S)": {
+	"verify_checksum() (Blake 2S)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2s",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"56: verify_checksum() (SHA3-224)": {
+	"verify_checksum() (SHA3-224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_224",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"57: verify_checksum() (SHA3-256)": {
+	"verify_checksum() (SHA3-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"58: verify_checksum() (SHA3-384)": {
+	"verify_checksum() (SHA3-384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_384",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"59: verify_checksum() (SHA3-512)": {
+	"verify_checksum() (SHA3-512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_512",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"60: verify_checksum() (Shake-128)": {
+	"verify_checksum() (Shake-128)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_128",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"61: verify_checksum() (Shake-256)": {
+	"verify_checksum() (Shake-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_256",
 		"test": test_verify_checksum,
 		"expect": True,
 	},
-	"62: verify_checksum()--invalid (MD5)": {
+	"verify_checksum()--invalid (MD5)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "md5",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": False,
 	},
-	"63: verify_checksum()--invalid (SHA)": {
+	"verify_checksum()--invalid (SHA)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": False,
 	},
-	"64: verify_checksum()--invalid (SHA1)": {
+	"verify_checksum()--invalid (SHA1)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha1",
 		"test": test_verify_checksum,
 		# A warning about weak checksum is also expected
 		"expect": False,
 	},
-	"65: verify_checksum()--invalid (SHA224)": {
+	"verify_checksum()--invalid (SHA224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha224",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"66: verify_checksum()--invalid (SHA256)": {
+	"verify_checksum()--invalid (SHA256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha256",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"67: verify_checksum()--invalid (SHA384)": {
+	"verify_checksum()--invalid (SHA384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha384",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"68: verify_checksum()--invalid (SHA512)": {
+	"verify_checksum()--invalid (SHA512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha512",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"69: verify_checksum()--invalid (Blake 2B)": {
+	"verify_checksum()--invalid (Blake 2B)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2b",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"70: verify_checksum()--invalid (Blake 2S)": {
+	"verify_checksum()--invalid (Blake 2S)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "blake2s",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"71: verify_checksum()--invalid (SHA3-224)": {
+	"verify_checksum()--invalid (SHA3-224)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_224",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"72: verify_checksum()--invalid (SHA3-256)": {
+	"verify_checksum()--invalid (SHA3-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_256",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"73: verify_checksum()--invalid (SHA3-384)": {
+	"verify_checksum()--invalid (SHA3-384)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_384",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"74: verify_checksum()--invalid (SHA3-512)": {
+	"verify_checksum()--invalid (SHA3-512)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "sha3_512",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"75: verify_checksum()--invalid (Shake-128)": {
+	"verify_checksum()--invalid (Shake-128)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_128",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"76: verify_checksum()--invalid (Shake-256)": {
+	"verify_checksum()--invalid (Shake-256)": {
 		"path": FilePath(f"{CHECKSUMS_DIR}/testcase2.txt"),
+		"filename": "testcase.txt",
 		"hash": "shake_256",
 		"test": test_verify_checksum,
 		"expect": False,
 	},
-	"77: Symlink valid source, valid destination, replace = True (secure_symlink)": {
+	"Symlink valid source, valid destination, replace = True (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"path": FilePath(f"{TEST_DIR}/test_symlink"),
 		"replace": True,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.OK},
 	},
-	"78: Symlink valid source, valid destination, replace = False (secure_symlink)": {
+	"Symlink valid source, valid destination, replace = False (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"path": FilePath(f"{TEST_DIR}/test_symlink"),
 		"replace": False,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.EXISTS},
 	},
-	"79: Symlink non-existing source parent, valid destination (secure_symlink)": {
+	"Symlink non-existing source parent, valid destination (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/this path does not exist/not this either"),
 		"path": FilePath(f"{TEST_DIR}/test_symlink"),
 		"replace": True,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.PARENT_DOES_NOT_EXIST},
 	},
-	"80: Symlink source with parent path resolution issues, valid destination (secure_symlink)": {
+	"Symlink source with parent path resolution issues, valid destination (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/15-symlink_directory/16-correct_file_in_correct_permission_directory"),
 		"path": FilePath(f"{TEST_DIR}/test_symlink"),
 		"replace": True,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF},
 	},
-	"--: Writing text to a file as preparation (secure_write_string)": {
+	"5. Writing text to a file as preparation (secure_write_string)": {
+		"prepare": True,
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"test": test_secure_write_string,
 		"permissions": 0o600,
 		"expect": None,
 	},
-	"81: Symlink valid source, non-symlink destination, replace = True (secure_symlink)": {
+	"Symlink valid source, non-symlink destination, replace = True (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"replace": True,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.EXISTS},
 	},
-	"82: Symlink valid source, non-symlink destination, replace = False (secure_symlink)": {
+	"Symlink valid source, non-symlink destination, replace = False (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/13-correct_directory/16-correct_file_in_correct_permission_directory"),
 		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
 		"replace": False,
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.EXISTS},
+	},
+	"Symlink valid path, no fallback (expand_path)": {
+		"path": f"{TEST_DIR}/02-symlink",
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{TEST_DIR}/02-symlink"), True),
+	},
+	"Valid path, no fallback (expand_path)": {
+		"path": f"{TEST_DIR}/05-not_executable.sh",
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{TEST_DIR}/05-not_executable.sh"), True),
+	},
+	"None path, no fallback (expand_path)": {
+		"path": None,
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(""), False),
+	},
+	"Empty path, no fallback (expand_path)": {
+		"path": "",
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(""), False),
+	},
+	"None path, fallback (expand_path)": {
+		"path": None,
+		"fallback": f"{TEST_DIR}/05-not_executable.sh",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{TEST_DIR}/05-not_executable.sh"), False),
+	},
+	"Empty path, fallback (expand_path)": {
+		"path": "",
+		"fallback": f"{TEST_DIR}/05-not_executable.sh",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{TEST_DIR}/05-not_executable.sh"), False),
+	},
+	"Valid path, expand {HOME}/ (expand_path)": {
+		"path": "{HOME}/.cmt/cmt.yaml",
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+	},
+	"Bare filename, expand {HOME}/ in search_paths (expand_path)": {
+		"path": "cmt.yaml",
+		"search_paths": ["{HOME}/.cmt/"],
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+	},
+	"Valid path, matching suffix (expand_path)": {
+		"path": f"{HOMEDIR}/.cmt/cmt",
+		"fallback": "",
+		"suffixes": [".yaml"],
+		"test": test_expand_path,
+		"expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+	},
+	"Valid path, non-matching suffix (expand_path)": {
+		"path": f"{HOMEDIR}/.cmt/cmt",
+		"fallback": "",
+		"suffixes": [".json"],
+		"test": test_expand_path,
+		"expect": (FilePath(""), False),
+	},
+	"Valid command, no env (execute_command)": {
+		"command": [FilePath("/bin/sleep"), "0"],
+		"env": None,
+		"comparison": 0,
+		"test": test_execute_command,
+		"expect": True,
+	},
+	"Non-existing command, no env (execute_command)": {
+		"command": [FilePath("/bin/thiscommanddoesnotexist"), "0"],
+		"env": None,
+		"comparison": 0,
+		"test": test_execute_command,
+		"expect_exception": FileNotFoundError,
+	},
+	"Valid command, env (execute_command)": {
+		"command": [FilePath("/bin/sleep"), "0"],
+		"env": { "PATH": "" },
+		"comparison": 0,
+		"test": test_execute_command,
+		"expect": True,
+	},
+	"Valid command, no env (execute_command_with_response)": {
+		"command": [FilePath("/bin/echo"), "foo"],
+		"env": None,
+		"test": test_execute_command_with_response,
+		"expect": "foo\n",
+	},
+	"Non-existing command, no env (execute_command_with_response)": {
+		"command": [FilePath("/bin/thiscommanddoesnotexist"), "0"],
+		"env": None,
+		"test": test_execute_command_with_response,
+		"expect_exception": FileNotFoundError,
+	},
+	"Valid command, env (execute_command_with_response)": {
+		"command": [FilePath("/bin/echo"), "foo"],
+		"env": { "PATH": "" },
+		"test": test_execute_command_with_response,
+		"expect": "foo\n",
+	},
+	"A valid set of SecurityStatus, separator \":\"": {
+		"status_set": {SecurityStatus.PERMISSIONS, SecurityStatus.IS_NOT_FILE},
+		"separator": ":",
+		"test": test_join_securitystatus_set,
+		"expect": f"<SecurityStatus.PERMISSIONS: {SecurityStatus.PERMISSIONS}>:<SecurityStatus.IS_NOT_FILE: {SecurityStatus.IS_NOT_FILE}>",
 	},
 }
 
@@ -1148,22 +1701,39 @@ def main() -> int:
 
 	init_ansithemeprint(themefile = None)
 
+	i = 0
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in testcases if not deep_get(testcases[i], DictPath("prepare"), False))
+
 	for testcase, testcase_data in testcases.items():
+		prepare = deep_get(testcase_data, DictPath("prepare"), False)
+		if not prepare:
+			ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+					ANSIThemeString(f" {testcase}:", "default")])
+			testcase_data["index"] = i
+
 		test = deep_get(testcase_data, DictPath("test"))
 		failed, msg = test(testcase_data)
+		testcase_data["result"] = (failed, msg)
 		if failed == 1:
 			fail += 1
-			failed_testcases.append(testcase)
-			ansithemeprint([ANSIThemeString("FAIL", "error"),
-					ANSIThemeString(f": Testcase: {testcase}; {msg}", "default")])
+			failed_testcases.append(f"{i}: {testcase}")
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {msg}", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("PASS", "success"),
-					ANSIThemeString(f": Testcase: {testcase}", "default")])
-			if not testcase.startswith("--"):
+			if not prepare:
+				ansithemeprint([ANSIThemeString("  PASS", "success")])
 				success += 1
 
+		if not prepare:
+			i += 1
+
 	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
 	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
 	if fail > 0:

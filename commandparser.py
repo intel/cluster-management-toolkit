@@ -1,26 +1,22 @@
 #! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This module parses command line options and generate helptexts
 """
 
 import errno
-from pathlib import Path
-import re
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple
-try:
-	import validators # type: ignore
-except ModuleNotFoundError:
-	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` "
-	      "or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
-	validators = None
+from typing import Callable, Dict, List, Optional, Tuple
 
 import about
 
 import cmtlib
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust, ansithemestring_join_tuple_list
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust
 from cmttypes import deep_get, DictPath, FilePath
+import cmtvalidators
 
 programname = None
 programversion = None
@@ -28,282 +24,6 @@ programdescription = None
 programauthors = None
 
 commandline = None
-
-def validator_bool(value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> Tuple[bool, bool]:
-	"""
-	Checks whether the value represents a bool.
-
-		Parameters:
-			value (any): The representation of value
-			error_on_failure (bool): Print an error message on failure
-			exit_on_failure (bool): Exit on failure
-		Returns:
-			result (bool): True if the value can be represented as bool, False if not
-			retval (bool): True if value is True, False if value is False
-	"""
-
-	result = False
-
-	if isinstance(value, bool):
-		result = True
-		retval = value
-	elif isinstance(value, int):
-		if value == 0:
-			result = True
-			retval = False
-		elif value == 1:
-			result = True
-			retval = True
-	elif isinstance(value, str):
-		if value.lower() in ("1", "y", "yes", "true"):
-			result = True
-			retval = True
-		elif value.lower() in ("0", "n", "no", "false"):
-			result = True
-			retval = False
-
-	if not result:
-		if error_on_failure:
-			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-					ANSIThemeString(": “", "default"),
-					ANSIThemeString(f"{value}", "option"),
-					ANSIThemeString("“ is not a boolean.", "default")], stderr = True)
-		if exit_on_failure:
-			sys.exit(errno.EINVAL)
-
-	return result, retval
-
-def validator_int(minval: int, maxval: int, value: Any, error_on_failure: bool = True, exit_on_failure: bool = True) -> bool:
-	"""
-	Checks whether value can be represented as an integer,
-	and whether it's within the range [min, max].
-
-		Parameters:
-			min (int): The minimum value
-			max (int): The maximum value
-			value (any): The representation of value
-			error_on_failure (bool): Print an error message on failure
-			exit_on_failure (bool): Exit on failure
-		Returns:
-			result (bool): True if the value can be represented as int, False if not
-	"""
-
-	try:
-		value = int(value)
-	except ValueError:
-		if error_on_failure:
-			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-					ANSIThemeString(": “", "default"),
-					ANSIThemeString(f"{value}", "option"),
-					ANSIThemeString("“ is not an integer.", "default")], stderr = True)
-		if exit_on_failure:
-			sys.exit(errno.EINVAL)
-		return False
-
-	if minval is None:
-		minval = -sys.maxsize
-		maxval_str = "<any>"
-	else:
-		minval_str = str(minval)
-
-	if maxval is None:
-		maxval = sys.maxsize
-		maxval_str = "<any>"
-	else:
-		maxval_str = str(maxval)
-
-	if minval > maxval:
-		raise ValueError("minval > maxval: This is a programming error!")
-
-	if not minval <= int(value) <= maxval:
-		if error_on_failure:
-			ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-					ANSIThemeString(": “", "default"),
-					ANSIThemeString(f"{value}", "option"),
-					ANSIThemeString("“ is not in the range [", "default"),
-					ANSIThemeString(minval_str, "emphasis"),
-					ANSIThemeString(", ", "default"),
-					ANSIThemeString(maxval_str, "emphasis"),
-					ANSIThemeString("].", "default")], stderr = True)
-		if exit_on_failure:
-			sys.exit(errno.EINVAL)
-		return False
-	return True
-
-def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict) -> bool:
-	"""
-	Validate an argument or argument list
-
-		Parameters:
-			arg (str): The argument to validate
-			arg_string (ansithemearray): A ansithemearray with the formatted representation of the expected data format
-			options (dict): Options to pass to the validators
-		Returns:
-			True on success, False on failure
-	"""
-
-	result = False
-
-	validator = deep_get(options, DictPath("validator"), "")
-	list_separator = deep_get(options, DictPath("list_separator"))
-	minval, maxval = deep_get(options, DictPath("valid_range"), (None, None))
-	allowlist = deep_get(options, DictPath("allowlist"), [])
-	validator_regex = deep_get(options, DictPath("regex"), r"")
-
-	if list_separator is None:
-		arglist = [arg]
-	else:
-		arglist = arg.split(list_separator)
-
-	for subarg in arglist:
-		if validator == "cidr":
-			valid = False
-			if "/" in subarg:
-				ip, netmask = subarg.split("/")
-				if validators is not None:
-					valid_ipv4_address = validators.ipv4(ip)
-					valid_ipv6_address = validators.ipv6(ip)
-				else:
-					valid_ipv4_address = True
-					valid_ipv6_address = True
-				try:
-					if valid_ipv4_address and 0 < int(netmask) <= 32:
-						valid = True
-					if valid_ipv6_address and 0 < int(netmask) <= 128:
-						valid = True
-				except ValueError:
-					pass
-
-			if not valid:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is not a valid POD Network CIDR.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator == "path":
-			if not Path(subarg).is_file():
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is not a valid path.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator in ("hostname", "hostname_or_path", "hostname_or_ip", "ip"):
-			valid_dns_label = cmtlib.validate_name("dns-label", subarg)
-			if validators is not None:
-				valid_ipv4_address = validators.ipv4(subarg)
-				valid_ipv6_address = validators.ipv6(subarg)
-			else:
-				valid_ipv4_address = True
-				valid_ipv6_address = True
-
-			if validator in ("hostname", "hostname_or_path") and not valid_dns_label:
-				# If validation failed as subname we check if it's a valid path;
-				# this will need deeper checks in the main function
-				if validator == "hostname_or_path":
-					if Path(subarg).is_file():
-						break
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is not a valid hostname or path.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is not a valid IP-address.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			if validator == "hostname_or_ip" and not valid_dns_label and not valid_ipv4_address and not valid_ipv6_address:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator in ("taint", "untaint"):
-			# Format: dns-subdomain[:dns-label]={NoSchedule,PreferNoSchedule,NoExecute}
-			valid = False
-			if "=" in subarg:
-				key_value, effect = subarg.split("=")
-			else:
-				key_value = subarg
-				effect = ""
-
-			if ":" in key_value:
-				key, value = key_value.split(":")
-			else:
-				key = key_value
-				value = ""
-
-			valid_key = cmtlib.validate_name("dns-subdomain", key)
-			if len(value) > 0:
-				valid_value = cmtlib.validate_name("dns-label", value)
-			else:
-				valid_value = True
-
-			valid_effect = effect in ("NoSchedule", "PreferNoSchedule", "NoExecute")
-			if len(effect) == 0 and validator == "untaint":
-				valid_effect = True
-
-			if not valid_key:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{key}", "option"),
-						ANSIThemeString("“ is not a valid taint-key.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			if not valid_value:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{value}", "option"),
-						ANSIThemeString("“ is not a valid taint-value.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-			if not valid_effect:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{effect}", "option"),
-						ANSIThemeString("“ is not a valid taint-effect.", "default")], stderr = True)
-				ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
-				ansithemeprint(ansithemestring_join_tuple_list(["NoSchedule", "PreferNoSchedule", "NoExecute"],
-									       formatting = "argument", separator = ANSIThemeString(", ", "separator")), stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator == "bool":
-			_result, _value = validator_bool(subarg)
-		elif validator == "int":
-			_result = validator_int(minval, maxval, subarg)
-		elif validator == "allowlist":
-			_result = subarg in allowlist
-			if _result is False:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "argument"),
-						ANSIThemeString("“ is not a valid argument for ", "default"),
-					       ] + arg_string + [ANSIThemeString(".", "default")], stderr = True)
-				ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr = True)
-				ansithemeprint(ansithemestring_join_tuple_list(allowlist, formatting = "argument",
-									       separator = ANSIThemeString(", ", "separator")), stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator == "regex":
-			tmp = re.match(validator_regex, subarg)
-			if tmp is None:
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "argument"),
-						ANSIThemeString("“ is not a valid argument for ", "default"),
-					       ] + arg_string + [ANSIThemeString(".", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-		elif validator == "url":
-			tmp_arg = subarg
-			if not tmp_arg.startswith("http"):
-				tmp_arg = f"https://{arg}"
-
-			# Workaround; it seems validators.url accepts usernames that start with "-"
-			if subarg.startswith("-") or validators is not None and not validators.url(tmp_arg):
-				ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-						ANSIThemeString(": “", "default"),
-						ANSIThemeString(f"{subarg}", "option"),
-						ANSIThemeString("“ is not a valid URL.", "default")], stderr = True)
-				sys.exit(errno.EINVAL)
-
-	return result
 
 # pylint: disable-next=unused-argument
 def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
@@ -816,6 +536,7 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	i = 1
 
 	programname = __programname
+	cmtvalidators.set_programname(programname)
 	programversion = __programversion
 	programdescription = __programdescription
 	programauthors = __programauthors
@@ -933,11 +654,11 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 							sys.exit(errno.EINVAL)
 						arg = argv[i]
 
-					# Validate the option argument
-					validator_options = deep_get(commandline, DictPath(f"{__key}#options#{option}#validation"), {})
+						# Validate the option argument
+						validator_options = deep_get(commandline, DictPath(f"{__key}#options#{option}#validation"), {})
 
-					# validate_argument() will terminate by default if validation fails
-					_result = validate_argument(arg, [ANSIThemeString(f"{option}", "option")], validator_options)
+						# validate_argument() will terminate by default if validation fails
+						_result = cmtvalidators.validate_argument(arg, [ANSIThemeString(f"{option}", "option")], validator_options)
 					options.append((option, arg))
 		else:
 			args.append(argv[i])
@@ -1009,6 +730,6 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		validator_options = deep_get(arg, DictPath("validation"), {})
 
 		# validate_argument() will terminate by default if validation fails
-		_result = validate_argument(args[i], arg["string"], validator_options)
+		_result = cmtvalidators.validate_argument(args[i], arg["string"], validator_options)
 
 	return command, options, args

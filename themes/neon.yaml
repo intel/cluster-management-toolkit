@@ -231,6 +231,9 @@ color_pairs_curses:
   log_format_raw: [["black", "normal"], ["yellow", "normal"]]
   log_status: [["yellow", "normal"], ["blue", "normal"]]
   log_status_highlight: [["white", "normal"], ["blue", "normal"]]
+  type_deleted:
+    unselected: [["black", "bright"], ["black", "normal"]]
+    selected: [["black", "bright"], ["white", "normal"]]
   type_positive_check:
     unselected: [["green", "bright"], ["black", "normal"]]
     selected: [["green", "bright"], ["white", "normal"]]
@@ -797,6 +800,7 @@ types:
   cputime_total_system: "type_cputime_total_system"
   cputime_user: "type_cputime_user"
   default: ["type_default", "bold"]
+  deleted: ["type_deleted", "none"]
   dir_date: "type_generic"
   dir_dev: ["type_dir_dev", "bold"]
   dir_dir: ["type_dir_dir", "bold"]
@@ -1063,6 +1067,8 @@ separators:
   newline: [["\\n", ["types", "separator_newline"]]]
   logbullet: [["• ", ["types", "logbullet"]]]
   statusbar: [[" ┃ ", ["statusbar", "default"]]]
+  #statusbar_pending: [["⌛", ["statusbar", "highlight"]]]
+  statusbar_pending: [["!", ["statusbar", "highlight"]]]
   statusbar_compact: [["┃", ["statusbar", "default_dim"]]]
   yaml_list: [["- ", ["types", "yaml_list"]]]
   yaml_key_separator: [[":", ["types", "yaml_key_separator"]]]

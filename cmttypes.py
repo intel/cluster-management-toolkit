@@ -1,30 +1,118 @@
 #! /usr/bin/env python3
 # Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 This file contains custom types used to define types used by CMT
 """
 
+from datetime import datetime
 from enum import auto, Enum, IntEnum
 from functools import reduce
+import os
+import sys
+import traceback
 from typing import Any, Dict, List, NewType, Optional, Union
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
 
+# Keep this first so we can use it in the exceptions
+def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
+	"""
+	Given a dictionary and a path into that dictionary, get the value
+
+		Parameters:
+			dictionary (dict): The dict to get the value from
+			path (DictPath): A dict path
+			default (Any): The default value to return if the dictionary, path is None, or result is None
+		Returns:
+			result (Any): The value from the path
+	"""
+
+	if dictionary is None:
+		return default
+	if path is None or len(path) == 0:
+		return default
+	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
+	if result is None:
+		result = default
+	return result
+
+# pylint: disable-next=too-many-instance-attributes
 class UnknownError(Exception):
 	"""
 	Exception raised when an error occurs that we have no further information about
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			message: Additional information about the error
+			message (str): Additional information about the error
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str) -> None:
+	traceback: Optional[str] = None
+
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
+
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
+
+		self.exception = __class__.__name__  # type: ignore
 		self.message = message
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+		self.traceback = "".join(traceback.format_stack())
+		return
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
 		if len(self.message) == 0:
 			message = "No further details were provided"
 		else:
@@ -32,41 +120,209 @@ class UnknownError(Exception):
 
 		return message
 
+	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
+		return {
+			"exception": self.exception,
+			"message": self.message,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+			"traceback": self.traceback,
+		}
+
+# pylint: disable-next=too-many-instance-attributes
 class ProgrammingError(Exception):
 	"""
 	Exception raised when a condition occured that is most likely caused by a programming error
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			message: Additional information about the error
+			message (str): Additional information about the error
+			subexception (Exception): Related standard exception
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str) -> None:
+	traceback: Optional[str] = None
+
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		subexception: Optional[Exception] = deep_get(kwargs, DictPath("subexception"))
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
+
+		self.exception = __class__.__name__  # type: ignore
+		self.subexception = subexception
 		self.message = message
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+		self.traceback = "".join(traceback.format_stack())
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
-		if len(self.message) == 0:
-			message = "No further details were provided"
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
+		if self.subexception is None:
+			message = ""
 		else:
-			message = self.message
+			message = f"({self.subexception}): "
+
+		if len(self.message) == 0:
+			message += "No further details were provided"
+		else:
+			message += f"{self.message}"
 
 		return message
 
+	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
+		return {
+			"exception": self.exception,
+			"subexception": self.subexception,
+			"message": self.message,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+			"traceback": self.traceback,
+		}
+
+# pylint: disable-next=too-many-instance-attributes
 class FilePathAuditError(Exception):
 	"""
 	Exception raised when a security check fails on a FilePath
+	Note: severity and formatted_msg use Any as type to avoid recursive imports,
+	but they are typically LogLevel and List[ANSIThemeString], respectively
 
 		Attributes:
-			path: The path being audited
-			message: Additional information about the error
+			message (str): Additional information about the error
+			path (FilePath): The path being audited
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg (any); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
 
-	def __init__(self, message: str, path: Optional[FilePath] = None) -> None:
-		self.path = path
+	traceback: Optional[str] = None
+
+	def __init__(self, message: str, **kwargs: Dict) -> None:
+		path: Optional[FilePath] = deep_get(kwargs, DictPath("path"))
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
+
+		self.exception = __class__.__name__  # type: ignore
 		self.message = message
+		self.path = path
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+		self.traceback = "".join(traceback.format_stack())
+
 		super().__init__(message)
 
 	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
 		if self.path is None:
 			path = "<omitted>"
 		else:
@@ -79,6 +335,29 @@ class FilePathAuditError(Exception):
 		msg = f"Security policy violation for path {path}.  {message}"
 
 		return msg
+
+	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
+		return {
+			"exception": self.exception,
+			"message": self.message,
+			"path": self.path,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+			"traceback": self.traceback,
+		}
 
 class HostNameStatus(Enum):
 	"""
@@ -95,6 +374,7 @@ class HostNameStatus(Enum):
 	DNS_LABEL_TOO_LONG = auto()
 	DNS_LABEL_PUNYCODE_TOO_LONG = auto()
 	DNS_LABEL_INVALID_CHARACTERS = auto()
+	DNS_TLD_INVALID = auto()
 
 class SecurityStatus(IntEnum):
 	"""
@@ -248,47 +528,26 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 	ref = dictionary
 	pathsplit = path.split("#")
 
-	for i in range(0, len(pathsplit)):
+	for i, pathsegment in enumerate(pathsplit):
+		# Note that we're (potentially) updating ref every iteration
 		if ref is None or not isinstance(ref, dict):
 			raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
 
-		if pathsplit[i] not in ref or ref[pathsplit[i]] is None:
+		if pathsegment not in ref or ref[pathsegment] is None:
 			if create_path:
-				ref[pathsplit[i]] = {}
+				ref[pathsegment] = {}
 
 		if i == len(pathsplit) - 1:
-			ref[pathsplit[i]] = value
+			ref[pathsegment] = value
 			break
 
-		ref = deep_get(ref, DictPath(pathsplit[i]))
-
-def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
-	"""
-	Given a dictionary and a path into that dictionary, get the value
-
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			path (DictPath): A dict path
-			default (Any): The default value to return if the dictionary, path is None, or result is None
-		Returns:
-			result (Any): The value from the path
-	"""
-
-	if dictionary is None:
-		return default
-	if path is None or len(path) == 0:
-		return default
-	result = reduce(lambda d, key: d.get(key, default) if isinstance(d, dict) else default, path.split("#"), dictionary)
-	if result is None:
-		result = default
-	return result
+		ref = deep_get(ref, DictPath(pathsegment))
 
 def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Union[List, None] = None) -> Optional[List[Any]]:
 	if result is None:
 		result = []
 
-	for i in range(0, len(path_fragments)):
-		path_fragment = DictPath(path_fragments[i])
+	for i, path_fragment in enumerate(path_fragments):
 		tmp = deep_get(dictionary, path_fragment)
 		if i + 1 == len(path_fragments):
 			if tmp is None:

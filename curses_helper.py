@@ -1,4 +1,7 @@
 #! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 """
 Curses-based User Interface helpers
@@ -9,23 +12,21 @@ Curses-based User Interface helpers
 import copy
 import curses
 import curses.textpad
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntFlag
 import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-import traceback
 from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
 
 try:
 	from natsort import natsorted
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
-# from cmtlog import debuglog
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
 from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
 
@@ -62,26 +63,39 @@ class ThemeString:
 	"""
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
-		if not isinstance(string, str):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeString()", "emphasis"),
-			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-			#		[ANSIThemeString("string (type: ", "error")],
-			#		[ANSIThemeString(f"{type(string)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{string}", "default")],
-			#		[ANSIThemeString("themeattr (type: ", "error")],
-			#		[ANSIThemeString(f"{type(themeattr)}", "argument")],
-			#		[ANSIThemeString(", expected ThemeAttr):", "error")],
-			#		[ANSIThemeString(f"{themeattr}", "default")],
-			#		[ANSIThemeString("selected (type: ", "error")],
-			#		[ANSIThemeString(f"{type(selected)}", "argument")],
-			#		[ANSIThemeString(", expected bool):", "error")],
-			#		[ANSIThemeString(f"{selected}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError(f"ThemeString only accepts (str, ThemeAttr[, bool]); received ThemeString({string}, {themeattr}, selected)")
+		if not (isinstance(string, str) and isinstance(themeattr, ThemeAttr) and (selected is None or isinstance(selected, bool))):
+			msg = [
+				[("ThemeString()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("string = ", "default"),
+				 (f"{string}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(string)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("themeattr = ", "default"),
+				 (f"{themeattr}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(themeattr)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeAttr", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.string = string
 		self.themeattr = themeattr
 		self.selected = selected
@@ -104,6 +118,16 @@ class ThemeString:
 		"""
 
 		return self.themeattr
+
+	def set_themeattr(self, themeattr: ThemeAttr) -> None:
+		"""
+		Replace the ThemeAttr attribute of the ThemeString
+
+			Parameters:
+				themeattr (ThemeAttr): The new ThemeAttr attribute for the ThemeString
+		"""
+
+		self.themeattr = themeattr
 
 	def get_selected(self) -> bool:
 		"""
@@ -132,26 +156,38 @@ class ThemeRef:
 	"""
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
-		if not isinstance(context, str) or not isinstance(key, str) or (selected is not None and not isinstance(selected, bool)):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeRef()", "emphasis"),
-			#		 ANSIThemeString(" initialised with invalid argument(s):", "error")],
-			#		[ANSIThemeString("context (type: ", "error")],
-			#		[ANSIThemeString(f"{type(context)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{context}", "default")],
-			#		[ANSIThemeString("key (type: ", "error")],
-			#		[ANSIThemeString(f"{type(key)}", "argument")],
-			#		[ANSIThemeString(", expected str):", "error")],
-			#		[ANSIThemeString(f"{key}", "default")],
-			#		[ANSIThemeString("selected (type: ", "error")],
-			#		[ANSIThemeString(f"{type(selected)}", "argument")],
-			#		[ANSIThemeString(", expected bool):", "error")],
-			#		[ANSIThemeString(f"{selected}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError("ThemeRef only accepts (str, str[, bool])")
+		if not (isinstance(context, str) and isinstance(key, str) and (selected is None or isinstance(selected, bool))):
+			msg = [
+				[("ThemeRef()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("context = ", "default"),
+				 (f"{context}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(context)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("key = ", "default"),
+				 (f"{key}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(key)}", "argument"),
+				 (", expected: ", "default"),
+				 ("str", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.context = context
 		self.key = key
 		self.selected = selected
@@ -160,16 +196,20 @@ class ThemeRef:
 		string = ""
 		data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if data is None:
-			#debuglog.add([
-			#		[ANSIThemeString("The ThemeRef(", "error")],
-			#		[ANSIThemeString(f"{self.context}", "argument")],
-			#		[ANSIThemeString(", ", "error")],
-			#		[ANSIThemeString(f"{self.key}", "argument")],
-			#		[ANSIThemeString(") does not exist.", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+			msg = [
+				[("The ThemeRef(", "error"),
+				 (f"{self.context}", "argument"),
+				 (", ", "error"),
+				 (f"{self.key}", "argument"),
+				 (") does not exist.", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		if isinstance(data, dict):
 			if self.selected:
 				selected = "selected"
@@ -207,16 +247,20 @@ class ThemeRef:
 		else:
 			array = data
 		if array is None:
-			#debuglog.add([
-			#		[ANSIThemeString("The ThemeRef(", "error")],
-			#		[ANSIThemeString(f"{self.context}", "argument")],
-			#		[ANSIThemeString(", ", "error")],
-			#		[ANSIThemeString(f"{self.key}", "argument")],
-			#		[ANSIThemeString(") does not exist.", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError(f"The ThemeRef(\"{self.context}\", \"{self.key}\") does not exist")
+			msg = [
+				[("The ThemeRef(", "error"),
+				 (f"{self.context}", "argument"),
+				 (", ", "error"),
+				 (f"{self.key}", "argument"),
+				 (") does not exist.", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		for string, themeattr in array:
 			themearray.append(ThemeString(string, ThemeAttr(themeattr[0], themeattr[1]), self.selected))
 		return themearray
@@ -248,25 +292,68 @@ class ThemeArray:
 
 	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
 		if array is None:
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeArray()", "emphasis"),
-			#		 ANSIThemeString(" initialised with an empty array:", "error")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError("A ThemeArray cannot be None")
+			msg = [
+				[("ThemeArray()", "emphasis"),
+				 (" initialised with an empty array", "error")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
+
+		if not isinstance(array, list):
+			msg = [
+				[("ThemeArray()", "emphasis"),
+				 (" initialised with invalid argument(s):", "error")],
+				[("array = ", "default"),
+				 (f"{array}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(array)}", "argument"),
+				 (", expected: ", "default"),
+				 ("list", "argument"),
+				 (")", "default")],
+				[("selected = ", "default"),
+				 (f"{selected}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(selected)}", "argument"),
+				 (", expected: ", "default"),
+				 ("bool", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 
 		newarray: List[Union[ThemeRef, ThemeString]] = []
 		for item in array:
 			if not isinstance(item, (ThemeRef, ThemeString)):
-				#debuglog.add([
-				#		[ANSIThemeString("ThemeArray()", "emphasis"),
-				#		 ANSIThemeString(" initialised with invalid type ", "error"),
-				#		 ANSIThemeString(f"{type(item)}", "argument"),
-				#		 ANSIThemeString("; substring:", "error")],
-				#		[ANSIThemeString(f"{item}", "default")],
-				#		[ANSIThemeString("Backtrace:", "error")],
-				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-				#       ], severity = LogLevel.ERR, facility = str(themefile))
-				raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+				msg = [
+					[("ThemeArray()", "emphasis"),
+					 (" initialised with invalid argument(s):", "error")],
+					[("array element = ", "default"),
+					 (f"{item}", "argument"),
+					 (" (type: ", "default"),
+					 (f"{type(item)}", "argument"),
+					 (", expected: ", "default"),
+					 ("ThemeRef", "argument"),
+					 (" or ", "default"),
+					 ("ThemeString", "argument"),
+					 (")", "default")],
+				]
+
+				unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+				raise ProgrammingError(unformatted_msg,
+						       severity = LogLevel.ERR,
+						       facility = str(themefile),
+						       formatted_msg = formatted_msg)
 			if selected is None:
 				newarray.append(item)
 			elif isinstance(item, ThemeString):
@@ -285,16 +372,26 @@ class ThemeArray:
 		"""
 
 		if not isinstance(item, (ThemeRef, ThemeString)):
-			#debuglog.add([
-			#		[ANSIThemeString("ThemeArray.append()", "emphasis"),
-			#		 ANSIThemeString(" called with invalid type ", "error"),
-			#		 ANSIThemeString(f"{type(item)}", "argument"),
-			#		 ANSIThemeString("; substring:", "error")],
-			#		[ANSIThemeString(f"{item}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError("All individual elements of a ThemeArray must be either ThemeRef or ThemeString")
+			msg = [
+				[("ThemeArray.append()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("item = ", "default"),
+				 (f"{item}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(item)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeRef", "argument"),
+				 (" or ", "default"),
+				 ("ThemeString", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
 		self.array.append(item)
 
 	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> "ThemeArray":
@@ -374,7 +471,7 @@ def set_mousemask(mask: int) -> None:
 	Enable/disable mouse support
 	"""
 
-	global mousemask # pylint: disable=global-statement
+	global mousemask  # pylint: disable=global-statement
 	curses.mousemask(mask)
 	mousemask = mask
 
@@ -490,8 +587,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			#		 ANSIThemeString(",", "error"),
 			#		 ANSIThemeString(f"{bg}", "argument"),
 			#		 ANSIThemeString(")", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			#       ], severity = LogLevel.ERR, facility = str(themefile))
 			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
@@ -503,8 +598,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 			#		 ANSIThemeString("-", "error"),
 			#		 ANSIThemeString("7", "argument"),
 			#		 ANSIThemeString(")", "error")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 			#       ], severity = LogLevel.DEBUG, facility = str(themefile))
 
 			# Most likely we failed due to the terminal only
@@ -522,8 +615,6 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 				#		 ANSIThemeString(",", "error"),
 				#		 ANSIThemeString(f"{bg}", "argument"),
 				#		 ANSIThemeString(f"{bright_black_remapped}", "argument")],
-				#		[ANSIThemeString("Backtrace:", "error")],
-				#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 				#       ], severity = LogLevel.ERR, facility = str(themefile))
 				raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; bright black remapped: {bright_black_remapped})") from e
 			curses.init_pair(color_nr, fg & 7, bg & 7)
@@ -539,8 +630,8 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 			defaultthemefile (FilePath): The fallback if the other theme is not available
 	"""
 
-	global theme # pylint: disable=global-statement
-	global themefile # pylint: disable=global-statement
+	global theme  # pylint: disable=global-statement
+	global themefile  # pylint: disable=global-statement
 
 	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
 		if Path(item).is_file():
@@ -885,9 +976,9 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	"""
 
 	heatmap: List[Union[ThemeRef, ThemeString]] = []
-	x = 0
 
-	tmp = ""
+	if len(stgroups) == 0:
+		return heatmap
 
 	# Append a dummy entry to avoid special casing
 	stgroups.append(StatusGroup.UNKNOWN)
@@ -1029,12 +1120,83 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 			win (curses.window): A reference to the progress bar window
 	"""
 
+	if not (isinstance(y, int) and isinstance(minx, int) and isinstance(maxx, int) and isinstance(progress, int) and (title is None or isinstance(title, str))):
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" initialised with invalid argument(s):", "error")],
+			[("y = ", "default"),
+			 (f"{y}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(y)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("minx = ", "default"),
+			 (f"{minx}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(minx)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("maxx = ", "default"),
+			 (f"{maxx}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(maxx)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(progress)}", "argument"),
+			 (", expected: ", "default"),
+			 ("int", "argument"),
+			 (")", "default")],
+			[("title = ", "default"),
+			 (f"{title}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(title)}", "argument"),
+			 (", expected: ", "default"),
+			 ("str or None", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
+
 	width = maxx - minx + 1
 
 	if progress < 0:
-		sys.exit("You cannot use a progress bar with negative progress; this is not a regression bar.")
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" called with progress < 0:", "error")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument")],
+			[("Negative progress is not supported; this is not a regression bar.", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 	elif progress > 100:
-		sys.exit("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")
+		msg = [
+			[("curses_helper.progressbar()", "emphasis"),
+			 (" called with progress > 100:", "error")],
+			[("progress = ", "default"),
+			 (f"{progress}", "argument")],
+			[("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
 	if win is None:
 		win = curses.newwin(3, width, y, minx)
@@ -1077,7 +1239,7 @@ def inputwrapper(keypress: int) -> int:
 			keypress (int): The filtered keypress
 	"""
 
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	if keypress == 27:	# ESCAPE
 		ignoreinput = True
@@ -1088,7 +1250,7 @@ def inputwrapper(keypress: int) -> int:
 # and specified title in the middle of the screen
 # pylint: disable-next=too-many-arguments,unused-argument
 def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, title: str) -> str:
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	# Show the cursor
 	curses.curs_set(True)
@@ -1132,7 +1294,7 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 # Show a confirmation box centered around y and x
 # with the specified default value and title
 def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", default: bool = False) -> bool:
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 
 	ignoreinput = False
 	retval = default
@@ -1213,7 +1375,7 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
 	"""
 	Add a ThemeArray to a curses window
 
@@ -1223,6 +1385,7 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 			y (int): The y-coordinate (-1 to start from current cursor position)
 			x (int): The x-coordinate (-1 to start from current cursor position)
 			selected (bool): Should the selected version of the ThemeArray be used
+			deleted (bool): Should the theme be overridden as deleted?
 		Returns:
 			(y, x):
 				y (int): The new y-coordinate
@@ -1230,6 +1393,8 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 	"""
 
 	for item in themearray_flatten(array):
+		if deleted:
+			item.set_themeattr(ThemeAttr("types", "deleted"))
 		string, attr = themestring_to_cursestuple(item)
 		# If there still are remaining <NUL> occurences, replace them
 		string = string.replace("\x00", "<NUL>")
@@ -1420,8 +1585,6 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 #				[ANSIThemeString(", ", "error")],
 #				[ANSIThemeString(f"{selected}", "argument")],
 #				[ANSIThemeString(").", "error")],
-#				[ANSIThemeString("Backtrace:", "error")],
-#				[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
 #		], severity = LogLevel.ERR, facility = str(themefile))
 		raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
 	return curses_col, curses_attrs
@@ -1470,27 +1633,39 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]], selected:
 			selected (bool): [optional] True is selected, False otherwise
 		Returns:
 			themearray_flattened (ThemeArray): The flattened themearray
+		Raises:
+			ProgrammingError: themearray is not a themearray
 	"""
 
 	themearray_flattened = []
 
-	for substring in themearray:
-		if isinstance(substring, ThemeString):
-			themearray_flattened.append(substring)
-		elif isinstance(substring, ThemeRef):
-			themearray_flattened += substring.to_themearray()
+	for item in themearray:
+		if isinstance(item, ThemeString):
+			themearray_flattened.append(item)
+		elif isinstance(item, ThemeRef):
+			themearray_flattened += item.to_themearray()
 		else:
-			sys.exit(f"themearray_flatten() called with invalid type {type(substring)}; substring: {substring}\nBacktrace: {''.join(traceback.format_stack())}")
-			#debuglog.add([
-			#		[ANSIThemeString("themearray_flatten()", "emphasis"),
-			#		 ANSIThemeString(" called with invalid type ", "error"),
-			#		 ANSIThemeString(f"{type(substring)}", "argument"),
-			#		 ANSIThemeString("; substring:", "error")],
-			#		[ANSIThemeString(f"{substring}", "default")],
-			#		[ANSIThemeString("Backtrace:", "error")],
-			#		[ANSIThemeString(f"{''.join(traceback.format_stack())}", "default")],
-			#	      ], severity = LogLevel.ERR, facility = str(themefile))
-			raise TypeError(f"themearray_flatten() called with invalid type {type(substring)}")
+			msg = [
+				[("themearray_flatten()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("item = ", "default"),
+				 (f"{item}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(item)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeRef", "argument"),
+				 (" or ", "default"),
+				 ("ThemeString", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
+
 	return themearray_flattened
 
 def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidth: int = -1, wrap_marker: bool = True, selected: Optional[bool] = None) ->\
@@ -1568,7 +1743,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
 		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Dict):
 	stdscr.refresh()
-	global ignoreinput # pylint: disable=global-statement
+	global ignoreinput  # pylint: disable=global-statement
 	ignoreinput = False
 
 	padwidth = 2
@@ -2021,6 +2196,17 @@ class UIProps:
 		# Helptext
 		self.helptext = None
 
+		# The UID of the selected object (if applicable)
+		self.selected_uid = None
+
+		# Remember position by UID (if False we remember by cursor position)
+		self.remember_uid = True
+
+		# The timestamp
+		self.last_timestamp_update = None
+
+		self.idle_timeout = 5
+
 		# Info to use for populating lists, etc.
 		self.sorted_list: List[Type] = []
 		self.sortorder_reverse = False
@@ -2143,13 +2329,23 @@ class UIProps:
 		if self.logpad is not None:
 			del self.logpad
 
+	def reselect_uid(self) -> None:
+		pos = self.curypos + self.yoffset
+		if len(self.sorted_list) > pos:
+			try:
+				self.selected_uid = getattr(self.sorted_list[pos], "__uid")
+			except (AttributeError, IndexError):
+				self.selected_uid = None
+
 	def update_sorted_list(self) -> None:
+		if self.curypos == -1 or self.yoffset == -1:
+			self.curypos = 0
+			self.yoffset = 0
+
 		if not self.sort_triggered:
 			return
 		self.sort_triggered = False
 		self.list_needs_regeneration(True)
-		self.yoffset = 0
-		self.curypos = 0
 
 		sortkey1, sortkey2 = self.get_sortkeys()
 		try:
@@ -2157,6 +2353,21 @@ class UIProps:
 		except TypeError:
 			# We could not sort the list; we should log and just keep the current sort order
 			pass
+
+		pos = self.curypos + self.yoffset
+
+		# If self.remember_uid is set we (try to) follow the item; else we remain at the cursor position (if possible)
+		if self.remember_uid:
+			for y, item in enumerate(self.sorted_list):
+				try:
+					uid = getattr(item, DictPath("__uid"))
+				except AttributeError:
+					# If the first element lacks "__uid" all elemenets will lack it
+					break
+				if self.selected_uid is None and y == pos:
+					self.selected_uid = uid
+				if uid == self.selected_uid:
+					self.move_cur_with_offset(y - pos)
 
 	def update_info(self, info: List[Type]) -> int:
 		self.info = info
@@ -2212,6 +2423,24 @@ class UIProps:
 	def list_needs_regeneration(self, regenerate_list: bool) -> None:
 		self.regenerate_list = regenerate_list
 
+	def is_idle(self) -> bool:
+		"""
+		Check whether the UI is considered idle;
+		The UI is idle if nothing has updated last_action within
+		the last idle_timeout seconds
+
+			Returns:
+				(bool): True if idle, False if not idle
+		"""
+		return (datetime.now() - self.last_action).seconds > self.idle_timeout
+
+	def force_idle(self) -> None:
+		"""
+		Set last_action far enough back so that the system is considered idle;
+		this should be done when doing a force reload
+		"""
+		self.last_action = datetime.now() - timedelta(seconds = self.idle_timeout)
+
 	def is_list_regenerated(self) -> bool:
 		return not self.regenerate_list
 
@@ -2221,6 +2450,12 @@ class UIProps:
 	def select_if_y(self, y: int, selection: Type) -> None:
 		if self.yoffset + self.curypos == y:
 			self.select(selection)
+
+	def refresh_selected(self) -> None:
+		if not self.sorted_list or self.yoffset + self.curypos >= self.listlen:
+			self.selected = None
+		else:
+			self.selected = self.sorted_list[self.yoffset + self.curypos]
 
 	def is_selected(self, selected: Union[None, Type]) -> bool:
 		if selected is None:
@@ -2272,7 +2507,7 @@ class UIProps:
 		self.sortkey1, self.sortkey2 = self.get_sortkeys()
 		self.resize_window()
 
-	def update_window(self) -> None:
+	def update_window(self, update: str = "true") -> None:
 		hline = deep_get(theme, DictPath("boxdrawing#hline"))
 
 		maxyx = self.stdscr.getmaxyx()
@@ -2287,7 +2522,7 @@ class UIProps:
 				self.addthemearray(self.stdscr, [ThemeString(" ", ThemeAttr("main", "default"))], y = y, x = self.maxx)
 
 		self.draw_winheader()
-		self.update_timestamp(0, self.maxx)
+		self.update_timestamp(update = update)
 
 		if self.headerpad is not None:
 			self.headerpad.clear()
@@ -2321,9 +2556,12 @@ class UIProps:
 		self.reset_update_delay()
 
 	# pylint: disable-next=unused-argument
-	def update_timestamp(self, ypos: int, xpos: int) -> None:
-		# Elsewhere we use now(timezone.utc), but here we want the local timezone
-		lastupdate = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	def update_timestamp(self, ypos: int = 0, xpos: int = -1, update: str = "true") -> None:
+		if xpos == -1:
+			xpos = self.maxx
+		if update == "true" or self.last_timestamp_update is None:
+			# Elsewhere we use now(timezone.utc), but here we want the local timezone
+			self.last_timestamp_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 
@@ -2336,8 +2574,12 @@ class UIProps:
 				ThemeString(self.helpstring, ThemeAttr("main", "statusbar")),
 				ThemeRef("separators", "statusbar"),
 			]
+		if update == "pending":
+			timestamparray += [
+				ThemeRef("separators", "statusbar_pending"),
+			]
 		timestamparray += [
-			ThemeString(lastupdate, ThemeAttr("main", "last_update")),
+			ThemeString(self.last_timestamp_update, ThemeAttr("main", "last_update")),
 		]
 
 		if self.borders:
@@ -2420,12 +2662,14 @@ class UIProps:
 		self.curypos = self.mincurypos
 		# offset relative pad
 		self.yoffset = 0
+		self.selected_uid = None
 		self.maxyoffset = 0
 		self.xoffset = 0
 		self.maxxoffset = 0
 
 		self.resize_statusbar()
 		self.force_update()
+		self.reselect_uid()
 
 	def refresh_all(self) -> None:
 		self.stdscr.touchwin()
@@ -2510,6 +2754,8 @@ class UIProps:
 		self.listpadheight = self.maxy - 2 - self.listpadypos
 		self.listpadwidth = max(width, self.listpadminwidth)
 		self.listpad = curses.newpad(self.listpadheight, self.listpadwidth)
+		self.curypos = 0
+		self.yoffset = 0
 		self.select(None)
 
 		return self.headerpad, self.listpad
@@ -2529,7 +2775,7 @@ class UIProps:
 		if self.borders:
 			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
 		else:
-			self.maxcurypos = min(self.listpadheight - 1, self.listlen - 1)
+			self.maxcurypos = min(self.listpadheight, self.listlen - 1)
 		self.maxyoffset = self.listlen - (self.maxcurypos - self.mincurypos) - 1
 		self.headerpadwidth = self.listpadwidth
 		self.maxxoffset = max(0, self.listpadwidth - self.listpadminwidth)
@@ -2540,6 +2786,7 @@ class UIProps:
 			self.listpad.resize(max(self.listpadheight, self.maxy), self.listpadwidth)
 		self.curypos = min(self.curypos, self.maxcurypos)
 		self.yoffset = min(self.yoffset, self.maxyoffset)
+		self.reselect_uid()
 
 	def refresh_listpad(self) -> None:
 		xpos = self.listpadxpos
@@ -2564,7 +2811,7 @@ class UIProps:
 				self.leftarrow, self.rightarrow, self.hdragger = scrollbar_horizontal(self.stdscr, y = self.maxy - 2, minx = self.listpadxpos, maxx = maxx, width = self.listpadwidth - 1, xoffset = self.xoffset, clear_color = ThemeAttr("main", "boxdrawing"))
 			else:
 				try:
-					self.listpad.noutrefresh(self.yoffset, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
+					self.listpad.noutrefresh(0, self.xoffset, self.listpadypos, xpos, self.maxy - 2, maxx)
 				except curses.error:
 					pass
 
@@ -2696,6 +2943,7 @@ class UIProps:
 			self.borders = borders
 
 		self.recalculate_logpad_xpos(tspadxpos = self.tspadxpos)
+		self.resize_listpad(-1)
 
 	def init_statusbar(self) -> curses.window:
 		"""
@@ -2736,7 +2984,7 @@ class UIProps:
 
 	# pylint: disable-next=too-many-arguments
 	def addthemearray(self, win: curses.window,
-			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None) -> Tuple[int, int]:
+			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
 		"""
 		Add a ThemeArray to a curses window
 
@@ -2746,6 +2994,7 @@ class UIProps:
 				y (int): The y-coordinate (-1 to start from current cursor position)
 				x (int): The x-coordinate (-1 to start from current cursor position)
 				selected (bool): Should the selected version of the ThemeArray be used
+				deleted (bool): Should the theme be overridden as deleted?
 			Returns:
 				(y, x):
 					y (int): The new y-coordinate
@@ -2753,6 +3002,8 @@ class UIProps:
 		"""
 
 		for item in themearray_flatten(array):
+			if deleted:
+				item.set_themeattr(ThemeAttr("types", "deleted"))
 			string, attr = themestring_to_cursestuple(item)
 			# If there still are remaining <NUL> occurences, replace them
 			string = string.replace("\x00", "<NUL>")
@@ -2812,6 +3063,7 @@ class UIProps:
 			self.yoffset = max(0, position)
 			self.yoffset = min(self.yoffset, self.maxyoffset)
 		self.refresh = True
+		self.reselect_uid()
 
 	def move_xoffset_rel(self, movement: int) -> None:
 		if self.borders:
@@ -2826,6 +3078,7 @@ class UIProps:
 		self.yoffset = max(0, self.yoffset + movement)
 		self.yoffset = min(self.maxyoffset, self.yoffset)
 		self.refresh = True
+		self.reselect_uid()
 
 	def move_cur_abs(self, position: int) -> None:
 		if position == -1:
@@ -2837,8 +3090,12 @@ class UIProps:
 		else:
 			raise ProgrammingError("FIXME")
 		self.list_needs_regeneration(True)
+		self.reselect_uid()
 
 	def move_cur_with_offset(self, movement: int) -> None:
+		if self.curypos == -1 or self.yoffset == -1:
+			self.curypos = 0
+			self.yoffset = 0
 		newcurypos = self.curypos + movement
 		newyoffset = self.yoffset
 
@@ -2860,17 +3117,18 @@ class UIProps:
 			self.curypos = newcurypos
 			self.yoffset = newyoffset
 			self.list_needs_regeneration(True)
+		self.reselect_uid()
 
 	def find_all_matches_by_searchkey(self, messages, searchkey: str) -> None:
 		self.match_index = None
 		self.search_matches.clear()
 
-		if len(searchkey) == 0:
+		if not searchkey:
 			return
 
 		for y, msg in enumerate(messages):
 			# The messages can either be raw strings,
-			# or themearrays, so we need to flatten them to just text first
+			# or themearrays, so we need to flatten them first
 			message = themearray_to_string(msg)
 			if searchkey in message:
 				self.search_matches.add(y)
@@ -2885,6 +3143,7 @@ class UIProps:
 					self.match_index = y
 					self.yoffset = min(y, self.maxyoffset)
 					break
+		self.reselect_uid()
 
 	def find_prev_match(self) -> None:
 		end = self.match_index
@@ -2897,6 +3156,7 @@ class UIProps:
 					self.match_index = y
 					self.yoffset = min(y, self.maxyoffset)
 					break
+		self.reselect_uid()
 
 	# Find the next line that has severity > NOTICE
 	def next_line_by_severity(self, severities: Optional[List[LogLevel]]) -> None:
@@ -2936,7 +3196,7 @@ class UIProps:
 		self.refresh = True
 
 	def next_by_sortkey(self, info: List[Type]) -> None:
-		if self.sortkey1 is None:
+		if not self.sortkey1:
 			return
 
 		pos = self.curypos + self.yoffset
@@ -3231,6 +3491,7 @@ class UIProps:
 					return Retval.NOMATCH
 				self.select(selected)
 				self.curypos = ypos
+				self.reselect_uid()
 
 				if selected.ref is not None:
 					if extraref is not None:
@@ -3266,6 +3527,7 @@ class UIProps:
 				if selected is None or here is None or selected != here:
 					self.select(new_here)
 					self.curypos = ypos
+					self.reselect_uid()
 				else:
 					# If we click an already selected item we open it
 					if selected.ref is not None and activatedfun is not None:
@@ -3373,6 +3635,10 @@ class UIProps:
 
 	# pylint: disable-next=too-many-return-statements
 	def generic_keycheck(self, c: int) -> Retval:
+		# We got some type of keypress; postpone idle
+		if c != -1:
+			self.last_action = datetime.now()
+
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
 			return Retval.MATCH
@@ -3411,6 +3677,8 @@ class UIProps:
 		if c == curses.KEY_F5:
 			# We need to rate limit this somehow
 			self.force_update()
+			self.update_forced = True
+			self.force_idle()
 			return Retval.MATCH
 		if c == ord("r"):
 			# Reverse the sort order
