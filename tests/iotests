@@ -1626,6 +1626,19 @@ testcases = {
 		"test": test_expand_path,
 		"expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
 	},
+	"Bare filename, /bin in search_paths (expand_path)": {
+		"path": "ls",
+		"search_paths": ["/bin"],
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f"/bin/ls"), True),
+	},
+	"Bare filename, empty search_paths (expand_path)": {
+		"path": "cmt.yaml",
+		"fallback": "",
+		"test": test_expand_path,
+		"expect": (FilePath(f""), False),
+	},
 	"Valid path, matching suffix (expand_path)": {
 		"path": f"{HOMEDIR}/.cmt/cmt",
 		"fallback": "",
@@ -1637,6 +1650,12 @@ testcases = {
 		"path": f"{HOMEDIR}/.cmt/cmt",
 		"fallback": "",
 		"suffixes": [".json"],
+		"test": test_expand_path,
+		"expect": (FilePath(""), False),
+	},
+	"Valid path, non suffix (expand_path)": {
+		"path": f"{HOMEDIR}/.cmt/cmt",
+		"fallback": "",
 		"test": test_expand_path,
 		"expect": (FilePath(""), False),
 	},
