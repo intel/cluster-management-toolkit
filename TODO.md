@@ -1,5 +1,14 @@
 # TODO
 
+## curses_helper.py
+* We need to rewrite the UI to remove reliance on stdscr; stdscr should just be blank
+  canvas. This solves all the rescaling issues, as well as limitations with what characters
+  can go where, etc.
+* The timestamp needs to be its own window.
+  The border sohuld be part of the bottom-most canvas and only needs redrawing if we
+  resize the window or toggle borders.
+* Scrollbars need their own windows.
+
 ## All
 * listgetters need to support passing both a label selector and a match selector
   in listgetter_args

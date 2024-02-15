@@ -2196,6 +2196,8 @@ class UIProps:
 		# Helptext
 		self.helptext = None
 
+		self.update_forced = False
+
 		# The UID of the selected object (if applicable)
 		self.selected_uid = None
 

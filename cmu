@@ -5165,7 +5165,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 	first_fetch = True
 
 	while True:
-		if len(executor) == 0:
+		if not executor:
 			new_data = "false"
 			uip.force_update()
 			uip.listlen = 0
@@ -5213,7 +5213,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 		if uip.is_idle() or uip.is_update_triggered():
 			# We need to generate the list info even if the list is empty,
 			# otherwise we'll crash elsewhere
-			if not uip.listlen or new_data == "pending" and (uip.update_forced or not tagged_items):
+			if not uip.listlen and first_fetch or new_data == "pending" and (uip.update_forced or not tagged_items):
 				vinfo = infogetter(**infogetter_extra_vars)
 				uip.update_info(vinfo)
 				uip.force_update()
@@ -5624,7 +5624,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				try:
 					tmp = compiled_pattern.match(item.name)
 
-					if tmp is not None and len(tmp[0]) > 0:
+					if tmp is not None and tmp[0]:
 						tagged_items.discard(item)
 						uip.list_needs_regeneration(True)
 				except re.error:
@@ -5642,7 +5642,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			else:
 				itemlist = [ item.name for item in tagged_items ]
 
-			if len(itemlist) == 0:
+			if not itemlist:
 				continue
 
 			for obj in vlist:
