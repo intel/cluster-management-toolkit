@@ -219,15 +219,18 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 				        ANSIThemeString(" after Punycode decoding.", "default")]
 				ansithemeprint(msg, stderr = True)
 			return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
-	if (len(dnslabels) == 1) or not (dnslabels[-1:][0][0].isascii() and dnslabels[-1:][0][0].isalpha() and len(dnslabels[-1:][0]) > 1):
+	if len(dnslabels) == 1:
+		return HostNameStatus.OK
+
+	if not (dnslabels[-1:][0][0].isascii() and dnslabels[-1:][0][0].isalpha() and len(dnslabels[-1:][0]) > 1):
 		# The dnslabel is OK if either of these apply:
 		# * It only has one field (it doesn't have a tld)
 		# * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
 		msg = [ANSIThemeString("Error", "error"),
 		       ANSIThemeString(": The DNS label ", "default"),
-		       ANSIThemeString(dnslabels, "hostname"),
+		       ANSIThemeString(dnslabel, "hostname"),
 		       ANSIThemeString(" is invalid; ", "default"),
-		       ANSIThemeString("the TLD must start with [a-z].", "default")]
+		       ANSIThemeString("the TLD must start with [a-z] and be at least 2 characters long.", "default")]
 		return HostNameStatus.DNS_TLD_INVALID
 
 	return HostNameStatus.OK

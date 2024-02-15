@@ -845,7 +845,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 					"arg": "foobar",
 					"arg_string": [ANSIThemeString("ARGUMENT", "argument")],
 					"options": {
-						"validator": "not-a-valid-validator",
+						"validator": "",
 						"list_separator": None,
 						"valid_range": (None, None),
 						"allowlist": [],
@@ -979,6 +979,8 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 			("foo", False, HostNameStatus.OK, None),
 			("foo.123", False, HostNameStatus.DNS_TLD_INVALID, None),
 			("foo.123", True, HostNameStatus.DNS_TLD_INVALID, None),
+			("foo.1", True, HostNameStatus.DNS_TLD_INVALID, None),
+			("foo.s", True, HostNameStatus.DNS_TLD_INVALID, None),
 			(f"fooåäöpad1{''.ljust(43, 'a')}", False, HostNameStatus.OK, None),
 			(f"fooåäöpad1{''.ljust(44, 'a')}", False, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
 			(f"fooåäöpad1{''.ljust(44, 'a')}", True, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
@@ -988,6 +990,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 			("\x81", True, None, UnicodeError),
 			("", False, HostNameStatus.DNS_SUBDOMAIN_EMPTY, None),
 			("", True, HostNameStatus.DNS_SUBDOMAIN_EMPTY, None),
+			(None, True, HostNameStatus.DNS_SUBDOMAIN_EMPTY, None),
 		)
 		for indata, message_on_error, expected_status, expected_exception in testdata:
 			try:
