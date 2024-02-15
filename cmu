@@ -285,7 +285,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 	return linelen
 
 # pylint: disable-next=unused-argument
-def get_hpa_metrics(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 	status = 200
 
@@ -334,7 +334,7 @@ def get_hpa_metrics(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 		vlist.append(d)
 	return vlist, status
 
-def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	metrics, status = kh.get_metrics()
@@ -472,7 +472,7 @@ def listgetter_files(**kwargs):
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_context_list(**kwargs: Dict) -> Tuple[List[Dict], List[str]]:
+def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
 	vlist = []
 	hosts = []
 
@@ -580,7 +580,7 @@ def __get_container_info(obj: Dict, container_type: str, spec_path: DictPath, st
 	return containers
 
 # pylint: disable-next=unused-argument
-def get_container_info(**kwargs: Dict) -> List[Type]:
+def get_container_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Containers
 
@@ -651,7 +651,7 @@ def get_container_info(**kwargs: Dict) -> List[Type]:
 	return info
 
 # pylint: disable-next=unused-argument
-def get_log_info(**kwargs: Dict) -> List[Type]:
+def get_log_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for logs
 
@@ -732,7 +732,7 @@ def get_log_info(**kwargs: Dict) -> List[Type]:
 	return info
 
 # pylint: disable-next=unused-argument
-def get_pod_containers_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 	_vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
 
@@ -765,7 +765,7 @@ def get_pod_containers_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 	return vlist, status
 
 # pylint: disable-next=unused-argument
-def get_sidecar_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_sidecar_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	for traffic_type, items in (("Ingress", deep_get(obj, DictPath("spec#ingress"), [])), ("Egress", deep_get(obj, DictPath("spec#egress"), []))):
@@ -1872,7 +1872,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 
 	return entry
 
-def generic_infogetter(**kwargs: Dict) -> List[Dict]:
+def generic_infogetter(**kwargs: Any) -> List[Dict]:
 	info = []
 
 	# Generate an empty entry
@@ -1956,7 +1956,7 @@ def check_matchlist(item, matchlist):
 	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
 
 # pylint: disable-next=unused-argument
-def listgetter_noop(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
+def listgetter_noop(obj: Dict, **kwargs: Any) -> Tuple[Dict, str]:
 	"""
 	A noop listgetter that returns an empty list
 		Parameters:
@@ -1971,7 +1971,7 @@ def listgetter_noop(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	return [], "OK"
 
 # pylint: disable-next=unused-argument
-def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
+def listgetter_matchrules(obj: Dict, **kwargs: Any) -> Tuple[Dict, str]:
 	"""
 	Extract match rules from an object
 
@@ -2014,7 +2014,7 @@ def listgetter_matchrules(obj: Dict, **kwargs: Dict) -> Tuple[Dict, str]:
 	return match_list, "OK"
 
 # pylint: disable-next=unused-argument
-def listgetter_ansible_volumes(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], str]:
+def listgetter_ansible_volumes(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], str]:
 	info = []
 
 	# Find all mounts
@@ -2066,7 +2066,7 @@ def listgetter_ansible_volumes(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], s
 
 	return info, "OK"
 
-def get_journalctl_log(obj: Dict, **kwargs: Dict):
+def get_journalctl_log(obj: Dict, **kwargs: Any):
 	timestamps = []
 	facilities = []
 	severities = []
@@ -2132,7 +2132,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Dict):
 	return (timestamps, facilities, severities, messages)
 
 # pylint: disable-next=unused-argument
-def get_traceflow(obj: Dict, **kwargs: Dict):
+def get_traceflow(obj: Dict, **kwargs: Any):
 	timestamps = []
 	facilities = []
 	severities = []
@@ -2169,7 +2169,7 @@ def get_traceflow(obj: Dict, **kwargs: Dict):
 	return (timestamps, facilities, severities, messages)
 
 # pylint: disable-next=unused-argument
-def get_task_log(obj: Dict, **kwargs: Dict):
+def get_task_log(obj: Dict, **kwargs: Any):
 	field = []
 
 	skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2204,10 +2204,10 @@ def get_task_log(obj: Dict, **kwargs: Dict):
 	return field
 
 # pylint: disable-next=unused-argument
-def get_themearrays(obj: Dict, **kwargs: Dict) -> Dict:
+def get_themearrays(obj: Dict, **kwargs: Any) -> Dict:
 	return obj
 
-def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	# This is essentially just a wrapper around listgetter_files
 	show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
 	extra_values = deep_get(kwargs, DictPath("extra_values"), {})
@@ -2229,7 +2229,7 @@ def logpad_files(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeSt
 		return formatters.format_markdown(vlist[0], **formatter_args)
 	return formatters.format_none(vlist[0], **formatter_args)
 
-def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	Takes an object and dumps it using the specified format (if possible)
 
@@ -2251,7 +2251,7 @@ def logpad_formatted(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, The
 	return messages
 
 # pylint: disable-next=unused-argument
-def get_cmt_log(obj: Dict, **kwargs: Dict):
+def get_cmt_log(obj: Dict, **kwargs: Any):
 	filepath = deep_get(obj, DictPath("filepath"), "")
 	timestamps = []
 	messages = []
@@ -2327,7 +2327,7 @@ def get_cmt_log(obj: Dict, **kwargs: Dict):
 
 	return (timestamps, facilities, severities, messages)
 
-def logpad_yaml(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
 	Takes an object and dumps it as formatted YAML
 
@@ -2346,7 +2346,7 @@ def logpad_yaml(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeStr
 
 	return messages
 
-def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, ThemeString]]]:
+def logpad_msg_getter(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	messages: List[List[Union[ThemeRef, ThemeString]]] = []
 
 	path = deep_get(kwargs, DictPath("path"))
@@ -2358,7 +2358,7 @@ def logpad_msg_getter(obj: Dict, **kwargs: Dict) -> List[List[Union[ThemeRef, Th
 	return messages
 
 # pylint: disable-next=unused-argument
-def get_netpol_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 	for item in deep_get(obj, DictPath("spec#ingress"), []):
 		policy_type = "ingress"
@@ -2427,7 +2427,7 @@ def get_netpol_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_virtsvc_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_virtsvc_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	for rule_path, rule_type in [("spec#http", "HTTP"), ("spec#tls", "TLS"), ("spec#tcp", "TCP")]:
@@ -2450,7 +2450,7 @@ def get_virtsvc_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, 200
 
-def get_promrules_info(**kwargs: Dict) -> List[Type]:
+def get_promrules_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Prometheus Rules
 
@@ -2500,7 +2500,7 @@ def get_promrules_info(**kwargs: Dict) -> List[Type]:
 			}))
 	return info
 
-def get_svcmon_endpoints_info(**kwargs: Dict) -> List[Type]:
+def get_svcmon_endpoints_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Service Monitor Endpoints
 
@@ -2540,7 +2540,7 @@ def get_svcmon_endpoints_info(**kwargs: Dict) -> List[Type]:
 
 	return info
 
-def get_limit_info(**kwargs: Dict) -> List[Type]:
+def get_limit_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Limits
 
@@ -2591,7 +2591,7 @@ def get_limit_info(**kwargs: Dict) -> List[Type]:
 			}))
 	return info
 
-def get_auth_rule_info(**kwargs: Dict) -> List[Type]:
+def get_auth_rule_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Istio Authorization Policy Rules
 
@@ -2648,7 +2648,7 @@ def get_auth_rule_info(**kwargs: Dict) -> List[Type]:
 			}))
 	return info
 
-def listgetter_feature_gates(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]], int]:
+def listgetter_feature_gates(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], int]:
 	"""
 	Listgetter for FeatureGate.config.openshift.io
 
@@ -2684,7 +2684,7 @@ def listgetter_feature_gates(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, Lis
 			vlist.append(item)
 	return vlist, 200
 
-def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]], int]:
+def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], int]:
 	"""
 	Listgetter for paths
 
@@ -2772,7 +2772,7 @@ def listgetter_path(obj: Dict, **kwargs: Dict) -> Tuple[Union[Dict, List[Dict]],
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def listgetter_policy_rules(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	"""
 	Listgetter for Role & ClusterRole policy rules
 
@@ -2873,7 +2873,7 @@ def listgetter_policy_rules(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_ingress_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def get_ingress_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	"""
 	Listgetter for Ingress rules
 
@@ -2920,7 +2920,7 @@ def get_ingress_rule_list(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	return vlist, 200
 
-def get_sas_info(**kwargs: Dict) -> List[Type]:
+def get_sas_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Service Account secrets
 
@@ -3235,7 +3235,7 @@ def cpu_usage_to_millicores(cpu_usage: str) -> str:
 	raise ValueError(f"Unknown cpu usage metrics: {cpu_usage}")
 
 # pylint: disable-next=unused-argument
-def listgetter_configmap_data(obj: Dict, **kwargs: Dict) -> Tuple[List[Dict], int]:
+def listgetter_configmap_data(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	vlist = []
 
 	cm_name = deep_get(obj, DictPath("metadata#name"))
@@ -3400,7 +3400,7 @@ def decode_value(value):
 
 	return vtype, value
 
-def get_key_value_info(**kwargs: Dict):
+def get_key_value_info(**kwargs: Any):
 	info = []
 
 	vlist = deep_get(kwargs, DictPath("_vlist"))
@@ -4702,7 +4702,7 @@ def filter_list_entry(obj, caller_obj, filters):
 			break
 	return skip
 
-def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Dict) -> List[Dict]:
+def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> List[Dict]:
 	label_selector = deep_get(kwargs, DictPath("label_selector"), "")
 	field_selector = deep_get(kwargs, DictPath("field_selector"), "")
 	filters = deep_get(kwargs, DictPath("filters"), [])

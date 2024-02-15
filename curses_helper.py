@@ -1741,7 +1741,7 @@ ignoreinput = False
 # pylint: disable-next=too-many-arguments,line-too-long
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
-		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Dict):
+		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Any):
 	stdscr.refresh()
 	global ignoreinput  # pylint: disable=global-statement
 	ignoreinput = False
@@ -3912,19 +3912,19 @@ class UIProps:
 		return Retval.NOMATCH
 
 	# Shortcuts used in most view
-	def __exit_program(self, **kwargs: Dict) -> NoReturn:
+	def __exit_program(self, **kwargs: Any) -> NoReturn:
 		retval = deep_get(kwargs, DictPath("retval"))
 
 		curses.endwin()
 		sys.exit(retval)
 
 	# pylint: disable-next=unused-argument
-	def __refresh_information(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __refresh_information(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		# XXX: We need to rate limit this somehow
 		self.force_update()
 		return Retval.MATCH, {}
 
-	def __select_menu(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __select_menu(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		refresh_apis = deep_get(kwargs, DictPath("refresh_apis"), False)
 		selectwindow = deep_get(kwargs, DictPath("selectwindow"))
 
@@ -3935,14 +3935,14 @@ class UIProps:
 		return retval, {}
 
 	# pylint: disable-next=unused-argument
-	def __show_about(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __show_about(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		if curses_configuration.abouttext is not None:
 			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
 				     items = curses_configuration.abouttext, title = "About", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 
-	def __show_help(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __show_help(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		helptext = deep_get(kwargs, DictPath("helptext"))
 
 		windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
@@ -3951,7 +3951,7 @@ class UIProps:
 		return Retval.MATCH, {}
 
 	# pylint: disable-next=unused-argument
-	def __toggle_mouse(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __toggle_mouse(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		# Toggle mouse support on/off to allow for copy'n'paste
 		if get_mousemask() == 0:
 			set_mousemask(-1)
@@ -3963,13 +3963,13 @@ class UIProps:
 		return Retval.MATCH, {}
 
 	# pylint: disable-next=unused-argument
-	def __toggle_borders(self, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def __toggle_borders(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		self.toggle_borders()
 		self.refresh_all()
 		self.force_update()
 		return Retval.MATCH, {}
 
-	def generate_helptext(self, shortcuts: Dict, **kwargs: Dict) -> List[Dict]:
+	def generate_helptext(self, shortcuts: Dict, **kwargs: Any) -> List[Dict]:
 		"""
 		Generate helptexts to use with generic_inputhandler()
 
@@ -4020,7 +4020,7 @@ class UIProps:
 
 		return format_helptext(helptext)
 
-	def generic_inputhandler(self, shortcuts: Dict, **kwargs: Dict) -> Tuple[Retval, Dict]:
+	def generic_inputhandler(self, shortcuts: Dict, **kwargs: Any) -> Tuple[Retval, Dict]:
 		"""
 		Generic inputhandler for views
 

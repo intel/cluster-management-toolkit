@@ -62,7 +62,7 @@ class UnknownError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self, message: str, **kwargs: Dict) -> None:
+	def __init__(self, message: str, **kwargs: Any) -> None:
 		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
 		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
 		formatted_msg: Optional[Any] = deep_get(kwargs, DictPath("formatted_msg"))
@@ -164,7 +164,7 @@ class ProgrammingError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self, message: str, **kwargs: Dict) -> None:
+	def __init__(self, message: str, **kwargs: Any) -> None:
 		subexception: Optional[Exception] = deep_get(kwargs, DictPath("subexception"))
 		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
 		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
@@ -272,7 +272,7 @@ class FilePathAuditError(Exception):
 
 	traceback: Optional[str] = None
 
-	def __init__(self, message: str, **kwargs: Dict) -> None:
+	def __init__(self, message: str, **kwargs: Any) -> None:
 		path: Optional[FilePath] = deep_get(kwargs, DictPath("path"))
 		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
 		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
@@ -548,7 +548,7 @@ def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Un
 		result = []
 
 	for i, path_fragment in enumerate(path_fragments):
-		tmp = deep_get(dictionary, path_fragment)
+		tmp = deep_get(dictionary, DictPath(path_fragment))
 		if i + 1 == len(path_fragments):
 			if tmp is None:
 				return result

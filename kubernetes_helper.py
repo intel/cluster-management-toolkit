@@ -3728,7 +3728,7 @@ class PoolManagerContext:
 
 		return self.pool_manager
 
-	def __exit__(self, *args: List, **kwargs: Dict) -> None:
+	def __exit__(self, *args: List, **kwargs: Any) -> None:
 		if self.pool_manager is not None:
 			self.pool_manager.clear()
 		self.pool_manager = None

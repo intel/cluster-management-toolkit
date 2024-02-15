@@ -18,7 +18,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
@@ -43,7 +43,7 @@ import about
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-						    critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+						    critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether or not strict host key checking has been disabled in cmtconfig
 
@@ -87,7 +87,7 @@ def check_security_disable_strict_host_key_checking(cluster_name: str, kubeconfi
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			     critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+			     critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
 	and whether the user can sudo without a password
@@ -179,7 +179,7 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			    critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+			    critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
 
@@ -238,7 +238,7 @@ def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict:
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			      critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+			      critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether ssh known_hosts hashing is enabled
 
@@ -296,7 +296,7 @@ def check_known_hosts_hashing(cluster_name: str, kubeconfig: Dict, cmtconfig_dic
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-				       critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+				       critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether .kube/config has insecure options
 
@@ -355,7 +355,7 @@ def check_insecure_kube_config_options(cluster_name: str, kubeconfig: Dict, cmtc
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-				      critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+				      critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether the versions of the various Kubernetes match properly
 
@@ -502,7 +502,7 @@ def check_client_server_version_match(cluster_name: str, kubeconfig: Dict, cmtco
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-					  critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+					  critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether the versions of kubelet and kube-proxy are acceptable
 
@@ -853,7 +853,7 @@ def get_pod_set(pods: List[Dict], any_of: List[Tuple[str, str]], all_of: List[Tu
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-		       critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+		       critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks what pods are running and their status
 
@@ -1375,7 +1375,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_file_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			   critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+			   critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether any files or directories have insecure permissions
 
@@ -1466,7 +1466,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 
 # pylint: disable-next=too-many-arguments,unused-argument
 def check_control_plane(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			critical: int, error: int, warning: int, note: int, **kwargs: Dict) -> Tuple[bool, int, int, int, int]:
+			critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether a host is suitable to be used as a control plane
 

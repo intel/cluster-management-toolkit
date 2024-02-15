@@ -48,7 +48,7 @@ except ModuleNotFoundError:  # pragma: no cover
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -1659,7 +1659,7 @@ def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple
 
 	return severity, message, remnants
 
-def format_key_value(key: str, value: str, severity: LogLevel, **kwargs: Dict) -> List[Union[ThemeRef, ThemeString]]:
+def format_key_value(key: str, value: str, severity: LogLevel, **kwargs: Any) -> List[Union[ThemeRef, ThemeString]]:
 	force_severity = deep_get(kwargs, DictPath("force_severity"), False)
 	error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
 

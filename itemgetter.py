@@ -272,7 +272,7 @@ KNOWN_PV_TYPES = {
 }
 
 # pylint: disable-next=unused-argument
-def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Dict]:
 	"""
 	Get a list of allowed IP-addresses
 
@@ -310,7 +310,7 @@ def get_allowed_ips(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 	return allowed_ips
 
 # pylint: disable-next=unused-argument
-def get_conditions(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+def get_conditions(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Dict]:
 	"""
 	Get a list of conditions
 
@@ -348,7 +348,7 @@ def get_conditions(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 	return condition_list
 
 # pylint: disable-next=unused-argument
-def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 	"""
 	Get a list of endpoint slices
 
@@ -376,7 +376,7 @@ def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwa
 	return tmp
 
 # pylint: disable-next=unused-argument
-def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Dict]:
 	"""
 	Get a list of events
 
@@ -403,7 +403,7 @@ def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict
 	return event_list
 
 # pylint: disable-next=unused-argument
-def get_image_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+def get_image_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 	"""
 	Get a list of container images
 
@@ -432,7 +432,7 @@ def get_image_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 	return cast(List[Tuple[str, str]], natsorted(vlist))
 
 # pylint: disable-next=unused-argument
-def get_key_value(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, Any]]:
+def get_key_value(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
 	"""
 	Get a list of key/value data
 
@@ -466,7 +466,7 @@ def get_key_value(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Any]:
 	"""
 	Get data in list format
 
@@ -523,7 +523,7 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Any]:
 	"""
 	Given a path to a dict (or a list of dicts), generate a list with all items
 	as a list of dicts with the key and the value in the fields as "key" and "value",
@@ -568,7 +568,7 @@ def get_dict_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Any]:
+def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Any]:
 	"""
 	Get the specified fields from a dict list in list format
 
@@ -632,7 +632,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_package_version_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[Tuple[str, str]]]:
+def get_package_version_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
 	name_path = deep_get(kwargs, DictPath("name_path"), "")
 	hostname = deep_get(obj, DictPath(name_path))
 	hostname = deep_get(kwargs, DictPath("name"), hostname)
@@ -643,7 +643,7 @@ def get_package_version_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, 
 	return package_versions
 
 # pylint: disable-next=unused-argument
-def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str, str]]:
+def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
 	affinities: List[Tuple[str, str, str, str, str]] = []
 
 	for affinity in deep_get(obj, DictPath("spec#affinity"), []):
@@ -684,7 +684,7 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 	return affinities
 
 # pylint: disable-next=unused-argument
-def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Optional[List[Tuple[str, str]]]:
+def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
 	cm_namespace = deep_get(kwargs, DictPath("cm_namespace"))
 	if isinstance(cm_namespace, list):
 		cm_namespace = deep_get_with_fallback(obj, cm_namespace)
@@ -743,7 +743,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Dict]:
+def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Dict]:
 	items = deep_get(kwargs, DictPath("items"), [])
 
 	vlist: List[Dict] = []
@@ -784,7 +784,7 @@ def get_prepopulated_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_pod_tolerations(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str, str]]:
+def get_pod_tolerations(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
 	tolerations: List[Tuple[str, str, str, str, str]] = []
 
 	for toleration in deep_get_with_fallback(obj, [DictPath("spec#tolerations"), DictPath("scheduling#tolerations")], []):
@@ -807,7 +807,7 @@ def get_pod_tolerations(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwa
 	return tolerations
 
 # pylint: disable-next=unused-argument
-def get_resource_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str]]:
+def get_resource_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 	vlist: List[Tuple[str, str, str]] = []
 
 	for res in deep_get(obj, DictPath("status#capacity"), {}):
@@ -817,7 +817,7 @@ def get_resource_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwarg
 	return vlist
 
 # pylint: disable-next=unused-argument
-def get_resources(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str]]:
+def get_resources(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 	resources: List[Tuple[str, str, str]] = []
 
 	for limit in list(deep_get(obj, DictPath("spec#resources#limits"), {})):
@@ -839,7 +839,7 @@ def get_resources(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: D
 	return resources
 
 # pylint: disable-next=unused-argument
-def get_strings_from_string(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[List[str]]:
+def get_strings_from_string(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[List[str]]:
 	vlist = []
 	if "path" in kwargs:
 		path = deep_get(kwargs, DictPath("path"))
@@ -875,7 +875,7 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
 	return endpoints
 
 # pylint: disable-next=unused-argument
-def get_security_context(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+def get_security_context(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 	security_policies = []
 
 	tmp = [
@@ -940,7 +940,7 @@ def get_security_context(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kw
 	return security_policies
 
 # pylint: disable-next=unused-argument
-def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str, str, str]]:
+def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str]]:
 	svcname = deep_get(obj, DictPath("metadata#name"))
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	port_target_endpoints = []
@@ -980,7 +980,7 @@ def get_pv_type(obj: Dict) -> Optional[str]:
 	return None
 
 # pylint: disable-next=unused-argument
-def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> List[Tuple[str, str]]:
+def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 	volume_properties: List[Tuple[str, str]] = []
 
 	# First find out what kind of volume we are dealing with

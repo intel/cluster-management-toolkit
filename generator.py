@@ -1265,7 +1265,7 @@ builtin_fields = {
 	},
 }
 
-def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Dict) -> Tuple[Dict, List[str], str, bool]:
+def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tuple[Dict, List[str], str, bool]:
 	"""
 	Generate a dict with the fields necessary for a view
 

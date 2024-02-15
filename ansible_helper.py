@@ -13,7 +13,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -1834,7 +1834,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 				ANSIThemeString(f"{host}", "hostname")])
 	return True
 
-def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Dict) -> None:
+def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Any) -> None:
 	# pylint: disable-next=global-variable-not-assigned
 	global finished_runs
 	finished_runs.add(runner_obj)

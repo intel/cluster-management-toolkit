@@ -398,7 +398,7 @@ def datagetter_regex_split_to_tuples(kh: kubernetes_helper.KubernetesHelper, obj
 	return list_fields, {}
 
 # pylint: disable-next=too-many-return-statements
-def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Dict) -> Tuple[str, StatusGroup]:
+def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> Tuple[str, StatusGroup]:
 	"""
 	Get status for a Pod
 
