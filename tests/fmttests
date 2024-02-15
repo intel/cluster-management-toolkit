@@ -99,7 +99,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
 			 "\n"
 			 "This is some code\n"
 			 "```\n"
-			 "The code has ended, but here's some embedded `code`", {"start": None, "end": None}, [
+			 "The *code* has ended, but here's some embedded `code`", {"start": None, "end": None}, [
 				[ThemeString("Header1", ThemeAttr("types", "markdown_header_1"))],
 				[ThemeString("text1", ThemeAttr("types", "generic"))],
 				[ThemeString("Header2", ThemeAttr("types", "markdown_header_2"))],
@@ -115,8 +115,33 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
 				 ThemeString("item3", ThemeAttr("types", "generic"))],
 				[ThemeString("", ThemeAttr("types", "generic"))],
 				[ThemeString("This is some code", ThemeAttr("types", "markdown_code"))],
-				[ThemeString("The code has ended, but here's some embedded ", ThemeAttr("types", "generic")),
-				 ThemeString("code", ThemeAttr("types", "markdown_code"))],
+				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+				 ThemeString("code", ThemeAttr(context='types', key='markdown_italics'), False),
+				 ThemeString(" has ended, but here's some embedded ", ThemeAttr(context='types', key='generic'), False),
+				 ThemeString("code", ThemeAttr(context='types', key='markdown_code'), False)],
+			 ], None),
+			("    This is some code\n"
+			 "\n"
+			 "The **code** has ended.", {"start": None, "end": None}, [
+				[ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
+				[ThemeString("", ThemeAttr("types", "generic"))],
+				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+				 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
+				 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
+			 ], None),
+			(["    This is some code",
+			  "",
+			  "The **code** has ended."], {"start": None, "end": None}, [
+				[ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
+				[ThemeString("", ThemeAttr("types", "generic"))],
+				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+				 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
+				 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
+			 ], None),
+			(["====",
+			  "This is not code",
+			  "----"], {"start": "====", "end": "----"}, [
+				[ThemeString("This is not code", ThemeAttr("types", "generic"))],
 			 ], None),
 		)
 		for indata, options, expected_result, expected_exception in testdata:
@@ -131,13 +156,11 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
 						  f"           input: \"{indata_quoted}\"\n" \
 						   "         options:\n" \
 						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{dump_themearray(tmp)}\n" \
-						  f"        expected: {expected_result}"
+						  f"          output: {repr(tmp)}\n" \
+					          f"        expected: {expected_result}"
 					result = False
 					break
 			except Exception as e:
-				raise
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass

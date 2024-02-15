@@ -66,6 +66,8 @@ def main() -> None:
 	executor.update("configmap", kind = ("ConfigMap", ""))
 	executor.trigger("service", 2, get_kubernetes_list_async, kind = ("Service", ""))
 
+	executor.update("NonExisting", kind = ("ConfigMap", ""))
+
 	print(f"executor pool length: {len(executor)}")
 
 	if "foo" in executor:
@@ -106,6 +108,11 @@ def main() -> None:
 
 		if fetches < 0:
 			break
+	print("params for configmap:")
+	print(executor.get_parameters("configmap"))
+	print(executor.get_parameters("NonExisting"))
+
+	executor.delete("configmap")
 	executor.shutdown()
 
 if __name__ == "__main__":
