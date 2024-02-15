@@ -5177,12 +5177,16 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
 				async_data["hosts"] = copy.deepcopy(hosts)
 				infogetter_extra_vars["_match_key"] = "name"
+				new_data = "pending"
+				first_fetch = False
 			elif listgetter_async == get_context_list and (first_fetch or uip.update_forced):
 				vlist, hosts = get_context_list()
 				async_data["hosts"] = copy.deepcopy(hosts)
 				match_key = "server_address"
 				infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
 				infogetter_extra_vars["_match_key"] = "server_address"
+				new_data = "pending"
+				first_fetch = False
 			elif listgetter_async == get_kubernetes_list_async and ".".join(kind) not in executor:
 				executor.trigger(".".join(kind), 5, get_kubernetes_list_async, get_kubernetes_list_async, kind = kind, namespace = selected_namespace, **listgetter_args)
 			if listgetter_async in (get_inventory_list, get_context_list) and "pings" not in executor:
