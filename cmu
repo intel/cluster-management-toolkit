@@ -5346,8 +5346,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				# but we should clear selections
 				caller = sys.exc_info()[2].tb_frame.f_back.f_code.co_name
 				if caller in ("setupui",):
-					tagged_items = set()
-					uip.force_refresh()
+					if tagged_items:
+						tagged_items = set()
+						uip.list_needs_regeneration(True)
 				else:
 					return Retval.RETURNDONE
 		if retval == Retval.RETURNFULL:
