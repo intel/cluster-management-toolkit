@@ -315,6 +315,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/networking.k8s.io/v1/", "apis/networking.k8s.io/v1beta1/"],
 		"api": "networkpolicies",
 	},
+	("ServiceCIDR", "networking.k8s.io"): {
+		"api_paths": ["apis/networking.k8s.io/v1alpha1/"],
+		"api": "servicecidrs",
+		"namespaced": False,
+	},
 	# node.k8s.io
 	("RuntimeClass", "node.k8s.io"): {
 		"api_paths": ["apis/node.k8s.io/v1/", "apis/node.k8s.io/v1beta1/"],
@@ -405,6 +410,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("VolumeAttachment", "storage.k8s.io"): {
 		"api_paths": ["apis/storage.k8s.io/v1/"],
 		"api": "volumeattachments",
+		"namespaced": False,
+	},
+	("VolumeAttributesClass", "storage.k8s.io"): {
+		"api_paths": ["apis/storage.k8s.io/v1alpha1/"],
+		"api": "volumeattributesclasses",
 		"namespaced": False,
 	},
 
