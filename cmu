@@ -49,7 +49,6 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT # nosec
 import sys
-import threading
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
 	import yaml
@@ -347,11 +346,13 @@ def get_metrics_list(**kwargs: Dict) -> Tuple[List[Dict], int]:
 
 	metrics_regex = re.compile(r"^([^{]*){([^}]*)}\s\d+$")
 
+	metric_set = set()
 	for line in metrics:
 		tmp = metrics_regex.match(line)
 		if tmp is None:
 			continue
 		metric = tmp[1]
+		metric_set.add(metric)
 		if deep_get(kwargs, DictPath("filter")) is not None:
 			if metric not in deep_get(kwargs, DictPath("filter")):
 				continue
@@ -5145,8 +5146,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 	listview_args = copy.deepcopy(deep_get(views, DictPath(f"{view}#listview_args"), {}))
 
 	listgetter = deep_get(views, DictPath(f"{view}#listgetter"))
-	listgetter_async = deep_get(views, DictPath("{view}#listgetter_async"))
-	listgetter_args = deep_get(views, DictPath("{view}#listgetter_args"), {})
+	listgetter_async = deep_get(views, DictPath(f"{view}#listgetter_async"))
+	listgetter_args = deep_get(views, DictPath(f"{view}#listgetter_args"), {})
 	listgetter_args["label_selector"] = label_selector
 
 	infogetter = deep_get(views, DictPath(f"{view}#infogetter"), generic_infogetter)
@@ -5163,28 +5164,48 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 	serverstatus = "ok"
 
 	first_fetch = True
+	new_data = "false"
+	uip.force_update()
+	uip.listlen = 0
 
 	while True:
-		if not executor:
-			new_data = "false"
-			uip.force_update()
-			uip.listlen = 0
+		if listgetter_async is not None:
 			# Temporary workaround
-			if listgetter_async == get_inventory_list:
+			if listgetter_async == get_inventory_list and "hosts" not in executor:
 				hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
 				# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
 				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
-				async_data["hosts"] = []
-				async_data["hosts_lock"] = threading.Lock()
-				match_key = "name"
-			elif listgetter_async == get_context_list:
+				async_data["hosts"] = copy.deepcopy(hosts)
+				infogetter_extra_vars["_match_key"] = "name"
+			elif listgetter_async == get_context_list and (first_fetch or uip.update_forced):
 				vlist, hosts = get_context_list()
+				async_data["hosts"] = copy.deepcopy(hosts)
 				match_key = "server_address"
-			elif listgetter in (generic_listgetter, get_kubernetes_list_async):
+				infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+				infogetter_extra_vars["_match_key"] = "server_address"
+			elif listgetter_async == get_kubernetes_list_async and ".".join(kind) not in executor:
 				executor.trigger(".".join(kind), 5, get_kubernetes_list_async, get_kubernetes_list_async, kind = kind, namespace = selected_namespace, **listgetter_args)
-			if listgetter_async in (get_inventory_list, get_context_list):
+			if listgetter_async in (get_inventory_list, get_context_list) and "pings" not in executor:
 				# But the hosts can change status more frequently than that
-				executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, interval = -1)
+				executor.trigger("pings", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("facts_ping.yaml"))), selection = hosts, verbose = False)
+		elif listgetter is not None:
+			if first_fetch or uip.update_forced:
+				if listgetter is not None:
+					if kind[0].startswith("__"):
+						vlist, status = listgetter(**listgetter_args)
+					else:
+						vlist, status = listgetter(deep_get(view, DictPath(f"{view}#kind")), selected_namespace, label_selector = label_selector)
+					infogetter_extra_vars["_vlist"] = vlist
+				new_data = "pending"
+				uip.update_timestamp(update = new_data)
+				first_fetch = False
+				win = None
+		else:
+			# We only have an infogetter
+			new_data = "pending"
+			uip.update_timestamp(update = new_data)
+			first_fetch = False
+			win = None
 
 		# The asynchronous UI follows these rules:
 		# Idle:
@@ -5193,22 +5214,85 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 		#   User pressed [F5], changed sort column, or opened/closed a dialog ([F1], [F2], [F8], etc)
 		# Additional blockers:
 		#   Items are tagged, menus are open, etc.
-		if (result := executor.get(".".join(kind))) != ([], []):
-			vlist, status = result
-			infogetter_extra_vars["_vlist"] = vlist
+		if executor:
+			if (result := executor.get("hosts")) != ([], []):
+				data, host_statuses = result
+				hosts = deep_get(data, DictPath("all#hosts"), {}).keys()
+				hosts_set = set(hosts)
+				async_data["hosts"] = list(hosts)
+				if vlist := deep_get(infogetter_extra_vars, DictPath("_vlist"), []):
+					vlist_hosts = [deep_get(item, DictPath("name")) for item in vlist]
+					vlist_hosts_set = set(vlist_hosts)
+				else:
+					vlist_hosts = []
+					vlist_hosts_set = set()
+				# Only add hosts that aren't part of vlist already
+				inventory_dict = ansible_get_inventory_dict()
+				for host in hosts_set - vlist_hosts_set:
+					vlist.append({
+						"name": host,
+						"ref": host,
+						"ips": [],
+						"ansible_groups": ansible_get_groups_by_host(inventory_dict, host),
+						"status": "UNKNOWN",
+						"__deleted": False,
+					})
+				# Tag hosts in vlist that are no longer part of hosts as deleted
+				for host in vlist_hosts_set - hosts_set:
+					for i, item in enumerate(vlist):
+						if deep_get(item, DictPath("name"), "") == host:
+							vlist[i]["status"] = "DELETED"
+							vlist[i]["__deleted"] = True
+				infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+				if not uip.listlen:
+					uip.force_update()
+				new_data = "pending"
+				uip.update_timestamp(update = new_data)
+				first_fetch = False
+				win = None
+			elif (result := executor.get("pings")) != ([], []):
+				ansible_results, ansible_status = result
+				vlist = deep_get(infogetter_extra_vars, DictPath("_vlist"), [])
+				for i, item in enumerate(vlist):
+					host = deep_get(item, DictPath(infogetter_extra_vars["_match_key"]))
+					for result in deep_get(ansible_results, f"{host}", []):
+						if deep_get(result, DictPath("task")) == "Ping":
+							if not deep_get(vlist[i], DictPath("__deleted"), False):
+								status = deep_get(result, DictPath("status"))
+								vlist[i]["status"] = status
+								ips = []
+								if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv4#address"), "")) > 0:
+									ips.append(ip)
+								if len(ip := deep_get(result, DictPath("ansible_facts#ansible_default_ipv6#address"), "")) > 0:
+									ips.append(ip)
+								vlist[i]["ips"] = copy.deepcopy(ips)
+				_pings_args, pings_kwargs = executor.get_parameters("pings")
+				if set(async_data["hosts"]) != set(deep_get(pings_kwargs, DictPath("selection"), [])):
+					executor.update("pings", selection = copy.deepcopy(async_data["hosts"]))
+					executor.retrigger("pings")
+				infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+				if not uip.listlen:
+					uip.force_update()
+				new_data = "pending"
+				uip.update_timestamp(update = new_data)
+				first_fetch = False
+				win = None
+			elif (result := executor.get(".".join(kind))) != ([], []):
+				vlist, status = result
+				infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
 
-			if status == 42503:
-				serverstatus = "Server Unavailable"
-			elif status == 42504:
-				serverstatus = "Connection Timeout"
-			else:
-				serverstatus = str(status)
-			if not uip.listlen:
-				uip.force_update()
-			new_data = "pending"
-			uip.update_timestamp(update = new_data)
-			first_fetch = False
-			win = None
+				if status == 42503:
+					serverstatus = "Server Unavailable"
+				elif status == 42504:
+					serverstatus = "Connection Timeout"
+				else:
+					serverstatus = str(status)
+				if not uip.listlen:
+					uip.force_update()
+				new_data = "pending"
+				uip.update_timestamp(update = new_data)
+				first_fetch = False
+				win = None
 
 		if uip.is_idle() or uip.is_update_triggered():
 			# We need to generate the list info even if the list is empty,
@@ -5984,6 +6068,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 					return retval
 
 				uip.force_update()
+				uip.update_forced = True
 				tagged_items.clear()
 				uip.list_needs_regeneration(True)
 				continue
@@ -6388,7 +6473,8 @@ def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
 def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
 	playbook = deep_get(kwargs, DictPath("playbook"))
 	selection = deep_get(kwargs, DictPath("selection"))
-	status, result = ansible_run_playbook_on_selection(playbook = playbook, selection = selection, verbose = False)
+	verbose = deep_get(kwargs, DictPath("verbose"), False)
+	status, result = ansible_run_playbook_on_selection(playbook = playbook, selection = selection, verbose = verbose)
 	return result, status
 
 def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
@@ -12063,19 +12149,18 @@ def populate_views(force_refresh: bool = False) -> None:
 			else:
 				infogetter = generic_infogetter
 
-			# This complexity is required because if the key is missing we want to use the default,
-			# but if the key is explicitly None we do not want any fallback
-			if "listgetter" in deep_get(d, DictPath("listview")):
-				listgetter = deep_get(d, DictPath("listview#listgetter"))
-				if listgetter is not None:
-					listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
-			else:
-				listgetter = generic_listgetter
-
-			# No fallback here, so no complexities needed
 			listgetter_async = deep_get(d, DictPath("listview#listgetter_async"))
 			if listgetter_async is not None:
 				listgetter_async = deep_get(listgetter_async_allowlist, DictPath(listgetter_async))
+
+			listgetter = deep_get(d, DictPath("listview#listgetter"))
+			if listgetter is not None:
+				listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
+
+			# If both are unset we use the default asynchronous listgetter
+			if "listgetter" not in deep_get(d, DictPath("listview")) and \
+			   "listgetter_async" not in deep_get(d, DictPath("listview")):
+				listgetter_async = get_kubernetes_list_async
 
 			listgetter_args = deep_get(d, DictPath("listview#listgetter_args"), {})
 
@@ -12778,6 +12863,8 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		# but we don't really care, since we're about to close down anyway
 		if str(e) == "endwin() returned ERR":
 			pass
+		else:
+			raise
 
 COMMANDLINE = {
 	# This is purely for the benefit of the helptext generator

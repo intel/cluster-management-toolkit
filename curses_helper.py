@@ -2361,10 +2361,13 @@ class UIProps:
 		# If self.remember_uid is set we (try to) follow the item; else we remain at the cursor position (if possible)
 		if self.remember_uid:
 			for y, item in enumerate(self.sorted_list):
+				uid = None
 				try:
-					uid = getattr(item, DictPath("__uid"))
+					uid = getattr(item, "__uid")
 				except AttributeError:
-					# If the first element lacks "__uid" all elemenets will lack it
+					pass
+				# If the first element lacks "__uid" all elemenets will lack it
+				if uid is None:
 					break
 				if self.selected_uid is None and y == pos:
 					self.selected_uid = uid

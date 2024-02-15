@@ -46,7 +46,7 @@ class ReExecutor:
 		data["future"] = self.executor.submit(data["function"], *data["args"], **data["kwargs"])
 		self.futures[key] = data
 
-	def trigger(self, key: str, interval: int, fn: Callable, /, *args, **kwargs) -> None:
+	def trigger(self, key: str, interval: int, fn: Callable, /, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
 		"""
 		Trigger a callable
 
@@ -79,7 +79,7 @@ class ReExecutor:
 		"""
 		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
 
-	def update(self, key: str, **kwargs) -> None:
+	def update(self, key: str, **kwargs: Dict[str, Any]) -> None:
 		"""
 		Update one or several parameters for a callable; we currently only support updating keyword args
 
@@ -92,6 +92,18 @@ class ReExecutor:
 				for kwarg, value in kwargs.items():
 					self.futures[key]["kwargs"][kwarg] = value
 				self.__trigger(key)
+
+	def get_parameters(self, key: str) -> Tuple[List[Any], Dict[str, Any]]:
+		"""
+		Get the parameters for a callable
+
+			Returns:
+				([args]): The arg list
+				({kwargs}): The kwargs dict
+		"""
+		if key in self.futures:
+			return self.futures[key]["args"], self.futures[key]["kwargs"]
+		return [], {}
 
 	def get(self, key: str) -> Tuple[List[Type], List[Any]]:
 		"""
