@@ -403,14 +403,16 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
 			 ], None),
 			(["# comment",
 			  "[main]",
-			  "setting1 = foo",
-			  "setting2 = bar"], {}, [
+			  "  setting1 = foo",
+			  "  setting2 = bar"], {}, [
 				[ThemeString("# comment", ThemeAttr("types", "ini_comment"))],
 				[ThemeString("[main]", ThemeAttr("types", "ini_section"))],
-				[ThemeString("setting1", ThemeAttr("types", "ini_key")),
+				[ThemeString("  ", ThemeAttr("types", "generic")),
+				 ThemeString("setting1", ThemeAttr("types", "ini_key")),
 				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
 				 ThemeString("foo", ThemeAttr("types", "ini_value"))],
-				[ThemeString("setting2", ThemeAttr("types", "ini_key")),
+				[ThemeString("  ", ThemeAttr("types", "generic")),
+				 ThemeString("setting2", ThemeAttr("types", "ini_key")),
 				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
 				 ThemeString("bar", ThemeAttr("types", "ini_value"))],
 			 ], None),
@@ -422,6 +424,100 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
 				[ThemeString("[main]", ThemeAttr("types", "generic"))],
 				[ThemeString("setting1 = foo", ThemeAttr("types", "generic"))],
 				[ThemeString("setting2 = bar", ThemeAttr("types", "generic"))],
+			 ], None),
+		)
+		for indata, options, expected_result, expected_exception in testdata:
+			if isinstance(indata, list):
+				indata_quoted = "\n".join(indata)
+			else:
+				indata_quoted = indata
+			indata_quoted = indata_quoted.replace('\n', '\\n')
+			try:
+				if (tmp := fun(indata, **options)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: \"{indata_quoted}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						   "          output:\n" \
+						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: \"{indata_quoted}\"\n" \
+							   "         options:\n" \
+							  f"{yaml_dump(options, base_indent = 17)}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: \"{indata_quoted}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = formatter.format_python_traceback
+	fun_str = "formatter.format_python_traceback"
+
+	if result:
+		# Indata format:
+		# (lines, options, expected_result, expected_exception)
+		testdata = (
+			("Traceback (most recent call last):\n"
+			 " File \"<stdin>\", line 1, in <module>\n"
+			 "ZeroDivisionError: division by zero", {}, [
+				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<stdin>", ThemeAttr("types", "path")),
+				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("1", ThemeAttr("types", "lineno")),
+				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<module>", ThemeAttr("types", "path"))],
+				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
+			 ], None),
+			(["Traceback (most recent call last):",
+			  " File \"<stdin>\", line 1, in <module>",
+			  "ZeroDivisionError: division by zero"], {}, [
+				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<stdin>", ThemeAttr("types", "path")),
+				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("1", ThemeAttr("types", "lineno")),
+				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<module>", ThemeAttr("types", "path"))],
+				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
+			 ], None),
+			(["",
+			  "Traceback (most recent call last):",
+			  " File \"<stdin>\", line 1, in <module>",
+			  "ZeroDivisionError: division by zero"], {}, [
+				[ThemeString("", ThemeAttr("logview", "severity_info"))],
+				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<stdin>", ThemeAttr("types", "path")),
+				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("1", ThemeAttr("types", "lineno")),
+				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+				 ThemeString("<module>", ThemeAttr("types", "path"))],
+				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
 			 ], None),
 		)
 		for indata, options, expected_result, expected_exception in testdata:
@@ -536,6 +632,10 @@ tests: Dict = {
 	},
 	("format_ini",): {
 		"callable": test_format_ini,
+		"result": None,
+	},
+	("format_python_traceback",): {
+		"callable": test_format_python_traceback,
 		"result": None,
 	},
 	("map_dataformat",): {
