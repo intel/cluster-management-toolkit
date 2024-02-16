@@ -155,7 +155,10 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 		]
 
 		d = secure_read_yaml(playbookpath, checks = checks)
-		description = [ANSIThemeString(deep_get(d[0], DictPath("vars#metadata#description")), "play")]
+		description = None
+		t_description = deep_get(d[0], DictPath("vars#metadata#description"), "")
+		if t_description:
+			description = [ANSIThemeString(t_description, "play")]
 
 		if description is None or not description:
 			description = [ANSIThemeString("Running “", "play"),
@@ -301,15 +304,14 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 			tmp[group].pop("hosts", None)
 	else:
 		for group in tmp:
-			if tmp[group].get("hosts") is None or tmp[group].get("hosts") == {}:
+			if not deep_get(tmp, DictPath(f"{group}#hosts"), {}):
 				tmp[group].pop("hosts", None)
 
 		# OK, but do we want hostvars?
 		if not include_hostvars:
 			for group in tmp:
-				if tmp[group].get("hosts") is not None:
-					for host in tmp[group]["hosts"]:
-						tmp[group]["hosts"][host] = None
+				for host in deep_get(tmp, DictPath(f"{group}#hosts"), {}):
+					deep_set(tmp, DictPath(f"{group}#hosts#{host}"), None)
 
 	dump: List[Union[List[ANSIThemeString], str]] = \
 		yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines()

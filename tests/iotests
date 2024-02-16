@@ -16,6 +16,7 @@ Usage: ./tests/iotests
 
 from pathlib import Path, PurePath
 import re
+import sys
 from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
@@ -45,7 +46,7 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 
 	path = deep_get(checkdata, DictPath("path"), "")
 	checks = deep_get(checkdata, DictPath("checks"), None)
-	message_on_error = True
+	message_on_error = deep_get(checkdata, DictPath("verbose"), False)
 	expect = deep_get(checkdata, DictPath("expect"))
 	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
 	owner_allowlist = deep_get(checkdata, DictPath("owner_allowlist"))
@@ -54,7 +55,7 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 	kwargs = {
 		"checks": checks,
 		"exit_on_critical": False,
-		"message_on_error": True,
+		"message_on_error": message_on_error,
 	}
 	if owner_allowlist is not None:
 		kwargs["owner_allowlist"] = owner_allowlist
@@ -463,10 +464,11 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 	src = deep_get(checkdata, DictPath("src"), "")
 	path = deep_get(checkdata, DictPath("path"), "")
 	expect = deep_get(checkdata, DictPath("expect"))
+	verbose = deep_get(checkdata, DictPath("verbose"), False)
 
 	kwargs = {
 		"replace_existing": deep_get(checkdata, DictPath("replace")),
-		"verbose": True,
+		"verbose": verbose,
 	}
 
 	violations = secure_symlink(src, path, **kwargs)
@@ -522,6 +524,11 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 	try:
 		secure_write_string(path, string = "Random text", permissions = permissions, write_mode = write_mode)
 		violations_set = {repr(SecurityStatus.OK)}
+	except ValueError as e:
+		if expect == type(e):
+			return 0, ""
+		else:
+			return 1, f"expected {expect}, got {e}"
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -752,6 +759,21 @@ testcases = {
 			SecurityChecks.IS_DIR,
 		],
 		"expect": [SecurityStatus.IS_NOT_DIR],
+	},
+	"Wrong type (Expected directory)": {
+		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh/NonExistingFile"),
+		"test": test_check_path,
+		"checks": [
+			SecurityChecks.PARENT_RESOLVES_TO_SELF,
+			SecurityChecks.RESOLVES_TO_SELF,
+			SecurityChecks.OWNER_IN_ALLOWLIST,
+			SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+			SecurityChecks.PERMISSIONS,
+			SecurityChecks.PARENT_PERMISSIONS,
+			SecurityChecks.EXISTS,
+			SecurityChecks.IS_DIR,
+		],
+		"expect": [SecurityStatus.PARENT_IS_NOT_DIR],
 	},
 	"Correct type (Expected directory)": {
 		"path": FilePath(f"{TEST_DIR}/13-correct_directory"),
@@ -1137,7 +1159,6 @@ testcases = {
 	},
 	"Creating testdir; verbose = True, non-existing parent (secure_mkdir)": {
 		"path": FilePath(f"{TEST_DIR}/nonexistingdir/testdir"),
-		"verbose": True,
 		"test": test_secure_mkdir,
 		"exist_ok": False,
 		"permissions": 0o700,
@@ -1201,6 +1222,13 @@ testcases = {
 		"permissions": 0o600,
 		"expect": {repr(SecurityStatus.EXISTS)},
 	},
+	"Writing string to a file, wrong write_mode (secure_write_string)": {
+		"path": FilePath(f"{TEST_DIR}/testfile.txt"),
+		"test": test_secure_write_string,
+		"write_mode": "z",
+		"permissions": 0o600,
+		"expect": ValueError,
+	},
 	"Writing YAML to a file (secure_write_yaml)": {
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_write_yaml,
@@ -1259,17 +1287,8 @@ testcases = {
 		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
 		"path": FilePath(f"{TEST_DIR}/testfile.yaml"),
 		"test": test_secure_copy,
-		"verbose": True,
 		"permissions": 0o600,
 		"expect": {SecurityStatus.EXISTS},
-	},
-	"Copying valid file to non-valid destination, verbose = True (secure_copy)": {
-		"src": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
-		"path": FilePath("/etc/thisshouldnotwork"),
-		"test": test_secure_copy,
-		"verbose": True,
-		"permissions": 0o600,
-		"expect": {SecurityStatus.PERMISSIONS},
 	},
 	"5. Deleting testfile.yaml (secure_rm)": {
 		"prepare": True,
@@ -1542,6 +1561,13 @@ testcases = {
 		"test": test_secure_symlink,
 		"expect": {SecurityStatus.EXISTS},
 	},
+	"Symlink valid source, invalid destination (secure_symlink)": {
+		"src": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
+		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh/destination"),
+		"replace": False,
+		"test": test_secure_symlink,
+		"expect": {SecurityStatus.PARENT_IS_NOT_DIR},
+	},
 	"Symlink non-existing source parent, valid destination (secure_symlink)": {
 		"src": FilePath(f"{TEST_DIR}/this path does not exist/not this either"),
 		"path": FilePath(f"{TEST_DIR}/test_symlink"),
@@ -1725,6 +1751,8 @@ def main() -> int:
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in testcases if not deep_get(testcases[i], DictPath("prepare"), False))
 
+	print("Running tests with verbose = False:")
+	verbose = False
 	for testcase, testcase_data in testcases.items():
 		prepare = deep_get(testcase_data, DictPath("prepare"), False)
 		if not prepare:
@@ -1733,6 +1761,33 @@ def main() -> int:
 			testcase_data["index"] = i
 
 		test = deep_get(testcase_data, DictPath("test"))
+		testcase_data["verbose"] = verbose
+		failed, msg = test(testcase_data)
+		testcase_data["result"] = (failed, msg)
+		if failed == 1:
+			fail += 1
+			failed_testcases.append(f"{i}: {testcase}")
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {msg}", "default")])
+		else:
+			if not prepare:
+				ansithemeprint([ANSIThemeString("  PASS", "success")])
+				success += 1
+
+		if not prepare:
+			i += 1
+
+	print("\nRunning tests with verbose = True:")
+	verbose = False
+	for testcase, testcase_data in testcases.items():
+		prepare = deep_get(testcase_data, DictPath("prepare"), False)
+		if not prepare:
+			ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+					ANSIThemeString(f" {testcase}:", "default")])
+			testcase_data["index"] = i
+
+		test = deep_get(testcase_data, DictPath("test"))
+		testcase_data["verbose"] = verbose
 		failed, msg = test(testcase_data)
 		testcase_data["result"] = (failed, msg)
 		if failed == 1:

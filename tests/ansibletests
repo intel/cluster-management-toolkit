@@ -10,6 +10,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 
 from datetime import datetime, timezone
 import os
+from pathlib import PurePath
 import sys
 import tempfile
 from typing import Dict, Tuple
@@ -18,9 +19,11 @@ import yaml
 import cmtlib
 from cmtio_yaml import secure_read_yaml
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmttypes import deep_get, deep_set, DictPath, ProgrammingError, FilePathAuditError
+from cmttypes import deep_get, deep_set, DictPath, FilePath, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import ansible_helper
+
+TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybooks")))
 
 # unit-tests for ansible_helper.py
 
@@ -99,8 +102,22 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")],
 			 [([ANSIThemeString(string="  • ", themeref="separator"),
 			    ANSIThemeString(string="Get package versions", themeref="play")],
-			   f"{ANSIBLE_PLAYBOOK_DIR}/get_versions.yaml")], None),
+			   os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml"))], None),
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
+			([os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml")],
+			 [([ANSIThemeString(string="  • ", themeref="separator"),
+			   ANSIThemeString(string="Hostname test playbook; local, lacks summary", themeref="play")],
+			   os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml"))], None),
+			([os.path.join(TEST_PLAYBOOKS_DIR, ".hostname.yml")], [], None),
+			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml")],
+			 [([ANSIThemeString(string="  • ", themeref="separator"),
+			    ANSIThemeString(string="Running “", themeref="play"),
+			    ANSIThemeString(string="uptime", themeref="programname"),
+			    ANSIThemeString(string="“", themeref="play")],
+			   os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"))], None),
+			([os.path.join(TEST_PLAYBOOKS_DIR, "~uptime.yaml")], [], None),
+			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.json")], None, ValueError),
+			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml", "NonExistingFile.yaml")], None, FilePathAuditError),
 			([""], None, ValueError),
 			(None, None, TypeError),
 			(1, None, TypeError),
@@ -149,6 +166,7 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
 		# (playbook, expected_result, expected_exception)
 		testdata = (
 			(ansible_helper.populate_playbooks_from_paths([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")]), None),
+			(ansible_helper.populate_playbooks_from_paths([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml")]), None),
 			([], ValueError),
 			([1], TypeError),
 			(None, TypeError),
@@ -213,10 +231,12 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 		testdata = (
 			(["all"], False, False, False, False, None),
 			(["all"], False, False, False, True, None),
+			(["all"], True, True, True, True, None),
 			([], True, True, True, True, None),
 			([], True, True, False, True, None),
 			([], True, True, False, True, None),
 			(["NotAnExistingGroup"], False, False, False, True, None),
+			(["NotAnExistingGroup"], True, True, True, True, None),
 			("a", True, True, False, True, TypeError),
 			(1, True, True, False, True, TypeError),
 			(None, False, False, False, False, None),
@@ -412,6 +432,10 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 	fun_str = "ansible_helper.__ansible_create_inventory"
 
 	if result:
+		real_ansible_user = deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))
+		real_ansible_password = deep_get(ansible_helper.ansible_configuration, DictPath("ansible_password"))
+		real_ansible_disable_strict_host_key_checking = deep_get(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"))
+
 		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
 			# __ansible_create_inventory() will open the file
 			tf.close()
@@ -424,6 +448,17 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 					},
 				}
 			}
+			d2 = {
+				"all": {
+					"hosts": {},
+					"vars": {
+						"ansible_python_interpreter": "/usr/bin/python3",
+						"ansible_ssh_pass": "bar",
+						"ansible_user": "foo",
+					},
+				},
+				"ansible_ssh_common_args": "-o StrictHostKeyChecking=no",
+			}
 
 			if (ansible_user := deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))) is not None:
 				deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path = True)
@@ -432,21 +467,27 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 			if (disable_strict_host_key_checking := deep_get(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), False)):
 				deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path = True)
 			# Indata format:
-			# (path, overwrite, expected_result, expected_content, expected_exception)
+			# (path, overwrite, override_ansible_configuration, expected_result, expected_content, expected_exception)
 			testdata = (
-				(f"{td}/TemporaryFile", False, True, d, None),
+				(f"{td}/TemporaryFile", False, False, True, d, None),
 				# The file should exist now; so write should fail
-				(tf.name, False, False, None, None),
+				(tf.name, False, False, False, None, None),
 				# The file should exist now; write should succeed
-				(tf.name, True, True, d, None),
-				(None, True, None, None, TypeError),
-				(1, True, None, None, TypeError),
-				(tf.name, None, None, None, TypeError),
-				(tf.name, 1, None, None, TypeError),
+				(tf.name, True, False, True, d, None),
+				(None, True, False, None, None, TypeError),
+				(1, True, False, None, None, TypeError),
+				(tf.name, None, False, None, None, TypeError),
+				(tf.name, 1, False, None, None, TypeError),
+				# The file should exist now; write should succeed; override ansible_configuration
+				(tf.name, True, True, True, d2, None),
 			)
 			for indata in testdata:
-				path, overwrite, expected_result, expected_content, expected_exception = indata
+				path, overwrite, override_ansible_configuration, expected_result, expected_content, expected_exception = indata
 				try:
+					if override_ansible_configuration:
+						deep_set(ansible_helper.ansible_configuration, DictPath("ansible_user"), "foo")
+						deep_set(ansible_helper.ansible_configuration, DictPath("ansible_password"), "bar")
+						deep_set(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), True)
 					if (tmp := fun(path, overwrite, temporary = True)) != expected_result:
 						message = f"{fun_str}() did not yield expected result:\n" \
 							  f"           path: {path}\n" \
@@ -460,9 +501,6 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 						continue
 					output_d = secure_read_yaml(path, temporary = True)
 					if not (output_d is not None and output_d.items() == expected_content.items()):
-						if output_d is not None:
-							print(output_d.items())
-							print(expected_content.items())
 						message = f"{fun_str}() did not yield expected result:\n" \
 							   " inventory dict:\n" \
 							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
@@ -489,7 +527,10 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
 							  f"      exception: {type(e)}\n"
 						result = False
 						break
-	os.unlink(tf.name)
+			deep_set(ansible_helper.ansible_configuration, DictPath("ansible_user"), real_ansible_user)
+			deep_set(ansible_helper.ansible_configuration, DictPath("ansible_password"), real_ansible_password)
+			deep_set(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), real_ansible_disable_strict_host_key_checking)
+			os.unlink(tf.name)
 	return message, result
 
 def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
@@ -511,7 +552,8 @@ def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
 			testdata = (
 				(f"{td}/TemporaryFile", ["group1", "group2", "group3"], ["group1", "group2", "group3"], True, None),
 				# Pre-existing groups are ignored
-				(tf.name, ["group1", "group2", "group3"], ["group1", "group2", "group3"], True, None),
+				(tf.name, ["group1", "group2", "group2", "group3"], ["group1", "group2", "group3"], True, None),
+				(tf.name, ["group1", "group2", "group2", "group3"], ["group1", "group2", "group3"], True, None),
 				# Empty lists are ignored
 				(tf.name, [], None, True, None),
 				# None is ignored
@@ -558,7 +600,7 @@ def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
 							  f"      exception: {type(e)}\n"
 						result = False
 						break
-	os.unlink(tf.name)
+			os.unlink(tf.name)
 	return message, result
 
 def test_ansible_set_vars(verbose: bool = False) -> Tuple[str, bool]:
@@ -767,6 +809,7 @@ def main() -> int:
 
 	init_ansithemeprint(themefile = None)
 	cmtlib.read_cmtconfig()
+	deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR)
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))

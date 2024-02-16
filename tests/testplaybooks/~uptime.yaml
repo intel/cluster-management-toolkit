@@ -1,0 +1,16 @@
+- hosts: "selection"
+  name: "Uptime"
+  vars:
+    metadata:
+      description: "Uptime test playbook; local, lacks summary"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Information"
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Checking uptime"
+      ansible.builtin.command: "/usr/bin/uptime"
+      changed_when: false

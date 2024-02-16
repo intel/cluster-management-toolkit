@@ -1,0 +1,16 @@
+- hosts: "selection"
+  name: "Hostname"
+  vars:
+    metadata:
+      description: "Hostname test playbook; local, lacks summary"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Information"
+      read_only: true
+  gather_facts: false
+  tasks:
+    - name: "Checking hostname"
+      ansible.builtin.command: "/usr/bin/hostname"
+      changed_when: false
