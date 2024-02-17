@@ -93,6 +93,7 @@ class ThemeString:
 			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
 
 			raise ProgrammingError(unformatted_msg,
+					       subexception = TypeError,
 					       severity = LogLevel.ERR,
 					       facility = str(themefile),
 					       formatted_msg = formatted_msg)
@@ -107,7 +108,7 @@ class ThemeString:
 		return len(self.string)
 
 	def __repr__(self) -> str:
-		return f"ThemeString(\"{self.string}\", {repr(self.themeattr)}, {self.selected})"
+		return f"ThemeString('{self.string}', {repr(self.themeattr)}, {self.selected})"
 
 	def get_themeattr(self) -> ThemeAttr:
 		"""
@@ -226,7 +227,7 @@ class ThemeRef:
 		return len(str(self))
 
 	def __repr__(self) -> str:
-		return f"ThemeRef(\"{self.context}\", \"{self.key}\", {self.selected})"
+		return f"ThemeRef('{self.context}', '{self.key}', {self.selected})"
 
 	def to_themearray(self) -> List[ThemeString]:
 		"""
@@ -639,8 +640,32 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 			break
 
 	if themefile is None:
-		print("Error: could not find a valid theme file; aborting.", file = sys.stderr)
-		sys.exit(errno.ENOENT)
+		if configthemefile:
+			msg = [
+				[("curses_helper.read_theme()", "emphasis"),
+				 (" failed to load ", "error"),
+				 (f"{themefile}", "path"),
+				 ("; file not found", "error")],
+			]
+		elif defaulthemefile:
+			msg = [
+				[("curses_helper.read_theme()", "emphasis"),
+				 (" failed to load ", "error"),
+				 (f"{defaultthemefile}", "path"),
+				 ("; file not found", "error")],
+			]
+		else:
+			msg = [
+				[("curses_helper.read_theme()", "emphasis"),
+				 (" failed to load theme; both the themefile and the defaultthemefile paths are empty", "error")],
+			]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = FileNotFoundError,
+				       severity = LogLevel.ERR,
+				       formatted_msg = formatted_msg)
 
 	# The parsers directory itself may be a symlink. This is expected behaviour when installing from a git repo,
 	# but we only allow it if the rest of the path components are secure

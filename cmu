@@ -13181,7 +13181,13 @@ def main() -> None:
 		tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
 	themefile, theme_path_found = expand_path(path = tmpthemefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
 
-	read_theme(themefile, defaultthemefile)
+	try:
+		read_theme(themefile, defaultthemefile)
+	except ProgrammingError as e:
+		if e.subexception == FileNotFoundError:
+			print("Error: could not find a valid theme file; aborting.", file = sys.stderr)
+			sys.exit(errno.ENOENT)
+		raise
 
 	curses_configuration.abouttext = helptexts.about
 	curses_configuration.mousescroll_enable = deep_get(cmtlib.cmtconfig, DictPath("Mouse#enablescroll"), False)

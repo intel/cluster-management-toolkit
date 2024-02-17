@@ -1,0 +1,275 @@
+#! /bin/sh
+# vim: filetype=python
+# pylint: disable-next=anomalous-backslash-in-string,line-too-long
+''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from datetime import datetime, timezone
+import os
+from pathlib import PurePath
+import sys
+import tempfile
+from typing import Dict, Tuple
+import yaml
+
+import cmtlib
+from cmtio import expand_path
+from cmtio_yaml import secure_read_yaml
+from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
+from cmttypes import deep_get, deep_set, DictPath, FilePath, ProgrammingError, FilePathAuditError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
+import curses_helper
+from curses_helper import ThemeAttr, ThemeRef, ThemeString
+
+# unit-tests for curses_helper.py
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
+
+def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.ThemeString
+	fun_str = "curses_helper.ThemeString"
+
+	if result:
+		try:
+			themeattr = ThemeAttr("types", "generic")
+			if repr(themeattr) != "ThemeAttr(context='types', key='generic')":
+				message = f"ThemeAttr() did not yield expected result:\n" \
+					  f"          input: (\"types\", \"generic\")\n" \
+					  f"         output: {repr(themeattr)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: ThemeAttr(context='types', key='generic')"
+				result = False
+		except Exception as e:
+			message = f"ThemeAttr() did not yield expected result:\n" \
+				  f"          input: (\"types\", \"generic\")\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: ThemeAttr(context='types', key='generic')"
+			result = False
+
+	if result:
+		try:
+			# ThemeAttr shouldn't check if the context/key pair exists
+			themeattr = ThemeAttr("types", "DOESNOTEXIST")
+			if repr(themeattr) != "ThemeAttr(context='types', key='DOESNOTEXIST')":
+				message = f"ThemeAttr() did not yield expected result:\n" \
+					  f"          input: ('types', 'DOESNOTEXIST')\n" \
+					  f"         output: {repr(themeattr)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: ThemeAttr(context='types', key='DOESNOTEXIST')"
+				result = False
+		except Exception as e:
+			message = f"ThemeAttr() did not yield expected result:\n" \
+				  f"          input: (\"types\", \"generic\")\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: ThemeAttr(context='types', key='DOESNOTEXIST')"
+			result = False
+
+	if result:
+		# Indata format:
+		testdata = (
+			("A test string", ThemeAttr("types", "generic"),
+			 "ThemeString('A test string', ThemeAttr(context='types', key='generic'), False)", None),
+			(None, ThemeAttr("types", "generic"),
+			 None, ProgrammingError),
+		)
+		for indata, themeattr, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata, themeattr)
+				if repr(tmp) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		tmp = len(indata)
+		if tmp != 3:
+			message = f"{fun_str}.__len__() did not yield expected result:\n" \
+				  f"          input: {repr(tmp)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: 3"
+			result = False
+
+	if result:
+		str1 = ThemeString("123", ThemeAttr("types", "generic"))
+		str2 = ThemeString("124", ThemeAttr("types", "generic"))
+		tmp = str1 == str2
+		if tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {str1} == {str2}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: False"
+			result = False
+
+	if result:
+		str1 = ThemeString("123", ThemeAttr("types", "generic"))
+		str2 = ThemeString("123", ThemeAttr("types", "generic"))
+		tmp = str1 == str2
+		if not tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {str1} == {str2}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: True"
+			result = False
+
+	if result:
+		str1 = ThemeString("123", ThemeAttr("types", "generic"))
+		str2 = "a"
+		tmp = str1 == str2
+		if tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {str1} == {str2}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: False"
+			result = False
+
+	if result:
+		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		try:
+			tmp = indata.get_themeattr()
+			if tmp != ThemeAttr("types", "generic"):
+				message = f"ThemeAttr() did not yield expected result:\n" \
+					  f"          input: (indata)\n" \
+					  f"         output: {repr(tmp)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: ThemeAttr(context='types', key='generic')"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
+				  f"          input: (indata)\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: ThemeAttr(context='types', key='generic')"
+			result = False
+
+	if result:
+		indata = ThemeString("http://www.intel.com", ThemeAttr("types", "generic"))
+		try:
+			indata.set_themeattr(ThemeAttr("types", "url"))
+			tmp = indata.get_themeattr()
+			if tmp != ThemeAttr("types", "url"):
+				message = f"ThemeAttr() did not yield expected result:\n" \
+					  f"          input: (indata)\n" \
+					  f"         output: {repr(tmp)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: ThemeAttr(context='types', key='url')"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
+				  f"          input: (indata)\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: ThemeAttr(context='types', key='url')"
+			result = False
+
+	if result:
+		indata = ThemeString("1", ThemeAttr("types", "generic"), True)
+		try:
+			tmp = indata.get_selected()
+			if tmp != True:
+				message = f"ThemeAttr() did not yield expected result:\n" \
+					  f"          input: (indata)\n" \
+					  f"         output: {tmp}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: True"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
+				  f"          input: (indata)\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: True"
+			result = False
+
+	return message, result
+
+
+
+tests: Dict = {
+	("ThemeString()",): {
+		"callable": test_themestring,
+		"result": None,
+	},
+}
+
+def main() -> int:
+	global tests
+
+	fail = 0
+	success = 0
+	verbose = False
+	failed_testcases = []
+
+	init_ansithemeprint(themefile = None)
+	cmtlib.read_cmtconfig()
+
+	defaultthemefile = DEFAULT_THEME_FILE
+	tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
+	themefile, _theme_path_found = expand_path(path = tmpthemefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
+	curses_helper.read_theme(themefile, defaultthemefile)
+
+	# How many non-prepare testcases do we have?
+	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+
+	for i, test in enumerate(tests):
+		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		message, result = tests[test]["callable"](verbose = verbose)
+		if len(message) > 0:
+			ansithemeprint([ANSIThemeString("  FAIL", "error"),
+					ANSIThemeString(f": {message}", "default")])
+		else:
+			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			success += 1
+		tests[test]["result"] = result
+		if not result:
+			fail += 1
+			failed_testcases.append(f"{i}: {', '.join(test)}")
+
+	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	if fail > 0:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+	else:
+		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+
+	if fail > 0:
+		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		for testcase in failed_testcases:
+			ansithemeprint([ANSIThemeString("  • ", "separator"),
+					ANSIThemeString(testcase, "default")], stderr = True)
+
+	return fail
+
+if __name__ == "__main__":
+	main()
