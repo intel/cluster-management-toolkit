@@ -118,7 +118,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		tmp = len(indata)
 		if tmp != 3:
 			message = f"{fun_str}.__len__() did not yield expected result:\n" \
-				  f"          input: {repr(tmp)}\n" \
+				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: 3"
 			result = False
@@ -129,7 +129,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		tmp = str1 == str2
 		if tmp:
 			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
-				  f"          input: {str1} == {str2}\n" \
+				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
 			result = False
@@ -140,9 +140,19 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		tmp = str1 == str2
 		if not tmp:
 			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
-				  f"          input: {str1} == {str2}\n" \
+				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: True"
+			result = False
+
+	if result:
+		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		tmp = str(indata)
+		if tmp != "123":
+			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: 123"
 			result = False
 
 	if result:
@@ -151,7 +161,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		tmp = str1 == str2
 		if tmp:
 			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
-				  f"          input: {str1} == {str2}\n" \
+				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
 			result = False
@@ -162,14 +172,13 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			tmp = indata.get_themeattr()
 			if tmp != ThemeAttr("types", "generic"):
 				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: (indata)\n" \
+					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"      exception: {type(e)}\n" \
 					  f"       expected: ThemeAttr(context='types', key='generic')"
 				result = False
 		except Exception as e:
 			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
-				  f"          input: (indata)\n" \
+				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: ThemeAttr(context='types', key='generic')"
 			result = False
@@ -180,15 +189,14 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			indata.set_themeattr(ThemeAttr("types", "url"))
 			tmp = indata.get_themeattr()
 			if tmp != ThemeAttr("types", "url"):
-				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: (indata)\n" \
+				message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"      exception: {type(e)}\n" \
 					  f"       expected: ThemeAttr(context='types', key='url')"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
-				  f"          input: (indata)\n" \
+			message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: ThemeAttr(context='types', key='url')"
 			result = False
@@ -198,26 +206,222 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.get_selected()
 			if tmp != True:
-				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: (indata)\n" \
+				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
 					  f"         output: {tmp}\n" \
-					  f"      exception: {type(e)}\n" \
 					  f"       expected: True"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
-				  f"          input: (indata)\n" \
+			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: True"
 			result = False
 
 	return message, result
 
+def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
 
+	fun = curses_helper.ThemeRef
+	fun_str = "curses_helper.ThemeRef"
+
+	if result:
+		# Indata format:
+		testdata = (
+			(("strings", "none"),
+			 "ThemeRef('strings', 'none', False)", None),
+			((None, "none"),
+			 None, ProgrammingError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata[0], indata[1])
+				if repr(tmp) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", False)
+		tmp = str(indata)
+		if tmp != "■":
+			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: ■"
+			result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", True)
+		tmp = str(indata)
+		if tmp != "█":
+			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: █"
+			result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", True)
+		tmp = len(indata)
+		if tmp != 1:
+			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: 1"
+			result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", False)
+		try:
+			tmp = indata.to_themearray()
+			if repr(tmp) != "[ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]":
+				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
+					  f"         output: {repr(tmp)}\n" \
+					  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]"
+			result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", True)
+		try:
+			tmp = indata.to_themearray()
+			if repr(tmp) != "[ThemeString('█', ThemeAttr(context='main', key='status_critical'), True)]":
+				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
+					  f"         output: {repr(tmp)}\n" \
+					  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), True)]"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: [ThemeString('█', ThemeAttr(context='main', key='status_critical'), True)]"
+
+			result = False
+
+	if result:
+		indata = ThemeRef("", "", True)
+		try:
+			tmp = indata.to_themearray()
+			message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {repr(tmp)}\n" \
+				  f"       expected: {ProgrammingError}"
+			result = False
+		except Exception as e:
+			if not isinstance(e, ProgrammingError):
+				message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: {ProgrammingError}"
+				result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", False)
+		try:
+			tmp = indata.get_selected()
+			if tmp:
+				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
+					  f"         output: {tmp}\n" \
+					  f"       expected: True"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: True"
+			result = False
+
+	if result:
+		indata = ThemeRef("strings", "status_critical", True)
+		try:
+			tmp = indata.get_selected()
+			if not tmp:
+				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+					  f"          input: {repr(indata)}\n" \
+					  f"         output: {tmp}\n" \
+					  f"       expected: False"
+				result = False
+		except Exception as e:
+			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"      exception: {type(e)}\n" \
+				  f"       expected: True"
+			result = False
+
+	if result:
+		indata1 = ThemeRef("strings", "status_critical", False)
+		indata2 = ThemeRef("strings", "status_critical", True)
+		tmp = indata1 == indata2
+		if tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: False"
+			result = False
+
+	if result:
+		indata1 = ThemeRef("strings", "status_critical", False)
+		indata2 = ThemeRef("strings", "status_critical", False)
+		tmp = indata1 == indata2
+		if not tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: True"
+			result = False
+
+	if result:
+		indata1 = ThemeRef("strings", "status_critical", False)
+		indata2 = 42
+		tmp = indata1 == indata2
+		if tmp:
+			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: False"
+			result = False
+
+	return message, result
 
 tests: Dict = {
 	("ThemeString()",): {
 		"callable": test_themestring,
+		"result": None,
+	},
+	("ThemeRef()",): {
+		"callable": test_themeref,
 		"result": None,
 	},
 }
