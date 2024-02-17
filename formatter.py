@@ -201,9 +201,9 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 						bold = True
 					else:
 						bold = not bold
-					if "*" in section and codeblock == "":
+					if (section.startswith("*") or " *" in section) and codeblock == "":
 						italics_sections = section.split("*")
-					elif "_" in section and codeblock == "":
+					elif (section.startswith("_") or " _" in section) and codeblock == "":
 						italics_sections = section.split("_")
 					else:
 						italics_sections = [section]

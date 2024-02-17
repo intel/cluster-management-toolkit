@@ -143,6 +143,12 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
 			  "----"], {"start": "====", "end": "----"}, [
 				[ThemeString("This is not code", ThemeAttr("types", "generic"))],
 			 ], None),
+			(["_This is italics_"], {}, [
+				[ThemeString("This is italics", ThemeAttr("types", "markdown_italics"))],
+			 ], None),
+			(["This_is_not_italics"], {}, [
+				[ThemeString("This_is_not_italics", ThemeAttr("types", "generic"))],
+			 ], None),
 		)
 		for indata, options, expected_result, expected_exception in testdata:
 			if isinstance(indata, list):
