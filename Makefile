@@ -1,6 +1,6 @@
 yaml_dirs = parsers themes views playbooks docs/examples
 python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests
+python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests tests/cursestests
 test_lib_symlinks = \
 	about.py ansible_helper.py ansithemeprint.py \
 	checks.py \
@@ -33,7 +33,7 @@ code-checks-strict: flake8 mypy-strict pylint
 
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
 
-tests: iotests logtests validatortests atptests cmtlibtests
+tests: iotests logtests validatortests atptests cmtlibtests cursestests
 
 clean: remove_test_symlinks
 
@@ -49,7 +49,7 @@ coverage: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/atptests tests/cmtlibtests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
+	for test in tests/atptests tests/cmtlibtests tests/cursestests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
 		$$cmd run --branch --append $$test ;\
 	done ;\
@@ -304,6 +304,10 @@ validatortests: setup_tests
 cmtlibtests: setup_tests
 	@printf -- "\n\nRunning cmtlibtests to check that cmtlib.py behaves as expected\n\n"; \
 	(cd tests && ./cmtlibtests)
+
+cursestests: setup_tests
+	@printf -- "\n\nRunning cursestests to check that curses_helper.py behaves as expected\n\n"; \
+	(cd tests && ./cursestests)
 
 atptests: setup_tests
 	@printf -- "\n\nRunning atptests --include-clear to check that ansithemeprint.py behaves as expected; if there's a failure please re-run manually without the --include-clear flag\n\n"; \
