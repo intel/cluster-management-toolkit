@@ -1,0 +1,127 @@
+kind: "__VersionData"
+default_command: "versions"
+command:
+- "version"
+- "cv"
+listview:
+  name: "Version Data"
+  group: "Administration"
+  listgetter: "listgetter_files"
+  listgetter_args:
+    playbooks:
+    - "update_version_cache.yaml"
+    paths:
+    - filepath: "{HOME}/.cmt/version-cache/kubernetes_current.yaml"
+      filetype: "yaml"
+      path: "schedules"
+      pathtype: "dict"
+      data:
+        path: 0
+        pathtype: "list"
+        data:
+          path: "previousPatches"
+          pathtype: "dict"
+          data:
+            path: 0
+            pathtype: "list"
+      _extra_data:
+        name: "Kubernetes"
+        installed_version:
+          fieldgetter: "fieldgetter_api_server_version"
+          fieldgetter_args:
+            fields:
+            - 2
+  infogetter: "generic_infogetter"
+  field_indexes:
+    Normal:
+      fields: ["name", "installed_version", "latest_version", "release_date", "last_checked", "note"]
+      sortcolumn: "release_date"
+      sortorder_reverse: true
+  labels: false
+  fields:
+    installed_version:
+      header: "Current Version:"
+      paths:
+      - path: "_extra_data#installed_version"
+        pathtype: "fieldgetter"
+      type: "version"
+    latest_version:
+      header: "Latest Version:"
+      path: "release"
+      type: "version"
+    last_checked:
+      header: "Last Checked:"
+      path: "_extra_data#mtime"
+      type: "unix_timestamp"
+      default: -1
+      formatter: "timestamp"
+    name:
+      header: "Component:"
+      path: "_extra_data#name"
+      type: "str"
+    note:
+      header: "Note:"
+      path: "note"
+      type: "str"
+    release_date:
+      header: "Release Date:"
+      path: "targetDate"
+      type: "str"
+  shortcuts:
+    # Overrides:
+    "Edit resource": null
+infoview:
+  name: "Version Info"
+  infopad:
+    name_path: "_extra_data#name"
+    namespace_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["installed_version", "latest_version", "release_date", "note", "mtime"]
+    rows:
+      installed_version:
+        header: [["Installed Version:", ["main", "infoheader"]]]
+        paths:
+        - path: "_extra_data#installed_version"
+          pathtype: "fieldgetter"
+        type: "version"
+      latest_version:
+        header: [["Latest Version:", ["main", "infoheader"]]]
+        path: "release"
+        type: "version"
+      mtime:
+        header: [["Last Checked:", ["main", "infoheader"]]]
+        path: "_extra_data#mtime"
+        type: "unix_timestamp"
+        default: -1
+        formatter: "timestamp"
+      note:
+        header: [["Note:", ["main", "infoheader"]]]
+        path: "note"
+        type: "str"
+      release_date:
+        header: [["Release Date:", ["main", "infoheader"]]]
+        path: "targetDate"
+        type: "str"
+  logpad:
+    # We cannot get the changelog in the previous infogetter,
+    # since we don't have the latest version at that point
+    infogetter: "logpad_files"
+    infogetter_args:
+      extra_values_lookup:
+        "version": ["release"]
+      paths:
+      - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
+        filetype: "text"
+        pathtype: "raw"
+      formatter: "markdown"
+      formatter_args:
+        # First match in the file is what we want
+        start: "## Changelog since "
+        include_start: true
+        end: "# v"
+        include_end: false
+        strip_empty_start: false
+        strip_empty_end: true
+    timestamps: false

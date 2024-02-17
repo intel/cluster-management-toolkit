@@ -439,7 +439,10 @@ def listgetter_files(**kwargs):
 
 	for path in paths:
 		filepath = deep_get(path, DictPath("filepath"), "")
-		filetype = deep_get(path, DictPath("filetype"), "yaml")
+		filetype = deep_get(path, DictPath("filetype"), "text")
+		matchtype = deep_get(path, DictPath("data#matchtype"), "all")
+		regex = deep_get(path, DictPath("data#regex"))
+		key = deep_get(path, DictPath("data#key"))
 
 		# Substitute {HOME}/ for {HOMEDIR}
 		if filepath.startswith(("{HOME}/", "{HOME}\\")):
@@ -457,8 +460,25 @@ def listgetter_files(**kwargs):
 		p = Path(FilePath(filepath))
 		mtime = p.stat().st_mtime
 
+		item = {key: []}
 		if filetype == "text":
-			item = d
+			if regex:
+				match = False
+				for line in d.splitlines():
+					tmp = re.match(regex, line)
+					if tmp:
+						for group in tmp.groups():
+							if group:
+								item[key].append(group)
+						match = True
+						if matchtype == "first":
+							if len(item[key]) == 1:
+								item[key] = item[key][0]
+							break
+				if not match:
+					continue
+			else:
+				item = d
 		else:
 			item = __recurse_data(path, d)
 		extra_data = deep_get(path, DictPath("_extra_data"), {})
@@ -1595,6 +1615,16 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 						else:
 							__values.append(mpaths[i])
 					_values.append((tuple(__values), "raw"))
+				elif ptype == "fieldgetter":
+					data = deep_get(paths, DictPath("path"))
+					fieldgetter_data = deep_get_with_fallback(obj, path, {})
+					fieldgetter_tmp = deep_get(fieldgetter_data, DictPath("fieldgetter"))
+					fieldgetter = deep_get(fieldgetter_allowlist, DictPath(fieldgetter_tmp))
+					if fieldgetter is None:
+						raise ValueError(f"{fieldgetter_tmp} is not a valid fieldgetter; the view-file is probably incorrect.")
+					fieldgetter_args = deep_get(fieldgetter_data, DictPath("fieldgetter_args"), {})
+					tmp = fieldgetter(**fieldgetter_args)
+					_values.append((tmp, vtype))
 				elif ptype in ("items", "appenditems"):
 					if len(subpath) > 0:
 						if len(subpaths) > 0:
@@ -1619,7 +1649,6 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 							items += tmp
 						else:
 							items.append(tmp)
-
 					for item in items:
 						if not when_filter(_path, item):
 							continue
@@ -11845,6 +11874,23 @@ infogetter_allowlist = {
 	"get_cmt_log": get_cmt_log,
 	"get_themearrays": get_themearrays,
 	"get_traceflow": get_traceflow,
+}
+
+def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
+	field_list = []
+	fields = deep_get(kwargs, DictPath("fields"), [])
+	result = kh.get_api_server_version()
+	if not fields:
+		field_tuple = copy.deepcopy(result)
+	else:
+		for i, field in enumerate(result):
+			if i in fields:
+				field_list.append(field)
+	return field_list
+
+# Fieldgetters acceptable for direct use in view files
+fieldgetter_allowlist = {
+	"fieldgetter_api_server_version": fieldgetter_api_server_version,
 }
 
 # Listgetters acceptable for direct use in view files

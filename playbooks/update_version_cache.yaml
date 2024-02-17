@@ -74,7 +74,7 @@
       loop:
       # We'll need to fix this for fetching multiple versions
         - url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-{{ version | splitext | first | string }}.md"
-          dest: "kubernetes_current_changelog.yaml"
+          dest: "kubernetes_current_changelog.md"
       environment:
         https_proxy: "{{ https_proxy | default('') }}"
     - name: "Updating last-updated"
