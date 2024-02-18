@@ -8,6 +8,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+import copy
 from datetime import datetime, timezone
 import os
 from pathlib import PurePath
@@ -23,7 +24,7 @@ from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from cmttypes import deep_get, deep_set, DictPath, FilePath, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import curses_helper
-from curses_helper import ThemeAttr, ThemeRef, ThemeString
+from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray
 
 # unit-tests for curses_helper.py
 
@@ -44,43 +45,43 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		try:
 			themeattr = ThemeAttr("types", "generic")
-			if repr(themeattr) != "ThemeAttr(context='types', key='generic')":
+			if repr(themeattr) != "ThemeAttr('types', 'generic')":
 				message = f"ThemeAttr() did not yield expected result:\n" \
 					  f"          input: (\"types\", \"generic\")\n" \
 					  f"         output: {repr(themeattr)}\n" \
 					  f"      exception: {type(e)}\n" \
-					  f"       expected: ThemeAttr(context='types', key='generic')"
+					  f"       expected: ThemeAttr('types', 'generic')"
 				result = False
 		except Exception as e:
 			message = f"ThemeAttr() did not yield expected result:\n" \
 				  f"          input: (\"types\", \"generic\")\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr(context='types', key='generic')"
+				  f"       expected: ThemeAttr('types', 'generic')"
 			result = False
 
 	if result:
 		try:
 			# ThemeAttr shouldn't check if the context/key pair exists
 			themeattr = ThemeAttr("types", "DOESNOTEXIST")
-			if repr(themeattr) != "ThemeAttr(context='types', key='DOESNOTEXIST')":
+			if repr(themeattr) != "ThemeAttr('types', 'DOESNOTEXIST')":
 				message = f"ThemeAttr() did not yield expected result:\n" \
 					  f"          input: ('types', 'DOESNOTEXIST')\n" \
 					  f"         output: {repr(themeattr)}\n" \
 					  f"      exception: {type(e)}\n" \
-					  f"       expected: ThemeAttr(context='types', key='DOESNOTEXIST')"
+					  f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
 				result = False
 		except Exception as e:
 			message = f"ThemeAttr() did not yield expected result:\n" \
 				  f"          input: (\"types\", \"generic\")\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr(context='types', key='DOESNOTEXIST')"
+				  f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
 			result = False
 
 	if result:
 		# Indata format:
 		testdata = (
 			("A test string", ThemeAttr("types", "generic"),
-			 "ThemeString('A test string', ThemeAttr(context='types', key='generic'), False)", None),
+			 "ThemeString('A test string', ThemeAttr('types', 'generic'), False)", None),
 			(None, ThemeAttr("types", "generic"),
 			 None, ProgrammingError),
 		)
@@ -174,13 +175,13 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 				message = f"ThemeAttr() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: ThemeAttr(context='types', key='generic')"
+					  f"       expected: ThemeAttr('types', 'generic')"
 				result = False
 		except Exception as e:
 			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr(context='types', key='generic')"
+				  f"       expected: ThemeAttr('types', 'generic')"
 			result = False
 
 	if result:
@@ -192,13 +193,13 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 				message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: ThemeAttr(context='types', key='url')"
+					  f"       expected: ThemeAttr('types', 'url')"
 				result = False
 		except Exception as e:
 			message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr(context='types', key='url')"
+				  f"       expected: ThemeAttr('types', 'url')"
 			result = False
 
 	if result:
@@ -298,34 +299,34 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeRef("strings", "status_critical", False)
 		try:
 			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]":
+			if repr(tmp) != "[ThemeString('■', ThemeAttr('main', 'status_critical'), False)]":
 				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]"
+					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
 				result = False
 		except Exception as e:
 			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), False)]"
+				  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
 			result = False
 
 	if result:
 		indata = ThemeRef("strings", "status_critical", True)
 		try:
 			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeString('█', ThemeAttr(context='main', key='status_critical'), True)]":
+			if repr(tmp) != "[ThemeString('█', ThemeAttr('main', 'status_critical'), True)]":
 				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeString('■', ThemeAttr(context='main', key='status_critical'), True)]"
+					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), True)]"
 				result = False
 		except Exception as e:
 			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeString('█', ThemeAttr(context='main', key='status_critical'), True)]"
+				  f"       expected: [ThemeString('█', ThemeAttr('main', 'status_critical'), True)]"
 
 			result = False
 
@@ -415,6 +416,283 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.ThemeArray
+	fun_str = "curses_helper.ThemeArray"
+
+	if result:
+		# Indata format:
+		testdata = (
+			([ThemeString("Hello ", ThemeAttr("types", "generic")),
+			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			 ], False,
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
+				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
+			([ThemeString("Hello ", ThemeAttr("types", "generic"), False),
+			  ThemeString("World", ThemeAttr("types", "emphasis"), False),
+			 ], True,
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), True), " \
+				     "ThemeString('World', ThemeAttr('types', 'emphasis'), True)])", None),
+			([ThemeString("Hello ", ThemeAttr("types", "generic")),
+			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			 ], None,
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
+				    "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
+			([ThemeString("Hello ", ThemeAttr("types", "generic")),
+			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			  ThemeRef("separators", "matchbullet"),
+			 ], False,
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
+				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False), " \
+				     "ThemeRef('separators', 'matchbullet', False)])", None),
+			(None, False, None, ProgrammingError),
+			("a", False, None, ProgrammingError),
+			(["a"], False, None, ProgrammingError),
+		)
+		for indata, selected, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(indata, selected)
+				if repr(tmp) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		base = ThemeArray([ThemeString("Hello World", ThemeAttr("types", "emphasis"))], False)
+		testdata = (
+			(ThemeRef("separators", "matchbullet", True),
+			 "ThemeArray([ThemeString('Hello World', ThemeAttr('types', 'emphasis'), False), ThemeRef('separators', 'matchbullet', True)])", None),
+			(None,
+			 None, ProgrammingError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = copy.deepcopy(base)
+				tmp.append(indata)
+				if expected_exception is None:
+					if repr(tmp) != expected_result:
+						message = f"{fun_str}.append() did not yield expected result:\n" \
+							  f"          input: {repr(base)}\n" \
+							  f"         append: {repr(indata)}\n" \
+							  f"         output: {repr(tmp)}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.append() did not yield expected result:\n" \
+						  f"          input: {repr(base)}\n" \
+						  f"         append: {repr(indata)}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_exception}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"          input: {repr(base)}\n" \
+							  f"         append: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          input: {base}\n" \
+						  f"         append: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		base = ThemeArray([ThemeString("Hello ", ThemeAttr("types", "emphasis"))], False)
+		testdata = (
+			(ThemeArray([ThemeString("World", ThemeAttr("types", "generic"))], False),
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeString('World', ThemeAttr('types', 'generic'), False)])", None),
+			([ThemeString("World", ThemeAttr("types", "generic"), False)],
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeString('World', ThemeAttr('types', 'generic'), False)])", None),
+			(None,
+			 None, ProgrammingError),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = copy.deepcopy(base)
+				tmp += indata
+				if expected_exception is None:
+					if repr(tmp) != expected_result:
+						message = f"{fun_str}.__add__() did not yield expected result:\n" \
+							  f"          input: {repr(base)}\n" \
+							  f"         append: {repr(indata)}\n" \
+							  f"         output: {repr(tmp)}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__add__() did not yield expected result:\n" \
+						  f"          input: {repr(base)}\n" \
+						  f"         append: {repr(indata)}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_exception}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}.__add__() did not yield expected result:\n" \
+							  f"          input: {repr(base)}\n" \
+							  f"         append: {indata}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__add__() did not yield expected result:\n" \
+						  f"          input: {base}\n" \
+						  f"         append: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		indata = ThemeArray([ThemeString("Hello ", ThemeAttr("types", "generic")),
+				     ThemeString("World", ThemeAttr("types", "emphasis"))])
+		tmp = str(indata)
+		if tmp != "Hello World":
+			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+				  f"          input: {repr(indata)}\n" \
+				  f"         output: {tmp}\n" \
+				  f"       expected: Hello World"
+			result = False
+
+	if result:
+		testdata = (
+			(ThemeArray([ThemeString("12345", ThemeAttr("types", "generic"))], False),
+			 5, None),
+			(ThemeArray([ThemeString("", ThemeAttr("types", "generic"), False)]),
+			 0, None),
+			# "–"; this needs to be modified if the separator changes, so don't!
+			(ThemeArray([ThemeRef("separators", "range", False)]),
+			 1, None),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				tmp = len(indata)
+				if expected_exception is None:
+					if tmp != expected_result:
+						message = f"{fun_str}.__len__() did not yield expected result:\n" \
+							  f"          input: {repr(indata)}\n" \
+							  f"         output: {repr(tmp)}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__len__() did not yield expected result:\n" \
+						  f"          input: {repr(indata)}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_exception}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}.__len__() did not yield expected result:\n" \
+							  f"          input: {repr(indata)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__len__() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	if result:
+		testdata = (
+			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			 ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			 True, None),
+			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			 ThemeArray([ThemeString("B", ThemeAttr("types", "generic"))], False),
+			 False, None),
+		)
+		for indata1, indata2, expected_result, expected_exception in testdata:
+			try:
+				tmp = indata1 == indata2
+				if expected_exception is None:
+					if tmp != expected_result:
+						message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+							  f"         input1: {repr(indata1)}\n" \
+							  f"         input2: {repr(indata2)}\n" \
+							  f"         output: {repr(tmp)}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+						  f"         input1: {repr(indata1)}\n" \
+						  f"         input2: {repr(indata2)}\n" \
+						  f"         output: {repr(tmp)}\n" \
+						  f"       expected: {expected_exception}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+							  f"         input1: {repr(indata1)}\n" \
+							  f"         input2: {repr(indata2)}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+						  f"         input1: {repr(indata1)}\n" \
+						  f"         input2: {repr(indata2)}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
 tests: Dict = {
 	("ThemeString()",): {
 		"callable": test_themestring,
@@ -422,6 +700,10 @@ tests: Dict = {
 	},
 	("ThemeRef()",): {
 		"callable": test_themeref,
+		"result": None,
+	},
+	("ThemeArray()",): {
+		"callable": test_themearray,
 		"result": None,
 	},
 }

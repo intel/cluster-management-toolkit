@@ -52,6 +52,9 @@ class ThemeAttr(NamedTuple):
 	context: str
 	key: str
 
+	def __repr__(self) -> str:
+		return f"ThemeAttr('{self.context}', '{self.key}')"
+
 class ThemeString:
 	"""
 	A themed string
@@ -395,13 +398,33 @@ class ThemeArray:
 					       formatted_msg = formatted_msg)
 		self.array.append(item)
 
-	def __add__(self, array: List[Union[ThemeRef, ThemeString]]) -> "ThemeArray":
-		tmparray: List[Union[ThemeRef, ThemeString]] = []
-		for item in self.array:
-			tmparray.append(item)
-		for item in array:
-			tmparray.append(item)
-		return ThemeArray(tmparray)
+	def __add__(self, array: Union["ThemeArray", List[Union[ThemeRef, ThemeString]]]) -> "ThemeArray":
+		if isinstance(array, ThemeArray):
+			return ThemeArray(self.to_list() + array.to_list())
+
+		if not isinstance(array, list):
+			msg = [
+				[("ThemeArray.__add__()", "emphasis"),
+				 (" called with invalid argument(s):", "error")],
+				[("array = ", "default"),
+				 (f"{array}", "argument"),
+				 (" (type: ", "default"),
+				 (f"{type(array)}", "argument"),
+				 (", expected: ", "default"),
+				 ("ThemeArray", "argument"),
+				 (" or ", "default"),
+				 ("[ThemeRef|ThemeString]", "argument"),
+				 (")", "default")],
+			]
+
+			unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+			raise ProgrammingError(unformatted_msg,
+					       severity = LogLevel.ERR,
+					       facility = str(themefile),
+					       formatted_msg = formatted_msg)
+
+		return ThemeArray(self.to_list() + array)
 
 	def __str__(self) -> str:
 		string = ""
@@ -424,7 +447,7 @@ class ThemeArray:
 			else:
 				references += f", {repr(item)}"
 			first = False
-		return f"ThemeArray({references})"
+		return f"ThemeArray([{references}])"
 
 	def __eq__(self, obj: Any) -> bool:
 		if not isinstance(obj, ThemeArray):
@@ -433,6 +456,12 @@ class ThemeArray:
 		return repr(obj) == repr(self)
 
 	def to_list(self) -> List[Union[ThemeRef, ThemeString]]:
+		"""
+		Return the ThemeArray as a list of ThemeRef|ThemeString
+
+			Returns:
+				([ThemeRef|ThemeArray]): The list of ThemeRef|ThemeString
+		"""
 		return self.array
 
 def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
