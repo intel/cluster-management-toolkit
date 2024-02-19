@@ -661,7 +661,6 @@ def test_ansible_set_vars(verbose: bool = False) -> Tuple[str, bool]:
 								  f"       expected: {expected_exception}\n" \
 								  f"      exception: {e}"
 							result = False
-							print(indata)
 							break
 					else:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -730,7 +729,6 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
 							  f" should include: {expected_content}"
 						result = False
-						print(indata)
 						break
 				except Exception as e:
 					if expected_exception is not None:
@@ -743,7 +741,6 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 								  f"       expected: {expected_exception}\n" \
 								  f"      exception: {e}"
 							result = False
-							print(indata)
 							break
 					else:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -824,7 +821,6 @@ def test_ansible_set_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 							  f"{yaml_dump(output_d2, base_indent = 17)}\n" \
 							  f" should include: {expected_content}"
 						result = False
-						print(indata)
 						break
 				except Exception as e:
 					if expected_exception is not None:
@@ -837,7 +833,6 @@ def test_ansible_set_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 								  f"       expected: {expected_exception}\n" \
 								  f"      exception: {e}"
 							result = False
-							print(indata)
 							break
 					else:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -941,7 +936,6 @@ def test_ansible_unset_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
 							  f" should include: {expected_content}"
 						result = False
-						print(indata)
 						break
 				except Exception as e:
 					if expected_exception is not None:
@@ -954,7 +948,6 @@ def test_ansible_unset_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 								  f"       expected: {expected_exception}\n" \
 								  f"      exception: {e}"
 							result = False
-							print(indata)
 							break
 					else:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -1012,10 +1005,14 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 			testdata = (
 				(tf.name, ["foo"], ["value1"],
 				 {"all": {"hosts": {"foo": {"value2": 42}, "bar": None, "foobar": {"onlyvar": True}}, "vars": {"value3": "another string", "value4": 2077}}}, True, None),
+				(tf.name, ["foo"], ["value1"],
+				 {"all": {"hosts": {"foo": {"value2": 42}, "bar": None, "foobar": {"onlyvar": True}}, "vars": {"value3": "another string", "value4": 2077}}}, True, None),
 				(tf.name, ["nonexisting"], ["onlyvar"],
 				 {}, True, None),
 				(tf.name, ["foobar"], ["onlyvar"],
 				 {}, True, None),
+				(None, ["foobar"], ["onlyvar"],
+				 {}, False, ProgrammingError),
 			)
 			for indata in testdata:
 				path, groups, values, expected_content, expected_result, expected_exception = indata
@@ -1046,7 +1043,91 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
 							  f" should include: {expected_content}"
 						result = False
-						print(indata)
+						break
+				except Exception as e:
+					if expected_exception is not None:
+						if isinstance(e, expected_exception):
+							pass
+						else:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								  f"           path: {path} (tempfile)\n" \
+								  f"         output: {tmp}\n" \
+								  f"       expected: {expected_exception}\n" \
+								  f"      exception: {e}"
+							result = False
+							break
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"      exception: {type(e)}\n"
+						result = False
+						break
+	os.unlink(tf.name)
+	return message, result
+
+def test_ansible_add_hosts(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_add_hosts
+	fun_str = "ansible_helper.ansible_add_hosts"
+
+	if result:
+		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
+			# secure_write_yaml() will open the file
+			tf.close()
+			# Create an artificial inventory that meets all the requirements we have for these tests
+			d = {
+				"all": {
+					"hosts": {
+					},
+				},
+				"group1": {
+				},
+			}
+
+			# Indata format:
+			# (path, hosts, group, skip_all, expected_content, expected_result, expected_exception)
+			testdata = (
+				(tf.name, ["host1"], "group1", False,
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, ["host1", "host1"], "group2", False,
+				 {"all": {"hosts": {"host1": {}}}, "group1": {}, "group2": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, ["host1", "host1"], "", False,
+				 {"all": {"hosts": {"host1": {}}}, "group1": {}}, True, None),
+				(f"{td}/newinventory.yaml", ["host1"], "group1", False,
+				 {"all": {"hosts": {"host1": {}}, "vars": {"ansible_python_interpreter": "/usr/bin/python3"}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+			)
+			for indata in testdata:
+				secure_write_yaml(tf.name, copy.deepcopy(d), temporary = True)
+				path, hosts, group, skip_all, expected_content, expected_result, expected_exception = indata
+				try:
+					if (tmp := fun(inventory = path, hosts = hosts, group = group, skip_all = skip_all, temporary = True)) != expected_result:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"         output: {tmp}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+					# We expect not to write anything, we didn't, so we continue
+					if not expected_result or hosts is None or not hosts:
+						continue
+					output_d = secure_read_yaml(path, temporary = True)
+					found = True
+					for key, value in expected_content.items():
+						if key not in output_d:
+							found = False
+							break
+						if output_d[key] != value:
+							found = False
+					if expected_content in output_d.items():
+						found = True
+					if not found:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   "      inventory:\n" \
+							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
+							  f" should include: {expected_content}"
+						result = False
 						break
 				except Exception as e:
 					raise
@@ -1060,7 +1141,6 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 								  f"       expected: {expected_exception}\n" \
 								  f"      exception: {e}"
 							result = False
-							print(indata)
 							break
 					else:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -1130,6 +1210,10 @@ tests: Dict = {
 	},
 	("ansible_unset_hostvars()",): {
 		"callable": test_ansible_unset_hostvars,
+		"result": None,
+	},
+	("ansible_add_hosts()",): {
+		"callable": test_ansible_add_hosts,
 		"result": None,
 	},
 }

@@ -965,6 +965,57 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 
 	changed = False
 
+	if not (isinstance(inventory, str) and inventory and
+		isinstance(hosts, list) and
+		isinstance(group, str) and
+		isinstance(skip_all, bool) and
+		isinstance(temporary, bool)):
+		msg = [
+			[("ansible_add_hosts()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("hosts = ", "default"),
+			 (f"“{hosts}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(hosts)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{list}", "argument"),
+			 (")", "default")],
+			[("group = ", "default"),
+			 (f"{group}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(group)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{str}", "argument"),
+			 (")", "default")],
+			[("skip_all = ", "default"),
+			 (f"{skip_all}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(skip_all)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
+
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
+
 	if not hosts:
 		return True
 
