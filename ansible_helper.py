@@ -633,11 +633,9 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 
 	changed = False
 
-	if not (isinstance(inventory, str) and
-	        isinstance(groups, list) and
-		groups and isinstance(groups[0], str) and
-		isinstance(groupvars, list) and
-		groupvars and isinstance(groupvars[0], tuple) and
+	if not (isinstance(inventory, str) and inventory and
+	        isinstance(groups, list) and groups and isinstance(groups[0], str) and
+		isinstance(groupvars, list) and groupvars and isinstance(groupvars[0], tuple) and
 		len(groupvars[0]) == 2 and isinstance(groupvars[0][0], str) and isinstance(groupvars[0][1], (str, int)) and
 		isinstance(temporary, bool)):
 		msg = [
@@ -662,7 +660,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			 (" (type: ", "default"),
 			 (f"{type(groupvars)}", "argument"),
 			 (", expected: ", "default"),
-			 (f"{[(str, str)]}", "argument"),
+			 ("[(str, str|int)]", "argument"),
 			 (")", "default")],
 			[("temporary = ", "default"),
 			 (f"{temporary}", "argument"),
@@ -677,48 +675,6 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 
 		raise ProgrammingError(unformatted_msg,
 				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
-
-	if not (len(inventory) > 0 and len(groupvars) > 0):
-		msg = [
-			[("ansible_set_groupvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(inventory)}", "argument"),
-			 (")", "default")],
-			[("groups = ", "default"),
-			 (f"“{groups}“", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(groups)}", "argument"),
-			 (")", "default")],
-			[("groupvars = ", "default"),
-			 (f"{groupvars}", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(groupvars)}", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = ValueError,
-				       formatted_msg = formatted_msg)
-
-	if not Path(inventory).is_file():
-		msg = [
-			[("ansible_set_groupvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" does not exist.", "argument")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = FileNotFoundError,
 				       formatted_msg = formatted_msg)
 
 	d = secure_read_yaml(inventory, temporary = temporary)
@@ -745,30 +701,66 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 	return True
 
 # Set one or several vars for hosts in the group all
-def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[Tuple[str, str]]) -> bool:
+def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[Tuple[str, Union[str, int]]], temporary: bool = False) -> bool:
 	"""
 	Set one or several vars for the specified hosts
 
 		Parameters:
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The hosts to set variables for
-			hostvars (list[(str, str)]): The values to set
+			hostvars (list[(str, str|int)]): The values to set
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
 
 	changed = False
 
-	if hosts is None or not hosts:
-		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
+	if not (isinstance(inventory, str) and inventory and
+		isinstance(hosts, list) and hosts and isinstance(hosts[0], str) and
+		isinstance(hostvars, list) and hostvars and isinstance(hostvars[0], tuple) and
+		len(hostvars[0]) == 2 and isinstance(hostvars[0][0], str) and isinstance(hostvars[0][1], (str, int)) and
+		isinstance(temporary, bool)):
+		msg = [
+			[("ansible_set_hostvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("hosts = ", "default"),
+			 (f"“{hosts}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(hosts)}", "argument"),
+			 (", expected: ", "default"),
+			 ("{list}", "argument"),
+			 (")", "default")],
+			[("hostvars = ", "default"),
+			 (f"{hostvars}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(hostvars)}", "argument"),
+			 (", expected: ", "default"),
+			 ("[(str, str|int)]", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
 
-	if hostvars is None or not hostvars:
-		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
 
-	if not Path(inventory).is_file():
-		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -784,12 +776,12 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 			changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
 # Unset one or several vars in the specified groups
-def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: List[str]) -> bool:
+def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: List[str], temporary: bool = False) -> bool:
 	"""
 	Unset one or several vars for the specified groups
 
@@ -797,22 +789,57 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to unset variables for
 			groupvars (list[(str]): The values to unset
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
 
 	changed = False
 
-	if groups is None or not groups:
-		raise ValueError("ansible_set_vars: groups is empty or groups; this is a programming error")
+	if not (isinstance(inventory, str) and inventory and
+	        isinstance(groups, list) and groups and isinstance(groups[0], str) and
+		isinstance(groupvars, list) and groupvars and isinstance(groupvars[0], str) and groupvars[0] and
+		isinstance(temporary, bool)):
+		msg = [
+			[("ansible_set_groupvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("groups = ", "default"),
+			 (f"“{groups}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(groups)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{list}", "argument"),
+			 (")", "default")],
+			[("groupvars = ", "default"),
+			 (f"{groupvars}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(groupvars)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{[str]}", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
 
-	if groupvars is None or not groupvars:
-		raise ValueError("ansible_set_vars: groupvars is empty or None; this is a programming error")
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
 
-	if not Path(inventory).is_file():
-		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -836,12 +863,12 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 			d[group].pop("vars", None)
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
 # Unset one or several vars for the specified host in the group all
-def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[str]) -> bool:
+def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[str], temporary: bool = False) -> bool:
 	"""
 	Unset one or several vars for the specified hosts
 
@@ -849,22 +876,57 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The hosts to unset variables for
 			hostvars (list[(str]): The values to unset
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
 
 	changed = False
 
-	if hosts is None or not hosts:
-		raise ValueError("ansible_set_vars: hosts is empty or None; this is a programming error")
+	if not (isinstance(inventory, str) and inventory and
+		isinstance(hosts, list) and hosts and isinstance(hosts[0], str) and
+		isinstance(hostvars, list) and hostvars and isinstance(hostvars[0], str) and hostvars[0] and
+		isinstance(temporary, bool)):
+		msg = [
+			[("ansible_set_hostvars()", "emphasis"),
+			 (" called with invalid argument(s):", "error")],
+			[("inventory = ", "default"),
+			 (f"“{inventory}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(inventory)}", "argument"),
+			 (", expected: ", "default"),
+			 ("FilePath", "argument"),
+			 (")", "default")],
+			[("hosts = ", "default"),
+			 (f"“{hosts}“", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(hosts)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{list}", "argument"),
+			 (")", "default")],
+			[("hostvars = ", "default"),
+			 (f"{hostvars}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(hostvars)}", "argument"),
+			 (", expected: ", "default"),
+			 (f"{[str]}", "argument"),
+			 (")", "default")],
+			[("temporary = ", "default"),
+			 (f"{temporary}", "argument"),
+			 (" (type: ", "default"),
+			 (f"{type(temporary)}", "argument"),
+			 (", expected: ", "default"),
+			 ("bool", "argument"),
+			 (")", "default")],
+		]
 
-	if hostvars is None or not hostvars:
-		raise ValueError("ansible_set_vars: hostvars is empty or None; this is a programming error")
+		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
 
-	if not Path(inventory).is_file():
-		raise FileNotFoundError("ansible_set_vars: the inventory does not exist; this is a programming error")
+		raise ProgrammingError(unformatted_msg,
+				       subexception = TypeError,
+				       formatted_msg = formatted_msg)
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -883,11 +945,11 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 			d["all"]["hosts"][host] = None
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
-def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", skip_all: bool = False) -> bool:
+def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", skip_all: bool = False, temporary: bool = False) -> bool:
 	"""
 	Add hosts to the ansible inventory; if the inventory does not exist, create it
 
@@ -896,6 +958,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 			hosts (list[str]): The hosts to add to the inventory
 			group (str): The group to add the hosts to
 			skip_all (bool): If True we do not create a new inventory if it does not exist
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -914,9 +977,9 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 			changed = True
 		else:
 			__ansible_create_inventory(inventory, overwrite = False)
-			d = secure_read_yaml(inventory)
+			d = secure_read_yaml(inventory, temporary = temporary)
 	else:
-		d = secure_read_yaml(inventory)
+		d = secure_read_yaml(inventory, temporary = temporary)
 
 	for host in hosts:
 		# Kubernetes doesn't like uppercase hostnames
@@ -956,12 +1019,12 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 				changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
 # Remove hosts from ansible groups
-def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[str] = None) -> bool:
+def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[str] = None, temporary: bool = False) -> bool:
 	"""
 	Remove hosts from the inventory
 
@@ -969,6 +1032,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 			inventory (FilePath): The inventory to use
 			hosts (list[str]): The hosts to remove
 			group (str): The group to remove the hosts from
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -986,7 +1050,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 	if not Path(inventory).is_file():
 		return False
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for host in hosts:
 		if group in d and d[group].get("hosts") is not None:
@@ -995,11 +1059,11 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 				changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
-def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = False) -> bool:
+def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = False, temporary: bool = False) -> bool:
 	"""
 	Remove groups from the inventory
 
@@ -1007,6 +1071,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 			inventory (FilePath): The inventory to use
 			groups (list[str]): The groups to remove
 			force (bool): Force allows for removal of non-empty groups
+			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 	"""
@@ -1020,7 +1085,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 	if not Path(inventory).is_file():
 		return False
 
-	d = secure_read_yaml(inventory)
+	d = secure_read_yaml(inventory, temporary = temporary)
 
 	for group in groups:
 		if d.get(group) is None:
@@ -1033,7 +1098,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True)
+		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
 
 	return True
 
@@ -1296,7 +1361,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 	}
 
 	metadata_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml")
-	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False)
+	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False, temporary = temporary)
 
 	i = 0
 
@@ -1380,7 +1445,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			d["stdout_lines"] = ["<no output>"]
 
 		logentry_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}")
-		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
+		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False, temporary = temporary)
 
 # pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: List[str], stderr_lines: List[str], retval: int,
