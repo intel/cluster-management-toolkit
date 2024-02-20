@@ -1196,7 +1196,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 	}
 
 	metadata_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml")
-	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False, temporary = temporary)
+	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False)
 
 	i = 0
 
@@ -1280,7 +1280,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			d["stdout_lines"] = ["<no output>"]
 
 		logentry_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}")
-		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False, temporary = temporary)
+		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
 
 # pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: List[str], stderr_lines: List[str], retval: int,

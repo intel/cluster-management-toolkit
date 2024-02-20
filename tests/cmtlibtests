@@ -1165,6 +1165,9 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
 			([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
 			# Invalid type for values
 			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+			# Empty expression
+			([{}], None, ValueError),
+			([], "", None),
 			(None, "", None),
 			# Incorrect type
 			("a", None, TypeError),

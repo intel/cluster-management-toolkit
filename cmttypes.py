@@ -243,7 +243,7 @@ class ArgumentValidationError(Exception):
 		else:
 			message = f"({self.subexception}): "
 
-		if len(self.message) == 0:
+		if not self.message:
 			message += "No further details were provided"
 		else:
 			message += f"{self.message}"
@@ -490,7 +490,7 @@ class FilePathAuditError(Exception):
 			"traceback": self.traceback,
 		}
 
-def validate_arguments(kwargs_properties: List[Dict[str, Any]], kwargs: Any) -> None:
+def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 	"""
 	Validates that the kwargs against the requirements in kwargs_properties
 
@@ -616,11 +616,11 @@ def validate_arguments(kwargs_properties: List[Dict[str, Any]], kwargs: Any) -> 
 					continue
 		results[key] = {}
 
-	msg = []
+	msg: List[List[Tuple[str, str]]] = []
 
 	# Check if we got all the arguments we asked for
 	if not msg:
-		missing = []
+		missing: List[str] = []
 		for key in allof:
 			if key not in kwargs:
 				missing += key

@@ -672,13 +672,15 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 					if isinstance(weight, int):
 						weight = f"/{weight}"
 					topology = deep_get(selector, DictPath("topologyKey"), "")
-					# We are combining a few different policies, so the expressions can be in various places; not simultaneously though
-					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchExpressions"), {}))
-					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchFields"), {}))
-					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchExpressions"), {}))
-					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchFields"), {}))
-					selectors += make_set_expression(deep_get(selector, DictPath("matchExpressions"), {}))
-					selectors += make_set_expression(deep_get(selector, DictPath("matchFields"), {}))
+					# We are combining a few different policies,
+					# so the expressions can be in various places; not simultaneously though
+					# hence += should be OK. The best thing would probably be to use deep_get_with_fallback though.
+					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchExpressions"), []))
+					selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchFields"), []))
+					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchExpressions"), []))
+					selectors += make_set_expression(deep_get(selector, DictPath("preference#matchFields"), []))
+					selectors += make_set_expression(deep_get(selector, DictPath("matchExpressions"), []))
+					selectors += make_set_expression(deep_get(selector, DictPath("matchFields"), []))
 					affinities.append((atype, f"{scheduling}{weight}", execution, selectors, topology))
 
 	return affinities

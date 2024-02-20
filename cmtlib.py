@@ -403,7 +403,7 @@ def age_to_seconds(age: str) -> int:
 	if len(age) == 0:
 		return -1
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
-	if tmp.span() != (0, 0):
+	if tmp is not None and tmp.span() != (0, 0):
 		d = 0 if tmp[1] is None else int(tmp[1][:-1])
 		h = 0 if tmp[2] is None else int(tmp[2][:-1])
 		m = 0 if tmp[3] is None else int(tmp[3][:-1])
@@ -641,13 +641,12 @@ def make_set_expression_list(expression_list: List[Dict], key: str = "") -> List
 				requires_values = "0"
 			elif operator == "Gt":
 				new_operator = "> "
-				requires_values = True
 				requires_values = "1"
 			elif operator == "Lt":
 				new_operator = "< "
 				requires_values = "1"
 			else:
-				raise ValueError(f"Unknown operator {operator}")
+				raise ValueError(f"Unknown operator '{operator}'")
 			key = deep_get_with_fallback(expression, [DictPath("key"), DictPath("scopeName")], key)
 			if not isinstance(key, str):
 				raise TypeError("key must be a str")
@@ -671,7 +670,7 @@ def make_set_expression_list(expression_list: List[Dict], key: str = "") -> List
 			expressions.append((str(key), str(new_operator), values))
 	return expressions
 
-def make_set_expression(expression_list: Dict) -> str:
+def make_set_expression(expression_list: List[Dict]) -> str:
 	"""
 	Join set expressions data into one single string
 
