@@ -20,7 +20,7 @@ import yaml
 import cmtlib
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmttypes import deep_get, deep_set, DictPath, FilePath, ProgrammingError, FilePathAuditError
+from cmttypes import deep_get, deep_set, DictPath, FilePath, ArgumentValidationError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import ansible_helper
 
@@ -625,8 +625,8 @@ def test_ansible_set_vars(verbose: bool = False) -> Tuple[str, bool]:
 				(f"{td}/TemporaryFile", "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
 				(tf.name, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
 				(tf.name, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
-				("", "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, None, ProgrammingError),
-				(None, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, ProgrammingError),
+				("", "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, None, ArgumentValidationError),
+				(None, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, ArgumentValidationError),
 			)
 			for indata in testdata:
 				path, group, values, expected_content, expected_result, expected_exception = indata
@@ -697,8 +697,8 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 				 {}, True, None),
 				(f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
 				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}, "bar": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, None, FilePathAuditError),
-				("", ["foo"], [("bar", 1), ("baz", "text")], None, None, ProgrammingError),
-				(None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ProgrammingError),
+				("", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
+				(None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
 			)
 			for indata in testdata:
 				path, groups, values, expected_content, expected_result, expected_exception = indata
@@ -781,7 +781,7 @@ def test_ansible_set_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
 				 {"foo": {"bar": 1, "baz": "text"}}, True, None),
 				(None, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"bar": 1, "baz": "text"}}, True, ProgrammingError),
+				 {"foo": {"bar": 1, "baz": "text"}}, True, ArgumentValidationError),
 				("DoesNotExist", ["foo"], [("bar", 1), ("baz", "text")],
 				 {"foo": {"bar": 1, "baz": "text"}}, True, FilePathAuditError),
 				(tf.name, ["nonexistinghost"], [("bar", 1), ("baz", "text")],
@@ -905,7 +905,7 @@ def test_ansible_unset_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 				(tf.name, ["baz"], ["value5"],
 				 {}, True, None),
 				(None, ["foo"], ["value5"],
-				 None, None, ProgrammingError),
+				 None, None, ArgumentValidationError),
 			)
 			for indata in testdata:
 				path, groups, values, expected_content, expected_result, expected_exception = indata
@@ -1012,7 +1012,7 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
 				(tf.name, ["foobar"], ["onlyvar"],
 				 {}, True, None),
 				(None, ["foobar"], ["onlyvar"],
-				 {}, False, ProgrammingError),
+				 {}, False, ArgumentValidationError),
 			)
 			for indata in testdata:
 				path, groups, values, expected_content, expected_result, expected_exception = indata
@@ -1076,31 +1076,46 @@ def test_ansible_add_hosts(verbose: bool = False) -> Tuple[str, bool]:
 		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
 			# secure_write_yaml() will open the file
 			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
+			# Create inventories that meets all the requirements we have for these tests
+			d1 = {
 				"all": {
 					"hosts": {
+						"existing": {},
 					},
 				},
 				"group1": {
 				},
 			}
+			d2 = {
+				"all": {
+					"hosts": None,
+				},
+			}
 
 			# Indata format:
-			# (path, hosts, group, skip_all, expected_content, expected_result, expected_exception)
+			# (path, template, hosts, group, skip_all, expected_content, expected_result, expected_exception)
 			testdata = (
-				(tf.name, ["host1"], "group1", False,
+				(tf.name, d1, ["host1"], "group1", False,
+				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, d2, ["host1"], "group1", False,
 				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, ["host1", "host1"], "group2", False,
-				 {"all": {"hosts": {"host1": {}}}, "group1": {}, "group2": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, ["host1", "host1"], "", False,
-				 {"all": {"hosts": {"host1": {}}}, "group1": {}}, True, None),
-				(f"{td}/newinventory.yaml", ["host1"], "group1", False,
+				(tf.name, d1, ["host1", "host1"], "group2", False,
+				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {}, "group2": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, d1, ["host1", "host1"], "", False,
+				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {}}, True, None),
+				(tf.name, d1, ["existing"], "", False,
+				 {"all": {"hosts": {"existing": {}}}, "group1": {}}, True, None),
+				(tf.name, d1, ["existing"], "group1", True,
+				 {"all": {"hosts": {"existing": {}}}, "group1": {"hosts": {"existing": {}}}}, True, None),
+				(f"{td}/newinventory.yaml", None, ["host1"], "group1", False,
 				 {"all": {"hosts": {"host1": {}}, "vars": {"ansible_python_interpreter": "/usr/bin/python3"}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(None, d1, ["host1"], "group1", False,
+				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, ArgumentValidationError),
 			)
 			for indata in testdata:
-				secure_write_yaml(tf.name, copy.deepcopy(d), temporary = True)
-				path, hosts, group, skip_all, expected_content, expected_result, expected_exception = indata
+				path, template, hosts, group, skip_all, expected_content, expected_result, expected_exception = indata
+				if template:
+					secure_write_yaml(tf.name, copy.deepcopy(template), temporary = True)
 				try:
 					if (tmp := fun(inventory = path, hosts = hosts, group = group, skip_all = skip_all, temporary = True)) != expected_result:
 						message = f"{fun_str}() did not yield expected result:\n" \
@@ -1130,7 +1145,186 @@ def test_ansible_add_hosts(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				except Exception as e:
-					raise
+					if expected_exception is not None:
+						if isinstance(e, expected_exception):
+							pass
+						else:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								  f"           path: {path} (tempfile)\n" \
+								  f"         output: {tmp}\n" \
+								  f"       expected: {expected_exception}\n" \
+								  f"      exception: {e}"
+							result = False
+							break
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"      exception: {type(e)}\n"
+						result = False
+						break
+	os.unlink(tf.name)
+	return message, result
+
+def test_ansible_remove_hosts(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_remove_hosts
+	fun_str = "ansible_helper.ansible_remove_hosts"
+
+	if result:
+		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
+			# secure_write_yaml() will open the file
+			tf.close()
+			# Create an artificial inventory that meets all the requirements we have for these tests
+			d = {
+				"all": {
+					"hosts": {
+						"host1": {},
+					},
+				},
+				"group1": {
+					"hosts": {
+						"host1": {},
+					},
+				},
+			}
+
+			# Indata format:
+			# (path, hosts, group, expected_content, expected_result, expected_exception)
+			testdata = (
+				(tf.name, ["host1"], "group1",
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {}}}, True, None),
+				(tf.name, ["host2"], "group1",
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(None, ["host1"], "group1",
+				 {"all": {"hosts": {}}, "group1": {}}, True, ArgumentValidationError),
+			)
+			for indata in testdata:
+				secure_write_yaml(tf.name, copy.deepcopy(d), temporary = True)
+				path, hosts, group, expected_content, expected_result, expected_exception = indata
+				try:
+					if (tmp := fun(inventory = path, hosts = hosts, group = group, temporary = True)) != expected_result:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"         output: {tmp}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+					# We expect not to write anything, we didn't, so we continue
+					if not expected_result or hosts is None or not hosts:
+						continue
+					output_d = secure_read_yaml(path, temporary = True)
+					found = True
+					for key, value in expected_content.items():
+						if key not in output_d:
+							found = False
+							break
+						if output_d[key] != value:
+							found = False
+					if expected_content in output_d.items():
+						found = True
+					if not found:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   "      inventory:\n" \
+							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
+							  f" should include:\n" \
+							  f"{yaml_dump(expected_content, base_indent = 17)}"
+						result = False
+						break
+				except Exception as e:
+					if expected_exception is not None:
+						if isinstance(e, expected_exception):
+							pass
+						else:
+							message = f"{fun_str}() did not yield expected result:\n" \
+								  f"           path: {path} (tempfile)\n" \
+								  f"         output: {tmp}\n" \
+								  f"       expected: {expected_exception}\n" \
+								  f"      exception: {e}"
+							result = False
+							break
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"      exception: {type(e)}\n"
+						result = False
+						break
+	os.unlink(tf.name)
+	return message, result
+
+def test_ansible_remove_groups(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_remove_groups
+	fun_str = "ansible_helper.ansible_remove_groups"
+
+	if result:
+		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
+			# secure_write_yaml() will open the file
+			tf.close()
+			# Create an artificial inventory that meets all the requirements we have for these tests
+			d = {
+				"all": {
+					"hosts": {
+						"host1": {},
+					},
+				},
+				"group1": {
+					"hosts": {
+						"host1": {},
+					},
+				},
+				"group2": {
+				},
+			}
+
+			# Indata format:
+			# (path, groups, force, expected_content, expected_result, expected_exception)
+			testdata = (
+				(tf.name, ["group1"], False,
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+				(tf.name, ["group2"], False,
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, ["group1"], True,
+				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+				(None, ["group1"], True,
+				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, ArgumentValidationError),
+			)
+			for indata in testdata:
+				secure_write_yaml(tf.name, copy.deepcopy(d), temporary = True)
+				path, groups, force, expected_content, expected_result, expected_exception = indata
+				try:
+					if (tmp := fun(inventory = path, groups = groups, force = force, temporary = True)) != expected_result:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path} (tempfile)\n" \
+							  f"         output: {tmp}\n" \
+							  f"       expected: {expected_result}"
+						result = False
+						break
+					# We expect not to write anything, we didn't, so we continue
+					if not expected_result or groups is None or not groups:
+						continue
+					output_d = secure_read_yaml(path, temporary = True)
+					found = True
+					for key, value in expected_content.items():
+						if key not in output_d:
+							found = False
+							break
+						if output_d[key] != value:
+							found = False
+					if expected_content in output_d.items():
+						found = True
+					if not found:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							   "      inventory:\n" \
+							  f"{yaml_dump(output_d, base_indent = 17)}\n" \
+							  f" should include:\n" \
+							  f"{yaml_dump(expected_content, base_indent = 17)}"
+						result = False
+						break
+				except Exception as e:
 					if expected_exception is not None:
 						if isinstance(e, expected_exception):
 							pass
@@ -1214,6 +1408,14 @@ tests: Dict = {
 	},
 	("ansible_add_hosts()",): {
 		"callable": test_ansible_add_hosts,
+		"result": None,
+	},
+	("ansible_remove_hosts()",): {
+		"callable": test_ansible_remove_hosts,
+		"result": None,
+	},
+	("ansible_remove_groups()",): {
+		"callable": test_ansible_remove_groups,
 		"result": None,
 	},
 }

@@ -20,6 +20,7 @@ except ModuleNotFoundError:  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
+from ansithemeprint import ANSIThemeString
 import cmtlib
 from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
@@ -27,7 +28,7 @@ from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, ProgrammingError
+from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, validate_arguments
 
 ansible_results: Dict = {}
 
@@ -526,72 +527,16 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: b
 
 	changed = False
 
-	if not (isinstance(inventory, str) and isinstance(group, str) and isinstance(values, dict) and isinstance(temporary, bool)):
-		msg = [
-			[("ansible_set_vars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("group = ", "default"),
-			 (f"“{group}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(group)}", "argument"),
-			 (", expected: ", "default"),
-			 ("str", "argument"),
-			 (")", "default")],
-			[("values = ", "default"),
-			 (f"{values}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(values)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{dict}", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
-
-	if not (len(inventory) > 0 and len(group) > 0 and len(values) > 0):
-		msg = [
-			[("ansible_set_vars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(inventory)}", "argument"),
-			 (")", "default")],
-			[("group = ", "default"),
-			 (f"“{group}“", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(group)}", "argument"),
-			 (")", "default")],
-			[("values = ", "default"),
-			 (f"{values}", "argument"),
-			 (" (len: ", "default"),
-			 (f"{len(values)}", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = ValueError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "group", "values", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"group": {"types": (str, ), "range": (1, None)},
+				"values": {"types": (dict, ), "range": (1, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"group": group,
+					"values": values,
+					"temporary": temporary})
 
 	if not Path(inventory).is_file():
 		__ansible_create_inventory(inventory, overwrite = False, temporary = temporary)
@@ -633,49 +578,16 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 
 	changed = False
 
-	if not (isinstance(inventory, str) and inventory and
-	        isinstance(groups, list) and groups and isinstance(groups[0], str) and
-		isinstance(groupvars, list) and groupvars and isinstance(groupvars[0], tuple) and
-		len(groupvars[0]) == 2 and isinstance(groupvars[0][0], str) and isinstance(groupvars[0][1], (str, int)) and
-		isinstance(temporary, bool)):
-		msg = [
-			[("ansible_set_groupvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("groups = ", "default"),
-			 (f"“{groups}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(groups)}", "argument"),
-			 (", expected: ", "default"),
-			 ("{list}", "argument"),
-			 (")", "default")],
-			[("groupvars = ", "default"),
-			 (f"{groupvars}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(groupvars)}", "argument"),
-			 (", expected: ", "default"),
-			 ("[(str, str|int)]", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "groups", "groupvars", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"groups": {"types": (list, dict), "range": (1, None)},
+				"groupvars": {"types": (list, dict), "range": (1, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"groups": groups,
+					"groupvars": groupvars,
+					"temporary": temporary})
 
 	d = secure_read_yaml(inventory, temporary = temporary)
 
@@ -716,49 +628,16 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 
 	changed = False
 
-	if not (isinstance(inventory, str) and inventory and
-		isinstance(hosts, list) and hosts and isinstance(hosts[0], str) and
-		isinstance(hostvars, list) and hostvars and isinstance(hostvars[0], tuple) and
-		len(hostvars[0]) == 2 and isinstance(hostvars[0][0], str) and isinstance(hostvars[0][1], (str, int)) and
-		isinstance(temporary, bool)):
-		msg = [
-			[("ansible_set_hostvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("hosts = ", "default"),
-			 (f"“{hosts}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(hosts)}", "argument"),
-			 (", expected: ", "default"),
-			 ("{list}", "argument"),
-			 (")", "default")],
-			[("hostvars = ", "default"),
-			 (f"{hostvars}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(hostvars)}", "argument"),
-			 (", expected: ", "default"),
-			 ("[(str, str|int)]", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "hosts", "hostvars", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"hosts": {"types": (list, dict), "range": (1, None)},
+				"hostvars": {"types": (list, dict), "range": (1, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"hosts": hosts,
+					"hostvars": hostvars,
+					"temporary": temporary})
 
 	d = secure_read_yaml(inventory, temporary = temporary)
 
@@ -796,48 +675,16 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 
 	changed = False
 
-	if not (isinstance(inventory, str) and inventory and
-	        isinstance(groups, list) and groups and isinstance(groups[0], str) and
-		isinstance(groupvars, list) and groupvars and isinstance(groupvars[0], str) and groupvars[0] and
-		isinstance(temporary, bool)):
-		msg = [
-			[("ansible_set_groupvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("groups = ", "default"),
-			 (f"“{groups}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(groups)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{list}", "argument"),
-			 (")", "default")],
-			[("groupvars = ", "default"),
-			 (f"{groupvars}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(groupvars)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{[str]}", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "groups", "groupvars", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"groups": {"types": (list, dict), "range": (1, None)},
+				"groupvars": {"types": (list, dict), "range": (1, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"groups": groups,
+					"groupvars": groupvars,
+					"temporary": temporary})
 
 	d = secure_read_yaml(inventory, temporary = temporary)
 
@@ -883,48 +730,16 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 
 	changed = False
 
-	if not (isinstance(inventory, str) and inventory and
-		isinstance(hosts, list) and hosts and isinstance(hosts[0], str) and
-		isinstance(hostvars, list) and hostvars and isinstance(hostvars[0], str) and hostvars[0] and
-		isinstance(temporary, bool)):
-		msg = [
-			[("ansible_set_hostvars()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("hosts = ", "default"),
-			 (f"“{hosts}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(hosts)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{list}", "argument"),
-			 (")", "default")],
-			[("hostvars = ", "default"),
-			 (f"{hostvars}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(hostvars)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{[str]}", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "hosts", "hostvars", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"hosts": {"types": (list, dict), "range": (1, None)},
+				"hostvars": {"types": (list, dict), "range": (1, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"hosts": hosts,
+					"hostvars": hostvars,
+					"temporary": temporary})
 
 	d = secure_read_yaml(inventory, temporary = temporary)
 
@@ -965,56 +780,18 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 
 	changed = False
 
-	if not (isinstance(inventory, str) and inventory and
-		isinstance(hosts, list) and
-		isinstance(group, str) and
-		isinstance(skip_all, bool) and
-		isinstance(temporary, bool)):
-		msg = [
-			[("ansible_add_hosts()", "emphasis"),
-			 (" called with invalid argument(s):", "error")],
-			[("inventory = ", "default"),
-			 (f"“{inventory}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(inventory)}", "argument"),
-			 (", expected: ", "default"),
-			 ("FilePath", "argument"),
-			 (")", "default")],
-			[("hosts = ", "default"),
-			 (f"“{hosts}“", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(hosts)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{list}", "argument"),
-			 (")", "default")],
-			[("group = ", "default"),
-			 (f"{group}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(group)}", "argument"),
-			 (", expected: ", "default"),
-			 (f"{str}", "argument"),
-			 (")", "default")],
-			[("skip_all = ", "default"),
-			 (f"{skip_all}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(skip_all)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-			[("temporary = ", "default"),
-			 (f"{temporary}", "argument"),
-			 (" (type: ", "default"),
-			 (f"{type(temporary)}", "argument"),
-			 (", expected: ", "default"),
-			 ("bool", "argument"),
-			 (")", "default")],
-		]
-
-		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
-
-		raise ProgrammingError(unformatted_msg,
-				       subexception = TypeError,
-				       formatted_msg = formatted_msg)
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "hosts", "group", "skip_all", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"hosts": {"types": (list, tuple, ), "range": (1, None)},
+				"group": {"types": (str, ), "range": (0, None)},
+				"skip_all": {"types": (bool, )},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"hosts": hosts,
+					"group": group,
+					"skip_all": skip_all,
+					"temporary": temporary})
 
 	if not hosts:
 		return True
@@ -1090,16 +867,16 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 
 	changed = False
 
-	# Treat empty or zero-length hosts as a programming error
-	if hosts is None or len(hosts) == 0:
-		raise ValueError("None or zero-length hosts; this is a programming error")
-
-	# Treat empty or zero-length group as a programming error
-	if group is None or len(group) == 0:
-		raise ValueError("None or zero-length group; this is a programming error")
-
-	if not Path(inventory).is_file():
-		return False
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "hosts", "group", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"hosts": {"types": (list, tuple, ), "range": (1, None)},
+				"group": {"types": (str, ), "range": (0, None)},
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"hosts": hosts,
+					"group": group,
+					"temporary": temporary})
 
 	d = secure_read_yaml(inventory, temporary = temporary)
 
@@ -1129,9 +906,16 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 
 	changed = False
 
-	# Treat empty or zero-length groups as a programming error
-	if groups is None or len(groups) == 0:
-		raise ValueError("None or zero-length group; this is a programming error")
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory", "groups", "force", "temporary"),
+				"inventory": {"types": (str, ), "range": (1, None)},
+				"groups": {"types": (list, tuple, ), "range": (1, None)},
+				"force": {"types": (bool, ), },
+				"temporary": {"types": (bool, )}}, kwargs = {
+					"inventory": inventory,
+					"groups": groups,
+					"force": force,
+					"temporary": temporary})
 
 	if not Path(inventory).is_file():
 		return False

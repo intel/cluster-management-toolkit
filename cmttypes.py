@@ -14,10 +14,29 @@ from functools import reduce
 import os
 import sys
 import traceback
-from typing import Any, Dict, List, NewType, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
+
+def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
+	"""
+	Given a structured error message return a plaintext representation
+
+		Parameters:
+			msg ([[(str, str)]]): A structured message for format
+		Returns:
+			(str): The plaintext representation
+	"""
+
+	joined_strings = []
+
+	for line in msg:
+		joined_string = ""
+		for string, _fmt in line:
+			joined_string += string
+		joined_strings.append(joined_string)
+	return "\n".join(joined_strings)
 
 # Keep this first so we can use it in the exceptions
 def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
@@ -130,6 +149,118 @@ class UnknownError(Exception):
 
 		return {
 			"exception": self.exception,
+			"message": self.message,
+			"severity": self.severity,
+			"facility": self.facility,
+			"formatted_msg": self.formatted_msg,
+			"timestamp": self.timestamp,
+			"file": self.file,
+			"function": self.function,
+			"lineno": self.lineno,
+			"ppid": self.ppid,
+			"traceback": self.traceback,
+		}
+
+# pylint: disable-next=too-many-instance-attributes
+class ArgumentValidationError(Exception):
+	"""
+	Exception raised when argument validation fails.
+	Note: severity use Any as type to avoid recursive imports,
+	but it is typically LogLevel.
+
+		Attributes:
+			message (str): Additional information about the error
+			subexception (Exception): Related standard exception
+			severity (any): The severity
+			facility (str): A facility
+			formatted_msg ([[(str,str)]]); A formatted version of the message
+			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+			file (str): The file the error occurred in (optional; normally taken from the frame)
+			function (str): The function the error occurred in (optional; normally taken from the frame)
+			lineno (str): The line the error occurred on (optional; normally taken from the frame)
+			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
+	"""
+
+	traceback: Optional[str] = None
+
+	def __init__(self, **kwargs: Any) -> None:
+		message: Optional[str] = deep_get(kwargs, DictPath("message"))
+		subexception: Optional[Exception] = deep_get(kwargs, DictPath("subexception"))
+		severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
+		facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
+		formatted_msg: Optional[List[List[Tuple[str, str]]]] = deep_get(kwargs, DictPath("formatted_msg"))
+		timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
+		file: Optional[str] = deep_get(kwargs, DictPath("file"))
+		function: Optional[str] = deep_get(kwargs, DictPath("function"))
+		lineno: Optional[int] = deep_get(kwargs, DictPath("lineno"))
+		ppid: Optional[int] = deep_get(kwargs, DictPath("ppid"))
+		try:
+			# This is to get the necessary stack info
+			raise UserWarning
+		except UserWarning:
+			frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+			self.file = str(frame.f_code.co_filename)  # type: ignore
+			self.function = str(frame.f_code.co_name)  # type: ignore
+			self.lineno = int(frame.f_lineno)  # type: ignore
+
+		if message is None and formatted_msg is not None and formatted_msg:
+			message = reformat_msg(formatted_msg)
+
+		self.exception = __class__.__name__  # type: ignore
+		self.subexception = subexception
+		self.message = message
+		self.severity = severity
+		self.facility = facility
+		self.formatted_msg = formatted_msg
+		if timestamp is None:
+			self.timestamp = datetime.now()
+		else:
+			self.timestamp = timestamp
+		if file is not None:
+			self.file = file
+		if function is not None:
+			self.function = function
+		if lineno is not None:
+			self.lineno = lineno
+		if ppid is not None:
+			self.ppid = ppid
+		else:
+			self.ppid = os.getppid()
+		self.traceback = "".join(traceback.format_stack())
+
+		super().__init__(message)
+
+	def __str__(self) -> str:
+		"""
+		Return a string representation of the exception
+
+			Returns:
+				(str): The string representation of the exception
+		"""
+
+		if self.subexception is None:
+			message = ""
+		else:
+			message = f"({self.subexception}): "
+
+		if len(self.message) == 0:
+			message += "No further details were provided"
+		else:
+			message += f"{self.message}"
+
+		return message
+
+	def exception_dict(self) -> Dict:
+		"""
+		Return a dictionary containing structured information about the exception
+
+			Returns:
+				(dict): A dictionary with structured information
+		"""
+
+		return {
+			"exception": self.exception,
+			"subexception": self.subexception,
 			"message": self.message,
 			"severity": self.severity,
 			"facility": self.facility,
@@ -358,6 +489,168 @@ class FilePathAuditError(Exception):
 			"ppid": self.ppid,
 			"traceback": self.traceback,
 		}
+
+def validate_arguments(kwargs_properties: List[Dict[str, Any]], kwargs: Any) -> None:
+	"""
+	Validates that the kwargs against the requirements in kwargs_properties
+
+		Parameters:
+			kwargs_properties ([dict]): The expected properties for kwargs
+			kwargs ([{str, Any}]): The kwargs to validate
+		Raises:
+			ArgumentValidationError (with subexception)
+	"""
+
+	results: Dict = {}
+
+	try:
+		# This is to get the necessary stack info
+		raise UserWarning
+	except UserWarning:
+		frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
+		function = str(frame.f_code.co_name)  # type: ignore
+
+	anyof = deep_get(kwargs_properties, DictPath("__anyof"), {})
+	allof = deep_get(kwargs_properties, DictPath("__allof"), {})
+
+	for key, data in kwargs_properties.items():
+		if key.startswith("__"):
+			continue
+		expected_types = deep_get(data, DictPath("types"))
+		none_acceptable = deep_get(data, DictPath("none"))
+		# -1 (no min/max length); min_len == max_len for exact length
+		min_max = deep_get(data, DictPath("range"))
+		try:
+			kwarg = deep_get(kwargs, DictPath(key))
+		except:
+			sys.exit(f"{kwargs=}\n{key=}\n{data=}")
+
+		if kwarg is None and not none_acceptable:
+			if len(expected_types) == 1:
+				results[key] = {
+					"subexception": TypeError,
+					"msg": [(f"    {key}", "argument"),
+						 ("is ", "default"),
+						 ("None", "emphasis"),
+						 (" expected ", "default"),
+						(f"{expected_types}", "emphasis")],
+					"missing": True,
+				}
+			else:
+				results[key] = {
+					"subexception": TypeError,
+					"msg": [(f"    {key}", "argument"),
+						 ("is ", "default"),
+						 ("None", "emphasis"),
+						 (" expected one of ", "default"),
+						(f"{expected_types}", "emphasis")],
+					"missing": True,
+				}
+			# If kwarg is None there's nothing else we can check
+			continue
+
+		if not isinstance(kwarg, expected_types):
+			if len(expected_types) == 1:
+				results[key] = {
+					"subexception": TypeError,
+					"msg": [(f"    {key}", "argument"),
+						 ("is ", "default"),
+						(f"{type(kwarg)}", "emphasis"),
+						 (" expected ", "default"),
+						(f"{expected_types}", "emphasis")],
+				}
+			else:
+				results[key] = {
+					"subexception": TypeError,
+					"msg": [(f"    {key}", "argument"),
+						 ("is ", "default"),
+						(f"{type(kwarg)}", "emphasis"),
+						 (" expected one of ", "default"),
+						(f"{expected_types}", "emphasis")],
+				}
+			continue
+
+		if min_max is not None:
+			minval, maxval = min_max
+			if minval is None:
+				minval_cmp = -sys.maxsize
+				minval_str = ""
+			else:
+				minval_cmp = minval
+				minval_str = str(minval)
+			if maxval is None:
+				maxval_cmp = sys.maxsize
+				maxval_str = ""
+			else:
+				maxval_cmp = maxval
+				maxval_str = str(maxval)
+
+			if isinstance(kwarg, (int, float)):
+				if not (minval_cmp <= kwarg <= maxval_cmp):
+					results[key] = {
+						"subexception": ValueError,
+						"msg": [(f"    {key}", "argument"),
+							 ("=", "default"),
+							(f"{kwarg}", "emphasis"),
+							 (", valid range is [", "default"),
+							(f"{minval_str}", "numerical"),
+							 (", ", "default"),
+							(f"{maxval_str}", "numerical"),
+							 ("]", "default")],
+					}
+					continue
+			else:
+				if not (minval_cmp <= len(kwarg) <= maxval_cmp):
+					results[key] = {
+						"subexception": ValueError,
+						"msg": [("    len(", "default"),
+							(f"{key}", "argument"),
+							 (")=", "default"),
+							(f"{len(kwarg)}", "emphasis"),
+							 (", valid range is [", "default"),
+							(f"{minval_str}", "numerical"),
+							 (", ", "default"),
+							(f"{maxval_str}", "numerical"),
+							 ("]", "default")],
+					}
+					continue
+		results[key] = {}
+
+	msg = []
+
+	# Check if we got all the arguments we asked for
+	if not msg:
+		missing = []
+		for key in allof:
+			if key not in kwargs:
+				missing += key
+		if missing:
+			msg = [
+				[(f"{function}()", "emphasis"),
+				  (" called with invalid argument(s):", "error")],
+				[ ("    The following arguments are missing but must be present:", "default")],
+			]
+			for key in missing:
+				msg.append([(f"{key}", "argument")])
+
+	if not msg:
+		# Check whether arguments were OK
+		for key, result in results.items():
+			# No complaints
+			if not result:
+				continue
+			submsg = deep_get(result, DictPath("msg"))
+			subexception = deep_get(result, DictPath("subexception"))
+			if not msg:
+				msg = [
+					[(f"{function}()", "emphasis"),
+					  (" called with invalid argument(s):", "error")],
+				]
+			msg.append(submsg)
+
+	if msg:
+		raise ArgumentValidationError(subexception = subexception, formatted_msg = msg)
+	return None
 
 class HostNameStatus(Enum):
 	"""

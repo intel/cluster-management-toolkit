@@ -56,7 +56,8 @@ coverage: setup_tests
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear ;\
 	$$cmd report ;\
-	$$cmd html
+	$$cmd html ;\
+	$$cmd json
 
 # Run this to augment existing coverage data with tests that require manual interaction
 coverage-manual: setup_tests
@@ -69,7 +70,8 @@ coverage-manual: setup_tests
 	printf -- "\n\n  Running: tests/atptests --include-clear --include-input\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
 	$$cmd report ;\
-	$$cmd html
+	$$cmd html ;\
+	$$cmd json
 
 # Run this to augment existing coverage data with tests that require an ansible inventory
 coverage-ansible: setup_tests
@@ -84,7 +86,8 @@ coverage-ansible: setup_tests
 	printf -- "\n\n  Running: tests/ansibletests\n\n" ;\
 	$$cmd run --branch --append tests/ansibletests ;\
 	$$cmd report ;\
-	$$cmd html
+	$$cmd html ;\
+	$$cmd json
 
 # Run this to augment existing coverage data with tests that require a running cluster
 coverage-cluster: setup_tests
@@ -101,7 +104,8 @@ coverage-cluster: setup_tests
 	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
 	$$cmd report ;\
-	$$cmd html
+	$$cmd html ;\
+	$$cmd json
 
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
