@@ -16,7 +16,7 @@ from typing import Callable, Dict, Tuple
 import yaml
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name
-from cmttypes import UnknownError, ProgrammingError, FilePathAuditError
+from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 
 def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
@@ -139,6 +139,7 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
 		"b": {
 			"c": 2,
 		},
+		"e": [],
 	}
 
 	path1 = DictPath("a")
@@ -147,6 +148,8 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
 	expected_result2 = 1
 	path3 = DictPath("c#d")
 	expected_result3 = 4
+	path4 = DictPath("e#f")
+	expected_result4 = 4
 
 	fun = deep_set
 	fun_str = "deep_set"
@@ -175,6 +178,7 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			fun(indata_copy, path3, value = expected_result2)
 			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: ValueError"
+			result = False
 		except ValueError:
 			pass
 	if result:
@@ -183,6 +187,14 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
 		if (tmp := deep_get(indata_copy, path3)) != expected_result3:
 			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
 			result = False
+	if result:
+		indata_copy = copy.deepcopy(indata)
+		try:
+			fun(indata_copy, path4, value = expected_result3, create_path = True)
+			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
+			result = False
+		except ValueError:
+			pass
 
 	return message, result
 
@@ -195,7 +207,7 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
 	indata = {
 		"severity": LogLevel.ERR,
 		"facility": "facility",
-		"formatted_msg": [ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")],
+		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
 		"timestamp": none_timestamp,
 		"file": "thisfile",
 		"function": "thatfunction",
@@ -257,6 +269,81 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
+
+	indata = {
+		"message": "Error: an error message.",
+		"subexception": ValueError,
+		"severity": LogLevel.ERR,
+		"facility": "facility",
+		"formatted_msg": [[("Error", "error"), (": an error message.", "default")]],
+		"timestamp": none_timestamp,
+		"file": "thisfile",
+		"function": "thatfunction",
+		"lineno": "42",
+		"ppid": "1234567",
+	}
+
+	fun = ArgumentValidationError
+	fun_str = "ArgumentValidationError"
+
+	if result:
+		try:
+			raise fun(**indata)
+		except fun as e:
+			exception_dict = e.exception_dict()
+			expected_data = copy.deepcopy(indata)
+			diff = False
+			message = ""
+			for key, value in exception_dict.items():
+				# These are populated by the exception
+				if key in ("message", "exception", "traceback"):
+					continue
+				expected_value = deep_get(expected_data, DictPath(key), "")
+				if value != expected_value:
+					if not diff:
+						message = f"{fun_str} returned incorrect output:\n"
+					message = f"    {value}    {expected_value}"
+					diff = True
+					result = False
+			try:
+				if (tmp := str(e)) != "(<class 'ValueError'>): Error: an error message.":
+					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): Error: An error message.\""
+					result = False
+			except Exception as e:
+				raise
+				message = f"{fun_str}.__str__() raised {e} instead of returning \"(<class 'ValueError'>): Error: an error message.\""
+				result = False
+	if result:
+		try:
+			raise fun(formatted_msg = [[("Error", "error"), (": an error message.", "default")]])
+		except fun:
+			pass
+		except Exception as e:
+			raise
+			message = f"{fun_str} raised {e} instead of {fun_str}"
+			result = False
+	if result:
+		try:
+			raise fun()
+		except fun as e:
+			try:
+				if (tmp := str(e)) != "No further details were provided":
+					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+					result = False
+			except Exception as e:
+				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
+				result = False
+		except Exception as e:
+			message = f"{fun_str} raised {e} instead of {fun_str}"
+			result = False
+
+	return message, result
+
 def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -267,7 +354,7 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
 		"subexception": ValueError,
 		"severity": LogLevel.ERR,
 		"facility": "facility",
-		"formatted_msg": [ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")],
+		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
 		"timestamp": none_timestamp,
 		"file": "thisfile",
 		"function": "thatfunction",
@@ -339,7 +426,7 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
 		"path": FilePath("/etc/passwd"),
 		"severity": LogLevel.ERR,
 		"facility": "facility",
-		"formatted_msg": [ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")],
+		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
 		"timestamp": none_timestamp,
 		"file": "thisfile",
 		"function": "thatfunction",
@@ -433,6 +520,10 @@ tests: Dict = {
 	},
 	("UnknownError", ): {
 		"callable": test_unknownerror,
+		"result": None,
+	},
+	("ArgumentValidationError", ): {
+		"callable": test_argumentvalidationerror,
 		"result": None,
 	},
 	("ProgrammingError", ): {
