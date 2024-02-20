@@ -92,17 +92,27 @@
         dest: "{{ tempdir.path }}/kubic.key"
         mode: "0644"
         force: true
-        use_proxy: "{{ use_proxy }}"
+        use_proxy: "{{ use_proxy | default('no') }}"
       environment:
         https_proxy: "{{ https_proxy | default('') }}"
       when: "(ansible_os_family in ['Debian', 'Suse'])"
+    - name: "Fetching CRI-O OBS repository key"
+      ansible.builtin.get_url:
+        url: "https://download.opensuse.org/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v1.29/deb/Release.key"
+        dest: "/etc/apt/keyrings/cri-o-obs-keyring.asc"
+        mode: "0644"
+        force: true
+        use_proxy: "{{ use_proxy | default('no') }}"
+      environment:
+        https_proxy: "{{ https_proxy | default('') }}"
+      when: "ansible_os_family == 'Debian'"
     - name: "Fetching security:netfilter repository key"
       ansible.builtin.get_url:
         url: "https://download.opensuse.org/repositories/security:/netfilter/openSUSE_Leap_15.4/repodata/repomd.xml.key"
         dest: "{{ tempdir.path }}/security_netfilter.key"
         mode: "0644"
         force: true
-        use_proxy: "{{ use_proxy }}"
+        use_proxy: "{{ use_proxy | default('no') }}"
       environment:
         https_proxy: "{{ https_proxy | default('') }}"
       when: "ansible_os_family == 'Suse'"
@@ -142,7 +152,7 @@
         dest: "/etc/apt/apt.conf.d/01proxy-cri-o"
         src: "templates/etc/apt/apt.conf.d/01proxy-cri-o.j2"
         mode: "0644"
-      when: "(ansible_os_family == 'Debian') and (use_proxy == 'yes')"
+      when: "(ansible_os_family == 'Debian') and (use_proxy | default('no') == 'yes')"
     - name: "Pinning CRI-O repository"
       ansible.builtin.template:
         dest: "/etc/apt/preferences.d/cri-o"
@@ -159,6 +169,15 @@
         zypper --gpg-auto-import-keys refresh
       when: "ansible_os_family == 'Suse'"
       changed_when: true
+    # This is necessary in case the old version of cri-o has been installed before
+    - name: "Remove containers-common"
+      ansible.builtin.apt:
+        pkg:
+        - "containers-common"
+        - "cri-o"
+        state: "absent"
+        force_apt_get: true
+      when: "ansible_os_family == 'Debian'"
     - name: "Installing cri-o"  # noqa package-latest
       ansible.builtin.apt:
         name: "cri-o"

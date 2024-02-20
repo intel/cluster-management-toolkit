@@ -3955,7 +3955,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
 	elif cri == "cri-o":
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
-		crio_version = get_crio_version((int(requested_major), int(requested_minor)))
+		crio_major_version, crio_minor_version = get_crio_version((int(requested_major), int(requested_minor)))
 
 	cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
@@ -3991,7 +3991,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"control_plane_path": control_plane_path,
 		"cordon_nodes_on_join": cordon_on_join,
 		"control_plane_k8s_version": control_plane_version,
-		"crio_version": crio_version,
+		"crio_major_version": crio_major_version,
+		"crio_minor_version": crio_major_version,
 		"cri_socket": cri_socket,
 		"configuration_path": configuration_path,
 		"join_configuration_api_version": join_configuration_api_version,
@@ -4824,25 +4825,24 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> str:
 		Parameters:
 			kubernetes_version ((int, int)): A version tuple (major, minor)
 		Returns:
-			(str): The cri-o version
+			(str, str): The cri-o version (major, minor)
 	"""
 
 	# cri-o is built/distributed using OBS, hence we need to know the major.minor version
 	# Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
 	# and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
-	#
-	# XXX: For now it seems that there are no stable deb packages in the new repository
-	# so let's cap the version at 1.28 for the time being
+	requested_major, requested_minor = kubernetes_version
 
-	crio_version = f"1.{min(kubernetes_version[1], 28)}"
+	tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
+	if requested_major < int(tmp[0]) or requested_major == int(tmp[0]) and requested_minor < int(tmp[1]):
+		crio_major_version = requested_major
+		crio_minor_version = requested_minor
+	else:
+		crio_version = f"{tmp[0]}.{tmp[1]}"
+		crio_major_version = tmp[0]
+		crio_minor_version = tmp[1]
 
-	#tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
-	#if requested_major < tmp[0] or requested_major == tmp[0] and requested_minor < tmp[1]:
-	#	crio_version = f"{requested_major}.{requested_minor}"
-	#else:
-	#	crio_version = f"{tmp[0]}.{tmp[1]}"
-
-	return crio_version
+	return crio_major_version, crio_minor_version
 
 def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -5090,8 +5090,9 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
 	elif cri == "cri-o":
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
-		crio_version = get_crio_version((int(requested_major), int(requested_minor)))
-		setup_control_plane_targets[k8s_distro]["extra_values"]["crio_version"] = crio_version
+		crio_major_version, crio_minor_version = get_crio_version((int(requested_major), int(requested_minor)))
+		setup_control_plane_targets[k8s_distro]["extra_values"]["crio_major_version"] = crio_major_version
+		setup_control_plane_targets[k8s_distro]["extra_values"]["crio_minor_version"] = crio_minor_version
 
 	if cni is None or cni == "<none>":
 		if k8s_distro == "rke2":
@@ -7129,6 +7130,9 @@ def main() -> None:
 
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, theme = DEFAULT_THEME_FILE)
+	major_minor_patchrev = get_latest_kubernetes_upstream_version()
+	requested_major, requested_minor, _rest = major_minor_patchrev.split(".", maxsplit = 3)
+	crio_major_version, crio_minor_version = get_crio_version((int(requested_major), int(requested_minor)))
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
