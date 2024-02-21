@@ -520,10 +520,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 		none_acceptable = deep_get(data, DictPath("none"))
 		# -1 (no min/max length); min_len == max_len for exact length
 		min_max = deep_get(data, DictPath("range"))
-		try:
-			kwarg = deep_get(kwargs, DictPath(key))
-		except:
-			sys.exit(f"{kwargs=}\n{key=}\n{data=}")
+		kwarg = deep_get(kwargs, DictPath(key))
 
 		if kwarg is None and not none_acceptable:
 			if len(expected_types) == 1:
@@ -554,18 +551,18 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						 ("is ", "default"),
+						( "is ", "default"),
 						(f"{type(kwarg)}", "emphasis"),
-						 (" expected ", "default"),
+						( " expected ", "default"),
 						(f"{expected_types}", "emphasis")],
 				}
 			else:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						 ("is ", "default"),
+						( "is ", "default"),
 						(f"{type(kwarg)}", "emphasis"),
-						 (" expected one of ", "default"),
+						( " expected one of ", "default"),
 						(f"{expected_types}", "emphasis")],
 				}
 			continue
@@ -590,13 +587,13 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 					results[key] = {
 						"subexception": ValueError,
 						"msg": [(f"    {key}", "argument"),
-							 ("=", "default"),
+							( "=", "default"),
 							(f"{kwarg}", "emphasis"),
-							 (", valid range is [", "default"),
+							( ", valid range is [", "default"),
 							(f"{minval_str}", "numerical"),
-							 (", ", "default"),
+							( ", ", "default"),
 							(f"{maxval_str}", "numerical"),
-							 ("]", "default")],
+							( "]", "default")],
 					}
 					continue
 			else:

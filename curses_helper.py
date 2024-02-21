@@ -676,7 +676,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 				 (f"{themefile}", "path"),
 				 ("; file not found", "error")],
 			]
-		elif defaulthemefile:
+		elif defaultthemefile:
 			msg = [
 				[("curses_helper.read_theme()", "emphasis"),
 				 (" failed to load ", "error"),
@@ -1243,7 +1243,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 			 (" called with progress > 100:", "error")],
 			[("progress = ", "default"),
 			 (f"{progress}", "argument")],
-			[("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.")],
+			[("That's impossible. No one can give more than 100%. By definition, that is the most anyone can give.", "default")],
 		]
 
 		unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
@@ -2259,7 +2259,7 @@ class UIProps:
 		self.remember_uid = True
 
 		# The timestamp
-		self.last_timestamp_update = None
+		self.last_timestamp_update: Optional[str] = None
 
 		self.idle_timeout = 5
 

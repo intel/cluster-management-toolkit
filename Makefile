@@ -55,7 +55,7 @@ coverage: setup_tests
 	done ;\
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear ;\
-	$$cmd report ;\
+	$$cmd report --sort cover --precision 1;\
 	$$cmd html ;\
 	$$cmd json
 
@@ -69,7 +69,7 @@ coverage-manual: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/atptests --include-clear --include-input\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --include-input ;\
-	$$cmd report ;\
+	$$cmd report --sort cover --precision 1;\
 	$$cmd html ;\
 	$$cmd json
 
@@ -85,7 +85,7 @@ coverage-ansible: setup_tests
 	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
 	printf -- "\n\n  Running: tests/ansibletests\n\n" ;\
 	$$cmd run --branch --append tests/ansibletests ;\
-	$$cmd report ;\
+	$$cmd report --sort cover --precision 1;\
 	$$cmd html ;\
 	$$cmd json
 
@@ -103,7 +103,7 @@ coverage-cluster: setup_tests
 	$$cmd run --branch --append tests/khtests --include-cluster ;\
 	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
-	$$cmd report ;\
+	$$cmd report --sort cover --precision 1;\
 	$$cmd html ;\
 	$$cmd json
 

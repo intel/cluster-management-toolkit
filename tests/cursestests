@@ -9,20 +9,15 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # SPDX-License-Identifier: MIT
 
 import copy
-from datetime import datetime, timezone
 import os
-from pathlib import PurePath
-import sys
-import tempfile
 from typing import Dict, Tuple
 import yaml
 
 import cmtlib
 from cmtio import expand_path
-from cmtio_yaml import secure_read_yaml
 from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
-from cmttypes import deep_get, deep_set, DictPath, FilePath, ProgrammingError, FilePathAuditError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
+from cmttypes import deep_get, DictPath, ProgrammingError
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import curses_helper
 from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray
 
@@ -49,7 +44,6 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 				message = f"ThemeAttr() did not yield expected result:\n" \
 					  f"          input: (\"types\", \"generic\")\n" \
 					  f"         output: {repr(themeattr)}\n" \
-					  f"      exception: {type(e)}\n" \
 					  f"       expected: ThemeAttr('types', 'generic')"
 				result = False
 		except Exception as e:
@@ -67,7 +61,6 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 				message = f"ThemeAttr() did not yield expected result:\n" \
 					  f"          input: ('types', 'DOESNOTEXIST')\n" \
 					  f"         output: {repr(themeattr)}\n" \
-					  f"      exception: {type(e)}\n" \
 					  f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
 				result = False
 		except Exception as e:
@@ -429,24 +422,24 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 			([ThemeString("Hello ", ThemeAttr("types", "generic")),
 			  ThemeString("World", ThemeAttr("types", "emphasis")),
 			 ], False,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
 				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
 			([ThemeString("Hello ", ThemeAttr("types", "generic"), False),
 			  ThemeString("World", ThemeAttr("types", "emphasis"), False),
 			 ], True,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), True), " \
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), True), "
 				     "ThemeString('World', ThemeAttr('types', 'emphasis'), True)])", None),
 			([ThemeString("Hello ", ThemeAttr("types", "generic")),
 			  ThemeString("World", ThemeAttr("types", "emphasis")),
 			 ], None,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
 				    "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
 			([ThemeString("Hello ", ThemeAttr("types", "generic")),
 			  ThemeString("World", ThemeAttr("types", "emphasis")),
 			  ThemeRef("separators", "matchbullet"),
 			 ], False,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), " \
-				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False), " \
+			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
+				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False), "
 				     "ThemeRef('separators', 'matchbullet', False)])", None),
 			(None, False, None, ProgrammingError),
 			("a", False, None, ProgrammingError),

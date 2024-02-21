@@ -16,7 +16,6 @@ Usage: ./tests/iotests
 
 from pathlib import Path, PurePath
 import re
-import sys
 from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
@@ -760,7 +759,7 @@ testcases = {
 		],
 		"expect": [SecurityStatus.IS_NOT_DIR],
 	},
-	"Wrong type (Expected directory)": {
+	"Wrong parent type (Expected directory)": {
 		"path": FilePath(f"{TEST_DIR}/05-not_executable.sh/NonExistingFile"),
 		"test": test_check_path,
 		"checks": [
@@ -1657,13 +1656,13 @@ testcases = {
 		"search_paths": ["/bin"],
 		"fallback": "",
 		"test": test_expand_path,
-		"expect": (FilePath(f"/bin/ls"), True),
+		"expect": (FilePath("/bin/ls"), True),
 	},
 	"Bare filename, empty search_paths (expand_path)": {
 		"path": "cmt.yaml",
 		"fallback": "",
 		"test": test_expand_path,
-		"expect": (FilePath(f""), False),
+		"expect": (FilePath(""), False),
 	},
 	"Valid path, matching suffix (expand_path)": {
 		"path": f"{HOMEDIR}/.cmt/cmt",

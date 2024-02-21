@@ -378,28 +378,40 @@ def test_ansible_get_groups_by_host(verbose: bool = False) -> Tuple[str, bool]:
 	fun_str = "ansible_helper.ansible_get_groups_by_host"
 
 	if result:
-		d = ansible_helper.ansible_get_inventory_dict()
+		d = {
+			"all": {
+				"hosts": {
+					"foo": {},
+				},
+			},
+			"group1": {
+				"hosts": {
+					"foo": {},
+				},
+			}
+		}
 		# Indata format:
 		# (inventory, group)
 		testdata = (
-			(d, "localhost", None),
-			(d, "NonExistingHost", None),
-			(d, 1, TypeError),
-			(d, None, TypeError),
-			(None, "localhost", TypeError),
-			(1, "localhost", TypeError),
+			(d, "foo", ["all", "group1"], None),
+			(d, "NonExistingHost", [], None),
+			(d, 1, None, ArgumentValidationError),
+			(d, None, None, ArgumentValidationError),
+			(None, "localhost", None, ArgumentValidationError),
+			(1, "localhost", None, ArgumentValidationError),
 		)
 		for indata in testdata:
-			inventory_dict, host, expected_exception = indata
+			inventory_dict, host, expected_result, expected_exception = indata
 			try:
 				tmp = fun(inventory_dict, host)
-				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+				if tmp != expected_result:
 						message = f"{fun_str}() did not yield expected result:\n" \
 							   " inventory dict:\n" \
 							  f"{yaml_dump(inventory_dict, base_indent = 17)}\n" \
 							  f"          group: {host}\n" \
+							  f"         output: {tmp}\n" \
 							  f"      exception: {type(e)}\n" \
-							  f"  expected type: [str]"
+							  f"       expected: {expected_result}"
 						result = False
 						break
 			except Exception as e:
@@ -1200,6 +1212,7 @@ def test_ansible_remove_hosts(verbose: bool = False) -> Tuple[str, bool]:
 						"host1": {},
 					},
 				},
+				"group2": {},
 			}
 
 			# Indata format:
@@ -1209,6 +1222,8 @@ def test_ansible_remove_hosts(verbose: bool = False) -> Tuple[str, bool]:
 				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {}}}, True, None),
 				(tf.name, ["host2"], "group1",
 				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(tf.name, ["host1"], "group2",
+				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
 				(None, ["host1"], "group1",
 				 {"all": {"hosts": {}}, "group1": {}}, True, ArgumentValidationError),
 			)
@@ -1299,7 +1314,11 @@ def test_ansible_remove_groups(verbose: bool = False) -> Tuple[str, bool]:
 				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
 				(tf.name, ["group2"], False,
 				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(td, ["group1"], True,
+				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, False, None),
 				(tf.name, ["group1"], True,
+				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+				(tf.name, ["group3"], True,
 				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
 				(None, ["group1"], True,
 				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, ArgumentValidationError),
@@ -1355,6 +1374,102 @@ def test_ansible_remove_groups(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 	os.unlink(tf.name)
+	return message, result
+
+def test_ansible_get_logs(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_get_logs
+	fun_str = "ansible_helper.ansible_get_logs"
+
+	# We're not quite sure whether there are any logs or what they contain,
+	# so we just make sure that the return types are acceptable
+	if result:
+		tmp = fun()
+		if not isinstance(tmp, list):
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"           type: {type(tmp)}\n" \
+				  f"       expected: {repr(list)}\n"
+			result = False
+		elif len(tmp) > 0:
+			if len(tmp[0]) != 4:
+				message = f"{fun_str}() did not yield expected result:\n" \
+					  f"       len([0]): {len(tmp[0])}\n" \
+					  f"       expected: 4\n"
+				result = False
+			else:
+				filename, name, path, timestamp = tmp[0]
+				if not (isinstance(filename, str) and isinstance(name, str) and isinstance(path, str) and isinstance(timestamp, datetime)):
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"          types: [({type(filename)}, {type(name)}, {type(path)}, {type(timestamp)})]" \
+						  f"       expected: [({repr(str)}, {repr(str)}, {repr(FilePath)}, {repr(datetime)}]"
+					result = False
+
+	return message, result
+
+def test_ansible_extract_failure(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_extract_failure
+	fun_str = "ansible_helper.ansible_extract_failure"
+
+	if result:
+		# Indata format:
+		# (retval, stderr_lines, skipped, unreachable, expected_result, expected_exception)
+		testdata = (
+			(0, [], False, False, "SUCCESS", None),
+			(0, [], True, False, "SKIPPED", None),
+			(-1, [], False, True, "UNREACHABLE (unknown reason)", None),
+			(-1, ["Failed to connect to the host via ssh: ssh: connect to host host1 port 22: No route to host"], False, True, "NO ROUTE TO HOST", None),
+			(-1, ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host2: Name or service not known"], False, True, "COULD NOT RESOLVE", None),
+			(-1, ["Failed to connect to the host via ssh: foobar@host3: Permission denied (publickey,password)."], False, True, "PERMISSION DENIED", None),
+			(-1, ["Failed to connect to the host via ssh: Some other reason."], False, True, "UNREACHABLE (unknown error)", None),
+			# Not sure what the exact timeout message is; this one is artificial.
+			(-1, ["Failed to connect to the host via ssh: Connection timed out."], False, True, "CONNECTION TIMED OUT", None),
+			(-1, ["The module failed to execute correctly, you probably need to set the interpreter.", "See stdout/stderr for the exact error"], False, False, "MISSING INTERPRETER?", None),
+			(-1, ["Some random error we don't know about."], False, False, "FAILED (unknown error)", None),
+			(-1, [], False, False, "FAILED (unknown reason)", None),
+		)
+		for indata in testdata:
+			retval, stderr_lines, skipped, unreachable, expected_result, expected_exception = indata
+			try:
+				if (tmp := fun(retval, stderr_lines, skipped = skipped, unreachable = unreachable)) != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"         retval: {retval}\n" \
+						  f"        skipped: {skipped}\n" \
+						  f"    unreachable: {unreachable}\n" \
+						   "   stderr_lines:\n" \
+						  f"{yaml_dump(stderr_lines, base_indent = 17)}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"         retval: {path} (tempfile)\n" \
+							  f"        skipped: {path} (tempfile)\n" \
+							  f"    unreachable: {path} (tempfile)\n" \
+							   "   stderr_lines:\n" \
+							  f"{yaml_dump(stderr_lines, base_indent = 17)}\n" \
+							  f"      exception: {e}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"         retval: {path} (tempfile)\n" \
+						  f"        skipped: {path} (tempfile)\n" \
+						  f"    unreachable: {path} (tempfile)\n" \
+						   "   stderr_lines:\n" \
+						  f"{yaml_dump(stderr_lines, base_indent = 17)}\n" \
+						  f"      exception: {e}"
+					result = False
+					break
 	return message, result
 
 tests: Dict = {
@@ -1428,6 +1543,14 @@ tests: Dict = {
 	},
 	("ansible_remove_groups()",): {
 		"callable": test_ansible_remove_groups,
+		"result": None,
+	},
+	("ansible_get_logs()",): {
+		"callable": test_ansible_get_logs,
+		"result": None,
+	},
+	("ansible_extract_failure()",): {
+		"callable": test_ansible_extract_failure,
 		"result": None,
 	},
 }

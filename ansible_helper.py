@@ -20,7 +20,6 @@ except ModuleNotFoundError:  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
-from ansithemeprint import ANSIThemeString
 import cmtlib
 from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
@@ -29,8 +28,6 @@ from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
 from ansithemeprint import ANSIThemeString, ansithemeprint
 from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, validate_arguments
-
-ansible_results: Dict = {}
 
 ansible_configuration: Dict = {
 	"ansible_forks": 10,
@@ -383,17 +380,11 @@ def ansible_get_groups(inventory: FilePath) -> List[str]:
 			groups (list[str]): A list of groups
 	"""
 
-	groups = []
-
 	if not Path(inventory).exists():
 		return []
 
 	d = secure_read_yaml(inventory)
-
-	for group in d:
-		groups.append(group)
-
-	return groups
+	return list(d.keys())
 
 def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 	"""
@@ -403,19 +394,22 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 			inventory_dict (dict): An Ansible inventory
 			host (str): The host to return groups for
 		Returns:
-			groups (list[str]): A list of groups
+			([str]): The list of groups the host belongs to
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
+
+	validate_arguments(kwargs_properties = {
+				"__allof": ("inventory_dict", "host"),
+				"inventory_dict": {"types": (dict,)},
+				"host": {"types": (str,), "range": (1, None)}}, kwargs = {
+					"inventory_dict": inventory_dict,
+					"host": host})
 
 	groups = []
 
-	if not isinstance(inventory_dict, dict):
-		raise TypeError(f"inventory dict is type: {type(inventory_dict)}, expected {dict}")
-
-	if not isinstance(host, str):
-		raise TypeError(f"host is type: {type(host)}, expected str")
-
 	for group in inventory_dict:
-		if inventory_dict[group].get("hosts") and host in inventory_dict[group]["hosts"]:
+		if host in deep_get(inventory_dict, DictPath(f"{group}#hosts")):
 			groups.append(group)
 
 	return groups
@@ -523,16 +517,18 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: b
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "group", "values", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
-				"group": {"types": (str, ), "range": (1, None)},
-				"values": {"types": (dict, ), "range": (1, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"inventory": {"types": (str,), "range": (1, None)},
+				"group": {"types": (str,), "range": (1, None)},
+				"values": {"types": (dict,), "range": (1, None)},
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"group": group,
 					"values": values,
@@ -574,16 +570,18 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "groups", "groupvars", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
+				"inventory": {"types": (str,), "range": (1, None)},
 				"groups": {"types": (list, dict), "range": (1, None)},
 				"groupvars": {"types": (list, dict), "range": (1, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"groups": groups,
 					"groupvars": groupvars,
@@ -624,16 +622,18 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "hosts", "hostvars", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
+				"inventory": {"types": (str,), "range": (1, None)},
 				"hosts": {"types": (list, dict), "range": (1, None)},
 				"hostvars": {"types": (list, dict), "range": (1, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"hosts": hosts,
 					"hostvars": hostvars,
@@ -671,16 +671,18 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "groups", "groupvars", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
+				"inventory": {"types": (str,), "range": (1, None)},
 				"groups": {"types": (list, dict), "range": (1, None)},
 				"groupvars": {"types": (list, dict), "range": (1, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"groups": groups,
 					"groupvars": groupvars,
@@ -726,16 +728,18 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "hosts", "hostvars", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
+				"inventory": {"types": (str,), "range": (1, None)},
 				"hosts": {"types": (list, dict), "range": (1, None)},
 				"hostvars": {"types": (list, dict), "range": (1, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"hosts": hosts,
 					"hostvars": hostvars,
@@ -776,17 +780,19 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "hosts", "group", "skip_all", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
-				"hosts": {"types": (list, tuple, ), "range": (1, None)},
-				"group": {"types": (str, ), "range": (0, None)},
-				"skip_all": {"types": (bool, )},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"inventory": {"types": (str,), "range": (1, None)},
+				"hosts": {"types": (list, tuple,), "range": (1, None)},
+				"group": {"types": (str,), "range": (0, None)},
+				"skip_all": {"types": (bool,)},
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"hosts": hosts,
 					"group": group,
@@ -860,16 +866,18 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "hosts", "group", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
-				"hosts": {"types": (list, tuple, ), "range": (1, None)},
-				"group": {"types": (str, ), "range": (0, None)},
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"inventory": {"types": (str,), "range": (1, None)},
+				"hosts": {"types": (list, tuple,), "range": (1, None)},
+				"group": {"types": (str,), "range": (0, None)},
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"hosts": hosts,
 					"group": group,
@@ -899,16 +907,18 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = 
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
+		Raises:
+			ArgumentValidationError: At least one of the arguments failed validation
 	"""
 
 	changed = False
 
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory", "groups", "force", "temporary"),
-				"inventory": {"types": (str, ), "range": (1, None)},
-				"groups": {"types": (list, tuple, ), "range": (1, None)},
-				"force": {"types": (bool, ), },
-				"temporary": {"types": (bool, )}}, kwargs = {
+				"inventory": {"types": (str,), "range": (1, None)},
+				"groups": {"types": (list, tuple,), "range": (1, None)},
+				"force": {"types": (bool,)},
+				"temporary": {"types": (bool,)}}, kwargs = {
 					"inventory": inventory,
 					"groups": groups,
 					"force": force,
@@ -973,29 +983,37 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bo
 	status = ""
 
 	if unreachable:
-		for line in error_msg_lines:
-			if "Name or service not known" in line:
-				status = "COULD NOT RESOLVE"
-				break
-			if "Permission denied" in line:
-				status = "PERMISSION DENIED"
-				break
-			if "The module failed to execute correctly" in line:
-				status = "MISSING INTERPRETER?"
-				break
-			if "No route to host" in line:
-				status = "NO ROUTE TO HOST"
-				break
-			if "Connection timed out" in line:
-				status = "CONNECTION TIMED OUT"
-				break
-		if len(status) == 0:
+		if error_msg_lines:
+			for line in error_msg_lines:
+				if "Name or service not known" in line:
+					status = "COULD NOT RESOLVE"
+					break
+				if "Permission denied" in line:
+					status = "PERMISSION DENIED"
+					break
+				if "No route to host" in line:
+					status = "NO ROUTE TO HOST"
+					break
+				if "Connection timed out" in line:
+					status = "CONNECTION TIMED OUT"
+					break
+			if not status:
+				status = "UNREACHABLE (unknown error)"
+		else:
 			status = "UNREACHABLE (unknown reason)"
 	elif skipped:
 		status = "SKIPPED"
 	else:
 		if retval != 0:
-			status = "FAILED"
+			if error_msg_lines:
+				for line in error_msg_lines:
+					if "The module failed to execute correctly" in line:
+						status = "MISSING INTERPRETER?"
+						break
+				if not status:
+					status = "FAILED (unknown error)"
+			if not status:
+				status = "FAILED (unknown reason)"
 		else:
 			status = "SUCCESS"
 
@@ -1034,11 +1052,11 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		return -1, d
 
 	host = deep_get(event, DictPath("event_data#host"), "")
-	if len(host) == 0:
+	if not host:
 		return 0, {}
 
 	task = deep_get(event, DictPath("event_data#task"), "")
-	if len(task) == 0:
+	if not task:
 		return 0, {}
 
 	ansible_facts = deep_get(event, DictPath("event_data#res#ansible_facts"), {})
@@ -1069,7 +1087,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 
 	msg = deep_get(event, DictPath("event_data#res#msg"), "")
 	msg_lines = []
-	if len(msg) > 0:
+	if msg:
 		msg_lines = msg.split("\n")
 
 	start_date_timestamp = deep_get(event, DictPath("event_data#start"))
@@ -1080,9 +1098,9 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), [])
 	stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), [])
 
-	if len(stdout_lines) == 0 and len(stdout) > 0:
+	if not stdout_lines and stdout:
 		stdout_lines = stdout.split("\n")
-	if len(stderr_lines) == 0 and len(stderr) > 0:
+	if not stderr_lines and stderr:
 		stderr_lines = stderr.split("\n")
 
 	d = {
@@ -1103,16 +1121,16 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	if not unreachable and __retval == 0:
 		d["status"] = "SUCCESS"
 
-	if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
-		if len(stdout_lines) > 0:
+	if msg_lines or stdout_lines or stderr_lines:
+		if stdout_lines:
 			d["stdout_lines"] = stdout_lines
-		if len(stderr_lines) > 0:
+		if stderr_lines:
 			d["stderr_lines"] = stderr_lines
 		# We do not want msg unless stdout_lines and stderr_lines are empty
 		# XXX: Or can it be used to get a sequential log when there's both
 		# stdout and stderr?
-		if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
-			if __retval != 0:
+		if not stdout_lines and not stderr_lines and msg_lines:
+			if __retval:
 				d["stderr_lines"] = msg_lines
 			else:
 				d["msg_lines"] = msg_lines
@@ -1120,32 +1138,11 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		d["stdout_lines"] = ["<no output>"]
 
 	error_msg_lines = stderr_lines
-	if len(error_msg_lines) == 0:
+	if not error_msg_lines:
 		error_msg_lines = msg_lines
 	d["status"] = ansible_extract_failure(__retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
 
 	return __retval, d
-
-def ansible_results_add(event: Dict) -> int:
-	"""
-	Add the result of an Ansible play to the ansible results
-
-		Parameters:
-			event (dict): The output from the run
-		Returns:
-			(int): 0 on success, -1 if host is unreachable, retval on other failure
-	"""
-	global ansible_results  # pylint: disable=global-variable-not-assigned
-
-	host = deep_get(event, DictPath("event_data#host"), "")
-	__retval, d = ansible_results_extract(event)
-
-	if len(d) > 0:
-		if host not in ansible_results:
-			ansible_results[host] = []
-		ansible_results[host].append(d)
-
-	return __retval
 
 def ansible_delete_log(log: str) -> None:
 	"""
@@ -1199,11 +1196,11 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 
 	for event in events:
 		host = deep_get(event, DictPath("event_data#host"), "")
-		if len(host) == 0:
+		if not host:
 			continue
 
 		task = deep_get(event, DictPath("event_data#task"), "")
-		if len(task) == 0:
+		if not task:
 			continue
 
 		skipped = deep_get(event, DictPath("event"), "") == "runner_on_skipped"
@@ -1225,7 +1222,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 		filename = f"{i:02d}-{host}_{taskname}.yaml".replace(" ", "_").replace("/", "_")
 		msg = deep_get(event, DictPath("event_data#res#msg"), "")
 		msg_lines = []
-		if len(msg) > 0:
+		if msg:
 			msg_lines = msg.split("\n")
 
 		start_date_timestamp = deep_get(event, DictPath("event_data#start"))
@@ -1236,13 +1233,13 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 		stdout_lines = deep_get(event, DictPath("event_data#res#stdout_lines"), "")
 		stderr_lines = deep_get(event, DictPath("event_data#res#stderr_lines"), "")
 
-		if len(stdout_lines) == 0 and len(stdout) > 0:
+		if not stdout_lines and stdout:
 			stdout_lines = stdout.split("\n")
-		if len(stderr_lines) == 0 and len(stderr) > 0:
+		if not stderr_lines and stderr:
 			stderr_lines = stderr.split("\n")
 
 		error_msg_lines = stderr_lines
-		if len(error_msg_lines) == 0:
+		if not error_msg_lines:
 			error_msg_lines = msg_lines
 		status = ansible_extract_failure(retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
 
@@ -1260,16 +1257,16 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			"status": status,
 		}
 
-		if len(msg_lines) > 0 or len(stdout_lines) > 0 or len(stderr_lines) > 0:
-			if len(stdout_lines) > 0:
+		if msg_lines or stdout_lines or stderr_lines:
+			if stdout_lines:
 				d["stdout_lines"] = stdout_lines
-			if len(stderr_lines) > 0:
+			if stderr_lines:
 				d["stderr_lines"] = stderr_lines
 			# We do not want msg unless stdout_lines and stderr_lines are empty
 			# XXX: Or can it be used to get a sequential log when there's both
 			# stdout and stderr?
-			if len(stdout_lines) == 0 and len(stderr_lines) == 0 and len(msg_lines) > 0:
-				if retval != 0:
+			if not stdout_lines and not stderr_lines and msg_lines:
+				if retval:
 					d["stderr_lines"] = msg_lines
 				else:
 					d["msg_lines"] = msg_lines
@@ -1305,7 +1302,7 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 					ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
 			ansithemeprint([ANSIThemeString("", "default")])
 		return
-	elif retval != 0:
+	elif retval:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
 				ANSIThemeString(f"{task}", "error"),
 				ANSIThemeString(" (retval: ", "default"),
@@ -1315,36 +1312,36 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 		ansithemeprint([ANSIThemeString("• ", "separator"),
 				ANSIThemeString(f"{task}", "success")])
 
-	if len(msg_lines) > 0:
+	if msg_lines:
 		ansithemeprint([ANSIThemeString("msg:", "header")])
 		for line in msg_lines:
 			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
 		ansithemeprint([ANSIThemeString("", "default")])
 
-	if len(stdout_lines) > 0 or len(msg_lines) == 0 and len(stderr_lines) == 0:
+	if stdout_lines or not msg_lines and not stderr_lines:
 		ansithemeprint([ANSIThemeString("stdout:", "header")])
 		for line in stdout_lines:
 			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
-		if len(stdout_lines) == 0:
+		if not stdout_lines:
 			ansithemeprint([ANSIThemeString("<no output>", "none")])
 		ansithemeprint([ANSIThemeString("", "default")])
 
 	# If retval is not 0 we do not really care if stderr is empty
-	if len(stderr_lines) > 0 or retval != 0:
+	if stderr_lines or retval:
 		ansithemeprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
 			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr = True)
-		if len(stderr_lines) == 0:
+		if not stderr_lines:
 			ansithemeprint([ANSIThemeString("<no output>", "none")])
 		ansithemeprint([ANSIThemeString("", "default")])
 
-def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bool = False) -> None:
+def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool = False) -> None:
 	"""
 	Pretty-print the result of an Ansible play
 
 		Parameters:
 			retval (int): The return value from the play
-			__ansible_results (opaque): The data from a playbook run
+			ansible_results (opaque): The data from a playbook run
 			verbose (bool): Should skipped tasks be outputted?
 	"""
 
@@ -1356,14 +1353,14 @@ def ansible_print_play_results(retval: int, __ansible_results: Dict, verbose: bo
 	count_success = 0
 	count_fail = 0
 
-	if retval != 0 and len(__ansible_results) == 0:
+	if retval != 0 and not ansible_results:
 		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
 				ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
-		for host in __ansible_results:
+		for host in ansible_results:
 			count_total += 1
 
-			plays = __ansible_results[host]
+			plays = ansible_results[host]
 			header_output = False
 
 			for play in plays:
@@ -1461,11 +1458,8 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 			(retval(int), ansible_results(dict)): The return value and results from the run
 	"""
 
-	global ansible_results  # pylint: disable=global-statement
-
 	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
-	# Flush previous results
 	ansible_results = {}
 
 	inventories: Union[Dict, List[FilePath]] = []
@@ -1487,9 +1481,16 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 	retval = 0
 	if runner is not None:
 		for event in runner.events:
-			_retval = ansible_results_add(event)
-			if retval == 0 and _retval != 0:
-				retval = _retval
+			host = deep_get(event, DictPath("event_data#host"))
+			if host is None:
+				continue
+			retval_, d = ansible_results_extract(event)
+			if not retval and retval_:
+				retval = retval_
+			if d:
+				if host not in ansible_results:
+					ansible_results[host] = []
+				ansible_results[host].append(d)
 		ansible_write_log(start_date, playbook, runner.events)
 
 	return retval, ansible_results
@@ -1542,7 +1543,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	# as ansible user to make scripts that tries to access ansible_user function properly.
 	d = ansible_get_inventory_dict()
 
-	if len(d) == 0:
+	if not d:
 		return -errno.ENOENT, {}
 
 	if values is None:
@@ -1598,7 +1599,7 @@ def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[
 	else:
 		d = inventory
 
-	if len(d) == 0:
+	if not d:
 		return -errno.ENOENT, {}
 
 	if values is None:
@@ -1641,10 +1642,10 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 
-	_retval, __ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
+	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
 
-	for host in __ansible_results:
-		for task in deep_get(__ansible_results, DictPath(host), []):
+	for host in ansible_results:
+		for task in deep_get(ansible_results, DictPath(host), []):
 			unreachable = deep_get(task, DictPath("unreachable"))
 			skipped = deep_get(task, DictPath("skipped"))
 			stderr_lines = deep_get(task, DictPath("stderr_lines"))
@@ -1764,11 +1765,11 @@ def ansible_async_get_data(async_cookie: ansible_runner.runner.Runner) -> Option
 
 			__retval, d = ansible_results_extract(event)
 
-			if len(d) > 0:
+			if d:
 				if host not in async_results:
 					async_results[host] = []
 				async_results[host].append(d)
-		if len(async_results) > 0:
+		if async_results:
 			data = async_results
 
 	return data
