@@ -793,9 +793,6 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 					"skip_all": skip_all,
 					"temporary": temporary})
 
-	if not hosts:
-		return True
-
 	d: Dict = {}
 
 	# The inventory does not exist; if the user specified skip_all

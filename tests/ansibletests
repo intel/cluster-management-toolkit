@@ -682,9 +682,16 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete = False) as tf:
 			# __ansible_create_inventory() will open the file
 			tf.close()
-			tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite = True, temporary = True)
-			ansible_helper.ansible_create_groups(tf.name, ["foo", "bar"], temporary = True)
-			d = secure_read_yaml(tf.name, temporary = True)
+			d = {
+				"foo": {
+					"hosts": {
+					},
+					"vars": {
+					},
+				},
+				"bar": None,
+			}
+			secure_write_yaml(tf.name, d, temporary = True)
 
 			# Indata format:
 			# (path, groups, values, expected_content, expected_result, expected_exception)
@@ -693,6 +700,8 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
 				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
 				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
+				(tf.name, ["bar"], [("meaning", 42)],
+				 {"foo": {"hosts": {}, "vars": {}}, "bar": {"vars": {"meaning": 42}}}, True, None),
 				(tf.name, ["nonexisting"], [("bar", 1), ("baz", "text")],
 				 {}, True, None),
 				(f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
@@ -701,6 +710,7 @@ def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
 				(None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
 			)
 			for indata in testdata:
+				secure_write_yaml(tf.name, copy.deepcopy(d), temporary = True)
 				path, groups, values, expected_content, expected_result, expected_exception = indata
 				try:
 					if (tmp := fun(path, groups, values, temporary = True)) != expected_result:
@@ -1109,6 +1119,8 @@ def test_ansible_add_hosts(verbose: bool = False) -> Tuple[str, bool]:
 				 {"all": {"hosts": {"existing": {}}}, "group1": {"hosts": {"existing": {}}}}, True, None),
 				(f"{td}/newinventory.yaml", None, ["host1"], "group1", False,
 				 {"all": {"hosts": {"host1": {}}, "vars": {"ansible_python_interpreter": "/usr/bin/python3"}}, "group1": {"hosts": {"host1": {}}}}, True, None),
+				(f"{td}/newinventory2.yaml", None, ["host1"], "group1", True,
+				 {"group1": {"hosts": {"host1": {}}}}, True, None),
 				(None, d1, ["host1"], "group1", False,
 				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, ArgumentValidationError),
 			)
