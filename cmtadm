@@ -7130,9 +7130,6 @@ def main() -> None:
 
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, theme = DEFAULT_THEME_FILE)
-	major_minor_patchrev = get_latest_kubernetes_upstream_version()
-	requested_major, requested_minor, _rest = major_minor_patchrev.split(".", maxsplit = 3)
-	crio_major_version, crio_minor_version = get_crio_version((int(requested_major), int(requested_minor)))
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
