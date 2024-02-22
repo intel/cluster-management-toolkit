@@ -1472,6 +1472,175 @@ def test_ansible_extract_failure(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_ansible_print_task_results(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_print_task_results
+	fun_str = "ansible_helper.ansible_print_task_results"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+
+		# Indata format:
+		# (retval, task, msg_lines, stdout_lines, stderr_lines, skipped, unreachable, verbose, expected_exception)
+		testdata = (
+			( 0, "Checking uptime", [], [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"], [], False, False, False, None),
+			( 0, "Checking uptime", [], [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"], [], False, False, True, None),
+			(-1, "Checking uptime", [], [], ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: Name or service not known"], False, True, False, None),
+			(-1, "Checking uptime", [], [], ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: Name or service not known"], False, True, True, None),
+			(0, "Package versions", ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A', 'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A', 'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00', 'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A', 'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''], [], [], False, False, False, None),
+			(0, "Package versions", ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A', 'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A', 'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00', 'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A', 'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''], [], [], False, False, True, None),
+			(-1, "Checking uptime", [], [], [], False, False, False, None),
+			(-1, "Checking uptime", [], [], [], False, False, True, None),
+			(-1, "Checking uptime", [], [], [], True, False, False, None),
+			(-1, "Checking uptime", [], [], [], True, False, True, None),
+			(-1, "Checking uptime", [], [], ["Failed somehow"], False, False, False, None),
+			(-1, "Checking uptime", [], [], ["Failed somehow"], False, False, True, None),
+		)
+		for indata in testdata:
+			retval, task, msg_lines, stdout_lines, stderr_lines, skipped, unreachable, verbose, expected_exception = indata
+			try:
+				fun(task = task, msg_lines = msg_lines, stdout_lines = stdout_lines, stderr_lines = stderr_lines, retval = retval, unreachable = unreachable, skipped = skipped, verbose = verbose)
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           task: {task}\n" \
+							  f"         retval: {retval}\n" \
+							  f"        skipped: {skipped}\n" \
+							  f"    unreachable: {unreachable}\n" \
+							  f"        verbose: {verbose}\n" \
+							   "      msg_lines:\n" \
+							  f"{yaml_dump(msg_lines, base_indent = 17)}\n" \
+							   "   stdout_lines:\n" \
+							  f"{yaml_dump(stdout_lines, base_indent = 17)}\n" \
+							   "   stderr_lines:\n" \
+							  f"{yaml_dump(stderr_lines, base_indent = 17)}\n" \
+							  f"      exception: {e}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           task: {task}\n" \
+						  f"         retval: {retval}\n" \
+						  f"        skipped: {skipped}\n" \
+						  f"    unreachable: {unreachable}\n" \
+						  f"        verbose: {verbose}\n" \
+						   "      msg_lines:\n" \
+						  f"{yaml_dump(msg_lines, base_indent = 17)}\n" \
+						   "   stdout_lines:\n" \
+						  f"{yaml_dump(stdout_lines, base_indent = 17)}\n" \
+						   "   stderr_lines:\n" \
+						  f"{yaml_dump(stderr_lines, base_indent = 17)}\n" \
+						  f"      exception: {e}"
+					result = False
+					break
+	return message, result
+
+def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_run_playbook
+	fun_str = "ansible_helper.ansible_run_playbook"
+
+	if result:
+		d = {
+			"all": {"hosts": {"localhost": {}}},
+			"selection": {"hosts": {"localhost": {}}},
+		}
+
+		# Indata format:
+		# (path, inventory, verbose, expected_retval, expected_result, expected_exception)
+		testdata = (
+			(os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"), d, False, 0, {"Checking uptime": {
+				"task": "Checking uptime",
+				"start_date": None,
+				"end_date": None,
+				"retval": 0,
+				"no_hosts_matched": False,
+				"unreachable": False,
+				"status": "SUCCESS",
+				"skipped": False,
+				"stdout_lines": None,
+				"stderr_lines": [],
+				"msg_lines": [],
+				"ansible_facts": None}}, None),
+			(os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"), d, True, 0, {"Checking uptime": {
+				"task": "Checking uptime",
+				"start_date": None,
+				"end_date": None,
+				"retval": 0,
+				"no_hosts_matched": False,
+				"unreachable": False,
+				"status": "SUCCESS",
+				"skipped": False,
+				"stdout_lines": None,
+				"stderr_lines": [],
+				"msg_lines": [],
+				"ansible_facts": None}}, None),
+		)
+		for indata in testdata:
+			path, inventory, verbose, expected_retval, expected_result, expected_exception = indata
+			try:
+				retval, result = fun(path, inventory, verbose)
+				if retval != expected_retval:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           path: {path}\n" \
+						  f"      inventory:\n" \
+						  f"{yaml_dump(inventory, base_indent = 17)}\n" \
+						  f"         retval: {retval}\n" \
+						  f"       expected: {expected_retval}\n"
+					result = False
+					break
+				# Checking result is trickier:
+				match = True
+				invalid = {}
+				for task, data in result.items():
+					if task in expected_result:
+						expected_data = expected_result[task]
+						for key, value in expected_data.items():
+							if key not in data:
+								if task not in invalid:
+									invalid[task] = {}
+								if key not in invalid[task]:
+									invalid[task][key] = {}
+								invalid[task][key]["missing"] = True
+								match = False
+							if value is not None:
+								if data[key] != value:
+									invalid[task][key]["mismatch"] = {"expected": copy.deepcopy(data[key]), "result": copy.deepcopy(value)}
+									match = False
+				if not match:
+					print(f"{invalid}")
+					result = False
+					break
+			except Exception as e:
+				raise
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           path: {path}\n" \
+							  f"      inventory:\n" \
+							  f"{yaml_dump(inventory, base_indent = 17)}\n" \
+							  f"      exception: {e}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           path: {path}\n" \
+						  f"      inventory:\n" \
+						  f"{yaml_dump(inventory, base_indent = 17)}\n" \
+						  f"      exception: {e}"
+					result = False
+					break
+	return message, result
+
 tests: Dict = {
 	("get_playbook_path()",): {
 		"callable": test_get_playbook_path,
@@ -1551,6 +1720,14 @@ tests: Dict = {
 	},
 	("ansible_extract_failure()",): {
 		"callable": test_ansible_extract_failure,
+		"result": None,
+	},
+	("ansible_print_task_results()",): {
+		"callable": test_ansible_print_task_results,
+		"result": None,
+	},
+	("ansible_run_playbook()",): {
+		"callable": test_ansible_run_playbook,
 		"result": None,
 	},
 }
