@@ -4,6 +4,18 @@ If you haven't already cloned the CMT repository, first do so:
 
 `git clone https://github.com/intel/cluster-management-toolkit.git`
 
+## .netrc
+
+`cmtadm` and some of the _Ansible_ playbooks perform calls
+to GitHub APIs. If you are behind a proxy or end up doing a lot
+of API requests you might run into GitHub's daily rate limit,
+which will cause requests to fail.
+
+If you haven't done so already you should always consider adding
+a _Personal Accesss Token_ for GitHub to your `.netrc` file.
+
+See instructions here: [Using a GitHub PAT](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
+
 ## Without proxy
 
 ```

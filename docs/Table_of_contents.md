@@ -3,6 +3,7 @@
 1. [Introduction](Introduction.md#introduction)
     1. [Introduction](Introduction.md#getting-started)
 2. [Installing CMT](Installing_CMT.md#installing-cmt)
+    1. [netrc](Installing_CMT.md#netrc)
     1. [Without proxy](Installing_CMT.md#without-proxy)
     2. [With proxy](Installing_CMT.md#with-proxy)
 3. [Creating a cluster using a template file](Creating_a_cluster_using_a_template_file.md#creating-a-cluster-using-a-template-file)
