@@ -42,7 +42,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
-from cmtpaths import DEPLOYMENT_DIR
+from cmtpaths import DEPLOYMENT_DIR, NETRC_PATH
 from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR, CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
 from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR, CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -5992,7 +5992,15 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
-			abort, critical, error, warning, note = call(cluster_name, kubeconfig, cmtlib.cmtconfig, user, critical, error, warning, note, **kwargs)
+			abort, critical, error, warning, note = call(cluster_name = cluster_name,
+								     kubeconfig = kubeconfig,
+								     cmtconfig_dict = cmtlib.cmtconfig,
+								     user = user,
+								     critical = critical,
+								     error = error,
+								     warning = warning,
+								     note = note,
+								     **kwargs)
 			if abort:
 				break
 
@@ -7130,6 +7138,12 @@ def main() -> None:
 
 	command, options, args = parse_commandline(about.ADMIN_PROGRAM_NAME, about.ADMIN_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, theme = DEFAULT_THEME_FILE)
+
+	for key, value in options:
+		if key == "__commandname" and value in ("help", "version", "preflight-check"):
+			break
+	else:
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)

@@ -178,8 +178,7 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 	return abort, critical, error, warning, note
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict, user: str,
-			    critical: int, error: int, warning: int, note: int, **kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	"""
 	This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
 
@@ -202,11 +201,23 @@ def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict:
 
 	abort = False
 
-	ansithemeprint([ANSIThemeString("[Checking whether permissions for ", "phase"),
-			ANSIThemeString(".netrc", "path"),
-			ANSIThemeString(" are sufficiently strict on ", "phase"),
-			ANSIThemeString("localhost", "hostname"),
-			ANSIThemeString("]", "phase")])
+	cluster_name: Optional[str] = deep_get(kwargs, DictPath("cluster_name"))
+	kubeconfig: Optional[Dict] = deep_get(kwargs, DictPath("kubeconfig"))
+	cmtconfig_dict: Optional[Dict] = deep_get(kwargs, DictPath("cmtconfig_dict"))
+	user: Optional[str] = deep_get(kwargs, DictPath("user"))
+	critical: int = deep_get(kwargs, DictPath("critical"), 0)
+	error: int = deep_get(kwargs, DictPath("error"), 0)
+	warning: int = deep_get(kwargs, DictPath("warning"), 0)
+	note: int = deep_get(kwargs, DictPath("note"), 0)
+	verbose = deep_get(kwargs, DictPath("verbose"), True)
+	exit_on_error = deep_get(kwargs, DictPath("exit_on_error"), False)
+
+	if verbose:
+		ansithemeprint([ANSIThemeString("[Checking whether permissions for ", "phase"),
+				ANSIThemeString(".netrc", "path"),
+				ANSIThemeString(" are sufficiently strict on ", "phase"),
+				ANSIThemeString("localhost", "hostname"),
+				ANSIThemeString("]", "phase")])
 
 	path_entry = Path(NETRC_PATH)
 	path_stat = path_entry.stat()
@@ -221,7 +232,7 @@ def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict:
 				ANSIThemeString(" are ", "default"),
 				ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
 				ANSIThemeString(";", "default")], stderr = True)
-		ansithemeprint([ANSIThemeString("    the recommended permissions are ", "default"),
+		ansithemeprint([ANSIThemeString("    the required permissions are ", "default"),
 				ANSIThemeString(f"{0o600:03o}", "emphasis"),
 				ANSIThemeString(" (or stricter).", "default")], stderr = True)
 		ansithemeprint([ANSIThemeString("  ", "default"),
@@ -230,6 +241,8 @@ def check_netrc_permissions(cluster_name: str, kubeconfig: Dict, cmtconfig_dict:
 		ansithemeprint([ANSIThemeString("    Ansible will refuse to fetch files if the permissions for ", "default"),
 				ANSIThemeString(f"{NETRC_PATH}", "path"),
 				ANSIThemeString(" are not sufficiently strict\n", "default")], stderr = True)
+		if exit_on_error:
+			sys.exit(errno.EPERM)
 		critical += 1
 	else:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])

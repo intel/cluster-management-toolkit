@@ -107,6 +107,8 @@ import helptexts
 
 from kubernetes_helper import KubernetesHelper, get_image_version, get_node_status, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
 
+import checks
+
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
 
 import reexecutor
@@ -13252,6 +13254,12 @@ def main() -> None:
 
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "*", theme = themefile)
+
+	for key, value in options:
+		if key == "__commandname" and value in ("help", "version"):
+			break
+	else:
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
 
 	for opt, optarg in options:
 		if opt == "--developer-mode":

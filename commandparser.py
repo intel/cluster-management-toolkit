@@ -732,4 +732,6 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		# validate_argument() will terminate by default if validation fails
 		_result = cmtvalidators.validate_argument(args[i], arg["string"], validator_options)
 
+	options.append(("__commandname", commandname))
+
 	return command, options, args

@@ -63,6 +63,8 @@ from networkio import scan_and_add_ssh_keys
 
 from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context, guess_kind
 
+import checks
+
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint, ansithemeinput, ansithemeinput_password
 
 import about
@@ -3652,6 +3654,12 @@ def main() -> int:
 
 	command, options, args = parse_commandline(programname, about.TOOL_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   commandline, theme = DEFAULT_THEME_FILE)
+
+	for key, value in options:
+		if key == "__commandname" and value in ("help", "version"):
+			break
+	else:
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)

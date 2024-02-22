@@ -51,6 +51,8 @@ from ansible_helper import ANSIBLE_INVENTORY
 import cmtlib
 from cmtlib import read_cmtconfig
 
+import checks
+
 from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list
 
 import about
@@ -1918,6 +1920,12 @@ def main() -> int:
 
 	command, options, args = parse_commandline(about.INVENTORY_PROGRAM_NAME, about.INVENTORY_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "inventory", theme = DEFAULT_THEME_FILE)
+
+	for key, value in options:
+		if key == "__commandname" and value in ("help", "version"):
+			break
+	else:
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
