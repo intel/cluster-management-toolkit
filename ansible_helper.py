@@ -1004,7 +1004,7 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bo
 	elif skipped:
 		status = "SKIPPED"
 	else:
-		if retval != 0:
+		if retval:
 			if error_msg_lines:
 				for line in error_msg_lines:
 					if "The module failed to execute correctly" in line:
@@ -1075,11 +1075,11 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		__retval = deep_get(event, DictPath("event_data#res#rc"))
 
 	if task.startswith("hide_on_ok: "):
-		if __retval == 0:
+		if not __retval:
 			__retval = None
 		else:
 			task = task[len("hide_on_ok: "):]
-	elif task == "Gathering Facts" and __retval == 0:
+	elif task == "Gathering Facts" and not __retval:
 		__retval = None
 
 	if __retval is None:
@@ -1118,7 +1118,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		"ansible_facts": ansible_facts,
 	}
 
-	if not unreachable and __retval == 0:
+	if not unreachable and not __retval:
 		d["status"] = "SUCCESS"
 
 	if msg_lines or stdout_lines or stderr_lines:
@@ -1353,7 +1353,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 	count_success = 0
 	count_fail = 0
 
-	if retval != 0 and not ansible_results:
+	if retval and not ansible_results:
 		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
 				ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
 	else:
@@ -1381,7 +1381,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
 					elif skipped:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "skip")])
-					elif retval == 0:
+					elif not retval:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
 					else:
 						ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
@@ -1391,7 +1391,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 					count_unreachable += 1
 				elif skipped:
 					count_skip += 1
-				elif retval == 0:
+				elif not retval:
 					count_success += 1
 				else:
 					count_fail += 1

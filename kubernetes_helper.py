@@ -4040,7 +4040,7 @@ def list_contexts(config_path: Optional[FilePath] = None) -> List[Tuple[bool, st
 		# other exceptions might be security related, so we let them raise
 		return []
 	except yaml.parser.ParserError as e:
-		e.args += (f"{config_path} is not valid YAML; aborting.", )
+		e.args += (f"{config_path} is not valid YAML; aborting.",)
 		raise
 
 	current_context = deep_get(kubeconfig, DictPath("current-context"), "")
@@ -4247,7 +4247,7 @@ class KubernetesHelper:
 			# other exceptions might be security related, so we let them raise
 			return
 		except yaml.parser.ParserError as e:
-			e.args += (f"{KUBE_CREDENTIALS_FILE} is not valid YAML; aborting.", )
+			e.args += (f"{KUBE_CREDENTIALS_FILE} is not valid YAML; aborting.",)
 			raise
 
 		# We got ourselves a credentials file;
@@ -4402,7 +4402,7 @@ class KubernetesHelper:
 				try:
 					ca_certs = base64.b64decode(ccac).decode("utf-8")
 				except UnicodeDecodeError as e:
-					e.args += (f"failed to decode certificate-authority-data: {e}", )
+					e.args += (f"failed to decode certificate-authority-data: {e}",)
 					raise
 				break
 			if ccac_file is not None:
@@ -4435,7 +4435,7 @@ class KubernetesHelper:
 					try:
 						cert = base64.b64decode(ccd).decode("utf-8")
 					except UnicodeDecodeError as e:
-						e.args += (f"failed to decode client-certificate-data: {e}", )
+						e.args += (f"failed to decode client-certificate-data: {e}",)
 						raise
 				elif ccd_file is not None:
 					cert = cast(str, secure_read(ccd_file))
@@ -4450,7 +4450,7 @@ class KubernetesHelper:
 					try:
 						key = base64.b64decode(ckd).decode("utf-8")
 					except UnicodeDecodeError as e:
-						e.args += (f"failed to decode client-key-data: {e}", )
+						e.args += (f"failed to decode client-key-data: {e}",)
 						raise
 				elif ckd_file is not None:
 					key = cast(str, secure_read(ckd_file))
@@ -4843,7 +4843,7 @@ class KubernetesHelper:
 		if api_version is not None and "/" in api_version:
 			tmp = re.match(r"^(.*)/.*", api_version)
 			if tmp is None:
-				raise ValueError(f"Could not extract API-group from {api_version}", )
+				raise ValueError(f"Could not extract API-group from {api_version}",)
 			api_group = tmp[1]
 		else:
 			api_group = ""

@@ -251,7 +251,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 	path_stat = path.stat()
 	path_permissions = path_stat.st_mode & 0o002
 
-	if path_permissions != 0:
+	if path_permissions:
 		ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "critical"),
 					       ANSIThemeString(": The target path ", "default"),
 					       ANSIThemeString(f"{directory}", "path"),
@@ -321,7 +321,7 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 
 		if r1.status == 200:
 			# Check that we actually got any data
-			if len(r1.data) == 0:
+			if not r1.data:
 				ansithemeprint.ansithemeprint([ANSIThemeString("Critical", "error"),
 							       ANSIThemeString(": File downloaded from ", "default"),
 							       ANSIThemeString(f"{url}", "url"),
