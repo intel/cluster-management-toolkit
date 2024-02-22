@@ -1347,6 +1347,10 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		pod_network_cidr = kh.get_pod_network_cidr()
 		if pod_network_cidr is None:
+			installation_info = get_installation_info()
+			cluster_name = installation_info["installation_target"]
+			pod_network_cidr = deep_get(installation_info, DictPath(f"{cluster_name}#pod_network_cidr"))
+		if pod_network_cidr is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": Could not identify Pod network CIDR; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOTSUP)
