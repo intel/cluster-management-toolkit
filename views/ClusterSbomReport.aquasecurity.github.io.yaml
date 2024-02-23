@@ -1,0 +1,151 @@
+kind: "ClusterSbomReport"
+api_family: "aquasecurity.github.io"
+default_command: "clustersbomreports"
+command:
+- "clrsboms"
+- "clrsbom"
+listview:
+  name: "Cluster SBOM Reports"
+  group: "Security"
+  field_indexes:
+    Normal:
+      fields: ["name", "scanner", "repository", "tag", "components_count", "dependencies_count", "age"]
+      sortcolumn: "name"
+  fields:
+    components_count:
+      header: "Components:"
+      path: "report#summary#componentsCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    dependencies_count:
+      header: "Dependencies:"
+      path: "report#summary#dependenciesCount"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    repository:
+      header: "Repository:"
+      path: "report#artifact#repository"
+      type: "str"
+    scanner:
+      header: "Scanner:"
+      paths:
+      - path: [["report#scanner#name"], ["report#scanner#version"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
+    tag:
+      header: "Tag:"
+      path: "report#artifact#tag"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Cluster SBOM Report Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["scanner", "vendor", "bom_format", "digest", "repository", "tag"]
+    rows:
+      bom_format:
+        header: [["BOM Format:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#components#bomFormat"], ["report#components#specVersion"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      digest:
+        header: [["Digest:", ["main", "infoheader"]]]
+        path: "report#artifact#digest"
+        type: "str"
+      repository:
+        header: [["Repository:", ["main", "infoheader"]]]
+        path: "report#artifact#repository"
+        type: "str"
+      scanner:
+        header: [["Scanner:", ["main", "infoheader"]]]
+        paths:
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      tag:
+        header: [["Tag:", ["main", "infoheader"]]]
+        path: "report#artifact#tag"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      vendor:
+        header: [["Vendor:", ["main", "infoheader"]]]
+        path: "report#scanner#vendor"
+        type: "str"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__SbomReportData"
+      api_family: "aquasecurity.github.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      paths:
+      - path: "report#components#components"
+        type: "list"
+        key_name: "__type"
+        key_value: "Basic"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "type", "version", "licenses", "supplier"]
+        sortcolumn: "severity"
+    fields:
+      licenses:
+        header: "Licenses:"
+        paths:
+        - path: "licenses"
+          pathtype: "items"
+          subpaths:
+          - "license#name"
+          default: ["<unspecified>"]
+        type: "list"
+        formatter: "list"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      supplier:
+        header: "Supplier:"
+        path: "supplier#name"
+        type: "str"
+        default: "<unspecified>"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
+      version:
+        header: "Version:"
+        path: "version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
