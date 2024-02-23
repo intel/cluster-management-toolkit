@@ -42,6 +42,9 @@ generate_helptexts:
 		./$$file help --format markdown > docs/$${file}_helptext.md ;\
 	done
 
+coverage_stats:
+	@tests/coverage_stats
+
 coverage: setup_tests
 	@cmd=python3-coverage ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
