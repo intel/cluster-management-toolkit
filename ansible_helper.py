@@ -1473,6 +1473,8 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 
 	event_handler = None
 	if verbose:
+		event_handler = __ansible_run_event_handler_verbose_cb
+	else:
 		event_handler = __ansible_run_event_handler_cb
 
 	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks,
@@ -1676,10 +1678,41 @@ def ansible_ping_async(selection: Optional[List[str]], inventory: Optional[Dict]
 						       selection = selection, inventory = inventory)
 
 def __ansible_run_event_handler_cb(data: Dict) -> bool:
+	if deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("failed", "error"),
+				ANSIThemeString(" on ", "default"),
+				ANSIThemeString(f"{host}", "hostname")])
+		for res in deep_get(data, DictPath("event_data#res#results"), []):
+			msg = deep_get(res, DictPath("msg"), "")
+			if msg:
+				ansithemeprint([ANSIThemeString("    ", "default"), ANSIThemeString("Error", "error"), ANSIThemeString(":", "default")])
+				ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
+	elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
+		host = deep_get(data, DictPath("event_data#host"), "<unset>")
+		task = deep_get(data, DictPath("event_data#task"), "<unset>")
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
+				ANSIThemeString("Task", "action"),
+				ANSIThemeString(": ", "default"),
+				ANSIThemeString(f"{task}", "play"),
+				ANSIThemeString(" ", "default"),
+				ANSIThemeString("failed", "error"),
+				ANSIThemeString("; ", "default"),
+				ANSIThemeString(f"{host}", "hostname"),
+				ANSIThemeString(" unreachable", "default")])
+	return True
+
+def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
 	if deep_get(data, DictPath("event"), "") == "runner_on_start":
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
 		task = deep_get(data, DictPath("event_data#task"), "<unset>")
-		ansithemeprint([ANSIThemeString("• ", "separator"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString("Task", "action"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{task}", "play"),
@@ -1690,7 +1723,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 	elif deep_get(data, DictPath("event"), "") in ("runner_on_ok", "runner_on_async_ok"):
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
 		task = deep_get(data, DictPath("event_data#task"), "<unset>")
-		ansithemeprint([ANSIThemeString("• ", "separator"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString("Task", "action"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{task}", "play"),
@@ -1701,7 +1734,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 	elif deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
 		task = deep_get(data, DictPath("event_data#task"), "<unset>")
-		ansithemeprint([ANSIThemeString("• ", "separator"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString("Task", "action"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{task}", "play"),
@@ -1709,10 +1742,15 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 				ANSIThemeString("failed", "error"),
 				ANSIThemeString(" on ", "default"),
 				ANSIThemeString(f"{host}", "hostname")])
+		for res in deep_get(data, DictPath("event_data#res#results"), []):
+			msg = deep_get(res, DictPath("msg"), "")
+			if msg:
+				ansithemeprint([ANSIThemeString("    ", "default"), ANSIThemeString("Error", "error"), ANSIThemeString(":", "default")])
+				ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
 	elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
 		task = deep_get(data, DictPath("event_data#task"), "<unset>")
-		ansithemeprint([ANSIThemeString("• ", "separator"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString("Task", "action"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{task}", "play"),
@@ -1724,7 +1762,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 	elif deep_get(data, DictPath("event"), "") == "runner_on_skipped":
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
 		task = deep_get(data, DictPath("event_data#task"), "<unset>")
-		ansithemeprint([ANSIThemeString("• ", "separator"),
+		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString("Task", "action"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{task}", "play"),

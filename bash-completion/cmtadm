@@ -150,6 +150,11 @@ _cmtadm() {
 	esac
 
 	case "${COMP_WORDS[1]}" in
+	check-versions|cv)
+		commands=$(add_option_if_not_in_list "--verbose" ${commands})
+	esac
+
+	case "${COMP_WORDS[1]}" in
 	prepare)
 		commands=$(add_option_if_not_in_list "--control-plane" ${commands})
 	esac

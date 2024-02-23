@@ -211,6 +211,7 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	note: int = deep_get(kwargs, DictPath("note"), 0)
 	verbose = deep_get(kwargs, DictPath("verbose"), True)
 	exit_on_error = deep_get(kwargs, DictPath("exit_on_error"), False)
+	quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
 	if verbose:
 		ansithemeprint([ANSIThemeString("[Checking whether permissions for ", "phase"),
@@ -244,7 +245,7 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 		if exit_on_error:
 			sys.exit(errno.EPERM)
 		critical += 1
-	else:
+	elif not quiet_on_ok:
 		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return abort, critical, error, warning, note

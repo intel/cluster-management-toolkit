@@ -1925,7 +1925,7 @@ def main() -> int:
 		if key == "__commandname" and value in ("help", "version"):
 			break
 	else:
-		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)

@@ -1112,6 +1112,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			args (list[str]): The CNI to install and configure (optional; if not specified the default CNI will be used)
 	"""
 
+	# default options
 	confirm = True
 	reinstall = False
 	verbose = False
@@ -1680,16 +1681,18 @@ def __task_check_and_install_ansible_posix(installation_info: Dict, verbose: boo
 
 	check_and_print_status(install_ansible_posix())
 
-def update_version_cache() -> bool:
+def update_version_cache(verbose: bool = False) -> bool:
 	"""
 	Update the version cache
 
+		Parameters:
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
 		Returns:
 			True on success, False on failure
 	"""
 
 	update_version_cache_path = get_playbook_path(FilePath("update_version_cache.yaml"))
-	_retval, ansible_results = run_playbook(update_version_cache_path, hosts = ["localhost"])
+	_retval, ansible_results = run_playbook(update_version_cache_path, hosts = ["localhost"], verbose = verbose)
 
 	if len(ansible_results) == 0:
 		return False
@@ -1793,13 +1796,14 @@ def get_latest_kubernetes_upstream_version() -> str:
 
 	return kubernetes_upstream_version
 
-def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]]) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
+def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]], verbose: bool = False) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
 	"""
 	Check versions for all relevant software
 
 		Parameters:
 			deb_packages (list[str]): A list of debian packages
 			version_checks (list[(software, args, regex)]): A list of component, the command needed to check its version, and a regex to extract the version number
+			verbose (bool): If the results are printed, should skipped tasks be printed too?
 		Returns:
 			(deb_versions, other_versions): A tuple of utput from check_versions_apt(), (software, installed_version, "")
 	"""
@@ -1957,7 +1961,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 	}
 	merged_values = { **values, **extra_values }
 
-	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, verbose = verbose)
 
 	if not quiet:
 		ansible_print_play_results(retval, ansible_results, verbose = verbose)
@@ -3380,7 +3384,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	ansithemeprint([ANSIThemeString("\n[Preparing localhost and control plane(s)]", "phase")])
 
-	check_and_print_status(update_version_cache())
+	check_and_print_status(update_version_cache(verbose = verbose))
 
 	run_tasks(tasks = prepare_tasks, phase = cast(int, phase), phase_skiplist = phase_skiplist, final_state = "prepared", verbose = verbose)
 
@@ -3625,10 +3629,13 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	# default options
 	update_cache = True
+	verbose = False
 
 	for opt, _optarg in options:
 		if opt == "--no-cache-update":
 			update_cache = False
+		elif opt == "--verbose":
+			verbose = True
 
 	ansithemeprint([ANSIThemeString("\n[Checking for software updates]", "phase")])
 	ansithemeprint([ANSIThemeString("Note", "note"),
@@ -3645,7 +3652,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 			check_and_print_status(update_zypper_cache())
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating version cache", "action")])
-		check_and_print_status(update_version_cache())
+		check_and_print_status(update_version_cache(verbose = verbose))
 
 	pkg_packages = [
 		"ansible",
@@ -3683,7 +3690,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 	version_checks: List = []
 
 	print()
-	check_versions(pkg_packages, version_checks)
+	check_versions(pkg_packages, version_checks, verbose = verbose)
 	print()
 
 def show_configuration(action: str,
@@ -6220,6 +6227,9 @@ COMMANDLINE = {
 			"--no-cache-update": {
 				"description": [ANSIThemeString("Do not update the APT cache", "description")],
 			},
+			"--verbose": {
+				"description": [ANSIThemeString("Be more verbose", "description")],
+			},
 		},
 		"callback": check_for_updates,
 	},
@@ -7147,7 +7157,7 @@ def main() -> None:
 		if key == "__commandname" and value in ("help", "version", "preflight-check"):
 			break
 	else:
-		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)

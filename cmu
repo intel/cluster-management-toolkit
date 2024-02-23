@@ -13259,7 +13259,7 @@ def main() -> None:
 		if key == "__commandname" and value in ("help", "version"):
 			break
 	else:
-		checks.check_netrc_permissions(verbose = False, exit_on_error = True)
+		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	for opt, optarg in options:
 		if opt == "--developer-mode":
