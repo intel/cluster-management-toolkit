@@ -1497,26 +1497,6 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 
 	return retval, ansible_results
 
-# pylint: disable-next=unused-argument
-def ansible_run_playbook_async(playbook: FilePath, inventory: Dict, verbose: bool = False) -> ansible_runner.runner.Runner:
-	"""
-	Run a playbook asynchronously
-
-		Parameters:
-			playbook (FilePath): The playbook to run
-			inventory (dict): An inventory dict with selection as the list of hosts to run on
-
-		Returns:
-			runner: An ansible_runner.runner.Runner object
-	"""
-
-	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
-
-	_thread, runner = ansible_runner.interface.run_async(json_mode = True, quiet = True, playbook = playbook, inventory = inventory,
-							     forks = forks, finished_callback = __ansible_run_async_finished_cb, envvars = { "ANSIBLE_JINJA2_NATIVE": True })
-
-	return runner
-
 def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
@@ -1570,62 +1550,6 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 
 	return ansible_run_playbook(playbook, d, verbose)
 
-def ansible_run_playbook_on_selection_async(playbook: FilePath, selection: List[str], values: Optional[Dict] = None,
-					    inventory: Optional[Dict] = None, verbose: bool = False) -> ansible_runner.runner.Runner:
-	"""
-	Run a playbook on selected nodes
-
-		Parameters:
-			playbook (FilePath): The playbook to run
-			selection (list[str]): The hosts to run the play on
-			values (dict): Extra values to set for the hosts
-			verbose (bool): Output status updates for every new Ansible event
-		Returns:
-			The result from ansible_run_playbook_async()
-	"""
-
-	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
-	# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
-	# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
-	# since group and host vars take precedence over system vars.
-	#
-	# This is mainly for the benefit of making the prepare_host task possible to run without
-	# encouraging permanent use of ansible_{ssh,sudo,become}_pass.
-	# Ideally these variables should only be needed once; when preparing the host; after that
-	# we will use passwordless sudo and ssh hostkeys.
-	#
-	# Also, if ansible_user is not set ansible will implicitly use the local user. Pass this
-	# as ansible user to make scripts that tries to access ansible_user function properly.
-	if inventory is None:
-		d = ansible_get_inventory_dict()
-	else:
-		d = inventory
-
-	if not d:
-		return -errno.ENOENT, {}
-
-	if values is None:
-		values = {}
-
-	if "ansible_sudo_pass" in values and "ansible_become_pass" not in values:
-		values["ansible_become_pass"] = values["ansible_sudo_pass"]
-	if "ansible_become_pass" in values and "ansible_ssh_pass" not in d["all"]["vars"]:
-		values["ansible_ssh_pass"] = values["ansible_become_pass"]
-	if "ansible_user" not in d["all"]["vars"]:
-		values["ansible_user"] = deep_get(ansible_configuration, DictPath("ansible_user"))
-
-	for key, value in values.items():
-		d["all"]["vars"][key] = value
-
-	d["selection"] = {
-		"hosts": {}
-	}
-
-	for host in selection:
-		d["selection"]["hosts"][host] = {}
-
-	return ansible_run_playbook_async(playbook, d, verbose)
-
 def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
 	Ping all selected hosts
@@ -1643,6 +1567,11 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 
 	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
+	else:
+		validate_arguments(kwargs_properties = {
+					"__allof": ("selection",),
+					"selection": {"types": (list,)}}, kwargs = {
+					"selection": selection})
 
 	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
 
@@ -1657,25 +1586,6 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	ansible_configuration["save_logs"] = save_logs_tmp
 
 	return host_status
-
-def ansible_ping_async(selection: Optional[List[str]], inventory: Optional[Dict] = None) -> ansible_runner.runner.Runner:
-	"""
-	Ping all selected hosts asynchronously
-
-		Parameters:
-			selection (list[str]): A list of hostnames
-		Returns:
-			The result from ansible_run_playbook_async()
-	"""
-
-	if inventory is None:
-		if selection is None:
-			selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
-	else:
-		selection = list(deep_get(inventory, DictPath("all#hosts"), {}))
-
-	return ansible_run_playbook_on_selection_async(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))),
-						       selection = selection, inventory = inventory)
 
 def __ansible_run_event_handler_cb(data: Dict) -> bool:
 	if deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
@@ -1771,43 +1681,3 @@ def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
 				ANSIThemeString(" on ", "default"),
 				ANSIThemeString(f"{host}", "hostname")])
 	return True
-
-def __ansible_run_async_finished_cb(runner_obj: ansible_runner.runner.Runner, **kwargs: Any) -> None:
-	# pylint: disable-next=global-variable-not-assigned
-	global finished_runs
-	finished_runs.add(runner_obj)
-
-finished_runs: Set[ansible_runner.runner.Runner] = set()
-
-def ansible_async_get_data(async_cookie: ansible_runner.runner.Runner) -> Optional[Dict]:
-	"""
-	Get the result from an asynchronous ansible play
-
-		Parameters:
-			async_cookie (ansible_runner.runner.Runner): The return value from ansible_run_playbook_async
-		Returns:
-			data (dict): The result of the run (in a format suitable for passing to ansible_print_play_results)
-	"""
-
-	if async_cookie is None or not isinstance(async_cookie, ansible_runner.runner.Runner) or async_cookie not in finished_runs:
-		return None
-
-	finished_runs.discard(async_cookie)
-
-	async_results: Dict = {}
-	data = None
-
-	if async_cookie is not None:
-		for event in async_cookie.events:
-			host = deep_get(event, DictPath("event_data#host"), "")
-
-			__retval, d = ansible_results_extract(event)
-
-			if d:
-				if host not in async_results:
-					async_results[host] = []
-				async_results[host].append(d)
-		if async_results:
-			data = async_results
-
-	return data
