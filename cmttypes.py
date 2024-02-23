@@ -510,8 +510,38 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 		frame = sys.exc_info()[2].tb_frame.f_back  # type: ignore
 		function = str(frame.f_code.co_name)  # type: ignore
 
-	anyof = deep_get(kwargs_properties, DictPath("__anyof"), {})
-	allof = deep_get(kwargs_properties, DictPath("__allof"), {})
+	anyof = deep_get(kwargs_properties, DictPath("__anyof"), ())
+	allof = deep_get(kwargs_properties, DictPath("__allof"), ())
+	if not (isinstance(anyof, tuple) and
+	        isinstance(allof, tuple) and
+	        isinstance(kwargs_properties, dict) and
+	        isinstance(kwargs, dict)):
+		msg = [
+			[( "validate_arguments()", "emphasis"),
+			 ( " called with invalid argument(s):", "error")],
+			[( "    __anyof", "argument"),
+			 ( " is ", "default"),
+			 (f"{type(anyof)}", "argument"),
+			 ( " expected ", "default"),
+			 (f"{repr(tuple)}", "emphasis")],
+			[( "    __allof", "argument"),
+			 ( " is ", "default"),
+			 (f"{type(allof)}", "argument"),
+			 ( " expected ", "default"),
+			 (f"{repr(tuple)}", "emphasis")],
+			[( "    kwargs_properties", "argument"),
+			 ( " is ", "default"),
+			 (f"{type(kwargs_properties)}", "argument"),
+			 ( " expected ", "default"),
+			 (f"{repr(dict)}", "emphasis")],
+			[( "    kwargs", "argument"),
+			 ( " is ", "default"),
+			 (f"{type(kwargs)}", "argument"),
+			 ( " expected ", "default"),
+			 (f"{repr(dict)}", "emphasis")],
+		]
+
+		raise ArgumentValidationError(subexception = TypeError, formatted_msg = msg)
 
 	for key, data in kwargs_properties.items():
 		if key.startswith("__"):
@@ -527,7 +557,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						 ("is ", "default"),
+						 (" is ", "default"),
 						 ("None", "emphasis"),
 						 (" expected ", "default"),
 						(f"{expected_types}", "emphasis")],
@@ -537,7 +567,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						 ("is ", "default"),
+						 (" is ", "default"),
 						 ("None", "emphasis"),
 						 (" expected one of ", "default"),
 						(f"{expected_types}", "emphasis")],
@@ -551,7 +581,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						( "is ", "default"),
+						( " is ", "default"),
 						(f"{type(kwarg)}", "emphasis"),
 						( " expected ", "default"),
 						(f"{expected_types}", "emphasis")],
@@ -560,7 +590,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				results[key] = {
 					"subexception": TypeError,
 					"msg": [(f"    {key}", "argument"),
-						( "is ", "default"),
+						( " is ", "default"),
 						(f"{type(kwarg)}", "emphasis"),
 						( " expected one of ", "default"),
 						(f"{expected_types}", "emphasis")],
@@ -629,6 +659,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 			]
 			for key in missing:
 				msg.append([(f"{key}", "argument")])
+			subexception = ValueError
 
 	if not msg:
 		# Check whether arguments were OK
@@ -637,7 +668,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 			if not result:
 				continue
 			submsg = deep_get(result, DictPath("msg"))
-			subexception = deep_get(result, DictPath("subexception"))
+			subexception = deep_get(result, DictPath("subexception"), TypeError)
 			if not msg:
 				msg = [
 					[(f"{function}()", "emphasis"),
