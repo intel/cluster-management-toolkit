@@ -1619,7 +1619,6 @@ def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 			except Exception as e:
-				raise
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -1636,6 +1635,56 @@ def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
 						  f"           path: {path}\n" \
 						  f"      inventory:\n" \
 						  f"{yaml_dump(inventory, base_indent = 17)}\n" \
+						  f"      exception: {e}"
+					result = False
+					break
+	return message, result
+
+def test_ansible_ping(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_ping
+	fun_str = "ansible_helper.ansible_ping"
+
+	if result:
+		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": This check can potentially be very slow.\n", "default")])
+
+		# Indata format:
+		# (inventory, expected_result, expected_exception)
+		testdata = (
+			(["localhost"], [("localhost", "SUCCESS")], None),
+			(["nonexistinghost"], [('nonexistinghost', 'COULD NOT RESOLVE')], None),
+			([], [], None),
+			# We cannot do a None testcase, because that pings ALL hosts in the default inventory,
+			# and would thus be difficult/impossible to verify the result of;
+			# instead we test with an invalid type.
+			(1, None, ArgumentValidationError),
+		)
+		for indata in testdata:
+			selection, expected_result, expected_exception = indata
+			try:
+				tmp = fun(selection)
+				if tmp != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"      selection: {selection}\n" \
+						  f"         result: {tmp}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"      selection: {selection}\n" \
+							  f"      exception: {e}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"      selection: {selection}\n" \
 						  f"      exception: {e}"
 					result = False
 					break
@@ -1728,6 +1777,10 @@ tests: Dict = {
 	},
 	("ansible_run_playbook()",): {
 		"callable": test_ansible_run_playbook,
+		"result": None,
+	},
+	("ansible_ping()",): {
+		"callable": test_ansible_ping,
 		"result": None,
 	},
 }
