@@ -556,7 +556,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 		    not isinstance(none_acceptable, bool) or
 		    (min_max is not None and
 		     (not isinstance(min_max, tuple) or len(min_max) != 2 or
-		      not isinstance(min_max[0], (int, float)) or not isinstance(min_max[1], (int, float))))):
+		      not (min_max[0] is None or isinstance(min_max[0], (int, float))) or not (min_max[1] is None or isinstance(min_max[1], (int, float)))))):
 			msg = [
 				[( "validate_arguments()", "emphasis"),
 				 ( " called with invalid argument(s):", "error")],
