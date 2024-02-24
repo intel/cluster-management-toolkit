@@ -15,9 +15,16 @@ from datetime import datetime, timedelta, date
 from typing import Callable, Dict, Tuple
 import yaml
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name
+from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_arguments
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+	result = ""
+	dump = yaml.dump(data)
+	for line in dump.splitlines():
+		result += f"{' '.ljust(base_indent)}{line}\n"
+	return result
 
 def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -488,6 +495,161 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = validate_arguments
+	fun_str = "validate_arguments"
+
+	if result:
+		# Indata format:
+		# (kwargs_properties, kwargs, expected_exception)
+		testdata = (
+			# Empty data should pass
+			({}, {}, None),
+			# Now try arguments that are invalid for validate_arguments() itself
+			({
+				"__allof": ("foo"), # Should be a dict; the missing comma turns it into just a string
+				"foo": {
+					"types": (int, ),
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo"), # Should be a dict; the missing comma turns it into just a string
+				"foo": {
+					"types": (int, ),
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int), # Should be a dict; the missing comma turns it into just a string
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int, ),
+					"range": ("foo", 4), # Should be int|float
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int, ),
+					"range": (1, 2, 4), # Should have 2 elements
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int, ),
+					"range": (1, ), # Should have 2 elements
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int, ),
+					"range": (0, 4),
+					"none": 1, # Should be bool
+				},
+			}, {"foo": 1}, ArgumentValidationError),
+			# Now let's validate arguments instead of the validator...
+			({
+				"__anyof": ("foo",),
+				"foo": {
+					"types": (int, ),
+					"range": (0, 4),
+				},
+			}, {"foo": 1}, None),
+			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (2, 4)}}, {
+				"foo": 1,	# Out of range <
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, 0)}}, {
+				"foo": 1,	# Out of range >
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (list,)}}, {
+				"foo": 1,	# Invalid type
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
+				"foo": "bar",	# OK
+			}, None),
+			({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
+				"foo": None,	# None
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (str, dict,)}}, {
+				"foo": None,	# None
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (str,), "none": True}}, {
+				"foo": None,	# OK
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (int,float,), "none": True}}, {
+				"foo": "bar",	# OK
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (0, 5)}}, {
+				"foo": "bar",	# OK
+			}, None),
+			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (5, 7)}}, {
+				"foo": "bar",	# Out of range < len(str)
+			}, ArgumentValidationError),
+			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (1, 2)}}, {
+				"foo": "bar",	# Out of range > len(str)
+			}, ArgumentValidationError),
+			({"__allof": ("foo","bar",), # "bar" is missing
+			  "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
+			({"__anyof": ("foo","bar",), # "bar" is missing, but that's OK
+			  "foo": {"types": (int,)}}, {"foo": 1}, None),
+			({"__anyof": ("bar",), # None of the keys in __anyof exists; that's NOT ok
+			  "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
+			({"__allof": ("foo", "bar",),
+			  "foo": {"types": (int,)}, "bar": {"types": (int,)}}, {"foo": 1, "bar": 2}, None),
+			({"__allof": ("foo", "bar",),
+			  "foo": {"types": (str,)}, "bar": {"types": (str,)}}, {
+				"foo": 1,	# Wrong type
+				"bar": 2,	# Wrong type
+			 }, ArgumentValidationError),
+		)
+		for indata in testdata:
+			kwargs_properties, kwargs, expected_exception = indata
+			try:
+				fun(kwargs_properties, kwargs)
+				if expected_exception is not None:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"kwargs_properties:\n" \
+						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
+						  f"           kwargs:\n" \
+						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
+						  f"         expected: {expected_exception}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"kwargs_properties:\n" \
+							  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
+							  f"           kwargs:\n" \
+							  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
+							  f"         expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					raise
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"kwargs_properties:\n" \
+						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
+						  f"           kwargs:\n" \
+						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
+						  f"         expected: {expected_exception}\n" \
+						  f"        exception: {repr(e).split('(')[0]}\n"
+					result = False
+					break
+	return message, result
+
 def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -532,6 +694,10 @@ tests: Dict = {
 	},
 	("FilePathAuditError", ): {
 		"callable": test_filepathauditerror,
+		"result": None,
+	},
+	("validate_arguments", ): {
+		"callable": test_validate_arguments,
 		"result": None,
 	},
 	("loglevel_to_name", ): {

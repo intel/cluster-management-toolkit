@@ -547,10 +547,38 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 		if key.startswith("__"):
 			continue
 		expected_types = deep_get(data, DictPath("types"))
-		none_acceptable = deep_get(data, DictPath("none"))
+		none_acceptable = deep_get(data, DictPath("none"), False)
 		# -1 (no min/max length); min_len == max_len for exact length
+
 		min_max = deep_get(data, DictPath("range"))
 		kwarg = deep_get(kwargs, DictPath(key))
+		if (expected_types is None or not isinstance(expected_types, tuple) or
+		    not isinstance(none_acceptable, bool) or
+		    (min_max is not None and
+		     (not isinstance(min_max, tuple) or len(min_max) != 2 or
+		      not isinstance(min_max[0], (int, float)) or not isinstance(min_max[1], (int, float))))):
+			msg = [
+				[( "validate_arguments()", "emphasis"),
+				 ( " called with invalid argument(s):", "error")],
+				[( "    types", "argument"),
+				 ( " is ", "default"),
+				 (f"{type(expected_types)}", "argument"),
+				 ( " expected ", "default"),
+				 (f"{repr(tuple)}", "emphasis")],
+				[( "    none", "argument"),
+				 ( " is ", "default"),
+				 (f"{type(none_acceptable)}", "argument"),
+				 ( " expected ", "default"),
+				 (f"{repr(bool)}", "emphasis")],
+				[( "    range", "argument"),
+				 ( " is ", "default"),
+				 (f"{type(min_max)}", "argument"),
+				 ( " expected ", "default"),
+				 ( "((int|float, int|float))", "emphasis")],
+			]
+
+			raise ArgumentValidationError(subexception = TypeError, formatted_msg = msg)
+
 
 		if kwarg is None and not none_acceptable:
 			if len(expected_types) == 1:
@@ -646,20 +674,35 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 	msg: List[List[Tuple[str, str]]] = []
 
 	# Check if we got all the arguments we asked for
-	if not msg:
-		missing: List[str] = []
-		for key in allof:
-			if key not in kwargs:
-				missing += key
-		if missing:
-			msg = [
-				[(f"{function}()", "emphasis"),
-				  (" called with invalid argument(s):", "error")],
-				[ ("    The following arguments are missing but must be present:", "default")],
-			]
-			for key in missing:
-				msg.append([(f"{key}", "argument")])
-			subexception = ValueError
+	missing: List[str] = []
+	anyexists: bool = False
+	
+	for key in anyof:
+		if key in kwargs:
+			anyexists = True
+			break
+	if anyof and not anyexists:
+		msg = [
+			[(f"{function}()", "emphasis"),
+			  (" called with invalid argument(s):", "error")],
+			[ ("    At least one of the following arguments must be present:", "default")],
+		]
+		for key in anyof:
+			msg.append([(f"{key}", "argument")])
+		subexception = ValueError
+
+	for key in allof:
+		if key not in kwargs:
+			missing += key
+	if missing:
+		msg = [
+			[(f"{function}()", "emphasis"),
+			  (" called with invalid argument(s):", "error")],
+			[ ("    The following arguments are missing but must be present:", "default")],
+		]
+		for key in missing:
+			msg.append([(f"{key}", "argument")])
+		subexception = ValueError
 
 	if not msg:
 		# Check whether arguments were OK
