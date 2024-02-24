@@ -349,7 +349,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 	else:
 		# For kubeadm we try to use the package version
 		get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
-		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane])
+		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane], quiet = False)
 
 		if len(ansible_results) == 0:
 			raise ValueError(f"Error: Failed to get package versions from {controlplane} (retval: {retval}); aborting.")
@@ -1961,7 +1961,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 	}
 	merged_values = { **values, **extra_values }
 
-	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, verbose = verbose)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, verbose = verbose, quiet = False)
 
 	if not quiet:
 		ansible_print_play_results(retval, ansible_results, verbose = verbose)
@@ -3577,7 +3577,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			pod_network_cidr = "<unknown>"
 
 		get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
-		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane])
+		retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [controlplane], quiet = False)
 
 		if len(ansible_results) == 0:
 			raise ValueError(f"Error: Failed to get package versions from {controlplane} (retval: {retval}); aborting.")

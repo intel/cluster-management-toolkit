@@ -23,6 +23,12 @@
   (named config-clustername) rather than merging the config-files
 
 ## cmu
+* Divide ping (inventory & context views) into 2 different categories;
+  normal and slow; slow to use with hosts that responded with
+  "NO ROUTE TO HOST", "CONNECTION TIMED OUT", or "COULD NOT RESOLVE";
+  we still continue pinging them every, say, 30 seconds, but there's no point
+  holding up the results from the remaining hosts. Also we should probably
+  figure out massively parallel pinging somehow.
 * Bundle all Core APIs into one file and load them all using secure_read_yaml_all();
   this *should* lead to a slight performance improvement;
   note that the files should be kept separate and only bundle upon "build"

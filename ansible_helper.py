@@ -1446,7 +1446,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 				ANSIThemeString(f"{count_no_hosts_match}\n", "numerical"),
 				])
 
-def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False, quiet: bool = True) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
@@ -1454,6 +1454,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 			playbook (FilePath): The playbook to run
 			inventory (dict): An inventory dict with selection as the list of hosts to run on
 			verbose (bool): Output status updates for every new Ansible event
+			quiet (bool): Disable console output
 		Returns:
 			(retval(int), ansible_results(dict)): The return value and results from the run
 	"""
@@ -1474,7 +1475,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 	event_handler = None
 	if verbose:
 		event_handler = __ansible_run_event_handler_verbose_cb
-	else:
+	elif not quiet:
 		event_handler = __ansible_run_event_handler_cb
 
 	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks,
@@ -1497,7 +1498,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 
 	return retval, ansible_results
 
-def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, verbose: bool = False) -> Tuple[int, Dict]:
+def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, verbose: bool = False, quiet: bool = True) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
 
@@ -1506,6 +1507,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 			selection (list[str]): The hosts to run the play on
 			values (dict): Extra values to set for the hosts
 			verbose (bool): Output status updates for every new Ansible event
+			quiet (bool): Disable console output
 		Returns:
 			The result from ansible_run_playbook()
 			retval = -errno.ENOENT if the inventory is missing or empty
@@ -1548,7 +1550,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	for host in selection:
 		d["selection"]["hosts"][host] = {}
 
-	return ansible_run_playbook(playbook, d, verbose)
+	return ansible_run_playbook(playbook, d, verbose = verbose, quiet = quiet)
 
 def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
@@ -1573,7 +1575,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 					"selection": {"types": (list,)}}, kwargs = {
 					"selection": selection})
 
-	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection)
+	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection, quiet = False)
 
 	for host in ansible_results:
 		for task in deep_get(ansible_results, DictPath(host), []):

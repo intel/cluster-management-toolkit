@@ -191,7 +191,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 	}
 	merged_values = { **values, **extra_values }
 
-	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, quiet = False)
 	if retval == -errno.ENOENT and len(ansible_results) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
@@ -1307,7 +1307,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	# if it's an RKE2 cluster we try to deduce the channel from the control plane
 	# Kubernetes version
 	if k8s_distro == "kubeadm":
-		_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip])
+		_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml"))), selection = [control_plane_ip], quiet = False)
 		if len(ansible_results) == 0:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(f": Failed to get package versions from control plane at {control_plane_ip} (retval: {retval}); aborting.", "default")], stderr = True)

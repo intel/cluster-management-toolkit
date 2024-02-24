@@ -1003,7 +1003,7 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	playbook_path = deep_get(playbooks, DictPath(f"{playbook}#playbook"), "")
-	retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, verbose = verbose)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, verbose = verbose, quiet = False)
 	if verbose:
 		ansithemeprint([ANSIThemeString("", "default")])
 

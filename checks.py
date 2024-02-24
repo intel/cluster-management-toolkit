@@ -1472,7 +1472,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 	}
 	merged_values = { **values, **extra_values }
 
-	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values)
+	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, quiet = False)
 
 	ansible_print_play_results(retval, ansible_results)
 
