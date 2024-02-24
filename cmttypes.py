@@ -676,7 +676,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 	# Check if we got all the arguments we asked for
 	missing: List[str] = []
 	anyexists: bool = False
-	
+
 	for key in anyof:
 		if key in kwargs:
 			anyexists = True
