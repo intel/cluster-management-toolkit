@@ -919,10 +919,11 @@ def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Un
 			return tmp
 
 		if isinstance(tmp, dict):
-			result = __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
+			return __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
 		elif isinstance(tmp, list):
+			result = []
 			for tmp2 in tmp:
-				result = __deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result)
+				result.append(__deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result))
 
 	return result
 
@@ -939,7 +940,13 @@ def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[Lis
 			result (List[Any]): The values from the paths
 	"""
 
+	if dictionary is None or paths is None:
+		return default
+
+	result = None
 	for path in paths:
+		if path is None:
+			continue
 		result = __deep_get_recursive(dictionary, path.split("#"))
 
 		if result is not None and not (type(result) in (list, str, dict) and len(result) == 0 and fallback_on_empty):

@@ -638,12 +638,71 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					raise
 					message = f"{fun_str}() did not yield expected result:\n" \
 						  f"kwargs_properties:\n" \
 						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
 						  f"           kwargs:\n" \
 						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
+						  f"         expected: {expected_exception}\n" \
+						  f"        exception: {repr(e).split('(')[0]}\n"
+					result = False
+					break
+	return message, result
+
+def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = deep_get_list
+	fun_str = "deep_get_list"
+
+	if result:
+		obj = {'spec': {'ports': [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
+					  {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}]}}
+
+		# Indata format:
+		# (paths, default, fallback_on_empty, expected_result, expected_exception)
+		testdata = (
+			(["spec#ports"], [], False, [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
+						     {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
+			(["spec#ports#name"], [], False, ["port1", "port2"], None),
+			(["spec#ports#protocol", "spec#ports#name"], [], False, ["TCP", "UDP"], None),
+			(["nonExistingPath", "spec#ports#name"], [], True, ["port1", "port2"], None),
+			([], [], False, [], None),
+			(None, [], False, [], None),
+			([None], [], False, [], None),
+			([""], [], False, [], None),
+			([""], ["foo"], True, ["foo"], None),
+			(["nonExistingPath"], ["fallback"], True, ["fallback"], None),
+		)
+		for indata in testdata:
+			paths, default, fallback_on_empty, expected_result, expected_exception = indata
+			try:
+				tmp = fun(dictionary = obj, paths = paths, default = default, fallback_on_empty = fallback_on_empty)
+				if tmp != expected_result:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"            paths: {paths}\n" \
+						  f"          default: {default}\n" \
+						  f"fallback_on_empty: {fallback_on_empty}\n" \
+						  f"           result: {tmp}\n" \
+						  f"         expected: {expected_result}\n"
+
+				if expected_exception is not None:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"         expected: {expected_exception}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"         expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
 						  f"         expected: {expected_exception}\n" \
 						  f"        exception: {repr(e).split('(')[0]}\n"
 					result = False
@@ -696,11 +755,15 @@ tests: Dict = {
 		"callable": test_filepathauditerror,
 		"result": None,
 	},
-	("validate_arguments", ): {
+	("validate_arguments()", ): {
 		"callable": test_validate_arguments,
 		"result": None,
 	},
-	("loglevel_to_name", ): {
+	("deep_get_list()", ): {
+		"callable": test_deep_get_list,
+		"result": None,
+	},
+	("loglevel_to_name()", ): {
 		"callable": test_loglevel_to_name,
 		"result": None,
 	},
