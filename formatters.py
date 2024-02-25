@@ -7,6 +7,8 @@
 Format text as themearrays
 """
 
+import base64
+import binascii
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -1421,7 +1423,7 @@ def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Li
 	return format_none
 
 # Formatters acceptable for direct use in view files
-formatter_allowlist = {
+formatter_allowlist: Dict[str, Callable] = {
 	"format_caddyfile": format_caddyfile,
 	"format_crt": format_crt,
 	"format_fluentbit": format_fluentbit,
@@ -1437,3 +1439,186 @@ formatter_allowlist = {
 	"format_yaml": format_yaml,
 	"reformat_json": reformat_json,
 }
+
+# These are based on attributes of the name of the cmdata
+cmdata_format: List[Tuple[str, str, str, str, str]] = [
+	# cm namespace, cm name prefix, cmdata prefix, cmdata suffix, dataformat
+	# To do an exact match on cmdata set both cmdata prefix and cmdata suffix to the same string
+	# (this will work unless you have a string that contains the same substring twice)
+	("", "", "caBundle", "caBundle", "CRT"),
+	("", "image-registry-certificates", "", "", "CRT"),
+	("", "", "", ".crt", "CRT"),
+	("", "", "", ".pem", "CRT"),
+	("", "", "", "client-ca-file", "CRT"),
+	("", "", "haproxy.cfg", "haproxy.cfg", "HAProxy"),
+	("", "", "", ".ini", "INI"),
+	("", "", "", ".ndjson", "NDJSON"),
+	("", "", "", ".json", "JSON"),
+	("", "", "mosquitto.conf", "mosquitto.conf", "mosquitto"),
+	("", "", "", ".sh", "Shell Script"),
+	("", "", "", ".toml", "TOML"),
+	("", "", "", ".xml", "XML"),
+	("", "", "", ".yaml", "YAML"),
+	("", "", "", ".yml", "YAML"),
+	("calico-system", "cni-config", "", "", "JSON"),
+	("", "canal-config", "cni_network_config", "", "JSON"),
+	("", "", "fluentbit.conf", "", "FluentBit"),
+	("", "intel-iaa-config", "iaa.conf", "iaa.conf", "JSON"),
+	("istio-system", "istio", "", "", "YAML"),
+	("", "k10-k10-metering-config", "", "", "YAML"),
+	("", "kubeapps-clusters-config", "clusters.conf", "", "JSON"),
+	("", "kubeapps-internal-kubeappsapis-configmap", "plugins.conf", "", "JSON"),
+	("kube-public", "cluster-info", "kubeconfig", "", "YAML"),
+	("kube-public", "cluster-info", "jws-", "", "JWS"),
+	("kube-system", "antrea", "antrea-agent", "", "YAML"),
+	("kube-system", "antrea", "antrea-controller", "", "YAML"),
+	("kube-system", "antrea", "antrea-cni", "", "JSON"),
+	("kube-system", "cluster-config", "install-config", "", "YAML"),
+	("kube-system", "", "cni_network_config", "", "JSON"),
+	("", "coredns", "Corefile", "", "CaddyFile"),
+	("kube-system", "rke2-coredns", "Corefile", "", "CaddyFile"),
+	("kube-system", "rke2-coredns", "linear", "", "YAML"),
+	("kube-system", "rke2-etcd-snapshots", "", "", "JSON"),
+	("kube-system", "kubeadm-config", "", "", "YAML"),
+	("kube-system", "kubeconfig-in-cluster", "kubeconfig", "", "YAML"),
+	("kube-system", "kubelet-config", "", "", "YAML"),
+	("kube-system", "kube-proxy", "", "config.conf", "YAML"),
+	("kube-system", "scheduler-extender-policy", "policy.cfg", "", "JSON"),
+	("", "", "nginx.conf", "nginx.conf", "NGINX"),
+	("", "kubeshark-nginx", "default.conf", "default.conf", "NGINX"),
+	("", "kubeapps", "vhost.conf", "vhost.conf", "NGINX"),
+	("", "kubeapps", "k8s-api-proxy.conf", "k8s-api-proxy.conf", "NGINX"),
+	("", "linkerd-config", "values", "", "YAML"),
+	("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
+	("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
+	("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
+	("", "trivy-operator", "scanJob.podTemplateContainerSecurityContext", "", "JSON"),
+	("", "", "", ".py", "Python"),
+	# Openshift
+	("", "dns-default", "Corefile", "", "CaddyFile"),
+	("", "v4-0-config-system-cliconfig", "v4-0-config-system-cliconfig", "", "JSON"),
+	("openshift-authentication", "v4-0-config-system-metadata", "oauthMetadata", "", "JSON"),
+	("openshift-config-managed", "oauth-openshift", "oauthMetadata", "", "JSON"),
+	("openshift-kube-apiserver", "check-endpoints-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "config", "kubeconfig", "", "JSON"),
+	("openshift-kube-apiserver", "control-plane-node-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "kube-apiserver-cert-syncer-kubeconfig", "kubeconfig", "", "YAML"),
+	("openshift-kube-apiserver", "oauth-metadata", "oauthMetadata", "", "JSON"),
+	("openshift-kube-controller-manager", "controller-manager-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-controller-manager", "kube-controller-cert-syncer-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-scheduler", "kube-scheduler-cert-syncer-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-kube-scheduler", "scheduler-kubeconfig", "kubeconfig", "", "JSON"),
+	("openshift-machine-config-operator", "coreos-bootimages", "stream", "", "JSON"),
+	("openshift-operator", "applied-cluster", "applied", "", "JSON"),
+	# Keep last; match everything that does not match anything
+	("", "", "", "", "Text"),
+]
+
+# These are based on the data itself
+cmdata_header: List[Tuple[str, str]] = [
+	("<?xml ", "XML"),
+	("/bin/sh", "Shell Script"),
+	("/usr/bin/env bash", "BASH"),
+	("/usr/bin/env perl", "Perl"),
+	("/usr/bin/env python", "Python"),
+	("/bin/bash", "BASH"),
+	("/bin/dash", "Shell Script"),
+	("/bin/zsh", "ZSH"),
+	("python", "Python"),
+	("perl", "Perl"),
+	("perl", "Ruby"),
+	("-----BEGIN CERTIFICATE-----", "CRT"),
+]
+
+# Binary file headers
+cmdata_bin_header: List[Tuple[int, List[int], str]] = [
+	(0, [0x1f, 0x8b], "gz / tar+gz"),
+	(0, [0x1f, 0x9d], "lzw / tar+lzw"),
+	(0, [0x1f, 0xa0], "lzh / tar+lzh"),
+	(0, [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0], "xz / tar+xz"),
+	(0, [0x42, 0x5a, 0x68], "bz2 / tar+bz2"),
+	(0, [0x4c, 0x49, 0x50], "lzip"),
+	(2, [0x2d, 0x68, 0x6c, 0x30, 0x2d], "lzh (no compression)"),
+	(2, [0x2d, 0x68, 0x6c, 0x35, 0x2d], "lzh (8KiB sliding window)"),
+	(0, [0x51, 0x46, 0x49], "qcow"),
+	(0, [0x30, 0x37, 0x30, 0x37, 0x30, 0x37], "cpio"),
+	(0, [0x28, 0xb5, 0x2f, 0xfd], "zstd"),
+	(0, [0x50, 0x4b, 0x03, 0x04], "zip"),
+	(0, [0x50, 0x4b, 0x05, 0x06], "zip (empty)"),
+	(0, [0x50, 0x4b, 0x07, 0x08], "zip (spanned archive)"),
+	(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00], "rar (v1.50+)"),
+	(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00], "rar (v5.00+)"),
+	(0, [0x7f, 0x45, 0x4c, 0x46], "ELF"),
+	(0x8001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0x8801, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0x9001, [0x43, 0x44, 0x30, 0x30, 0x31], "ISO 9660"),
+	(0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x00, 0x30, 0x30], "tar"),
+	(0, [0x75, 0x73, 0x74, 0x61, 0x72, 0x20, 0x20, 0x00], "tar"),
+	(0, [0x78, 0x61, 0x72, 0x21], "xar"),
+	(0, [0x21, 0x3c, 0x61, 0x72, 0x63, 0x68, 0x3e, 0x0a], "deb"),
+	(0, [0xed, 0xab, 0xee, 0xdb], "rpm"),
+]
+
+def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
+	if len(data) == 0:
+		return "Empty", format_none
+
+	uudata = False
+
+	if "\n" not in data:
+		try:
+			decoded = base64.b64decode(data)
+			if base64.b64encode(decoded) == bytes(data, encoding = "utf-8"):
+				uudata = True
+		except binascii.Error:
+			pass
+
+	if uudata:
+		try:
+			data = decoded.decode("utf-8")
+		except UnicodeDecodeError:
+			for offset, match_bin_infix, dataformat in cmdata_bin_header:
+				if len(decoded) < len(match_bin_infix) + offset:
+					continue
+
+				if bytes(match_bin_infix) == decoded[offset:len(match_bin_infix) + offset]:
+					return dataformat, format_binary
+			return "Text or Base64 encoded binary", format_none
+
+	splitmsg = split_msg(data)
+	dataformat = ""
+
+	# We are in luck; there is an interpreter signature
+	# or other type of signature to help
+	if splitmsg and splitmsg[0].startswith(("#!", "-----")):
+		for tmp in cmdata_header:
+			match_infix, dataformat = tmp
+			if match_infix in data:
+				break
+
+	if len(dataformat) == 0:
+		for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
+			if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
+				break
+
+	formatter = map_dataformat(dataformat)
+
+	return dataformat, formatter
+
+def identify_formatter(dataformat, kind = None, obj = None, path = None):
+	formatter = format_none
+
+	if dataformat is None:
+		if kind is not None and obj is not None and path is not None:
+			if kind == ("ConfigMap", ""):
+				cmdata_name = path
+				cm_name = deep_get(obj, DictPath("metadata#name"))
+				cm_namespace = deep_get(obj, DictPath("metadata#namespace"))
+				data = deep_get(obj, DictPath(f"data#{path}"))
+				dataformat, formatter = identify_cmdata(cmdata_name, cm_name, cm_namespace, data)
+			else:
+				raise ValueError(f"We do not know how to auto-identify data for kind {kind}")
+		else:
+			raise ValueError("identify_formatter was called without dataformat and kind, obj, or path=None")
+
+	return formatter

@@ -16,6 +16,9 @@ import yaml
 from cmttypes import deep_get, DictPath, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import cmtlib
+import kubernetes_helper
+
+kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
 # unit-tests for cmtlib.py
 
@@ -1427,7 +1430,7 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
 		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
 		k8s_distros = ("k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "rke2", "talos", "vcluster")
 		try:
-			tmp = fun()
+			tmp = fun(kubernetes_helper = kh)
 			if tmp not in k8s_distros:
 				message = f"{fun_str}() did not yield expected type:\n" \
 				          f"         output: {tmp}\n" \
@@ -1571,6 +1574,7 @@ tests_with_cluster = {
 }
 
 def main() -> int:
+	global kh
 	global tests
 
 	fail = 0
@@ -1584,6 +1588,7 @@ def main() -> int:
 		tests = { **tests, **tests_with_ansible }
 	if "--include-cluster" in sys.argv:
 		tests = { **tests, **tests_with_cluster }
+		kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))

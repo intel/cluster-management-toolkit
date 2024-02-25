@@ -11,7 +11,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 from typing import Dict, Tuple
 import yaml
 
-from cmttypes import deep_get, DictPath, ProgrammingError, HostNameStatus
+from cmttypes import deep_get, DictPath, ProgrammingError, HostNameStatus, ArgumentValidationError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import cmtvalidators
 
@@ -855,6 +855,21 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 				None,
 				ProgrammingError,
 			),
+			(
+				{
+					"arg": "foobar",
+					"arg_string": [ANSIThemeString("ARGUMENT", "argument")],
+					"options": {
+						"validator": "doesnotexist",
+						"list_separator": None,
+						"valid_range": (None, None),
+						"allowlist": [],
+						"regex": r"",
+					},
+				},
+				None,
+				ProgrammingError,
+			),
 		)
 		for indata, expected_status, expected_exception in testdata:
 			arg = deep_get(indata, DictPath("arg"), {})
@@ -957,6 +972,8 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 		# (fqdn, message_on_error, expected_status, expected_exception)
 		testdata = (
 			("intel.com", False, HostNameStatus.OK, None),
+			("\x00intel.com", False, None, ArgumentValidationError),
+			("\x00intel.com", True, None, ArgumentValidationError),
 			(f"{''.ljust(63, 'a')}.com", False, HostNameStatus.OK, None),
 			(f"{''.ljust(63, 'a')}.com", True, HostNameStatus.OK, None),
 			(f"{''.ljust(64, 'a')}.com", False, HostNameStatus.DNS_LABEL_TOO_LONG, None),

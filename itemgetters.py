@@ -425,7 +425,7 @@ def get_image_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 			if "@sha256:" not in name:
 				break
 
-		if len(name) == 0:
+		if not name:
 			continue
 		size = disksize_to_human(deep_get(image, DictPath("sizeBytes"), "0"))
 		vlist.append((name, size))
@@ -490,7 +490,7 @@ def get_list_as_list(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 		if _regex is not None:
 			compiled_regex = re.compile(_regex)
 		for item in deep_get_with_fallback(obj, paths, []):
-			if len(item) == 0:
+			if not item:
 				continue
 			if _regex is not None:
 				tmp = compiled_regex.match(item)
@@ -702,7 +702,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 	vlist = []
 
 	field_selector = ""
-	if pod_name is not None and len(pod_name) > 0:
+	if pod_name is not None and pod_name:
 		field_selector = f"metadata.name={pod_name}"
 
 	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector)
@@ -727,19 +727,19 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 		if matched:
 			continue
 		for container in deep_get(item, DictPath("spec#containers"), []):
-			for env in deep_get(volume, DictPath("env"), []):
-				if deep_get(source, DictPath("ValueFrom#configMapKeyRef#name"), "") == cm_name:
+			for env in deep_get(container, DictPath("env"), []):
+				if deep_get(env, DictPath("ValueFrom#configMapKeyRef#name"), "") == cm_name:
 					matched = True
 					vlist.append((cm_namespace, pod_name))
 					break
 			if matched:
 				break
-			for env_from in deep_get(volume, DictPath("envFrom"), []):
-				if deep_get(source, DictPath("configMapKeyRef#name"), "") == cm_name:
+			for env_from in deep_get(container, DictPath("envFrom"), []):
+				if deep_get(env_from, DictPath("configMapKeyRef#name"), "") == cm_name:
 					vlist.append((cm_namespace, pod_name))
 					break
 
-	if len(vlist) == 0:
+	if not vlist:
 		return None
 
 	return vlist
@@ -846,7 +846,7 @@ def get_strings_from_string(kh: kubernetes_helper.KubernetesHelper, obj: Dict, *
 	if "path" in kwargs:
 		path = deep_get(kwargs, DictPath("path"))
 		tmp = deep_get(obj, DictPath(path), [])
-		if tmp is not None and len(tmp) > 0:
+		if tmp is not None and tmp:
 			for line in split_msg(tmp):
 				vlist.append([line])
 	return vlist
@@ -860,7 +860,7 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
 
 	for subset in subsets:
 		# Keep track of whether we have not ready addresses
-		if deep_get(subset, DictPath("notReadyAddresses")) is not None and len(deep_get(subset, DictPath("notReadyAddresses"))) > 0:
+		if deep_get(subset, DictPath("notReadyAddresses")) is not None and deep_get(subset, DictPath("notReadyAddresses")):
 			notready += 1
 
 		if deep_get(subset, DictPath("addresses")) is None:
@@ -869,8 +869,8 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
 		for address in deep_get(subset, DictPath("addresses"), []):
 			endpoints.append(deep_get(address, DictPath("ip")))
 
-	if len(endpoints) == 0:
-		if notready > 0:
+	if not endpoints:
+		if notready:
 			return ["<not ready>"]
 		return ["<none>"]
 
@@ -966,11 +966,11 @@ def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: D
 		else:
 			target_port = ""
 		endpointstr = f":{target_port}, ".join(endpoints)
-		if len(endpointstr) > 0:
+		if endpointstr:
 			endpointstr += f":{target_port}"
 		port_target_endpoints.append((f"{name}:{svcport}/{protocol}", f"{node_port}", f"{target_port}/{protocol}", endpointstr))
 
-	if len(port_target_endpoints) == 0:
+	if not port_target_endpoints:
 		port_target_endpoints = [("<none>", "", "", "")]
 
 	return port_target_endpoints

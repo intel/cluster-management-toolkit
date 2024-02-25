@@ -24,7 +24,7 @@ from ansible_helper import ansible_configuration
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
 
 from cmtio import execute_command_with_response
-from cmttypes import deep_get, DictPath, FilePath
+from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
@@ -571,8 +571,8 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 			ANSIThemeString("kube-proxy", "programname"),
 			ANSIThemeString(" versions]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+		raise ProgrammingError("check_kubelet_and_kube_proxy_versions() called without kubernetes_helper")
 
 	vlist, _status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if vlist is None or _status != 200:
@@ -892,8 +892,9 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 
 	ansithemeprint([ANSIThemeString("\n[Checking required pods]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+		raise ProgrammingError("check_running_pods() called without kubernetes_helper")
+
 
 	pods, _status = kh.get_list_by_kind_namespace(("Pod", ""), "")
 	all_ok = True
@@ -1470,7 +1471,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		"registry_mirrors": registry_mirrors,
 		"use_proxy": use_proxy,
 	}
-	merged_values = { **values, **extra_values }
+	merged_values = {**values, **extra_values}
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, quiet = False)
 

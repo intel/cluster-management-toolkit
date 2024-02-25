@@ -12,6 +12,7 @@ Kubernetes helpers used by CMT
 
 import base64
 import copy
+from datetime import datetime
 import hashlib
 # ujson is much faster than json,
 # but it might not be available
@@ -44,7 +45,6 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
-from cmtlib import datetime_to_timestamp, get_since, timestamp_to_datetime, versiontuple
 #from cmtlog import debuglog
 #from cmttypes import LogLevel
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, ProgrammingError, SecurityChecks, SecurityPolicy, StatusGroup
@@ -3564,19 +3564,171 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	},
 }
 
+def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetime]]:
+	"""
+	Given a Pod object, return the total number of restarts for all containers
+	as well as the timestamp of the latest restart
+
+		Parameters:
+			pod (dict): The pod to return information about
+		Returns:
+			(int, int|datetime):
+				(int): The number of restarts
+				(int|datetime): The timestamp for the last restart
+						or -1 if number of restarts = 0
+	"""
+
+	restarts = 0
+	restarted_at: Union[int, datetime] = -1
+
+	#for status in deep_get(pod, DictPath("status#initContainerStatuses"), []) + deep_get(pod, DictPath("status#containerStatuses"), []):
+	for status in deep_get(pod, DictPath("status#containerStatuses"), []):
+		restart_count = deep_get(status, DictPath("restartCount"), 0)
+		restarts += restart_count
+		if restart_count > 0:
+			started_at = cmtlib.timestamp_to_datetime(deep_get_with_fallback(status, [DictPath("state#running#startedAt"), DictPath("lastState#terminated#finishedAt")], None))
+			if started_at is not None and (restarted_at == -1 or cast(datetime, restarted_at) < started_at):
+				restarted_at = started_at
+
+	if not restarts:
+		restarted_at = -1
+	return restarts, restarted_at
+
+def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Dict[str, Any]]) -> List[List[str]]:
+	container_dict = {}
+	container_list = []
+
+	for container in containers:
+		container_name = deep_get(container, DictPath("name"))
+		container_image = deep_get(container, DictPath("image"))
+		image_version = get_image_version(container_image)
+		container_dict[container_name] = image_version
+
+	for container in container_statuses:
+		container_name = deep_get(container, DictPath("name"))
+		container_image = deep_get(container, DictPath("image"))
+		if container_dict[container_name] == "<undefined>":
+			image_version = get_image_version(container_image, "<undefined>")
+			container_list.append([container_name, image_version])
+		else:
+			container_list.append([container_name, container_dict[container_name]])
+
+	return container_list
+
+def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
+	controller = (("", ""), "")
+	if owner_references is not None:
+		api_group_regex = re.compile(r"^(.*)/.*")
+
+		for owr in owner_references:
+			if deep_get(owr, DictPath("controller"), False):
+				api_version = deep_get(owr, DictPath("apiVersion"), "")
+				tmp = api_group_regex.match(api_version)
+				if tmp is not None:
+					api_group = tmp[1]
+				else:
+					api_group = ""
+				kind = (deep_get(owr, DictPath("kind")), api_group)
+				controller = (kind, deep_get(owr, DictPath("name"), ""))
+
+	return controller
+
+def get_node_roles(node: Dict) -> List[str]:
+	"""
+	Get a list of the roles that the node belongs to
+
+		Parameters:
+			node (dict): The node object
+		Returns:
+			roles (list[str]): THe roles that the node belongs to
+	"""
+
+	roles: List[str] = []
+
+	node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
+
+	for label in deep_get(node, DictPath("metadata#labels"), {}).items():
+		tmp = node_role_regex.match(label[0])
+
+		if tmp is None:
+			continue
+
+		role = tmp[1]
+
+		if role not in roles:
+			roles.append(role)
+
+	return roles
+
+# We could probably merge this into the list above?
+def resource_kind_to_rtype(resource):
+	rtypes = {
+		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
+		("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
+		("CiliumEndpoint", "cilium.io"): "[cilium_endpoint]",
+		("ConfigAuditReport", "aquasecurity.github.io"): "[report]",
+		("ConfigMap", ""): "[configmap]",
+		("Container", ""): "[container]",
+		("Controller", ""): "[controller]",
+		("ControllerRevision", "apps"): "[controller_revision]",
+		("CronJob", "batch"): "[job_controller]",
+		("DaemonSet", "apps"): "[controller]",
+		("Deployment", "apps"): "[controller]",
+		("Endpoints", ""): "[endpoints]",
+		("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
+		("EphemeralContainer", ""): "[ephemeral_container]",
+		("ExposedSecretReport", "aquasecurity.github.io"): "[report]",
+		("Event", ""): "[event]",
+		("Event", "events.k8s.io"): "[event]",
+		("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
+		("InfraAssessmentReport", "aquasecurity.github.io"): "[report]",
+		("Ingress", "networking.k8s.io"): "[ingress]",
+		("InitContainer", ""): "[init_container]",
+		("Job", "batch"): "[controller]",
+		("Lease", "coordination.k8s.io"): "[lease]",
+		("LimitRange", ""): "[limit]",
+		("MutatingWebhookConfiguration", "admissionregistration.k8s.io"): "[webhook_configuration]",
+		("Node", ""): "[node]",
+		("PersistentVolume", ""): "[volume]",
+		("PersistentVolumeClaim", ""): "[volume_claim]",
+		("Pod", ""): "[pod]",
+		("PodDisruptionBudget", "policy"): "[pod_disruption_budget]",
+		("PodMetrics", "metrics.k8s.io"): "[pod_metrics]",
+		("PriorityClass", "scheduling.k8s.io"): "[priority_class]",
+		("ReplicaSet", "apps"): "[controller]",
+		("ReplicationController", ""): "[controller]",
+		("ResourceClaim", "resource.k8s.io"): "[resource_claim]",
+		("Role", "rbac.authorization.k8s.io"): "[role]",
+		("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
+		("RuntimeClass", "node.k8s.io"): "[runtime_class]",
+		("SbomReport", "aquasecurity.github.io"): "[report]",
+		("Scheduler", ""): "[scheduler]",
+		("Secret", ""): "[secret]",
+		("Service", ""): "[service]",
+		("ServiceAccount", ""): "[service_account]",
+		("ServiceEntry", ""): "[service_entry]",
+		("StatefulSet", "apps"): "[controller]",
+		("TASPolicy", "telemetry.intel.com"): "[scheduling_policy]",
+		("TFJob", "kubeflow.org"): "[controller]",
+		("ValidatingWebhookConfiguration", "admissionregistration.k8s.io"): "[webhook_configuration]",
+		("VulnerabilityReport", "aquasecurity.github.io"): "[report]",
+		("Workflow", "argoproj.io"): "[controller]",
+	}
+
+	return rtypes.get(resource, "[unknown]")
+
 class KubernetesResourceCache:
 	"""
 	A class for caching Kubernetes resources
 	"""
 
 	updated = False
-	resource_cache: Dict = None
 
 	def __init__(self) -> None:
 		"""
 		Initialize the resource cache
 		"""
-		self.resource_cache = {}
+		self.resource_cache: Dict = {}
 
 	def update_resource(self, kind: Tuple[str, str], resource: Dict) -> None:
 		"""
@@ -3627,7 +3779,7 @@ class KubernetesResourceCache:
 		for resource in resources:
 			self.update_resource(kind, resource = resource)
 
-	def get_resources(self, kind: Tuple[str, str]) -> Tuple[List[Dict], str]:
+	def get_resources(self, kind: Tuple[str, str]) -> Optional[List[Dict]]:
 		"""
 		Return a list with all resources of the specified kind
 
@@ -3790,16 +3942,16 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 
 	if isinstance(kind, str):
 		if "." in kind:
-			kind = tuple(kind.split(".", maxsplit = 1))
+			kind = cast(tuple, tuple(kind.split(".", maxsplit = 1)))
 		else:
 			kind = (kind, "")
 
 	# If we already have a tuple, do not guess
 	if kind in kubernetes_resources:
-		return kind
+		return cast(tuple, kind)
 
 	if kind[0].startswith("__"):
-		return kind
+		return cast(tuple, kind)
 
 	guess = None
 
@@ -4588,7 +4740,7 @@ class KubernetesHelper:
 								if cni_version is None:
 									cni_version = image_version
 									pod_matches += 1
-								elif versiontuple(image_version) > versiontuple(cni_version):
+								elif cmtlib.versiontuple(image_version) > cmtlib.versiontuple(cni_version):
 									cni_version = image_version
 									pod_matches += 1
 								elif image_version != cni_version:
@@ -4651,33 +4803,6 @@ class KubernetesHelper:
 		cni += self.__identify_cni("weave", ("DaemonSet", "apps"), "metadata.name=weave-net", "weave")
 
 		return cni
-
-	def get_node_roles(self, node: Dict) -> List[str]:
-		"""
-		Get a list of the roles that the node belongs to
-
-			Parameters:
-				node (dict): The node object
-			Returns:
-				roles (list[str]): THe roles that the node belongs to
-		"""
-
-		roles: List[str] = []
-
-		node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
-
-		for label in deep_get(node, DictPath("metadata#labels"), {}).items():
-			tmp = node_role_regex.match(label[0])
-
-			if tmp is None:
-				continue
-
-			role = tmp[1]
-
-			if role not in roles:
-				roles.append(role)
-
-		return roles
 
 	def __close_certs(self) -> None:
 		if self.tmp_ca_certs_file is not None:
@@ -4751,8 +4876,8 @@ class KubernetesHelper:
 		for secret in vlist:
 			name = deep_get(secret, DictPath("metadata#name"))
 			if name.startswith("bootstrap-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
-				newage = get_since(timestamp)
+				timestamp = cmtlib.timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
+				newage = cmtlib.get_since(timestamp)
 				if age == -1 or newage < age:
 					try:
 						tmp1 = base64.b64decode(deep_get(secret, DictPath("data#token-id"), "")).decode("utf-8")
@@ -4791,8 +4916,8 @@ class KubernetesHelper:
 		# Find the newest certificate-controller-token
 		for secret in vlist:
 			if deep_get(secret, DictPath("metadata#name")).startswith("certificate-controller-token-"):
-				timestamp = timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
-				newage = get_since(timestamp)
+				timestamp = cmtlib.timestamp_to_datetime(deep_get(secret, DictPath("metadata#creationTimestamp")))
+				newage = cmtlib.get_since(timestamp)
 				if age == -1 or newage < age:
 					try:
 						tmp1 = base64.b64decode(deep_get(secret, DictPath("data#ca.crt"), "")).decode("utf-8")
@@ -6010,14 +6135,14 @@ a				the return value from __rest_helper_patch
 			involved_name = deep_get_with_fallback(obj, [DictPath("regarding#name"), DictPath("involvedObject#name")])
 			ev_name = deep_get(obj, DictPath("metadata#name"))
 			ev_namespace = deep_get(obj, DictPath("metadata#namespace"), "")
-			_last_seen = timestamp_to_datetime(deep_get_with_fallback(obj, [
+			_last_seen = cmtlib.timestamp_to_datetime(deep_get_with_fallback(obj, [
 				DictPath("series#lastObservedTime"),
 				DictPath("deprecatedLastTimestamp"),
 				DictPath("lastTimestamp"),
 				DictPath("eventTime"),
 				DictPath("deprecatedFirstTimestamp"),
 				DictPath("firstTimestamp")]))
-			last_seen = datetime_to_timestamp(_last_seen)
+			last_seen = cmtlib.datetime_to_timestamp(_last_seen)
 			status = deep_get(obj, DictPath("type"), "")
 			reason = deep_get(obj, DictPath("reason"), "").replace("\\\"", "“").replace("\n", "\\n").rstrip()
 			src_component = deep_get(obj, DictPath("reportingController"), "")
@@ -6032,8 +6157,8 @@ a				the return value from __rest_helper_patch
 				source = src_component
 			else:
 				source = f"{src_host}/{src_component}"
-			_first_seen = timestamp_to_datetime(deep_get_with_fallback(obj, [DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")]))
-			first_seen = datetime_to_timestamp(_first_seen)
+			_first_seen = cmtlib.timestamp_to_datetime(deep_get_with_fallback(obj, [DictPath("eventTime"), DictPath("deprecatedFirstTimestamp"), DictPath("firstTimestamp")]))
+			first_seen = cmtlib.datetime_to_timestamp(_first_seen)
 
 			count: str = deep_get_with_fallback(obj, [DictPath("series#count"), DictPath("deprecatedCount"), DictPath("count")], "")
 			if count is None:

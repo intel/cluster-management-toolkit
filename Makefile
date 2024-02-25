@@ -7,15 +7,15 @@ test_lib_symlinks = \
 	cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py \
 	commandparser.py \
 	curses_helper.py \
-	datagetter.py \
-	formatter.py \
-	generator.py \
+	datagetters.py \
+	formatters.py \
+	generators.py \
 	helptexts.py \
-	itemgetter.py \
+	itemgetters.py \
 	kubernetes_helper.py \
 	logparser.py \
 	networkio.py \
-	objgetter.py \
+	objgetters.py \
 	reexecutor.py
 
 # Most of these are warnings/errors emitted due to coding style differences
@@ -158,7 +158,16 @@ pylint:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
-	$$cmd --rcfile .pylint $(python_executables) $(python_test_executables) *.py || /bin/true
+	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
+
+pylint-tests:
+	@cmd=pylint ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
+	$$cmd --rcfile .pylint $(python_test_executables) || /bin/true
 
 flake8:
 	@cmd=flake8 ;\
@@ -215,7 +224,7 @@ mypy:
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) $(python_test_executables) *.py; do \
+	for file in $(python_executables) *.py; do \
 		$$cmd --ignore-missing-imports $$file || true; \
 	done
 

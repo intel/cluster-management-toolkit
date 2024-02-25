@@ -61,7 +61,8 @@ from cmtio import execute_command, secure_read_string
 from cmtio_yaml import secure_read_yaml
 from networkio import scan_and_add_ssh_keys
 
-from kubernetes_helper import list_contexts, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context, guess_kind
+import kubernetes_helper
+from kubernetes_helper import list_contexts, get_node_roles, get_node_status, kubectl_get_version, update_api_status as kh_update_api_status, set_context, guess_kind
 
 import checks
 
@@ -70,6 +71,8 @@ from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ans
 import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
+
+kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
 def request_ansible_password() -> None:
 	"""
@@ -189,7 +192,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		"use_proxy": use_proxy,
 		"minor_versions": minor_versions,
 	}
-	merged_values = { **values, **extra_values }
+	merged_values = {**values, **extra_values}
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, quiet = False)
 	if retval == -errno.ENOENT and len(ansible_results) == 0:
@@ -246,11 +249,12 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 				name (str): The name of the control plane
 				ipaddresses ([str]): A list of IP-addresses for the control plane
 	"""
+	global kh  # pylint: disable=global-statement
 
 	controlplanes = []
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
@@ -266,7 +270,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 
 	for node in vlist:
 		name = deep_get(node, DictPath("metadata#name"))
-		node_roles = kh.get_node_roles(cast(Dict, node))
+		node_roles = get_node_roles(cast(Dict, node))
 		if "control-plane" in node_roles or "master" in node_roles:
 			ipaddresses = []
 			for address in deep_get(node, DictPath("status#addresses")):
@@ -397,6 +401,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 				non_existing_nodes (list[str]): The non-existing nodes
 				controlplanes (list[str]): The control planes
 	"""
+	global kh  # pylint: disable=global-statement
 
 	all_items = False
 	items1 = []
@@ -422,8 +427,8 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 
 	# Kubernetes resources
 	if isinstance(kind, tuple):
-		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		if kh is None:
+			kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		if status != 200:
@@ -442,7 +447,7 @@ def get_selection(selection: List[str], kind: Optional[Tuple[str, str]] = None) 
 			if not all_items and name not in selection:
 				continue
 
-			node_roles = kh.get_node_roles(cast(Dict, node))
+			node_roles = get_node_roles(cast(Dict, node))
 			if "control-plane" in node_roles or "master" in node_roles:
 				items2.append(name)
 				continue
@@ -468,6 +473,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	include_control_planes = False
 	header = True
@@ -506,8 +512,8 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Cordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		ansithemeprint([ANSIThemeString(f"{node}:", "hostname")])
@@ -608,6 +614,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	include_control_planes = False
 	header = True
@@ -646,8 +653,8 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Uncordoning nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		ansithemeprint([ANSIThemeString(f"{node}:", "hostname")])
@@ -676,6 +683,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	include_control_planes = False
 	overwrite = False
@@ -729,8 +737,8 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Tainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
@@ -767,6 +775,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	include_control_planes = False
 	header = True
@@ -818,8 +827,8 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if header:
 		ansithemeprint([ANSIThemeString("\n[Untainting nodes]", "phase")])
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for node in nodes:
 		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
@@ -1026,6 +1035,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	os_distro = identify_distro()
 	k8s_distro = "kubeadm"
@@ -1219,8 +1229,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\n[Adding nodes]", "phase")])
 
 	# Get variables that need to be available when setting up nodes
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	join_token = None
 	ca_cert_hash = None
@@ -1977,6 +1987,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		Returns:
 			0 on success, exits with errno on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	namespaced_only = None
 	local_only = None
@@ -2051,8 +2062,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		elif opt == "--wide":
 			wide = True
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	result, api_resources = kh.get_api_resources()
 	kubernetes_resources = None

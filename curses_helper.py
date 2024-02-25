@@ -1032,7 +1032,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	heatmap: List[Union[ThemeRef, ThemeString]] = []
 
 	if len(stgroups) == 0:
-		return heatmap
+		return []
 
 	# Append a dummy entry to avoid special casing
 	stgroups.append(StatusGroup.UNKNOWN)
@@ -1237,7 +1237,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int, progress: int,
 		raise ProgrammingError(unformatted_msg,
 				       severity = LogLevel.ERR,
 				       formatted_msg = formatted_msg)
-	elif progress > 100:
+	if progress > 100:
 		msg = [
 			[("curses_helper.progressbar()", "emphasis"),
 			 (" called with progress > 100:", "error")],
@@ -2262,6 +2262,7 @@ class UIProps:
 		self.last_timestamp_update: Optional[str] = None
 
 		self.idle_timeout = 5
+		self.last_action = datetime.now()
 
 		# Info to use for populating lists, etc.
 		self.sorted_list: List[Type] = []

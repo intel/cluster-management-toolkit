@@ -564,6 +564,12 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 					"range": (0, 4),
 				},
 			}, {"foo": 1}, None),
+			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (None, 4)}}, {
+				"foo": 1,	# OK
+			}, None),
+			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, None)}}, {
+				"foo": 1,	# OK
+			}, None),
 			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (2, 4)}}, {
 				"foo": 1,	# Out of range <
 			}, ArgumentValidationError),

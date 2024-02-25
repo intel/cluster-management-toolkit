@@ -14,11 +14,12 @@ import re
 import sys
 from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
-import about
 from ansithemeprint import ANSIThemeString, ansithemeprint
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, SecurityPolicy, ProgrammingError, LogLevel
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
 import cmtio
+
+import kubernetes_helper
 
 cmtconfig = {}
 
@@ -930,10 +931,12 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 
 	return versions
 
-def identify_k8s_distro() -> str:
+def identify_k8s_distro(**kwargs: Any) -> str:
 	"""
 	Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use
 
+		Parameters:
+			kwargs (dict): Additional parameters
 		Returns:
 			k8s_distro (str): The identified Kubernetes distro; empty if no distro could be identified
 	"""
@@ -941,8 +944,8 @@ def identify_k8s_distro() -> str:
 	k8s_distro = None
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+		raise ProgrammingError("identify_k8s_distro() called without kubernetes_helper")
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
@@ -958,7 +961,7 @@ def identify_k8s_distro() -> str:
 
 	tmp_k8s_distro = None
 	for node in vlist:
-		node_roles = kh.get_node_roles(cast(Dict, node))
+		node_roles = kubernetes_helper.get_node_roles(cast(Dict, node))
 		labels = deep_get(node, DictPath("metadata#labels"), {})
 		if "control-plane" in node_roles or "master" in node_roles:
 			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")

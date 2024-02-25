@@ -42,7 +42,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
-from cmtpaths import DEPLOYMENT_DIR, NETRC_PATH
+from cmtpaths import DEPLOYMENT_DIR
 from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR, CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
 from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR, CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
@@ -64,6 +64,7 @@ import cmtlib
 from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper, identify_distro, read_cmtconfig, substitute_list, substitute_string
 
 import kubernetes_helper
+from kubernetes_helper import get_node_roles
 
 from ansithemeprint import ANSIThemeString, ansithemeinput, ansithemeinput_password, ansithemeprint
 from ansithemeprint import ansithemestring_join_tuple_list, themearray_override_formatting
@@ -78,6 +79,8 @@ DEFAULT_CNI = "cilium"
 DEFAULT_POD_NETWORK_CIDR = "10.244.0.0/16"
 
 no_password = False
+
+kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
 cri_data: Dict = {
 	"containerd": {
@@ -321,13 +324,14 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
 		Returns:
 			version (str): The Kubernetes version if discernible, the empty string if not
 	"""
+	global kh  # pylint: disable=global-statement
 
 	version = None
 
 	if k8s_distro == "rke2":
 		# This will only work for running clusters
-		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		if kh is None:
+			kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 		vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 		if status != 200:
@@ -390,14 +394,15 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 		Parameters:
 			state (str): The installation state
 	"""
+	global kh  # pylint: disable=global-statement
 
 	k8s_distro = None
 	controlplane = None
 	cri = "<none>"
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
@@ -413,7 +418,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 
 	for node in vlist:
 		name = deep_get(node, DictPath("metadata#name"))
-		node_roles = kh.get_node_roles(cast(Dict, node))
+		node_roles = get_node_roles(cast(Dict, node))
 		if "control-plane" in node_roles or "master" in node_roles:
 			controlplane = name
 			cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
@@ -1180,6 +1185,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Unused
 	"""
+	global kh  # pylint: disable=global-statement
 
 	confirm = True
 	cni_version = None
@@ -1209,8 +1215,8 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	directory = FilePath(str(PurePath(DEPLOYMENT_DIR).joinpath("cni")))
 
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cnis = kh.identify_cni()
 	if len(cnis) == 1:
@@ -1328,8 +1334,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): The CNI to upgrade (optional; if not specified the CNI will be taken from installation_info.yaml)
 	"""
+	global kh  # pylint: disable=global-statement
 
-	kh = None
 	pod_network_cidr = None
 	verbose = False
 
@@ -1344,8 +1350,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	if pod_network_cidr is None:
 		# If we have a running cluster and we are upgrading by CNI rather than through installation info we need to get the Pod CIDR
 		# by some other means; try this. If this fails we give up.
-		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		if kh is None:
+			kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		pod_network_cidr = kh.get_pod_network_cidr()
 		if pod_network_cidr is None:
 			installation_info = get_installation_info()
@@ -1358,8 +1364,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if cni in ("", "<none>", "<unknown>"):
 		if kh is None:
-			from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-			kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+			kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 		tmp_cni = kh.identify_cni()
 		if len(tmp_cni) == 0:
 			cni = "<unknown>"
@@ -1412,6 +1417,7 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs) -> boo
 		Returns:
 			result (bool): True on success, False on failure
 	"""
+	global kh  # pylint: disable=global-statement
 
 	pass_cni = []
 	verbose = deep_get(kwargs, DictPath("verbose"), False)
@@ -1436,8 +1442,8 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs) -> boo
 				ANSIThemeString(" is not a valid/supported CNI; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# upgrade_cni doesn't take a context, so we need to set the current context before calling it,
 	# otherwise we might end up performing the changes on the wrong cluster
@@ -1796,6 +1802,7 @@ def get_latest_kubernetes_upstream_version() -> str:
 
 	return kubernetes_upstream_version
 
+# pylint: disable-next=unused-argument
 def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]], verbose: bool = False) -> Tuple[List[Tuple[str, str, str, List[str]]], List[Tuple[str, str, str, List[str]]]]:
 	"""
 	Check versions for all relevant software
@@ -1807,6 +1814,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 		Returns:
 			(deb_versions, other_versions): A tuple of utput from check_versions_apt(), (software, installed_version, "")
 	"""
+	global kh  # pylint: disable=global-statement
 
 	os_distro = identify_distro()
 
@@ -1825,8 +1833,8 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 	# Get the API-server version (if available)
 	# This will only work for running clusters
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	_server_major_version, _server_minor_version, kubernetes_installed_version = kh.get_api_server_version()
 
@@ -1959,7 +1967,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 		"registry_mirrors": registry_mirrors,
 		"use_proxy": use_proxy,
 	}
-	merged_values = { **values, **extra_values }
+	merged_values = {**values, **extra_values}
 
 	retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection = hosts, values = merged_values, verbose = verbose, quiet = False)
 
@@ -2507,6 +2515,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 		Parameters:
 			installation_info (dict): A dict with installation information
 	"""
+	global kh  # pylint: disable=global-statement
 
 	control_plane_name = __selection_control_planes()[0]
 	cluster_name = installation_info["installation_target"]
@@ -2540,8 +2549,9 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 				# Try to figure out the internal IP of the control plane;
 				# this only works if we're running this on the control plane;
 				# we should probably do this while fetching the config-file instead
-				from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-				kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+				# This will only work for running clusters
+				if kh is None:
+					kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 				obj = kh.get_ref_by_kind_name_namespace(("Node", ""), control_plane_name, "")
 				if obj is None:
@@ -2633,11 +2643,13 @@ def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = Fals
 		Parameters:
 			installation_info (dict): A dict with installation information (Unused)
 	"""
+	global kh  # pylint: disable=global-statement
 
 	controlplanes = __selection_control_planes()
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	# This will only work for running clusters
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	for controlplane in controlplanes:
 		ansithemeprint([ANSIThemeString(f"  {controlplane}:", "hostname")])
@@ -2736,7 +2748,7 @@ def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bo
 			installation_info (dict): A dict with installation information (Unused)
 	"""
 
-	node_statuses, _kh = __get_node_info()
+	node_statuses = __get_node_info()
 
 	if node_statuses is not None:
 		for node in node_statuses:
@@ -3431,7 +3443,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Arguments to use when executing this action
 	"""
-
+	global kh  # pylint: disable=global-statement
 	global no_password  # pylint: disable=global-statement
 
 	# default options
@@ -3443,8 +3455,8 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		elif opt == "--no-password":
 			no_password = True
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 	clusters = kh.list_clusters()
 	available_clusters = [tmp[0] for tmp in clusters]
 
@@ -3535,7 +3547,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 		for node in vlist:
 			node_name = deep_get(node, DictPath("metadata#name"))
-			node_roles = kh.get_node_roles(cast(Dict, node))
+			node_roles = get_node_roles(cast(Dict, node))
 			if "control-plane" in node_roles:
 				controlplanes.append(node_name)
 				if controlplane is None:
@@ -3902,8 +3914,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Arguments to use when executing this action
 	"""
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	global kh  # pylint: disable=global-statement
+
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	cordon_on_join = False
 	cri = "containerd"
@@ -3959,7 +3973,6 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	# Add the CRI to the setup playbooks for the control plane;
 	# the list is short enough that doing prepend isn't a performance issue
-	crio_version = ""
 	if cri == "docker-shim":
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml")))]
 	elif cri == "containerd":
@@ -4003,7 +4016,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 		"cordon_nodes_on_join": cordon_on_join,
 		"control_plane_k8s_version": control_plane_version,
 		"crio_major_version": crio_major_version,
-		"crio_minor_version": crio_major_version,
+		"crio_minor_version": crio_minor_version,
 		"cri_socket": cri_socket,
 		"configuration_path": configuration_path,
 		"join_configuration_api_version": join_configuration_api_version,
@@ -4049,9 +4062,11 @@ def set_context(cluster_name: str, context_name: str) -> None:
 			cluster_name (str): The name of the cluster (used for error messages)
 			context_name (str): The context to switch to
 	"""
+	global kh  # pylint: disable=global-statement
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	# This will only work for running clusters
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	if not kh.set_context(name = context_name, unchanged_is_success = True):
 		ansithemeprint([ANSIThemeString("Warning", "warning"),
@@ -4070,6 +4085,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 			options (list[(opt, optarg)]): Options to use when executing this action
 			args (list[str]): Arguments to use when executing this action
 	"""
+	global kh  # pylint: disable=global-statement
 
 	http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
 	https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
@@ -4241,7 +4257,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 		]
 
 	taint_control_planes = not deep_get(cd, DictPath("cluster#untaintControlPlanes"), False)
-	setup_control_plane_options.append(("--extra-values", { "taint_control_plane": taint_control_planes }))
+	setup_control_plane_options.append(("--extra-values", {"taint_control_plane": taint_control_planes}))
 
 	if verbose:
 		setup_control_plane_options.append(("--verbose", None))
@@ -4281,8 +4297,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 	admin_name = f"kubernetes-admin+{cluster_name}"
 	context_name = f"{admin_name}@{cluster_name}"
 
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	if kh is None:
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# We (hopefully) have a cluster now; change the context to that cluster
 	if not kh.set_context(name = context_name, unchanged_is_success = True):
@@ -4849,7 +4865,6 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> str:
 		crio_major_version = requested_major
 		crio_minor_version = requested_minor
 	else:
-		crio_version = f"{tmp[0]}.{tmp[1]}"
 		crio_major_version = tmp[0]
 		crio_minor_version = tmp[1]
 
@@ -5237,7 +5252,9 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 				ANSIThemeString(f"{KUBE_CONFIG_FILE}", "path"),
 				ANSIThemeString(" with the real IP-address of this host.\n", "default")])
 
-def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> Tuple[List[Dict], kubernetes_helper.KubernetesHelper]:
+def __get_node_info() -> List[Dict]:
+	global kh  # pylint: disable=global-statement
+
 	if not Path(KUBE_CONFIG_FILE).is_file():
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
 				ANSIThemeString(": Could not find ", "default"),
@@ -5245,11 +5262,8 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
-	# The reason for importing inside the function is to avoid slow startup
-	# when we do not use the Kubernetes helper
 	if kh is None:
-		from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
-		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+		kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	# If kh is *still* None here something has gone wrong. It is time to exit.
 	if kh is None:
@@ -5274,7 +5288,7 @@ def __get_node_info(kh: Optional[kubernetes_helper.KubernetesHelper] = None) -> 
 	for node in vlist:
 		node_name = deep_get(node, DictPath("metadata#name"))
 		node_schedulable = not deep_get(node, DictPath("spec#unschedulable"), False)
-		node_roles = kh.get_node_roles(cast(Dict, node))
+		node_roles = get_node_roles(cast(Dict, node))
 		node_taints = deep_get(node, DictPath("spec#taints"), [])
 		node_statuses.append({
 			"name": node_name,
@@ -5618,7 +5632,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			confirm = False
 
 	# XXX: How do we check that nodes are drained? We can check whether they are cordoned
-	node_status, _kh = __get_node_info()
+	node_status = __get_node_info()
 
 	if node_status is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
@@ -5856,7 +5870,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 			args (list[str]): Arguments to use when executing this action
 	"""
 
-	node_statuses, kh = __get_node_info()
+	node_statuses = __get_node_info()
 
 	if node_statuses is None:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -5911,7 +5925,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 			args (list[str]): Arguments to use when executing this action
 	"""
 
-	node_statuses, kh = __get_node_info()
+	node_statuses = __get_node_info()
 
 	if node_statuses is None:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -6003,6 +6017,10 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 
 		call = deep_get(check, DictPath("call"))
 		if call is not None:
+			if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+				# This will only work for running clusters
+				kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+				kwargs["kubernetes_helper"] = kh
 			abort, critical, error, warning, note = call(cluster_name = cluster_name,
 								     kubeconfig = kubeconfig,
 								     cmtconfig_dict = cmtlib.cmtconfig,

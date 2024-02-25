@@ -276,6 +276,5 @@ class CMTLog:
 		Close the log; this is not necessary from an I/O-perspective; it is intended to be used to detect logical errors in the code
 		"""
 
-		self.path = None
 		self.logtype = None
 		self.log = []

@@ -73,7 +73,7 @@ from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 import cmtlib
 from cmtlib import none_timestamp, strip_ansicodes
 #from cmtlog import debuglog
-import formatter as formatters  # pylint: disable=wrong-import-order,deprecated-module
+import formatters
 
 from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
 
@@ -1721,7 +1721,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 	severity_overrides = deep_get(options, DictPath("severity#overrides"), [])
 	facilities = deep_get(options, DictPath("facilities"), ["source", "subsys", "caller", "logger", "Topic"])
 	versions = deep_get(options, DictPath("versions"), [])
-	substitute_bullets = deep_get(options, DictPath("substitute_bullets"), True)
+	substitute_bullets_ = deep_get(options, DictPath("substitute_bullets"), True)
 	collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
 	is_event: bool = deep_get(options, DictPath("is_event"), False)
 
@@ -1812,7 +1812,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				for line in s:
 					if len(line) > 0:
 						# Real bullets look so much nicer
-						if line.startswith("* ") and substitute_bullets and logparser_configuration.msg_realbullets:
+						if line.startswith("* ") and substitute_bullets_ and logparser_configuration.msg_realbullets:
 							remnants.append(([ThemeRef("separators", "logbullet"),
 									  ThemeString(f"{line[2:]}", ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 						else:
@@ -1868,12 +1868,11 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 					else:
 						if is_event and d_key == "type":
 							if d_value.strip("\"") == "Normal":
-								__severity = LogLevel.NOTICE
+								severity_ = LogLevel.NOTICE
 							elif d_value.strip("\"") == "Warning":
-								__severity = LogLevel.WARNING
-							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
-							if severity > __severity:
-								severity = __severity
+								severity_ = LogLevel.WARNING
+							tmp.append(format_key_value(d_key, d_value, severity_, force_severity = True))
+							severity = min(severity, severity_)
 						elif is_event and d_key == "reason":
 							# A lot more reasons need to be added here
 							if d_value.strip("\"") in (
@@ -1892,22 +1891,22 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 									"SuccessfulCreate",
 									"SuccessfulDelete",
 									"WaitForServeDeploymentReady"):
-								__severity = LogLevel.NOTICE
+								severity_ = LogLevel.NOTICE
 							elif d_value.strip("\"") in (
 									"BackOff",
 									"FailedBinding",
 									"FailedScheduling",
 									"FailedToCreateEndpoint",
 									"ServiceUnhealthy"):
-								__severity = LogLevel.WARNING
+								severity_ = LogLevel.WARNING
 							elif d_value.strip("\"") in (
 									"BackoffLimitExceeded",):
-								__severity = LogLevel.ERR
-							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = True))
+								severity_ = LogLevel.ERR
+							tmp.append(format_key_value(d_key, d_value, severity_, force_severity = True))
 						else:
-							d_value, __severity = custom_override_severity(d_value, severity, overrides = severity_overrides)
+							d_value, severity_ = custom_override_severity(d_value, severity, overrides = severity_overrides)
 							# pylint: disable-next=superfluous-parens
-							tmp.append(format_key_value(d_key, d_value, __severity, force_severity = (__severity != severity)))
+							tmp.append(format_key_value(d_key, d_value, severity_, force_severity = (severity_ != severity)))
 				else:
 					tmp.append(f"{d_key}={d_value}")
 
@@ -2299,14 +2298,14 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	# If no block end is defined we continue until EOF
 	block_end = deep_get(options, DictPath("block_end"))
 
-	format_block_end = False
-	process_block_end = True
+	# format_block_end = False
+	# process_block_end = True
 
 	for _be in block_end:
 		matchtype = deep_get(_be, DictPath("matchtype"))
 		matchkey = deep_get(_be, DictPath("matchkey"))
-		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
-		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
+		# format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+		# process_block_end = deep_get(_be, DictPath("process_block_end"), True)
 		if matchtype == "empty":
 			if len(message.strip()) == 0:
 				matched = False
@@ -2591,7 +2590,6 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 	facility = ""
 	severity = LogLevel.INFO
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
-	matched = True
 	final_block = deep_get(options, "final_block", False)
 
 	message = strip_iso_timestamp(message)
@@ -2651,7 +2649,6 @@ def ansible_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLe
 		options = {}
 
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
-	matched = False
 
 	if message.startswith("PLAY [") and message.endswith("***"):
 		if severity is None:

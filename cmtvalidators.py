@@ -22,7 +22,7 @@ except ModuleNotFoundError:  # pragma: no cover
 	validators = None
 
 from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list, ansithemearray_to_str
-from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError, LogLevel
+from cmttypes import deep_get, DictPath, HostNameStatus, ProgrammingError, LogLevel, ArgumentValidationError
 
 programname = None
 
@@ -128,14 +128,23 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 		return HostNameStatus.DNS_SUBDOMAIN_EMPTY
 	if "\x00" in fqdn:
 		stripped_fqdn = fqdn.replace("\x00", "<NUL>")
-		msg = [ANSIThemeString("Critical", "critical"),
-		       ANSIThemeString(": the FQDN / hostname ", "default"),
-		       ANSIThemeString(stripped_fqdn, "hostname")]
-		msg += [ANSIThemeString(" contains NUL-bytes (replaced here);\n"
-					"this is either a programming error, a system error, file or memory corruption, "
-					"or a deliberate attempt to bypass security; aborting.", "default")]
-		ansithemeprint(msg, stderr = True)
-		sys.exit(errno.EINVAL)
+		if message_on_error:
+			msg = [ANSIThemeString("Critical", "critical"),
+			       ANSIThemeString(": the FQDN / hostname ", "default"),
+			       ANSIThemeString(stripped_fqdn, "hostname")]
+			msg += [ANSIThemeString(" contains NUL-bytes (replaced here);\n"
+						"this is either a programming error, a system error, file or memory corruption, "
+						"or a deliberate attempt to bypass security; aborting.", "default")]
+			ansithemeprint(msg, stderr = True)
+		emsg = [
+			[("validate_fqdn()", "emphasis"),
+			 (": The FQDN / hostname ", "default"),
+			 (stripped_fqdn, "hostname"),
+			 (" contains NUL-bytes (replaced here)", "default")],
+			[("This is either a programming error, a system error, file or memory corruption, ", "default"),
+			 ("or a deliberate attempt to bypass security; aborting.", "default")],
+		]
+		raise ArgumentValidationError(formatted_msg = emsg)
 	if len(fqdn) > 253:
 		if message_on_error:
 			msg = [ANSIThemeString("Critical", "critical"),
@@ -228,7 +237,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 		# * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
 		msg = [ANSIThemeString("Error", "error"),
 		       ANSIThemeString(": The DNS label ", "default"),
-		       ANSIThemeString(dnslabel, "hostname"),
+		       ANSIThemeString(fqdn, "hostname"),
 		       ANSIThemeString(" is invalid; ", "default"),
 		       ANSIThemeString("the TLD must start with [a-z] and be at least 2 characters long.", "default")]
 		return HostNameStatus.DNS_TLD_INVALID

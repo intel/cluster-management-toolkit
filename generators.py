@@ -19,7 +19,7 @@ from curses_helper import color_status_group, themearray_len, themearray_to_stri
 import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup, LogLevel, ProgrammingError
-import datagetter as datagetters
+import datagetters
 
 def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeString]]:
 	"""
@@ -1154,7 +1154,7 @@ def get_formatter(field: Dict) -> Dict:
 		if formatter not in formatter_to_generator_and_processor:
 			msg = [
 				[("get_formatter()", "emphasis"),
-				 (" called with invalid argument(s):" "error")],
+				 (" called with invalid argument(s):", "error")],
 				[("field = ", "default"),
 				 (yaml.dump(field), "argument"),
 				 (" has an invalid ", "default"),
@@ -1326,7 +1326,7 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tu
 		else:
 			msg = [
 				[("fieldgenerator()", "emphasis"),
-				 (" called with invalid argument(s):" "error")],
+				 (" called with invalid argument(s):", "error")],
 				[("View ", "default"),
 				 (f"{view}", "argument"),
 				 (": field “", "default"),

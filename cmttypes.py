@@ -120,7 +120,6 @@ class UnknownError(Exception):
 		else:
 			self.ppid = os.getppid()
 		self.traceback = "".join(traceback.format_stack())
-		return
 
 		super().__init__(message)
 
@@ -502,6 +501,8 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 	"""
 
 	results: Dict = {}
+	msg: List[List[Tuple[str, str]]] = []
+	function = "<unknown>"  # This is just to make pylint happy
 
 	try:
 		# This is to get the necessary stack info
@@ -671,8 +672,6 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 					continue
 		results[key] = {}
 
-	msg: List[List[Tuple[str, str]]] = []
-
 	# Check if we got all the arguments we asked for
 	missing: List[str] = []
 	anyexists: bool = False
@@ -721,7 +720,6 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 
 	if msg:
 		raise ArgumentValidationError(subexception = subexception, formatted_msg = msg)
-	return None
 
 class HostNameStatus(Enum):
 	"""
@@ -920,7 +918,7 @@ def __deep_get_recursive(dictionary: Dict, path_fragments: List[str], result: Un
 
 		if isinstance(tmp, dict):
 			return __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
-		elif isinstance(tmp, list):
+		if isinstance(tmp, list):
 			result = []
 			for tmp2 in tmp:
 				result.append(__deep_get_recursive(tmp2, path_fragments[i + 1:len(path_fragments)], result))

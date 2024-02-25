@@ -13,7 +13,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import cast, Dict, List, Optional, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -252,7 +252,7 @@ def ansible_get_inventory_dict() -> Dict:
 
 def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
 				 include_groupvars: bool = False, include_hostvars: bool = False,
-				 include_hosts: bool = True) -> Union[List[str], List[List[ANSIThemeString]]]:
+				 include_hosts: bool = True) -> List[Union[List[ANSIThemeString], str]]:
 	"""
         Get the Ansible inventory and return it neatly formatted
 
@@ -312,7 +312,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 					deep_set(tmp, DictPath(f"{group}#hosts#{host}"), None)
 
 	dump: List[Union[List[ANSIThemeString], str]] = \
-		yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines()
+		list(yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines())
 
 	if highlight and len(dump) > 0:
 		i = 0
@@ -320,7 +320,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 		key_value_regex = re.compile(r"^(.*?)(:)(.*)")
 		for i, data in enumerate(dump):
 			# Is it a list?
-			tmp2 = list_regex.match(data)
+			tmp2 = list_regex.match(cast(str, data))
 			if tmp2 is not None:
 				indent = tmp2[1]
 				listmarker = tmp2[2]
@@ -331,7 +331,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				continue
 
 			# Is it key: value?
-			tmp2 = key_value_regex.match(data)
+			tmp2 = key_value_regex.match(cast(str, data))
 			if tmp2 is not None:
 				key = tmp2[1]
 				separator = tmp2[2]
@@ -342,7 +342,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 				continue
 
 			# Nope, then we will use default format
-			dump[i] = [ANSIThemeString(dump[i], "default")]
+			dump[i] = [ANSIThemeString(cast(str, dump[i]), "default")]
 
 	return dump
 
@@ -1461,7 +1461,7 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 
 	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
-	ansible_results = {}
+	ansible_results: Dict = {}
 
 	inventories: Union[Dict, List[FilePath]] = []
 

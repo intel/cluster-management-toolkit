@@ -51,6 +51,8 @@ from ansible_helper import ANSIBLE_INVENTORY
 import cmtlib
 from cmtlib import read_cmtconfig
 
+import kubernetes_helper
+
 import checks
 
 from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemestring_join_tuple_list
@@ -480,13 +482,12 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	# We ideally want to iterate over all clusters here, but for now we only import the current-context
-	from kubernetes_helper import KubernetesHelper  # pylint: disable=import-outside-toplevel
 	cluster_name = get_cluster_name()
 	if cluster_name is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not obtain cluster name; do you have a cluster available? Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+	kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
@@ -501,7 +502,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 		sys.exit(errno.EINVAL)
 
 	for node in vlist:
-		roles = kh.get_node_roles(cast(Dict, node))
+		roles = kubernetes_helper.get_node_roles(cast(Dict, node))
 		if "control-plane" in roles:
 			groups = ["all", "controlplane", cluster_name]
 		else:

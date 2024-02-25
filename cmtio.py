@@ -725,8 +725,8 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 			# Since the behaviour of the called program might change if we call it
 			# by a different name we do not return the resolved path; we return
 			# the original path
-			if len({ SecurityStatus.PATH_NOT_RESOLVING_TO_SELF,
-			         SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF }.union(violations)) <= 2:
+			if len({SecurityStatus.PATH_NOT_RESOLVING_TO_SELF,
+			        SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF}.union(violations)) <= 2:
 				return path
 			continue
 
