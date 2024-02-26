@@ -918,7 +918,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 		action = None
 		replace_quotes = None
 
-		if path is None and not paths or path is not None and paths and datagetter is None:
+		if (path is None and not paths or path is not None and paths) and datagetter is None:
 			raise ValueError(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
 		if datagetter is not None:
@@ -10659,6 +10659,7 @@ def main() -> None:
 	"""
 	# global auditlog  # pylint: disable=global-statement
 	# global debuglog  # pylint: disable=global-statement
+	global read_only_mode  # pylint: disable=global-statement
 
 	# Before doing anything else, make sure that the user is not running as root
 	if os.geteuid() == 0:
@@ -10711,8 +10712,19 @@ def main() -> None:
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), True)
 
 	if "--developer-mode" in sys.argv:
-		cmtlib.cmtconfig["Debug#developer_mode"] = True
+		deep_set(cmtlib.cmtconfig, DictPath("Debug#developer_mode"), True, create_path = True)
 		sys.argv.remove("--developer-mode")
+		read_only_mode = True
+	if "--use-testdata" in sys.argv:
+		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")):
+			# To be able to add support for APIs that we do not have setup in clusters
+			# this allows injecting data; this is currently only supported by
+			# get_list_by_kind_namespace() and get_ref_by_kind_name_namespace(),
+			# with several limitations (no filtering possible, etc).
+			deep_set(cmtlib.cmtconfig, DictPath("Debug#use_testdata"), True, create_path = True)
+		else:
+			print("Warning: --use-testdata is only supported in developer mode")
+		sys.argv.remove("--use-testdata")
 
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "*", theme = themefile)

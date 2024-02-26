@@ -5356,6 +5356,23 @@ class KubernetesHelper:
 			for _resource_kind, resource_data in kubernetes_resources.items():
 				resource_data["available"] = False
 
+			# When running in developer mode with testdata we allow reads from files,
+			# and can thus get data without the Kubernetes API being available.
+			if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
+				from pathlib import Path
+				from cmtpaths import HOMEDIR
+				for path in Path(f"{HOMEDIR}/testdata").iterdir():
+					if not path.name.endswith(".yaml"):
+						continue
+					tmp = path.name[:-len(".yaml")]
+					tmp_kind = tmp.split(".", maxsplit = 1)
+					if len(tmp_kind) == 2:
+						kind = tuple(tmp_kind)
+					else:
+						kind = (tmp_kind[0], "")
+					if kind in kubernetes_resources:
+						kubernetes_resources[kind]["available"] = True
+
 			for api in deep_get(core_apis, DictPath("resources"), []):
 				if "list" not in deep_get(api, DictPath("verbs"), []):
 					# Ignore non-list APIs
@@ -6162,6 +6179,15 @@ a				the return value from __rest_helper_patch
 					status (int): The HTTP response
 		"""
 
+		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
+			from pathlib import Path
+			from cmtpaths import HOMEDIR
+			from cmtio_yaml import secure_read_yaml_all
+			testdata = f"{HOMEDIR}/testdata/{'.'.join(kind)}.yaml"
+			if Path(testdata).is_file():
+				d = secure_read_yaml(testdata)
+				return deep_get(d, DictPath("items"), []), 200
+
 		d, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
 		d = cast(List[Optional[Dict]], d)
 		return d, status
@@ -6177,6 +6203,19 @@ a				the return value from __rest_helper_patch
 			Returns:
 				object (dict): An object dict
 		"""
+
+		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
+			from pathlib import Path
+			from cmtpaths import HOMEDIR
+			from cmtio_yaml import secure_read_yaml_all
+			testdata = f"{HOMEDIR}/testdata/{'.'.join(kind)}.yaml"
+			if Path(testdata).is_file():
+				d = secure_read_yaml(testdata)
+				for item in deep_get(d, DictPath("items"), []):
+					i_name = deep_get(item, DictPath("metadata#name"), "")
+					i_namespace = deep_get(item, DictPath("metadata#namespace"))
+					if i_name == name and i_namespace == namespace:
+						return item
 
 		ref, _status = self.__rest_helper_get(kind = kind, name = name, namespace = namespace)
 		ref = cast(Dict, ref)
