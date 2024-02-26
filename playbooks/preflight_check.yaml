@@ -11,9 +11,12 @@
         - description: "Checks whether the host is a Kubernetes node"
       playbook_types:
       - "internal"
-      gather_facts: true
       category: "Setup"
       read_only: true
+  gather_subset:
+    - "!min"
+    - "!all"
+    - "distribution"
   become: true
   become_user: "root"
   tasks:
