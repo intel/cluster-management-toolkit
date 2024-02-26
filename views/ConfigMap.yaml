@@ -34,6 +34,18 @@ listview:
         actionfunc: "delete_resource"
 infoview:
   name: "Config Map Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["immutable"]
+    rows:
+      immutable:
+        header: [["Immutable:", ["main", "infoheader"]]]
+        paths:
+        - path: "immutable"
+          pathtype: "value"
+          type: "bool"
+          default: "False"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
