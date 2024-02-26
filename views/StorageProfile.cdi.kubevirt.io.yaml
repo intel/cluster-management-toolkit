@@ -12,8 +12,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "provisioner", "storage_class"]
+        fields: ["controller", "provisioner", "storage_class", "clone_strategy", "data_import_cron_source_format"]
     rows:
+      clone_strategy:
+        header: [["Clone Strategy:", ["main", "infoheader"]]]
+        path: "status#cloneStrategy"
+        type: "str"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -37,6 +41,10 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
+      data_import_cron_source_format:
+        header: [["Data Import Cron Source Format:", ["main", "infoheader"]]]
+        path: "status#dataImportCronSourceFormat"
+        type: "str"
       provisioner:
         header: [["Provisioner:", ["main", "infoheader"]]]
         path: "status#provisioner"
@@ -69,3 +77,15 @@ infoview:
         name_path: "status#storageClass"
         kind: "StorageClass"
         api_family: "storage.k8s.io"
+    "View Claim Property Sets":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show claim property sets"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Claim Property Sets"
+        _pass_obj: true
+        path: "status#claimPropertySets"
+        include_root: true

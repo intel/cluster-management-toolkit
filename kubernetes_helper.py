@@ -774,13 +774,26 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "cdis",
 		"namespaced": False,
 	},
+	("CDIConfig", "cdi.kubevirt.io"): {
+		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
+		"api": "cdiconfigs",
+		"namespaced": False,
+	},
+	("DataImportCron", "cdi.kubevirt.io"): {
+		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
+		"api": "dataimportcrons",
+	},
+	("DataSource", "cdi.kubevirt.io"): {
+		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
+		"api": "datasources",
+	},
 	("DataVolume", "cdi.kubevirt.io"): {
 		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
 		"api": "datavolumes",
 	},
-	("CDIConfig", "cdi.kubevirt.io"): {
+	("ObjectTransfer", "cdi.kubevirt.io"): {
 		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
-		"api": "cdiconfigs",
+		"api": "objecttransfers",
 		"namespaced": False,
 	},
 	("StorageProfile", "cdi.kubevirt.io"): {
@@ -788,18 +801,17 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api": "storageprofiles",
 		"namespaced": False,
 	},
-	("DataSource", "cdi.kubevirt.io"): {
+	("VolumeCloneSource", "cdi.kubevirt.io"): {
 		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
-		"api": "datasources",
+		"api": "volumeclonesources",
 	},
-	("DataImportCron", "cdi.kubevirt.io"): {
+	("VolumeImportSource", "cdi.kubevirt.io"): {
 		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
-		"api": "dataimportcrons",
+		"api": "volumeimportsources",
 	},
-	("ObjectTransfer", "cdi.kubevirt.io"): {
+	("VolumeUploadSource", "cdi.kubevirt.io"): {
 		"api_paths": ["apis/cdi.kubevirt.io/v1beta1/"],
-		"api": "objecttransfers",
-		"namespaced": False,
+		"api": "volumeuploadsources",
 	},
 	# cert-manager.io <= rename from: certmanager.k8s.io
 	("Certificate", "cert-manager.io"): {
@@ -1629,6 +1641,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/grafana.integreatly.org/v1beta1/"],
 		"api": "grafanas",
 	},
+	# hco.kubevirt.io
+	("HyperConverged", "hco.kubevirt.io"): {
+		"api_paths": ["apis/hco.kubevirt.io/v1beta1/"],
+		"api": "hyperconvergeds",
+	},
 	# helm.cattle.io
 	("HelmChartConfig", "helm.cattle.io"): {
 		"api_paths": ["apis/helm.cattle.io/v1/"],
@@ -1647,6 +1664,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("ProjectHelmChartRepository", "helm.openshift.io"): {
 		"api_paths": ["apis/helm.openshift.io/v1beta1/"],
 		"api": "projecthelmchartrepositories",
+	},
+	# hostpathprovisioner.kubevirt.io
+	("HostPathProvisioner", "hostpathprovisioner.kubevirt.io"): {
+		"api_paths": ["apis/hostpathprovisioner.kubevirt.io/v1beta1/"],
+		"api": "hostpathprovisioners",
+		"namespaced": False,
 	},
 	# image.openshift.io
 	("Image", "image.openshift.io"): {
@@ -1922,6 +1945,29 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/k8s.otterize.com/v1alpha2/"],
 		"api": "kafkaserverconfigs",
 	},
+	# k8s.ovn.org
+	("AdminPolicyBasedExternalRoute", "k8s.ovn.org"): {
+		"api_paths": ["apis/k8s.ovn.org/v1/"],
+		"api": "adminpolicybasedexternalroutes",
+		"namespaced": False,
+	},
+	("EgressFirewall", "k8s.ovn.org"): {
+		"api_paths": ["apis/k8s.ovn.org/v1/"],
+		"api": "egressfirewalls",
+	},
+	("EgressIP", "k8s.ovn.org"): {
+		"api_paths": ["apis/k8s.ovn.org/v1/"],
+		"api": "egressips",
+		"namespaced": False,
+	},
+	("EgressQoS", "k8s.ovn.org"): {
+		"api_paths": ["apis/k8s.ovn.org/v1/"],
+		"api": "egressqoses",
+	},
+	("EgressService", "k8s.ovn.org"): {
+		"api_paths": ["apis/k8s.ovn.org/v1/"],
+		"api": "egressservices",
+	},
 	# kamaji.clastix.io
 	("DataStore", "kamaji.clastix.io"): {
 		"api_paths": ["apis/kamaji.clastix.io/v1alpha1/"],
@@ -1959,6 +2005,26 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Peer", "kilo.squat.ai"): {
 		"api_paths": ["apis/kilo.squat.ai/v1alpha1/"],
 		"api": "peers",
+		"namespaced": False,
+	},
+	# kmm.sigs.x-k8s.io
+	("Module", "kmm.sigs.x-k8s.io"): {
+		"api_paths": ["apis/kmm.sigs.x-k8s.io/v1beta1/"],
+		"api": "modules",
+	},
+	("NodeModulesConfig", "kmm.sigs.x-k8s.io"): {
+		"api_paths": ["apis/kmm.sigs.x-k8s.io/v1beta1/"],
+		"api": "nodemodulesconfigs",
+		"namespaced": False,
+	},
+	("PreflightValidation", "kmm.sigs.x-k8s.io"): {
+		"api_paths": ["apis/kmm.sigs.x-k8s.io/v1beta1/"],
+		"api": "preflightvalidations",
+		"namespaced": False,
+	},
+	("PreflightValidationOCP", "kmm.sigs.x-k8s.io"): {
+		"api_paths": ["apis/kmm.sigs.x-k8s.io/v1beta1/"],
+		"api": "preflightvalidationsocp",
 		"namespaced": False,
 	},
 	# kubeapps.com
@@ -2264,6 +2330,19 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
 		"api": "outputs",
 	},
+	# lvm.topolvm.io
+	("LVMCluster", "lvm.topolvm.io"): {
+		"api_paths": ["apis/lvm.topolvm.io/v1alpha1/"],
+		"api": "lvmclusters",
+	},
+	("LVMVolumeGroupNodeStatus", "lvm.topolvm.io"): {
+		"api_paths": ["apis/lvm.topolvm.io/v1alpha1/"],
+		"api": "lvmvolumegroupnodestatuses",
+	},
+	("LVMVolumeGroup", "lvm.topolvm.io"): {
+		"api_paths": ["apis/lvm.topolvm.io/v1alpha1/"],
+		"api": "lvmvolumegroups",
+	},
 	# machine.openshift.io
 	("ControlPlaneMachineSet", "machine.openshift.io"): {
 		"api_paths": ["apis/machine.openshift.io/v1/"],
@@ -2430,6 +2509,10 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/metal3.io/v1alpha1/"],
 		"api": "firmwareschemas",
 	},
+	("HardwareData", "metal3.io"): {
+		"api_paths": ["apis/metal3.io/v1alpha1/"],
+		"api": "hardwaredata",
+	},
 	("HostFirmwareSettings", "metal3.io"): {
 		"api_paths": ["apis/metal3.io/v1alpha1/"],
 		"api": "hostfirmwaresettings",
@@ -2501,6 +2584,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/monitoring.coreos.com/v1/"],
 		"api": "thanosrulers",
 	},
+	# mtq.kubevirt.io
+	("MTQ", "mtq.kubevirt.io"): {
+		"api_paths": ["apis/mtq.kubevirt.io/v1alpha1/"],
+		"api": "mtqs",
+		"namespaced": False,
+	},
 	# mutations.gatekeeper.sh
 	("ModifySet", "mutations.gatekeeper.sh"): {
 		"api_paths": ["apis/mutations.gatekeeper.sh/v1/"],
@@ -2530,6 +2619,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("AlertRelabelConfig", "monitoring.openshift.io"): {
 		"api_paths": ["apis/monitoring.openshift.io/v1/"],
 		"api": "alertrelabelconfigs",
+	},
+	# networkaddonsoperator.network.kubevirt.io
+	("NetworkAddonsConfig", "networkaddonsoperator.network.kubevirt.io"): {
+		"api_paths": ["apis/networkaddonsoperator.network.kubevirt.io/v1/"],
+		"api": "networkaddonsconfigs",
+		"namespaced": False,
 	},
 	# network.openshift.io
 	("ClusterNetwork", "network.openshift.io"): {
@@ -2624,6 +2719,15 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
 		"api": "nodefeaturerules",
 		"namespaced": False,
+	},
+	# nfd.openshift.io
+	("NodeFeatureDiscovery", "nfd.openshift.io"): {
+		"api_paths": ["apis/nfd.openshift.io/v1/"],
+		"api": "nodefeaturediscoveries",
+	},
+	("NodeFeatureRule", "nfd.openshift.io"): {
+		"api_paths": ["apis/nfd.openshift.io/v1alpha1/"],
+		"api": "nodefeaturerules",
 	},
 	# nodeinfo.volcano.sh
 	("Numatopology", "nodeinfo.volcano.sh"): {
@@ -2738,6 +2842,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("IngressController", "operator.openshift.io"): {
 		"api_paths": ["apis/operator.openshift.io/v1/"],
 		"api": "ingresscontrollers",
+	},
+	("InsightsOperator", "operator.openshift.io"): {
+		"api_paths": ["apis/operator.openshift.io/v1/"],
+		"api": "insightsoperators",
+		"namespaced": False,
 	},
 	("KubeAPIServer", "operator.openshift.io"): {
 		"api_paths": ["apis/operator.openshift.io/v1/"],
@@ -2906,6 +3015,17 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("Server", "policy.linkerd.io"): {
 		"api_paths": ["apis/policy.linkerd.io/v1beta1/"],
 		"api": "servers",
+	},
+	# policy.networking.k8s.io
+	("AdminNetworkPolicy", "policy.networking.k8s.io"): {
+		"api_paths": ["apis/policy.networking.k8s.io/v1alpha1/"],
+		"api": "adminnetworkpolicies",
+		"namespaced": False,
+	},
+	("BaselineAdminNetworkPolicy", "policy.networking.k8s.io"): {
+		"api_paths": ["apis/policy.networking.k8s.io/v1alpha1/"],
+		"api": "baselineadminnetworkpolicies",
+		"namespaced": False,
 	},
 	# pool.kubevirt.io
 	("VirtualMachinePool", "pool.kubevirt.io"): {
@@ -3087,6 +3207,17 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 		"api_paths": ["apis/serving.kubeflow.org/v1alpha2/"],
 		"api": "trainedmodels",
 	},
+	# sharedresource.openshift.io
+	("SharedConfigMap", "sharedresource.openshift.io"): {
+		"api_paths": ["apis/sharedresource.openshift.io/v1alpha1/"],
+		"api": "sharedconfigmaps",
+		"namespaced": False,
+	},
+	("SharedSecret", "sharedresource.openshift.io"): {
+		"api_paths": ["apis/sharedresource.openshift.io/v1alpha1/"],
+		"api": "sharedsecrets",
+		"namespaced": False,
+	},
 	# snapshot.kubevirt.io
 	("VirtualMachineRestore", "snapshot.kubevirt.io"): {
 		"api_paths": ["apis/snapshot.kubevirt.io/v1alpha1/"],
@@ -3134,6 +3265,11 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("TrafficSplit", "split.smi-spec.io"): {
 		"api_paths": ["apis/split.smi-spec.io/v1alpha4/", "apis/split.smi-spec.io/v1alpha3/", "apis/split.smi-spec.io/v1alpha2/", "apis/split.smi-spec.io/v1alpha1/"],
 		"api": "trafficsplits",
+	},
+	# ssp.kubevirt.io
+	("SSP", "ssp.kubevirt.io"): {
+		"api_paths": ["apis/ssp.kubevirt.io/v1beta2/"],
+		"api": "ssps",
 	},
 	# stats.antrea.io
 	("AntreaClusterNetworkPolicyStats", "stats.antrea.io"): {
@@ -3374,6 +3510,12 @@ kubernetes_resources: Dict[Tuple[str, str], Any] = {
 	("NodeResourceTopology", "topology.node.k8s.io"): {
 		"api_paths": ["apis/topology.node.k8s.io/v1alpha1/"],
 		"api": "noderesourcetopologies",
+	},
+	# topolvm.io
+	("LogicalVolume", "topolvm.io"): {
+		"api_paths": ["apis/topolvm.io/v1/"],
+		"api": "logicalvolumes",
+		"namespaced": False,
 	},
 	# traefik.containo.us
 	("IngressRoute", "traefik.containo.us"): {
