@@ -49,7 +49,7 @@ if json_is_ujson:
 
 		indent = 2
 		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
-else:
+else:  # pragma: no cover
 	def json_dumps(obj: Dict) -> str:
 		"""
 		Dump Python object to JSON in text format; json version
@@ -135,7 +135,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 			if not include_start:
 				continue
 
-		if len(line) == 0:
+		if not line:
 			emptylines.append(ThemeString("", ThemeAttr("types", "generic")))
 			continue
 		if (not strip_empty_start or dumps) and emptylines:
@@ -212,7 +212,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 					italics = True
 					for k, italics_section in enumerate(italics_sections):
 						italics = not italics
-						if len(italics_section) == 0:
+						if not italics_section:
 							continue
 						tmpline.append(ThemeString(italics_section, format_lookup[(codeblock != "", bold, italics)]))
 			dumps.append(tmpline)
@@ -349,19 +349,23 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 		key_format = ThemeAttr("types", "yaml_key")
 		value_format = ThemeAttr("types", "yaml_value")
 		list_format: Union[ThemeRef, ThemeString] = ThemeRef("separators", "yaml_list")
-		separator_format = ThemeAttr("types", "generic")
+		separator_format = ThemeAttr("types", "yaml_separator")
 		reference_format = ThemeAttr("types", "yaml_reference")
+		anchor_format = ThemeAttr("types", "yaml_anchor")
 	elif isinstance(override_formatting, ThemeAttr):
-		generic_format = override_formatting
-		comment_format = override_formatting
-		key_format = override_formatting
-		value_format = override_formatting
-		list_format = ThemeString("- ", override_formatting)
-		separator_format = override_formatting
-		reference_format = override_formatting
-		override_formatting = {}
+		# We just return the line unformatted
+		return [ThemeString(line, override_formatting)], []
+	else:
+		raise TypeError(f"type(override_formatting) is {type(override_formatting)}; should be either {repr(ThemeAttr)} or {repr(dict)}")
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
+
+	# [whitespace]-<whitespace><value>
+	yaml_list_regex = re.compile(r"^(\s*)- (.*)")
+	# <key>:<whitespace><value>
+	# <key>:<whitespace>&<anchor>[<whitespace><value>]
+	# <key>: *<alias>
+	yaml_key_reference_value_regex = re.compile(r"^([^:]+)(:\s*)(&|\*|)([^\s]+)([\s]+[^\s]+|)")
 
 	if line.lstrip(" ").startswith("#"):
 		tmpline += [
@@ -369,42 +373,49 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 		]
 		return tmpline, remnants
 	if line.lstrip(" ").startswith("- "):
-		tmp = re.match(r"^(\s*?)- (.*)", line)
-		if tmp is not None:
-			tmpline += [
-				ThemeString(tmp[1], generic_format),
-				list_format,
-			]
-			line = tmp[2]
-			if len(line) == 0:
-				return tmpline, remnants
+		tmp = yaml_list_regex.match(line)
+		tmpline += [
+			ThemeString(tmp[1], generic_format),
+			list_format,
+		]
+		line = tmp[2]
+		if not line:
+			return tmpline, remnants
 
 	if line.endswith(":"):
-		if isinstance(override_formatting, dict):
-			_key_format = deep_get(override_formatting, DictPath(f"{line[:-1]}#key"), key_format)
-		else:
-			_key_format = key_format
+		_key_format = deep_get(override_formatting, DictPath(f"{line[:-1]}#key"), key_format)
 		tmpline += [
 			ThemeString(f"{line[:-1]}", _key_format),
 			ThemeString(":", separator_format),
 		]
 	else:
-		tmp = re.match(r"^(.*?)(:\s*?)(&|\.|)(.*)", line)
+		tmp = yaml_key_reference_value_regex.match(line)
+
 		# pylint: disable-next=line-too-long
 		if tmp is not None and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\""))):
 			key = tmp[1]
-			reference = tmp[2]
-			separator = tmp[3]
-			value = tmp[4]
-			if isinstance(override_formatting, dict):
-				_key_format = deep_get(override_formatting, DictPath(f"{key.strip()}#key"), key_format)
-				if value.strip() in ("{", "["):
-					_value_format = value_format
+			separator = tmp[2]
+			reference = tmp[3]
+			anchor = ""
+			value_or_anchor = tmp[4]
+			value = tmp[5]
+
+			if reference:
+				if value:
+					anchor = value_or_anchor
 				else:
-					_value_format = deep_get(override_formatting, DictPath(f"{key.strip()}#value"), value_format)
+					anchor = value_or_anchor
+					value = ""
+				value_or_anchor = ""
 			else:
-				_key_format = key_format
+				value = value_or_anchor
+				value_or_anchor = ""
+
+			_key_format = deep_get(override_formatting, DictPath(f"{key.strip()}#key"), key_format)
+			if value.strip() in ("{", "["):
 				_value_format = value_format
+			else:
+				_value_format = deep_get(override_formatting, DictPath(f"{key.strip()}#value"), value_format)
 
 			if value_strip_ansicodes:
 				value = strip_ansicodes(value)
@@ -429,9 +440,12 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 						tmpline = [
 							ThemeString(f"{key}", _key_format),
 							ThemeString(f"{separator}", separator_format),
-							ThemeString(f"{reference}", reference_format),
-							ThemeString(f"{value_line}", _value_format),
 						]
+						if reference:
+							tmpline.append(ThemeString(f"{reference}", reference_format))
+						if anchor:
+							tmpline.append(ThemeString(f"{anchor}", anchor_format))
+						tmpline.append(ThemeString(f"{value_line}", _value_format))
 						value_line_indent = len(value_line) - len(value_line.lstrip(" \""))
 					else:
 						remnants.append([
@@ -442,24 +456,30 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 				if value_expand_tabs:
 					tmp_split_value = value.replace("\\t", "\t").split("\t")
 					tmp_value = ""
+					first = True
 					for j, split_value_segment in enumerate(tmp_split_value):
 						tabsize = 0
 						if j < len(tmp_split_value):
 							tabsize = 8 - len(tmp_value) % 8
-						tmp_value += split_value_segment  + "".ljust(tabsize)
+						if not first:
+							tmp_value += "".ljust(tabsize)
+						else:
+							first = False
+						tmp_value += split_value_segment
 					value = tmp_value
 
 				tmpline += [
 					ThemeString(f"{key}", _key_format),
 					ThemeString(f"{separator}", separator_format),
-					ThemeString(f"{reference}", reference_format),
-					ThemeString(f"{value}", _value_format),
 				]
+				if reference:
+					tmpline.append(ThemeString(f"{reference}", reference_format))
+				if anchor:
+					tmpline.append(ThemeString(f"{anchor}", anchor_format))
+				if value:
+					tmpline.append(ThemeString(f"{value}", _value_format))
 		else:
-			if isinstance(override_formatting, dict):
-				_value_format = deep_get(override_formatting, DictPath(f"{line}#value"), value_format)
-			else:
-				_value_format = value_format
+			_value_format = deep_get(override_formatting, DictPath(f"{line}#value"), value_format)
 			tmpline += [
 				ThemeString(f"{line}", _value_format),
 			]
@@ -521,7 +541,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 				first = False
 				if line in ("|", "|-"):
 					continue
-			if len(line) == 0:
+			if not line:
 				continue
 
 			kwargs["override_formatting"] = override_formatting
@@ -622,7 +642,7 @@ def format_haproxy(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Uni
 
 	for line in lines:
 		# Is it whitespace?
-		if len(line.strip()) == 0:
+		if not line.strip():
 			dumps.append([ThemeString(line, ThemeAttr("types", "generic"))])
 			continue
 
@@ -699,7 +719,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Any) -> List[List[U
 		tmpline: List[Union[ThemeRef, ThemeString]] = []
 
 		# Empty line
-		if len(line) == 0 and len(tmpline) == 0:
+		if not line and not tmpline:
 			tmpline = [
 				ThemeString("", ThemeAttr("types", "xml_content")),
 			]
@@ -748,7 +768,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Any) -> List[List[U
 			# Is this a site?
 			tmp = site_regex.match(line)
 			if tmp is not None:
-				if block_depth == 0 and not site and (single_site or "{" in tmp[3]):
+				if not block_depth and not site and (single_site or "{" in tmp[3]):
 					if tmp[1]:
 						tmpline += [
 							ThemeString(tmp[1], ThemeAttr("types", "caddyfile_site")),
@@ -842,7 +862,7 @@ def format_mosquitto(lines: Union[str, List[str]], **kwargs: Any) -> List[List[U
 
 	for line in lines:
 		# Is it whitespace?
-		if len(line.strip()) == 0:
+		if not line.strip():
 			dumps.append([ThemeString(line, ThemeAttr("types", "generic"))])
 			continue
 
@@ -895,8 +915,8 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union
 
 	for line in lines:
 		dump: List[Union[ThemeRef, ThemeString]] = []
-		if len(line.strip()) == 0:
-			if len(dump) == 0:
+		if not line.strip():
+			if not dump:
 				dump += [
 					ThemeString("", ThemeAttr("types", "generic"))
 				]
@@ -976,7 +996,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[T
 		tmpline: List[Union[ThemeRef, ThemeString]] = []
 
 		# Empty line
-		if len(line) == 0 and len(tmpline) == 0:
+		if not line and not tmpline:
 			tmpline = [
 				ThemeString("", ThemeAttr("types", "xml_content")),
 			]
@@ -1213,7 +1233,7 @@ def format_toml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 	tmpline: List[Union[ThemeRef, ThemeString]] = []
 
 	for line in lines:
-		if len(line) == 0:
+		if not line:
 			continue
 
 		if multiline_basic or multiline_literal:
@@ -1307,7 +1327,7 @@ def format_fluentbit(lines: Union[str, List[str]], **kwargs: Any) -> List[List[U
 			tmpline = [
 				ThemeString(line, ThemeAttr("types", "ini_section")),
 			]
-		elif len(line.strip()) == 0:
+		elif not line.strip():
 			tmpline = [
 				ThemeString("", ThemeAttr("types", "generic")),
 			]
@@ -1560,7 +1580,7 @@ cmdata_bin_header: List[Tuple[int, List[int], str]] = [
 ]
 
 def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
-	if len(data) == 0:
+	if not data:
 		return "Empty", format_none
 
 	uudata = False
@@ -1596,9 +1616,9 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 			if match_infix in data:
 				break
 
-	if len(dataformat) == 0:
+	if not dataformat:
 		for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
-			if (len(match_cm_namespace) == 0 or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
+			if (not match_cm_namespace or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
 				break
 
 	formatter = map_dataformat(dataformat)

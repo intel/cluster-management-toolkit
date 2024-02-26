@@ -254,7 +254,6 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 			except Exception as e:
-				raise
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -312,7 +311,156 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 			except Exception as e:
-				raise
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun_str}() did not yield expected result:\n" \
+							  f"           input: \"{indata}\"\n" \
+							   "         options:\n" \
+							  f"{yaml_dump(options, base_indent = 17)}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: \"{indata}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
+def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = formatters.format_yaml_line
+	fun_str = fun.__name__
+
+	if result:
+		# Indata format:
+		# (lines, options, expected_result, expected_exception)
+		testdata = (
+			("# A comment", {}, ([
+				ThemeString("# A comment", ThemeAttr("types", "yaml_comment")),
+			 ], []), None),
+			("# A comment", {"override_formatting": ThemeAttr("types", "generic")}, ([
+				ThemeString("# A comment", ThemeAttr("types", "generic")),
+			 ], []), None),
+			("    # Indented comment", {}, ([
+				ThemeString("    # Indented comment", ThemeAttr("types", "yaml_comment")),
+			 ], []), None),
+			("key: value", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("value", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("\"key\": \"value\"", {}, ([
+				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("\"config\": \"value1\"\\n\"value2\"\\n\"value3\"", {"expand_newline_fields": ("config",)}, ([
+				ThemeString("\"config\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"value1\"", ThemeAttr("types", "yaml_value")),
+			 ], [
+				[ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value2\"", ThemeAttr("types", "yaml_value"), False)],
+				[ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value3\"", ThemeAttr("types", "yaml_value"), False)],
+			 ]), None),
+			("\"key\": \"\033[0;4;37mvalue\"", {"value_strip_ansicodes": True}, ([
+				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("\"key\": \"val\\tue\"", {"value_expand_tabs": True}, ([
+				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"val    ue\"", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("\"key\": \"value\"", {"value_expand_tabs": True}, ([
+				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("\"key\": \"value\"", {}, ([
+				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("key: &define", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("&", ThemeAttr("types", "yaml_reference")),
+				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+			 ], []), None),
+			("key: &define '#112233'", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("&", ThemeAttr("types", "yaml_reference")),
+				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+				ThemeString(" '#112233'", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("key: *define", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("*", ThemeAttr("types", "yaml_reference")),
+				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+			 ], []), None),
+			("key:", {"override_formatting": {"key": {"key": ThemeAttr("types", "generic")}}}, ([
+				ThemeString("key", ThemeAttr("types", "generic")),
+				ThemeString(":", ThemeAttr("types", "yaml_separator")),
+			 ], []), None),
+			("key: {", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("{", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("key: {", {}, ([
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+				ThemeString("{", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("}", {}, ([
+				ThemeString("}", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("- value", {}, ([
+				ThemeString("", ThemeAttr("types", "generic")),
+				ThemeRef("separators", "yaml_list"),
+				ThemeString("value", ThemeAttr("types", "yaml_value")),
+			 ], []), None),
+			("- key:", {}, ([
+				ThemeString("", ThemeAttr("types", "generic")),
+				ThemeRef("separators", "yaml_list"),
+				ThemeString("key", ThemeAttr("types", "yaml_key")),
+				ThemeString(':', ThemeAttr('types', 'yaml_separator'), False),
+			 ], []), None),
+			("- key:", {"override_formatting": "a"}, None, TypeError),
+		)
+		for indata, options, expected_result, expected_exception in testdata:
+			try:
+				if (tmp := fun(indata, **options)) != expected_result:
+					output, remnants = tmp
+					print(f"  indata: {indata}")
+					print(f"     got: {output}")
+					print(f"expected: {expected_result[0]}")
+					print(f"remnants: {remnants}")
+					print(f"expected: {expected_result[1]}")
+					sys.exit()
+					message = f"{fun_str}() did not yield expected result:\n" \
+						  f"           input: \"{indata}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						   "          output:\n" \
+						  f"{dump_themearray(tmp)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -382,7 +530,6 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 			except Exception as e:
-				raise
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -653,6 +800,10 @@ tests: Dict = {
 	},
 	("format_diff_line",): {
 		"callable": test_format_diff_line,
+		"result": None,
+	},
+	("format_yaml_line",): {
+		"callable": test_format_yaml_line,
 		"result": None,
 	},
 	("format_crt",): {

@@ -890,7 +890,7 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 	ref = dictionary
 	pathsplit = path.split("#")
 
-	for i, pathsegment in enumerate(pathsplit): # pragma: no branch
+	for i, pathsegment in enumerate(pathsplit):  # pragma: no branch
 		# Note that we're (potentially) updating ref every iteration
 		if ref is None or not isinstance(ref, dict):
 			raise ValueError(f"Path {path} does not exist in dictionary {dictionary} or is the wrong type {type(ref)}")
