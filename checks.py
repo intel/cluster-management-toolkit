@@ -221,6 +221,16 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 				ANSIThemeString("]", "phase")])
 
 	path_entry = Path(NETRC_PATH)
+	if not path_entry.exists():
+		if verbose:
+			ansithemeprint([ANSIThemeString("  ", "default"),
+					ANSIThemeString("Note", "critical"),
+					ANSIThemeString(":", "default")])
+			ansithemeprint([ANSIThemeString(f"    {NETRC_PATH}", "path"),
+					ANSIThemeString(" does not exist.\n", "default")])
+		note += 1
+		return abort, critical, error, warning, note
+
 	path_stat = path_entry.stat()
 	path_permissions = path_stat.st_mode & 0o777
 
