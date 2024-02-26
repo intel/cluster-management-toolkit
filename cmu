@@ -918,7 +918,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 		action = None
 		replace_quotes = None
 
-		if (path is None and not paths or path is not None and paths and datagetter is None:
+		if path is None and not paths or path is not None and paths and datagetter is None:
 			raise ValueError(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
 		if datagetter is not None:
@@ -10710,6 +10710,10 @@ def main() -> None:
 	ansible_configuration["disable_strict_host_key_checking"] = deep_get(cmtlib.cmtconfig, DictPath("Node#disablestricthostkeychecking"), False)
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), True)
 
+	if "--developer-mode" in sys.argv:
+		cmtlib.cmtconfig["Debug#developer_mode"] = True
+		sys.argv.remove("--developer-mode")
+
 	command, options, args = parse_commandline(about.UI_PROGRAM_NAME, about.UI_PROGRAM_VERSION, PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv,
 						   COMMANDLINE, default_command = "*", theme = themefile)
 
@@ -10720,12 +10724,10 @@ def main() -> None:
 		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	for opt, optarg in options:
-		if opt == "--developer-mode":
-			cmtlib.cmtconfig["Debug#developer_mode"] = True
 		# Currently we only support --kube-config, but in case
 		# we add option aliases (which we probably should) this
 		# is a good thing to have
-		elif opt in ("--kubeconfig", "--kube-config"):
+		if opt in ("--kubeconfig", "--kube-config"):
 			global kube_config_file
 			kube_config_file = optarg
 
