@@ -6183,7 +6183,11 @@ a				the return value from __rest_helper_patch
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
 			from cmtio_yaml import secure_read_yaml_all
-			testdata = f"{HOMEDIR}/testdata/{'.'.join(kind)}.yaml"
+			if not kind[1]:
+				joined_kind = kind[0]
+			else:
+				joined_kind = ".".join(kind)
+			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
 			if Path(testdata).is_file():
 				d = secure_read_yaml(testdata)
 				return deep_get(d, DictPath("items"), []), 200
@@ -6208,7 +6212,11 @@ a				the return value from __rest_helper_patch
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
 			from cmtio_yaml import secure_read_yaml_all
-			testdata = f"{HOMEDIR}/testdata/{'.'.join(kind)}.yaml"
+			if not kind[1]:
+				joined_kind = kind[0]
+			else:
+				joined_kind = ".".join(kind)
+			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
 			if Path(testdata).is_file():
 				d = secure_read_yaml(testdata)
 				for item in deep_get(d, DictPath("items"), []):
