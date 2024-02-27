@@ -989,6 +989,9 @@ def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
 					if "openshift-crc-cluster" in name:
 						tmp_k8s_distro = "crc"
 						break
+					if "openshift-" in name and "ocp-" in name:
+						tmp_k8s_distro = "openshift"
+						break
 				if tmp_k8s_distro is not None:
 					break
 			if minikube_name != "":
