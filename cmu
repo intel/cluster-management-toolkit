@@ -6445,7 +6445,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 				tail_lines = uip.logpadheight
 
 			if len(multilog_containers) == 0:
-				pod_info = infogetters.get_pod_info(**{"vlist": [obj]})[0]
+				pod_info = infogetters.get_pod_info(**{"vlist": [obj]}, kubernetes_helper = kh)[0]
 				podname = pod_info.name
 				namespace = pod_info.namespace
 				containername = deep_get(container, DictPath("name"))
