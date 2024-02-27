@@ -17,12 +17,79 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["phase", "image_pull_policy", "infrastructure_header", "infrastructure_node_selector", "infrastructure_tolerations", "workload_header", "workload_node_selector", "version_header", "version_observed", "version_operator", "version_target"]
+        fields:
+        - "phase"
+        - "cert_config_header"
+        - "cert_ca_header"
+        - "cert_ca_duration"
+        - "cert_ca_renew_before"
+        - "cert_server_header"
+        - "cert_server_duration"
+        - "cert_server_renew_before"
+        - "image_pull_policy"
+        - "infrastructure_header"
+        - "infrastructure_node_selector"
+        - "infrastructure_tolerations"
+        - "workload_header"
+        - "workload_node_selector"
+        - "uninstall_strategy"
+        - "version_header"
+        - "version_observed"
+        - "version_operator"
+        - "version_target"
+        - "configuration"
+        - "configuration_feature_gates"
+        - "configuration_tls_security_profile_type"
+        - "configuration_datavolume_ttl_seconds"
     rows:
+      cert_config_header:
+        header: [["Certificate Configuration:", ["main", "infoheader"]]]
+      cert_ca_header:
+        header: [["  Certificate Authority:", ["main", "infoheader"]]]
+      cert_ca_duration:
+        header: [["    Duration:", ["main", "infoheader"]]]
+        path: "spec#certConfig#ca#duration"
+        type: "str"
+        formatter: "age"
+      cert_ca_renew_before:
+        header: [["    Renew Before:", ["main", "infoheader"]]]
+        path: "spec#certConfig#ca#renewBefore"
+        type: "str"
+        formatter: "age"
+      cert_server_header:
+        header: [["  Server:", ["main", "infoheader"]]]
+      cert_server_duration:
+        header: [["    Duration:", ["main", "infoheader"]]]
+        path: "spec#certConfig#server#duration"
+        type: "str"
+        formatter: "age"
+      cert_server_renew_before:
+        header: [["    Renew Before:", ["main", "infoheader"]]]
+        path: "spec#certConfig#server#renewBefore"
+        type: "str"
+        formatter: "age"
+      configuration:
+        header: [["Configuration:", ["main", "infoheader"]]]
+      configuration_datavolume_ttl_seconds:
+        header: [["  DataVolume TTL:", ["main", "infoheader"]]]
+        path: "spec#dataVolumeTTLSeconds"
+        type: "str"
+        formatter: "numerical"
+        default: "Disabled"
+      configuration_feature_gates:
+        header: [["  Feature Gates:", ["main", "infoheader"]]]
+        path: "spec#config#featureGates"
+        type: "raw"
+        formatter: "list"
+      configuration_tls_security_profile_type:
+        header: [["  TLS Security Profile Type:", ["main", "infoheader"]]]
+        path: "spec#config#tlsSecurityProfile#type"
+        type: "str"
       image_pull_policy:
         header: [["Image Pull Policy:", ["main", "infoheader"]]]
         path: "spec#imagePullPolicy"
         type: "str"
+        default: "<unset>"
       infrastructure_header:
         header: [["Infrastructure:", ["main", "infoheader"]]]
       infrastructure_node_selector:
@@ -56,6 +123,10 @@ infoview:
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
+        type: "str"
+      uninstall_strategy:
+        header: [["Uninstall Strategy:", ["main", "infoheader"]]]
+        path: "spec#uninstallStrategy"
         type: "str"
       version_header:
         header: [["Version:", ["main", "infoheader"]]]

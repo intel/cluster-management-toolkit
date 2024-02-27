@@ -12,7 +12,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller"]
+        fields: ["controller", "feature_gates", "tls_security_profile_type", "scratch_space_storage_class"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -37,6 +37,19 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
+      feature_gates:
+        header: [["Feature Gates:", ["main", "infoheader"]]]
+        path: "spec#featureGates"
+        type: "raw"
+        formatter: "list"
+      scratch_space_storage_class:
+        header: [["Scratch Space Storage Class:", ["main", "infoheader"]]]
+        path: "status#scratchSpaceStorageClass"
+        type: "str"
+      tls_security_profile_type:
+        header: [["TLS Security Profile Type:", ["main", "infoheader"]]]
+        path: "spec#tlsSecurityProfile#type"
+        type: "str"
   shortcuts:
     "Open controller":
       key: "c"
