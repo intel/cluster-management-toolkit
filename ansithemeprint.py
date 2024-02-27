@@ -9,7 +9,7 @@ Print themed strings to the console
 """
 
 import errno
-from getpass import getpass
+import getpass
 import copy
 from pathlib import PurePath
 import subprocess  # nosec
@@ -487,7 +487,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], color: str = "aut
 
 	string = ansithemearray_to_str(themearray, color = use_color)
 	try:
-		tmp = getpass(string)
+		tmp = getpass.getpass(string)
 	except KeyboardInterrupt:  # pragma: no cover
 		print()
 		sys.exit(errno.ECANCELED)

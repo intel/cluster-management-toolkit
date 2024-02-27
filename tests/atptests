@@ -11,6 +11,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 import os
 import sys
 from typing import Dict, Tuple
+from unittest import mock
 
 import ansithemeprint
 from ansithemeprint import ANSIThemeString
@@ -412,103 +413,91 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
-def test_ansithemeinput(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	fun = ansithemeprint.ansithemeinput
-	fun_str = "ansithemeprint.ansithemeinput"
-
-	try:
-		indata = [ANSIThemeString("  Please input the string \"test1\": ", "option")]
-		expected_result = "test1"
-		tmp = fun(indata, color = "auto")
-		if tmp != expected_result:
-			message = f"{fun_str}(color = \"auto\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n    expected: {repr(expected_result)}"
-			result = False
-	except ProgrammingError:
-		message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-		result = False
-
 	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the string \"test2\": ", "argument")]
-			expected_result = "test2"
-			tmp = fun(indata, color = "always")
-			if tmp != expected_result:
-				message = f"{fun_str}(color = \"always\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n    expected: {repr(expected_result)}"
-				result = False
-		except ProgrammingError:
-			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-			result = False
+		# Indata format:
+		# (fun, mocked_fun, prompt, mocked_input, color, expected_result, expected_exception)
+		testdata = (
+			(ansithemeprint.ansithemeinput, "builtins.input",
+			 [ANSIThemeString("  Please input the string \"test1\": ", "option")],
+			 "always", "test1", "test1", None),
+			(ansithemeprint.ansithemeinput, "builtins.input",
+			 [ANSIThemeString("  Please input the string \"test2\": ", "option")],
+			 "auto", "test2", "test2", None),
+			(ansithemeprint.ansithemeinput, "builtins.input",
+			 [ANSIThemeString("  Please input the string \"test3\": ", "option")],
+			 "never", "test3", "test3", None),
+			(ansithemeprint.ansithemeinput, "builtins.input",
+			 [ANSIThemeString("  Please input the string \"test3\": ", "option")],
+			 "invalid value", "test3", None, ValueError),
+			(ansithemeprint.ansithemeinput_password, "getpass.getpass",
+			 [ANSIThemeString("  Please input the string \"test4\": ", "option")],
+			 "always", "test4", "test4", None),
+			(ansithemeprint.ansithemeinput_password, "getpass.getpass",
+			 [ANSIThemeString("  Please input the string \"test5\": ", "option")],
+			 "auto", "test5", "test5", None),
+			(ansithemeprint.ansithemeinput_password, "getpass.getpass",
+			 [ANSIThemeString("  Please input the string \"test6\": ", "option")],
+			 "never", "test6", "test6", None),
+			(ansithemeprint.ansithemeinput_password, "getpass.getpass",
+			 [ANSIThemeString("  Please input the string \"test6\": ", "option")],
+			 "invalid value", "test6", None, ValueError),
+		)
 
-	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the string \"test3\": ", "argument")]
-			expected_result = "test3"
-			tmp = fun(indata, color = "never")
-			if tmp != expected_result:
-				message = f"{fun_str}(color = \"never\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n    expected: {repr(expected_result)}"
-				result = False
-		except ProgrammingError:
-			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-			result = False
+		for indata in testdata:
+			fun, mocked_fun, prompt, color, mocked_input, expected_result, expected_exception = indata
+			try:
+				if mock_input:
+					with mock.patch(mocked_fun, return_value = mocked_input):
+						tmp = fun(prompt, color = color)
+					if tmp != expected_result:
+						message = f"{fun.__name__}() returned incorrect result:\n" \
+							  f"           prompt: {prompt}\n" \
+							  f"     mocked input: {mocked_input}\n" \
+							  f"            color: {color}\n" \
+							  f"  expected result: {expected_result}"
+						result = False
+						break
+				else:
+					tmp = fun(prompt, color = color)
+					if tmp != expected_result:
+						message = f"{fun.__name__}() returned incorrect result (did you type the correct string?):\n" \
+							  f"           prompt: {prompt}\n" \
+							  f"            input: {tmp}\n" \
+							  f"            color: {color}\n" \
+							  f"  expected result: {expected_result}"
+						result = False
+						break
 
-	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the string \"test3\": ", "argument")]
-			tmp = fun(indata, color = "incorrect value")
-			message = f"{fun_str} did not raise an exception for invalid input for color:\n    input: \"incorrect_value\""
-			result = False
-		except ValueError:
-			pass
-
-	if result:
-		try:
-			fun = ansithemeprint.ansithemeinput_password
-			fun_str = "ansithemeprint.ansithemeinput_password"
-			indata = [ANSIThemeString("  Please input the password \"test4\": ", "option")]
-			expected_result = "test4"
-			tmp = fun(indata, color = "auto")
-			if tmp != expected_result:
-				message = f"{fun_str}(color = \"auto\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n    expected: {repr(expected_result)}"
-				result = False
-		except ProgrammingError:
-			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-			result = False
-
-	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the password \"test5\": ", "argument")]
-			expected_result = "test5"
-			tmp = fun(indata, color = "always")
-			if tmp != expected_result:
-				message = f"{fun_str}(color = \"always\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n    expected: {repr(expected_result)}"
-				result = False
-		except ProgrammingError:
-			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-			result = False
-
-	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the password \"test6\": ", "argument")]
-			expected_result = "test6"
-			tmp = fun(indata, color = "never")
-			if tmp != expected_result:
-				message = f"{fun_str}(color = \"never\") returned incorrect input (did you type the correct string?):\n       input: {indata})\n      output: {tmp}\n    expected: {repr(expected_result)}"
-				result = False
-		except ProgrammingError:
-			message = f"{fun_str} raised an exception even though theme and themepath are initialized"
-			result = False
-
-	if result:
-		try:
-			indata = [ANSIThemeString("  Please input the password \"test6\": ", "argument")]
-			tmp = fun(indata, color = "incorrect value")
-			message = f"{fun_str} did not raise an exception for invalid input for color:\n    input: \"incorrect_value\""
-			result = False
-		except ValueError:
-			pass
+				if expected_exception is not None:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"           prompt: {prompt}\n" \
+						  f"            color: {color}\n" \
+						  f"         expected: {expected_exception}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"           prompt: {prompt}\n" \
+							  f"            color: {color}\n" \
+							  f"         expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"           prompt: {prompt}\n" \
+						  f"            color: {color}\n" \
+						  f"         expected: {expected_result}\n" \
+						  f"        exception: {repr(e).split('(')[0]}\n"
+					result = False
+					break
 
 	return message, result
 
@@ -570,6 +559,13 @@ tests: Dict = {
 		"callable": test___themearray_to_raw_string,
 		"result": None,
 	},
+	("ansithemeinput", "ansithemeinput_password"): {
+		"callable": test_ansithemeinput,
+		"result": None,
+		"kwargs": {
+			"mock_input": True,
+		},
+	},
 }
 
 def main() -> int:
@@ -580,19 +576,18 @@ def main() -> int:
 
 	if len(sys.argv) > 1:
 		if "--include-clear" in sys.argv:
-			tests[("clear_screen", )] = {
+			tests[("clear_screen",)] = {
 				"callable": test_clear_screen,
 				"result": None,
 			}
 		if "--include-input" in sys.argv:
-			tests[("ansithemeinput", "ansithemeinput_password")] = {
-				"callable": test_ansithemeinput,
-				"result": None,
-			}
+			tests[("ansithemeinput", "ansithemeinput_password")]["kwargs"]["mock_input"] = False
 
 	for i, test in enumerate(tests):
 		print(f"\033[1;37m[{i:03}/{len(tests) - 1:03}]\033[0m {', '.join(test)}:")
-		message, result = tests[test]["callable"](verbose = verbose)
+		kwargs = tests[test].get("kwargs", {})
+		kwargs["verbose"] = verbose
+		message, result = tests[test]["callable"](**kwargs)
 		if len(message) > 0:
 			print(f"  \033[1;31mFAIL\033[0m: {message}")
 		else:

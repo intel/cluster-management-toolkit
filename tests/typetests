@@ -322,7 +322,6 @@ def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
 					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): Error: An error message.\""
 					result = False
 			except Exception as e:
-				raise
 				message = f"{fun_str}.__str__() raised {e} instead of returning \"(<class 'ValueError'>): Error: an error message.\""
 				result = False
 	if result:
@@ -331,7 +330,6 @@ def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
 		except fun:
 			pass
 		except Exception as e:
-			raise
 			message = f"{fun_str} raised {e} instead of {fun_str}"
 			result = False
 	if result:
@@ -649,7 +647,7 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
 						  f"           kwargs:\n" \
 						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
-						  f"         expected: {expected_exception}\n" \
+						  f"         expected: {expected_result}\n" \
 						  f"        exception: {repr(e).split('(')[0]}\n"
 					result = False
 					break
@@ -709,7 +707,7 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
 						break
 				else:
 					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"         expected: {expected_exception}\n" \
+						  f"         expected: {expected_result}\n" \
 						  f"        exception: {repr(e).split('(')[0]}\n"
 					result = False
 					break
