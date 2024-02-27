@@ -4431,7 +4431,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 			node_heatmap_width = ((uip.maxx - uip.minx - 1) // 5) - 2
 			pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 1
 
-		k8s_distro = identify_k8s_distro(kubernetes_helper = kh)
+		k8s_distro, _status = identify_k8s_distro(kubernetes_helper = kh)
 
 		if k8s_distro is not None:
 			k8s_distro_string = ThemeString(f"{k8s_distro}", ThemeAttr("types", "generic"))

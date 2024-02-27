@@ -278,6 +278,13 @@ setup_tests: create_test_symlinks
 	@(cd tests ;\
 	  test -d testpaths || mkdir testpaths );\
 	(cd tests/testpaths ;\
+	 test -f cmt.yaml || printf -- "Debug:\n  developer_mode: true" > cmt.yaml ;\
+	 test -d cmt.yaml.d || mkdir cmt.yaml.d ;\
+	 test -f cmt.yaml.d/Debug.yaml || printf -- "Debug:\n  developer_mode: false" > cmt.yaml.d/Debug.yaml ;\
+	 test -f cmt.yaml.d/~Debug.yaml || printf -- "Debug:\n  value1: true" > cmt.yaml.d/~Debug.yaml ;\
+	 test -f cmt.yaml.d/.Debug.yaml || printf -- "Debug:\n  value2: true" > cmt.yaml.d/.Debug.yaml ;\
+	 test -f cmt.yaml.d/Debug || printf -- "Debug:\n  value3: true" > cmt.yaml.d/Debug ;\
+	 test -f cmt.yaml.d/Empty.yml || touch cmt.yaml.d/Empty.yml ;\
 	 test -f 01-wrong_permissions || touch 01-wrong_permissions ;\
 	 test -L 02-symlink || ln -s 05-not_executable.sh 02-symlink ;\
 	 test -d 03-wrong_dir_permissions || mkdir 03-wrong_dir_permissions ;\

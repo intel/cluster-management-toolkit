@@ -9,11 +9,13 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timezone
+from pathlib import PurePath
 import sys
 from typing import Dict, Tuple
+from unittest import mock
 import yaml
 
-from cmttypes import deep_get, DictPath, ProgrammingError
+from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
 import cmtlib
 import kubernetes_helper
@@ -21,6 +23,8 @@ import kubernetes_helper
 kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
 # unit-tests for cmtlib.py
+
+TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	result = ""
@@ -740,13 +744,49 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		try:
-			tmp = fun()
-			if not isinstance(tmp, dict):
+			with mock.patch("cmtlib.CMT_CONFIG_FILE", "/doesnotexist"):
+				tmp = fun()
+			if not isinstance(tmp, dict) or tmp:
 				message = f"{fun_str}() did not yield expected result:\n" \
 					  f"    output type: {type(tmp)}\n" \
+					  f"     output len: {len(tmp)}\n" \
+					  f"   expected len: 0\n" \
 					  f"  expected type: dict"
 				result = False
 		except Exception as e:
+			raise
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	if result:
+		try:
+			with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+				tmp = fun()
+			if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": True}}:
+				message = f"{fun_str}() did not yield expected result:\n" \
+					  f"    output type: {type(tmp)}\n" \
+					  f"     output len: {len(tmp)}\n" \
+					  f"   expected len: 1\n" \
+					  f"  expected type: dict"
+				result = False
+		except Exception as e:
+			raise
+			message = f"{fun_str}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+	if result:
+		try:
+			with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+				tmp = fun()
+			if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": False}}:
+				message = f"{fun_str}() did not yield expected result:\n" \
+					  f"    output type: {type(tmp)}\n" \
+					  f"     output len: {len(tmp)}\n" \
+					  f"   expected len: 1\n" \
+					  f"  expected type: dict"
+				result = False
+		except Exception as e:
+			raise
 			message = f"{fun_str}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
@@ -809,8 +849,11 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
 		# Indata format:
 		# (age, negative_is_skew, expected_result, expected_exception)
 		testdata = (
+			(int(f"{8*24*60*60+7*60*60+43*60+21}"), False, "8d", None),
 			(int(f"{6*24*60*60+5*60*60+43*60+21}"), False, "6d5h", None),
+			(int(f"{0*24*60*60+13*60*60+43*60+0}"), False, "13h", None),
 			(int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
+			(int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
 			(int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
 			(int(f"0"), False, "<unset>", None),
 			(int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
@@ -1008,6 +1051,7 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
 			("2020-02-13T12:06:18-0100", None, None),
 			("2024-01-01 00:42:42.011345+0100", None, None),
 			("2020-02-13T12:06:18-0100", None, None),
+			("2024-01-01 00:42:42.011345 +0100 UTC", None, None),
 			(-1, None, None),
 			(None, None, None),
 			("a", None, ValueError),
@@ -1313,23 +1357,43 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
 	fun_str = "cmtlib.identify_distro"
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+		testdata = (
+			("ID=debian", False, "debian", None),
+			("ID=ubuntu\nID_LIKE=debian", False, "debian", None),
+			("ID=\"suse opensuse\"", False, "suse", None),
+			("ID=", False, "", None),
+			("ID=", True, "", None),
+			("", False, "", None),
+		)
 
-		try:
-			tmp = fun()
-			if not isinstance(tmp, str):
-				message = f"{fun_str}() did not yield expected type:\n" \
-				          f"         output: {tmp}\n" \
-					  f"       expected: str"
-				result = False
-			else:
-				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
-				ansithemeprint([ANSIThemeString("    Identified distro: ", "default"),
-						ANSIThemeString(f"{tmp}", "programname")])
-		except Exception as e:
-			message = f"{fun_str}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
+		for os_release_data, error_on_failure, expected_result, expected_exception in testdata:
+			try:
+				with mock.patch("builtins.open", mock.mock_open(read_data = os_release_data)):
+					tmp = fun(error_on_failure = error_on_failure, exit_on_failure = False)
+
+				if tmp != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+					          f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+						          f"          input: {os_release_data}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+					          f"          input: {os_release_data}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
 	return message, result
 
 def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
@@ -1424,16 +1488,16 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtlib.identify_k8s_distro
-	fun_str = "cmtlib.identify_k8s_distro"
+	k8s_distros = ("k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "rke2", "talos", "vcluster")
 
 	if result:
 		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
-		k8s_distros = ("k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "rke2", "talos", "vcluster")
 		try:
-			tmp = fun(kubernetes_helper = kh)
+			tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False)
 			if tmp not in k8s_distros:
-				message = f"{fun_str}() did not yield expected type:\n" \
+				message = f"{fun.__name__}() did not yield expected type:\n" \
 				          f"         output: {tmp}\n" \
+				          f"         status: {status}\n" \
 					  f"       expected: one of {', '.join(k8s_distros)}"
 				result = False
 			else:
@@ -1441,9 +1505,26 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
 				ansithemeprint([ANSIThemeString("    Identified k8s distro: ", "default"),
 						ANSIThemeString(f"{tmp}", "programname")])
 		except Exception as e:
-			message = f"{fun_str}() did not yield expected result:\n" \
+			message = f"{fun.__name__}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
+	if result:
+		with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace", return_value = ([], 404)):
+			try:
+				tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False, error_on_failure = False)
+				if status != 404 or tmp != "<unknown>":
+					message = f"{fun.__name__}() did not yield expected type:\n" \
+					          f"         output: {tmp}\n" \
+					          f"         status: {status}\n" \
+						  f"       expected: <unknown>" \
+						  f"expected status: 404"
+					result = False
+			except Exception as e:
+				message = f"{fun.__name__}() did not yield expected result:\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: <unknown>" \
+					  f"expected status: 404"
+				result = False
 	return message, result
 
 tests: Dict = {

@@ -298,7 +298,7 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
 	for pkg, data in packages.items():
 		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
 		reason = deep_get(data, DictPath("reason"), "")
-		if len(recommended_minimum) == 0:
+		if not recommended_minimum:
 			continue
 
 		args = [zypper_path, "info"] + [pkg]
@@ -377,7 +377,7 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
 	for pkg, data in packages.items():
 		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
 		reason = deep_get(data, DictPath("reason"), "")
-		if len(recommended_minimum) == 0:
+		if not recommended_minimum:
 			continue
 
 		args = [yum_path, "info"] + [pkg]
@@ -464,7 +464,7 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
 	for pkg, data in packages.items():
 		recommended_minimum = deep_get(data, DictPath("recommended minimum"), "")
 		reason = deep_get(data, DictPath("reason"), "")
-		if len(recommended_minimum) == 0:
+		if not recommended_minimum:
 			continue
 		args = [apt_cache_path, "policy"] + [pkg]
 		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
@@ -511,10 +511,10 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
 		always_fallback_distros = deep_get(data, DictPath("always-fallback-distros"), [])
 		never_fallback_distros = deep_get(data, DictPath("never-fallback-distros"), [])
 
-		if len(distros) > 0 and distro not in distros:
+		if distros and distro not in distros:
 			continue
 		trimmed_packages[pkg] = data
-		if len(never_fallback_distros) > 0 and distro in never_fallback_distros and fallback:
+		if never_fallback_distros and distro in never_fallback_distros and fallback:
 			trimmed_packages[pkg].pop("fallback")
 
 	return trimmed_packages
@@ -558,7 +558,7 @@ def install_software_with_pip(packages: List[str], pip_proxy: str = "", verbose:
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 	args = [pip3_path, "install"]
-	if len(pip_proxy) > 0:
+	if pip_proxy:
 		args += ["--proxy", pip_proxy]
 	args += list(packages)
 	_retval = subprocess.run(args, check = False).returncode
@@ -682,10 +682,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
 		for missing in all_packages.difference(found_packages):
 			fallbacks.add(deep_get(packages[missing], DictPath("fallback")))
 
-	if len(pkgs) > 0 and not dryrun:
+	if pkgs and not dryrun:
 		install_software(pkgs, verbose = verbose, distro = distro)
 
-	if len(fallbacks) > 0 and not dryrun:
+	if fallbacks and not dryrun:
 		install_software_with_pip(list(fallbacks), pip_proxy = pip_proxy, verbose = verbose)
 
 	return list(pkgs), list(fallbacks)
@@ -740,8 +740,7 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 	distro_id = ""
 
 	with open(distro_path, "r", encoding = "utf-8") as f:
-		lines = f.readlines()
-		for line in lines:
+		for line in f:
 			line = line.strip()
 			key, value = line.split("=")
 			value = value.strip("\"'")
@@ -754,12 +753,12 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
 				# But if we've only found an ID we cannot be sure
 				# that there won't be an ID_LIKE later on
 
-	if len(distro_id_like) > 0:
+	if distro_id_like:
 		distro = distro_id_like
 	else:
 		distro = distro_id
 
-	if distro is None or len(distro) == 0:
+	if distro is None or not distro:
 		ansithemeprint([ANSIThemeString("Error:", "error"),
 				ANSIThemeString(" Cannot read ID_LIKE from “", "default"),
 				ANSIThemeString("os-release", "path"),

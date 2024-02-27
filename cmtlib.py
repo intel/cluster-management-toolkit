@@ -401,7 +401,7 @@ def age_to_seconds(age: str) -> int:
 	if not isinstance(age, str):
 		raise TypeError(f"age is type {type(age)}, expected str")
 
-	if len(age) == 0:
+	if not age:
 		return -1
 	tmp = re.match(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?", age)
 	if tmp is not None and tmp.span() != (0, 0):
@@ -707,7 +707,7 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 	get_versions_path = get_playbook_path(FilePath("get_versions.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_versions_path, selection = [hostname])
 
-	if len(ansible_results) == 0:
+	if not ansible_results:
 		raise ValueError(f"Error: Failed to get package versions from {hostname} (retval: {retval}); aborting.")
 
 	tmp = []
@@ -717,7 +717,7 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
 			tmp = deep_get(result, DictPath("msg_lines"), [])
 			break
 
-	if len(tmp) == 0:
+	if not tmp:
 		raise ValueError(f"Error: Received empty version data from {hostname} (retval: {retval}); aborting.")
 
 	package_versions = []
@@ -871,7 +871,7 @@ def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[st
 	# Now summarise
 	for package, data in versions_dict.items():
 		candidate = "<none>"
-		if len(data["available"]) > 0:
+		if data["available"]:
 			candidate = data["available"][-1]
 			if data["installed"] == candidate:
 				candidate = ""
@@ -923,7 +923,7 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 	for package, data in versions_dict.items():
 		installed = data["installed"]
 		available = data["available"]
-		if len(available) > 0:
+		if available:
 			candidate = available[0]
 		if candidate == installed:
 			candidate = ""
@@ -931,7 +931,7 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 
 	return versions
 
-def identify_k8s_distro(**kwargs: Any) -> str:
+def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
 	"""
 	Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use
 
@@ -939,9 +939,12 @@ def identify_k8s_distro(**kwargs: Any) -> str:
 			kwargs (dict): Additional parameters
 		Returns:
 			k8s_distro (str): The identified Kubernetes distro; empty if no distro could be identified
+			status (int): API-server retval
 	"""
 
 	k8s_distro = None
+	exit_on_failure = deep_get(kwargs, DictPath("exit_on_failure"), True)
+	error_on_failure = deep_get(kwargs, DictPath("error_on_failure"), True)
 
 	# This will only work for running clusters
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
@@ -949,15 +952,20 @@ def identify_k8s_distro(**kwargs: Any) -> str:
 
 	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
 	if status != 200:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": API-server returned ", "default"),
-				ANSIThemeString(f"{status}", "errorvalue"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
+		if error_on_failure:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": API-server returned ", "default"),
+					ANSIThemeString(f"{status}", "errorvalue")], stderr = True)
+		if exit_on_failure:  # pragma: no cover
+			sys.exit(errno.EINVAL)
+		return "<unknown>", status
 	if vlist is None:
-		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
-		sys.exit(errno.EINVAL)
+		if error_on_failure:
+			ansithemeprint([ANSIThemeString("Error", "error"),
+					ANSIThemeString(": API-server did not return any data", "default")], stderr = True)
+		if exit_on_failure:  # pragma: no cover
+			sys.exit(errno.EINVAL)
+		return "<unknown>", status
 
 	tmp_k8s_distro = None
 	for node in vlist:
@@ -1015,7 +1023,7 @@ def identify_k8s_distro(**kwargs: Any) -> str:
 				# fall back to checking whether the annotation
 				# kubeadm.alpha.kubernetes.io/cri-socket exists if we cannot
 				# find any managedFields
-				if len(deep_get(node, DictPath("metadata#annotations#kubeadm.alpha.kubernetes.io/cri-socket"), "")) > 0:
+				if deep_get(node, DictPath("metadata#annotations#kubeadm.alpha.kubernetes.io/cri-socket"), ""):
 					tmp_k8s_distro = "kubeadm"
 			if tmp_k8s_distro is not None:
 				if k8s_distro is not None:
@@ -1035,15 +1043,20 @@ def identify_k8s_distro(**kwargs: Any) -> str:
 	if k8s_distro is None:
 		k8s_distro = "<unknown>"
 
-	return k8s_distro
+	return k8s_distro, status
 
-def identify_distro() -> str:
+def identify_distro(**kwargs: Any) -> str:
 	"""
 	Identify what distro (Debian, Red Hat, SUSE, etc.) is in use
 
+		Parameters:
+			kwargs (dict): Additional parameters
 		Returns:
 			distro (str): The identified distro; empty if no distro could be identified
 	"""
+
+	exit_on_failure = deep_get(kwargs, DictPath("exit_on_failure"), True)
+	error_on_failure = deep_get(kwargs, DictPath("error_on_failure"), True)
 
 	# Find out what distro this is run on
 	try:
@@ -1064,8 +1077,7 @@ def identify_distro() -> str:
 	distro_id = ""
 
 	with open(distro_path, "r", encoding = "utf-8") as f:
-		lines = f.readlines()
-		for line in lines:
+		for line in f:
 			line = line.strip()
 			key, value = line.split("=")
 			value = value.strip("\"'")
@@ -1078,17 +1090,20 @@ def identify_distro() -> str:
 				# But if we've only found an ID we cannot be sure
 				# that there won't be an ID_LIKE later on
 
-	if len(distro_id_like) > 0:
+	if distro_id_like:
 		distro = distro_id_like
 	else:
 		distro = distro_id
 
 	if distro is None or len(distro) == 0:
-		ansithemeprint([ANSIThemeString("Error:", "error"),
-				ANSIThemeString(" Cannot read ID / ID_LIKE from “", "default"),
-				ANSIThemeString("os-release", "path"),
-				ANSIThemeString("“ file to determine OS distribution; aborting.", "default")])
-		sys.exit(errno.ENOENT)
+		if error_on_failure:
+			ansithemeprint([ANSIThemeString("Error:", "error"),
+					ANSIThemeString(" Cannot read ID / ID_LIKE from “", "default"),
+					ANSIThemeString("os-release", "path"),
+					ANSIThemeString("“ file to determine OS distribution", "default")])
+		if exit_on_failure:  # pragma: no cover
+			sys.exit(errno.ENOENT)
+		return ""
 
 	if distro == "suse opensuse":
 		distro = "suse"
