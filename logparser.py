@@ -554,7 +554,7 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
 		break
 
-	if old_timestamp == none_timestamp() and len(tmp_timestamp) > 0:
+	if old_timestamp == none_timestamp() and tmp_timestamp:
 		timestamp = datetime.strptime(tmp_timestamp, "%Y-%m-%d %H:%M:%S.%f%z")
 
 	# message + either a timestamp or none_timestamp() is passed in, so it is safe just to return it too
@@ -621,8 +621,8 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 	for i, items in enumerate(old_messages):
 		tmp_message: List[Union[ThemeRef, ThemeString]] = []
 		for j, item in enumerate(items.split(" ")):
-			if j == 0:
-				if item.startswith("/sbin/iptables"):
+			if not j:
+				if item.startswith(("/usr/sbin/iptables", "/sbin/iptables")):
 					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_programname")))
 				elif item.startswith("*"):
 					tmp_message.append(ThemeString(item, ThemeAttr("types", "iptables_table")))
@@ -642,7 +642,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 			else:
 				tmp_message.append(ThemeString(f" {item}", ThemeAttr("types", "iptables_argument")))
 
-		if i == 0:
+		if not i:
 			new_message = tmp_message
 		else:
 			new_remnants.append((tmp_message, severity))
@@ -693,7 +693,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 				message = tmp[2]
 
 	# Short format
-	if len(ipaddress) > 0:
+	if ipaddress:
 		tmp = re.match(r"( - - )"			# separator1
 			       r"(\[)"				# separator2
 			       r"(\d\d)"			# day
@@ -755,7 +755,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 			return new_message, severity, facility
 
-	if len(ipaddress) > 0:
+	if ipaddress:
 		tmp = re.match(r"( - - )"
 			       r"(\[)"
 			       r"(\d\d)"
@@ -1012,7 +1012,7 @@ def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str 
 		facility = f"{(tmp[3])}"
 		message = f"{(tmp[4])}"
 		# The first character is always whitespace unless this is an empty line
-		if len(message) > 0:
+		if message:
 			message = message[1:]
 		matched = True
 	else:
@@ -1217,7 +1217,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 						if _msg in logentry:
 							logentry.pop(_msg, None)
 							break
-					if len(logentry) > 0:
+					if logentry:
 						message = f"{msg} {logentry}"
 					else:
 						message = msg
@@ -1256,7 +1256,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 			formatted_message = None
 			remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
-			if len(logentry) > 0:
+			if logentry:
 				tagseverity = None
 				if structseverity == LogLevel.DEBUG:
 					override_formatting = ThemeAttr("logview", "severity_debug")
@@ -1595,9 +1595,26 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 		tmp += raw_msg
 	return severity, message, remnants
 
-def expand_event(message: str, severity: LogLevel, remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = None, fold_msg: bool = True) ->\
-			Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
-	if fold_msg or (remnants is not None and len(remnants) > 0):
+def expand_event(message: str, severity: LogLevel, **kwargs) -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+	"""
+	Given a log message, expand and format event messages
+
+		Parameters:
+			message (str): The log message
+			severity (LogLevel): Current loglevel; will be overriden if new severity is higher
+			remnants ([(ThemeArray, LogLevel)]): Remnants for messages split into multiple lines
+			fold_msg (bool): Should lines be unfolded where possible?
+		Returns:
+			(LogLevel, str, [(ThemeArray, LogLevel)]):
+				(LogLevel): The new loglevel
+				(str): The processed message
+				([(ThemeArray, LogLevel)]): The formatted remnants
+	"""
+
+	remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = deep_get(kwargs, DictPath("remnants"))
+	fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
+
+	if fold_msg or (remnants is not None and remnants):
 		return severity, message, remnants
 
 	raw_message = message
@@ -1810,7 +1827,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 				remnants.append(([ThemeString(tmp[1], ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}"))], severity))
 				s = tmp[2].replace("\\t", "").split("\\n")
 				for line in s:
-					if len(line) > 0:
+					if line:
 						# Real bullets look so much nicer
 						if line.startswith("* ") and substitute_bullets_ and logparser_configuration.msg_realbullets:
 							remnants.append(([ThemeRef("separators", "logbullet"),
@@ -1820,7 +1837,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 		else:
 			tmp = []
 			# If we are extracting msg we always want msg first
-			if logparser_configuration.msg_extract and not fold_msg and len(msg) > 0:
+			if logparser_configuration.msg_extract and not fold_msg and msg:
 				tmp.append(msg)
 				# Pop the first matching _msg
 				for _msg in messages:
@@ -1828,23 +1845,21 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 						d.pop(_msg, "")
 						break
 				for key in errors:
-					value = d.pop(key, "")
-					if len(value) > 0:
+					if (value := d.pop(key, "")):
 						tmp.append(format_key_value(key, value, severity, error_keys = errors))
 			else:
 				if logparser_configuration.msg_first:
 					if fold_msg:
 						for key in messages + errors:
 							value = d.pop(key, "")
-							if len(value) > 0:
+							if value:
 								if logparser_configuration.msg_extract and key in messages:
 									# We already have the message extracted
 									tmp.append(msg)
 								else:
 									tmp.append(f"{key}={value}")
 					else:
-						msg = deep_get_with_fallback(d, messages, "")
-						if len(msg) > 0:
+						if (msg := deep_get_with_fallback(d, messages, "")):
 							force_severity = False
 							if not any(key in errors for key in d):
 								force_severity = True
@@ -1855,8 +1870,7 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 								d.pop(_msg, "")
 								break
 						for key in errors:
-							value = d.pop(key, "")
-							if len(value) > 0:
+							if (value := d.pop(key, "")):
 								tmp.append(format_key_value(key, value, severity))
 
 			for d_key, d_value in d.items():
@@ -1913,11 +1927,11 @@ def key_value(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facili
 			if fold_msg:
 				message = " ".join(tmp)
 			else:
-				if len(tmp) > 0:
+				if tmp:
 					message = tmp.pop(0)
 				else:
 					message = ""
-				if len(tmp) > 0:
+				if tmp:
 					remnants = (tmp, severity)
 
 	if logparser_configuration.expand_newlines and "\\n" in message and isinstance(message, str) and not fold_msg:
@@ -1954,7 +1968,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 
 	# Split into substrings based on spaces
 	tmp = re.findall(r"(?:\".*?\"|\S)+", message)
-	if tmp is not None and len(tmp) > 0:
+	if tmp is not None and tmp:
 		if "=" in tmp[0]:
 			# Try parsing this as regular key_value
 			facility, severity, new_message, remnants = key_value(message, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
@@ -1979,7 +1993,7 @@ def key_value_with_leading_message(message: str, severity: Optional[LogLevel] = 
 
 		facility, severity, first_message, tmp_new_remnants = key_value(rest, fold_msg = fold_msg, severity = severity, facility = facility, options = options)
 		logparser_configuration.msg_extract = tmp_msg_extract
-		if tmp_new_remnants is not None and len(tmp_new_remnants) > 0:
+		if tmp_new_remnants is not None and tmp_new_remnants:
 			new_remnants_strs, new_remnants_severity = tmp_new_remnants
 			new_remnants = ([first_message] + new_remnants_strs, new_remnants_severity)
 		else:
@@ -2178,7 +2192,7 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 			ThemeString(f"{name}", ThemeAttr("types", "dir_socket"))
 		]
 
-	if len(suffix) > 0:
+	if suffix:
 		_message += [
 			ThemeString(f"{suffix}", ThemeAttr("types", "dir_suffix"))
 		]
@@ -2980,7 +2994,7 @@ def init_parser_list():
 					container_name = matchkey.get("container_name", "")
 					image_name = matchkey.get("image_name", "")
 					image_regex_raw = matchkey.get("image_regex", "")
-					if len(image_regex_raw) > 0:
+					if image_regex_raw:
 						image_regex = re.compile(image_regex_raw)
 					else:
 						image_regex = None
@@ -3228,11 +3242,11 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 				facility, severity, rmessage, remnants = custom_parser(message, filters = parser.parser_rules, fold_msg = fold_msg, options = options)
 
 				_lparser = []
-				if len(pod_prefix) > 0:
+				if pod_prefix:
 					_lparser.append(pod_prefix)
-				if len(container_prefix) > 0:
+				if container_prefix:
 					_lparser.append(container_prefix)
-				if len(image_prefix) > 0:
+				if image_prefix:
 					_lparser.append(image_prefix)
 				lparser = "|".join(_lparser)
 				break
