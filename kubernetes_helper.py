@@ -6190,7 +6190,9 @@ a				the return value from __rest_helper_patch
 			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
 			if Path(testdata).is_file():
 				d = secure_read_yaml(testdata)
-				return deep_get(d, DictPath("items"), []), 200
+				if deep_get(d, DictPath("kind")) == "List":
+					d = deep_get(d, DictPath("items"), [])
+				return d, 200
 
 		d, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
 		d = cast(List[Optional[Dict]], d)
@@ -6219,10 +6221,12 @@ a				the return value from __rest_helper_patch
 			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
 			if Path(testdata).is_file():
 				d = secure_read_yaml(testdata)
-				for item in deep_get(d, DictPath("items"), []):
+				if deep_get(d, DictPath("kind")) == "List":
+					d = deep_get(d, DictPath("items"), [])
+				for item in d:
 					i_name = deep_get(item, DictPath("metadata#name"), "")
 					i_namespace = deep_get(item, DictPath("metadata#namespace"))
-					if i_name == name and i_namespace == namespace:
+					if i_name == name and (not namespace or i_namespace == namespace):
 						return item
 
 		ref, _status = self.__rest_helper_get(kind = kind, name = name, namespace = namespace)
