@@ -374,13 +374,14 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 		return tmpline, remnants
 	if line.lstrip(" ").startswith("- "):
 		tmp = yaml_list_regex.match(line)
-		tmpline += [
-			ThemeString(tmp[1], generic_format),
-			list_format,
-		]
-		line = tmp[2]
-		if not line:
-			return tmpline, remnants
+		if tmp is not None:
+			tmpline += [
+				ThemeString(tmp[1], generic_format),
+				list_format,
+			]
+			line = tmp[2]
+			if not line:
+				return tmpline, remnants
 
 	if line.endswith(":"):
 		_key_format = deep_get(override_formatting, DictPath(f"{line[:-1]}#key"), key_format)
@@ -1579,7 +1580,7 @@ cmdata_bin_header: List[Tuple[int, List[int], str]] = [
 	(0, [0xed, 0xab, 0xee, 0xdb], "rpm"),
 ]
 
-def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
+def identify_cmdata(cmdata_name: str, cm_name: str, cm_namespace: str, data: Any) -> Tuple[str, Callable]:
 	if not data:
 		return "Empty", format_none
 
@@ -1625,7 +1626,7 @@ def identify_cmdata(cmdata_name, cm_name, cm_namespace, data):
 
 	return dataformat, formatter
 
-def identify_formatter(dataformat, kind = None, obj = None, path = None):
+def identify_formatter(dataformat: str, kind: Optional[str] = None, obj: Optional[Dict[str, Any]] = None, path: Optional[str] = None) -> Callable:
 	formatter = format_none
 
 	if dataformat is None:

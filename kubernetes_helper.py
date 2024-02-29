@@ -3803,7 +3803,11 @@ def get_node_roles(node: Dict) -> List[str]:
 	return roles
 
 # We could probably merge this into the list above?
-def resource_kind_to_rtype(resource):
+def resource_kind_to_rtype(resource: Tuple[str, str]) -> str:
+	"""
+	Given a kind return a resource type (basically a summary
+	of what type is).
+	"""
 	rtypes = {
 		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
 		("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
@@ -3923,7 +3927,7 @@ class KubernetesResourceCache:
 		for resource in resources:
 			self.update_resource(kind, resource = resource)
 
-	def get_resources(self, kind: Tuple[str, str], namespace: str = None, label_selector: str = "", field_selector: str = "") -> Optional[List[Dict]]:
+	def get_resources(self, kind: Tuple[str, str], namespace: str = "", label_selector: str = "", field_selector: str = "") -> List[Dict[str, Any]]:
 		"""
 		Return a list with all resources of the specified kind
 
@@ -3936,7 +3940,8 @@ class KubernetesResourceCache:
 				([dict]): The list of cached resources of the specified kind
 		"""
 		if kind not in self.resource_cache:
-			return None
+			return []
+
 		if namespace is not None and namespace or label_selector or field_selector:
 			vlist = []
 			field_selector_dict = {}
@@ -3954,7 +3959,7 @@ class KubernetesResourceCache:
 				key = key.replace(".", "#")
 				label_selector_dict[f"metadata#labels#{key}"] = value
 
-			tmp = []
+			tmp: List[Dict[str, Any]] = []
 			for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items():
 				if deep_get(resource, DictPath("metadata#namespace"), "") != namespace:
 					continue
@@ -5400,10 +5405,11 @@ class KubernetesHelper:
 						continue
 					tmp = path.name[:-len(".yaml")]
 					tmp_kind = tmp.split(".", maxsplit = 1)
-					if len(tmp_kind) == 2:
-						kind = tuple(tmp_kind)
+					tmp_split = tmp.split(".", maxsplit = 1)
+					if len(tmp_split) == 1:
+						kind = (tmp_split[0], "")
 					else:
-						kind = (tmp_kind[0], "")
+						kind = (tmp_split[0], tmp_split[1])
 					if kind in kubernetes_resources:
 						kubernetes_resources[kind]["available"] = True
 
@@ -5412,9 +5418,9 @@ class KubernetesHelper:
 					# Ignore non-list APIs
 					continue
 				name = deep_get(api, DictPath("name"), "")
-				kind = deep_get(api, DictPath("kind"), "")
-				if (kind, "") in kubernetes_resources:
-					kubernetes_resources[(kind, "")]["available"] = True
+				kind_ = deep_get(api, DictPath("kind"), "")
+				if (kind_, "") in kubernetes_resources:
+					kubernetes_resources[(kind_, "")]["available"] = True
 
 			# Attempt aggregated discovery; we need custom header_params to do this.
 			# Fallback to the old method if aggregate discovery isn't supported.
@@ -5451,20 +5457,18 @@ class KubernetesHelper:
 					# Now we need to check what kinds this api_group supports
 					# and using what version
 					for version in versions:
-						_version = deep_get(version, DictPath("version"))
-						if _version is None:
+						if (version_ := deep_get(version, DictPath("version"))) is None:
 							# This should not happen, but ignore it
 							continue
 						resources = deep_get(version, DictPath("resources"), [])
 						for resource in resources:
 							if "list" not in deep_get(resource, DictPath("verbs"), []):
 								continue
-							kind = deep_get(resource, DictPath("responseKind#kind"), "")
-							if len(kind) == 0:
+							if not (kind_ := deep_get(resource, DictPath("responseKind#kind"), "")):
 								continue
-							if (kind, name) in kubernetes_resources and \
-									f"apis/{name}/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
-								kubernetes_resources[(kind, name)]["available"] = True
+							if (kind_, name) in kubernetes_resources and \
+									f"apis/{name}/{version_}/" in kubernetes_resources[(kind_, name)].get("api_paths", ""):
+								kubernetes_resources[(kind_, name)]["available"] = True
 								continue
 				modified = True
 				return kubernetes_resources, status, modified
@@ -5483,11 +5487,10 @@ class KubernetesHelper:
 				# Now we need to check what kinds this api_group supports
 				# and using what version
 				for version in versions:
-					_version = deep_get(version, DictPath("groupVersion"))
-					if _version is None:
+					if (version_ := deep_get(version, DictPath("groupVersion"))) is None:
 						# This should not happen, but ignore it
 						continue
-					url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{_version}"
+					url = f"https://{self.control_plane_ip}:{self.control_plane_port}{self.control_plane_path}/apis/{version_}"
 					raw_data, _message, status = self.__rest_helper_generic_json(pool_manager = pool_manager, method = method, url = url)
 
 					if status != 200 or raw_data is None:
@@ -5502,12 +5505,11 @@ class KubernetesHelper:
 					for resource in deep_get(data, DictPath("resources"), []):
 						if "list" not in deep_get(resource, DictPath("verbs"), []):
 							continue
-						kind = deep_get(resource, DictPath("kind"), "")
-						if len(kind) == 0:
+						if not (kind_ := deep_get(resource, DictPath("kind"), "")):
 							continue
-						if (kind, name) in kubernetes_resources and f"apis/{_version}/" in kubernetes_resources[(kind, name)].get("api_paths", ""):
-							if (kind, name) in kubernetes_resources:
-								kubernetes_resources[(kind, name)]["available"] = True
+						if (kind_, name) in kubernetes_resources and f"apis/{version_}/" in kubernetes_resources[(kind_, name)].get("api_paths", ""):
+							if (kind_, name) in kubernetes_resources:
+								kubernetes_resources[(kind_, name)]["available"] = True
 							continue
 
 		modified = True
@@ -6198,21 +6200,28 @@ a				the return value from __rest_helper_patch
 				msg = []
 		return msg, status
 
-	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, label_selector: str = "", field_selector: str = "", resource_cache: KubernetesResourceCache = None) -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
+	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
 		"""
 		Given kind, namespace and optionally label and/or field selectors, return all matching resources
 
 			Parameters:
 				kind (str, str): A kind, API-group tuple
 				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
-				label_selector (str): A label selector
-				field_selector (str): A field selector
-				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
+				kwargs (dict):
+					label_selector (str): A label selector
+					field_selector (str): A field selector
+					resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				(objects, status):
 					objects (list[dict]): A list of object dicts
 					status (int): The HTTP response
 		"""
+
+		label_selector: str = deep_get(kwargs, DictPath("label_selector"), "")
+		field_selector: str = deep_get(kwargs, DictPath("field_selector"), "")
+		resource_cache: Optional[KubernetesResourceCache] = deep_get(kwargs, DictPath("resource_cache"))
+
+		vlist: List[Dict[str, Any]] = []
 
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
 			from pathlib import Path
@@ -6220,8 +6229,8 @@ a				the return value from __rest_helper_patch
 			from cmtio_yaml import secure_read_yaml_all
 
 			if resource_cache:
-				if d := resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector):
-					return d, 200
+				if vlist := resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector):
+					return vlist, 200
 
 			if not kind[1]:
 				joined_kind = kind[0]
@@ -6229,23 +6238,26 @@ a				the return value from __rest_helper_patch
 				joined_kind = ".".join(kind)
 			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
 			if Path(testdata).is_file():
-				d = secure_read_yaml(testdata)
+				d = secure_read_yaml(FilePath(testdata))
 				if deep_get(d, DictPath("kind")) == "List":
-					d = deep_get(d, DictPath("items"), [])
-				if d is None:
+					vlist = deep_get(d, DictPath("items"), [])
+				else:
+					if d:
+						vlist = list(d)
+				if vlist is None:
 					d = []
-				if d and resource_cache is not None:
-					resource_cache.update_resources(kind, d)
+				if vlist and resource_cache is not None:
+					resource_cache.update_resources(kind, vlist)
 					# This way we get the selectors handled
 					return resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector), 200
 				else:
-					return d, 200
+					return vlist, 200
 
-		d, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
-		d = cast(List[Optional[Dict]], d)
-		return d, status
+		tmp, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
+		vlist = cast(List[Dict[str, Any]], tmp)
+		return vlist, status
 
-	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, resource_cache: KubernetesResourceCache = None) -> Dict:
+	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, **kwargs: Any) -> Dict[str, Any]:
 		"""
 		Given kind, name, namespace return a resource
 
@@ -6253,10 +6265,13 @@ a				the return value from __rest_helper_patch
 				kind (str, str): A kind, API-group tuple
 				name (str): The name of the resource
 				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
-				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
+				kwargs (dict):
+					resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				object (dict): An object dict
 		"""
+
+		resource_cache: Optional[KubernetesResourceCache] = deep_get(kwargs, DictPath("resource_cache"))
 
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
 			from pathlib import Path
@@ -6273,9 +6288,9 @@ a				the return value from __rest_helper_patch
 			else:
 				d = []
 			if not d and Path(testdata).is_file():
-				d = secure_read_yaml(testdata)
-				if deep_get(d, DictPath("kind")) == "List":
-					d = deep_get(d, DictPath("items"), [])
+				tmp = secure_read_yaml(FilePath(testdata))
+				if deep_get(tmp, DictPath("kind")) == "List":
+					d = deep_get(tmp, DictPath("items"), [])
 			if d is None:
 				d = []
 			for item in d:
@@ -6348,7 +6363,7 @@ a				the return value from __rest_helper_patch
 		ref = cast(dict, ref)
 		return ref
 
-	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, resource_cache: KubernetesResourceCache = None) -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
+	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, **kwargs: Any) -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
 		"""
 		Given kind, name, and namespace, returns all matching events
 
@@ -6356,7 +6371,8 @@ a				the return value from __rest_helper_patch
 				kind ((str, str)): A (kind, api_group) tuple
 				name (str): The name of the resource
 				namespace (str): The namespace of the resource
-				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
+				kwargs (dict):
+					resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				events (list[(ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)]):
 					ev_namespace (str): The namespace of the event
@@ -6369,6 +6385,8 @@ a				the return value from __rest_helper_patch
 					count (str): The number of times this event has been emitted
 					message (str): A free-form explanation of the event
 		"""
+
+		resource_cache: Optional[KubernetesResourceCache] = deep_get(kwargs, DictPath("resource_cache"))
 
 		events: List[Tuple[str, str, str, str, str, str, str, str, str]] = []
 		vlist, _status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "", resource_cache = resource_cache)

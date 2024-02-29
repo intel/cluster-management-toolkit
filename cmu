@@ -6094,7 +6094,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							# w_item[i] is a column
 							tmp = []
 							for i in range(0, len(w_item)):
-								tmp.append([ThemeString(w_item[i], w_formatting[min(i, len(w_formatting) - 1)])])
+								tmp_formatting = w_formatting[min(i, len(w_formatting) - 1)]
+								if isinstance(tmp_formatting, List):
+									formatting = ThemeAttr(tmp_formatting[0], tmp_formatting[1])
+								else:
+									formatting = tmp_formatting
+								tmp.append([ThemeString(w_item[i], formatting)])
 
 							tmp_items.append({
 								"lineattrs": lineattrs,

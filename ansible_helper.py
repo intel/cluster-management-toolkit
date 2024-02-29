@@ -10,15 +10,17 @@ Ansible-related helpers
 
 from datetime import datetime
 import errno
+import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
-	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import yaml; "
+	         "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 import cmtlib
 from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
@@ -42,7 +44,8 @@ try:
 	import ansible_runner  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
-	sys.exit("ModuleNotFoundError: Could not import ansible_runner; you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import ansible_runner; "
+		 "you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 # Exit if the ansible directory does not exist
 if not Path(ANSIBLE_DIR).exists():
@@ -183,7 +186,10 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 	if not playbooks:
 		raise ValueError("playbooks is empty")
 
-	if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2 and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
+	if not (isinstance(playbooks[0], tuple) and
+			len(playbooks[0]) == 2 and
+			isinstance(playbooks[0][0], list) and
+			isinstance(playbooks[0][1], str)):
 		raise TypeError(f"playbooks[] is wrong type; expected: [([{ANSIThemeString}], {FilePath})]")
 
 	# We do not want to check that parent resolves to itself,
@@ -559,7 +565,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: b
 
 	return True
 
-def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: List[Tuple[str, Union[str, int]]], temporary: bool = False) -> bool:
+def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: List[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
 	"""
 	Set one or several vars for the specified groups
 
@@ -567,12 +573,15 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The groups to set variables for
 			groupvars (list[(str, str|int)]): The values to set
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+			kwargs (Dict):
+				temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 		Raises:
 			ArgumentValidationError: At least one of the arguments failed validation
 	"""
+
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -611,7 +620,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 	return True
 
 # Set one or several vars for hosts in the group all
-def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[Tuple[str, Union[str, int]]], temporary: bool = False) -> bool:
+def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
 	"""
 	Set one or several vars for the specified hosts
 
@@ -619,12 +628,15 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 			inventory (FilePath): The path to the inventory
 			groups (list[str]): The hosts to set variables for
 			hostvars (list[(str, str|int)]): The values to set
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+			kwargs (Dict):
+				temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
 			(bool): True on success, False on failure
 		Raises:
 			ArgumentValidationError: At least one of the arguments failed validation
 	"""
+
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -799,7 +811,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 					"skip_all": skip_all,
 					"temporary": temporary})
 
-	d: Dict = {}
+	d: Dict[str, Any] = {}
 
 	# The inventory does not exist; if the user specified skip_all
 	# we do not mind, otherwise we need to create it
@@ -1446,18 +1458,22 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 				ANSIThemeString(f"{count_no_hosts_match}\n", "numerical"),
 				])
 
-def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, verbose: bool = False, quiet: bool = True) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, **kwargs: Any) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
 		Parameters:
 			playbook (FilePath): The playbook to run
 			inventory (dict): An inventory dict with selection as the list of hosts to run on
-			verbose (bool): Output status updates for every new Ansible event
-			quiet (bool): Disable console output
+			kwargs (dict):
+				verbose (bool): Output status updates for every new Ansible event
+				quiet (bool): Disable console output
 		Returns:
 			(retval(int), ansible_results(dict)): The return value and results from the run
 	"""
+
+	verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+	quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
 	forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
@@ -1498,16 +1514,17 @@ def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, v
 
 	return retval, ansible_results
 
-def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], values: Optional[Dict] = None, verbose: bool = False, quiet: bool = True) -> Tuple[int, Dict]:
+def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], **kwargs: Any) -> Tuple[int, Dict]:
 	"""
 	Run a playbook on selected nodes
 
 		Parameters:
 			playbook (FilePath): The playbook to run
 			selection (list[str]): The hosts to run the play on
-			values (dict): Extra values to set for the hosts
-			verbose (bool): Output status updates for every new Ansible event
-			quiet (bool): Disable console output
+			kwargs (dict):
+				values (dict): Extra values to set for the hosts
+				verbose (bool): Output status updates for every new Ansible event
+				quiet (bool): Disable console output
 		Returns:
 			The result from ansible_run_playbook()
 			retval = -errno.ENOENT if the inventory is missing or empty
@@ -1529,6 +1546,10 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 
 	if not d:
 		return -errno.ENOENT, {}
+
+	values: Dict[str, Any] = deep_get(kwargs, DictPath("values"), {})
+	verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+	quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
 	if values is None:
 		values = {}
@@ -1575,7 +1596,8 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 					"selection": {"types": (list,)}}, kwargs = {
 					"selection": selection})
 
-	_retval, ansible_results = ansible_run_playbook_on_selection(FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("ping.yaml"))), selection = selection, quiet = False)
+	playbook_path = FilePath(os.path.join(ANSIBLE_PLAYBOOK_DIR, "ping.yaml"))
+	_retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, quiet = False)
 
 	for host in ansible_results:
 		for task in deep_get(ansible_results, DictPath(host), []):

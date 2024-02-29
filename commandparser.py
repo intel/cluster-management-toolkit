@@ -667,6 +667,9 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	if command is None and default_command is not None:
 		commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
 
+	if not commandname:
+		raise ValueError("commandname is None")
+
 	if max_args == 0 and len(args) > 0:
 		ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
 				ANSIThemeString(": “", "default"),

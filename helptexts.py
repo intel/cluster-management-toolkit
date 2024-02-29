@@ -15,27 +15,27 @@ from curses_helper import ThemeAttr, ThemeString
 # as a list of lines
 
 about = [
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))]),
-	(0, [ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))]),
-	(0, [ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))]),
-	(0, [ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))]),
-	(0, [ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))]),
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))]), # pylint: disable=line-too-long
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))]),
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))]),
-	(0, [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Testing:", ThemeAttr("main", "about_text_highlight"))]),
-	(0, [ThemeString(" Valtteri Rantala", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Ukri Niemimuukko", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Eero Tamminen", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString(" Alexey Fomenko", ThemeAttr("main", "about_text"))]),
-	(0, [ThemeString("", ThemeAttr("main", "about_text"))]),
+	[ThemeString("", ThemeAttr("main", "about_text"))],
+	[ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],
+	[ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],
+	[ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))],
+	[ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],
+	[ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],
+	[ThemeString("", ThemeAttr("main", "about_text"))],
+	[ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))], # pylint: disable=line-too-long
+	[ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))], # pylint: disable=line-too-long
+	[ThemeString("", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],
+	[ThemeString("", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))],
+	[ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))],
+	[ThemeString("", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Testing:", ThemeAttr("main", "about_text_highlight"))],
+	[ThemeString(" Valtteri Rantala", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Ukri Niemimuukko", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Eero Tamminen", ThemeAttr("main", "about_text"))],
+	[ThemeString(" Alexey Fomenko", ThemeAttr("main", "about_text"))],
+	[ThemeString("", ThemeAttr("main", "about_text"))],
 ]
 
 toggleborders = [

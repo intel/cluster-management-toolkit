@@ -18,7 +18,7 @@ import errno
 from operator import attrgetter
 from pathlib import Path, PurePath
 import sys
-from typing import Any, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
 
 try:
 	from natsort import natsorted
@@ -1793,11 +1793,19 @@ ignoreinput = False
 #	"retval": the value to return if this item is selected (any type is allowed)
 # }
 # pylint: disable-next=too-many-arguments,line-too-long
-def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
-		 items, headers = None, title: str = "", preselection: Union[str, Set[int]] = "",
-		 cursor: bool = True, taggable: bool = False, confirm: bool = False, confirm_buttons = None, **kwargs: Any):
-	stdscr.refresh()
+def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, items: List[Dict[str, Any]], **kwargs: Any) -> Union[Set, Tuple[int, Union[bool, int, str, None]], Union[bool, int, str, None]]:
 	global ignoreinput  # pylint: disable=global-statement
+
+	headers: List[str] = deep_get(kwargs, DictPath("headers"))
+	title: str = deep_get(kwargs, DictPath("title"), "")
+	preselection: Union[str, Set[int]] = deep_get(kwargs, DictPath("preselection"), "")
+	cursor: bool = deep_get(kwargs, DictPath("cursor"), True)
+	taggable: bool = deep_get(kwargs, DictPath("taggable"), False)
+	confirm: bool = deep_get(kwargs, DictPath("confirm"), False)
+	confirm_buttons: List = deep_get(kwargs, DictPath("confirm_buttons"), [])
+	key_f6: bool = deep_get(kwargs, DictPath("KEY_F6"), False)
+
+	stdscr.refresh()
 	ignoreinput = False
 
 	padwidth = 2
@@ -1807,18 +1815,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 		confirm_buttons = []
 
 	if isinstance(items[0], tuple):
-		# This is used by the About text
-		if isinstance(items[0][0], int):
-			tmpitems = []
-			for item in items:
-				tmpitems.append({
-					"lineattrs": item[0],
-					"columns": list(item[1:]),
-					"retval": None,
-				})
-			items = tmpitems
-		else:
-			raise ValueError(f"The text passed to windowwidget() is of invalid format:\n\n{items}")
+		raise ValueError(f"The text passed to windowwidget() is invalid; please report this!\n\n{items}")
 
 	columns = len(items[0]["columns"])
 	lengths = [0] * columns
@@ -2248,7 +2245,7 @@ class UIProps:
 		self.stdscr: curses.window = stdscr
 
 		# Helptext
-		self.helptext = None
+		self.helptext: Optional[List[Dict[str, Any]]] = None
 
 		self.update_forced = False
 
@@ -2358,7 +2355,7 @@ class UIProps:
 		self.timestamps: Optional[List[datetime]] = None
 		self.facilities: Optional[List[str]] = None
 		self.severities: Optional[List[LogLevel]] = None
-		self.messages: Optional[List[str]] = None
+		self.messages: Optional[List[Union[str, ThemeArray, List[Union[ThemeString, ThemeRef]]]]] = None
 		# For checking clicks/drags of the scrollbars
 		self.leftarrow = -1, -1
 		self.rightarrow = -1, -1
@@ -2368,13 +2365,13 @@ class UIProps:
 		self.vdragger = -1, -1, -1
 
 		# Function handler for <enter> / <double-click>
-		self.activatedfun = None
+		self.activatedfun: Optional[Callable] = None
 		self.on_activation: Dict = {}
-		self.extraref = None
-		self.data = None
+		self.extraref: Optional[str] = None
+		self.data: Optional[bool] = None
 
 		self.windowheader: str = ""
-		self.view = ""
+		self.view: Union[Optional[Tuple[str, str]], str] = ""
 
 	def __del__(self) -> None:
 		if self.infopad is not None:
@@ -2437,7 +2434,7 @@ class UIProps:
 		return self.listlen
 
 	def update_log_info(self, timestamps: Optional[List[datetime]],
-			    facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[str]]) -> None:
+			    facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[Union[str, ThemeArray, List[Union[ThemeString, ThemeRef]]]]]) -> None:
 		self.timestamps = timestamps
 		self.facilities = facilities
 		self.severities = severities
@@ -2529,9 +2526,19 @@ class UIProps:
 	# Default behaviour:
 	# timestamps enabled, no automatic updates, default sortcolumn = "status"
 	# pylint: disable-next=too-many-arguments
-	def init_window(self, field_list: Dict, view = None, windowheader: str = "",
-			update_delay: int = -1, sortcolumn: str = "status", sortorder_reverse: bool = False, reversible: bool = True,
-			helptext = None, activatedfun = None, on_activation = None, extraref = None, data = None) -> None:
+	def init_window(self, field_list: Dict, **kwargs: Any) -> None:
+		view: Union[Optional[Tuple[str, str]], str] = deep_get(kwargs, DictPath("view"))
+		windowheader: str = deep_get(kwargs, DictPath("windowheader"), "")
+		update_delay: int = deep_get(kwargs, DictPath("update_delay"), -1)
+		sortcolumn: str = deep_get(kwargs, DictPath("sortcolumn"), "status")
+		sortorder_reverse: bool = deep_get(kwargs, DictPath("sortorder_reverse"), False)
+		reversible: bool = deep_get(kwargs, DictPath("reversible"), True)
+		helptext: Optional[List[Dict[str, Any]]] = deep_get(kwargs, DictPath("helptext"))
+		activatedfun: Optional[Callable] = deep_get(kwargs, DictPath("activatedfun"))
+		on_activation: Optional[Dict[str, Any]] = deep_get(kwargs, DictPath("on_activation"))
+		extraref: Optional[str] = deep_get(kwargs, DictPath("extraref"))
+		data: Optional[bool] = deep_get(kwargs, DictPath("data"))
+
 		self.field_list = field_list
 		self.searchkey = ""
 		self.sortcolumn = sortcolumn
@@ -3179,17 +3186,20 @@ class UIProps:
 			self.list_needs_regeneration(True)
 		self.reselect_uid()
 
-	def find_all_matches_by_searchkey(self, messages, searchkey: str) -> None:
+	def find_all_matches_by_searchkey(self, messages: Optional[List[Union[str, ThemeArray, List[Union[ThemeString, ThemeRef]]]]], searchkey: str) -> None:
 		self.match_index = None
 		self.search_matches.clear()
 
-		if not searchkey:
+		if not searchkey or not messages:
 			return
 
 		for y, msg in enumerate(messages):
 			# The messages can either be raw strings,
 			# or themearrays, so we need to flatten them first
-			message = themearray_to_string(msg)
+			if isinstance(msg, str):
+				message = msg
+			else:
+				message = themearray_to_string(msg)
 			if searchkey in message:
 				self.search_matches.add(y)
 
@@ -3507,7 +3517,9 @@ class UIProps:
 		return sortkey1, sortkey2
 
 	# pylint: disable-next=too-many-arguments,too-many-return-statements
-	def handle_mouse_events(self, win: curses.window, sorted_list, activatedfun, extraref, data) -> Retval:
+	def handle_mouse_events(self, win: curses.window, sorted_list: List[Type], activatedfun: Optional[Callable], extraref: Optional[str], data: Optional[bool]) -> Retval:
+		selected: Optional[Any]
+
 		try:
 			_eventid, x, y, _z, bstate = curses.getmouse()
 		except curses.error:
@@ -3668,7 +3680,7 @@ class UIProps:
 
 		return Retval.NOMATCH
 
-	def enter_handler(self, activatedfun, extraref, data) -> Retval:
+	def enter_handler(self, activatedfun: Optional[Callable], extraref: Optional[str], data: Optional[bool]) -> Retval:
 		selected = self.get_selected()
 
 		if activatedfun is not None and selected is not None and selected.ref is not None:
@@ -3730,8 +3742,11 @@ class UIProps:
 			return Retval.MATCH
 		if c == curses.KEY_F12:
 			if curses_configuration.abouttext is not None:
+				items = []
+				for line in curses_configuration.abouttext:
+					items.append({"lineattrs": WidgetLineAttrs.NORMAL, "columns": [line], "retval": None})
 				windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-					     items = curses_configuration.abouttext, title = "About", cursor = False)
+					     items = items, title = "About", cursor = False)
 			self.refresh_all()
 			return Retval.MATCH
 		if c == curses.KEY_F5:
@@ -3992,8 +4007,11 @@ class UIProps:
 	# pylint: disable-next=unused-argument
 	def __show_about(self, **kwargs: Any) -> Tuple[Retval, Dict]:
 		if curses_configuration.abouttext is not None:
+			items = []
+			for line in curses_configuration.abouttext:
+				items.append({"lineattrs": WidgetLineAttrs.NORMAL, "columns": [line], "retval": None})
 			windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-				     items = curses_configuration.abouttext, title = "About", cursor = False)
+				     items = items, title = "About", cursor = False)
 		self.refresh_all()
 		return Retval.MATCH, {}
 

@@ -43,20 +43,20 @@ import formatters
 from kubernetes_helper import get_node_status, make_selector, resource_kind_to_rtype
 import listgetters_async
 
-def check_matchlists(item, exacts: List[str], prefixes: List[str], suffixes: List[str], ins: List[str]) -> bool:
+def check_matchlists(item: str, exacts: List[str], prefixes: Tuple[str, ...], suffixes: Tuple[str, ...], ins: List[str]) -> bool:
 	if item in exacts:
 		return True
-	for _in in ins:
-		if _in in item:
+	for in_ in ins:
+		if in_ in item:
 			return True
 	if prefixes and item.startswith(prefixes) or suffixes and item.endswith(suffixes):
 		return True
 	return False
 
 # Takes an unprocessed matchlist, splits it into individual matchlists, and checks for matches
-def check_matchlist(item, matchlist):
-	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = [], suffixes = [], ins = [])
-	return check_matchlists(item, exacts = exacts, prefixes = prefixes, suffixes = suffixes, ins = ins)
+def check_matchlist(item: str, matchlist: List[str]) -> bool:
+	exacts, prefixes, suffixes, ins = split_matchlist(matchlist, exacts = [], prefixes = (), suffixes = (), ins = [])
+	return check_matchlists(item, exacts = exacts, prefixes = tuple(prefixes), suffixes = tuple(suffixes), ins = ins)
 
 def get_device_model(obj: Dict, device: DictPath) -> str:
 	for dev in deep_get(obj, DictPath("ansible_devices"), {}):
@@ -70,7 +70,7 @@ def get_device_model(obj: Dict, device: DictPath) -> str:
 # Takes a list and splits it into four lists;
 # exacts, strings starting _and_ ending with "*", strings starting with "*",
 # and strings ending with "*"
-def split_matchlist(matchlist, exacts: List[str], prefixes: List[str], suffixes: List[str], ins: List[str]):
+def split_matchlist(matchlist: List[str], exacts: List[str], prefixes: Tuple[str, ...], suffixes: Tuple[str, ...], ins: List[str]) -> Tuple[List[str], Tuple[str, ...], Tuple[str, ...], List[str]]:
 	tmp_exacts = []
 	tmp_prefixes = []
 	tmp_suffixes = []
@@ -87,15 +87,15 @@ def split_matchlist(matchlist, exacts: List[str], prefixes: List[str], suffixes:
 	if not tmp_exacts:
 		tmp_exacts = exacts
 	if not tmp_prefixes:
-		tmp_prefixes = prefixes
+		tmp_prefixes = list(prefixes)
 	if not tmp_suffixes:
-		tmp_suffixes = suffixes
+		tmp_suffixes = list(suffixes)
 	if not tmp_ins:
 		tmp_ins = ins
 	return tmp_exacts, tuple(tmp_prefixes), tuple(tmp_suffixes), tmp_ins
 
 # Returns True if the item should be skipped
-def filter_list_entry(obj, caller_obj, filters):
+def filter_list_entry(obj: Dict[str, Any], caller_obj: Dict[str, Any], filters: Dict) -> bool:
 	skip = False
 	for f in filters:
 		if not deep_get(filters[f], DictPath("enabled"), True):
@@ -137,7 +137,6 @@ def filter_list_entry(obj, caller_obj, filters):
 				elif rtype == "dictlist":
 					path = deep_get(rule, DictPath("path"), "")
 					target_dict = deep_get(obj, DictPath(path), {})
-					key_value_matches = []
 					matched = False
 					for _dict in target_dict:
 						for key, value in deep_get(rule, DictPath("fields"), {}).items():
@@ -194,7 +193,7 @@ def filter_list_entry(obj, caller_obj, filters):
 	return skip
 
 # listview, listpad
-def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> Tuple[List[Dict], Union[int, str, List[StatusGroup]]]:
+def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("generic_listgetter() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -215,7 +214,7 @@ def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> 
 
 	return vlist2, status
 
-def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict], Union[int]]:
+def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_metrics_list() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -259,7 +258,7 @@ def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict], Union[int]]:
 	return vlist, status
 
 # pylint: disable-next=unused-argument
-def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict], int]:
+def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_pod_containers_list() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -295,7 +294,7 @@ def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict], int]:
 
 	return vlist, status
 
-def __recurse_data(path: Dict, obj: Any):
+def __recurse_data(path: Dict, obj: Any) -> Any:
 	datapath = deep_get(path, DictPath("path"), "")
 	pathtype = deep_get(path, DictPath("pathtype"), "raw")
 	nextpath = deep_get(path, DictPath("data"), {})
@@ -314,7 +313,7 @@ def __recurse_data(path: Dict, obj: Any):
 
 	return __recurse_data(nextpath, data)
 
-def listgetter_files(**kwargs):
+def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	paths = deep_get(kwargs, DictPath("paths"), [])
 	vlist = []
 
@@ -372,7 +371,7 @@ def listgetter_files(**kwargs):
 
 	return vlist, 200
 
-def listgetter_dir(**kwargs):
+def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	dirpath = deep_get(kwargs, DictPath("dirpath"), "")
 	# Substitute {HOME} for {HOMEDIR}
 	if dirpath.startswith("{HOME}"):
@@ -416,7 +415,7 @@ def listgetter_dir(**kwargs):
 # Used by listpad
 
 # pylint: disable-next=unused-argument
-def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
+def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	vlist = []
 	status = 200
 
@@ -466,7 +465,7 @@ def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	return vlist, status
 
 # pylint: disable-next=unused-argument
-def get_ingress_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
+def get_ingress_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	"""
 	Listgetter for Ingress rules
 
@@ -514,7 +513,7 @@ def get_ingress_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 	return vlist, 200
 
 # pylint: disable-next=unused-argument
-def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
+def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	vlist = []
 	for item in deep_get(obj, DictPath("spec#ingress"), []):
 		policy_type = "ingress"
@@ -582,7 +581,7 @@ def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 
 	return vlist, 200
 
-def get_pv_from_pvc_name(pvc_name: str, **kwargs) -> Tuple[Optional[Dict], Optional[str]]:
+def get_pv_from_pvc_name(pvc_name: str, **kwargs: Any) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_pv_from_pvc_name() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -603,7 +602,7 @@ def get_pv_from_pvc_name(pvc_name: str, **kwargs) -> Tuple[Optional[Dict], Optio
 
 	return pv, pv_name
 
-def get_pv_status(pv) -> Tuple[str, StatusGroup]:
+def get_pv_status(pv: Dict[str, Any]) -> Tuple[str, StatusGroup]:
 	phase = deep_get(pv, DictPath("status#phase"))
 
 	if phase in ("Bound", "Available"):
@@ -618,7 +617,7 @@ def get_pv_status(pv) -> Tuple[str, StatusGroup]:
 	return reason, status_group
 
 # pylint: disable-next=unused-argument
-def get_pod_resource_list(obj, **kwargs):
+def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_pod_resource_list() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -1634,14 +1633,14 @@ def listgetter_configmap_data(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int
 # Return all items of a dict as a list of dicts
 # with the key and the value in the fields
 # "key" and "value", respectively
-def listgetter_dict_list(obj, **kwargs):
+def listgetter_dict_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	path = deep_get(kwargs, DictPath("path"))
 	vlist = []
 	for key, value in deep_get(obj, DictPath(path), {}).items():
 		vlist.append({"key": key, "value": value})
 	return vlist, 200
 
-def listgetter_field(obj, **kwargs):
+def listgetter_field(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	path = deep_get(kwargs, DictPath("path"))
 	vlist = deep_get(obj, DictPath(path))
 	return vlist, 200
@@ -1666,7 +1665,7 @@ def listgetter_field(obj, **kwargs):
 # fields = [{"path": "a#b", "name": "bar"}, {"path": "a#c", "name": "baz"}]
 # would generate the list
 # [{"foo": "d", "bar": 1, "baz": 2}, {"foo": "e", "bar": 2, "baz": 3}]
-def listgetter_join_dicts_to_list(obj, **kwargs):
+def listgetter_join_dicts_to_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	vlist = []
 	key_paths = deep_get(kwargs, DictPath("key_paths"), "")
 	key_name = deep_get(kwargs, DictPath("key_name"), "")
@@ -1696,7 +1695,7 @@ def listgetter_join_dicts_to_list(obj, **kwargs):
 
 	return vlist, 200
 
-def listgetter_join_lists(obj, **kwargs):
+def listgetter_join_lists(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	paths = deep_get(kwargs, DictPath("paths"))
 	vlist = []
 
@@ -1866,8 +1865,6 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
 	join_key = deep_get(kwargs, DictPath("join_key"))
 
 	if paths is not None:
-		ppaths = []
-
 		for path in paths:
 			ppath = deep_get(path, DictPath("path"))
 			ptype = deep_get(path, DictPath("type"))
@@ -1893,6 +1890,7 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
 			for tmp in vlists:
 				vlist += tmp
 		else:
+			# XXX: What was intended here? join_key isn't used
 			for tmp in vlists:
 				vlist = [{**u, **v} for u, v in zip_longest(vlist, tmp, fillvalue = {})]
 		return vlist, 200

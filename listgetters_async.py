@@ -9,7 +9,7 @@ Get list data asynchronously
 
 import re
 import sys
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -20,7 +20,7 @@ from cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
 import infogetters
 
 # pylint: disable-next=unused-argument
-def get_kubernetes_list(*args, **kwargs) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
+def get_kubernetes_list(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
 	"""
 	Fetch a list of Kubernetes objects, optionally with postprocessing
 
@@ -36,6 +36,8 @@ def get_kubernetes_list(*args, **kwargs) -> Tuple[List[Any], Union[int, str, Lis
 					sort_reverse (bool): Should the list be returned with reversed sort order? (optional)
 					postprocess (str): Post-processing (if any) to apply (optional)
 					limit (int): The max number of items to return (optional)
+				kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+				kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
 		Returns:
 			([dict], int|str|[StatusGroup]):
 				[dict]: A list of Kubernetes objects
@@ -142,7 +144,7 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
 	return vlist, hosts
 
 # Asynchronous listgetters acceptable for direct use in view files
-listgetter_async_allowlist = {
+listgetter_async_allowlist: Dict[str, Callable] = {
 	# Used by listpad
 	"get_kubernetes_list": get_kubernetes_list,
 	"get_context_list": get_context_list,

@@ -197,7 +197,7 @@ def datagetter_deprecated_api(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 	kind, api_family = guess_kind((result[0], result[1]))
 	return (kind, api_family, result[2]), extra_vars
 
-def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any) -> Tuple[Tuple[str, str, str], Dict]:
+def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict, path: DictPath, default: Any, **kwargs: Any) -> Tuple[Tuple[str, str, str], Dict]:
 	"""
 	A datagetter that returns the latest available API for kind as passed in path
 
@@ -206,6 +206,8 @@ def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 			obj (dict): The object to get the old API information from
 			path (list[kind_path, api_family_path, old_version_path)]: Paths to Kind, API-family, and the old version of the API
 			default: Unused?
+			kwargs (dict):
+				kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
 		Returns:
 			(group (str), latest_version (str), message (str)) (tuple(str, str, str), {} (dict):
 				group: new API-group (since it might change)
@@ -324,7 +326,7 @@ def get_endpoint_endpoints(subsets: List[Dict]) -> List[Tuple[str, StatusGroup]]
 		for address in deep_get(subset, DictPath("notReadyAddresses"), []):
 			endpoints.append((deep_get(address, DictPath("ip")), StatusGroup.NOT_OK))
 
-	if len(endpoints) == 0:
+	if not endpoints:
 		endpoints.append(("<none>", StatusGroup.UNKNOWN))
 
 	return endpoints
@@ -441,7 +443,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 				for container in deep_get(obj, DictPath("status#initContainerStatuses"), []):
 					if not deep_get(container, DictPath("ready")):
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
-						if reason is not None and len(reason) > 0:
+						if reason is not None and reason:
 							if reason in ("CrashLoopBackOff", "ImagePullBackOff"):
 								status_group = StatusGroup.NOT_OK
 							reason = f"Init:{reason}"
@@ -449,7 +451,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 				for container in deep_get(obj, DictPath("status#containerStatuses"), []):
 					if not deep_get(container, DictPath("ready")):
 						reason = deep_get(container, DictPath("state#waiting#reason"), "").rstrip()
-						if reason is not None and len(reason) > 0:
+						if reason is not None and reason:
 							if reason in ("CrashLoopBackOff", "ErrImageNeverPull", "ErrImagePull"):
 								status_group = StatusGroup.NOT_OK
 							return reason, status_group
@@ -572,7 +574,7 @@ def datagetter_api_support(kh: kubernetes_helper.KubernetesHelper, obj: Dict, pa
 	except NameError:
 		pass
 
-	if len(available_views) == 0:
+	if not available_views:
 		available_views = default
 
 	return available_views, {}
