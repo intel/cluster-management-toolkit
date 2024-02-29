@@ -214,6 +214,8 @@ def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 				{}: An empty dict
 	"""
 
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
+
 	if obj is None or path is None:
 		if default is None:
 			default = ("", "", "")
@@ -235,7 +237,7 @@ def datagetter_latest_version(kh: kubernetes_helper.KubernetesHelper, obj: Dict,
 	message = ""
 
 	# Check if there's a deprecation message in the CRD
-	ref = kh.get_ref_by_kind_name_namespace(("CustomResourceDefinition", "apiextensions.k8s.io"), kind_tuple_to_name(kind), "")
+	ref = kh.get_ref_by_kind_name_namespace(("CustomResourceDefinition", "apiextensions.k8s.io"), kind_tuple_to_name(kind), "", resource_cache = kh_cache)
 
 	if ref is not None:
 		versions: Dict = {}
@@ -409,6 +411,8 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 			phase (str), status_group (StatusGroup): The phase and status group of the pod
 	"""
 
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
+
 	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
 
 	if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
@@ -467,7 +471,7 @@ def get_pod_status(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 				# Can we get more info? Is the host available?
 				if in_depth_node_status:
 					node_name = deep_get(obj, DictPath("spec#nodeName"))
-					node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, "")
+					node = kh.get_ref_by_kind_name_namespace(("Node", ""), node_name, "", resource_cache = kh_cache)
 					node_status = get_node_status(node)
 					if node_status[0] == "Unreachable":
 						status = "NodeUnreachable"

@@ -106,7 +106,7 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, 
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, get_controller_from_owner_references, get_image_version, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
+from kubernetes_helper import KubernetesHelper, KubernetesResourceCache, get_controller_from_owner_references, get_image_version, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
 
 import checks
 
@@ -140,6 +140,7 @@ selected_namespace = ""
 defaultview = ""
 
 kh: KubernetesHelper = None  # type: ignore
+kh_cache: KubernetesResourceCache = None  # type: ignore
 
 executor = reexecutor.ReExecutor()
 async_data: Dict = {}
@@ -150,9 +151,11 @@ def init_kubernetes_client() -> None:
 	"""
 
 	global kh  # pylint: disable=global-statement
+	global kh_cache  # pylint: disable=global-statement
 
 	if kubernetes_support:
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, config_path = kube_config_file)
+		kh_cache = KubernetesResourceCache()
 
 override_tail_lines = None
 default_tail_lines = 4000
@@ -359,7 +362,7 @@ def get_container_info(**kwargs: Any) -> List[Type]:
 	# as defined by the tuple (name, type, version, image_id),
 	# so we need to iterate the list of all pods and extract this
 	# information.
-	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "", resource_cache = kh_cache)
 	if status != 200:
 		return info
 
@@ -1126,9 +1129,9 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 
 					try:
 						if not lookup_name:
-							lookup_obj, _status = kh.get_list_by_kind_namespace((lookup_kind, lookup_api_group), lookup_namespace, label_selector = lookup_selector)
+							lookup_obj, _status = kh.get_list_by_kind_namespace((lookup_kind, lookup_api_group), lookup_namespace, label_selector = lookup_selector, resource_cache = kh_cache)
 						else:
-							lookup_obj = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_group), lookup_name, lookup_namespace)
+							lookup_obj = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_group), lookup_name, lookup_namespace, resource_cache = kh_cache)
 					except NameError:
 						unknown = deep_get(_path, DictPath("unknown"), "Unknown Kind")
 						_values.append((unknown, "raw"))
@@ -1472,7 +1475,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 						raise ValueError(f"Field {name}: currently status_tuple only supports 'lookup'")
 					path = deep_get(_path, DictPath("path"))
 					value = deep_get(obj, DictPath(path))
-					tmp = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_family), value, "")
+					tmp = kh.get_ref_by_kind_name_namespace((lookup_kind, lookup_api_family), value, "", resource_cache = kh_cache)
 					if lookup_status == "highlight":
 						if tmp is None:
 							status_group = StatusGroup.NOT_OK
@@ -2123,7 +2126,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 		secret_name = deep_get(secret, DictPath("name"))
 
 		# Get a reference to the secret
-		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
+		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace, resource_cache = kh_cache)
 
 		info.append(type("InfoClass", (), {
 			"name": secret_name,
@@ -2140,7 +2143,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 		secret_name = deep_get(secret, DictPath("name"))
 
 		# Get a reference to the secret
-		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace)
+		ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name, snamespace, resource_cache = kh_cache)
 
 		info.append(type("InfoClass", (), {
 			"name": secret_name,
@@ -2150,7 +2153,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 			"type": "Image Pull",
 		}))
 
-	vlist, status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"), "")
+	vlist, status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"), "", resource_cache = kh_cache)
 
 	# Get all Role Bindings that bind to this ServiceAccount
 	for ref in vlist:
@@ -2173,7 +2176,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 				rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""), deep_get(ref, DictPath("roleRef#apiGroup")))
 				rolerefname = deep_get(ref, DictPath("roleRef#name"), "")
 				rolerefnamespace = deep_get(ref, DictPath("metadata#namespace"), "")
-				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, rolerefnamespace)
+				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, rolerefnamespace, resource_cache = kh_cache)
 				if roleref is not None:
 					deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path = True)
 					deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/", create_path = True)
@@ -2186,7 +2189,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 				}))
 				break
 
-	vlist, status = kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "")
+	vlist, status = kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "", resource_cache = kh_cache)
 
 	# Get all Cluster Role Bindings that bind to this ServiceAccount
 	for ref in vlist:
@@ -2208,7 +2211,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 				# Excellent, we have a Cluster Role Binding, now add the role it binds to
 				rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""), deep_get(ref, DictPath("roleRef#apiGroup")))
 				rolerefname = deep_get(ref, DictPath("roleRef#name"), "")
-				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, subjectnamespace)
+				roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname, subjectnamespace, resource_cache = kh_cache)
 				if roleref is not None:
 					deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path = True)
 					deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/", create_path = True)
@@ -2597,7 +2600,7 @@ def get_control_plane() -> Tuple[Dict, str]:
 	if not kubernetes_support:
 		return None, ""
 
-	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
+	vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "", resource_cache = kh_cache)
 	control_planes = []
 
 	if vlist is None or not vlist or status != 200:
@@ -2937,6 +2940,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			elif listgetter_async == listgetters_async.get_kubernetes_list and ".".join(kind) not in executor:
 				if "kubernetes_helper" not in listgetter_args:
 					listgetter_args["kubernetes_helper"] = kh
+					listgetter_args["kh_cache"] = kh_cache
 				executor.trigger(".".join(kind), 5, listgetters_async.get_kubernetes_list, kind = kind, namespace = selected_namespace, **listgetter_args)
 			if listgetter_async in (listgetters_async.get_inventory_list, listgetters_async.get_context_list) and "pings" not in executor:
 				# But the hosts can change status more frequently than that
@@ -2944,12 +2948,13 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 		elif listgetter is not None:
 			if first_fetch or uip.update_forced:
 				if listgetter is not None:
+					if "kubernetes_helper" not in listgetter_args:
+						listgetter_args["kubernetes_helper"] = kh
+						listgetter_args["kh_cache"] = kh_cache
 					if kind[0].startswith("__"):
-						if "kubernetes_helper" not in listgetter_args:
-							listgetter_args["kubernetes_helper"] = kh
 						vlist, status = listgetter(**listgetter_args)
 					else:
-						vlist, status = listgetter(deep_get(view, DictPath(f"{view}#kind")), selected_namespace, label_selector = label_selector)
+						vlist, status = listgetter(deep_get(view, DictPath(f"{view}#kind")), selected_namespace, label_selector = label_selector, **listgetter_args)
 					infogetter_extra_vars["_vlist"] = vlist
 				new_data = "pending"
 				uip.update_timestamp(update = new_data)
@@ -3375,7 +3380,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				"retval": all_ns,
 			}]
 
-			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
+			tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "", resource_cache = kh_cache)
 			if status == 200:
 				for ns in (deep_get(item, DictPath("metadata#name")) for item in tmp):
 					namespace_list.append({
@@ -4062,7 +4067,7 @@ def __open_reference(**kwargs):
 		name = pod_name
 		kind = ("Pod", "")
 
-	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache = kh_cache)
 	retval = resourceinfodispatch(uip.stdscr, ref, kind)
 	if retval is not None and retval == Retval.RETURNFULL:
 		return retval, {}
@@ -4322,9 +4327,9 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 	if not islocal:
 		executor.trigger("sysinfo", 5, run_ansible_play_async, playbook = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("load_ping.yaml"))), selection = [control_plane_name])
-	executor.trigger("node", 5, listgetters_async.get_kubernetes_list, kind = ("Node", ""), namespace = "", fetch_args = {"sort_key": "metadata#name", "postprocess": "node"}, kubernetes_helper = kh)
-	executor.trigger("pod", 5, listgetters_async.get_kubernetes_list, kind = ("Pod", ""), namespace = "", fetch_args = {"postprocess": "pod"}, kubernetes_helper = kh)
-	executor.trigger("event", 5, listgetters_async.get_kubernetes_list, kind = ("Event", ""), namespace = "", fetch_args = {"sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5}, kubernetes_helper = kh)
+	executor.trigger("node", 5, listgetters_async.get_kubernetes_list, kind = ("Node", ""), namespace = "", fetch_args = {"sort_key": "metadata#name", "postprocess": "node"}, kubernetes_helper = kh, kh_cache = kh_cache)
+	executor.trigger("pod", 5, listgetters_async.get_kubernetes_list, kind = ("Pod", ""), namespace = "", fetch_args = {"postprocess": "pod"}, kubernetes_helper = kh, kh_cache = kh_cache)
+	executor.trigger("event", 5, listgetters_async.get_kubernetes_list, kind = ("Event", ""), namespace = "", fetch_args = {"sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5}, kubernetes_helper = kh, kh_cache = kh_cache)
 
 	while True:
 		if (result := executor.get("sysinfo")) != ([], []):
@@ -5580,7 +5585,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 			# Refresh obj whenever we reload, unless this is a special view or "no_reload_on_refresh" is true
 			if not view[0].startswith("__") and not deep_get(viewref, DictPath("no_reload_on_refresh"), False):
-				obj = kh.get_ref_by_kind_name_namespace(view, deep_get(obj, DictPath("metadata#name")), deep_get(obj, DictPath("metadata#namespace")))
+				obj = kh.get_ref_by_kind_name_namespace(view, deep_get(obj, DictPath("metadata#name")), deep_get(obj, DictPath("metadata#namespace")), resource_cache = kh_cache)
 
 				if obj is None:
 					title = "Error!"
@@ -5708,6 +5713,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					curses.doupdate()
 					if "kubernetes_helper" not in listgetter_args:
 						listgetter_args["kubernetes_helper"] = kh
+						listgetter_args["kh_cache"] = kh_cache
 					# pylint: disable-next=comparison-with-callable
 					if listgetter == listgetters.generic_listgetter:
 						vlist, status = listgetter(**listgetter_args)
@@ -6064,6 +6070,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if isinstance(w_itemgetter, str):
 						w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
 					w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
+					w_itemgetter_args["kh_cache"] = kh_cache
 					w_selectable = deep_get(value, DictPath("selectable"), False)
 					# w_kind = deep_get(value, DictPath("kind"), view)
 					if "_slow_task_msg" in w_itemgetter_args:
@@ -6308,7 +6315,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					elif kind:
 						if isinstance(kind, str):
 							kind = guess_kind(kind)
-						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace)
+						ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace, resource_cache = kh_cache)
 						retval = call(uip.stdscr, ref, kind)
 						if retval is not None and retval == Retval.RETURNFULL:
 							return retval
@@ -6336,7 +6343,7 @@ def eventdispatch(stdscr: curses.window, **kwargs):
 	name = deep_get_with_fallback(obj, name_path)
 	namespace_path = deep_get(kwargs, DictPath("namespace_path"))
 	namespace = deep_get_with_fallback(obj, namespace_path + ["metadata#namespace"], "")
-	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache = kh_cache)
 	return resourceinfodispatch(stdscr, ref, kind)
 
 # pylint: disable-next=too-many-arguments
@@ -6445,7 +6452,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 				tail_lines = uip.logpadheight
 
 			if len(multilog_containers) == 0:
-				pod_info = infogetters.get_pod_info(**{"vlist": [obj]}, kubernetes_helper = kh)[0]
+				pod_info = infogetters.get_pod_info(**{"vlist": [obj]}, kubernetes_helper = kh, kh_cache = kh_cache)[0]
 				podname = pod_info.name
 				namespace = pod_info.namespace
 				containername = deep_get(container, DictPath("name"))
@@ -7841,7 +7848,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
         # If the kind is unknown we will get NameError;
 	# in this case we probably do not want to crash
 	try:
-		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+		obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache = kh_cache)
 	except NameError:
 		obj = None
 
@@ -8056,7 +8063,7 @@ def create_namespace(stdscr: curses.window, **kwargs):
 		       ANSIThemeString(name, "argument"),
 		       ANSIThemeString("“ is not a valid name", "default")]
 		ansithemeprint(msg, stderr = True)
-	elif kh.get_ref_by_kind_name_namespace(("Namespace", ""), name, "") is not None:
+	elif kh.get_ref_by_kind_name_namespace(("Namespace", ""), name, "", resource_cache = kh_cache) is not None:
 		msg = [ANSIThemeString("Error: ", "error"),
 		       ANSIThemeString("namespace “", "default"),
 		       ANSIThemeString(name, "argument"),
@@ -8096,7 +8103,7 @@ def __restart_resource(kind, namespace, name):
 	return result
 
 def __get_resource_scale(kind, namespace, name):
-	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace)
+	obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache = kh_cache)
 	return deep_get(obj, DictPath("status#replicas"))
 
 # Valid kinds:
@@ -10089,7 +10096,7 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	init_kubernetes_client()
 
-	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "")
+	tmp, status = kh.get_list_by_kind_namespace(("Namespace", ""), "", resource_cache = kh_cache)
 	if status in (42503, 42504):
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": API-server unavailable", "default")], stderr = True)

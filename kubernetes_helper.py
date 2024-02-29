@@ -3886,14 +3886,16 @@ class KubernetesResourceCache:
 				"resources": {},
 			}
 
-		if len(uid := deep_get(resource, DictPath("metadata#uid"), "")) == 0:
-			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
-					       "Attempt to add a resource with empty or None uid was made")
+		# Some resources lack a UID (notably metrics);
+		# let's not cache those.
+		if not (uid := deep_get(resource, DictPath("metadata#uid"), "")):
+			return
+
 		resource_version = deep_get(resource, DictPath("metadata#resourceVersion"))
 		if resource_version is None:
 			raise ProgrammingError("KubernetesResourceCache.update_resource(): "
 					       "Attempt to add a resource with empty or None resourceVersion was made")
-		if resource_version == "":
+		if not resource_version:
 			resource_version = "0"
 		if uid not in self.resource_cache[kind]:
 			self.resource_cache[kind]["resource_version"] = int(resource_version)
@@ -3914,25 +3916,58 @@ class KubernetesResourceCache:
 				kind ((str, str)): The kind tuple for the resources
 				resources (dict): The resource data
 		"""
-		if resources is None or len(resources) == 0:
+		if resources is None or not resources:
 			raise ProgrammingError("KubernetesResourceCache.update_resources(): "
 					       "resources is empty or None")
 
 		for resource in resources:
 			self.update_resource(kind, resource = resource)
 
-	def get_resources(self, kind: Tuple[str, str]) -> Optional[List[Dict]]:
+	def get_resources(self, kind: Tuple[str, str], namespace: str = None, label_selector: str = "", field_selector: str = "") -> Optional[List[Dict]]:
 		"""
 		Return a list with all resources of the specified kind
 
 			Parameters:
 				kind ((str, str)): The kind tuple for the resources
+				namespace (str): The namespace of the resource (None to return all namespaces)
+				label_selector (str): A label selector
+				field_selector (str): A field selector
 			Returns:
 				([dict]): The list of cached resources of the specified kind
 		"""
 		if kind not in self.resource_cache:
 			return None
-		return [resource for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items()]
+		if namespace is not None and namespace or label_selector or field_selector:
+			vlist = []
+			field_selector_dict = {}
+			for selector in field_selector.split(","):
+				if not selector:
+					continue
+				key, value = selector.split("=")
+				key = key.replace(".", "#")
+				field_selector_dict[key] = value
+			label_selector_dict = {}
+			for selector in label_selector.split(","):
+				if not selector:
+					continue
+				key, value = selector.split("=")
+				key = key.replace(".", "#")
+				label_selector_dict[f"metadata#labels#{key}"] = value
+
+			tmp = []
+			for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items():
+				if deep_get(resource, DictPath("metadata#namespace"), "") != namespace:
+					continue
+				for key, value in field_selector_dict.items():
+					if deep_get(resource, DictPath(key), "") != value:
+						continue
+				for key, value in label_selector_dict.items():
+					if deep_get(resource, DictPath(key), "") != value:
+						continue
+				vlist.append(resource)
+			return vlist
+		else:
+			return [resource for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items()]
 
 	def index(self) -> List[str]:
 		"""
@@ -3956,7 +3991,6 @@ class KubernetesResourceCache:
 		if self.resource_cache is None:
 			return 0
 		return len(self.resource_cache)
-
 
 	def len(self, kind: Tuple[str, str]) -> int:
 		"""
@@ -6164,7 +6198,7 @@ a				the return value from __rest_helper_patch
 				msg = []
 		return msg, status
 
-	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, label_selector: str = "", field_selector: str = "") -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
+	def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str, label_selector: str = "", field_selector: str = "", resource_cache: KubernetesResourceCache = None) -> Tuple[Union[Optional[Dict], List[Optional[Dict]]], int]:
 		"""
 		Given kind, namespace and optionally label and/or field selectors, return all matching resources
 
@@ -6172,7 +6206,8 @@ a				the return value from __rest_helper_patch
 				kind (str, str): A kind, API-group tuple
 				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
 				label_selector (str): A label selector
-				label_selector (str): A field selector
+				field_selector (str): A field selector
+				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				(objects, status):
 					objects (list[dict]): A list of object dicts
@@ -6183,6 +6218,11 @@ a				the return value from __rest_helper_patch
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
 			from cmtio_yaml import secure_read_yaml_all
+
+			if resource_cache:
+				if d := resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector):
+					return d, 200
+
 			if not kind[1]:
 				joined_kind = kind[0]
 			else:
@@ -6192,13 +6232,20 @@ a				the return value from __rest_helper_patch
 				d = secure_read_yaml(testdata)
 				if deep_get(d, DictPath("kind")) == "List":
 					d = deep_get(d, DictPath("items"), [])
-				return d, 200
+				if d is None:
+					d = []
+				if d and resource_cache is not None:
+					resource_cache.update_resources(kind, d)
+					# This way we get the selectors handled
+					return resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector), 200
+				else:
+					return d, 200
 
 		d, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
 		d = cast(List[Optional[Dict]], d)
 		return d, status
 
-	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> Dict:
+	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, resource_cache: KubernetesResourceCache = None) -> Dict:
 		"""
 		Given kind, name, namespace return a resource
 
@@ -6206,6 +6253,7 @@ a				the return value from __rest_helper_patch
 				kind (str, str): A kind, API-group tuple
 				name (str): The name of the resource
 				namespace (str): The namespace of the resource (empty if the resource is not namespaced)
+				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				object (dict): An object dict
 		"""
@@ -6214,20 +6262,27 @@ a				the return value from __rest_helper_patch
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
 			from cmtio_yaml import secure_read_yaml_all
+
 			if not kind[1]:
 				joined_kind = kind[0]
 			else:
 				joined_kind = ".".join(kind)
 			testdata = f"{HOMEDIR}/testdata/{joined_kind}.yaml"
-			if Path(testdata).is_file():
+			if resource_cache:
+				d = resource_cache.get_resources(kind, namespace = namespace)
+			else:
+				d = []
+			if not d and Path(testdata).is_file():
 				d = secure_read_yaml(testdata)
 				if deep_get(d, DictPath("kind")) == "List":
 					d = deep_get(d, DictPath("items"), [])
-				for item in d:
-					i_name = deep_get(item, DictPath("metadata#name"), "")
-					i_namespace = deep_get(item, DictPath("metadata#namespace"))
-					if i_name == name and (not namespace or i_namespace == namespace):
-						return item
+			if d is None:
+				d = []
+			for item in d:
+				i_name = deep_get(item, DictPath("metadata#name"), "")
+				i_namespace = deep_get(item, DictPath("metadata#namespace"))
+				if i_name == name and (not namespace or i_namespace == namespace):
+					return item
 
 		ref, _status = self.__rest_helper_get(kind = kind, name = name, namespace = namespace)
 		ref = cast(Dict, ref)
@@ -6293,7 +6348,7 @@ a				the return value from __rest_helper_patch
 		ref = cast(dict, ref)
 		return ref
 
-	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str) -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
+	def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, resource_cache: KubernetesResourceCache = None) -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
 		"""
 		Given kind, name, and namespace, returns all matching events
 
@@ -6301,6 +6356,7 @@ a				the return value from __rest_helper_patch
 				kind ((str, str)): A (kind, api_group) tuple
 				name (str): The name of the resource
 				namespace (str): The namespace of the resource
+				resource_cache (KubernetesResourceCache): A KubernetesResourceCache
 			Returns:
 				events (list[(ev_namespace, ev_name, last_seen, status, reason, source, first_seen, count, message)]):
 					ev_namespace (str): The namespace of the event
@@ -6315,8 +6371,8 @@ a				the return value from __rest_helper_patch
 		"""
 
 		events: List[Tuple[str, str, str, str, str, str, str, str, str]] = []
-		vlist, _status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "")
-		if vlist is None or len(vlist) == 0 or _status != 200:
+		vlist, _status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "", resource_cache = resource_cache)
+		if vlist is None or not vlist or _status != 200:
 			return events
 
 		for obj in vlist:

@@ -197,11 +197,12 @@ def filter_list_entry(obj, caller_obj, filters):
 def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> Tuple[List[Dict], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("generic_listgetter() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	label_selector = deep_get(kwargs, DictPath("label_selector"), "")
 	field_selector = deep_get(kwargs, DictPath("field_selector"), "")
 	filters = deep_get(kwargs, DictPath("filters"), [])
-	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector)
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector, resource_cache = kh_cache)
 	if not vlist or status != 200 or not filters:
 		return vlist, status
 
@@ -217,6 +218,7 @@ def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> 
 def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict], Union[int]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_metrics_list() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	vlist = []
 
@@ -260,9 +262,10 @@ def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict], Union[int]]:
 def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict], int]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_pod_containers_list() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	vlist = []
-	_vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "")
+	_vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "", resource_cache = kh_cache)
 
 	if status == 200:
 		for obj in _vlist:
@@ -581,20 +584,21 @@ def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 
 def get_pv_from_pvc_name(pvc_name: str, **kwargs) -> Tuple[Optional[Dict], Optional[str]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-		raise ProgrammingError("get_pod_resource_list() called without kubernetes_helper")
+		raise ProgrammingError("get_pv_from_pvc_name() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	pv = None
 	pv_name = None
 	field_selector = f"metadata.name={pvc_name}"
 
-	vlist, status = kh.get_list_by_kind_namespace(("PersistentVolumeClaim", ""), "", field_selector = field_selector)
+	vlist, status = kh.get_list_by_kind_namespace(("PersistentVolumeClaim", ""), "", field_selector = field_selector, resource_cache = kh_cache)
 	if status == 200:
 		for pvc in vlist:
 			if deep_get(pvc, DictPath("metadata#name")) == pvc_name:
 				volume_name = deep_get(pvc, DictPath("spec#volumeName"))
 				if volume_name is not None:
 					pv_name = volume_name
-					pv = kh.get_ref_by_kind_name_namespace(("PersistentVolume", ""), pv_name, None)
+					pv = kh.get_ref_by_kind_name_namespace(("PersistentVolume", ""), pv_name, None, resource_cache = kh_cache)
 					break
 
 	return pv, pv_name
@@ -617,6 +621,7 @@ def get_pv_status(pv) -> Tuple[str, StatusGroup]:
 def get_pod_resource_list(obj, **kwargs):
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_pod_resource_list() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	vlist = []
 
@@ -676,7 +681,7 @@ def get_pod_resource_list(obj, **kwargs):
 		name = deep_get(obj, DictPath("spec#nodeName"))
 		ref = None
 		if name is not None:
-			ref = kh.get_ref_by_kind_name_namespace(("Node", ""), name, None)
+			ref = kh.get_ref_by_kind_name_namespace(("Node", ""), name, None, resource_cache = kh_cache)
 		if name is None:
 			name = "<unset>"
 		resource_tuple = ("", "", name)
@@ -730,7 +735,7 @@ def get_pod_resource_list(obj, **kwargs):
 
 		status = ""
 
-		ref = kh.get_ref_by_kind_name_namespace(owr_kind, owr_name, pod_namespace)
+		ref = kh.get_ref_by_kind_name_namespace(owr_kind, owr_name, pod_namespace, resource_cache = kh_cache)
 		# XXX: Maybe we should get the ref status here?
 		if ref is None:
 			status = "<missing>"
@@ -807,6 +812,7 @@ def get_pod_resource_list(obj, **kwargs):
 		kind = deep_get(kwargs, DictPath("kind"))
 		if "kubernetes_helper" not in kwargs:
 			kwargs["kubernetes_helper"] = kh
+			kwargs["kh_cache"] = kh_cache
 		if resource not in filter_resources and kh.is_kind_available(kind):
 			executors[kind] = executor_.submit(listgetters_async.get_kubernetes_list, **kwargs)
 
@@ -847,7 +853,7 @@ def get_pod_resource_list(obj, **kwargs):
 		rtype = resource_kind_to_rtype(kind)
 
 		name = deep_get(obj, DictPath("spec#serviceAccountName"))
-		ref = kh.get_ref_by_kind_name_namespace(kind, name, pod_namespace)
+		ref = kh.get_ref_by_kind_name_namespace(kind, name, pod_namespace, resource_cache = kh_cache)
 		resource_tuple = ("", "", name)
 		vlist.append({
 			"ref": ref,
@@ -872,7 +878,7 @@ def get_pod_resource_list(obj, **kwargs):
 			secret_name = deep_get(vol, DictPath("secret#secretName"))
 			optional = deep_get(vol, DictPath("secret#optional"), False)
 			resource_tuple = ("", "", secret_name)
-			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace)
+			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace, resource_cache = kh_cache)
 			if ref is None:
 				if not optional:
 					status = "<missing>"
@@ -898,7 +904,7 @@ def get_pod_resource_list(obj, **kwargs):
 			cm_name = deep_get(vol, DictPath("configMap#name"))
 			optional = deep_get(vol, DictPath("configMap#optional"), False)
 			resource_tuple = ("", "", cm_name)
-			ref = kh.get_ref_by_kind_name_namespace(kind, cm_name, pod_namespace)
+			ref = kh.get_ref_by_kind_name_namespace(kind, cm_name, pod_namespace, resource_cache = kh_cache)
 			if ref is None:
 				if not optional:
 					status = "<missing>"
@@ -927,7 +933,7 @@ def get_pod_resource_list(obj, **kwargs):
 			rtype = "[image_pull_secret]"
 			secret_name = deep_get(vol, DictPath("name"))
 			resource_tuple = ("", "", secret_name)
-			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace)
+			ref = kh.get_ref_by_kind_name_namespace(kind, secret_name, pod_namespace, resource_cache = kh_cache)
 			vlist.append({
 				"ref": ref,
 				"namespace": pod_namespace,
@@ -944,7 +950,7 @@ def get_pod_resource_list(obj, **kwargs):
 
 	if "pod_metrics" not in filter_resources:
 		kind = ("PodMetrics", "metrics.k8s.io")
-		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace, resource_cache = kh_cache)
 		if podmetrics is not None:
 			ref = podmetrics
 			rtype = resource_kind_to_rtype(kind)
@@ -966,7 +972,7 @@ def get_pod_resource_list(obj, **kwargs):
 	if "cilium_endpoint" not in filter_resources:
 		# Check if there's a matching cilium endpoint
 		kind = ("CiliumEndpoint", "cilium.io")
-		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace)
+		ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace, resource_cache = kh_cache)
 		if ref is not None:
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", pod_name)
@@ -988,7 +994,7 @@ def get_pod_resource_list(obj, **kwargs):
 	if "runtimeclass" not in filter_resources:
 		kind = ("RuntimeClass", "node.k8s.io")
 		name = deep_get(obj, DictPath("spec#runtimeClassName"))
-		ref = kh.get_ref_by_kind_name_namespace(kind, name, "")
+		ref = kh.get_ref_by_kind_name_namespace(kind, name, "", resource_cache = kh_cache)
 		if ref is not None:
 			rtype = resource_kind_to_rtype(kind)
 			resource_tuple = ("", "", name)
@@ -1386,7 +1392,8 @@ def get_pod_resource_list(obj, **kwargs):
 					continue
 				vlist2_, status = kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace,
 										label_selector = make_selector(selector),
-										field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}")
+										field_selector = f"metadata.name={pod_name},metadata.namespace={pod_namespace}",
+										resource_cache = kh_cache)
 				if vlist2_:
 					ref = item
 					name = deep_get(item, DictPath("metadata#name"))
@@ -1436,6 +1443,7 @@ def get_pod_resource_list(obj, **kwargs):
 def get_resource_info_by_last_applied_configuration(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], Union[str, int]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("listgetter_namespaced_resources() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	kind = deep_get(kwargs, DictPath("kind"))
 	if kind is None:
@@ -1453,7 +1461,7 @@ def get_resource_info_by_last_applied_configuration(obj: Dict, **kwargs: Any) ->
 
 	resource_info: List[Dict] = []
 
-	items, status = kh.get_list_by_kind_namespace(kind, "")
+	items, status = kh.get_list_by_kind_namespace(kind, "", resource_cache = kh_cache)
 	if status != 200:
 		return resource_info, status
 
@@ -1750,6 +1758,7 @@ def listgetter_matchrules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], Union[s
 def listgetter_namespaced_resources(obj: Dict, **kwargs: Any) -> Tuple[List, Union[str, int, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("listgetter_namespaced_resources() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	vlist = []
 	status: Union[str, int, List[StatusGroup]] = 200
@@ -1764,7 +1773,7 @@ def listgetter_namespaced_resources(obj: Dict, **kwargs: Any) -> Tuple[List, Uni
 	executors = {}
 	for kind in namespaced_resources:
 		joined_kind = ".".join(kind)
-		executors[kind] = executor_.submit(listgetters_async.get_kubernetes_list, kind = kind, namespace = namespace, kubernetes_helper = kh)
+		executors[kind] = executor_.submit(listgetters_async.get_kubernetes_list, kind = kind, namespace = namespace, kubernetes_helper = kh, kh_cache = kh_cache)
 	for kind, ex in executors.items():
 		vlist_, status_ = ex.result()
 		if status_ != 200:

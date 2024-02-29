@@ -359,12 +359,13 @@ def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwa
 		Returns:
 			list[(str, str)]: A list of endpoint slices
 	"""
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	svcname = deep_get(obj, DictPath("metadata#name"))
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
-	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}")
+	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}", resource_cache = kh_cache)
 	tmp: List[Tuple[str, str]] = []
 	if vlist is None or _status != 200:
 		return tmp
@@ -387,6 +388,7 @@ def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any)
 		Returns:
 			list[dict]: A list of events
 	"""
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	event_list = []
 
@@ -394,7 +396,7 @@ def get_events(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any)
 	api_version = deep_get(obj, DictPath("apiVersion"), "")
 	name = deep_get(obj, DictPath("metadata#name"))
 	namespace = deep_get(obj, DictPath("metadata#namespace"), "")
-	tmp = kh.get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace)
+	tmp = kh.get_events_by_kind_name_namespace(kh.kind_api_version_to_kind(kind, api_version), name, namespace, resource_cache = kh_cache)
 	for event in tmp:
 		event_list.append({
 			"fields": event,
@@ -687,6 +689,8 @@ def get_pod_affinity(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs
 
 # pylint: disable-next=unused-argument
 def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
+
 	cm_namespace = deep_get(kwargs, DictPath("cm_namespace"))
 	if isinstance(cm_namespace, list):
 		cm_namespace = deep_get_with_fallback(obj, cm_namespace)
@@ -705,7 +709,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 	if pod_name is not None and pod_name:
 		field_selector = f"metadata.name={pod_name}"
 
-	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector)
+	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector, resource_cache = kh_cache)
 
 	plist = cast(List, plist)
 
@@ -943,6 +947,8 @@ def get_security_context(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kw
 
 # pylint: disable-next=unused-argument
 def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str]]:
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
+
 	svcname = deep_get(obj, DictPath("metadata#name"))
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	port_target_endpoints = []
@@ -950,7 +956,7 @@ def get_svc_port_target_endpoints(kh: kubernetes_helper.KubernetesHelper, obj: D
 	cluster_ip = deep_get(obj, DictPath("spec#clusterIP"))
 	endpoints = []
 
-	ref = kh.get_ref_by_kind_name_namespace(("Endpoints", ""), svcname, svcnamespace)
+	ref = kh.get_ref_by_kind_name_namespace(("Endpoints", ""), svcname, svcnamespace, resource_cache = kh_cache)
 	endpoints = get_endpoint_ips(deep_get(ref, DictPath("subsets")))
 
 	for port in deep_get(obj, DictPath("spec#ports"), []):

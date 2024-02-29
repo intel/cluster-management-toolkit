@@ -53,6 +53,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	for obj in vlist:
 		skip = False

@@ -44,6 +44,7 @@ def get_kubernetes_list(*args, **kwargs) -> Tuple[List[Any], Union[int, str, Lis
 
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	kind = deep_get(kwargs, DictPath("kind"))
 	namespace = deep_get(kwargs, DictPath("namespace"), "")
@@ -56,7 +57,7 @@ def get_kubernetes_list(*args, **kwargs) -> Tuple[List[Any], Union[int, str, Lis
 	limit = deep_get(fetch_args, DictPath("limit"))
 	extra_data = []
 
-	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector)
+	vlist, status = kh.get_list_by_kind_namespace(kind, namespace, label_selector = label_selector, field_selector = field_selector, resource_cache = kh_cache)
 	if sort_key:
 		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
 	if postprocess == "node":
