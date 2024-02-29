@@ -229,7 +229,7 @@ def ansible_get_inventory_dict() -> Dict:
 			d (dict): A dictionary with an Ansible inventory
 	"""
 
-	if not Path(ANSIBLE_INVENTORY).exists():
+	if not Path(ANSIBLE_INVENTORY).is_file():
 		return {
 			"all": {
 				"hosts": {},
@@ -268,7 +268,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 
 	tmp = {}
 
-	if not Path(ANSIBLE_INVENTORY).exists():
+	if not Path(ANSIBLE_INVENTORY).is_file():
 		return []
 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
@@ -959,12 +959,12 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 	for path in Path(ANSIBLE_LOG_DIR).iterdir():
 		filename = str(path.name)
 		tmp = timestamp_regex.match(filename)
-		if tmp is not None:
-			date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
-			name = tmp[2]
-			logs.append((filename, name, FilePath(str(path)), date))
-		else:
-			raise ValueError(f"Could not parse {filename}")
+		if tmp is None:
+			# Skip files that cannot be interpreted as filenames
+			continue
+		date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
+		name = tmp[2]
+		logs.append((filename, name, FilePath(str(path)), date))
 	return logs
 
 def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bool = False, unreachable: bool = False) -> str:

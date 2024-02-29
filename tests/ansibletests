@@ -15,6 +15,7 @@ from pathlib import PurePath
 import sys
 import tempfile
 from typing import Dict, Tuple
+from unittest import mock
 import yaml
 
 import cmtlib
@@ -200,21 +201,34 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = ansible_helper.ansible_get_inventory_dict
-	fun_str = "ansible_helper.ansible_get_inventory_dict"
 
+	# Mock a non-existing inventory
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if there is a valid inventory.", "default")])
-		ansithemeprint([ANSIThemeString("      ", "note"), ANSIThemeString("  Manual sanity checking is necessary for these test results.\n", "default")])
+		# Indata format:
+		# (mock_path, mock_value, mock_return_value, inventory, expected_result)
+		testdata = (
+			("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None, {"all": {"hosts": {}, "vars": {}}}),
+			("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
+			("ansible_helper.secure_read_yaml", None, {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}, {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
+			("ansible_helper.secure_read_yaml", None, {"all": {"hosts": None, "vars": None}}, {"all": {"hosts": {}, "vars": {}}}),
+		)
 		try:
-			tmp = fun()
-			if not (isinstance(tmp, dict) and len(tmp) > 0):
-				message = f"{fun_str}() did not yield expected result:\n" \
-					  f"         output: {tmp} (type: {type(tmp)}\n" \
-					  f"       expected: {dict}"
-				result = False
-			print(yaml_dump(tmp, base_indent = 17))
+			for indata in testdata:
+				mock_path, mock_value, mock_return_value, expected_result = indata
+				if mock_value:
+					with mock.patch(mock_path, mock_value):
+						tmp = fun()
+				else:
+					with mock.patch(mock_path, return_value = mock_return_value):
+						tmp = fun()
+				if tmp != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
 		except Exception as e:
-			message = f"{fun_str}() did not yield expected result:\n" \
+			raise
+			message = f"{fun.__name__}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
 	return message, result
@@ -224,9 +238,36 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 	result = True
 
 	fun = ansible_helper.ansible_get_inventory_pretty
-	fun_str = "ansible_helper.ansible_get_inventory_pretty"
 
 	if result:
+		with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
+			if (tmp := fun(["all"], False, False, False, False)):
+				message = f"{fun.__name__}() did not yield expected result:\n" \
+					  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"  expected type: [str|[ANSIThemeString]]"
+				result = False
+	if result:
+		inventory = {
+			"all": {
+				"hosts": {
+					"localhost": {}
+				},
+				"vars": {
+					"no_proxy": "localhost",
+				},
+			},
+			"no_hosts": {
+				"vars": {
+					"foo": 42,
+				},
+			},
+			"no_vars": {
+				"hosts": {
+					"bar": {},
+				},
+			},
+		}
 		# Indata format:
 		# (groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception)
 		testdata = (
@@ -245,9 +286,10 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 		for indata in testdata:
 			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
 			try:
-				tmp = fun(groups, highlight, include_groupvars, include_hostvars, include_hosts)
+				with mock.patch("ansible_helper.secure_read_yaml", return_value = inventory):
+					tmp = fun(groups, highlight, include_groupvars, include_hostvars, include_hosts)
 				if not (isinstance(tmp, list) and len(tmp) > 0 and (isinstance(tmp[0], str) or len(tmp[0]) > 0 and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"  expected type: [str|[ANSIThemeString]]"
@@ -258,14 +300,14 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"      exception: {type(e)}\n"
 					result = False
@@ -1800,6 +1842,7 @@ def main() -> int:
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 	start_at_task = 0
+	end_at_task = testcount
 
 	i = 1
 
@@ -1813,6 +1856,11 @@ def main() -> int:
 				raise ValueError(f"--start-at TASK requires an integer in the range [0,{testcount}]")
 			start_at_task = int(optarg)
 			i += 1
+		elif opt == "--end-at":
+			if not (isinstance(optarg, str) and optarg.isnumeric()):
+				raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+			end_at_task = int(optarg)
+			i += 1
 		else:
 			sys.exit(f"Unknown argument: {opt}")
 		i += 1
@@ -1820,6 +1868,8 @@ def main() -> int:
 	for i, test in enumerate(tests):
 		if i < start_at_task:
 			continue
+		if i > end_at_task:
+			break
 		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
 				ANSIThemeString(f" {', '.join(test)}:", "default")])
 		message, result = tests[test]["callable"](verbose = verbose)
