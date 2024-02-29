@@ -1,0 +1,60 @@
+kind: "HyperConverged"
+api_family: "hco.kubevirt.io"
+default_command: "hyperconvergeds"
+command:
+- "hypcons"
+- "hypcon"
+listview:
+  name: "HyperConvergeds"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["name", "system_health", "age"]
+  fields:
+    system_health:
+      header: "System Health:"
+      path: "status#systemHealthStatus"
+      type: "str"
+      formatter: "list"
+      formatting:
+        mapping:
+          mappings:
+            "error":
+              field_colors:
+              - context: "main"
+                type: "status_error"
+            "healthy":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "warning":
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+infoview:
+  name: "HyperConverged Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["system_health"]
+    rows:
+      system_health:
+        header: [["System Health:", ["main", "infoheader"]]]
+        path: "status#systemHealthStatus"
+        type: "str"
+        formatter: "list"
+        formatting:
+          mapping:
+            mappings:
+              "error":
+                field_colors:
+                - context: "main"
+                  type: "status_error"
+              "healthy":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "warning":
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
