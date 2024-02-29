@@ -212,7 +212,7 @@ mypy-strict:
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) $(python_test_executables) *.py; do \
-		$$cmd --ignore-missing-imports --check-untyped-defs $$file || true; \
+		$$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file || true; \
 	done
 
 # Note: we know that the code does not have complete type-hinting,
