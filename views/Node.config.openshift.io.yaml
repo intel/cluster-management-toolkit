@@ -15,8 +15,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version"]
+        fields: ["cluster_version", "cgroup_mode"]
     rows:
+      cgroup_mode:
+        header: [["CGroup Mode:", ["main", "infoheader"]]]
+        path: "spec#cgroupMode"
+        type: "str"
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:

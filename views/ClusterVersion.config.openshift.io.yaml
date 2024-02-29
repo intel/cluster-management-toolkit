@@ -113,7 +113,7 @@ infoview:
         path: "status#desired#image"
         type: "str"
       desired_url:
-        header: [["Desired URL:", ["main", "infoheader"]]]
+        header: [["Desired ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
         path: "status#desired#url"
         type: "str"
       desired_version:
@@ -166,3 +166,13 @@ infoview:
         header: "Unmanaged:"
         path: "unmanaged"
         type: "bool"
+  shortcuts:
+    "Open URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open URL in browser"
+      action: "call"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["status#desired#url"]]

@@ -84,7 +84,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["operator_versions", "cluster_version"]
+        fields: ["cluster_version"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
@@ -97,21 +97,6 @@ infoview:
           - key: "kind"
             eq: "ClusterVersion"
         default: "<none>"
-      operator_versions:
-        header: [["Operator Versions:", ["main", "infoheader"]]]
-        paths:
-        - path: "status#versions"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - "version"
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "generic"
-          - type: "version"
-          field_separators:
-          - type: "version"
   listpad:
     on_activation:
       call: "resourceinfodispatch_with_lookup_on_activation"
@@ -162,3 +147,19 @@ infoview:
         owner_reference_path: "metadata#ownerReferences"
         kind: "ClusterVersion"
         api_family: "config.openshift.io"
+    "List versions":
+      key: "v"
+      read_only: true
+      helptext: "List versions"
+      widget: "windowwidget"
+      title: "Versions:"
+      selectable: true
+      headers: ["Name:", "Version:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#versions"
+        fields:
+        - "name"
+        - "version"
+      # Not supported for now
+      sortcolumn: "resource"

@@ -29,7 +29,7 @@ infoview:
             eq: "ClusterVersion"
         default: "<none>"
       console_url:
-        header: [["Console URL:", ["main", "infoheader"]]]
+        header: [["Console ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
         path: "status#consoleURL"
         type: "str"
   shortcuts:
@@ -45,3 +45,12 @@ infoview:
         owner_reference_path: "metadata#ownerReferences"
         kind: "ClusterVersion"
         api_family: "config.openshift.io"
+    "Open Console":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open console in browser"
+      action: "call"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["status#consoleURL"]]

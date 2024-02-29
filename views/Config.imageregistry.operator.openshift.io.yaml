@@ -9,4 +9,80 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "ready_replicas", "age"]
+  fields:
+    ready_replicas:
+      header: "Ready Replicas:"
+      path: "status#readyReplicas"
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
+infoview:
+  name: "Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["http_secret", "loglevel", "operator_loglevel", "management_state", "rollout_strategy", "replicas", "ready_replicas"]
+    rows:
+      http_secret:
+        header: [["HTTP Secret:", ["main", "infoheader"]]]
+        path: "spec#httpSecret"
+        type: "str"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        type: "str"
+      operator_loglevel:
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
+      ready_replicas:
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
+        path: "status#readyReplicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        path: "spec#replicas"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      rollout_strategy:
+        header: [["Rollout Strategy:", ["main", "infoheader"]]]
+        path: "spec#rolloutStrategy"
+        type: "str"
+  shortcuts:
+    "List generations":
+      key: "g"
+      read_only: true
+      helptext: "List generations"
+      widget: "windowwidget"
+      title: "Generations:"
+      selectable: true
+      headers: ["Resource:", "Group:", "Namespace:", "Name:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#generations"
+        fields:
+        - "resource"
+        - "group"
+        - "namespace"
+        - "name"
+      # Not supported for now
+      sortcolumn: "resource"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_group_path: 1
+        namespace_path: 2
+        name_path: 3
