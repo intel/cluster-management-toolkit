@@ -28,7 +28,7 @@ from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH, NETRC_PATH
+from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
 import cmtlib
 from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint
 
@@ -174,6 +174,95 @@ def check_sudo_configuration(cluster_name: str, kubeconfig: Dict, cmtconfig_dict
 					ANSIThemeString(user, "path"),
 					ANSIThemeString(" cannot perform passwordless sudo.\n", "default")], stderr = True)
 			error += 1
+
+	return abort, critical, error, warning, note
+
+# pylint: disable-next=too-many-arguments,unused-argument
+def check_ansible_dir_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+	"""
+	This checks whether .ansible is owned and accessible by the user
+
+		Parameters:
+			critical (int): The current count of critical severity security issues
+			error (int): The current count of error severity security issues
+			warning (int): The current count of warning severity security issues
+			note (int): The current count of note severity security issues
+			kwargs (dict): Additional parameters
+		Returns:
+			(critical, error, warning, note):
+				critical (int): The new count of critical severity security issues
+				error (int): The new count of error severity security issues
+				warning (int): The new count of warning severity security issues
+				note (int): The new count of note severity security issues
+	"""
+
+	abort = False
+
+	user: str = deep_get(kwargs, DictPath("user"))
+	critical: int = deep_get(kwargs, DictPath("critical"), 0)
+	error: int = deep_get(kwargs, DictPath("error"), 0)
+	warning: int = deep_get(kwargs, DictPath("warning"), 0)
+	note: int = deep_get(kwargs, DictPath("note"), 0)
+	verbose = deep_get(kwargs, DictPath("verbose"), True)
+	exit_on_error = deep_get(kwargs, DictPath("exit_on_error"), False)
+	quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
+
+	if verbose:
+		ansithemeprint([ANSIThemeString("[Checking whether ownership for ", "phase"),
+				ANSIThemeString(".ansible", "path"),
+				ANSIThemeString(" is correct on ", "phase"),
+				ANSIThemeString("localhost", "hostname"),
+				ANSIThemeString("]", "phase")])
+
+	path_entry = Path(DOT_ANSIBLE_PATH)
+	# It's OK if .ansible doesn't exist; it will be created on execution
+	if path_entry.exists():
+		path_stat = path_entry.stat()
+		path_permissions = path_stat.st_mode
+
+		if path_permissions & 0o300 != 0o300:
+			ansithemeprint([ANSIThemeString("  ", "default"),
+					ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(":", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    The permissions for ", "default"),
+					ANSIThemeString(f"{DOT_ANSIBLE_PATH}", "path"),
+					ANSIThemeString(" are ", "default"),
+					ANSIThemeString(f"{path_permissions:03o}", "emphasis"),
+					ANSIThemeString(";", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    Ansible will not be able to ", "default"),
+					ANSIThemeString("run properly.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("  ", "default"),
+					ANSIThemeString("Justification", "emphasis"),
+					ANSIThemeString(": ", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    Ansible will fail to run if it cannot write to ", "default"),
+					ANSIThemeString(f"{DOT_ANSIBLE_PATH}", "path"),
+					ANSIThemeString("\n", "default")], stderr = True)
+			if exit_on_error:
+				sys.exit(errno.EPERM)
+			critical += 1
+		if path_entry.owner() != user:
+			ansithemeprint([ANSIThemeString("  ", "default"),
+					ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(":", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    The executing user ", "default"),
+					ANSIThemeString(f"{user}", "path"),
+					ANSIThemeString(" is not the owner of ", "default"),
+					ANSIThemeString(f"{DOT_ANSIBLE_PATH}", "path")], stderr = True)
+			ansithemeprint([ANSIThemeString("    Ansible will not be able to ", "default"),
+					ANSIThemeString("run properly.", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("  ", "default"),
+					ANSIThemeString("Justification", "emphasis"),
+					ANSIThemeString(": ", "default")], stderr = True)
+			ansithemeprint([ANSIThemeString("    Ansible will fail to run if it cannot write to ", "default"),
+					ANSIThemeString(f"{DOT_ANSIBLE_PATH}", "path"),
+					ANSIThemeString("\n", "default")], stderr = True)
+			if exit_on_error:
+				sys.exit(errno.EPERM)
+			critical += 1
+		elif not quiet_on_ok:
+			ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
+	elif not quiet_on_ok:
+		ansithemeprint([ANSIThemeString("  OK\n", "emphasis")])
 
 	return abort, critical, error, warning, note
 

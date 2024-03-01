@@ -17,6 +17,7 @@ For usage, see:
 """
 
 import errno
+from getpass import getuser
 import os
 from pathlib import Path, PurePath
 import re
@@ -1926,6 +1927,7 @@ def main() -> int:
 		if key == "__commandname" and value in ("help", "version"):
 			break
 	else:
+		checks.check_ansible_dir_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True, user = getuser())
 		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	# Used by the ansible module

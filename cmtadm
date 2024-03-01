@@ -6135,7 +6135,13 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 preflight_checks = [
 	{
-		"description": "Check whether permissions for .netrc are strict enough",
+		"description": "check whether ownership for .ansible is correct",
+		"call": checks.check_ansible_dir_permissions,
+		"preconditions": [
+			"user",
+		],
+	}, {
+		"description": "check whether permissions for .netrc are strict enough",
 		"call": checks.check_netrc_permissions,
 		"preconditions": [
 			"user",
@@ -7175,6 +7181,7 @@ def main() -> None:
 		if key == "__commandname" and value in ("help", "version", "preflight-check"):
 			break
 	else:
+		checks.check_ansible_dir_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True, user = getuser())
 		checks.check_netrc_permissions(verbose = False, exit_on_error = True, quiet_on_ok = True)
 
 	# Used by the ansible module

@@ -243,7 +243,15 @@ def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = F
 	"""
 
 	for src, dst in symlinks:
-		_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True)
+		try:
+			_violations = secure_symlink(src, dst, verbose = verbose, replace_existing = True)
+		except PermissionError:
+			print()
+			ansithemeprint([ANSIThemeString("Critical", "critical"),
+					ANSIThemeString(": Could not write to ", "default"),
+					ANSIThemeString(f"{dst}", "path"),
+					ANSIThemeString("; permissions or ownership are incorrect; aborting.", "default")], stderr = True)
+			sys.exit(errno.EPERM)
 
 def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
 	"""

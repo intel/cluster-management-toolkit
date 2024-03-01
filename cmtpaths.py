@@ -81,6 +81,7 @@ SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
 SSH_BIN_PATH = FilePath("/usr/bin/ssh")
 
 NETRC_PATH = FilePath(os.path.join(HOMEDIR, ".netrc"))
+DOT_ANSIBLE_PATH = FilePath(os.path.join(HOMEDIR, ".ansible"))
 
 # Accepted cryptos
 SSH_ARGS_STRICT_CRYPTOS = \

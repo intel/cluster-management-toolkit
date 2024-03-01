@@ -109,6 +109,8 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 	dumps: List[List[Union[ThemeRef, ThemeString]]] = []
 	start = deep_get(kwargs, DictPath("start"), None)
 	include_start = deep_get(kwargs, DictPath("include_start"), False)
+	strip_empty_start = deep_get(kwargs, DictPath("strip_empty_start"), False)
+	strip_empty_end = deep_get(kwargs, DictPath("strip_empty_end"), False)
 	end = deep_get(kwargs, DictPath("end"), None)
 
 	if isinstance(lines, str):
@@ -1619,7 +1621,9 @@ def identify_cmdata(cmdata_name: str, cm_name: str, cm_namespace: str, data: Any
 
 	if not dataformat:
 		for match_cm_namespace, match_cm_name, match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
-			if (not match_cm_namespace or match_cm_namespace == cm_namespace) and cm_name.startswith(match_cm_name) and cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix):
+			if ((not match_cm_namespace or match_cm_namespace == cm_namespace) and
+			    cm_name.startswith(match_cm_name) and
+			    cmdata_name.startswith(match_cmdata_prefix) and cmdata_name.endswith(match_cmdata_suffix)):
 				break
 
 	formatter = map_dataformat(dataformat)
