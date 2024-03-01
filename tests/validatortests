@@ -29,7 +29,6 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtvalidators.validator_bool
-	fun_str = "logparsers.validator_bool"
 
 	if result:
 		valid_indata = (True, 1, "1", "y", "yes", "true")
@@ -38,11 +37,11 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		for indata in valid_indata:
 			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
 			if status != expected_status:
-				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
 				break
 			if retval != expected_result:
-				message = f"{fun_str}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+				message = f"{fun.__name__}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
 				result = False
 				break
 	if result:
@@ -52,11 +51,11 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		for indata in valid_indata:
 			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
 			if status != expected_status:
-				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
 				break
 			if retval != expected_result:
-				message = f"{fun_str}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+				message = f"{fun.__name__}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
 				result = False
 				break
 	if result:
@@ -65,7 +64,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		for indata in invalid_indata:
 			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
 			if status != expected_status:
-				message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
 				break
 	return message, result
@@ -75,7 +74,6 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtvalidators.validator_int
-	fun_str = "logparsers.validator_int"
 
 	if result:
 		# Indata format:
@@ -96,7 +94,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
 			try:
 				status = fun(range_min, range_max, indata, error_on_failure = True, exit_on_failure = False)
 				if status != expected_status:
-					message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n      output: {status}\n    expected: {expected_status}"
+					message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n      output: {status}\n    expected: {expected_status}"
 					result = False
 					break
 			except Exception as e:
@@ -104,11 +102,11 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_exception}"
+						message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_status}"
+					message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_status}"
 					result = False
 					break
 	return message, result
@@ -118,7 +116,6 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtvalidators.validate_argument
-	fun_str = "cmtvalidators.validate_argument"
 
 	if result:
 		# Indata format:
@@ -879,7 +876,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			options["exit_on_failure"] = False
 			try:
 				if (status := fun(arg = arg, arg_string = arg_string, options = options)) != expected_status:
-					message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n      output: {status}\n    expected: {expected_status}"
+					message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n      output: {status}\n    expected: {expected_status}"
 					result = False
 					break
 			except Exception as e:
@@ -887,11 +884,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_exception}"
+						message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_status}"
+					message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_status}"
 					result = False
 					break
 	return message, result
@@ -901,7 +898,6 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtvalidators.validate_name
-	fun_str = "cmtvalidators.validate_name"
 
 	if result:
 		# Indata format:
@@ -931,7 +927,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 		for rtype, indata, expected_status, expected_exception in testdata:
 			try:
 				if (status := fun(rtype = rtype, name = indata)) != expected_status:
-					message = f"{fun_str}() did not yield expected status:\n" \
+					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"       rtype: {rtype}\n" \
 						  f"      output: {status}\n" \
@@ -943,7 +939,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected status:\n" \
+						message = f"{fun.__name__}() did not yield expected status:\n" \
 							  f"       input: {indata}\n" \
 							  f"       rtype: {rtype}\n" \
 							  f"   exception: {type(e)}\n" \
@@ -951,7 +947,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected status:\n" \
+					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"       rtype: {rtype}\n" \
 						  f"   exception: {type(e)}\n" \
@@ -965,7 +961,6 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = cmtvalidators.validate_fqdn
-	fun_str = "cmtvalidators.validate_fqdn"
 
 	if result:
 		# Indata format:
@@ -1012,7 +1007,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 		for indata, message_on_error, expected_status, expected_exception in testdata:
 			try:
 				if (status := fun(fqdn = indata, message_on_error = message_on_error)) != expected_status:
-					message = f"{fun_str}() did not yield expected status:\n" \
+					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"      output: {status}\n" \
 						  f"    expected: {expected_status}"
@@ -1023,14 +1018,14 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected status:\n" \
+						message = f"{fun.__name__}() did not yield expected status:\n" \
 							  f"       input: {indata}\n" \
 							  f"   exception: {type(e)}\n" \
 							  f"    expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected status:\n" \
+					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"   exception: {type(e)}\n" \
 						  f"    expected: {expected_status}"

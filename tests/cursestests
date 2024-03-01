@@ -19,7 +19,7 @@ from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from cmttypes import deep_get, DictPath, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import curses_helper
-from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray
+from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray, WidgetLineAttrs
 
 # unit-tests for curses_helper.py
 
@@ -35,7 +35,6 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = curses_helper.ThemeString
-	fun_str = "curses_helper.ThemeString"
 
 	if result:
 		try:
@@ -82,7 +81,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			try:
 				tmp = fun(indata, themeattr)
 				if repr(tmp) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"         output: {repr(tmp)}\n" \
 						  f"       expected: {expected_result}"
@@ -93,14 +92,14 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {indata}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
 						  f"       expected: {expected_result}"
@@ -111,7 +110,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeString("123", ThemeAttr("types", "generic"))
 		tmp = len(indata)
 		if tmp != 3:
-			message = f"{fun_str}.__len__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: 3"
@@ -122,7 +121,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		str2 = ThemeString("124", ThemeAttr("types", "generic"))
 		tmp = str1 == str2
 		if tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
@@ -133,7 +132,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		str2 = ThemeString("123", ThemeAttr("types", "generic"))
 		tmp = str1 == str2
 		if not tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: True"
@@ -143,7 +142,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeString("123", ThemeAttr("types", "generic"))
 		tmp = str(indata)
 		if tmp != "123":
-			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: 123"
@@ -154,7 +153,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		str2 = "a"
 		tmp = str1 == str2
 		if tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(str1)} == {repr(str2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
@@ -171,7 +170,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 					  f"       expected: ThemeAttr('types', 'generic')"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_themeattr() did not yield expected result:\n" \
+			message = f"{fun.__name__}.get_themeattr() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: ThemeAttr('types', 'generic')"
@@ -183,13 +182,13 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			indata.set_themeattr(ThemeAttr("types", "url"))
 			tmp = indata.get_themeattr()
 			if tmp != ThemeAttr("types", "url"):
-				message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
+				message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
 					  f"       expected: ThemeAttr('types', 'url')"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.set_themeattr() did not yield expected result:\n" \
+			message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: ThemeAttr('types', 'url')"
@@ -200,13 +199,13 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.get_selected()
 			if tmp != True:
-				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {tmp}\n" \
 					  f"       expected: True"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: True"
@@ -219,7 +218,6 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = curses_helper.ThemeRef
-	fun_str = "curses_helper.ThemeRef"
 
 	if result:
 		# Indata format:
@@ -233,7 +231,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 			try:
 				tmp = fun(indata[0], indata[1])
 				if repr(tmp) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"         output: {repr(tmp)}\n" \
 						  f"       expected: {expected_result}"
@@ -244,14 +242,14 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {indata}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
 						  f"       expected: {expected_result}"
@@ -262,7 +260,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeRef("strings", "status_critical", False)
 		tmp = str(indata)
 		if tmp != "■":
-			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: ■"
@@ -272,17 +270,32 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeRef("strings", "status_critical", True)
 		tmp = str(indata)
 		if tmp != "█":
-			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: █"
 			result = False
 
 	if result:
+		indata = ThemeRef("nonexisting", "themeref", True)
+		try:
+			tmp = str(indata)
+			message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield expected result:\n" \
+				  f"       expected: ProgrammingError"
+			result = False
+		except Exception as e:
+			if isinstance(e, ProgrammingError):
+				pass
+			else:
+				message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield expected result:\n" \
+					  f"       expected: ProgrammingError"
+				result = False
+
+	if result:
 		indata = ThemeRef("strings", "status_critical", True)
 		tmp = len(indata)
 		if tmp != 1:
-			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: 1"
@@ -293,13 +306,13 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.to_themearray()
 			if repr(tmp) != "[ThemeString('■', ThemeAttr('main', 'status_critical'), False)]":
-				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
 					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
@@ -310,13 +323,13 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.to_themearray()
 			if repr(tmp) != "[ThemeString('█', ThemeAttr('main', 'status_critical'), True)]":
-				message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
 					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), True)]"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: [ThemeString('█', ThemeAttr('main', 'status_critical'), True)]"
@@ -327,14 +340,14 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeRef("", "", True)
 		try:
 			tmp = indata.to_themearray()
-			message = f"{fun_str}.to_themearray() did not yield expected result:\n" \
+			message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {repr(tmp)}\n" \
 				  f"       expected: {ProgrammingError}"
 			result = False
 		except Exception as e:
 			if not isinstance(e, ProgrammingError):
-				message = f"{fun_str}.top_themearray() did not yield expected result:\n" \
+				message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"      exception: {type(e)}\n" \
 					  f"       expected: {ProgrammingError}"
@@ -345,13 +358,13 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.get_selected()
 			if tmp:
-				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {tmp}\n" \
 					  f"       expected: True"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: True"
@@ -362,13 +375,13 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			tmp = indata.get_selected()
 			if not tmp:
-				message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {tmp}\n" \
 					  f"       expected: False"
 				result = False
 		except Exception as e:
-			message = f"{fun_str}.get_selected() did not yield expected result:\n" \
+			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
 				  f"       expected: True"
@@ -379,7 +392,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata2 = ThemeRef("strings", "status_critical", True)
 		tmp = indata1 == indata2
 		if tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
@@ -390,7 +403,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata2 = ThemeRef("strings", "status_critical", False)
 		tmp = indata1 == indata2
 		if not tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: True"
@@ -401,7 +414,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata2 = 42
 		tmp = indata1 == indata2
 		if tmp:
-			message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: False"
@@ -414,7 +427,6 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 	result = True
 
 	fun = curses_helper.ThemeArray
-	fun_str = "curses_helper.ThemeArray"
 
 	if result:
 		# Indata format:
@@ -449,7 +461,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 			try:
 				tmp = fun(indata, selected)
 				if repr(tmp) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"         output: {repr(tmp)}\n" \
 						  f"       expected: {expected_result}"
@@ -460,14 +472,14 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {indata}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
 						  f"       expected: {expected_result}"
@@ -488,7 +500,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 				tmp.append(indata)
 				if expected_exception is None:
 					if repr(tmp) != expected_result:
-						message = f"{fun_str}.append() did not yield expected result:\n" \
+						message = f"{fun.__name__}.append() did not yield expected result:\n" \
 							  f"          input: {repr(base)}\n" \
 							  f"         append: {repr(indata)}\n" \
 							  f"         output: {repr(tmp)}\n" \
@@ -496,7 +508,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}.append() did not yield expected result:\n" \
+					message = f"{fun.__name__}.append() did not yield expected result:\n" \
 						  f"          input: {repr(base)}\n" \
 						  f"         append: {repr(indata)}\n" \
 						  f"         output: {repr(tmp)}\n" \
@@ -508,7 +520,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {repr(base)}\n" \
 							  f"         append: {indata}\n" \
 							  f"      exception: {type(e)}\n" \
@@ -516,7 +528,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {base}\n" \
 						  f"         append: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
@@ -540,7 +552,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 				tmp += indata
 				if expected_exception is None:
 					if repr(tmp) != expected_result:
-						message = f"{fun_str}.__add__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
 							  f"          input: {repr(base)}\n" \
 							  f"         append: {repr(indata)}\n" \
 							  f"         output: {repr(tmp)}\n" \
@@ -548,7 +560,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__add__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
 						  f"          input: {repr(base)}\n" \
 						  f"         append: {repr(indata)}\n" \
 						  f"         output: {repr(tmp)}\n" \
@@ -560,7 +572,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}.__add__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
 							  f"          input: {repr(base)}\n" \
 							  f"         append: {indata}\n" \
 							  f"      exception: {type(e)}\n" \
@@ -568,7 +580,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__add__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
 						  f"          input: {base}\n" \
 						  f"         append: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
@@ -581,7 +593,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 				     ThemeString("World", ThemeAttr("types", "emphasis"))])
 		tmp = str(indata)
 		if tmp != "Hello World":
-			message = f"{fun_str}.__str__() did not yield expected result:\n" \
+			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"         output: {tmp}\n" \
 				  f"       expected: Hello World"
@@ -602,14 +614,14 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 				tmp = len(indata)
 				if expected_exception is None:
 					if tmp != expected_result:
-						message = f"{fun_str}.__len__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
 							  f"          input: {repr(indata)}\n" \
 							  f"         output: {repr(tmp)}\n" \
 							  f"       expected: {expected_result}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__len__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
 						  f"          input: {repr(indata)}\n" \
 						  f"         output: {repr(tmp)}\n" \
 						  f"       expected: {expected_exception}"
@@ -620,14 +632,14 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}.__len__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
 							  f"          input: {repr(indata)}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__len__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
 						  f"          input: {indata}\n" \
 						  f"      exception: {type(e)}\n" \
 						  f"       expected: {expected_result}"
@@ -642,13 +654,16 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
 			 ThemeArray([ThemeString("B", ThemeAttr("types", "generic"))], False),
 			 False, None),
+			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			 "3",
+			 False, None),
 		)
 		for indata1, indata2, expected_result, expected_exception in testdata:
 			try:
 				tmp = indata1 == indata2
 				if expected_exception is None:
 					if tmp != expected_result:
-						message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 							  f"         input1: {repr(indata1)}\n" \
 							  f"         input2: {repr(indata2)}\n" \
 							  f"         output: {repr(tmp)}\n" \
@@ -656,7 +671,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 						  f"         input1: {repr(indata1)}\n" \
 						  f"         input2: {repr(indata2)}\n" \
 						  f"         output: {repr(tmp)}\n" \
@@ -668,7 +683,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+						message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 							  f"         input1: {repr(indata1)}\n" \
 							  f"         input2: {repr(indata2)}\n" \
 							  f"      exception: {type(e)}\n" \
@@ -676,7 +691,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}.__eq__() did not yield expected result:\n" \
+					message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
 						  f"         input1: {repr(indata1)}\n" \
 						  f"         input2: {repr(indata2)}\n" \
 						  f"      exception: {type(e)}\n" \
@@ -684,6 +699,58 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 
+	return message, result
+
+def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.format_helptext
+
+	if result:
+		# Indata format:
+		# (helptext, expected_result, expected_exception)
+		testdata = (
+			([("[F1] / [Shift] + H", "Show this helptext"), ("[Ctrl] + X", "Exit program")],
+			 [{"lineattrs": WidgetLineAttrs.NORMAL,
+			   "columns": [[ThemeString("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
+				       [ThemeString("Show this helptext", ThemeAttr("windowwidget", "default"))]],
+			   "retval": None},
+			  {"lineattrs": WidgetLineAttrs.NORMAL,
+			   "columns": [[ThemeString("[Ctrl] + X", ThemeAttr("windowwidget", "highlight"))],
+				       [ThemeString("Exit program", ThemeAttr("windowwidget", "default"))]],
+			   "retval": None}], None),
+		)
+		for indata in testdata:
+			helptext, expected_result, expected_exception = indata
+			try:
+				tmp = fun(helptext)
+				if tmp != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {helptext}\n" \
+						  f"         result: {tmp}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+			except Exception as e:
+				raise
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          input: {helptext}\n" \
+							  f"      exception: {e}\n" \
+							  f"       expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {helptext}\n" \
+						  f"      exception: {e}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
 	return message, result
 
 tests: Dict = {
@@ -697,6 +764,10 @@ tests: Dict = {
 	},
 	("ThemeArray()",): {
 		"callable": test_themearray,
+		"result": None,
+	},
+	("format_helptext()",): {
+		"callable": test_format_helptext,
 		"result": None,
 	},
 }
