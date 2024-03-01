@@ -86,7 +86,10 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 			lines (list[str]): A list of strings
 			*or*
 			lines (str): A string with newlines that should be split
-			kwargs (dict): Unused
+			**kwargs (dict[str, Any]): Keyword arguments
+				start ((str)): Start indicator(s)
+				include_start (bool): Include the start line
+				end ((str)): End indicator(s)
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -107,9 +110,6 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 	start = deep_get(kwargs, DictPath("start"), None)
 	include_start = deep_get(kwargs, DictPath("include_start"), False)
 	end = deep_get(kwargs, DictPath("end"), None)
-	include_end = deep_get(kwargs, DictPath("include_end"), False)
-	strip_empty_start = deep_get(kwargs, DictPath("include_end"), False)
-	strip_empty_end = deep_get(kwargs, DictPath("include_end"), False)
 
 	if isinstance(lines, str):
 		# Remove all commented-out blocks
@@ -197,7 +197,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 					bold_sections = [codesection]
 				bold = True
 
-				for j, section in enumerate(bold_sections):
+				for _j, section in enumerate(bold_sections):
 					if section.startswith("#### "):
 						section = section[len("#### "):]
 						bold = True
@@ -210,7 +210,7 @@ def format_markdown(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Un
 					else:
 						italics_sections = [section]
 					italics = True
-					for k, italics_section in enumerate(italics_sections):
+					for _k, italics_section in enumerate(italics_sections):
 						italics = not italics
 						if not italics_section:
 							continue
@@ -296,7 +296,7 @@ def format_diff_line(line: str, **kwargs: Any) -> List[Union[ThemeRef, ThemeStri
 		Returns:
 			themearray: a themearray
 	"""
-	override_formatting: Optional[Union[ThemeAttr, Dict]] = deep_get(kwargs, DictPath("override_formatting"))
+	_override_formatting: Optional[Union[ThemeAttr, Dict]] = deep_get(kwargs, DictPath("override_formatting"))
 	indent = deep_get(kwargs, DictPath("indent"), "")
 
 	tmpline: List[Union[ThemeRef, ThemeString]] = []

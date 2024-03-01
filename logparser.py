@@ -2597,14 +2597,14 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 	return message, remnants
 
 # pylint: disable-next=unused-argument
-def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict] = None) ->\
+def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dict[str, Any]] = None) ->\
 				Tuple[Tuple[str, Optional[Callable], Dict],
 				      Tuple[datetime, str, LogLevel, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
 	timestamp = none_timestamp()
 	facility = ""
 	severity = LogLevel.INFO
 	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
-	final_block = deep_get(options, "final_block", False)
+	final_block = deep_get(options, DictPath("final_block"), False)
 
 	message = strip_iso_timestamp(message)
 

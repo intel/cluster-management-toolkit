@@ -11,7 +11,7 @@ This generates and post-processes elements for various more complex types
 
 import copy
 from datetime import datetime
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
 from ansithemeprint import ANSIThemeString
@@ -941,17 +941,17 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef, field_separa
 
 			if field_prefixes is not None and i < len(field_prefixes):
 				if isinstance(field_prefixes[i], tuple):
-					string += themearray_to_string([field_prefixes[i]])
+					string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]], [field_prefixes[i]]))
 				else:
-					for _item in field_prefixes[i]:
-						string += themearray_to_string([_item])
+					for item_ in cast(List[Union[ThemeRef, ThemeString]], field_prefixes[i]):
+						string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]], [item_]))
 			string += tmp
 			if field_suffixes is not None and i < len(field_suffixes):
 				if isinstance(field_suffixes[i], tuple):
-					string += themearray_to_string([field_suffixes[i]])
+					string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]], [field_suffixes[i]]))
 				else:
-					for _item in field_suffixes[i]:
-						string += themearray_to_string([_item])
+					for item_ in cast(List[Union[ThemeRef, ThemeString]], field_suffixes[i]):
+						string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]], [item_]))
 			skip_separator = False
 
 		strings.append(string)
@@ -1031,7 +1031,7 @@ def processor_mem(obj: Dict, field: str) -> str:
 
 	return string
 
-default_processor = {
+default_processor: Dict[Callable, Callable] = {
 	generator_age: processor_age,
 	generator_list: processor_list,
 	generator_list_with_status: processor_list_with_status,
@@ -1041,12 +1041,12 @@ default_processor = {
 
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
-def get_formatting(field: str, formatting: str, default: Union[Union[dict, ThemeAttr, ThemeRef, ThemeString], List[dict]]):
-	result = []
+def get_formatting(field: Dict[str, Any], formatting: str, default: Dict[str, Any]) -> Union[List[Union[ThemeAttr, ThemeString, ThemeRef]], int, ThemeRef]:
+	result: List[Union[ThemeAttr, ThemeString, ThemeRef]] = []
 	items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
 
 	if items is None:
-		return default
+		return deep_get(default, DictPath(f"{formatting}"))
 
 	if not isinstance(items, (dict, list)):
 		raise TypeError(f"Formatting must be either list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; is type: {type(items)}")
@@ -1085,7 +1085,7 @@ def get_formatting(field: str, formatting: str, default: Union[Union[dict, Theme
 
 	return result
 
-formatter_to_generator_and_processor = {
+formatter_to_generator_and_processor: Dict[str, Dict[str, Any]] = {
 	"mem": {
 		"generator": generator_mem_single,
 		"processor": None,
@@ -1167,25 +1167,25 @@ def get_formatter(field: Dict) -> Dict:
 					       severity = LogLevel.ERR,
 					       formatted_msg = formatted_msg)
 
-		generator = deep_get(formatter_to_generator_and_processor[formatter], DictPath("generator"), None)
-		processor = deep_get(formatter_to_generator_and_processor[formatter], DictPath("processor"), None)
-		field_separators_default = deep_get(formatter_to_generator_and_processor[formatter], DictPath("field_separators_default"), field_separators_default)
+		generator = deep_get(formatter_to_generator_and_processor, DictPath(f"{formatter}#generator"))
+		processor = deep_get(formatter_to_generator_and_processor, DictPath(f"{formatter}#processor"))
+		field_separators_default = deep_get(formatter_to_generator_and_processor, DictPath(f"{formatter}#field_separators_default"), field_separators_default)
 
 	theme = get_theme_ref()
 	if deep_get(field, DictPath("formatting#field_colors")) is None:
 		if "type" in field and field["type"] in theme["types"]:
-			field_colors = [ThemeAttr("types", deep_get(field, DictPath("type")))]
+			field_colors: List[ThemeAttr] = [ThemeAttr("types", deep_get(field, DictPath("type")))]
 		else:
-			field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
+			field_colors = cast(List[ThemeAttr], get_formatting(field, "field_colors", {"field_colors": [ThemeAttr("types", "field")]}))
 	else:
-		field_colors = get_formatting(field, "field_colors", [ThemeAttr("types", "field")])
+		field_colors = cast(List[ThemeAttr], get_formatting(field, "field_colors", {"field_colors": [ThemeAttr("types", "field")]}))
 
-	field_prefixes = get_formatting(field, "field_prefixes", [])
-	field_suffixes = get_formatting(field, "field_suffixes", [])
-	field_separators = get_formatting(field, "field_separators", field_separators_default)
-	ellipsise = deep_get(field, DictPath("formatting#ellipsise"), -1)
-	ellipsis = get_formatting(field, "ellipsis", ThemeRef("separators", "ellipsis"))
-	item_separator = get_formatting(field, "item_separator", ThemeRef("separators", "list"))
+	field_prefixes = get_formatting(field, "field_prefixes", {"field_prefixes": []})
+	field_suffixes = get_formatting(field, "field_suffixes", {"field_suffixes": []})
+	field_separators = get_formatting(field, "field_separators", {"field_separators": field_separators_default})
+	ellipsise = deep_get(field, DictPath("formatting#ellipsise"), {"ellipsise": -1})
+	ellipsis = get_formatting(field, "ellipsis", {"ellipsis": ThemeRef("separators", "ellipsis")})
+	item_separator = get_formatting(field, "item_separator", {"item_separator": ThemeRef("separators", "list")})
 	mapping = deep_get(field, DictPath("formatting#mapping"), {})
 
 	tmp_field["generator"] = generator
@@ -1218,7 +1218,7 @@ def get_formatter(field: Dict) -> Dict:
 
 	return tmp_field
 
-builtin_fields = {
+builtin_fields: Dict[str, Dict[str, Any]] = {
 	"age": {
 		"header": "Age:",
 		"paths": [{
@@ -1265,7 +1265,7 @@ builtin_fields = {
 	},
 }
 
-def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tuple[Dict, List[str], str, bool]:
+def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tuple[Optional[Dict], Optional[List[str]], Optional[str], bool]:
 	"""
 	Generate a dict with the fields necessary for a view
 

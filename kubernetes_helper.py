@@ -6226,7 +6226,6 @@ a				the return value from __rest_helper_patch
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
-			from cmtio_yaml import secure_read_yaml_all
 
 			if resource_cache:
 				if vlist := resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector):
@@ -6276,7 +6275,6 @@ a				the return value from __rest_helper_patch
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
 			from pathlib import Path
 			from cmtpaths import HOMEDIR
-			from cmtio_yaml import secure_read_yaml_all
 
 			if not kind[1]:
 				joined_kind = kind[0]

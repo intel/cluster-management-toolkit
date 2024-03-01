@@ -4479,7 +4479,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		# cpu usage:
 		# low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
 		# This is aggregate over all CPUs
-		percentagebar_cpu: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(8, 7, uip.infopadwidth - 10, cputimetotal, [
+		percentagebar_cpu: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(7, uip.infopadwidth - 10, cputimetotal, [
 			(cputimeusernice, ThemeRef("strings", "cputime_user_nice")),
 			(cputimeuser, ThemeRef("strings", "cputime_user")),
 			(cputimetotalsystem, ThemeRef("strings", "cputime_total_system")),
@@ -4488,7 +4488,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 
 		# memory usage:
 		# used (green) / buffers (bold blue) / cache (yellow)
-		percentagebar_mem: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 7, uip.infopadwidth - 10, memtotal, [
+		percentagebar_mem: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(7, uip.infopadwidth - 10, memtotal, [
 			(memused - memcached - buffers, ThemeRef("strings", "mem")),
 			(buffers, ThemeRef("strings", "buffers")),
 			(memcached, ThemeRef("strings", "cached"))
@@ -4497,7 +4497,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 		# swap usage:
 		# used (red)
 		if swaptotal:
-			percentagebar_or_string_swap: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(9, 6, uip.infopadwidth - 10, swaptotal, [
+			percentagebar_or_string_swap: List[Union[ThemeRef, ThemeString]] = curses_helper.percentagebar(6, uip.infopadwidth - 10, swaptotal, [
 				(swapused, ThemeRef("strings", "swap_used"))
 			])
 			percentagebar_or_string_swap += [

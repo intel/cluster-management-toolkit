@@ -183,9 +183,6 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 	This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
 
 		Parameters:
-			cluster_name (str): The name of the cluster
-			kubeconfig (dict)): The kubeconfig file
-			cmtconfig_dict (dict): The cmtconfig file
 			critical (int): The current count of critical severity security issues
 			error (int): The current count of error severity security issues
 			warning (int): The current count of warning severity security issues
@@ -201,10 +198,6 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
 	abort = False
 
-	cluster_name: Optional[str] = deep_get(kwargs, DictPath("cluster_name"))
-	kubeconfig: Optional[Dict] = deep_get(kwargs, DictPath("kubeconfig"))
-	cmtconfig_dict: Optional[Dict] = deep_get(kwargs, DictPath("cmtconfig_dict"))
-	user: Optional[str] = deep_get(kwargs, DictPath("user"))
 	critical: int = deep_get(kwargs, DictPath("critical"), 0)
 	error: int = deep_get(kwargs, DictPath("error"), 0)
 	warning: int = deep_get(kwargs, DictPath("warning"), 0)

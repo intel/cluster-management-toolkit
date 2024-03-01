@@ -209,10 +209,12 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
 	message = ""
 	result = True
 
+	fun = ANSIThemeString
+
 	# Initialise ANSIThemeStrings with invalid string type
 	try:
 		indata = 1
-		tmp = ANSIThemeString(indata, "warning")
+		tmp = fun(indata, "warning")
 		message = f"{fun.__name__}() silently accepted wrong type for themeref:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: TypeError"
 		return message, result
 	except TypeError:
@@ -221,16 +223,16 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
 	# Initialise ANSIThemeStrings with invalid themeref type
 	try:
 		indata = 1
-		tmp = ANSIThemeString("test", indata)
+		tmp = fun("test", indata)
 		message = f"{fun.__name__}().__init__() silently accepted wrong type for themeref:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: TypeError"
 		return message, result
 	except TypeError:
 		pass
 
-	indata = ANSIThemeString("mIxEd CAse", "warning")
-	expected_result_upper = ANSIThemeString("MIXED CASE", "warning")
-	expected_result_lower = ANSIThemeString("mixed case", "warning")
-	expected_result_capitalize = ANSIThemeString("Mixed case", "warning")
+	indata = fun("mIxEd CAse", "warning")
+	expected_result_upper = fun("MIXED CASE", "warning")
+	expected_result_lower = fun("mixed case", "warning")
+	expected_result_capitalize = fun("Mixed case", "warning")
 
 	if (tmp := indata.upper()) != expected_result_upper:
 		message = f"{fun.__name__}.upper() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_upper)}"
@@ -244,13 +246,13 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
 			message = f"{fun.__name__}.capitalize() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_capitalize)}"
 			result = False
 	if result:
-		indata = ANSIThemeString("12345", "warning")
+		indata = fun("12345", "warning")
 		expected_result_len = 5
 		if (tmp := len(indata)) != expected_result_len:
 			message = f"{fun.__name__}.len() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_len)}"
 			result = False
 	if result:
-		indata = ANSIThemeString("12345", "warning")
+		indata = fun("12345", "warning")
 		expected_result = "warning"
 		if (tmp := indata.get_themeref()) != expected_result:
 			message = f"{fun.__name__}.get_themeref() did not yield expected result:\n       input: {repr(indata)}\n      output: {repr(tmp)}\n    expected: {repr(expected_result_len)}"

@@ -1064,7 +1064,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 	return themearray_wrap_line(heatmap, maxwidth + 1, wrap_marker = False)
 
 # pylint: disable-next=too-many-arguments
-def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeString]]:
+def percentagebar(minx: int, maxx: int, total: int, subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeString]]:
 	"""
 	Draw a bar of multiple subsets that sum up to a total
 
@@ -1084,7 +1084,6 @@ def percentagebar(y: int, minx: int, maxx: int, total: int, subsets: List[Tuple[
 	themearray: List[Union[ThemeRef, ThemeString]] = []
 
 	bar_width = maxx - minx + 1
-	barpos = minx + 1
 	subset_total = 0
 
 	if total > 0:
@@ -2058,7 +2057,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		if c == ord("") or c == ord(""):
 			curses.endwin()
 			sys.exit()
-		if deep_get(kwargs, DictPath("KEY_F6"), False) and c == curses.KEY_F6:
+		if key_f6 and c == curses.KEY_F6:
 			# This is used to toggle categorised list on/off
 			selection = -c
 			break
