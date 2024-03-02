@@ -8,7 +8,10 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Tuple
+import builtins
+import importlib
+from typing import Any, Dict, List, Tuple
+from unittest import mock
 import yaml
 
 from cmttypes import deep_get, DictPath, ProgrammingError, HostNameStatus, ArgumentValidationError
@@ -17,12 +20,52 @@ import cmtvalidators
 
 # unit-tests for cmtvalidators.py
 
+real_import = None
+
+import_override = {}
+
+def override_import(name: str, *args: List[Any], **kwargs: Any):
+	retval, exception = import_override.get(name, (None, None))
+	if exception:
+		raise exception
+	if retval:
+		return retval
+	return real_import(name, *args, **kwargs)
+
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	result = ""
 	dump = yaml.dump(data)
 	for line in dump.splitlines():
 		result += f"{' '.ljust(base_indent)}{line}\n"
 	return result
+
+def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
+	global import_override
+
+	message = ""
+	result = True
+	loglevels = []
+
+	if result:
+		import_override = {"validators": (None, ModuleNotFoundError)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(cmtvalidators)
+		except Exception as e:
+			message = f"overriding import validators failed"
+			result = False
+
+	if result:
+		import_override = {"validators": (None, None)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(cmtvalidators)
+		except Exception as e:
+			message = f"overriding import validators failed"
+			result = False
+
+	import_override = {}
+	return message, result
 
 def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -1034,6 +1077,10 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 	return message, result
 
 tests: Dict = {
+	("import_validators",): {
+		"callable": test_import_validators,
+		"result": None,
+	},
 	("validator_bool()", ): {
 		"callable": test_validator_bool,
 		"result": None,
@@ -1057,6 +1104,9 @@ tests: Dict = {
 }
 
 def main() -> int:
+	global real_import
+	real_import = builtins.__import__
+
 	fail = 0
 	success = 0
 	verbose = False

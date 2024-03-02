@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Tuple
 
 try:
 	import validators  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
 	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` "
 	      "or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
 	validators = None
