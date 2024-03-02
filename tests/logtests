@@ -10,13 +10,88 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 
 # unit-tests for logparser.py
 
+import builtins
 from datetime import datetime
-from typing import Callable, Dict, Tuple
+import importlib
+from typing import Any, Callable, Dict, List, Tuple
+from unittest import mock
 
 from cmttypes import deep_get, DictPath, LogLevel, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import logparser as logparsers
 from curses_helper import ThemeString, ThemeAttr
+
+real_import = None
+
+import_override = {}
+
+def override_import(name: str, *args: List[Any], **kwargs: Any):
+	retval, exception = import_override.get(name, (None, None))
+	if exception:
+		raise exception
+	if retval:
+		return retval
+	return real_import(name, *args, **kwargs)
+
+def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+	global import_override
+
+	message = ""
+	result = True
+	loglevels = []
+	testobj = {"foo": "bar"}
+	fun = logparsers.json_dumps
+
+	if result:
+		import_override = {"ujson": (None, ModuleNotFoundError)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(logparsers)
+				_tmp = logparsers.json_dumps(testobj)
+		except Exception as e:
+			message = f"overriding import ujson or {fun.__name__} failed"
+			result = False
+
+	if result:
+		import_override = {"ujson": (None, None)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(logparsers)
+				_tmp = logparsers.json_dumps(testobj)
+		except Exception as e:
+			message = f"overriding import ujson or {fun.__name__} failed"
+			result = False
+
+	import_override = {}
+	return message, result
+
+def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
+	global import_override
+
+	message = ""
+	result = True
+	loglevels = []
+
+	if result:
+		import_override = {"validators": (None, ModuleNotFoundError)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(logparsers)
+		except Exception as e:
+			message = "Overriding import validators failed"
+			result = False
+
+	if result:
+		import_override = {"validators": (None, None)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(logparsers)
+		except Exception as e:
+			message = "Overriding import validators failed"
+			result = False
+
+	import_override = {}
+	return message, result
 
 def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -24,19 +99,18 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 	loglevels = []
 
 	fun = logparsers.get_loglevel_names
-	fun_str = "logparsers.get_loglevel_names"
 	tmp = fun()
 	if verbose:
 		print(f"  loglevel_names: {tmp}")
 
 	if tmp is None:
-		message = f"{fun_str}() returned None"
+		message = f"{fun.__name__}() returned None"
 		result = False
 	elif not isinstance(tmp, list):
-		message = f"{fun_str}() returned wrong type ({type(tmp)}), expected list"
+		message = f"{fun.__name__}() returned wrong type ({type(tmp)}), expected list"
 		result = False
 	elif not tmp:
-		message = "{fun_str}() returned an empty list"
+		message = "{fun.__name__}() returned an empty list"
 		result = False
 	else:
 		loglevels = tmp
@@ -45,9 +119,9 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 		for indata in loglevels:
 			tmp = fun(indata)
 			if tmp is None:
-				message = f"{fun_str}() returned None for valid indata {indata}"
+				message = f"{fun.__name__}() returned None for valid indata {indata}"
 			elif not isinstance(tmp, LogLevel):
-				message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected LogLevel"
+				message = f"{fun.__name__}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected LogLevel"
 				result = False
 				break
 			if verbose:
@@ -57,7 +131,7 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 		try:
 			indata = "NOT A LOGLEVEL"
 			fun(indata)
-			message = f"{fun_str}() silently accepted invalid indata {indata}"
+			message = f"{fun.__name__}() silently accepted invalid indata {indata}"
 			result = False
 		except ProgrammingError:
 			pass
@@ -565,6 +639,14 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 	return message, result
 
 tests: Dict = {
+	("json_ujson",): {
+		"callable": test_json_ujson,
+		"result": None,
+	},
+	("import_validators",): {
+		"callable": test_import_validators,
+		"result": None,
+	},
 	("get_loglevel_names()", "name_to_loglevel()"): {
 		"callable": test_get_loglevel_names_and_name_to_loglevel,
 		"result": None,
@@ -632,6 +714,9 @@ tests: Dict = {
 }
 
 def main() -> int:
+	global real_import
+	real_import = builtins.__import__
+
 	fail = 0
 	success = 0
 	verbose = False

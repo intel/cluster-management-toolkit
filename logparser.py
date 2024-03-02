@@ -35,13 +35,13 @@ from datetime import datetime
 import difflib
 # ujson is much faster than json,
 # but it might not be available
-try:  # pragma: no cover
+try:
 	import ujson as json
 	json_is_ujson = True
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
 	import json  # type: ignore
 	json_is_ujson = False
 	DecodeException = json.decoder.JSONDecodeError  # type: ignore
@@ -60,10 +60,10 @@ except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
-	import validators  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover
+	import validators
+except ModuleNotFoundError:
 	print("ModuleNotFoundError: Could not import validators; you may need to (re-)run `cmt-install` or `pip3 install validators`; disabling IP-address validation.\n", file = sys.stderr)
-	validators = None
+	validators = None  # type: ignore
 
 from cmtpaths import HOMEDIR, PARSER_DIR
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ProgrammingError
