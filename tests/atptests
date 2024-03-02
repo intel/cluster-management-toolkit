@@ -8,9 +8,12 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+import builtins
+import errno
+import importlib
 import os
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, List, Tuple
 from unittest import mock
 
 import ansithemeprint
@@ -18,6 +21,18 @@ from ansithemeprint import ANSIThemeString
 
 from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+
+real_import = None
+
+import_override = {}
+
+def override_import(name: str, *args: List[Any], **kwargs: Any):
+	retval, exception = import_override.get(name, (None, None))
+	if exception:
+		raise exception
+	if retval:
+		return retval
+	return real_import(name, *args, **kwargs)
 
 def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -41,6 +56,35 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
 			result = False
 		except ProgrammingError:
 			pass
+
+	return message, result
+
+def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[str, bool]:
+	global import_override
+
+	message = ""
+	result = True
+
+	fun = ansithemeprint.init_ansithemeprint
+
+	import_override = {"yaml": (None, ModuleNotFoundError)}
+	try:
+		with mock.patch("builtins.__import__", side_effect = override_import):
+			fun()
+			importlib.reload(ansithemeprint)
+			if not ansithemeprint.USE_FALLBACK_THEME:
+				message = f"{fun.__name__} did not set USE_FALLBACK_THEME when importing yaml failed"
+				result = False
+	except Exception as e:
+		raise
+		message = f"{fun.__name__} did not use the fallback theme when no themepath was passed"
+		result = False
+
+	import_override = {}
+
+	importlib.reload(ansithemeprint)
+	global ANSIThemeString
+	ANSIThemeString = importlib.reload(ansithemeprint).ANSIThemeString
 
 	return message, result
 
@@ -490,17 +534,27 @@ def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	fun = ansithemeprint.clear_screen
+	if result:
+		fun = ansithemeprint.clear_screen
 
-	if (tmp := fun()) != 0:
-		message = f"{fun.__name__} failed (error code: {tmp}"
-		result = False
+		if (tmp := fun()) != 0:
+			message = f"{fun.__name__} failed (error code: {tmp}"
+			result = False
+	if result:
+		with mock.patch("ansithemeprint.cmtio.secure_which", side_effect = FileNotFoundError):
+			if (tmp := fun()) != errno.ENOENT:
+				message = f"{fun.__name__} failed; returned {tmp} (expected errno.ENOENT)"
+				result = False
 
 	return message, result
 
 tests: Dict = {
 	("uninitialized ansithemeprint functions", ): {
 		"callable": test_uninitialized_ansithemeprint_functions,
+		"result": None,
+	},
+	("init_ansithemeprint_use_fallback_theme", ): {
+		"callable": test_init_ansithemeprint_use_fallback_theme,
 		"result": None,
 	},
 	("init_ansithemeprint", ): {
@@ -553,6 +607,9 @@ tests: Dict = {
 }
 
 def main() -> int:
+	global real_import
+	real_import = builtins.__import__
+
 	fail = 0
 	success = 0
 	verbose = False

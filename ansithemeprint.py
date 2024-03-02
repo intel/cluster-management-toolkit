@@ -25,7 +25,7 @@ try:
 	import yaml  # noqa
 	from cmtio_yaml import secure_read_yaml
 	USE_FALLBACK_THEME = False
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
 	USE_FALLBACK_THEME = True
 
 class ANSIThemeString:
@@ -261,7 +261,7 @@ def clear_screen() -> int:
 	try:
 		cpath = cmtio.secure_which(FilePath("/usr/bin/clear"), fallback_allowlist = [],
 					   security_policy = SecurityPolicy.ALLOWLIST_STRICT)
-	except FileNotFoundError:  # pragma: no cover
+	except FileNotFoundError:
 		return errno.ENOENT
 
 	return subprocess.run([cpath], check = False).returncode
@@ -303,7 +303,7 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], color: bool = True)
 	string: str = ""
 	for themestring in themearray:
 		if not isinstance(themestring, ANSIThemeString):
-			raise TypeError("__themarray_to_string() only accepts arrays of AnsiThemeString; "
+			raise TypeError("ansithemearray_to_str() only accepts arrays of AnsiThemeString; "
 					f"this themearray consists of:\n{themearray}")
 
 		theme_attr_ref = themestring.themeref
