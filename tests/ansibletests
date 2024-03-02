@@ -1628,7 +1628,7 @@ def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
 		for indata in testdata:
 			path, inventory, verbose, expected_retval, expected_result, expected_exception = indata
 			try:
-				retval, result = fun(path, inventory, verbose)
+				retval, result = fun(path, inventory, verbose = verbose)
 				if retval != expected_retval:
 					message = f"{fun_str}() did not yield expected result:\n" \
 						  f"           path: {path}\n" \

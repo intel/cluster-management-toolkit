@@ -149,7 +149,6 @@ def init_kubernetes_client() -> None:
 	"""
 	Initialise the Kubernetes client
 	"""
-
 	global kh  # pylint: disable=global-statement
 	global kh_cache  # pylint: disable=global-statement
 
@@ -164,7 +163,6 @@ def gather_cluster_info() -> None:
 	"""
 	Gather information about the cluster necessary for running playbooks
 	"""
-
 	if not kubernetes_support:
 		return
 
@@ -176,7 +174,7 @@ def gather_cluster_info() -> None:
 	control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
 	_control_plane_node, control_plane_name = get_control_plane()
 
-	# This is tricky: we get this from the Debian package;
+	# This is tricky: we get this from the distro packages;
 	# since we cannot assume that we are running cmu on the [main] control plane
 	# we have to ask the [main] control plane, via ansible, what version of kubeadm it is running
 	package_versions = get_package_versions(control_plane_name)
@@ -231,9 +229,9 @@ def format_timestamp(timestamp: datetime, localtimezone: bool = False) -> List[U
 		array = [ThemeRef("strings", "none")]
 	else:
 		if localtimezone:
-			ftimestamp = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+			ftimestamp = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 		else:
-			ftimestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+			ftimestamp = f"{timestamp:%Y-%m-%d %H:%M:%S}"
 		array = generators.format_numerical_with_units(ftimestamp, "timestamp", False)
 
 	return array
@@ -2580,17 +2578,17 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 		internal_error = False
 	elif status == 400:
 		# Not successful; error in rawmsg
-		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: {rawmsg}"
+		rawmsg = f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} CRITICAL: {rawmsg}"
 		internal_error = True
 	elif status == 500:
 		# Not successful; error in rawmsg
 		internal_error = True
 	else:
-		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: Failed to fetch log for pod (name: {name}, namespace: {namespace}, container: {container}); Request Status: {status}"
+		rawmsg = f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} CRITICAL: Failed to fetch log for pod (name: {name}, namespace: {namespace}, container: {container}); Request Status: {status}"
 		internal_error = True
 
 	if rawmsg.startswith("unable to retrieve container logs for"):
-		rawmsg = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} CRITICAL: {rawmsg}"
+		rawmsg = f"{datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S} CRITICAL: {rawmsg}"
 		internal_error = True
 
 	return rawmsg, internal_error

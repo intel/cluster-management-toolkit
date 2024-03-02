@@ -334,13 +334,13 @@ def get_conditions(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs: 
 			last_probe = "<unset>"
 		else:
 			timestamp = timestamp_to_datetime(last_probe)
-			last_probe = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+			last_probe = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 		last_transition = deep_get(condition, DictPath("lastTransitionTime"))
 		if last_transition is None:
 			last_transition = "<unset>"
 		else:
 			timestamp = timestamp_to_datetime(last_transition)
-			last_transition = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+			last_transition = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 		message = deep_get(condition, DictPath("message"), "")
 		condition_list.append({
 			"fields": [ctype, status, last_probe, last_transition, message],
@@ -615,7 +615,7 @@ def get_list_fields(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwargs:
 							value = "<unset>"
 						else:
 							timestamp = timestamp_to_datetime(_value)
-							value = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+							value = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 					elif i < len(fields) and i < len(override_types) and override_types[i] == "age":
 						if _value is None:
 							value = "<unset>"

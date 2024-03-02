@@ -2627,7 +2627,7 @@ class UIProps:
 			xpos = self.maxx
 		if update == "true" or self.last_timestamp_update is None:
 			# Elsewhere we use now(timezone.utc), but here we want the local timezone
-			self.last_timestamp_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+			self.last_timestamp_update = f"{datetime.now():%Y-%m-%d %H:%M:%S}"
 		rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 		ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 

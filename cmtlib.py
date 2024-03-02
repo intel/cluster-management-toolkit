@@ -536,7 +536,7 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
 		# with the same length as a timestamp
 		string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
 	else:
-		string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+		string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 	return string
 
 def reformat_timestamp(timestamp: str) -> str:
@@ -556,7 +556,7 @@ def reformat_timestamp(timestamp: str) -> str:
 			    "%Y-%m-%dT%H:%M:%S%z"):
 
 			try:
-				return datetime.strptime(timestamp, fmt).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+				return f"{datetime.strptime(timestamp, fmt).astimezone():%Y-%m-%d %H:%M:%S}"
 			except ValueError:
 				pass
 

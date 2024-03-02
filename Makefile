@@ -13,6 +13,7 @@ test_lib_symlinks = \
 	helptexts.py \
 	itemgetters.py \
 	kubernetes_helper.py \
+	kubernetes_resources.py \
 	logparser.py \
 	networkio.py \
 	objgetters.py \

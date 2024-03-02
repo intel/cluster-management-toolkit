@@ -48,12 +48,12 @@ except ModuleNotFoundError:  # pragma: no cover
 		 "you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 # Exit if the ansible directory does not exist
-if not Path(ANSIBLE_DIR).exists():
+if not Path(ANSIBLE_DIR).exists():  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit(f"{ANSIBLE_DIR} not found; try (re-)running cmt-install")
 
 # Exit if the ansible log directory does not exist
-if not Path(ANSIBLE_LOG_DIR).exists():
+if not Path(ANSIBLE_LOG_DIR).exists():  # pragma: no cover
 	# This is acceptable; we don't benefit from a backtrace or log message
 	sys.exit(f"{ANSIBLE_LOG_DIR} not found; try (re-)running cmt-install")
 

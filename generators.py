@@ -809,7 +809,7 @@ def generator_timestamp_with_age(obj: Dict,
 					break
 
 				timestamp = timestamp_to_datetime(values[i])
-				timestamp_string = timestamp.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+				timestamp_string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
 				array += format_numerical_with_units(timestamp_string, "timestamp", selected)
 			elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
 				array += generator_age_raw(values[i], selected)
@@ -848,7 +848,7 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 	if isinstance(value, str):
 		return value
 
-	string = value.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+	string = f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
 	return string
 
 def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
