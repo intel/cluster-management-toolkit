@@ -20,8 +20,6 @@
             conditions:
               - "Debian and derivatives"
               - "SUSE and derivatives"
-          - description: "containerd.io"
-            conditions:
               - "Red Hat and derivatives"
           - description: "runc"
             conditions:
@@ -67,10 +65,10 @@
         state: "latest"
         force_apt_get: true
       when: "ansible_os_family == 'Debian'"
-    - name: "Installing containerd.io and runc"  # noqa package-latest
+    - name: "Installing containerd and runc"  # noqa package-latest
       ansible.builtin.dnf:
         name:
-          - "containerd.io"
+          - "containerd"
           - "runc"
         state: "latest"
       when: "ansible_os_family == 'RedHat'"
