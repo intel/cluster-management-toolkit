@@ -37,7 +37,7 @@ from cmtio import secure_read_string
 from cmtio_yaml import secure_read_yaml
 import cmtlib
 from cmtlib import disksize_to_human, get_since, timestamp_to_datetime, make_set_expression_list
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, ProgrammingError, StatusGroup
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, ProgrammingError, StatusGroup, FilePathAuditError
 import datagetters
 import formatters
 from kubernetes_helper import get_node_status, make_selector, resource_kind_to_rtype
@@ -315,7 +315,9 @@ def __recurse_data(path: Dict, obj: Any) -> Any:
 
 def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	paths = deep_get(kwargs, DictPath("paths"), [])
+	file_not_found_status = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
 	vlist = []
+	status = None
 
 	for path in paths:
 		filepath = deep_get(path, DictPath("filepath"), "")
@@ -328,13 +330,23 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, st
 		if filepath.startswith(("{HOME}/", "{HOME}\\")):
 			filepath = FilePath(str(PurePath(HOMEDIR).joinpath(filepath[len('{HOME}/'):])))
 
-		if filetype == "yaml":
-			d = secure_read_yaml(filepath)
-		else:
-			d = secure_read_string(filepath)
+		try:
+			if filetype == "yaml":
+				d = secure_read_yaml(filepath)
+			else:
+				d = secure_read_string(filepath)
+		except FilePathAuditError as e:
+			if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) or "SecurityStatus.DOES_NOT_EXIST" in str(e):
+				if status is None:
+					status = file_not_found_status
+				continue
+			raise
 
 		if not d:
 			continue
+
+		# We've successfully read data at least once
+		status = "OK"
 
 		# Get the mtime of the file
 		p = Path(FilePath(filepath))
@@ -369,7 +381,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, st
 
 		vlist.append(item)
 
-	return vlist, 200
+	return vlist, status
 
 def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	dirpath = deep_get(kwargs, DictPath("dirpath"), "")

@@ -10,6 +10,7 @@ listview:
   listgetter_args:
     playbooks:
     - "update_version_cache.yaml"
+    file_not_found_status: "No version data found"
     paths:
     - filepath: "{HOME}/.cmt/version-cache/kubernetes_current.yaml"
       filetype: "yaml"
@@ -111,6 +112,7 @@ infoview:
     infogetter_args:
       extra_values_lookup:
         "version": ["release"]
+      file_not_found_status: "No changelog found"
       paths:
       - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
         filetype: "text"

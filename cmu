@@ -58,7 +58,7 @@ except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
-from cmttypes import ProgrammingError
+from cmttypes import ProgrammingError, FilePathAuditError
 from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE, CMT_CONFIG_FILENAME, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
@@ -1766,7 +1766,10 @@ def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr
 
 	kwargs.pop("extra_values_lookup", "")
 
-	vlist, _status = listgetters.listgetter_files(**kwargs)
+	vlist, status = listgetters.listgetter_files(**kwargs)
+
+	if status != "OK":
+		return []
 
 	formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
 
@@ -2920,7 +2923,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			if listgetter_async == listgetters_async.get_inventory_list and "hosts" not in executor:
 				hosts = list(deep_get(ansible_get_inventory_dict(), DictPath("all#hosts")).keys())
 				# The inventory doesn't change all that often, but reading it every 10 seconds should be OK
-				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml")
+				executor.trigger("hosts", 10, read_file_async, path = ANSIBLE_INVENTORY, filetype = "yaml", **listgetter_args)
 				async_data["hosts"] = copy.deepcopy(hosts)
 				infogetter_extra_vars["_match_key"] = "name"
 				new_data = "pending"
@@ -4219,13 +4222,24 @@ clusteroverview_shortcuts = {
 }
 
 def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
-	path = deep_get(kwargs, DictPath("path"))
-	filetype = deep_get(kwargs, DictPath("filetype"), "string")
-	if filetype == "string":
-		result = secure_read_string(path, directory_is_symlink = True)
-	elif filetype == "yaml":
-		result = secure_read_yaml(path, directory_is_symlink = True)
+	file_not_found_status: str = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
+	path: str = deep_get(kwargs, DictPath("path"))
+	filetype: str = deep_get(kwargs, DictPath("filetype"), "string")
+
 	status = StatusGroup.OK
+
+	try:
+		if filetype == "string":
+			result = secure_read_string(path, directory_is_symlink = True)
+		elif filetype == "yaml":
+			result = secure_read_yaml(path, directory_is_symlink = True)
+	except FilePathAuditError as e:
+		if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) or "SecurityStatus.DOES_NOT_EXIST" in str(e):
+			status = file_not_found_status
+			result = []
+		else:
+			raise
+
 	return result, status
 
 def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
