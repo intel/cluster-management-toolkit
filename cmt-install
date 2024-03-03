@@ -93,7 +93,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "ansible-runner",
 		"always-fallback-distros": [
 			"suse",
-			"fedora",
 			"rhel",
 		],
 	},
@@ -102,7 +101,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"always-fallback-distros": [
 			"suse",
 			# Until RHEL 9
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -113,7 +111,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "natsort",
 		"always-fallback-distros": [
 			"suse",
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -124,7 +121,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "paramiko",
 		"always-fallback-distros": [
 			"suse",
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -140,7 +136,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		],
 		"always-fallback-distros": [
 			# Until RHEL 9
-			"fedora",
 			"rhel",
 		],
 	},
@@ -148,7 +143,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"fallback": "ujson",
 		"always-fallback-distros": [
 			"suse",
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -162,7 +156,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 		"always-fallback-distros": [
 			"suse",
 			# Until RHEL 9
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -172,7 +165,6 @@ PACKAGES_WITH_PIP_FALLBACK = {
 	"python3-validators": {
 		"fallback": "validators",
 		"always-fallback-distros": [
-			"fedora",
 			"rhel",
 		],
 		"never-fallback-distros": [
@@ -643,15 +635,15 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
 		for line in split_response:
 			tmp = information_for_regex.match(line)
 			if tmp is not None:
-				if distro not in deep_get(packages[tmp[1]], DictPath("always-fallback-distros"), []):
-					if tmp[1] not in pkgs:
+				if distro not in deep_get(packages, DictPath(f"{tmp[1]}#always-fallback-distros"), []):
+					if tmp[1] in packages.keys() and tmp[1] not in pkgs:
 						pkgs[tmp[1]] = packages[tmp[1]]
 					continue
-				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+				fallbacks.add(deep_get(packages, DictPath(f"{tmp[1]}#fallback")))
 				continue
 			tmp = not_found_regex.match(line)
 			if tmp is not None:
-				fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
+				fallbacks.add(deep_get(packages, DictPath(f"{tmp[1]}#fallback")))
 	elif distro in ("fedora", "rhel"):
 		try:
 			yum_path = secure_which(FilePath("/usr/bin/yum"), fallback_allowlist = ["/usr/bin"],
@@ -668,27 +660,26 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
 		split_response = response.splitlines()
 
 		information_for_regex = re.compile(r"^([^.]+).+$")
-		not_found_regex = re.compile(r"^Error: No matching Packages to list$")
 
 		all_packages = set(packages.keys())
 		found_packages = set()
 
 		if split_response[0] != "Error: No matching Packages to list":
 			for line in split_response:
-				if line.startswith("Installed Packages"):
+				if line.startswith(("Available Packages", "Installed Packages")):
 					continue
 				tmp = information_for_regex.match(line)
 
 				if tmp is not None:
-					if distro not in deep_get(packages[tmp[1]], DictPath("always-fallback-distros"), []):
-						if tmp[1] not in pkgs:
+					found_packages.add(tmp[1])
+					if distro not in deep_get(packages, DictPath(f"{tmp[1]}#always-fallback-distros"), []):
+						if tmp[1] in packages.keys() and tmp[1] not in pkgs:
 							pkgs[tmp[1]] = packages[tmp[1]]
 						continue
-					fallbacks.add(deep_get(packages[tmp[1]], DictPath("fallback")))
-					found_packages.add(tmp[1])
+					fallbacks.add(deep_get(packages, DictPath(f"{tmp[1]}#fallback")))
 					continue
 		for missing in all_packages.difference(found_packages):
-			fallbacks.add(deep_get(packages[missing], DictPath("fallback")))
+			fallbacks.add(deep_get(packages, DictPath("{missing}#fallback")))
 
 	if pkgs and not dryrun:
 		install_software(pkgs, verbose = verbose, distro = distro)
