@@ -2310,7 +2310,7 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	matched = True
 
 	# If no block end is defined we continue until EOF
-	block_end = deep_get(options, DictPath("block_end"))
+	block_end = deep_get(options, DictPath("block_end"), [])
 
 	# format_block_end = False
 	# process_block_end = True
@@ -2412,7 +2412,7 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	matched = True
 
 	# If no block end is defined we continue until EOF
-	block_end = deep_get(options, DictPath("block_end"))
+	block_end = deep_get(options, DictPath("block_end"), [])
 
 	format_block_end = False
 	process_block_end = True
@@ -2510,7 +2510,7 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	matched = True
 
 	# If no block end is defined we continue until EOF
-	block_end = deep_get(options, DictPath("block_end"))
+	block_end = deep_get(options, DictPath("block_end"), [])
 
 	format_block_end = False
 	process_block_end = True
