@@ -10055,8 +10055,13 @@ def populate_views(force_refresh: bool = False) -> None:
 			kh_update_api_status((kind, api_family), listview = has_listview, infoview = has_infoview)
 
 def setupui(stdscr: curses.window) -> None:
-	# Hide the cursor
-	curses.curs_set(False)
+	# Hide the cursor; seems some implementations of curses (or terminals?)
+	# might not support toggling the cursor; they will throw an exception instead.
+	# Catch this an pretend that everything is fine.
+	try:
+		curses.curs_set(False)
+	except curses.error:
+		pass
 	# Disable CTRL+C, CTRL+Z, etc.
 	curses.raw()
 	# Enable mouse support

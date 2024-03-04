@@ -1305,8 +1305,13 @@ def inputwrapper(keypress: int) -> int:
 def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, title: str) -> str:
 	global ignoreinput  # pylint: disable=global-statement
 
-	# Show the cursor
-	curses.curs_set(True)
+	# Show the cursor; seems some implementations of curses (or terminals?)
+	# might not support toggling the cursor; they will throw an exception instead.
+	# Catch this an pretend that everything is fine.
+	try:
+		curses.curs_set(True)
+	except curses.error:
+		pass
 
 	ignoreinput = False
 
@@ -1336,8 +1341,13 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 	del tpad
 	del win
 
-	# Hide the cursor
-	curses.curs_set(False)
+	# Hide the cursor; seems some implementations of curses (or terminals?)
+	# might not support toggling the cursor; they will throw an exception instead.
+	# Catch this an pretend that everything is fine.
+	try:
+		curses.curs_set(False)
+	except curses.error:
+		pass
 	stdscr.touchwin()
 	stdscr.noutrefresh()
 	curses.doupdate()
