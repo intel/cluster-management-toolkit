@@ -2663,6 +2663,8 @@ a				the return value from __rest_helper_patch
 				tmp = secure_read_yaml(FilePath(testdata))
 				if deep_get(tmp, DictPath("kind")) == "List":
 					d = deep_get(tmp, DictPath("items"), [])
+				else:
+					d = [tmp]
 			if d is None:
 				d = []
 			for item in d:
@@ -2670,6 +2672,7 @@ a				the return value from __rest_helper_patch
 				i_namespace = deep_get(item, DictPath("metadata#namespace"))
 				if i_name == name and (not namespace or i_namespace == namespace):
 					return item
+			return None
 
 		ref, _status = self.__rest_helper_get(kind = kind, name = name, namespace = namespace)
 		ref = cast(Dict, ref)

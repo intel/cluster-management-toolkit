@@ -11,15 +11,18 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 from datetime import datetime, timezone
 import sys
 from typing import Dict, Tuple
+from unittest import mock
 import yaml
 
-from cmttypes import deep_get, DictPath, ProgrammingError, StatusGroup
+import cmtlib
+from cmttypes import deep_get, deep_set, DictPath, ProgrammingError, StatusGroup
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import kubernetes_helper
 
 # unit-tests for kubernetes_helper.py
 
 kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
+kh_cache: kubernetes_helper.KubernetesResourceCache = None  # type: ignore
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	result = ""
@@ -690,6 +693,230 @@ def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = kh.get_ref_by_kind_name_namespace
+	cmtlib.read_cmtconfig()
+	deep_set(cmtlib.cmtconfig, DictPath("Debug#developer_mode"), True, create_path = True)
+	deep_set(cmtlib.cmtconfig, DictPath("Debug#use_testdata"), True, create_path = True)
+
+	if result:
+		# Indata format:
+		# (indata, kind, name, namespace, **kwargs, expected_result, expected_exception)
+		testdata = (
+			({
+				"apiVersion": "v1",
+				"kind": "List",
+				"items": [{
+					"apiVersion": "v1",
+					"kind": "Namespace",
+					"metadata": {
+						"creationTimestamp": "2023-10-24T10:05:01Z",
+						"labels": {
+							"kubernetes.io/metadata.name": "default",
+						},
+						"name": "default",
+						"resourceVersion": "41",
+						"uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+					},
+					 "spec": {
+						"finalizers": ["kubernetes"],
+					},
+					"status": {
+						"phase": "Active"
+					},
+				}],
+				"metadata": {
+					"resourceVersion": "",
+				},
+			 }, ("Namespace", ""), "default", "", {},
+			 {
+				"apiVersion": "v1",
+				"kind": "Namespace",
+				"metadata": {
+					"creationTimestamp": "2023-10-24T10:05:01Z",
+					"labels": {
+						"kubernetes.io/metadata.name": "default",
+					},
+					"name": "default",
+					"resourceVersion": "41",
+					"uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+				},
+				"spec": {
+					"finalizers": ["kubernetes"],
+				},
+				"status": {
+					"phase": "Active"
+				},
+			 }, None),
+			({
+				"apiVersion": "v1",
+				"kind": "List",
+				"items": [{
+					"apiVersion": "v1",
+					"kind": "Namespace",
+					"metadata": {
+						"creationTimestamp": "2023-10-24T10:05:01Z",
+						"labels": {
+							"kubernetes.io/metadata.name": "default",
+						},
+						"name": "default",
+						"resourceVersion": "41",
+						"uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+					},
+					 "spec": {
+						"finalizers": ["kubernetes"],
+					},
+					"status": {
+						"phase": "Active"
+					},
+				}],
+				"metadata": {
+					"resourceVersion": "",
+				},
+			 }, ("Namespace", ""), "default", "", {"resource_cache": kh_cache},
+			 {
+				"apiVersion": "v1",
+				"kind": "Namespace",
+				"metadata": {
+					"creationTimestamp": "2023-10-24T10:05:01Z",
+					"labels": {
+						"kubernetes.io/metadata.name": "default",
+					},
+					"name": "default",
+					"resourceVersion": "41",
+					"uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+				},
+				"spec": {
+					"finalizers": ["kubernetes"],
+				},
+				"status": {
+					"phase": "Active"
+				},
+			 }, None),
+			({
+				"apiVersion": "v1",
+				"kind": "List",
+				"items": [{
+					"apiVersion": "coordination.k8s.io/v1",
+					"kind": "Lease",
+					"metadata": {
+						"creationTimestamp": "2023-10-24T10:05:03Z",
+						"name": "controlplane",
+						"namespace": "kube-node-lease",
+						"resourceVersion": "1",
+					},
+					"spec": {
+						"holderIdentity": "controlplane",
+						"leaseDurationSeconds": 40,
+						"renewTime": "2024-03-04T15:57:15.221500Z",
+					},
+				}],
+				"metadata": {
+					"resourceVersion": "",
+				},
+			 }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
+			 {
+				"apiVersion": "coordination.k8s.io/v1",
+				"kind": "Lease",
+				"metadata": {
+					"creationTimestamp": "2023-10-24T10:05:03Z",
+					"name": "controlplane",
+					"namespace": "kube-node-lease",
+					"resourceVersion": "1",
+				},
+				"spec": {
+					"holderIdentity": "controlplane",
+					"leaseDurationSeconds": 40,
+					"renewTime": "2024-03-04T15:57:15.221500Z",
+				},
+			 }, None),
+			({
+				"apiVersion": "v1",
+				"kind": "List",
+				"items": [{
+					"apiVersion": "coordination.k8s.io/v1",
+					"kind": "Lease",
+					"metadata": {
+						"creationTimestamp": "2023-10-24T10:05:03Z",
+						"name": "controlplane",
+						"namespace": "kube-node-lease",
+						"resourceVersion": "1",
+					},
+					"spec": {
+						"holderIdentity": "controlplane",
+						"leaseDurationSeconds": 40,
+						"renewTime": "2024-03-04T15:57:15.221500Z",
+					},
+				}],
+				"metadata": {
+					"resourceVersion": "",
+				},
+			 }, ("Lease", "coordination.k8s.io"), "worker", "kube-node-lease", {},
+			 None, None),
+			({
+				"apiVersion": "coordination.k8s.io/v1",
+				"kind": "Lease",
+				"metadata": {
+					"creationTimestamp": "2023-10-24T10:05:03Z",
+					"name": "controlplane",
+					"namespace": "kube-node-lease",
+					"resourceVersion": "1",
+				},
+				"spec": {
+					"holderIdentity": "controlplane",
+					"leaseDurationSeconds": 40,
+					"renewTime": "2024-03-04T15:57:15.221500Z",
+				},
+			 }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
+			 {
+				"apiVersion": "coordination.k8s.io/v1",
+				"kind": "Lease",
+				"metadata": {
+					"creationTimestamp": "2023-10-24T10:05:03Z",
+					"name": "controlplane",
+					"namespace": "kube-node-lease",
+					"resourceVersion": "1",
+				},
+				"spec": {
+					"holderIdentity": "controlplane",
+					"leaseDurationSeconds": 40,
+					"renewTime": "2024-03-04T15:57:15.221500Z",
+				},
+			 }, None),
+		)
+		for indata, kind, name, namespace, kwargs, expected_result, expected_exception in testdata:
+			try:
+				with mock.patch("kubernetes_helper.secure_read_yaml", return_value = indata):
+					if (tmp := fun(kind, name, namespace, **kwargs)) != expected_result:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          indata: {indata}\n" \
+							  f"          output: {tmp}\n" \
+							  f"        expected: {expected_result}"
+						result = False
+						break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          indata: {indata}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          indata: {indata}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
 tests: Dict = {
 	("kind_tuple_to_name()",): {
 		"callable": test_kind_tuple_to_name,
@@ -722,10 +949,15 @@ tests_with_cluster = {
 		"callable": test_kubectl_get_version,
 		"result": None,
 	},
+	("get_ref_by_kind_name_namespace() (Developer mode)",): {
+		"callable": test_get_ref_by_kind_name_namespace,
+		"result": None,
+	},
 }
 
 def main() -> int:
 	global kh
+	global kh_cache
 	global tests
 
 	fail = 0
@@ -738,6 +970,7 @@ def main() -> int:
 	if "--include-cluster" in sys.argv:
 		tests = { **tests, **tests_with_cluster }
 		kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
+		kh_cache = kubernetes_helper.KubernetesResourceCache()
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
