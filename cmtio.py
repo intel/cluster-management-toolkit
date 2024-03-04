@@ -40,7 +40,7 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: O
 	partial_paths = []
 	full_path = None
 
-	if path is None or len(path) == 0:
+	if path is None or not path:
 		return FilePath(fallback), False
 
 	if path.startswith("{HOME}/"):
@@ -86,7 +86,7 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 	securitystatus_str = ""
 
 	for securitystatus in sorted(securitystatuses):
-		if len(securitystatus_str) > 0:
+		if securitystatus_str:
 			securitystatus_str += separator
 		securitystatus_str += repr(securitystatus)
 
@@ -246,7 +246,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 	if not path_entry.exists():
 		if SecurityChecks.EXISTS in checks:
 			violations.append(SecurityStatus.DOES_NOT_EXIST)
-		if len(violations) == 0:
+		if not violations:
 			violations = [SecurityStatus.OK]
 		return violations
 
@@ -340,7 +340,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			ansithemeprint.ansithemeprint(msg, stderr = True)
 		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
-	if len(violations) == 0:
+	if not violations:
 		violations = [SecurityStatus.OK]
 
 	return violations
@@ -379,7 +379,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 			# This is to allow remove when DOES_NOT_EXIST isn't in violations
 			pass
 
-	if len(violations) == 0:
+	if not violations:
 		violations = [SecurityStatus.OK]
 
 	if violations != [SecurityStatus.OK]:
@@ -424,7 +424,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			# This is to allow remove when DOES_NOT_EXIST isn't in violations
 			pass
 
-	if len(violations) == 0:
+	if not violations:
 		violations = [SecurityStatus.OK]
 
 	if violations != [SecurityStatus.OK]:

@@ -497,7 +497,7 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 			lines (list[str]): A list of strings
 			*or*
 			lines (str): A string with newlines that should be split
-			kwargs (Any): Additional parameters
+			**kwargs (Any): Additional parameters
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -565,6 +565,17 @@ def format_yaml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[
 	return dumps
 
 def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
+	"""
+	Given a string representation of JSON, reformat it
+
+		Parameters:
+			lines (list[str]): A list of strings
+			*or*
+			lines (str): A string with newlines that should be split
+			**kwargs (Any): Additional parameters
+		Returns:
+			list[themearray]: A list of themearrays
+	"""
 	kwargs["json"] = True
 	return format_yaml(lines, **kwargs)
 
@@ -1583,6 +1594,20 @@ cmdata_bin_header: List[Tuple[int, List[int], str]] = [
 ]
 
 def identify_cmdata(cmdata_name: str, cm_name: str, cm_namespace: str, data: Any) -> Tuple[str, Callable]:
+	"""
+	Try to identify the format of a configmap given the name of the data,
+	the name of the configmap, the namespace of the configmap, and the data itself
+
+		Parameters:
+			cmdata_name (str): The name of the configmap data
+			cm_name (str): The name of the configmap
+			cm_namespace (str): The namespace of the configmap
+			data (Any): The data
+		Returns:
+			(str, Callable):
+				description (str): The description of the format
+				formatter (Callable): The formatter to use
+	"""
 	if not data:
 		return "Empty", format_none
 
@@ -1630,7 +1655,18 @@ def identify_cmdata(cmdata_name: str, cm_name: str, cm_namespace: str, data: Any
 
 	return dataformat, formatter
 
-def identify_formatter(dataformat: str, kind: Optional[str] = None, obj: Optional[Dict[str, Any]] = None, path: Optional[str] = None) -> Callable:
+def identify_formatter(dataformat: str, kind: Optional[Tuple[str, str]] = None, obj: Optional[Dict[str, Any]] = None, path: Optional[str] = None) -> Callable:
+	"""
+	Identify what formatter to use for an object
+
+		Parameters:
+			dataformat (str): Unused
+			kind ((str, str)): The kind of data
+			obj (dict): The object to fetch the data from
+			path (str): The path to the data to identify the formatter for
+		Returns:
+			(callable): A formatter
+	"""
 	formatter = format_none
 
 	if dataformat is None:

@@ -16,6 +16,15 @@ import datagetters
 from kubernetes_helper import get_node_roles, get_node_status, get_containers, get_controller_from_owner_references, get_pod_restarts_total
 
 def format_controller(controller: Tuple[Tuple[str, str], str], show_kind: str) -> Tuple[str, str]:
+	"""
+	Reformat a controller kind + name tuple
+
+		Parameters:
+			controller ((str, str), str): The controller kind
+			show_kind (str): "short" / "full" / "mixed"
+		Returns:
+			(str, str): A tuple with a possibly reformatted controller kind + name
+	"""
 	if show_kind:
 		if show_kind == "short" or not controller[0][1]:
 			fmt_controller = (f"{controller[0][0]}", f"{controller[1]}")
@@ -39,7 +48,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Pods
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -79,7 +88,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 		name = deep_get(obj, DictPath("metadata#name"))
 		ref = obj
 		nodename = deep_get(obj, DictPath("spec#nodeName"), "<none>")
-		status, status_group = datagetters.get_pod_status(kh, obj, in_depth_node_status = in_depth_node_status)
+		status, status_group = datagetters.get_pod_status(obj, kubernetes_helper = kh, kh_cache = kh_cache, in_depth_node_status = in_depth_node_status)
 
 		if in_depth_node_status:
 			timestamp = cmtlib.timestamp_to_datetime(deep_get(obj, DictPath("metadata#creationTimestamp")))
@@ -151,7 +160,7 @@ def get_node_info(**kwargs: Any) -> List[Type]:
 
 	for obj in vlist:
 		# For now we do not do anything with external IPs; we should
-		name, internal_ips, external_ips = get_node_addresses(deep_get(obj, DictPath("status#addresses")))
+		name, internal_ips, _external_ips = get_node_addresses(deep_get(obj, DictPath("status#addresses")))
 		ref = obj
 		kubernetes_roles = get_node_roles(obj)
 		timestamp = cmtlib.timestamp_to_datetime(deep_get(obj, DictPath("metadata#creationTimestamp")))
@@ -185,6 +194,17 @@ def get_node_info(**kwargs: Any) -> List[Type]:
 	return info
 
 def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]]:
+	"""
+	Given the addresses list return all internal/external IPs and the hostname
+
+		Parameters:
+			addresses ([dict]): A list of address objects
+		Returns:
+			((str, [str], [str])):
+				(str): Hostname
+				([str]): Internal IPs
+				([str]): External IPs
+	"""
 	iips = []
 	eips = []
 

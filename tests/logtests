@@ -638,6 +638,354 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_http(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = logparsers.http
+
+	if result:
+		testdata = (
+			# Indata format:
+			# (string, fold_msg, expected_result, expected_remnants, expected_exception)
+			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 400 -',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('400', ThemeAttr('logview', 'severity_error'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 300 -',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+			('10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] "GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283 HTTP/1.1" 404 528 "-" "Grafana/8.3.10" 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4',
+			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
+			 [ThemeString('10.32.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[2023-02-20 11:38:13 +0000]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
+			  ThemeString(' 528 "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('Grafana/8.3.10', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4', ThemeAttr('types', 'generic'), False)], None),
+			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
+			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
+			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[2022-04-06 18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+			('10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"',
+			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
+			 [ThemeString('10.244.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[2022-00-29 10:34:20 +0000]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/v0/healthz', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('301', ThemeAttr('logview', 'severity_warning'), False),
+			  ThemeString(' 178 "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('kube-probe/1.23', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('', ThemeAttr('types', 'generic'), False)], None),
+			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 300 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 404 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
+			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+			('10.245.0.1 - - [01/Mar/2024:14:04:03 +0000] "GET /api/v1/status/buildinfo HTTP/1.1" 200 186 "-" "Grafana/8.5.27" 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('10.245.0.1', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[01/Mar/2024:14:04:03 +0000]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/api/v1/status/buildinfo', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+			  ThemeString(' 186 "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('Grafana/8.5.27', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80', ThemeAttr('types', 'generic'), False)], None),
+			('10.245.96.15 - - [28/Feb/2024:16:25:59 +0000] "GET /sd-shared-gpu-7b5548d864-pz77r.png HTTP/1.1" 304 0 "http://sd-preview.val.cluster:27080/" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[28/Feb/2024:16:25:59 +0000]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/sd-shared-gpu-7b5548d864-pz77r.png', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('304', ThemeAttr('logview', 'severity_warning'), False),
+			  ThemeString(' 0 "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('http://sd-preview.val.cluster:27080/', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
+			('10.245.96.15 - - [28/Feb/2024:16:29:57 +0000] "GET / HTTP/1.1" 200 1026 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+			 LogLevel.INFO, "", True, {},
+			 [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
+			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('[28/Feb/2024:16:29:57 +0000]', ThemeAttr('logview', 'timestamp'), False),
+			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('/', ThemeAttr('logview', 'url'), False),
+			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+			  ThemeString(' 1026 "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('-', ThemeAttr('logview', 'url'), False),
+			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+			  ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
+		)
+
+		for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+			try:
+				tmp, severity, facility = fun(string, severity, facility, fold_msg, options)
+				if tmp != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
+def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = logparsers.split_glog
+
+	if result:
+		testdata = (
+			# Indata format:
+			# (string, fold_msg, expected_result, expected_remnants, expected_exception)
+			('E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
+			 LogLevel.INFO, "",
+			 ("foo", LogLevel.ERR, "server_chttp2.cc:40", [], True), None),
+			('I0511 14:31:10.500543       1 start.go:76] bar',
+			 LogLevel.INFO, "",
+			 ("bar", LogLevel.INFO, "start.go:76", [], True), None),
+			('I0511 14:31:10.500543       1 start.go:76]',
+			 LogLevel.INFO, "",
+			 ("", LogLevel.INFO, "start.go:76", [], True), None),
+			('I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178] buggy',
+			 LogLevel.INFO, "",
+			 ("buggy", LogLevel.INFO, "tlsconfig.go:178", [], True), None),
+			('Not a match',
+			 LogLevel.INFO, "",
+			 ("Not a match", LogLevel.INFO, "", [], False), None),
+			('Not a match',
+			 None, "",
+			 ("Not a match", LogLevel.INFO, "", [], False), None),
+			('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
+			 LogLevel.INFO, "",
+			 ("ERROR: logging before flag.Parse", LogLevel.ERR, "server_chttp2.cc:40", [([ThemeString('foo', ThemeAttr('logview', 'severity_error'), False)], LogLevel.ERR)], True), None),
+		)
+
+		for string, severity, facility, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(string, severity, facility)
+				if tmp != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
+def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = logparsers.init_parser_list
+
+	if result:
+		try:
+			fun()
+		except Exception as e:
+			message = f"{fun.__name__}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
+
+	fun = logparsers.get_parser_list
+
+	if result:
+		try:
+			tmp = fun()
+		except Exception as e:
+			if expected_exception is not None:
+				if isinstance(e, expected_exception):
+					pass
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_exception}"
+					result = False
+			else:
+				message = f"{fun.__name__}() did not yield expected result:\n" \
+					  f"      exception: {type(e)}\n" \
+					  f"       expected: {expected_result}"
+				result = False
+
+	return message, result
+
 tests: Dict = {
 	("json_ujson",): {
 		"callable": test_json_ujson,
@@ -709,6 +1057,18 @@ tests: Dict = {
 	},
 	("test_iptables",): {
 		"callable": test_iptables,
+		"result": None,
+	},
+	("test_http",): {
+		"callable": test_http,
+		"result": None,
+	},
+	("test_split_glog",): {
+		"callable": test_split_glog,
+		"result": None,
+	},
+	("test_parser_list",): {
+		"callable": test_parser_list,
 		"result": None,
 	},
 }

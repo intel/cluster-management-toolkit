@@ -24,6 +24,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
 	import json  # type: ignore
 	DecodeException = json.decoder.JSONDecodeError  # type: ignore
+from pathlib import Path
 import re
 import ssl
 import sys
@@ -43,7 +44,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
 	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
-from cmtpaths import KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
+from cmtpaths import HOMEDIR, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 #from cmtlog import debuglog
 #from cmttypes import LogLevel
@@ -101,7 +102,17 @@ def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetim
 		restarted_at = -1
 	return restarts, restarted_at
 
-def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Dict[str, Any]]) -> List[List[str]]:
+def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Dict[str, Any]]) -> List[Tuple[str, str]]:
+	"""
+	Given a list of containers and a list of container statuses,
+	create a joined list with both pieces of information
+
+		Parameters:
+			containers ([dict]): The list of container info
+			container_statuses ([dict]): The list of container statuses
+		Returns:
+			[[str]]: The list of container info
+	"""
 	container_dict = {}
 	container_list = []
 
@@ -116,13 +127,23 @@ def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Di
 		container_image = deep_get(container, DictPath("image"))
 		if container_dict[container_name] == "<undefined>":
 			image_version = get_image_version(container_image, "<undefined>")
-			container_list.append([container_name, image_version])
+			container_list.append((container_name, image_version))
 		else:
-			container_list.append([container_name, container_dict[container_name]])
+			container_list.append((container_name, container_dict[container_name]))
 
 	return container_list
 
 def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
+	"""
+	Given an owner reference list, extract the controller (if any)
+
+		Parameters:
+			owner_references ([dict]): The list of owner references
+		Returns:
+			(((str, str), str)): A tuple made up of:
+				kind ((str, str)): The controller kind
+				name (str): The controller name
+	"""
 	controller = (("", ""), "")
 	if owner_references is not None:
 		api_group_regex = re.compile(r"^(.*)/.*")
@@ -324,7 +345,6 @@ class KubernetesResourceCache:
 				key = key.replace(".", "#")
 				label_selector_dict[f"metadata#labels#{key}"] = value
 
-			tmp: List[Dict[str, Any]] = []
 			for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items():
 				if deep_get(resource, DictPath("metadata#namespace"), "") != namespace:
 					continue
@@ -336,8 +356,7 @@ class KubernetesResourceCache:
 						continue
 				vlist.append(resource)
 			return vlist
-		else:
-			return [resource for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items()]
+		return [resource for uid, resource in deep_get(self.resource_cache[kind], DictPath("resources"), {}).items()]
 
 	def index(self) -> List[str]:
 		"""
@@ -1763,13 +1782,10 @@ class KubernetesHelper:
 			# When running in developer mode with testdata we allow reads from files,
 			# and can thus get data without the Kubernetes API being available.
 			if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
-				from pathlib import Path
-				from cmtpaths import HOMEDIR
 				for path in Path(f"{HOMEDIR}/testdata").iterdir():
 					if not path.name.endswith(".yaml"):
 						continue
 					tmp = path.name[:-len(".yaml")]
-					tmp_kind = tmp.split(".", maxsplit = 1)
 					tmp_split = tmp.split(".", maxsplit = 1)
 					if len(tmp_split) == 1:
 						kind = (tmp_split[0], "")
@@ -2589,9 +2605,6 @@ a				the return value from __rest_helper_patch
 		vlist: List[Dict[str, Any]] = []
 
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
-			from pathlib import Path
-			from cmtpaths import HOMEDIR
-
 			if resource_cache:
 				if vlist := resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector):
 					return vlist, 200
@@ -2614,8 +2627,7 @@ a				the return value from __rest_helper_patch
 					resource_cache.update_resources(kind, vlist)
 					# This way we get the selectors handled
 					return resource_cache.get_resources(kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector), 200
-				else:
-					return vlist, 200
+				return vlist, 200
 
 		tmp, status = self.__rest_helper_get(kind = kind, namespace = namespace, label_selector = label_selector, field_selector = field_selector)
 		vlist = cast(List[Dict[str, Any]], tmp)
@@ -2638,9 +2650,6 @@ a				the return value from __rest_helper_patch
 		resource_cache: Optional[KubernetesResourceCache] = deep_get(kwargs, DictPath("resource_cache"))
 
 		if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
-			from pathlib import Path
-			from cmtpaths import HOMEDIR
-
 			if not kind[1]:
 				joined_kind = kind[0]
 			else:

@@ -553,6 +553,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 
 		min_max = deep_get(data, DictPath("range"))
 		kwarg = deep_get(kwargs, DictPath(key))
+		# pylint: disable-next=too-many-boolean-expressions
 		if (expected_types is None or not isinstance(expected_types, tuple) or
 		    not isinstance(none_acceptable, bool) or
 		    (min_max is not None and
@@ -642,7 +643,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 				maxval_str = str(maxval)
 
 			if isinstance(kwarg, (int, float)):
-				if not (minval_cmp <= kwarg <= maxval_cmp):
+				if not minval_cmp <= kwarg <= maxval_cmp:
 					results[key] = {
 						"subexception": ValueError,
 						"msg": [(f"    {key}", "argument"),
@@ -656,7 +657,7 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 					}
 					continue
 			else:
-				if not (minval_cmp <= len(kwarg) <= maxval_cmp):
+				if not minval_cmp <= len(kwarg) <= maxval_cmp:
 					results[key] = {
 						"subexception": ValueError,
 						"msg": [("    len(", "default"),

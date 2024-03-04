@@ -1,3 +1,12 @@
+#! /usr/bin/env python3
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+"""
+List of Kubernetes resources known by CMT
+"""
+
 from typing import Dict, List, Tuple, Union
 
 # A list of all K8s resources we have some knowledge about
@@ -181,12 +190,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
 	},
 	# flowcontrol.apiserver.k8s.io
 	("FlowSchema", "flowcontrol.apiserver.k8s.io"): {
-		"api_paths": ["apis/flowcontrol.apiserver.k8s.io/v1/", "apis/flowcontrol.apiserver.k8s.io/v1beta3/", "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
+		"api_paths": ["apis/flowcontrol.apiserver.k8s.io/v1/", "apis/flowcontrol.apiserver.k8s.io/v1beta3/",
+			      "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 		"api": "flowschemas",
 		"namespaced": False,
 	},
 	("PriorityLevelConfiguration", "flowcontrol.apiserver.k8s.io"): {
-		"api_paths": ["apis/flowcontrol.apiserver.k8s.io/v1/", "apis/flowcontrol.apiserver.k8s.io/v1beta3/", "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
+		"api_paths": ["apis/flowcontrol.apiserver.k8s.io/v1/", "apis/flowcontrol.apiserver.k8s.io/v1beta3/",
+			      "apis/flowcontrol.apiserver.k8s.io/v1beta2/", "apis/flowcontrol.apiserver.k8s.io/v1beta1/"],
 		"api": "prioritylevelconfigurations",
 		"namespaced": False,
 	},
@@ -3110,7 +3121,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
 	},
 	# serving.knative.dev
 	("Configuration", "serving.knative.dev"): {
-		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
+		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/"],
 		"api": "configurations",
 	},
 	("DomainMapping", "serving.knative.dev"): {
@@ -3118,15 +3129,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
 		"api": "domainmappings",
 	},
 	("Revision", "serving.knative.dev"): {
-		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
+		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/"],
 		"api": "revisions",
 	},
 	("Route", "serving.knative.dev"): {
-		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
+		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/"],
 		"api": "routes",
 	},
 	("Service", "serving.knative.dev"): {
-		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha2/", "apis/serving.knative.dev/v1alpha1/"],
+		"api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/"],
 		"api": "services",
 	},
 	# serving.kubeflow.org

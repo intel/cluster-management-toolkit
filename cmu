@@ -923,7 +923,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 			raise ValueError(f"Field {name}: exactly one of path and paths must be non-empty unless a datagetter is specified\npath={path}\npaths={paths}\ndatagetter={datagetter}")
 
 		if datagetter is not None:
-			d[name], extradata = datagetter(kh, obj, path, default)
+			d[name], extradata = datagetter(obj, kubernetes_helper = kh, path = path, default = path)
 			for key, value in extradata.items():
 				d[key] = value
 		else:

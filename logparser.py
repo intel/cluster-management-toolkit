@@ -117,7 +117,7 @@ class logparser_configuration:
 	using_bundles: bool = False
 
 if json_is_ujson:
-	def json_dumps(obj) -> str:
+	def json_dumps(obj: Dict[str, Any]) -> str:
 		"""
 		Dump JSON object to text format; ujson version
 
@@ -130,7 +130,7 @@ if json_is_ujson:
 		indent = 2
 		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
 else:
-	def json_dumps(obj) -> str:
+	def json_dumps(obj: Dict[str, Any]) -> str:
 		"""
 		Dump JSON object to text format; json version
 
@@ -420,7 +420,7 @@ def split_colon_severity(message: str, default: LogLevel = LogLevel.INFO) -> Tup
 
 	return message, severity
 
-def is_timestamp(message: str):
+def is_timestamp(message: str) -> bool:
 	"""
 	Tries to check whether the field is a timestamp
 
@@ -592,7 +592,7 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 # pylint: disable-next=too-many-arguments,unused-argument
 def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]],
 	     severity: Optional[LogLevel] = LogLevel.INFO, facility: str = "", fold_msg: bool = True) ->\
-			Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+			Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel], str, List[Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel]]]]:
 	"""
 	Format output from iptables-save
 
@@ -607,7 +607,7 @@ def iptables(message: str, remnants: List[Tuple[List[Union[ThemeRef, ThemeString
 	"""
 
 	new_message: List[Union[ThemeRef, ThemeString]] = []
-	new_remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	new_remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel]]] = []
 
 	old_messages: List[str] = []
 	if fold_msg and "\\n" in message:
@@ -976,7 +976,7 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 # I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178]
 # they indicate a race condition; hack around them to make the log pretty
 def split_glog(message: str, severity: Optional[LogLevel] = None, facility: str = "") ->\
-			Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
+			Tuple[str, Optional[LogLevel], str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
 	"""
 	Extract messages in glog format
 
@@ -1048,7 +1048,7 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 			(message, severity, facility, remnants)
 	"""
 
-	remnants = []
+	remnants:List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
 	errors = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -1068,6 +1068,9 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 
 	message = fields[message_index]
 	remnants_index = message_index + 1
+
+	if severity is None:
+		severity = LogLevel.INFO
 
 	override_formatting = {}
 	for _msg in versions:
@@ -1113,14 +1116,14 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 				Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	logentry = None
 
-	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
-	errors = deep_get(options, DictPath("errors"), ["err", "error"])
+	messages: List[str] = deep_get(options, DictPath("messages"), ["msg", "message"])
+	errors: List[str] = deep_get(options, DictPath("errors"), ["err", "error"])
 	error_tags = deep_get(options, DictPath("error_tags"), {})
-	timestamps = deep_get(options, DictPath("timestamps"), ["ts", "time", "timestamp"])
-	severities = deep_get(options, DictPath("severities"), ["level"])
+	timestamps: List[str] = deep_get(options, DictPath("timestamps"), ["ts", "time", "timestamp"])
+	severities: List[str] = deep_get(options, DictPath("severities"), ["level"])
 	msg_severity_overrides = deep_get(options, DictPath("msg#severity#overrides"), [])
-	facilities = deep_get(options, DictPath("facilities"), ["logger", "caller", "filename"])
-	versions = deep_get(options, DictPath("versions"), [])
+	facilities: List[str] = deep_get(options, DictPath("facilities"), ["logger", "caller", "filename"])
+	versions: List[str] = deep_get(options, DictPath("versions"), [])
 
 	message = message.replace("\x00", "")
 
@@ -1226,7 +1229,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 		# else return an expanded representation
 		else:
 			if severity is not None and severity == LogLevel.DEBUG:
-				structseverity = severity
+				structseverity: LogLevel = severity
 			else:
 				structseverity = LogLevel.INFO
 
@@ -1293,7 +1296,7 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 				dump = json_dumps(logentry)
 
-				expand_newline_fields = ()
+				expand_newline_fields: Tuple = ()
 				if logparser_configuration.expand_newlines:
 					expand_newline_fields = (
 						"config",
@@ -1303,7 +1306,12 @@ def split_json_style(message: str, severity: Optional[LogLevel] = LogLevel.INFO,
 
 				tmp = formatters.format_yaml([dump], override_formatting = override_formatting, expand_newline_fields = expand_newline_fields, value_expand_tabs = logparser_configuration.expand_tabs)
 
-				if len(message) == 0:
+				if severity is None:
+					if structseverity is not None:
+						severity = structseverity
+					else:
+						severity = LogLevel.INFO
+				if not len(message):
 					formatted_message = tmp[0]
 					tmp.pop(0)
 					msgseverity = structseverity
@@ -1595,7 +1603,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, remnants: Optional
 		tmp += raw_msg
 	return severity, message, remnants
 
-def expand_event(message: str, severity: LogLevel, **kwargs) -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+def expand_event(message: str, severity: LogLevel, **kwargs: Any) -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
 	"""
 	Given a log message, expand and format event messages
 
@@ -1643,8 +1651,8 @@ def expand_event(message: str, severity: LogLevel, **kwargs) -> Tuple[LogLevel, 
 			refend = i
 		elif message[i] == ")":
 			parendepth -= 1
-			if parendepth == 0:
-				if curlydepth > 0:
+			if not parendepth:
+				if curlydepth:
 					# Abort parsing; assume that this message is either malformed
 					# or that the parser is flawed
 					return message, remnants
@@ -2158,7 +2166,7 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 			# but we can distinguish the two based on the file size;
 			# the size for devices is not really a size per se,
 			# but rather major, minor (a normal size never has a comma)
-			if len(suffix) == 0:
+			if not suffix:
 				if "," in size:
 					_message += [
 						ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dev")),
@@ -2321,7 +2329,7 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 		# format_block_end = deep_get(_be, DictPath("format_block_end"), False)
 		# process_block_end = deep_get(_be, DictPath("process_block_end"), True)
 		if matchtype == "empty":
-			if len(message.strip()) == 0:
+			if not message.strip():
 				matched = False
 		elif matchtype == "exact":
 			if message == matchkey:
@@ -2340,7 +2348,7 @@ def json_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 	elif message.lstrip() != message or message == "{":
 		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
-	elif len(message.strip()) == 0 and allow_empty_lines:
+	elif not message.strip() and allow_empty_lines:
 		remnants, _ = formatters.format_yaml_line(message, override_formatting = {})
 		processor = ("block", json_line_scanner, {})
 	else:
@@ -2372,7 +2380,7 @@ def json_line(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
 		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
-		if matchline == "any" or matchline == "first" and line == 0:
+		if matchline == "any" or matchline == "first" and not line:
 			if matchtype == "exact":
 				if message == matchkey:
 					matched = True
@@ -2423,7 +2431,7 @@ def yaml_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
 		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
 		if matchtype == "empty":
-			if len(message.strip()) == 0:
+			if not message.strip():
 				matched = False
 		elif matchtype == "exact":
 			if message == matchkey:
@@ -2476,7 +2484,7 @@ def yaml_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
 		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
-		if matchline == "any" or matchline == "first" and line == 0:
+		if matchline == "any" or matchline == "first" and not line:
 			if matchtype == "exact":
 				if message == matchkey:
 					matched = True
@@ -2521,7 +2529,7 @@ def diff_line_scanner(message: str, fold_msg: bool = True, options: Optional[Dic
 		format_block_end = deep_get(_be, DictPath("format_block_end"), False)
 		process_block_end = deep_get(_be, DictPath("process_block_end"), True)
 		if matchtype == "empty":
-			if len(message.strip()) == 0:
+			if not message.strip():
 				matched = False
 		elif matchtype == "exact":
 			if message == matchkey:
@@ -2574,7 +2582,7 @@ def diff_line(message: str, fold_msg: bool = True, severity: LogLevel = LogLevel
 		matchkey = _bs["matchkey"]
 		matchline = _bs["matchline"]
 		format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
-		if matchline == "any" or matchline == "first" and line == 0:
+		if matchline == "any" or matchline == "first" and not line:
 			if matchtype == "exact":
 				if message == matchkey:
 					matched = True
@@ -2608,12 +2616,12 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 
 	message = strip_iso_timestamp(message)
 
-	if len(message) == 0:
+	if not message:
 		options["override_formatting"] = None
 
 	# We're approaching the end
-	if final_block and len(message) == 0:
-		processor = ("end_block", None, {})
+	if final_block and not message:
+		processor: Tuple[str, Optional[Callable], Dict] = ("end_block", None, {})
 	else:
 		if "final_block" in options:
 			tmp = re.match(r"^.+?:\sok=(\d+)\s+changed=(\d+)\s+unreachable=(\d+)\s+failed=(\d+)\s+skipped=(\d+)\s+rescued=(\d+)\s+ignored=(\d+)$", message)
@@ -2627,15 +2635,15 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 				ignored = int(tmp[7])
 
 				# These are sorted in order of severity; "highest" wins
-				if ok > 0:
+				if ok:
 					options["override_formatting"] = ThemeAttr("main", "status_ok")
-				if changed > 0:
+				if changed:
 					options["override_formatting"] = ThemeAttr("logview", "modified")
-				if skipped > 0:
+				if skipped:
 					options["override_formatting"] = ThemeAttr("logview", "severity_debug")
-				if ignored > 0 or rescued > 0:
+				if ignored or rescued:
 					options["override_formatting"] = ThemeAttr("logview", "severity_warning")
-				if unreachable > 0 or failed > 0:
+				if unreachable or failed:
 					options["override_formatting"] = ThemeAttr("logview", "severity_error")
 
 		if message.startswith("skipping"):
@@ -2649,9 +2657,9 @@ def ansible_line_scanner(message: str, fold_msg: bool = True, options: Optional[
 		remnants = formatters.format_ansible_line(message, override_formatting = deep_get(options, DictPath("override_formatting")))
 		if message.startswith("PLAY RECAP"):
 			options["final_block"] = True
-			processor: Tuple[str, Optional[Callable], Dict] = ("final_block", ansible_line_scanner, options)
+			processor = ("final_block", ansible_line_scanner, options)
 		else:
-			processor: Tuple[str, Optional[Callable], Dict] = ("block", ansible_line_scanner, options)
+			processor = ("block", ansible_line_scanner, options)
 
 	return processor, (timestamp, facility, severity, remnants)
 
@@ -2681,7 +2689,7 @@ def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: s
 
 	format_rules = deep_get(options, DictPath("format_rules"), {})
 
-	if len(format_rules) == 0:
+	if not format_rules:
 		raise ValueError("format_rules is empty")
 
 	# Iterate until first matching rule, if any
@@ -2692,13 +2700,13 @@ def raw_formatter(message: str, severity: Optional[LogLevel] = None, facility: s
 
 		if matchtype == "regex":
 			tmp = re.match(matchkey, message)
-			if tmp is None or len(tmp.groups()) == 0:
+			if tmp is None or not tmp.groups():
 				continue
 			tmp_msg = []
 
 			field_colors = deep_get(formatting, DictPath("field_colors"), [])
 			for color_index, group in enumerate(tmp.groups()):
-				if len(field_colors) == 0:
+				if not field_colors:
 					tmp_msg.append(ThemeString(group, ThemeAttr("types", "generic")))
 				elif color_index > len(field_colors):
 					tmp_msg.append(ThemeString(group, ThemeAttr(field_colors[-1]["context"], field_colors[-1]["type"])))
@@ -2755,7 +2763,7 @@ def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility:
 			message, severity = custom_override_severity(tmp[message_field], severity, overrides = severity_overrides)
 		else:
 			message = tmp[message_field]
-		if facility_fields is not None and len(facility) == 0:
+		if facility_fields is not None and not facility:
 			if isinstance(facility_fields, str):
 				facility_fields = [facility_fields]
 			if isinstance(facility_separators, str):
@@ -2765,7 +2773,7 @@ def custom_splitter(message: str, severity: Optional[LogLevel] = None, facility:
 			for field in facility_fields:
 				if field > group_count:
 					sys.exit(f"The parser rule references a non-existing capture group {field} for facility; the valid range is [1-{group_count}]")
-				if i > 0:
+				if i:
 					facility += facility_separators[min(i - 1, len(facility_separators) - 1)]
 				if field != 0:
 					facility += tmp[field]
@@ -2852,7 +2860,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 					parts = message.split("{", 1)
 					if len(parts) == 2:
 						# No leading message
-						if len(parts[0]) == 0:
+						if not parts[0]:
 							message, severity, facility, remnants = split_json_style(message, severity = severity, facility = facility, fold_msg = fold_msg, options = _parser_options)
 						elif parts[0].rstrip() != parts[0]:
 							parts[0] = parts[0].rstrip()
@@ -2920,7 +2928,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
 
-def init_parser_list():
+def init_parser_list() -> None:
 	"""
 	Initialise the list of parsers
 	"""
@@ -2985,7 +2993,7 @@ def init_parser_list():
 		for parser_dict in dl:
 			for parser in parser_dict:
 				parser_name = parser.get("name", "")
-				if len(parser_name) == 0:
+				if not parser_name:
 					continue
 				show_in_selector = parser.get("show_in_selector", False)
 				matchrules = []
@@ -3000,16 +3008,16 @@ def init_parser_list():
 						image_regex = None
 					container_type = matchkey.get("container_type", "container")
 					# We need at least one way of matching
-					if len(pod_name) == 0 and len(container_name) == 0 and len(image_name) == 0:
+					if not pod_name and not container_name and not image_name:
 						continue
 					matchrule = (pod_name, container_name, image_name, container_type, image_regex)
 					matchrules.append(matchrule)
 
-				if len(matchrules) == 0:
+				if not matchrules:
 					continue
 
 				parser_rules = parser.get("parser_rules")
-				if parser_rules is None or len(parser_rules) == 0:
+				if parser_rules is None or not parser_rules:
 					continue
 
 				rules = []
@@ -3194,7 +3202,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 	# First extract the Kubernetes timestamp
 	message, timestamp = split_iso_timestamp(message, none_timestamp())
 
-	if len(parsers) == 0:
+	if not parsers:
 		init_parser_list()
 
 	rmessage = None
@@ -3254,7 +3262,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 		if lparser is not None:
 			break
 
-	if uparser is None and (lparser is None or len(lparser) == 0):
+	if uparser is None and (lparser is None or not lparser):
 		lparser = "<unknown format>"
 		uparser = "basic_8601"
 		parser = Parser(parser_name = "basic_8601", show_in_selector = True, match_rules = [("raw", "", "", "container", None)], parser_rules = ["ts_8601"])

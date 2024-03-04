@@ -365,7 +365,8 @@ def get_endpoint_slices(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwa
 	svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
 	# We need to find all Endpoint Slices in the same namespace as the service that have this service
 	# as its controller
-	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace, label_selector = f"kubernetes.io/service-name={svcname}", resource_cache = kh_cache)
+	vlist, _status = kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"), svcnamespace,
+						       label_selector = f"kubernetes.io/service-name={svcname}", resource_cache = kh_cache)
 	tmp: List[Tuple[str, str]] = []
 	if vlist is None or _status != 200:
 		return tmp
@@ -709,7 +710,7 @@ def get_pod_configmaps(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **kwar
 	if pod_name is not None and pod_name:
 		field_selector = f"metadata.name={pod_name}"
 
-	plist, status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector, resource_cache = kh_cache)
+	plist, _status = kh.get_list_by_kind_namespace(("Pod", ""), cm_namespace, field_selector = field_selector, resource_cache = kh_cache)
 
 	plist = cast(List, plist)
 

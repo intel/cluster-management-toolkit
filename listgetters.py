@@ -25,7 +25,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -70,7 +70,10 @@ def get_device_model(obj: Dict, device: DictPath) -> str:
 # Takes a list and splits it into four lists;
 # exacts, strings starting _and_ ending with "*", strings starting with "*",
 # and strings ending with "*"
-def split_matchlist(matchlist: List[str], exacts: List[str], prefixes: Tuple[str, ...], suffixes: Tuple[str, ...], ins: List[str]) -> Tuple[List[str], Tuple[str, ...], Tuple[str, ...], List[str]]:
+def split_matchlist(matchlist: List[str],
+		    exacts: List[str],
+		    prefixes: Tuple[str, ...],
+		    suffixes: Tuple[str, ...], ins: List[str]) -> Tuple[List[str], Tuple[str, ...], Tuple[str, ...], List[str]]:
 	tmp_exacts = []
 	tmp_prefixes = []
 	tmp_suffixes = []
@@ -217,7 +220,6 @@ def generic_listgetter(kind: Tuple[str, str], namespace: str, **kwargs: Any) -> 
 def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_metrics_list() called without kubernetes_helper")
-	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
 	vlist = []
 
@@ -313,10 +315,10 @@ def __recurse_data(path: Dict, obj: Any) -> Any:
 
 	return __recurse_data(nextpath, data)
 
-def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str, List[StatusGroup]]]:
+def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[None, int, str, List[StatusGroup]]]:
 	paths = deep_get(kwargs, DictPath("paths"), [])
 	file_not_found_status = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
-	vlist = []
+	vlist: List[Dict[str, Any]] = []
 	status = None
 
 	for path in paths:
@@ -352,7 +354,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, st
 		p = Path(FilePath(filepath))
 		mtime = p.stat().st_mtime
 
-		item: Dict[str, List] = {key: []}
+		item: Dict[str, Any] = {key: []}
 		if filetype == "text":
 			if regex:
 				match = False
@@ -642,7 +644,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
 	pod_name = deep_get(obj, DictPath("metadata#name"))
 	pod_namespace = deep_get(obj, DictPath("metadata#namespace"))
-	app_selector = f"app={deep_get(obj, DictPath('metadata#labels#apps'))}"
+
 	# We'll be one-shotting all of these, so we won't use reexecutor
 	executor_ = concurrent.futures.ThreadPoolExecutor()
 	executors = {}
@@ -671,7 +673,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 		ref = container
 		name = deep_get(container, DictPath("name"))
 		resource_tuple = ("", "", name)
-		status, status_group, restarts, message, age = datagetters.get_container_status(container_status, name)
+		status, _status_group, restarts, message, age = datagetters.get_container_status(container_status, name)
 		vlist.append({
 			"ref": ref,
 			"namespace": pod_namespace,
@@ -698,7 +700,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 		resource_tuple = ("", "", name)
 
 		if ref is not None:
-			status, status_group, _taints, _full_taints = get_node_status(ref)
+			status, _status_group, _taints, _full_taints = get_node_status(ref)
 		else:
 			status = "<unset>"
 
@@ -839,7 +841,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 			pv, pv_name = get_pv_from_pvc_name(claim_name, kubernetes_helper = kh)
 
 			if pv is not None:
-				status, status_group = get_pv_status(pv)
+				status, _status_group = get_pv_status(pv)
 			else:
 				pv_name = "<INVALID PV>"
 				status = "Error"
@@ -1696,7 +1698,6 @@ def listgetter_join_dicts_to_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[L
 		for field in fields:
 			path = deep_get(field, DictPath("path"), "")
 			name = deep_get(field, DictPath("name"))
-			default = deep_get(field, DictPath("default"))
 			if name is None:
 				continue
 			value = deep_get(obj, DictPath(f"{path}#{key}"))
@@ -1783,7 +1784,6 @@ def listgetter_namespaced_resources(obj: Dict, **kwargs: Any) -> Tuple[List, Uni
 	executor_ = concurrent.futures.ThreadPoolExecutor()
 	executors = {}
 	for kind in namespaced_resources:
-		joined_kind = ".".join(kind)
 		executors[kind] = executor_.submit(listgetters_async.get_kubernetes_list, kind = kind, namespace = namespace, kubernetes_helper = kh, kh_cache = kh_cache)
 	for kind, ex in executors.items():
 		vlist_, status_ = ex.result()
@@ -1904,7 +1904,7 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
 		else:
 			# XXX: What was intended here? join_key isn't used
 			for tmp in vlists:
-				vlist = [{**u, **v} for u, v in zip_longest(vlist, tmp, fillvalue = {})]
+				vlist = [{**u, **v} for u, v in cast(Dict, zip_longest(vlist, tmp, fillvalue = {}))]
 		return vlist, 200
 
 	path = deep_get(kwargs, DictPath("path"))

@@ -1344,14 +1344,11 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tu
 
 	tmp_fields = {}
 
-	for field_name in field_dict:
-		field = deep_get(field_dict, DictPath(field_name))
-
+	for field_name, field in field_dict.items():
 		# This is a custom field, so we need to construct one that's usable here
 		tmp_fields[field_name] = copy.deepcopy(field_dict[field_name])
 
-		tmp_field = get_formatter(field)
-		if tmp_field is None:
+		if (tmp_field := get_formatter(field)) is None:
 			continue
 
 		for key, value in tmp_field.items():
