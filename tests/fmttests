@@ -440,6 +440,33 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
 				ThemeString(':', ThemeAttr('types', 'yaml_separator'), False),
 			 ], []), None),
 			("- key:", {"override_formatting": "a"}, None, TypeError),
+			('  "error": "please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",',
+			 {
+				"override_formatting": {
+					'"msg"': {
+						'key': ThemeAttr('types', 'yaml_key'),
+						'value': ThemeAttr('logview', 'severity_info')
+					},
+					'"message"': {
+						'key': ThemeAttr('types', 'yaml_key'),
+						'value': ThemeAttr('logview', 'severity_info')
+					},
+					'"err"': {
+						'key': ThemeAttr('types', 'yaml_key_error'),
+						'value': ThemeAttr('logview', 'severity_error')
+					},
+					'"error"': {
+						'key': ThemeAttr('types', 'yaml_key_error'),
+						'value': ThemeAttr('logview', 'severity_error')
+					}
+				},
+				'expand_newline_fields': ('config', 'errorVerbose', 'stacktrace', 'status.message'),
+				'value_expand_tabs': True
+			}, ([
+				ThemeString('  "error"', ThemeAttr('types', 'yaml_key_error'), False),
+				ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+				ThemeString('"please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",', ThemeAttr('logview', 'severity_error'), False),
+			 ], []), None),
 		)
 		for indata, options, expected_result, expected_exception in testdata:
 			try:

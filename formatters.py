@@ -367,7 +367,7 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 	# <key>:<whitespace><value>
 	# <key>:<whitespace>&<anchor>[<whitespace><value>]
 	# <key>: *<alias>
-	yaml_key_reference_value_regex = re.compile(r"^([^:]+)(:\s*)(&|\*|)([^\s]+)([\s]+[^\s]+|)")
+	yaml_key_reference_value_regex = re.compile(r"^([^:]+)(:\s*)(&|\*|)([^\s]+)([\s]+.+|)")
 
 	if line.lstrip(" ").startswith("#"):
 		tmpline += [
@@ -411,7 +411,7 @@ def format_yaml_line(line: str, **kwargs: Any) -> Tuple[List[Union[ThemeRef, The
 					value = ""
 				value_or_anchor = ""
 			else:
-				value = value_or_anchor
+				value = f"{value_or_anchor}{value}"
 				value_or_anchor = ""
 
 			_key_format = deep_get(override_formatting, DictPath(f"{key.strip()}#key"), key_format)
