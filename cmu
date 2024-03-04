@@ -5550,6 +5550,10 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	first_fetch = True
 
 	while True:
+		# Populate useful variables that can be used in the statusbar
+		if formatter:
+			deep_set(infoview_args, DictPath("formatter"), formatter.__name__)
+
 		# Output listpad if we have one
 		if uip.is_update_triggered():
 			# The data in some fields might become shorter, so we need to trigger a clear
