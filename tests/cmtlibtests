@@ -1278,6 +1278,21 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
 						  f"      exception: {type(e)}\n"
 					result = False
 					break
+	if result:
+		try:
+			with mock.patch("ansible_helper.ansible_run_playbook_on_selection", return_value = (-1, [])):
+				tmp = fun("localhost")
+				message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
+					  f"         output: {tmp}\n" \
+					   "       expected: ValueError"
+				result = False
+		except Exception as e:
+			if isinstance(e, ValueError):
+				pass
+			else:
+				message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
+					   "       expected: ValueError"
+				result = False
 	return message, result
 
 def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
