@@ -8,9 +8,14 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+# unit-tests for formatters.py
+
+import builtins
 from datetime import datetime, timezone
+import importlib
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, List, Tuple
+from unittest import mock
 import yaml
 
 from cmtpaths import DEFAULT_THEME_FILE
@@ -20,7 +25,17 @@ import formatters
 
 from curses_helper import read_theme, ThemeAttr, ThemeRef, ThemeString, dump_themearray
 
-# unit-tests for formatters.py
+real_import = None
+
+import_override = {}
+
+def override_import(name: str, *args: List[Any], **kwargs: Any):
+	retval, exception = import_override.get(name, (None, None))
+	if exception:
+		raise exception
+	if retval:
+		return retval
+	return real_import(name, *args, **kwargs)
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	result = ""
@@ -28,6 +43,38 @@ def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	for line in dump.splitlines():
 		result += f"{' '.ljust(base_indent)}{line}\n"
 	return result
+
+def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+	global import_override
+
+	message = ""
+	result = True
+	loglevels = []
+	testobj = {"foo": "bar"}
+	fun = formatters.json_dumps
+
+	if result:
+		import_override = {"ujson": (None, ModuleNotFoundError)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(formatters)
+				_tmp = formatters.json_dumps(testobj)
+		except Exception as e:
+			message = f"overriding import ujson or {fun.__name__} failed"
+			result = False
+
+	if result:
+		import_override = {"ujson": (None, None)}
+		try:
+			with mock.patch("builtins.__import__", side_effect = override_import):
+				importlib.reload(formatters)
+				_tmp = formatters.json_dumps(testobj)
+		except Exception as e:
+			message = f"overriding import ujson or {fun.__name__} failed"
+			result = False
+
+	import_override = {}
+	return message, result
 
 def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -670,6 +717,232 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = formatters.format_caddyfile
+
+	if result:
+		# Indata format:
+		# (lines, options, expected_result, expected_exception)
+		testdata = (
+			([".:53 {",
+			  "    # comment",
+			  "",
+			  "}"], {},
+			 [
+				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    # comment', ThemeAttr('types', 'caddyfile_comment'), False)],
+				[ThemeString('', ThemeAttr('types', 'generic'), False)],
+				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+			], None),
+			([".:53 {",
+			  "    errors",
+			  "    health {",
+			  "       lameduck 5s",
+			  "    }",
+			  "    ready",
+			  "    kubernetes cluster.local in-addr.arpa ip6.arpa {",
+			  "       pods insecure",
+			  "       fallthrough in-addr.arpa ip6.arpa",
+			  "       ttl 30",
+			  "    }",
+			  "    prometheus :9153",
+			  "    forward . /etc/resolv.conf {",
+			  "       max_concurrent 1000",
+			  "    }",
+			  "    cache 30",
+			  "    loop",
+			  "    reload",
+			  "    loadbalance",
+			  "}"], {},
+			 [
+				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+			], None),
+			(".:53 {\n" \
+			 "    errors\n" \
+			 "    health {\n" \
+			 "       lameduck 5s\n" \
+			 "    }\n" \
+			 "    ready\n" \
+			 "    kubernetes cluster.local in-addr.arpa ip6.arpa {\n" \
+			 "       pods insecure\n" \
+			 "       fallthrough in-addr.arpa ip6.arpa\n" \
+			 "       ttl 30\n" \
+			 "    }\n" \
+			 "    prometheus :9153\n" \
+			 "    forward . /etc/resolv.conf {\n" \
+			 "       max_concurrent 1000\n" \
+			 "    }\n" \
+			 "    cache 30\n" \
+			 "    loop\n" \
+			 "    reload\n" \
+			 "    loadbalance\n" \
+			 "}", {},
+			 [
+				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
+				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+				 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
+				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+			], None),
+			([".:53 {",
+			  "    # comment",
+			  "}"], {"raw": True},
+			 [
+				[ThemeString('.:53 {', ThemeAttr('types', 'generic'), False)],
+				[ThemeString('    # comment', ThemeAttr('types', 'generic'), False)],
+				[ThemeString('}', ThemeAttr('types', 'generic'), False)]
+			], None),
+		)
+		for indata, options, expected_result, expected_exception in testdata:
+			if isinstance(indata, list):
+				indata_quoted = "\n".join(indata)
+			else:
+				indata_quoted = indata
+			indata_quoted = indata_quoted.replace('\n', '\\n')
+			try:
+				if (tmp := fun(indata, **options)) != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"           input: \"{indata_quoted}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						   "          output:\n" \
+						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__indata__}() did not yield expected result:\n" \
+							  f"           input: \"{indata_quoted}\"\n" \
+							   "         options:\n" \
+							  f"{yaml_dump(options, base_indent = 17)}\n" \
+							  f"       exception: {type(e)}\n" \
+							  f"        expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__indata__}() did not yield expected result:\n" \
+						  f"           input: \"{indata_quoted}\"\n" \
+						   "         options:\n" \
+						  f"{yaml_dump(options, base_indent = 17)}\n" \
+						  f"       exception: {type(e)}\n" \
+						  f"        expected: {expected_result}"
+					result = False
+					break
+	return message, result
+
 def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -809,6 +1082,10 @@ def test_map_dataformat(verbose: bool = False) -> Tuple[str, bool]:
 	return message, result
 
 tests: Dict = {
+	("json_ujson",): {
+		"callable": test_json_ujson,
+		"result": None,
+	},
 	("format_json_dumps",): {
 		"callable": test_json_dumps,
 		"result": None,
@@ -841,6 +1118,10 @@ tests: Dict = {
 		"callable": test_format_ini,
 		"result": None,
 	},
+	("format_caddyfile",): {
+		"callable": test_format_caddyfile,
+		"result": None,
+	},
 	("format_python_traceback",): {
 		"callable": test_format_python_traceback,
 		"result": None,
@@ -852,8 +1133,9 @@ tests: Dict = {
 }
 
 def main() -> int:
-	global kh
 	global tests
+	global real_import
+	real_import = builtins.__import__
 
 	fail = 0
 	success = 0

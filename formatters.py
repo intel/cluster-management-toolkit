@@ -17,7 +17,7 @@ try:
 	# The exception raised by ujson when parsing fails is different
 	# from what json raises
 	DecodeException = ValueError
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
 	import json  # type: ignore
 	json_is_ujson = False
 	DecodeException = json.decoder.JSONDecodeError  # type: ignore
@@ -49,7 +49,7 @@ if json_is_ujson:
 
 		indent = 2
 		return json.dumps(obj, indent = indent, escape_forward_slashes = False)
-else:  # pragma: no cover
+else:
 	def json_dumps(obj: Dict) -> str:
 		"""
 		Dump Python object to JSON in text format; json version
@@ -724,7 +724,7 @@ def format_caddyfile(lines: Union[str, List[str]], **kwargs: Any) -> List[List[U
 		# Empty line
 		if not line and not tmpline:
 			tmpline = [
-				ThemeString("", ThemeAttr("types", "xml_content")),
+				ThemeString("", ThemeAttr("types", "generic")),
 			]
 
 		directive = False
@@ -1001,7 +1001,7 @@ def format_xml(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[T
 		# Empty line
 		if not line and not tmpline:
 			tmpline = [
-				ThemeString("", ThemeAttr("types", "xml_content")),
+				ThemeString("", ThemeAttr("types", "generic")),
 			]
 
 		while line:
