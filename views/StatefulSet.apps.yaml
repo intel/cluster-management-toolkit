@@ -111,7 +111,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "autoremove_created_pvcs_header", "autoremove_created_pvcs_when_deleted", "autoremove_created_pvcs_when_scaled", "minimum_ready_seconds", "update_strategy", "replicas", "replicas_starting_number"]
+        fields: ["controller", "label_selector", "set_based_selector", "pod_management_policy", "autoremove_created_pvcs_header", "autoremove_created_pvcs_when_deleted", "autoremove_created_pvcs_when_scaled", "minimum_ready_seconds", "update_strategy", "replicas", "replicas_starting_number", "revision_history_limit", "collision_count"]
     rows:
       autoremove_created_pvcs_header:
         header: [["Auto-remove Created PVCs:", ["main", "infoheader"]]]
@@ -125,6 +125,12 @@ infoview:
         path: "spec#persistentVolumeClaimRetentionPolicy#whenScaled"
         default: "<unset>"
         type: "str"
+      collision_count:
+        header: [["Collision Count:", ["main", "infoheader"]]]
+        path: "status#collisionCount"
+        default: 0
+        type: "int"
+        formatter: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -205,6 +211,12 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
+      revision_history_limit:
+        header: [["Revision History Limit:", ["main", "infoheader"]]]
+        path: "spec#revisionHistoryLimit"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
