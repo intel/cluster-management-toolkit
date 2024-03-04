@@ -1063,12 +1063,10 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		}
 		return -1, d
 
-	host = deep_get(event, DictPath("event_data#host"), "")
-	if not host:
+	if not (host := deep_get(event, DictPath("event_data#host"), "")):
 		return 0, {}
 
-	task = deep_get(event, DictPath("event_data#task"), "")
-	if not task:
+	if not (task := deep_get(event, DictPath("event_data#task"), "")):
 		return 0, {}
 
 	ansible_facts = deep_get(event, DictPath("event_data#res#ansible_facts"), {})

@@ -209,8 +209,12 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
 		testdata = (
 			("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None, {"all": {"hosts": {}, "vars": {}}}),
 			("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
-			("ansible_helper.secure_read_yaml", None, {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}, {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
-			("ansible_helper.secure_read_yaml", None, {"all": {"hosts": None, "vars": None}}, {"all": {"hosts": {}, "vars": {}}}),
+			("ansible_helper.secure_read_yaml", None,
+			 {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}},
+			 {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
+			("ansible_helper.secure_read_yaml", None,
+			 {"all": {"hosts": None, "vars": None}},
+			 {"all": {"hosts": {}, "vars": {}}}),
 		)
 		try:
 			for indata in testdata:
@@ -219,7 +223,8 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
 					with mock.patch(mock_path, mock_value):
 						tmp = fun()
 				else:
-					with mock.patch(mock_path, return_value = mock_return_value):
+					# We might not have an inventory available, so pretend that we do
+					with mock.patch("ansible_helper.Path.is_file", return_value = True), mock.patch(mock_path, return_value = mock_return_value):
 						tmp = fun()
 				if tmp != expected_result:
 					message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -227,7 +232,6 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 		except Exception as e:
-			raise
 			message = f"{fun.__name__}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
@@ -286,13 +290,13 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 		for indata in testdata:
 			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
 			try:
-				with mock.patch("ansible_helper.secure_read_yaml", return_value = inventory):
+				with mock.patch("ansible_helper.Path.is_file", return_value = True), mock.patch("ansible_helper.secure_read_yaml", return_value = inventory):
 					tmp = fun(groups, highlight, include_groupvars, include_hostvars, include_hosts)
 				if not (isinstance(tmp, list) and len(tmp) > 0 and (isinstance(tmp[0], str) or len(tmp[0]) > 0 and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
 						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
 							  f"      exception: {type(e)}\n" \
-							  f"  expected type: [str|[ANSIThemeString]]"
+							   "  expected type: [str|[ANSIThemeString]]"
 						result = False
 						break
 			except Exception as e:
@@ -1514,6 +1518,168 @@ def test_ansible_extract_failure(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_ansible_results_extract(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = ansible_helper.ansible_results_extract
+
+	if result:
+		# Indata format:
+		# (event, expected_result, expected_exception)
+		testdata = (
+			({
+				'uuid': '417356ca-db51-4db9-88cc-974ec9604fdd',
+				'counter': 5,
+				'stdout': '',
+				'start_line': 5,
+				'end_line': 5,
+				'runner_ident': 'e84af1c7-39d1-4a8d-8000-1d65d6878e10',
+				'event': 'playbook_on_no_hosts_matched',
+				'pid': 615344,
+				'created': '2024-03-04T18:42:45.221111',
+			 }, (-1, {
+				"task": "",
+				"start_date": "",
+				"end_date": "",
+				"retval": -1,
+				"no_hosts_matched": True,
+				"unreachable": False,
+				"status": "NO HOSTS MATCHED",
+				"skipped": False,
+				"stdout_lines": [],
+				"stderr_lines": [],
+				"msg_lines": [],
+				"ansible_facts": {},
+			 }), None),
+			({
+				"event": "runner_on_ok",
+				"event_data": {
+					"host": "localhost",
+				},
+			 }, (0, {}), None),
+			({
+				"event": "runner_on_skipped",
+				"event_data": {
+					"host": "localhost",
+					"task": "hide_on_ok: A hidden task",
+				},
+			 }, (0, {}), None),
+			({
+				"event": "runner_on_skipped",
+				"event_data": {
+					"host": "localhost",
+					"task": "hide_on_ok: A hidden task",
+					"res": {
+						"unreachable": True,
+					},
+				},
+			 }, (0, {
+				"ansible_facts": {},
+				"end_date": None,
+				"start_date": None,
+				"msg_lines": [],
+				"stdout_lines": ["<no output>"],
+				"stderr_lines": [],
+				"task": "A hidden task",
+				"unreachable": True,
+				"no_hosts_matched": False,
+				"status": "UNREACHABLE (unknown reason)",
+				"retval": -1,
+				"skipped": True,
+			 }), None),
+			({
+				"event": "runner_on_ok",
+				"event_data": {
+					"host": "localhost",
+					"task": "Gathering Facts",
+				},
+				"stderr_lines": ["A message"],
+			 }, (0, {}), None),
+			({
+				"event": "runner_on_ok",
+				"event_data": {
+					"host": "localhost",
+					"task": "A task",
+					"res": {
+						"msg": "A message",
+					},
+					"retval": 0,
+				},
+			 }, (0, {
+				"ansible_facts": {},
+				"end_date": None,
+				"start_date": None,
+				"status": "SUCCESS",
+				"msg_lines": ["A message"],
+				"skipped": False,
+				"stdout_lines": [],
+				"stderr_lines": [],
+				"task": "A task",
+				"unreachable": False,
+				"no_hosts_matched": False,
+				"retval": 0,
+			 }), None),
+			({
+				"event": "runner_on_failed",
+				"event_data": {
+					"host": "localhost",
+					"task": "A task",
+					"res": {
+						"msg": "Another message",
+					},
+					"retval": -1,
+				},
+			 }, (0, {
+				"ansible_facts": {},
+				"end_date": None,
+				"msg_lines": [],
+				"start_date": None,
+				"status": "FAILED (unknown error)",
+				"skipped": False,
+				"stdout_lines": [],
+				"stderr_lines": ["Another message"],
+				"task": "A task",
+				"unreachable": False,
+				"no_hosts_matched": False,
+				"retval": -1,
+			 }), None),
+		)
+		for event, expected_result, expected_exception in testdata:
+			try:
+				retval, tmp = fun(event)
+				if tmp != expected_result[1]:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						   "          event:\n" \
+						  f"{yaml_dump(event, base_indent = 17)}\n" \
+						   "         result:\n" \
+						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
+						  f"       expected:\n" \
+						  f"{yaml_dump(expected_result[1], base_indent = 17)}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							   "          event:\n" \
+							  f"{yaml_dump(event, base_indent = 17)}\n" \
+							  f"      exception: {e}" \
+							  f"       expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						   "          event:\n" \
+						  f"{yaml_dump(event, base_indent = 17)}\n" \
+						  f"      exception: {e}" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+	return message, result
+
 def test_ansible_print_task_results(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -1811,6 +1977,10 @@ tests: Dict = {
 	},
 	("ansible_extract_failure()",): {
 		"callable": test_ansible_extract_failure,
+		"result": None,
+	},
+	("ansible_results_extract()",): {
+		"callable": test_ansible_results_extract,
 		"result": None,
 	},
 	("ansible_print_task_results()",): {
