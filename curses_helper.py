@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from enum import IntFlag
 import errno
 from operator import attrgetter
+import os
 from pathlib import Path, PurePath
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
@@ -606,6 +607,11 @@ def __convert_color_pair(color_pair: Tuple[Tuple[str, str], Tuple[str, str]]) ->
 def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 	fg, bg = color_pair
 	bright_black_remapped = False
+
+	if not curses.has_colors():
+		term = os.getenv("TERM", "<unknown>")
+		sys.exit(f"Error: Your terminal environment TERM={term} reports that it doesn't\n"
+			  "support colors; at least currently cmu requires color support; exiting.")
 
 	try:
 		curses.init_pair(color_nr, fg, bg)

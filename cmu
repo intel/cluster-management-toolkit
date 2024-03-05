@@ -10406,6 +10406,10 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		# but we don't really care, since we're about to close down anyway
 		if str(e) == "endwin() returned ERR":
 			pass
+		elif str(e) == "setupterm: could not find terminal":
+			term = os.getenv("TERM", "<unknown>")
+			sys.exit(f"Error: Could not initialise curses; your terminal environment TERM={term}\n"
+				  "might invalid or lack required features.")
 		else:
 			raise
 

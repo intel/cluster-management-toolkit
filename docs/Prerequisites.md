@@ -22,8 +22,8 @@ in path lookup and various I/O-operations.
 # Pre-requisites / tested platforms for setting up Kubernetes clusters
 
 The development platforms for __CMT__ are Debian and Ubuntu, and those two are thus the most tested platforms.
-__CMT__ support for openSUSE/SLES and RHEL8 systems has also been added, but the support for those platforms
-is less tested and may have limitations. Notably _CRI-O_ is currently not supported on RHEL8.
+__CMT__ support for openSUSE/SLES, RHEL8, and Fedora systems has also been added, but the support for those platforms
+are less tested and may have limitations. Notably _CRI-O_ is currently not supported on RHEL8.
 
 Other distributions are not supported at this point. This also applies to Windows.
 
@@ -47,3 +47,29 @@ _arm_, _arm64_, _ppc64le_, and _s390x_ are not supported, but may be added if th
 `cmt-install`, `cmtadm`, `cmt`, and `cmu` require the user to have _sudo_ access.
 For security reasons none of the programs can be run directly as root.
 The user also needs _sudo_ access on any remote system intended for use as control planes or worker nodes in a cluster.
+
+# TERM setting support for `cmu`
+
+`cmu` is implemented using the terminal UI toolkit `curses`
+and requires support for at least 8 colors (preferably 16) and UTF-8 character support,
+as well as various composite keys, such as F-keys, page up/down, home/end, shift+home/shift+end,
+shift+left/shift+right, etc.  This means that several common TERM settings are unsupported.
+
+## TERM settings known to work
+
+* `xterm`
+* `xterm-256color`
+* `screen`
+* `tmux`
+* `tmux-256color`
+* `gnome`
+* `gnome-256color`
+* `konsole`
+* `konsole-256color`
+
+## TERM settings known NOT to work
+
+* `linux` (composite key issues)
+* `vt100` (`has_colors()` returns false)
+* `ansi` (composite key issues, UTF-8 not supported)
+* `rxvt` (composite key issues)
