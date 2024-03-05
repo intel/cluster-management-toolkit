@@ -513,13 +513,13 @@ def get_mousemask() -> int:
 
 	return mousemask
 
-__color = {
+__color: Dict[str, Tuple[int, int]] = {
 }
 
-__pairs: Dict = {
+__pairs: Dict[Tuple[int, int], int] = {
 }
 
-color_map = {
+color_map: Dict[str, int] = {
 	"black": curses.COLOR_BLACK,
 	"red": curses.COLOR_RED,
 	"green": curses.COLOR_GREEN,
@@ -533,6 +533,9 @@ color_map = {
 def get_theme_ref() -> Dict:
 	"""
 	Get a reference to the theme
+
+		Returns:
+			(str): A reference to the theme
 	"""
 
 	return theme
@@ -605,26 +608,27 @@ def __convert_color_pair(color_pair: Tuple[Tuple[str, str], Tuple[str, str]]) ->
 	return (curses_fg, curses_bg)
 
 def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
-	fg, bg = color_pair
-	bright_black_remapped = False
-
-	if not curses.has_colors():
+	if not curses.has_colors():  # pragma: no cover
 		term = os.getenv("TERM", "<unknown>")
 		sys.exit(f"Error: Your terminal environment TERM={term} reports that it doesn't\n"
 			  "support colors; at least currently cmu requires color support; exiting.")
 
+	fg, bg = color_pair
+	bright_black_remapped = False
+
+	if fg == bg:
+		#debuglog.add([
+		#		[ANSIThemeString("__init_pair()", "emphasis"),
+		#		 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
+		#		 ANSIThemeString(f"{fg}", "argument"),
+		#		 ANSIThemeString(",", "error"),
+		#		 ANSIThemeString(f"{bg}", "argument"),
+		#		 ANSIThemeString(")", "error")],
+		#       ], severity = LogLevel.ERR, facility = str(themefile))
+		raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
+
 	try:
 		curses.init_pair(color_nr, fg, bg)
-		if fg == bg:
-			#debuglog.add([
-			#		[ANSIThemeString("__init_pair()", "emphasis"),
-			#		 ANSIThemeString(" called with a color pair where fg == bg (", "error"),
-			#		 ANSIThemeString(f"{fg}", "argument"),
-			#		 ANSIThemeString(",", "error"),
-			#		 ANSIThemeString(f"{bg}", "argument"),
-			#		 ANSIThemeString(")", "error")],
-			#       ], severity = LogLevel.ERR, facility = str(themefile))
-			raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 	except (curses.error, ValueError) as e:
 		if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
 			#debuglog.add([
@@ -669,8 +673,8 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 	global theme  # pylint: disable=global-statement
 	global themefile  # pylint: disable=global-statement
 
-	for item in [configthemefile, f"{configthemefile}.yaml", defaultthemefile]:
-		if Path(item).is_file():
+	for item in (configthemefile, f"{configthemefile}.yaml", defaultthemefile):
+		if item is not None and Path(item).is_file():
 			themefile = cast(FilePath, item)
 			break
 
@@ -679,7 +683,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
 			msg = [
 				[("curses_helper.read_theme()", "emphasis"),
 				 (" failed to load ", "error"),
-				 (f"{themefile}", "path"),
+				 (f"{configthemefile}", "path"),
 				 ("; file not found", "error")],
 			]
 		elif defaultthemefile:

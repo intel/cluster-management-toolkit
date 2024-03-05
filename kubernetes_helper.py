@@ -2633,7 +2633,7 @@ a				the return value from __rest_helper_patch
 		vlist = cast(List[Dict[str, Any]], tmp)
 		return vlist, status
 
-	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, **kwargs: Any) -> Dict[str, Any]:
+	def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str, namespace: str, **kwargs: Any) -> Optional[Dict[str, Any]]:
 		"""
 		Given kind, name, namespace return a resource
 

@@ -9,6 +9,8 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # SPDX-License-Identifier: MIT
 
 import copy
+import curses
+from pathlib import PurePath
 import os
 from typing import Dict, Tuple
 import yaml
@@ -20,6 +22,8 @@ from cmttypes import deep_get, DictPath, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import curses_helper
 from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray, WidgetLineAttrs
+
+TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 
 # unit-tests for curses_helper.py
 
@@ -733,7 +737,6 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
 					result = False
 					break
 			except Exception as e:
-				raise
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -753,6 +756,189 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	curses.initscr()
+	fun = curses_helper.set_mousemask
+
+	if result:
+		# Indata format:
+		# (mask, expected_exception)
+		testdata = (
+			(-1, None),
+			(0, None),
+		)
+		for indata, expected_exception in testdata:
+			try:
+				fun(indata)
+			except Exception as e:
+				if isinstance(e, expected_exception):
+					pass
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {e}\n" \
+						  f"       expected: {expected_exception}\n"
+					result = False
+					break
+	curses.endwin()
+	return message, result
+
+def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.get_mousemask
+
+	if result:
+		# Indata format:
+		# (mask, expected_result, expected_exception)
+		testdata = (
+			(-1, -1, None),
+			(0, 0, None),
+		)
+		for indata, expected_result, expected_exception in testdata:
+			try:
+				curses_helper.set_mousemask(indata)
+				if (tmp := fun()) != expected_result:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"         result: {tmp}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          input: {indata}\n" \
+							  f"      exception: {e}\n" \
+							  f"       expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {indata}\n" \
+						  f"      exception: {e}\n" \
+						  f"       expected: {expected_result}\n"
+					result = False
+					break
+	return message, result
+
+def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.read_theme
+
+	if result:
+		# Indata format:
+		# (configthemefile, defaultthemefile, expected_exception)
+		testdata = (
+			(os.path.join(THEME_DIR, "cvd.yaml"), DEFAULT_THEME_FILE, None),
+			(os.path.join(THEME_DIR, "cvd"), DEFAULT_THEME_FILE, None),
+			(os.path.join(THEME_DIR, "NonExistingTheme"), DEFAULT_THEME_FILE, None),
+			(os.path.join(THEME_DIR, "NonExistingTheme"), None, ProgrammingError),
+			(None, DEFAULT_THEME_FILE, None),
+			(None, os.path.join(THEME_DIR, "NonExistingTheme"), ProgrammingError),
+			(None, None, ProgrammingError),
+		)
+		for configthemefile, defaultthemefile, expected_exception in testdata:
+			try:
+				curses_helper.themefile = None
+				fun(configthemefile, defaultthemefile)
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f" configthemefile: {configthemefile}\n" \
+							  f"defaultthemefile: {defaultthemefile}\n" \
+							  f"       exception: {e}\n" \
+							  f"        expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f" configthemefile: {configthemefile}\n" \
+						  f"defaultthemefile: {defaultthemefile}\n" \
+						  f"       exception: {e}\n"
+					result = False
+					break
+	return message, result
+
+def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.get_theme_ref
+
+	curses_helper.read_theme(DEFAULT_THEME_FILE, DEFAULT_THEME_FILE)
+
+	if result:
+		tmp = fun()
+		if tmp != curses_helper.theme:
+			message = f"{fun.__name__}() did not yield expected result:\n" \
+				  f"        expected: {curses_helper.theme}\n" \
+				  f"             got: {tmp}\n"
+			result = False
+	return message, result
+
+def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = curses_helper.init_curses
+
+	if result:
+		# Indata format:
+		# (configthemefile, defaultthemefile, expected_exception)
+		testdata = (
+			(os.path.join(TEST_DIR, "fg_equals_bg.yaml"), ValueError),
+			(os.path.join(TEST_DIR, "colorremap.yaml"), None),
+			(os.path.join(TEST_DIR, "attr_not_known.yaml"), None),
+			(os.path.join(TEST_DIR, "attr_not_str.yaml"), None),
+			(os.path.join(TEST_DIR, "col_not_known.yaml"), ValueError),
+			(os.path.join(TEST_DIR, "col_not_str.yaml"), ValueError),
+			# This is just to restore things to a sensible state
+			(DEFAULT_THEME_FILE, None),
+		)
+		for configthemefile, expected_exception in testdata:
+			try:
+				curses.initscr()
+				curses.start_color()
+				curses_helper.read_theme(configthemefile, DEFAULT_THEME_FILE)
+				curses_helper.themefile = None
+				fun()
+				curses.endwin()
+			except Exception as e:
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f" configthemefile: {configthemefile}\n" \
+							  f"       exception: {e}\n" \
+							  f"        expected: {expected_exception}\n"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f" configthemefile: {configthemefile}\n" \
+						  f"       exception: {e}\n"
+					result = False
+					break
+	try:
+		curses.endwin()
+	except  curses.error:
+		pass
+	return message, result
+
 tests: Dict = {
 	("ThemeString()",): {
 		"callable": test_themestring,
@@ -768,6 +954,26 @@ tests: Dict = {
 	},
 	("format_helptext()",): {
 		"callable": test_format_helptext,
+		"result": None,
+	},
+	("set_mousemask()",): {
+		"callable": test_set_mousemask,
+		"result": None,
+	},
+	("get_mousemask()",): {
+		"callable": test_get_mousemask,
+		"result": None,
+	},
+	("read_theme()",): {
+		"callable": test_read_theme,
+		"result": None,
+	},
+	("get_theme_ref()",): {
+		"callable": test_get_theme_ref,
+		"result": None,
+	},
+	("init_curses()",): {
+		"callable": test_init_curses,
 		"result": None,
 	},
 }
