@@ -950,6 +950,129 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
+	message = ""
+	result = True
+
+	fun = logparsers.tab_separated
+
+	if result:
+		testdata = (
+			# Indata format:
+			# (string, severity, facility, fold_msg, options, expected_result, expected_exception)
+			('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+			 LogLevel.INFO, "",
+			 False, {},
+			 ('Metrics server is starting to listen',
+			  LogLevel.INFO, "controller-runtime.metrics",
+			  [
+				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+				([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+				  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
+			  ]),
+			 None),
+			('1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+			 LogLevel.INFO, "",
+			 False, {},
+			 ('Metrics server is starting to listen',
+			  LogLevel.INFO, "controller-runtime.metrics",
+			  [
+				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+				([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+				  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+			  ]),
+			 None),
+			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager',
+			 LogLevel.INFO, "",
+			 False, {},
+			 ('starting manager',
+			  LogLevel.INFO, "setup",
+			  [
+			  ]),
+			 None),
+			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version": "v1.0"}',
+			 LogLevel.INFO, "",
+			 False, {"options": {"versions": ["version"]}},
+			 ('foo',
+			  LogLevel.INFO, "setup",
+			  [
+				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+				([ThemeString('  "version"', ThemeAttr('types', 'yaml_key'), False),
+				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+				  ThemeString('"v1.0"', ThemeAttr('logview', 'severity_notice'), False)], LogLevel.INFO),
+				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
+			  ]),
+			 None),
+			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version: "v1.0"}',
+			 LogLevel.INFO, "",
+			 False, {"options": {"versions": ["version"]}},
+			 ('foo {"version: "v1.0"}',
+			  LogLevel.INFO, "setup",
+			  [
+			  ]),
+			 None),
+			('2022-12-13T22:23:45.808Z\tnot-severity\tsetup\tstarting manager',
+			 None, "",
+			 False, {},
+			 ('starting manager',
+			  LogLevel.INFO, "setup",
+			  [
+			  ]),
+			 None),
+			('2022-12-13T22:23:45.808Z\tINFO\tSETUP\tstarting manager',
+			 LogLevel.INFO, "",
+			 False, {},
+			 ('SETUP starting manager',
+			  LogLevel.INFO, "",
+			  [
+			  ]),
+			 None),
+			('INFO\tsetup\tstarting manager',
+			 LogLevel.INFO, "",
+			 False, {},
+			 ('INFO\tsetup\tstarting manager',
+			  LogLevel.INFO, "",
+			  [
+			  ]),
+			 None),
+		)
+
+		for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+			try:
+				tmp = fun(string, severity, facility, fold_msg, **options)
+				if tmp[0] != expected_result[0] or tmp[1] != expected_result[1] or tmp[2] != expected_result[2] or tmp[3] != expected_result[3]:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"         output: {tmp}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+			except Exception as e:
+				raise
+				if expected_exception is not None:
+					if isinstance(e, expected_exception):
+						pass
+					else:
+						message = f"{fun.__name__}() did not yield expected result:\n" \
+							  f"          input: {string}\n" \
+							  f"      exception: {type(e)}\n" \
+							  f"       expected: {expected_exception}"
+						result = False
+						break
+				else:
+					message = f"{fun.__name__}() did not yield expected result:\n" \
+						  f"          input: {string}\n" \
+						  f"      exception: {type(e)}\n" \
+						  f"       expected: {expected_result}"
+					result = False
+					break
+
+	return message, result
+
 def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -1065,6 +1188,10 @@ tests: Dict = {
 	},
 	("test_split_glog",): {
 		"callable": test_split_glog,
+		"result": None,
+	},
+	("test_tab_separated",): {
+		"callable": test_tab_separated,
 		"result": None,
 	},
 	("test_parser_list",): {
