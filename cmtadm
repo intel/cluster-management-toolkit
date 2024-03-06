@@ -91,9 +91,6 @@ cri_data: Dict = {
 	"cri-o": {
 		"socket": "unix:///run/crio/crio.sock",
 	},
-	"docker-shim": {
-		"socket": "unix:///run/dockershim.sock",
-	}
 }
 
 prepare_targets: Dict = {
@@ -1898,8 +1895,8 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	selection = __selection_localhost()
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets["localhost"]["playbooks"]))
 
-	# The first patch revision that isn't available from the old repositories is 1.28.3;
-	# this means that we need to include all minor versions from 28 and up.
+	# The first minor Kubernetes version available from the new repository is 1.24.0;
+	# let's add all minor versions from 24 and up; the old repository is no longer usable.
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
@@ -1909,7 +1906,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict, verbo
 	# Split the version tuple
 	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
-	for minor_version in range(28, int(upstream_minor) + 1):
+	for minor_version in range(24, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
 	if os_distro in ("debian",):
@@ -1951,8 +1948,8 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict, verbose: 
 		selection = control_planes + nodes
 	playbooks = populate_playbooks_from_paths(cast(List[FilePath], prepare_targets[k8s_distro]["playbooks"]))
 
-	# The first patch revision that isn't available from the old repositories is 1.28.3;
-	# this means that we need to include all minor versions from 28 and up.
+	# The first minor Kubernetes version available from the new repository is 1.24.0;
+	# let's add all minor versions from 24 and up; the old repository is no longer usable.
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
@@ -1962,7 +1959,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict, verbose: 
 	# Split the version tuple
 	_upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
-	for minor_version in range(28, int(upstream_minor) + 1):
+	for minor_version in range(24, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
 	if os_distro in ("debian",):
@@ -2962,21 +2959,14 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 		_major, minor = requested_version.split(".")
 		requested_version = f"v{requested_version}"
 
-	if int(minor) < 15:
+	if int(minor) < 24:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": Kubernetes versions older than ", "default"),
-				ANSIThemeString("1.15", "version"),
+				ANSIThemeString(": kubeadm versions older than ", "default"),
+				ANSIThemeString("1.24", "version"),
 				ANSIThemeString(" are not supported by ", "default"),
 				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
-	elif int(minor) < 18:
-		ansithemeprint([ANSIThemeString("Warning", "warning"),
-				ANSIThemeString(": Kubernetes versions older than ", "default"),
-				ANSIThemeString("1.18", "version"),
-				ANSIThemeString(" are not fully supported by ", "default"),
-				ANSIThemeString(f"{about.PROGRAM_SUITE_NAME}", "programname"),
-				ANSIThemeString(". Some features may be missing or completely broken.", "default")], stderr = True)
 	elif int(minor) < 21 and k8s_distro == "rke2":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": RKE2 versions older than ", "default"),
@@ -3015,8 +3005,9 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 				ANSIThemeString("“ for more information.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-	# Always require the user to specify the name of the cluster to operate against, even when resuming prepare;
-	# this avoids a lot of hairy corner-cases and attempts to figure out what cluster the user intended to operate against
+	# Always require the user to specify the name of the cluster to operate against,
+	# even when resuming prepare; this avoids a lot of hairy corner-cases and attempts
+	# to figure out what cluster the user intended to operate against
 	cluster_name = args[0]
 
 	installation_info = get_installation_info(cluster_name = cluster_name)
@@ -3050,7 +3041,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
 	__controlplanes = get_control_planes(fail_on_empty = False)
 	controlplanes = [controlplane[0] for controlplane in __controlplanes]
-	if len(controlplanes) == 0 and "--control-plane" not in (tmp[0] for tmp in options):
+	if not controlplanes and "--control-plane" not in (tmp[0] for tmp in options):
 		retval = ansithemeinput([ANSIThemeString("\nWarning", "warning"),
 					 ANSIThemeString(": No control plane defined in the inventory; do you want to add ", "default"),
 					 ANSIThemeString(f"{hostname}", "hostname"),
@@ -3124,8 +3115,8 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString("Updating version cache", "action")])
 
-		# The first patch revision that isn't available from the old repositories is 1.28.3;
-		# this means that we need to include all minor versions from 28 and up.
+		# The first minor Kubernetes version available from the new repository is 1.24.0;
+		# thus we don't support any version older than that.
 		if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
@@ -3729,9 +3720,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	# Add the CRI to the setup playbooks for the control plane;
 	# the list is short enough that doing prepend isn't a performance issue
-	if cri == "docker-shim":
-		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml")))]
-	elif cri == "containerd":
+	if cri == "containerd":
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
 	elif cri == "cri-o":
 		add_playbooks = [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
@@ -3753,13 +3742,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 			FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_setup_node.yaml")))
 		]
 
-	if int(requested_minor) < 23:
-		join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-	else:
-		join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+	join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
 	minor_versions = []
-	for minor_version in range(28, int(requested_minor) + 1):
+	for minor_version in range(24, int(requested_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
 	extra_values = {
@@ -4710,7 +4696,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 				sys.exit(0)
 			phase = __validate_task_index(setup_control_plane_tasks, phase)
 		elif opt == "--cri":
-			if optarg in ("docker-shim", "containerd", "cri-o"):
+			if optarg in ("containerd", "cri-o"):
 				cri = optarg
 			else:
 				ansithemeprint([ANSIThemeString("Error", "error"),
@@ -4785,12 +4771,8 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 		# Now split the version tuple
 		requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
-		if int(requested_minor) < 23:
-			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-			init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-		else:
-			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-			init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
 		setup_control_plane_targets[k8s_distro]["extra_values"]["cluster_configuration_api_version"] = cluster_configuration_api_version
 		setup_control_plane_targets[k8s_distro]["extra_values"]["init_configuration_api_version"] = init_configuration_api_version
@@ -4837,40 +4819,16 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 	if cri is None:
 		if k8s_distro == "rke2":
 			cri = "containerd"
-		elif int(requested_minor) < 24:
-			cri = "docker-shim"
 		elif enable_dra:
 			cri = "cri-o"
 		else:
 			cri = "containerd"
-	else:
-		if k8s_distro == "rke2":
-			if cri == "docker-shim":
-				ansithemeprint([ANSIThemeString("Error", "error"),
-						ANSIThemeString(": CRI cannot be “", "default"),
-						ANSIThemeString("docker-shim", "argument"),
-						ANSIThemeString("“ for ", "default"),
-						ANSIThemeString("RKE2", "argument"),
-						ANSIThemeString("; aborting.", "default")], stderr = True)
-				sys.exit(errno.ENOTSUP)
-		elif int(requested_minor) >= 24 and cri == "docker-shim":
-			ansithemeprint([ANSIThemeString("Error", "error"),
-					ANSIThemeString(": CRI cannot be “", "default"),
-					ANSIThemeString("docker-shim", "argument"),
-					ANSIThemeString("“ for ", "default"),
-					ANSIThemeString("Kubernetes ", "programname"),
-					ANSIThemeString(">= ", "default"),
-					ANSIThemeString("1.24", "version"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
-			sys.exit(errno.ENOTSUP)
 
 	installation_info = update_installation_info(cri = cri)
 
 	# Add the CRI to the setup playbooks for the control plane;
 	# the list is short enough that doing prepend isn't a performance issue
-	if cri == "docker-shim":
-		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml"))))
-	elif cri == "containerd":
+	if cri == "containerd":
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml"))))
 	elif cri == "cri-o":
 		setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml"))))
@@ -5401,8 +5359,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 	ansithemeprint([ANSIThemeString("\n[Preparing upgrade]", "phase")])
 
-	# The first patch revision that isn't available from the old repositories is 1.28.3;
-	# this means that we need to include all minor versions from 28 and up.
+	# The first minor Kubernetes version available from the new repository is 1.24.0;
+	# let's add all minor versions from 24 and up; the old repository is no longer usable.
 	if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Could not get the latest upstream Kubernetes version; ", "default"),
@@ -5412,7 +5370,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 	# Split the version tuple
 	upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 	minor_versions = []
-	for minor_version in range(28, int(upstream_minor) + 1):
+	for minor_version in range(24, int(upstream_minor) + 1):
 		minor_versions.append(f"{minor_version}")
 
 	if update_cache:
@@ -5520,7 +5478,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 				for version in reversed(pkg_versions[0][3]):
 					version_tuple = version.split(".")
 					major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
-					if int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2]):
+					if (int(version_tuple[1]) > int(installed_version_tuple[1]) and int(version_tuple[1]) <= int(requested_version_tuple[1]) and (major_minor not in minor_versions or minor_versions[major_minor] < version_tuple[2])):
 						minor_versions[major_minor] = version_tuple[2].split("-")[0]
 				for version, minor_version in minor_versions.items():
 					ansithemeprint([ANSIThemeString("• ", "separator"),
@@ -5566,12 +5524,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 		# Now split the version tuple
 		requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
-		if int(requested_minor) < 23:
-			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-			init_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-		else:
-			cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-			init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+		init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
 		upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
 			"cluster_configuration_api_version": cluster_configuration_api_version,
@@ -6328,13 +6282,6 @@ COMMANDLINE = {
 				"extended_description": [
 					[ANSIThemeString("Valid options for CRI", "description")],
 					[ANSIThemeString("(Container Runtime Interface) are:", "description")],
-					[ANSIThemeString("docker-shim", "argument"),
-					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" < ", "description"),
-					 ANSIThemeString("1.24", "version"),
-					 ANSIThemeString(")", "description"),
-					 ANSIThemeString(", ", "separator")],
 					[ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(", ", "separator"),
 					 ANSIThemeString("cri-o", "argument"),
@@ -6342,27 +6289,16 @@ COMMANDLINE = {
 					[ANSIThemeString("Default CRI:", "description")],
 					[ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("rke2", "argument"),
+					 ANSIThemeString("rke2", "programname"),
 					 ANSIThemeString("), ", "description")],
-					[ANSIThemeString("docker-shim", "argument"),
-					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" < ", "description"),
-					 ANSIThemeString("1.24", "version"),
-					 ANSIThemeString(")", "description"),
-					 ANSIThemeString(", ", "separator")],
 					[ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString("kubeadm", "programname"),
 					 ANSIThemeString(")", "description"),
 					 ANSIThemeString(", ", "separator")],
 					[ANSIThemeString("cri-o", "argument"),
 					 ANSIThemeString(" (", "description"),
-					 ANSIThemeString("Kubernetes", "programname"),
-					 ANSIThemeString(" >= ", "description"),
-					 ANSIThemeString("1.24", "version"),
+					 ANSIThemeString("kubeadm", "programname"),
 					 ANSIThemeString(" with ", "description"),
 					 ANSIThemeString("--enable-dra", "option"),
 					 ANSIThemeString(")", "description")],
@@ -6372,16 +6308,16 @@ COMMANDLINE = {
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.26", "version"),
 					 ANSIThemeString(" requires", "description")],
-					[ANSIThemeString("containerd", "programname"),
+					[ANSIThemeString("containerd", "argument"),
 					 ANSIThemeString(" >= ", "description"),
 					 ANSIThemeString("1.6", "version"),
 					 ANSIThemeString(" or ", "description"),
-					 ANSIThemeString("cri-o", "programname")],
+					 ANSIThemeString("cri-o", "argument")],
 				],
 				"requires_arg": True,
 				"validation": {
 					"validator": "allowlist",
-					"allowlist": ["containerd", "cri-o", "docker-shim"],
+					"allowlist": ["containerd", "cri-o"],
 				},
 			},
 			"--enable-dra": {

@@ -10,16 +10,10 @@
             conditions:
               - "Debian and derivatives"
         "Downloaded files":
-          - description: "https://packages.cloud.google.com/apt/doc/apt-key.gpg (GPG key for old Kubernetes repo)"
-            conditions:
-              - "Debian and derivatives"
           - description: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key (GPG key for new Kubernetes repo)"
             conditions:
               - "Debian and derivatives"
         "Created files":
-          - description: "/etc/apt/keyrings/kubernetes-archive-keyring.asc"
-            conditions:
-              - "Debian and derivatives"
           - description: "/etc/apt/keyrings/kubernetes-apt-keyring.asc"
             conditions:
               - "Debian and derivatives"
@@ -59,16 +53,6 @@
         state: "directory"
         suffix: "temp"
       register: "tempdir"
-    - name: "Fetching Kubernetes repository key for apt.kubernetes.io"
-      ansible.builtin.get_url:
-        url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
-        dest: "/etc/apt/keyrings/kubernetes-archive-keyring.asc"
-        mode: "0644"
-        force: true
-        use_proxy: "{{ use_proxy }}"
-      environment:
-        https_proxy: "{{ https_proxy | default('') }}"
-      when: "ansible_os_family == 'Debian'"
     - name: "Fetching Kubernetes repository key for pkgs.k8s.io"
       ansible.builtin.get_url:
         url: "https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key"
