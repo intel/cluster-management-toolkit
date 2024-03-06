@@ -12,8 +12,6 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-# pylint: disable=line-too-long
-
 """
 A curses-based UI for Cluster Management
 """
@@ -50,12 +48,14 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import yaml; "
+		 "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import natsort; "
+		 "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, Retval, SecurityPolicy, StatusGroup
 from cmttypes import ProgrammingError, FilePathAuditError
@@ -73,7 +73,8 @@ from commandparser import parse_commandline
 
 import logparser as logparsers
 from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
-from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity, loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
+from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity
+from logparser import loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
 import cmtlib
 from cmtlib import clamp, get_package_versions, identify_k8s_distro, make_set_expression_list
@@ -99,14 +100,19 @@ from itemgetters import itemgetter_allowlist
 from objgetters import objgetter_allowlist
 import formatters
 from formatters import formatter_allowlist
+from fieldgetters import fieldgetter_allowlist
 
 from ansible_helper import ansible_configuration
-from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host, ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log, ansible_print_play_results, get_playbook_path
+from ansible_helper import ansible_get_inventory_dict, ansible_get_groups, ansible_get_groups_by_host
+from ansible_helper import ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
+from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
+from ansible_helper import ansible_print_play_results, get_playbook_path
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 import helptexts
 
-from kubernetes_helper import KubernetesHelper, KubernetesResourceCache, get_controller_from_owner_references, get_image_version, kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
+from kubernetes_helper import KubernetesHelper, KubernetesResourceCache
+from kubernetes_helper import get_controller_from_owner_references, get_image_version
+from kubernetes_helper import kubectl_get_version, make_selector, update_api_status as kh_update_api_status, guess_kind
 
 import checks
 
@@ -285,7 +291,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 		pos = linelen
 
 	# The last element should not be padded
-	if linelen > 0:
+	if linelen:
 		linelen -= len(ThemeRef("separators", "pad"))
 
 	return linelen
@@ -1296,14 +1302,13 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str], field_index: st
 							__values.append(mpaths[i])
 					_values.append((tuple(__values), "raw"))
 				elif ptype == "fieldgetter":
-					data = deep_get(paths, DictPath("path"))
 					fieldgetter_data = deep_get_with_fallback(obj, path, {})
 					fieldgetter_tmp = deep_get(fieldgetter_data, DictPath("fieldgetter"))
 					fieldgetter = deep_get(fieldgetter_allowlist, DictPath(fieldgetter_tmp))
 					if fieldgetter is None:
 						raise ValueError(f"{fieldgetter_tmp} is not a valid fieldgetter; the view-file is probably incorrect.")
 					fieldgetter_args = deep_get(fieldgetter_data, DictPath("fieldgetter_args"), {})
-					tmp = fieldgetter(**fieldgetter_args)
+					tmp = fieldgetter(**fieldgetter_args, kubernetes_helper = kh)
 					_values.append((tmp, vtype))
 				elif ptype in ("items", "appenditems"):
 					if subpath:
@@ -1890,7 +1895,7 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStri
 
 	try:
 		tmp = yaml.dump(obj)
-		messages = formatters.format_yaml(tmp)
+		messages = formatters.format_yaml(tmp, **kwargs)
 	except yaml.YAMLError:
 		messages = []
 
@@ -3478,7 +3483,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 						uip.list_needs_regeneration(True)
 				except re.error:
 					continue
-		elif c == ord("l") and is_taggable and vlist is not None and uip.listlen > 0:
+		elif c == ord("l") and is_taggable and vlist is not None and uip.listlen:
 			# List the union of all labels of the tagged objects (if the objects support labels)
 			if not tagged_items:
 				selected = uip.get_selected()
@@ -3521,7 +3526,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			uip.list_needs_regeneration(True)
 			uip.refresh_all()
 			curses.doupdate()
-		elif c == ord("f") and is_taggable and vlist is not None and uip.listlen > 0:
+		elif c == ord("f") and is_taggable and vlist is not None and uip.listlen:
 			# List the union of all labels of the tagged objects and create a label selector
 			# from the choices made by the user (if the objects support labels)
 			if not tagged_items:
@@ -3654,7 +3659,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 			autoitem = False
 			control_plane = False
 
-			if len(tagged_items) == 0:
+			if not tagged_items:
 				selected = uip.get_selected()
 				tagged_items.add(selected)
 				uip.list_needs_regeneration(True)
@@ -3662,7 +3667,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
 			for item in tagged_items:
 				# XXX Once all infogetters have been fixed we do not need to check for <none>
-				if len(item.name) == 0 or item.name == "<none>":
+				if not item.name or item.name == "<none>":
 					break
 
 				if hasattr(item, "kubernetes_roles"):
@@ -3675,7 +3680,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				else:
 					items.append(item.name)
 
-			if len(items) == 0:
+			if not items:
 				tagged_items.clear()
 				uip.list_needs_regeneration(True)
 				continue
@@ -3702,7 +3707,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				playbook_context = deep_get(views, DictPath(f"{view}#actions#playbooklist#context"), None)
 				actions, actionlist = populate_playbooklist(context = playbook_context, actions = [], action_list = actionlist, control_plane_selected = control_plane, single_item = (len(items) == 1), cluster_available = cluster_available)
 
-			if len(actions) == 0:
+			if not actions:
 				if autoitem:
 					tagged_items.clear()
 					uip.list_needs_regeneration(True)
@@ -4102,7 +4107,7 @@ def __fetch_package_versions(**kwargs):
 	uip.refresh_listpad()
 	uip.refresh_statusbar()
 	curses.doupdate()
-	if len(package_versions) == 0:
+	if not package_versions:
 		return Retval.MATCH, {}
 	title = "Package Versions:"
 	headers = ["Package:", "Version:"]
@@ -4228,8 +4233,8 @@ clusteroverview_shortcuts = {
 	},
 }
 
-
-def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+# pylint: disable-next=unused-argument
+def read_file_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[StatusGroup]]:
 	file_not_found_status: str = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
 	path: str = deep_get(kwargs, DictPath("path"))
 	filetype: str = deep_get(kwargs, DictPath("filetype"), "string")
@@ -4250,7 +4255,8 @@ def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
 
 	return result, status
 
-def run_ansible_play_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
+# pylint: disable-next=unused-argument
+def run_ansible_play_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[StatusGroup]]:
 	playbook = deep_get(kwargs, DictPath("playbook"))
 	selection = deep_get(kwargs, DictPath("selection"))
 	verbose = deep_get(kwargs, DictPath("verbose"), False)
@@ -4623,7 +4629,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
 						timestamp = timestamp_to_datetime(cast(str, val))
 						formatted_timestamp = format_timestamp(timestamp)
 						tmp += formatted_timestamp
-						if evlens[i] - themearray_len(formatted_timestamp) > 0:
+						if evlens[i] - themearray_len(formatted_timestamp):
 							tmp.append(ThemeString("".ljust(evlens[i] - themearray_len(formatted_timestamp)), ThemeAttr("main", "default")))
 					elif ptype == "namespace":
 						tmp.append(ThemeString(val.ljust(evlens[i]), ThemeAttr("types", "namespace")))
@@ -4995,7 +5001,7 @@ def cniloop(stdscr: curses.window, view):
 			# Try to figure out which CNI we are using, if any
 			_cnis = kh.identify_cni()
 
-			if len(_cnis) == 0:
+			if not _cnis:
 				cni = "<unknown>"
 				cnistr: List[Union[ThemeRef, ThemeString]] = [
 					ThemeString(f"{cni}", color_status_group(StatusGroup.UNKNOWN))
@@ -5123,10 +5129,10 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
 
 def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
 	selection = deep_get(kwargs, DictPath("selection"), {})
-	if len(selection) == 0:
+	if not selection:
 		return None
 	obj = deep_get(kwargs, DictPath("obj"), {})
-	if len(obj) == 0:
+	if not obj:
 		return None
 	name_path = deep_get(kwargs, DictPath("name_path"))
 	name = selection[1][name_path][0]
@@ -5325,7 +5331,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 	objgetter = deep_get(viewref, DictPath("objgetter"))
 	if objgetter is not None:
 		obj = objgetter(obj)
-		if obj is None or len(obj) == 0:
+		if obj is None or not obj:
 			return Retval.NOMATCH
 
 	# XXX: For now we do not support custom fields for the lists on the info pages
@@ -5705,7 +5711,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						elif isinstance(label_value, list):
 							label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
 					listgetter_args["label_selector"] = make_selector(label_selectors)
-				if len(deep_get(listgetter_args, DictPath("label_selector"), "")) == 0 and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
+				if not deep_get(listgetter_args, DictPath("label_selector"), "") and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
 					listgetter = listgetters.listgetter_noop
 				_field_selector = deep_get(listgetter_args, DictPath("_field_selector"), {})
 				if _field_selector:
@@ -5862,7 +5868,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 							fac1 = ""
 
 						facility = []
-						if len(fac0.strip()) == 0:
+						if not fac0.strip():
 							facility += [ThemeString("".ljust(len(ThemeRef("separators", "facility_prefix"))), ThemeAttr("logview", "facility")),
 								     ThemeString(fac0, ThemeAttr("logview", "facility")),
 								     ThemeString("".ljust(len(ThemeRef("separators", "facility_suffix"))), ThemeAttr("logview", "facility"))]
@@ -5871,7 +5877,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 								     ThemeString(fac0, ThemeAttr("logview", "facility")),
 								     ThemeRef("separators", "facility_suffix")]
 						if fac1:
-							if len(fac1.strip()) == 0:
+							if not fac1.strip():
 								facility += [ThemeString("".ljust(len(ThemeRef("separators", "facility_extended_prefix"))), ThemeAttr("logview", "facility")),
 									     ThemeString(fac1, ThemeAttr("types", "facility_extended")),
 									     ThemeString("".ljust(len(ThemeRef("separators", "facility_extended_suffix"))), ThemeAttr("logview", "facility"))]
@@ -6038,7 +6044,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 			uip.refresh_all()
 			uip.force_update()
 		elif c == ord("W") and listpad is not None:
-			if len(field_indexes) == 0:
+			if not field_indexes:
 				continue
 
 			_list = list(field_indexes.keys())
@@ -6140,7 +6146,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2,
 											  items = w_items, headers = w_headers, title = w_title,
 											  cursor = w_selectable, sortcolumn = w_sortcolumn)
-						if len(tmpselection) == 0:
+						if not tmpselection:
 							continue
 						changed = True
 				elif widget == "inputbox":
@@ -6311,7 +6317,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				if owner_references_path is not None:
 					owner_reference = deep_get(obj, DictPath(owner_references_path), [])
 					if holder_identity_path is not None:
-						if len(owner_reference) == 0:
+						if not owner_reference:
 							continue
 						call_name = deep_get(obj, DictPath(holder_identity_path))
 						kind = get_holder_kind_from_owner_references(owner_reference, call_name)
@@ -6320,7 +6326,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						kind = owner_references_kind
 					else:
 						kind, call_name = get_controller_from_owner_references(owner_reference)
-					if kind == ("", "") or len(call_name) == 0:
+					if kind == ("", "") or not call_name:
 						continue
 				else:
 					call_name_path = deep_get(value, DictPath("name_path"))
@@ -6483,7 +6489,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 			if uip.continuous_log:
 				tail_lines = uip.logpadheight
 
-			if len(multilog_containers) == 0:
+			if not multilog_containers:
 				pod_info = infogetters.get_pod_info(**{"vlist": [obj]}, kubernetes_helper = kh, kh_cache = kh_cache)[0]
 				podname = pod_info.name
 				namespace = pod_info.namespace
@@ -6510,7 +6516,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 			# We do not want the "Fetching Log" notification every few seconds; we are just loading a few lines...
 			if not uip.continuous_log:
 				notice = curses_helper.notice(None, y = uip.maxy // 2, x = uip.maxx // 2, message = "Fetching log")
-			if len(multilog_containers) == 0:
+			if not multilog_containers:
 				rawmsg, internal_error = get_pod_log_by_name_namespace_container(podname, namespace, containername, tail_lines = tail_lines)
 				splitmsg = split_msg(rawmsg)
 			else:
@@ -6669,7 +6675,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 					continue
 
 				if prev_message == message and prev_facility == facility and prev_severity == severity and \
-				   (themearray_len(prev_message) > 0 or prev_remnants is not None) and prev_remnants == remnants:
+				   (themearray_len(prev_message) or prev_remnants is not None) and prev_remnants == remnants:
 					repeat_count += 1
 					prev_timestamp = timestamp
 					if merge_repeats:
@@ -6736,14 +6742,14 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 			uip.loglen = len(messages)
 			uip.update_window()
 
-			if len(multilog_containers) == 0:
+			if not multilog_containers:
 				containertypearray = f" [Type: {kind[0]}]"
 				if kind == ("InitContainer", ""):
 					src_statuses = deep_get(pod_info.ref, DictPath("status#initContainerStatuses"))
 				else:
 					src_statuses = deep_get(pod_info.ref, DictPath("status#containerStatuses"))
 
-				if src_statuses is None or len(src_statuses) == 0:
+				if src_statuses is None or not src_statuses:
 					break
 
 				for container_status in src_statuses:
@@ -6943,7 +6949,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 					ThemeString("Format: ", ThemeAttr("statusbar", "infoheader")),
 				]
 
-			if len(rawmsg) == 0:
+			if not rawmsg:
 				statusarray2 += [
 					ThemeString("Empty", ThemeAttr("main", "format_empty")),
 				]
@@ -7037,7 +7043,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 					if tmp is not None:
 						facility = tmp[1]
 						latest_facility_len = len(facility)
-					elif len(_facility.strip()) != len(_facility) and len(_facility.strip()) == 0:
+					elif len(_facility.strip()) != len(_facility) and not _facility.strip():
 						if latest_facility_len == -1:
 							facility = _facility
 						else:
@@ -7475,7 +7481,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 	_args = deep_get(kwargs, DictPath("command"))
 	input_path = deep_get(kwargs, DictPath("input_path"))
 
-	if len(_args) == 0:
+	if not _args:
 		return
 
 	obj = deep_get(kwargs, DictPath("obj"), {})
@@ -7592,7 +7598,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
 
 				# Delete the pod
 				ansithemeprint([ANSIThemeString("Forcibly deleting pod.", "default")])
-				message, status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
+				message, _status = kh.delete_obj_by_kind_name_namespace(("Pod", ""), pod_name, "default", force = True)
 		else:
 			args = [kubectl_path, "exec", obj_name, "-n", obj_namespace, "-i", "-t", "--container", container, "--"] + command
 			_result = subprocess.run(args, check = False).returncode
@@ -7789,7 +7795,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 		# If an integer namespace is empty, the namespace is (most likely)
 		# the same namespace as the parent. This should not interfere with non-namespaced
 		# APIs, since they ignore the namespace
-		if namespace is None or len(namespace) == 0:
+		if namespace is None or not namespace:
 			namespace = deep_get(kwargs, DictPath("_parent_namespace"), "")
 
 	if obj is not None:
@@ -7862,7 +7868,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs):
 			if len(tmp) == 2:
 				namespace, name = tmp
 
-	if name is None or len(name) == 0:
+	if name is None or not name:
 		return None
 
 	if namespace is None and obj is not None:
@@ -8032,7 +8038,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs):
 	obj = deep_get(kwargs, DictPath("obj"))
 
 	last_applied_configuration = deep_get(obj, DictPath("metadata#annotations#kubectl.kubernetes.io/last-applied-configuration"), {})
-	if last_applied_configuration is None or len(last_applied_configuration) == 0:
+	if last_applied_configuration is None or not last_applied_configuration:
 		return None
 
 	try:
@@ -8285,7 +8291,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
 
 	diff = []
 
-	if len(result.stdout) == 0:
+	if not result.stdout:
 		return Retval.MATCH
 
 	diff_regex = re.compile(r"^(\s*)(.*)")
@@ -8510,7 +8516,7 @@ def delete_logs(uip: UIProps, items, action, values, kind, **kwargs):
 def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	tmpargs = deep_get(values, DictPath("action_args#command"), [])
 	iterate = deep_get(values, DictPath("action_args#iterate"), False)
-	if len(tmpargs) == 0:
+	if not tmpargs:
 		return
 
 	args = []
@@ -8678,7 +8684,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs):
 		host = deep_get(obj, DictPath(name_path))
 	host = deep_get(kwargs, DictPath("name"), host)
 
-	if host is None or len(host) == 0:
+	if host is None or not host:
 		return
 
 	msg = [ANSIThemeString("SSH:ing to ", "action"),
@@ -8847,7 +8853,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 			continue
 
 		# Empty files are used to disable playbooks completely
-		if d is None or len(d) == 0:
+		if d is None or not d:
 			action_list[playbookname] = {
 				"description": playbookpath,
 				"playbook": FilePath(str(playbookpath)),
@@ -9423,25 +9429,6 @@ infogetter_allowlist = {
 }
 
 
-def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
-	field_list = []
-	fields = deep_get(kwargs, DictPath("fields"), [])
-	result = kh.get_api_server_version()
-	if not fields:
-		field_tuple = copy.deepcopy(result)
-	else:
-		for i, field in enumerate(result):
-			if i in fields:
-				field_list.append(field)
-	return field_list
-
-
-# Fieldgetters acceptable for direct use in view files
-fieldgetter_allowlist = {
-	"fieldgetter_api_server_version": fieldgetter_api_server_version,
-}
-
-
 # These views are always defined internally and cannot be disabled
 views_special = {
 	"Selector": {
@@ -9518,7 +9505,7 @@ def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str
 	if modifier and modifier not in ("ctrl", "shift"):
 		sys.exit(f"View-file {view_file} is invalid: unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
 
-	if key in ("f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12") and len(modifier) == 0:
+	if key in ("f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12") and not modifier:
 		shortcut_key = deep_get(key_mappings, DictPath(key))
 		help_key = f"[{key.upper()}]"
 	elif key in ("f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12") and modifier == "shift":
@@ -9526,7 +9513,7 @@ def map_key(view_file: str, shortcut: str, activatedfun, key: str, modifier: str
 		num = int(key[1:]) + 12
 		shortcut_key = deep_get(key_mappings, DictPath(_key))
 		help_key = f"[Shift] + [{key.upper()}] / [{key[0].upper()}{num}]"
-	elif key in ("f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24") and len(modifier) == 0:
+	elif key in ("f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24") and not modifier:
 		num = int(key[1:]) - 12
 		_key = key[0] + str(num)
 		shortcut_key = deep_get(key_mappings, DictPath(key))
@@ -9677,7 +9664,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			if custom_index:
 				_indexes["Custom"] = custom_index
 
-			if len(_indexes) == 0:
+			if not _indexes:
 				sys.exit(f"View-file {view_file} is invalid: field_indexes is either missing or empty for the list view. Aborting.")
 
 			field_indexes = copy.deepcopy(_indexes)
@@ -9764,7 +9751,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			_shortcuts = deep_get(d, DictPath("listview#shortcuts"), {})
 			for shortcut in _shortcuts:
 				# If the shortcut is empty we are disabling a default shortcut
-				if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+				if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
 					shortcuts[shortcut] = {}
 					continue
 
@@ -9842,7 +9829,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			_indexes = deep_get(infopad, DictPath("row_indexes"))
 
 			if _indexes is not None:
-				if len(_indexes) == 0:
+				if not _indexes:
 					sys.exit(f"View-file {view_file} is invalid: row_indexes is empty for the info view. Aborting.")
 
 				# We are not using row_indexes in the same way field_indexes are used; we do not support multiple profiles;
@@ -9973,7 +9960,7 @@ def populate_views(force_refresh: bool = False) -> None:
 			_shortcuts = deep_get(d, DictPath("infoview#shortcuts"), {})
 			for shortcut in _shortcuts:
 				# If the shortcut is empty we are disabling a default shortcut
-				if _shortcuts[shortcut] is None or len(_shortcuts[shortcut]) == 0:
+				if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
 					shortcuts[shortcut] = {}
 					continue
 
@@ -10206,7 +10193,7 @@ def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
 		# This is necessary because of built-in fields
 		for values in deep_get(viewref, DictPath("field_indexes"), {}).values():
 			fieldset.update(deep_get(values, DictPath("fields"), []))
-			if len(sortcolumn) == 0:
+			if not sortcolumn:
 				sortcolumn = deep_get(values, DictPath("sortcolumn"), "")
 		fieldset.union(set(deep_get(viewref, DictPath("fields"), {}).keys()))
 
@@ -10301,7 +10288,7 @@ def customise_listviews() -> None:
 
 		# OK, we've now (hopefully) skipped all views that do not have a list view
 		fields: List[str] = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}#fields"), [])
-		if len(fields) == 0:
+		if not fields:
 			continue
 
 		custom_fields: Dict = {}
@@ -10419,7 +10406,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		_available_api_families, _status, _modified = kh.get_available_kinds()
 
 	# Customises the list views if necessary
-	if len(infoviews) == 0:
+	if not infoviews:
 		ansithemeprint([ANSIThemeString("Populating list of supported views...\n", "default")])
 		populate_views()
 		customise_listviews()
@@ -10768,7 +10755,7 @@ def main() -> None:
 	# Used by the ansible module
 	ansible_configuration["ansible_forks"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
 	ansible_user = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_user"))
-	if ansible_user is None or len(ansible_user) == 0:
+	if ansible_user is None or not ansible_user:
 		ansible_user = getuser()
 	ansible_configuration["ansible_user"] = ansible_user
 	ansible_configuration["ansible_password"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))

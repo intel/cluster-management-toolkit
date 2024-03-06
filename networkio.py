@@ -35,7 +35,8 @@ from cmttypes import deep_get, DictPath, FilePath
 try:
 	import urllib3
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import urllib3; "
+		 "you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 	"""
@@ -202,14 +203,18 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 
 	return True
 
-# download_files can extract single files from archives; it will not extract entire archives due to the security risks,
+# download_files can extract single files from archives;
+# it will not extract entire archives due to the security risks,
 # and it requires the full path of the file within the archive to be specified.
-# If later necessary this function could be modified to take a list of multiple files to extract from one tarball;
+# If later necessary this function could be modified
+# to take a list of multiple files to extract from one tarball;
 # for now this does what is necessary though.
 #
 # fetch_urls is a list of tuples:
 # (URL to file or archive, file to extract, URL to checksum, type of checksum)
-def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]], permissions: int = 0o644) -> bool:
+def download_files(directory: str,
+		   fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]],
+		   permissions: int = 0o644) -> bool:
 	"""
 	Download files; if the file is a tar file it can extract a file.
 	If checksum information is provided it can also fetch a checksum and compare against.
@@ -398,7 +403,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
 
 	if url is not None:
 		with tempfile.TemporaryDirectory() as td:
-			if not (retval := download_files(td, [(url, "release.yaml", None, None)], permissions = 0o600)):
+			if not download_files(td, [(url, "release.yaml", None, None)], permissions = 0o600):
 				return None
 			tmp = secure_read_yaml(FilePath(f"{td}/release.yaml"))
 			result = deep_get(tmp, DictPath("tag_name"), "")
