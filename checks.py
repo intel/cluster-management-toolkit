@@ -816,6 +816,7 @@ def check_kubelet_and_kube_proxy_versions(cluster_name: str, kubeconfig: Dict, c
 
 	return abort, critical, error, warning, note
 
+
 required_pods: Dict[str, List[Dict[str, List]]] = {
 	"api-server": [
 		{
@@ -907,6 +908,7 @@ required_pods: Dict[str, List[Dict[str, List]]] = {
 		},
 	],
 }
+
 
 def get_pod_set(pods: List[Dict], any_of: List[Tuple[str, str]], all_of: List[Tuple[str, str]]) -> Tuple[List[Dict], Dict[Tuple[str, str], List[Dict]]]:
 	"""
@@ -1096,6 +1098,7 @@ def check_running_pods(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dict
 	print()
 
 	return abort, critical, error, warning, note
+
 
 recommended_directory_permissions = [
 	{

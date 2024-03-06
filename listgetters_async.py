@@ -143,6 +143,7 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
 
 	return vlist, hosts
 
+
 # Asynchronous listgetters acceptable for direct use in view files
 listgetter_async_allowlist: Dict[str, Callable] = {
 	# Used by listpad

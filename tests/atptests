@@ -26,6 +26,7 @@ real_import = None
 
 import_override = {}
 
+
 def override_import(name: str, *args: List[Any], **kwargs: Any):
 	retval, exception = import_override.get(name, (None, None))
 	if exception:
@@ -34,6 +35,8 @@ def override_import(name: str, *args: List[Any], **kwargs: Any):
 		return retval
 	return real_import(name, *args, **kwargs)
 
+
+# pylint: disable-next=unused-argument
 def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -51,7 +54,7 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
 		fun = ansithemeprint.ansithemeprint
 
 		try:
-			fun([ANSIThemeString("foo", "default")], stderr = False, color = "auto")
+			fun([ANSIThemeString("foo", "default")], stderr=False, color="auto")
 			message = f"{fun.__name__} did not raise an exception even though theme or themepath are uninitialized"
 			result = False
 		except ProgrammingError:
@@ -59,6 +62,8 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[str, bool]:
 	global import_override
 
@@ -69,15 +74,14 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
 
 	import_override = {"yaml": (None, ModuleNotFoundError)}
 	try:
-		with mock.patch("builtins.__import__", side_effect = override_import):
+		with mock.patch("builtins.__import__", side_effect=override_import):
 			fun()
 			importlib.reload(ansithemeprint)
 			if not ansithemeprint.USE_FALLBACK_THEME:
 				message = f"{fun.__name__} did not set USE_FALLBACK_THEME when importing yaml failed"
 				result = False
-	except Exception as e:
-		raise
-		message = f"{fun.__name__} did not use the fallback theme when no themepath was passed"
+	except Exception as e:  # pylint: disable=broad-except
+		message = f"{fun.__name__} did not use the fallback theme when no themepath was passed; exception {e}"
 		result = False
 
 	import_override = {}
@@ -88,6 +92,8 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -103,37 +109,39 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		themepath = FilePath(os.path.join(THEME_DIR, "/etc/passwd/nonexistingtheme.yaml"))
 		try:
-			fun(themefile = themepath)
+			fun(themefile=themepath)
 			message = f"{fun.__name__} did not raise an exception for invalid path"
 			result = False
-		except FilePathAuditError as e:
+		except FilePathAuditError:
 			pass
-		except Exception as e:
+		except Exception as e:  # pylint: disable=broad-except
 			message = f"{fun.__name__} raised unexpected exception {e}"
 			result = False
 
 	if result:
 		themepath = FilePath(os.path.join(THEME_DIR, "nonexistingtheme.yaml"))
 		try:
-			fun(themefile = themepath)
+			fun(themefile=themepath)
 		except FilePathAuditError as e:
 			if "SecurityStatus.DOES_NOT_EXIST" in str(e):
 				message = f"{fun.__name__} did not fallback to for a non-existing path"
 				result = False
-		except Exception as e:
+		except Exception as e:  # pylint: disable=broad-except
 			message = f"{fun.__name__} raised unexpected exception {e}"
 			result = False
 
 	if result:
 		themepath = DEFAULT_THEME_FILE
 		try:
-			fun(themefile = themepath)
+			fun(themefile=themepath)
 		except FilePathAuditError:
 			message = f"{fun.__name__} raised FilePathAuditError for a valid path"
 			result = False
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -164,7 +172,7 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -185,6 +193,8 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -193,28 +203,28 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 	try:
 		indata = [ANSIThemeString("  Formatted message (theme: path, color: always)", "path")]
-		fun(indata, stderr = False, color = "auto")
+		fun(indata, stderr=False, color="auto")
 	except ProgrammingError:
 		message = f"{fun.__name__} raised an exception even though theme and themepath are initialized"
 		result = False
 
 	try:
 		indata = [ANSIThemeString("  Formatted message (theme: argument, color: always)", "argument")]
-		fun(indata, stderr = True, color = "always")
+		fun(indata, stderr=True, color="always")
 	except ProgrammingError:
 		message = f"{fun.__name__} raised an exception even though theme and themepath are initialized"
 		result = False
 
 	try:
 		indata = [ANSIThemeString("  Formatted message (theme: error, color: never)", "option")]
-		fun(indata, stderr = False, color = "never")
+		fun(indata, stderr=False, color="never")
 	except ProgrammingError:
 		message = f"{fun.__name__} raised an exception even though theme and themepath are initialized"
 		result = False
 
 	try:
 		indata = [ANSIThemeString("  Formatted message (theme: error, color: never)", "ok")]
-		fun(indata, stderr = False, color = "incorrect value")
+		fun(indata, stderr=False, color="incorrect value")
 		message = f"{fun.__name__} did not raise an exception for invalid input for color:\n    input: {repr(indata)}"
 		result = False
 	except ValueError:
@@ -222,6 +232,8 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -231,16 +243,16 @@ def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bo
 	indata = ["one", ANSIThemeString("two", "warning"), "three"]
 	formatting = "error"
 
-	tmp = fun(indata, formatting = formatting)
+	tmp = fun(indata, formatting=formatting)
 	expected_result = [ANSIThemeString(string="one", themeref="error"), ANSIThemeString(string=", ", themeref="separator"), ANSIThemeString(string="two", themeref="warning"), ANSIThemeString(string=", ", themeref="separator"), ANSIThemeString(string="three", themeref="error")]
 
 	for i, item in enumerate(tmp):
-		if tmp[i] != expected_result[i]:
+		if item != expected_result[i]:
 			message = f"{fun.__name__} did not yield a correctly formatted string from valid indata:\n    input: {repr(indata)}"
 			result = False
 
 	if result:
-		tmp = fun(indata, formatting = formatting, separator = None)
+		tmp = fun(indata, formatting=formatting, separator=None)
 		expected_result = [ANSIThemeString(string="one", themeref="error"), ANSIThemeString(string="two", themeref="warning"), ANSIThemeString(string="three", themeref="error")]
 		for i, item in enumerate(tmp):
 			if tmp[i] != expected_result[i]:
@@ -249,6 +261,8 @@ def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bo
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -304,6 +318,8 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_themearray_ljust(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -323,6 +339,8 @@ def test_themearray_ljust(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_themearray_len(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -338,6 +356,8 @@ def test_themearray_len(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -348,18 +368,20 @@ def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, boo
 
 	fun = ansithemeprint.themearray_override_formatting
 
-	if (tmp := fun(indata, formatting = formatting)) != expected_result:
+	if (tmp := fun(indata, formatting=formatting)) != expected_result:
 		message = f"{fun.__name__} returned incorrect output:\n       input: {indata})\n      output: {tmp}\n    expected: {expected_result}"
 		result = False
 
 	if result:
 		expected_result = [ANSIThemeString("1", "default"), ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
-		if (tmp := fun(indata, formatting = None)) != expected_result:
+		if (tmp := fun(indata, formatting=None)) != expected_result:
 			message = f"{fun.__name__} returned incorrect output:\n       input: {indata})\n      output: {tmp}\n    expected: {expected_result}"
 			result = False
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -367,7 +389,7 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
 	indata = [ANSIThemeString("1", "default"), ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
 	expected_result = "123"
 
-	fun = ansithemeprint.__themearray_to_raw_string
+	fun = ansithemeprint.__themearray_to_raw_string  # pylint: disable=protected-access
 
 	if (tmp := fun(indata)) != expected_result:
 		message = f"{fun.__name__} returned incorrect output:\n       input: {indata})\n      output: {tmp}\n    expected: {expected_result}"
@@ -384,6 +406,8 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -392,34 +416,32 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 
 	fun = ansithemeprint.ansithemearray_to_str
 
-	# When color in ("always", "auto") we cannot predict the expected outcome since the the output is themed
 	try:
-		tmp = fun(indata, color = True)
+		tmp = fun(indata, color=True)
 	except TypeError:
-		message = f"{fun.__name__}(color = \"always\") failed with valid indata (TypeError):\n    input: {indata}"
+		message = f"{fun.__name__}(color=True) failed with valid indata (TypeError):\n    input: {indata}"
 		result = False
 	except KeyError:
-		message = f"{fun.__name__}(color = \"always\") failed with valid indata (KeyError):\n    input: {indata}"
+		message = f"{fun.__name__}(color=True) failed with valid indata (KeyError):\n    input: {indata}"
 		result = False
 
-	# When color == "never" we know the expected output
 	if result:
 		expected_result = "123"
 		try:
-			if (tmp := fun(indata, color = False)) != expected_result:
-				message = f"{fun.__name__}(color = \"never\") returned incorrect output:\n       input: {indata})\n      output: {repr(tmp)}\n    expected: {repr(expected_result)}"
+			if (tmp := fun(indata, color=False)) != expected_result:
+				message = f"{fun.__name__}(color=False) returned incorrect output:\n       input: {indata})\n      output: {repr(tmp)}\n    expected: {repr(expected_result)}"
 				result = False
 		except TypeError:
-			message = f"{fun.__name__}(color = \"never\") failed with valid indata (TypeError):\n    input: {indata}"
+			message = f"{fun.__name__}(color=False) failed with valid indata (TypeError):\n    input: {indata}"
 			result = False
 		except KeyError:
-			message = f"{fun.__name__}(color = \"never\") failed with valid indata (KeyError):\n    input: {indata}"
+			message = f"{fun.__name__}(color=False) failed with valid indata (KeyError):\n    input: {indata}"
 			result = False
 
 	if result:
 		indata = ["1", ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
 		try:
-			tmp = fun(indata, color = True)
+			tmp = fun(indata, color=True)
 			message = f"{fun.__name__} silently accepted invalid indata:\n    input: {repr(indata)}"
 			message = f"{fun.__name__} silently accepted invalid indata:\n       input: {repr(indata)}\n    expected: TypeError"
 			result = False
@@ -429,7 +451,7 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		indata = [ANSIThemeString("1", "nonexistingkey"), ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
 		try:
-			tmp = fun(indata, color = True)
+			tmp = fun(indata, color=True)
 			message = f"{fun.__name__} silently accepted invalid indata:\n       input: {repr(indata)}\n    expected: KeyError"
 			result = False
 		except KeyError:
@@ -438,10 +460,12 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 	# This is for coverage only
 	if result:
 		indata = [ANSIThemeString("", "ok")]
-		tmp = fun(indata, color = False)
+		tmp = fun(indata, color=False)
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -480,8 +504,8 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
 			fun, mocked_fun, prompt, color, mocked_input, expected_result, expected_exception = indata
 			try:
 				if mock_input:
-					with mock.patch(mocked_fun, return_value = mocked_input):
-						tmp = fun(prompt, color = color)
+					with mock.patch(mocked_fun, return_value=mocked_input):
+						tmp = fun(prompt, color=color)
 					if tmp != expected_result:
 						message = f"{fun.__name__}() returned incorrect result:\n" \
 							  f"           prompt: {prompt}\n" \
@@ -491,7 +515,7 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
 						result = False
 						break
 				else:
-					tmp = fun(prompt, color = color)
+					tmp = fun(prompt, color=color)
 					if tmp != expected_result:
 						message = f"{fun.__name__}() returned incorrect result (did you type the correct string?):\n" \
 							  f"           prompt: {prompt}\n" \
@@ -508,7 +532,7 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
 						  f"         expected: {expected_exception}\n"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -530,6 +554,8 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
 
 	return message, result
 
+
+# pylint: disable-next=unused-argument
 def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -541,12 +567,13 @@ def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
 			message = f"{fun.__name__} failed (error code: {tmp}"
 			result = False
 	if result:
-		with mock.patch("ansithemeprint.cmtio.secure_which", side_effect = FileNotFoundError):
+		with mock.patch("ansithemeprint.cmtio.secure_which", side_effect=FileNotFoundError):
 			if (tmp := fun()) != errno.ENOENT:
 				message = f"{fun.__name__} failed; returned {tmp} (expected errno.ENOENT)"
 				result = False
 
 	return message, result
+
 
 tests: Dict = {
 	("uninitialized ansithemeprint functions", ): {
@@ -606,6 +633,7 @@ tests: Dict = {
 	},
 }
 
+
 def main() -> int:
 	global real_import
 	real_import = builtins.__import__
@@ -650,9 +678,10 @@ def main() -> int:
 	if fail > 0:
 		print("\n\033[0;4;37mFailed testcases:\033[0m")
 		for testcase in failed_testcases:
-			print(f"\033[38;5;240m  • \033[0m{testcase}", file = sys.stderr)
+			print(f"\033[38;5;240m  • \033[0m{testcase}", file=sys.stderr)
 
 	return fail
+
 
 if __name__ == "__main__":
 	main()

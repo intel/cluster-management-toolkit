@@ -25,6 +25,7 @@ from typing import List, Optional, Tuple
 import paramiko
 
 import cmtlib
+from cmtio_yaml import secure_read_yaml
 
 from cmtpaths import SSH_DIR
 import ansithemeprint
@@ -381,3 +382,32 @@ def download_files(directory: str, fetch_urls: List[Tuple[str, str, Optional[str
 	spm.clear()  # type: ignore
 
 	return retval
+
+def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
+	"""
+	Given a github repository find the latest released version
+
+		Parameters:
+			url (str): The github API URL to check for latest version
+			version_regex (str): A regex
+		Returns:
+			version ([str]): A list of version number elements, or None in case of failure
+	"""
+
+	version: Optional[List[str]] = []
+
+	if url is not None:
+		with tempfile.TemporaryDirectory() as td:
+			if not (retval := download_files(td, [(url, "release.yaml", None, None)], permissions = 0o600)):
+				return None
+			tmp = secure_read_yaml(FilePath(f"{td}/release.yaml"))
+			result = deep_get(tmp, DictPath("tag_name"), "")
+			versionoutput = result.splitlines()
+			_version_regex = re.compile(version_regex)
+			for line in versionoutput:
+				tmp = _version_regex.match(line)
+				if tmp is not None:
+					version = list(tmp.groups())
+					break
+
+	return version

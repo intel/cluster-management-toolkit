@@ -444,6 +444,7 @@ def __find_command(__commandline: Dict, arg: str) -> Tuple[str, Optional[Callabl
 
 	return commandname, command, key, min_args, max_args, required_args, optional_args
 
+
 COMMANDLINEDEFAULTS = {
 	"Help": {
 		"command": ["help"],
@@ -508,6 +509,7 @@ COMMANDLINEDEFAULTS = {
 		"callback": __version,
 	},
 }
+
 
 # pylint: disable-next=line-too-long
 def parse_commandline(__programname: str, __programversion: str, __programdescription: str, __programauthors: str, argv: List[str],

@@ -206,8 +206,10 @@ class ANSIThemeString:
 
 		return "\n".join(joined_strings), themearray_list
 
+
 theme: Optional[Dict] = None
 themepath: Optional[FilePath] = None
+
 
 FALLBACK_THEME = {
 	"term": {

@@ -1013,6 +1013,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 	ansithemeprint([ANSIThemeString("\nHosts successfully prepared", "success")])
 	return 0
 
+
 cri_data: Dict = {
 	"containerd": {
 		"socket": "unix:///run/containerd/containerd.sock",
@@ -1024,6 +1025,7 @@ cri_data: Dict = {
 		"socket": "unix:///run/dockershim.sock",
 	}
 }
+
 
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
@@ -2439,6 +2441,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	return result
 
+
 # pylint: disable-next=pointless-string-statement
 """
 def get_resource(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -2454,6 +2457,7 @@ def get_resource(options: List[Tuple[str, str]], args: List[str]) -> None:
 	# We might have to get the resources across multiple namespaces, so we need to do multiple requests
 	return
 """
+
 
 CMT_COMMANDLINE = {
 	"Cordon Node": {
@@ -3622,6 +3626,7 @@ CMT_COMMANDLINE = {
 	]
 }
 
+
 def get_programname(callname: str) -> Tuple[str, Dict]:
 	"""
 	Return the name that the program was called with;
@@ -3686,6 +3691,7 @@ def main() -> int:
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), False)
 
 	return command(options, args)
+
 
 if __name__ == "__main__":
 	main()

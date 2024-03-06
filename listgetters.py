@@ -2040,6 +2040,8 @@ def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 		})
 
 	return vlist, 200
+
+
 # Listgetters acceptable for direct use in view files
 listgetter_allowlist = {
 	# Used by listview, listpad

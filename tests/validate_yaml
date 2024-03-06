@@ -8,14 +8,6 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-"""
-A checker that validates views, parser files, and themes
-for Cluster Management Toolkit for Kubernetes against a predefined schema
-
-For usage, see:
-	./tests/validate_yaml help
-"""
-
 import json
 from multiprocessing import Pool
 import os
@@ -33,9 +25,10 @@ try:
 except ModuleNotFoundError:
 	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
-validate_yaml_version = "0.4"
+__version__ = "0.4"
 
 failed_files = []
+
 
 def usage() -> None:
 	"""
@@ -70,14 +63,15 @@ def usage() -> None:
 	print("help|--help            Display this help and exit")
 	print("version|--version      Output version information and exit")
 
+
 def version() -> None:
 	"""
 	Display version information for the program.
 	"""
 
-	print(f"validate_yaml {validate_yaml_version}")
+	print(f"validate_yaml {__version__}")
 
-#def validate_file(args: Tuple[str, str, int, bool]) -> Tuple[Optional[str], int, str]:
+
 def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail: bool) -> Tuple[Optional[str], int, str]:
 	"""
 	Validate a YAML file against a JSON schema
@@ -115,14 +109,14 @@ def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail:
 	else:
 		yaml_data = {}
 
-		with open(schema_path, "r", encoding = "utf-8") as f:
+		with open(schema_path, "r", encoding="utf-8") as f:
 			try:
 				schema = json.load(f)
 			except json.decoder.JSONDecodeError as e:
 				sys.exit(f"\nThe schema file {schema_path} is not valid JSON:" + f"\njson.decoder.JSONDecodeError: {e}")
 
 		try:
-			with open(yaml_path, "r", encoding = "utf-8") as f:
+			with open(yaml_path, "r", encoding="utf-8") as f:
 				yaml_data = yaml.safe_load(f)
 		except yaml.scanner.ScannerError as e:
 			sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
@@ -133,7 +127,7 @@ def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail:
 			msg = f"Validating {yaml_path} with {schema_path}"
 
 		try:
-			jsonschema.validate(schema = schema, instance = yaml_data)
+			jsonschema.validate(schema=schema, instance=yaml_data)
 		except jsonschema.exceptions.SchemaError as e:
 			msg += f"\nFailed to validate schema {schema_path}"
 			msg += f"\njsonschema.exceptions.SchemaError: {e}"
@@ -148,6 +142,7 @@ def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail:
 			retval = 1
 
 	return file, retval, msg
+
 
 def main() -> None:
 	"""
@@ -165,10 +160,10 @@ def main() -> None:
 	resume_from = None
 
 	while i < len(sys.argv):
-		if sys.argv[i] in ["help","--help"]:
+		if sys.argv[i] in ["help", "--help"]:
 			usage()
 			sys.exit(0)
-		if sys.argv[i] in ["version","--version"]:
+		if sys.argv[i] in ["version", "--version"]:
 			version()
 			sys.exit(0)
 		elif sys.argv[i] in ["-q", "--quiet"]:
@@ -278,6 +273,7 @@ def main() -> None:
 			print("---")
 			for file in failed_files:
 				print(f"  {file}")
+
 
 if __name__ == "__main__":
 	main()

@@ -22,8 +22,8 @@ about = [
 	[ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],
 	[ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],
 	[ThemeString("", ThemeAttr("main", "about_text"))],
-	[ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))], # pylint: disable=line-too-long
-	[ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))], # pylint: disable=line-too-long
+	[ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))],  # pylint: disable=line-too-long
+	[ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))],  # pylint: disable=line-too-long
 	[ThemeString("", ThemeAttr("main", "about_text"))],
 	[ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],
 	[ThemeString("", ThemeAttr("main", "about_text"))],

@@ -25,7 +25,6 @@ from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray, WidgetLi
 
 TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 
-# unit-tests for curses_helper.py
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	result = ""
@@ -33,6 +32,7 @@ def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 	for line in dump.splitlines():
 		result += f"{' '.ljust(base_indent)}{line}\n"
 	return result
+
 
 def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -202,7 +202,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeString("1", ThemeAttr("types", "generic"), True)
 		try:
 			tmp = indata.get_selected()
-			if tmp != True:
+			if not tmp:
 				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {tmp}\n" \
@@ -216,6 +216,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	return message, result
+
 
 def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -425,6 +426,7 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	return message, result
+
 
 def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -705,6 +707,7 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
 def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -756,6 +759,7 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+
 def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -785,6 +789,7 @@ def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	curses.endwin()
 	return message, result
+
 
 def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -829,6 +834,7 @@ def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+
 def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -872,6 +878,7 @@ def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	return message, result
 
+
 def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -888,6 +895,7 @@ def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
 				  f"             got: {tmp}\n"
 			result = False
 	return message, result
+
 
 def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -935,9 +943,10 @@ def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
 					break
 	try:
 		curses.endwin()
-	except  curses.error:
+	except curses.error:
 		pass
 	return message, result
+
 
 tests: Dict = {
 	("ThemeString()",): {
@@ -978,6 +987,7 @@ tests: Dict = {
 	},
 }
 
+
 def main() -> int:
 	global tests
 
@@ -986,12 +996,12 @@ def main() -> int:
 	verbose = False
 	failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
+	init_ansithemeprint(themefile=None)
 	cmtlib.read_cmtconfig()
 
 	defaultthemefile = DEFAULT_THEME_FILE
 	tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
-	themefile, _theme_path_found = expand_path(path = tmpthemefile, search_paths = [os.getcwd(), THEME_DIR], suffixes = [".yaml"], fallback = defaultthemefile)
+	themefile, _theme_path_found = expand_path(path=tmpthemefile, search_paths=[os.getcwd(), THEME_DIR], suffixes=[".yaml"], fallback=defaultthemefile)
 	curses_helper.read_theme(themefile, defaultthemefile)
 
 	# How many non-prepare testcases do we have?
@@ -1000,7 +1010,7 @@ def main() -> int:
 	for i, test in enumerate(tests):
 		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
 				ANSIThemeString(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose = verbose)
+		message, result = tests[test]["callable"](verbose=verbose)
 		if len(message) > 0:
 			ansithemeprint([ANSIThemeString("  FAIL", "error"),
 					ANSIThemeString(f": {message}", "default")])
@@ -1023,9 +1033,10 @@ def main() -> int:
 		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
 			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+					ANSIThemeString(testcase, "default")], stderr=True)
 
 	return fail
+
 
 if __name__ == "__main__":
 	main()

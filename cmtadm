@@ -55,13 +55,15 @@ from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts,
 from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
 
 import cmtio
-from cmtio import check_path, execute_command, execute_command_with_response, join_securitystatus_set, secure_mkdir
+from cmtio import check_path, execute_command, execute_command_with_response, secure_mkdir
 from cmtio import secure_read_string, secure_rm, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from networkio import download_files, scan_and_add_ssh_keys
+from networkio import download_files, get_github_version, scan_and_add_ssh_keys
 
 import cmtlib
 from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper, identify_distro, read_cmtconfig, substitute_list, substitute_string
+
+from cni_data import cni_data
 
 import kubernetes_helper
 from kubernetes_helper import get_node_roles
@@ -637,257 +639,6 @@ def check_and_print_status(retval: bool) -> None:
 				ANSIThemeString("; aborting.", "default")], stderr = True)
 		sys.exit(errno.EINVAL)
 
-def patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
-	"""
-	Patch the configuration for Calico
-
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
-	"""
-
-	violations = check_path(cni_path)
-	if violations != [SecurityStatus.OK]:
-		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
-
-	# Ideally we should patch this using a round-trip capable YAML parser,
-	# such as ruamel
-	sedstr = fr's#cidr: 192.168.0.0/16$#cidr: {pod_network_cidr}#'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-
-def patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
-	"""
-	Patch the configuration for Canal
-
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
-	"""
-
-	violations = check_path(cni_path)
-	if violations != [SecurityStatus.OK]:
-		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
-
-	# Ideally we should patch this using a round-trip capable YAML parser,
-	# such as ruamel
-	# This seems like the obvious thing to patch
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network": "{pod_network_cidr}"\2#'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-	# According to the canal documentation this should be patched too; let's patch both just in case
-	sedstr = r's,# - name: CALICO_IPV4POOL_CIDR$,- name: CALICO_IPV4POOL_CIDR,'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-	sedstr = fr's,  value: "192.168.0.0/16"$,#   value: "{pod_network_cidr}",'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-
-def patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
-	"""
-	Patch the configuration for Flannel
-
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
-	"""
-
-	violations = check_path(cni_path)
-	if violations != [SecurityStatus.OK]:
-		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
-
-	# Ideally we should patch this using a round-trip capable YAML parser,
-	# such as ruamel
-	sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network": "{pod_network_cidr}",#'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-	check_and_print_status(execute_command(args))
-
-def patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
-	"""
-	Patch the configuration for Weave
-
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
-	"""
-
-	violations = check_path(cni_path)
-	if violations != [SecurityStatus.OK]:
-		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = cni_path)
-
-	# Ideally we should patch this using a round-trip capable YAML parser,
-	# such as ruamel
-	sedstr_remove_existing = r'/^                - name: IPALLOC_RANGE$/,+1d'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr_remove_existing, cni_path]
-	execute_command(args)
-
-	sedstr_add_new = fr's#^\(.*\)\(- name: INIT_CONTAINER\)$#\1- name: IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
-	args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
-	check_and_print_status(execute_command(args))
-
-def get_github_version(url: str, version_regex: str) -> List[str]:
-	"""
-	Given a github repository find the latest released version
-
-		Parameters:
-			url (str): The github API URL to check for latest version
-			version_regex (str): A regex
-		Returns:
-			version ([str]): A list of version number elements, or None in case of failure
-	"""
-
-	version: List[str] = []
-
-	if url is not None:
-		with tempfile.TemporaryDirectory() as td:
-			check_and_print_status(download_files(td, [(url, "release.yaml", None, None)], permissions = 0o600))
-			tmp = secure_read_yaml(FilePath(f"{td}/release.yaml"))
-			result = deep_get(tmp, DictPath("tag_name"), "")
-			versionoutput = result.splitlines()
-			_version_regex = re.compile(version_regex)
-			for line in versionoutput:
-				tmp = _version_regex.match(line)
-				if tmp is not None:
-					version = list(tmp.groups())
-					break
-
-	return version
-
-# XXX: We should move all of this code to a separate file to allow it to be used both from cmu and cmtadm
-cni_upgrade_data = {
-	"antrea": {
-		"CNI": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/antrea-io/antrea/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://raw.githubusercontent.com/antrea-io/antrea/<<<version>>>/build/yamls/antrea.yml",
-					"filename": "antrea.yaml",
-				}
-			]
-		}
-	},
-	"calico": {
-		"executable": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"version_command": ["kubectl", "calico", "version"],
-			"version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/calicoctl-linux-<<<arch>>>",
-					"checksum_url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/SHA256SUMS",
-					"checksum_type": "sha256",
-					"filename": "kubectl-calico",
-				}
-			]
-		},
-		"CNI": {
-			"version_command": ["kubectl", "calico", "version"],
-			"version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/tigera-operator.yaml",
-					"filename": "tigera-operator-<<<version>>>.yaml",
-				}, {
-					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/custom-resources.yaml",
-					"filename": "calico-custom-resources-<<<version>>>.yaml",
-					"patch": patch_cni_calico,
-				}
-			]
-		}
-	},
-	"canal": {
-		"CNI": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/canal.yaml",
-					"filename": "canal.yaml",
-					"patch": patch_cni_canal,
-				}
-			]
-		}
-	},
-	"cilium": {
-		"executable": {
-			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			"version_regex": r"^cilium-cli: (v)(\d+)(\.)(\d+)(\.)(\d+) .*$",
-			"candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
-					"checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
-					"checksum_type": "sha256",
-					"filename": "cilium",
-				}
-			],
-		},
-		"CNI": {
-			"version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			"version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
-			"candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
-			"install": ["cilium", "--context", "<<<context>>>", "install"],
-			"uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
-		}
-	},
-	"flannel": {
-		"CNI": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/flannel-io/flannel/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://github.com/flannel-io/flannel/releases/download/<<<version>>>/kube-flannel.yml",
-					"filename": "flannel.yaml",
-					"patch": patch_cni_flannel,
-				}
-			]
-		}
-	},
-	"kube-router": {
-		"CNI": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/<<<version>>>/daemonset/kubeadm-kuberouter.yaml",
-					"filename": "kube-router.yaml",
-				}
-			]
-		}
-	},
-	"weave": {
-		"CNI": {
-			"candidate_version_function": get_github_version,
-			"candidate_version_url": "https://api.github.com/repos/weaveworks/weave/releases/latest",
-			"candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
-			"urls": [
-				{
-					"url": "https://github.com/weaveworks/weave/releases/download/<<<version>>>/weave-daemonset-k8s-1.11.yaml",
-					"filename": "weave.yaml",
-					"patch": patch_cni_weave,
-				}
-			]
-		}
-	},
-}
-
 def check_version_from_url(url: str, version_regex: str) -> List[str]:
 	"""
 	Given a URL download a text file and treat the first line that matches version_regex as a version number
@@ -969,14 +720,14 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 
 	# FIXME: for now we hardcode this
 	arch = "amd64"
-	version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#version_command"))
-	version_command_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#version_regex"))
-	candidate_version_url = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_url"))
-	candidate_version_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
-	candidate_version_function = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_function"))
-	candidate_version_regex = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
-	install_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#install"))
-	upgrade_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#upgrade"))
+	version_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#version_command"))
+	version_command_regex = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#version_regex"))
+	candidate_version_url = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_url"))
+	candidate_version_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
+	candidate_version_function = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_function"))
+	candidate_version_regex = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
+	install_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#install"))
+	upgrade_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#upgrade"))
 
 	version_substitutions = {
 		"<<<arch>>>": arch,
@@ -994,7 +745,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 		ansithemeprint([ANSIThemeString("\n• ", "separator"),
 				ANSIThemeString(f"Checking {upgradetype} candidate version", "action")])
 		if candidate_version_function is not None:
-			candidate_version = candidate_version_function(candidate_version_url, candidate_version_regex)
+			if (candidate_version := candidate_version_function(candidate_version_url, candidate_version_regex)) is None:
+				check_and_print_status(False)
 		else:
 			candidate_version = check_version_from_url(substitute_string(candidate_version_url, version_substitutions), candidate_version_regex)
 	elif candidate_version_command is not None:
@@ -1004,7 +756,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 								  substitute_list(candidate_version_command[1:], version_substitutions),
 								  candidate_version_regex)
 
-	if "urls" in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}"), {}):
+	if "urls" in deep_get(cni_data, DictPath(f"{cni}#{upgradetype}"), {}):
 		# pylint: disable-next=too-many-boolean-expressions
 		if (version is None or len(version) == 0) or version is not None and (candidate_version is None or len(candidate_version) == 0) or version < candidate_version:
 			new_version = "".join(candidate_version)
@@ -1029,7 +781,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 				permissions = 0o755
 			secure_mkdir(directory)
 
-			for url in deep_get(cni_upgrade_data, DictPath(f"{cni}#{upgradetype}#urls"), []):
+			for url in deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#urls"), []):
 				download_url = deep_get(url, DictPath("url"), "")
 				checksum_url = deep_get(url, DictPath("checksum_url"), None)
 				checksum_type = deep_get(url, DictPath("checksum_type"), None)
@@ -1065,7 +817,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str, pod_network_cidr: st
 						ansithemeprint([ANSIThemeString("\n  • ", "separator"),
 								ANSIThemeString("Patching ", "subaction"),
 								ANSIThemeString(f"{filename}", "version")])
-						patch_cni_call(new_path, pod_network_cidr)
+						check_and_print_status(patch_cni_call(new_path, pod_network_cidr))
 					ansithemeprint([ANSIThemeString("\n  • ", "separator"),
 							ANSIThemeString("Applying ", "subaction"),
 							ANSIThemeString(f"{filename}", "version")])
@@ -1248,7 +1000,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 	cni_filenames = []
 	uninstall_command = None
 
-	urls = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#urls"), [])
+	urls = deep_get(cni_data, DictPath(f"{cni}#CNI#urls"), [])
 	# We need to remove the files in reverse order
 	for url in reversed(urls):
 		filename = deep_get(url, DictPath("filename"), "")
@@ -1259,7 +1011,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 			filename = substitute_string(filename, substitutions)
 		cni_filenames.append(filename)
 	# We might use an uninstall command rather than files
-	uninstall_command = deep_get(cni_upgrade_data, DictPath(f"{cni}#CNI#uninstall"))
+	uninstall_command = deep_get(cni_data, DictPath(f"{cni}#CNI#uninstall"))
 
 	if len(cni_filenames) == 0 and uninstall_command is None:
 		ansithemeprint([ANSIThemeString("Critical", "critical"),
@@ -1384,7 +1136,7 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 		elif opt == "--verbose":
 			verbose = True
 
-	if cni not in cni_upgrade_data:
+	if cni not in cni_data:
 		ansithemeprint([ANSIThemeString(f"{action_str} ", "default"),
 				ANSIThemeString(f"{cni}", "command"),
 				ANSIThemeString(" is currently not supported; exiting.", "default")])
@@ -1435,7 +1187,7 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs) -> boo
 				ANSIThemeString(" specified; skipping CNI installation.", "default")], stderr = True)
 		return True
 
-	if cni not in cni_upgrade_data:
+	if cni not in cni_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
@@ -3013,6 +2765,7 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeString:
 		__string = ANSIThemeString(string, fmt)
 	return __string
 
+
 prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Check for ssh host key and create if needed", "action")], __task_check_and_create_ssh_key),
 	([ANSIThemeString("Add ssh keys for localhost, control plane(s) and nodes to ", "action"),
@@ -3032,6 +2785,7 @@ prepare_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run post-prepare playbooks", "action")], __task_run_postpreparation_playbooks),
 ]
 
+
 __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run pre-setup playbooks", "action")], __task_run_presetup_playbooks),
 	([ANSIThemeString("Run playbooks on ", "action"),
@@ -3047,6 +2801,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 	([ANSIThemeString("Run post-setup playbooks", "action")], __task_run_postsetup_playbooks),
 ]
+
 
 __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[..., None]]] = [
 	([ANSIThemeString("Run pre-setup playbooks", "action")], __task_run_presetup_playbooks),
@@ -3064,6 +2819,7 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeString], Callable[...
 	  ANSIThemeString("Container Network Interface (CNI)", "action")], __task_setup_cni),
 	([ANSIThemeString("Run post-setup playbooks", "action")], __task_run_postsetup_playbooks),
 ]
+
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
@@ -4860,7 +4616,9 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> str:
 	# and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
 	requested_major, requested_minor = kubernetes_version
 
-	tmp = get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")
+	if (tmp := get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest", r"^v(\d+)\.(\d+)\.\d+$")) is None:
+		check_and_print_status(False)
+
 	if requested_major < int(tmp[0]) or requested_major == int(tmp[0]) and requested_minor < int(tmp[1]):
 		crio_major_version = requested_major
 		crio_minor_version = requested_minor
@@ -5158,7 +4916,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 						ANSIThemeString(" was specified; continuing installation.", "default")], stderr = True)
 		cni = new_cni
 
-	if cni != "none" and cni not in cni_upgrade_data:
+	if cni != "none" and cni not in cni_data:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default"),
 				ANSIThemeString(f"{cni}", "argument"),
@@ -6045,6 +5803,7 @@ def run_checks(checks: List[Dict], **kwargs) -> bool:
 
 	return critical + error + warning == 0
 
+
 security_audit_checks = [
 	{
 		"description": "Check whether strict host key checking has been disabled",
@@ -6064,6 +5823,7 @@ security_audit_checks = [
 		],
 	},
 ]
+
 
 # pylint: disable-next=unused-argument
 def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -6133,6 +5893,7 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 					ANSIThemeString(f"{username}", "argument")])
 			ansithemeprint([ANSIThemeString("\nto see if that resolves the warnings.", "default")])
 
+
 preflight_checks = [
 	{
 		"description": "check whether ownership for .ansible is correct",
@@ -6160,6 +5921,7 @@ preflight_checks = [
 		"call": checks.check_control_plane,
 	}
 ]
+
 
 def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -6192,6 +5954,7 @@ def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that installation will succeed.", "default")])
 
+
 troubleshoot_checks = [
 	# First start with the really basic: does the cluster respond?
 	# Check no_proxy, perhaps?
@@ -6218,6 +5981,7 @@ troubleshoot_checks = [
 	# check whether role bindings and cluster role bindings refer to non-existing roles/cluster roles
 ]
 
+
 # pylint: disable-next=unused-argument
 def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 	"""
@@ -6237,6 +6001,7 @@ def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
 				ANSIThemeString(" troubleshoot", "command"),
 				ANSIThemeString(" currently only checks for a very limited set of issues;", "default")])
 		ansithemeprint([ANSIThemeString("  a perfect score is not a guarantee that your cluster is problem free.", "default")])
+
 
 COMMANDLINE = {
 	"Check Versions": {
@@ -7162,6 +6927,7 @@ COMMANDLINE = {
 	},
 }
 
+
 def main() -> None:
 	"""
 	Main function for the program
@@ -7197,6 +6963,7 @@ def main() -> None:
 	ansible_configuration["save_logs"] = deep_get(cmtlib.cmtconfig, DictPath("Ansible#save_logs"), False)
 
 	return command(options, args)
+
 
 if __name__ == "__main__":
 	main()

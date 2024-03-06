@@ -812,6 +812,7 @@ class LogLevel(IntEnum):
 	DIFFSAME = 10
 	ALL = 255
 
+
 loglevel_mappings = {
 	LogLevel.EMERG: "Emergency",
 	LogLevel.ALERT: "Alert",
@@ -827,6 +828,7 @@ loglevel_mappings = {
 	LogLevel.ALL: "Debug",
 }
 
+
 def loglevel_to_name(loglevel: LogLevel) -> str:
 	"""
 	Given a numerical loglevel, return its severity string
@@ -838,16 +840,18 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
 	"""
 	return loglevel_mappings[min(LogLevel.DIFFSAME, loglevel)]
 
+
 class Retval(Enum):
 	"""
 	Return values from the UI functions
 	"""
 
-	NOMATCH = 0	# No keypress matched/processed; further checks needed (if any)
-	MATCH = 1	# keypress matched/processed; no further action
-	RETURNONE = 2	# keypress matched/processed; return up one level
-	RETURNFULL = 3	# keypress matched/processed, callback called; return up entire callstack
-	RETURNDONE = 4	# We've done our Return One
+	NOMATCH = 0     # No keypress matched/processed; further checks needed (if any)
+	MATCH = 1       # keypress matched/processed; no further action
+	RETURNONE = 2   # keypress matched/processed; return up one level
+	RETURNFULL = 3  # keypress matched/processed, callback called; return up entire callstack
+	RETURNDONE = 4  # We've done our Return One
+
 
 class StatusGroup(IntEnum):
 	"""
@@ -862,6 +866,7 @@ class StatusGroup(IntEnum):
 	NOT_OK = 2
 	UNKNOWN = 1
 	CRIT = 0
+
 
 stgroup_mapping = {
 	StatusGroup.CRIT: "status_critical",

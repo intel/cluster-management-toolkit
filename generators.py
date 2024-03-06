@@ -832,7 +832,7 @@ def generator_value_mapper(obj: Dict,
 
 	default_field_color = cast(ThemeAttr, deep_get(formatting, DictPath("field_colors"), [("types", "generic")])[0])
 
-	formatted_string, string = map_value(value, selected = selected,default_field_color = default_field_color,
+	formatted_string, string = map_value(value, selected = selected, default_field_color = default_field_color,
 					     mapping = deep_get(formatting, DictPath("mapping"), {}))
 	array = [
 		formatted_string
@@ -1031,6 +1031,7 @@ def processor_mem(obj: Dict, field: str) -> str:
 
 	return string
 
+
 default_processor: Dict[Callable, Callable] = {
 	generator_age: processor_age,
 	generator_list: processor_list,
@@ -1038,6 +1039,7 @@ default_processor: Dict[Callable, Callable] = {
 	generator_mem: processor_mem,
 	generator_timestamp: processor_timestamp,
 }
+
 
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
@@ -1084,6 +1086,7 @@ def get_formatting(field: Dict[str, Any], formatting: str, default: Dict[str, An
 			raise TypeError(f"Formatting is of invalid type {type(item)}")
 
 	return result
+
 
 formatter_to_generator_and_processor: Dict[str, Dict[str, Any]] = {
 	"mem": {
@@ -1137,6 +1140,7 @@ formatter_to_generator_and_processor: Dict[str, Dict[str, Any]] = {
 		"processor": None,
 	},
 }
+
 
 # This generates old-style fields from new-style fields
 def get_formatter(field: Dict) -> Dict:
@@ -1218,6 +1222,7 @@ def get_formatter(field: Dict) -> Dict:
 
 	return tmp_field
 
+
 builtin_fields: Dict[str, Dict[str, Any]] = {
 	"age": {
 		"header": "Age:",
@@ -1264,6 +1269,7 @@ builtin_fields: Dict[str, Dict[str, Any]] = {
 		"generator": generator_status,
 	},
 }
+
 
 def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tuple[Optional[Dict], Optional[List[str]], Optional[str], bool]:
 	"""
@@ -1358,6 +1364,7 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tu
 		tmp_fields[field_name]["sortkey2"] = sortcolumn
 
 	return tmp_fields, field_names, sortcolumn, sortorder_reverse
+
 
 # Generators acceptable for direct use in view files
 generator_allowlist = {

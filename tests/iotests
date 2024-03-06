@@ -32,6 +32,7 @@ from cmtpaths import HOMEDIR
 CHECKSUMS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("checksums")))
 TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
+
 def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether cmtio.check_path() works correctly
@@ -66,13 +67,14 @@ def test_check_path(checkdata: Dict) -> Tuple[int, str]:
 			return 1, f"expected {expect}, got {result}"
 		if expect_exception is not None:
 			return 1, f"expected exception {expect_exception}, got {result}"
-	except Exception as e:
+	except Exception as e:  # pylint: disable=broad-except
 		if expect_exception is not None:
-			if type(e) != expect_exception: # noqa: E721
+			if type(e) != expect_exception:  # noqa: E721 pylint: disable=unidiomatic-typecheck
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
 	return 0, ""
+
 
 def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -92,18 +94,19 @@ def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
 	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
 
 	try:
-		result = execute_command(command, env = env, comparison = comparison)
+		result = execute_command(command, env=env, comparison=comparison)
 		if result != expect:
 			return 1, f"expected {expect}, got {result}"
 		if expect_exception is not None:
 			return 1, f"expected exception {expect_exception}, got {result}"
-	except Exception as e:
+	except Exception as e:  # pylint: disable=broad-except
 		if expect_exception is not None:
-			if type(e) != expect_exception: # noqa: E721
+			if type(e) != expect_exception:  # noqa: E721 pylint: disable=unidiomatic-typecheck
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
 	return 0, ""
+
 
 def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -122,18 +125,19 @@ def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
 	expect_exception = deep_get(checkdata, DictPath("expect_exception"), None)
 
 	try:
-		result = execute_command_with_response(command, env = env)
+		result = execute_command_with_response(command, env=env)
 		if result != expect:
 			return 1, f"expected {expect}, got {result}"
 		if expect_exception is not None:
 			return 1, f"expected exception {expect_exception}, got {result}"
-	except Exception as e:
+	except Exception as e:  # pylint: disable=broad-except
 		if expect_exception is not None:
-			if type(e) != expect_exception: # noqa: E721
+			if type(e) != expect_exception:  # noqa: E721 pylint: disable=unidiomatic-typecheck
 				return 1, f"expected exception {expect_exception}, got {e}"
 		else:
 			return 1, f"expected {expect}, got {e}"
 	return 0, ""
+
 
 def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -163,9 +167,8 @@ def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
 			result = True
 		elif expect == "�" and isinstance(string, str) and "�" in string:
 			result = True
-	except Exception as e: # pylint: disable=broad-except
-		# pylint: disable-next=unidiomatic-typecheck
-		if type(e) == expect: # noqa: E721
+	except Exception as e:  # pylint: disable=broad-except
+		if type(e) == expect:  # noqa: E721 pylint: disable=unidiomatic-typecheck
 			result = True
 		else:
 			string = f"{type(e)}"
@@ -173,6 +176,7 @@ def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
 	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
+
 
 def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -201,9 +205,9 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 			result = True
 		elif expect == "�" and isinstance(string, str) and "�" in string:
 			result = True
-	except Exception as e: # pylint: disable=broad-except
+	except Exception as e:  # pylint: disable=broad-except
 		# pylint: disable-next=unidiomatic-typecheck
-		if type(e) == expect: # noqa: E721
+		if type(e) == expect:  # noqa: E721
 			result = True
 		else:
 			string = f"{type(e)}"
@@ -211,6 +215,7 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
 	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
+
 
 def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -234,9 +239,9 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 
 		if expect == "dict" and isinstance(d, dict):
 			result = True
-	except Exception as e: # pylint: disable=broad-except
+	except Exception as e:  # pylint: disable=broad-except
 		# pylint: disable-next=unidiomatic-typecheck
-		if type(e) == expect: # noqa: E721
+		if type(e) == expect:  # noqa: E721
 			result = True
 		else:
 			string = f"{type(e)}"
@@ -244,6 +249,7 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
 	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
+
 
 def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -266,9 +272,9 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 		ld = secure_read_yaml_all(path)
 		if expect == "generator" and isinstance(ld, GeneratorType):
 			result = True
-	except Exception as e: # pylint: disable=broad-except
+	except Exception as e:  # pylint: disable=broad-except
 		# pylint: disable-next=unidiomatic-typecheck
-		if type(e) == expect: # noqa: E721
+		if type(e) == expect:  # noqa: E721
 			result = True
 		else:
 			string = f"{type(e)}"
@@ -276,6 +282,7 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
 	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
+
 
 def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -297,12 +304,12 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 	result = False
 
 	try:
-		string = str(secure_which(path, fallback_allowlist = fallback_allowlist, security_policy = security_policy, executable = executable))
+		string = str(secure_which(path, fallback_allowlist=fallback_allowlist, security_policy=security_policy, executable=executable))
 		if expect == "string" and isinstance(string, str):
 			result = True
-	except Exception as e: # pylint: disable=broad-except
+	except Exception as e:  # pylint: disable=broad-except
 		# pylint: disable-next=unidiomatic-typecheck
-		if type(e) == expect: # noqa: E721
+		if type(e) == expect:  # noqa: E721
 			result = True
 		else:
 			string = f"{type(e)}"
@@ -310,6 +317,7 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
 	if not result:
 		return 1, f"expected {expect}, got {string}"
 	return 0, ""
+
 
 def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -328,7 +336,7 @@ def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
 	ignore_non_existing = expect is None
 
 	try:
-		secure_rm(path, ignore_non_existing = ignore_non_existing)
+		secure_rm(path, ignore_non_existing=ignore_non_existing)
 		fail = expect
 	except FileNotFoundError:
 		fail = True
@@ -347,6 +355,7 @@ def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
 		return 1, f"failed to delete file {path}; following testcases are likely to fail."
 	return 0, ""
 
+
 def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether cmtio.secure_rmdir() works correctly
@@ -364,7 +373,7 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 	ignore_non_existing = expect is None
 
 	try:
-		secure_rmdir(path, ignore_non_existing = ignore_non_existing)
+		secure_rmdir(path, ignore_non_existing=ignore_non_existing)
 		fail = expect
 	except FileNotFoundError:
 		fail = True
@@ -383,6 +392,7 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
 		return 1, f"failed to delete directory {path}; following testcases are likely to fail."
 	return 0, ""
 
+
 def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether cmtio.secure_mkdir() works correctly
@@ -400,7 +410,7 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 	expect = deep_get(checkdata, DictPath("expect"))
 	verbose = deep_get(checkdata, DictPath("verbose"), False)
 
-	violations = secure_mkdir(path, permissions = permissions, exist_ok = exist_ok, verbose = verbose)
+	violations = secure_mkdir(path, permissions=permissions, exist_ok=exist_ok, verbose=verbose)
 	violations_set = set(violations)
 
 	if SecurityStatus.PERMISSIONS not in violations_set and SecurityStatus.PARENT_IS_NOT_DIR not in violations_set and SecurityStatus.PARENT_DOES_NOT_EXIST not in violations_set:
@@ -414,6 +424,7 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
 	if violations_set != expect:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
 	return 0, ""
+
 
 def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -432,7 +443,7 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 	expect = deep_get(checkdata, DictPath("expect"))
 	verbose = deep_get(checkdata, DictPath("verbose"), False)
 
-	violations = secure_copy(src, path, permissions = permissions, verbose = verbose)
+	violations = secure_copy(src, path, permissions=permissions, verbose=verbose)
 	violations_set = set(violations)
 
 	if SecurityStatus.PERMISSIONS not in violations_set and SecurityStatus.EXISTS not in violations_set and SecurityStatus.PARENT_IS_NOT_DIR not in violations_set and SecurityStatus.PARENT_DOES_NOT_EXIST not in violations_set:
@@ -448,6 +459,7 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
 	if violations_set != expect:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
 	return 0, ""
+
 
 def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -481,6 +493,7 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
 		return 1, f"expected {join_securitystatus_set(', ', expect)}, got {join_securitystatus_set(', ', violations_set)}"
 	return 0, ""
 
+
 def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether cmtio.expand_path() works correctly
@@ -498,11 +511,12 @@ def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
 	suffixes = deep_get(checkdata, DictPath("suffixes"), None)
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	result, status = expand_path(path, fallback = fallback, search_paths = search_paths, suffixes = suffixes)
+	result, status = expand_path(path, fallback=fallback, search_paths=search_paths, suffixes=suffixes)
 
 	if (result, status) != expect:
 		return 1, f"expected {expect}, got ({result}, {status})"
 	return 0, ""
+
 
 def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -521,13 +535,12 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 	write_mode = deep_get(checkdata, DictPath("write_mode"), "w")
 
 	try:
-		secure_write_string(path, string = "Random text", permissions = permissions, write_mode = write_mode)
+		secure_write_string(path, string="Random text", permissions=permissions, write_mode=write_mode)
 		violations_set = {repr(SecurityStatus.OK)}
 	except ValueError as e:
 		if expect == type(e):
 			return 0, ""
-		else:
-			return 1, f"expected {expect}, got {e}"
+		return 1, f"expected {expect}, got {e}"
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -546,6 +559,7 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
 	if expect is not None and violations_set != expect:
 		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
 	return 0, ""
+
 
 def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -569,13 +583,12 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 		data = {
 			"valid_yaml": True,
 		}
-		secure_write_yaml(path, data = data, permissions = permissions, write_mode = write_mode, replace_empty = replace_empty, replace_null = replace_null)
+		secure_write_yaml(path, data=data, permissions=permissions, write_mode=write_mode, replace_empty=replace_empty, replace_null=replace_null)
 		violations_set = {repr(SecurityStatus.OK)}
 	except ValueError as e:
 		if expect == type(e):
 			return 0, ""
-		else:
-			return 1, f"expected {expect}, got {e}"
+		return 1, f"expected {expect}, got {e}"
 	except FilePathAuditError as e:
 		tmp = re.match(r".*Violated rules: (.*)", str(e))
 		if tmp is None:
@@ -595,6 +608,7 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
 		return 1, f"expected {', '.join(expect)}, got {', '.join(violations_set)}"
 	return 0, ""
 
+
 def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 	"""
 	Test whether networkio.verify_checksum() works correctly
@@ -611,16 +625,17 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
 	checksum_type = deep_get(checkdata, DictPath("hash"))
 	expect = deep_get(checkdata, DictPath("expect"))
 
-	data = cast(bytearray, secure_read(path, read_mode = "rb"))
+	data = cast(bytearray, secure_read(path, read_mode="rb"))
 	if checksum_type is not None:
-		csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode = "rb"))
+		csum = cast(bytes, secure_read(FilePath(f"{path}.{checksum_type}"), read_mode="rb"))
 	else:
-		csum = cast(bytes, secure_read(FilePath(f"{path}.md5"), read_mode = "rb"))
-	result = verify_checksum(checksum = csum, checksum_type = checksum_type, data = data, filename = filename)
+		csum = cast(bytes, secure_read(FilePath(f"{path}.md5"), read_mode="rb"))
+	result = verify_checksum(checksum=csum, checksum_type=checksum_type, data=data, filename=filename)
 
 	if result != expect:
 		return 1, f"expected {expect}, got {result}"
 	return 0, ""
+
 
 def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
 	"""
@@ -637,11 +652,12 @@ def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
 	separator = deep_get(checkdata, DictPath("separator"), ", ")
 	expect = deep_get(checkdata, DictPath("expect"), "")
 
-	result = join_securitystatus_set(separator = separator, securitystatuses = status_set)
+	result = join_securitystatus_set(separator=separator, securitystatuses=status_set)
 
 	if result != expect:
 		return 1, f"expected {expect}, got {result}"
 	return 0, ""
+
 
 testcases = {
 	"File permissions (default checks)": {
@@ -1700,7 +1716,7 @@ testcases = {
 	},
 	"Valid command, env (execute_command)": {
 		"command": [FilePath("/bin/sleep"), "0"],
-		"env": { "PATH": "" },
+		"env": {"PATH": ""},
 		"comparison": 0,
 		"test": test_execute_command,
 		"expect": True,
@@ -1719,7 +1735,7 @@ testcases = {
 	},
 	"Valid command, env (execute_command_with_response)": {
 		"command": [FilePath("/bin/echo"), "foo"],
-		"env": { "PATH": "" },
+		"env": {"PATH": ""},
 		"test": test_execute_command_with_response,
 		"expect": "foo\n",
 	},
@@ -1730,6 +1746,7 @@ testcases = {
 		"expect": f"<SecurityStatus.PERMISSIONS: {SecurityStatus.PERMISSIONS}>:<SecurityStatus.IS_NOT_FILE: {SecurityStatus.IS_NOT_FILE}>",
 	},
 }
+
 
 def main() -> int:
 	"""
@@ -1743,12 +1760,12 @@ def main() -> int:
 	success = 0
 	failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
+	init_ansithemeprint(themefile=None)
 
 	i = 0
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in testcases if not deep_get(testcases[i], DictPath("prepare"), False))
+	# How many non-prepare testcases do we have? (multiply by 2 since we run with and without verbose)
+	testcount = sum(1 for testcase, testcase_data in testcases.items() if not deep_get(testcase_data, DictPath("prepare"), False)) * 2
 
 	print("Running tests with verbose = False:")
 	verbose = False
@@ -1813,9 +1830,10 @@ def main() -> int:
 		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
 			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+					ANSIThemeString(testcase, "default")], stderr=True)
 
 	return fail
+
 
 if __name__ == "__main__":
 	main()

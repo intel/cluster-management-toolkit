@@ -19,17 +19,21 @@ from operator import attrgetter
 import os
 from pathlib import Path, PurePath
 import sys
-from typing import Any, Callable, cast, Dict, List, Optional, NamedTuple, NoReturn, Set, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional
+from typing import NamedTuple, NoReturn, Set, Tuple, Type, Union
 
 try:
 	from natsort import natsorted
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import natsort; "
+		 "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 from cmtio import check_path, join_securitystatus_set
 from cmtio_yaml import secure_read_yaml
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError, LogLevel, Retval
-from cmttypes import SecurityChecks, SecurityStatus, StatusGroup, loglevel_to_name, stgroup_mapping
+from cmttypes import DictPath, FilePath, LogLevel, StatusGroup, Retval
+from cmttypes import FilePathAuditError, ProgrammingError
+from cmttypes import SecurityChecks, SecurityStatus
+from cmttypes import deep_get, loglevel_to_name, stgroup_mapping
 
 from ansithemeprint import ANSIThemeString, ansithemeprint
 
@@ -40,6 +44,7 @@ themefile: Optional[FilePath] = None
 
 mousemask = 0
 
+
 # A reference to text formatting
 class ThemeAttr(NamedTuple):
 	"""
@@ -49,12 +54,12 @@ class ThemeAttr(NamedTuple):
 			context: The context to use when doing a looking in themes
 			key: The key to use when doing a looking in themes
 	"""
-
 	context: str
 	key: str
 
 	def __repr__(self) -> str:
 		return f"ThemeAttr('{self.context}', '{self.key}')"
+
 
 class ThemeString:
 	"""
@@ -63,11 +68,13 @@ class ThemeString:
 		Parameters:
 			string: A string
 			themeattr: The themeattr used to format the string
-			selected (Optional[bool]): Should the selected or unselected formatting be used
+			selected (Optional[bool]): Selected or unselected formatting
 	"""
 
 	def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
-		if not (isinstance(string, str) and isinstance(themeattr, ThemeAttr) and (selected is None or isinstance(selected, bool))):
+		if not (isinstance(string, str) and
+				isinstance(themeattr, ThemeAttr) and
+				(selected is None or isinstance(selected, bool))):
 			msg = [
 				[("ThemeString()", "emphasis"),
 				 (" initialised with invalid argument(s):", "error")],
@@ -121,7 +128,6 @@ class ThemeString:
 			Returns:
 				themeattr (ThemeAttr): The ThemeAttr attribute of the ThemeString
 		"""
-
 		return self.themeattr
 
 	def set_themeattr(self, themeattr: ThemeAttr) -> None:
@@ -129,9 +135,8 @@ class ThemeString:
 		Replace the ThemeAttr attribute of the ThemeString
 
 			Parameters:
-				themeattr (ThemeAttr): The new ThemeAttr attribute for the ThemeString
+				themeattr (ThemeAttr): The new ThemeAttr attribute to use
 		"""
-
 		self.themeattr = themeattr
 
 	def get_selected(self) -> bool:
@@ -141,7 +146,6 @@ class ThemeString:
 			Returns:
 				selected  (bool): The selected attribute of the ThemeString
 		"""
-
 		return self.selected
 
 	def __eq__(self, obj: Any) -> bool:
@@ -150,9 +154,11 @@ class ThemeString:
 
 		return repr(obj) == repr(self)
 
+
 class ThemeRef:
 	"""
-	A reference to a themed string; while the type definition is the same as ThemeAttr its use is different.
+	A reference to a themed string;
+	while the type definition is the same as ThemeAttr its use is different.
 
 		Parameters:
 			context: The context to use when doing a looking in themes
@@ -161,7 +167,9 @@ class ThemeRef:
 	"""
 
 	def __init__(self, context: str, key: str, selected: bool = False) -> None:
-		if not (isinstance(context, str) and isinstance(key, str) and (selected is None or isinstance(selected, bool))):
+		if not (isinstance(context, str) and
+				isinstance(key, str) and
+				(selected is None or isinstance(selected, bool))):
 			msg = [
 				[("ThemeRef()", "emphasis"),
 				 (" initialised with invalid argument(s):", "error")],
@@ -240,7 +248,6 @@ class ThemeRef:
 			Returns:
 				themearray (ThemeArray): The themearray representation
 		"""
-
 		themearray = []
 		data = deep_get(theme, DictPath(f"{self.context}#{self.key}"))
 		if isinstance(data, dict):
@@ -267,7 +274,9 @@ class ThemeRef:
 					       facility = str(themefile),
 					       formatted_msg = formatted_msg)
 		for string, themeattr in array:
-			themearray.append(ThemeString(string, ThemeAttr(themeattr[0], themeattr[1]), self.selected))
+			themearray.append(ThemeString(string,
+						      ThemeAttr(themeattr[0], themeattr[1]),
+						      self.selected))
 		return themearray
 
 	def get_selected(self) -> bool:
@@ -277,7 +286,6 @@ class ThemeRef:
 			Returns:
 				selected (bool): The selected attribute of the ThemeRef
 		"""
-
 		return self.selected
 
 	def __eq__(self, obj: Any) -> bool:
@@ -286,16 +294,20 @@ class ThemeRef:
 
 		return repr(obj) == repr(self)
 
+
 class ThemeArray:
 	"""
 	An array of themed strings and references to themed strings
 
 		Parameters:
 			list[Union[ThemeString, ThemeRef]]: The themearray
-			selected (Optional[bool]): Should the selected or unselected formatting be used; passing selected overrides the individual components
+			selected (Optional[bool]): Selected or unselected formatting;
+						   passing this parameter overrides
+						   individual members of the ThemeArray
 	"""
 
-	def __init__(self, array: List[Union[ThemeRef, ThemeString]], selected: Optional[bool] = None) -> None:
+	def __init__(self, array: List[Union[ThemeRef, ThemeString]],
+					selected: Optional[bool] = None) -> None:
 		if array is None:
 			msg = [
 				[("ThemeArray()", "emphasis"),
@@ -465,6 +477,34 @@ class ThemeArray:
 		"""
 		return self.array
 
+
+# pylint: disable-next=too-few-public-methods
+class curses_configuration:
+	"""
+	Configuration options for the curses UI
+	"""
+	abouttext: Optional[List[Tuple[int, List[ThemeString]]]] = None
+	mousescroll_enable: bool = False
+	mousescroll_up: int = 0b10000000000000000
+	mousescroll_down: int = 0b1000000000000000000000000000
+
+
+class WidgetLineAttrs(IntFlag):
+	"""
+	Special properties used by lines in windowwidgets
+	"""
+	# No specific attributes
+	NORMAL = 0
+	# Separators start a new category; they are not selectable
+	SEPARATOR = 1
+	# Disabled items are not selectable, but are not treated as a new category
+	DISABLED = 2
+	# Unselectable items are not selectable, but are not skipped when navigating
+	UNSELECTABLE = 4
+	# Invalid items are not selectable; to be used for parse error etc.
+	INVALID = 8
+
+
 def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
 	"""
 	Given a helptext in the format [(key, description)], format it in a way suitable for windowwidget
@@ -480,28 +520,17 @@ def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
 	for key, description in helptext:
 		formatted_helptext.append({
 			"lineattrs": WidgetLineAttrs.NORMAL,
-			"columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))], [ThemeString(description, ThemeAttr("windowwidget", "default"))]],
+			"columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))],
+				    [ThemeString(description, ThemeAttr("windowwidget", "default"))]],
 			"retval": None,
 		})
 
 	return formatted_helptext
 
-# pylint: disable-next=too-few-public-methods
-class curses_configuration:
-	"""
-	Configuration options for the curses UI
-	"""
-
-	abouttext: Optional[List[Tuple[int, List[ThemeString]]]] = None
-	mousescroll_enable: bool = False
-	mousescroll_up: int = 0b10000000000000000
-	mousescroll_down: int = 0b1000000000000000000000000000
-
 def set_mousemask(mask: int) -> None:
 	"""
 	Enable/disable mouse support
 	"""
-
 	global mousemask  # pylint: disable=global-statement
 	curses.mousemask(mask)
 	mousemask = mask
@@ -510,14 +539,14 @@ def get_mousemask() -> int:
 	"""
 	Get the default mouse mask
 	"""
-
 	return mousemask
 
-__color: Dict[str, Tuple[int, int]] = {
-}
 
-__pairs: Dict[Tuple[int, int], int] = {
-}
+__color: Dict[str, Tuple[int, int]] = {}
+
+
+__pairs: Dict[Tuple[int, int], int] = {}
+
 
 color_map: Dict[str, int] = {
 	"black": curses.COLOR_BLACK,
@@ -530,6 +559,7 @@ color_map: Dict[str, int] = {
 	"white": curses.COLOR_WHITE,
 }
 
+
 def get_theme_ref() -> Dict:
 	"""
 	Get a reference to the theme
@@ -537,7 +567,6 @@ def get_theme_ref() -> Dict:
 		Returns:
 			(str): A reference to the theme
 	"""
-
 	return theme
 
 def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int:
@@ -588,8 +617,7 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 	else:
 		curses_attr = 0
 
-	curses_color = deep_get(color_map, DictPath(col))
-	if curses_color is None:
+	if (curses_color := deep_get(color_map, DictPath(col))) is None:
 		#debuglog.add([
 		#		[ANSIThemeString("Invalid {color_type} color “", "default"),
 		#		 ANSIThemeString(f"{col}", "emphasis"),
@@ -915,7 +943,6 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int, height:
 			((int, int), (int, int), (int, int)): A tuple with (y, x) for the upper and lower arrow,
 			as well as the midpoint of the dragger
 	"""
-
 	arrowup = deep_get(theme, DictPath("boxdrawing#arrowup"), "▲")
 	arrowdown = deep_get(theme, DictPath("boxdrawing#arrowdown"), "▼")
 	scrollbar = deep_get(theme, DictPath("boxdrawing#scrollbar"), "▒")
@@ -1038,10 +1065,9 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup], selected: int) 
 		Returns:
 			array (list[ThemeArray]): A list of themearrays
 	"""
-
 	heatmap: List[Union[ThemeRef, ThemeString]] = []
 
-	if len(stgroups) == 0:
+	if not stgroups:
 		return []
 
 	# Append a dummy entry to avoid special casing
@@ -1137,7 +1163,7 @@ def notice(stdscr: Optional[curses.window], y: int, x: int, message: str) -> cur
 	Show a notification
 
 		Parameters:
-			win (curses.window): The curses window to operate on
+			stdscr (curses.window): The curses window to operate on
 			y (int): the y-coordinate of the window centre point
 			x (int): the x-coordinate of the window centre point
 			message (str): The message to show
@@ -1304,16 +1330,36 @@ def inputwrapper(keypress: int) -> int:
 
 	global ignoreinput  # pylint: disable=global-statement
 
-	if keypress == 27:	# ESCAPE
+	if keypress == 27:  # ESCAPE
 		ignoreinput = True
 		return 7
 	return keypress
 
-# Show a one line high pad the width of the current pad with a border
-# and specified title in the middle of the screen
 # pylint: disable-next=too-many-arguments,unused-argument
-def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, title: str) -> str:
+def inputbox(stdscr: curses.window, **kwargs: Any) -> str:
+	"""
+	Show an input box at (y, x)
+
+		Parameters:
+			stdscr (curses.window): The curses window to operate on
+			**kwargs (dict[str, Any]): Keyword arguments
+				y (int): the y-coordinate to draw the box at
+					 (default: maxy // 2)
+				x (int): the x-coordinate for the left edge of the inputbox
+					 (default: 1)
+				width (int): the width of the inputbox
+					     (default: maxx - 1)
+				title (str): The inputbox title (default: "")
+		Returns:
+			(str): The inputted string
+	"""
 	global ignoreinput  # pylint: disable=global-statement
+
+	maxy, maxx = stdscr.getmaxyx()
+	y = deep_get(kwargs, DictPath("y"), maxy // 2)
+	x = deep_get(kwargs, DictPath("x"), 1)
+	width = deep_get(kwargs, DictPath("width"), maxx - 2)
+	title = deep_get(kwargs, DictPath("title"), "")
 
 	# Show the cursor; seems some implementations of curses (or terminals?)
 	# might not support toggling the cursor; they will throw an exception instead.
@@ -1330,7 +1376,8 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 	win.attrset(col)
 	win.clear()
 	win.border()
-	win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
+	if title:
+		win.addstr(0, 1, title, themeattr_to_curses_merged(ThemeAttr("windowwidget", "title")))
 	win.noutrefresh()
 
 	inputarea = win.subwin(1, width - 2, y + 1, x + 1)
@@ -1364,10 +1411,29 @@ def inputbox(stdscr: curses.window, y: int, x: int, height: int, width: int, tit
 
 	return string.rstrip()
 
-# Show a confirmation box centered around y and x
-# with the specified default value and title
-def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", default: bool = False) -> bool:
+def confirmationbox(stdscr: curses.window, **kwargs: Any) -> bool:
+	"""
+	Show a confirmation box centered around y
+
+		Parameters:
+			stdscr (curses.window): The curses window to operate on
+			**kwargs (dict[str, Any]): Keyword arguments
+				y (int): the y-coordinate to draw the box at
+					 (default: maxy // 2)
+				x (int): the x-coordinate for the centre point of the box
+					 (default: maxx // 2)
+				default (bool): The default value
+				title (str): The confirmationbox title (default: "")
+		Returns:
+			(bool): The response
+	"""
 	global ignoreinput  # pylint: disable=global-statement
+
+	maxy, maxx = stdscr.getmaxyx()
+	y = deep_get(kwargs, DictPath("y"), maxy // 2)
+	x = deep_get(kwargs, DictPath("x"), maxx // 2)
+	default = deep_get(kwargs, DictPath("default"), False)
+	title = deep_get(kwargs, DictPath("title"), "")
 
 	ignoreinput = False
 	retval = default
@@ -1392,7 +1458,7 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 	while True:
 		stdscr.timeout(100)
 		c = stdscr.getch()
-		if c == 27:	# ESCAPE
+		if c == 27:  # ESCAPE
 			break
 
 		if c == ord("") or c == ord(""):
@@ -1418,8 +1484,26 @@ def confirmationbox(stdscr: curses.window, y: int, x: int, title: str = "", defa
 	return retval
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
-			 maxcurypos: int, maxyoffset: int, movement: int, wraparound: bool = False) -> Tuple[int, int]:
+def move_cur_with_offset(curypos: int, yoffset: int,
+			 maxcurypos: int, maxyoffset: int, movement: int, **kwargs: Any) -> Tuple[int, int]:
+	"""
+	Calculate a new cursor position based on an offset
+
+		Parameters:
+			curypos (int): The current cursor on the screen
+			yoffset (int): The offset in the range
+			maxcurypos (int): The maximum cursor screen position
+			maxyoffset (int): The maximum offset in the range
+			movement (int): The momvent to make
+			**kwargs (dict[str, Any]): Keyword arguments
+				wraparound (bool): Should the list wraparound (default: False)
+		Returns:
+			(int, int):
+				newcurypos (int): The new cursor position
+				newyoffset (int): The new offset in the range
+	"""
+	wraparound: bool = deep_get(kwargs, DictPath("wraparound"), False)
+
 	newcurypos = curypos + movement
 	newyoffset = yoffset
 
@@ -1448,22 +1532,26 @@ def move_cur_with_offset(curypos: int, listlen: int, yoffset: int,
 				newyoffset = max(yoffset + movement + curypos, 0)
 	return newcurypos, newyoffset
 
-def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
+def addthemearray(win: curses.window,
+		  array: List[Union[ThemeRef, ThemeString]], **kwargs: Any) -> Tuple[int, int]:
 	"""
 	Add a ThemeArray to a curses window
 
 		Parameters:
 			win (curses.window): The curses window to operate on
 			array (list[union[ThemeRef, ThemeString]]): The themearray to add to the curses window
-			y (int): The y-coordinate (-1 to start from current cursor position)
-			x (int): The x-coordinate (-1 to start from current cursor position)
-			selected (bool): Should the selected version of the ThemeArray be used
-			deleted (bool): Should the theme be overridden as deleted?
+			**kwargs (dict[str, Any]): Keyword arguments
+				y (int): The y-coordinate (-1 to start from current cursor position)
+				x (int): The x-coordinate (-1 to start from current cursor position)
+				deleted (bool): Should the theme be overridden as deleted?
 		Returns:
 			(y, x):
 				y (int): The new y-coordinate
 				x (int): The new x-coordinate
 	"""
+	y: int = deep_get(kwargs, DictPath("y"), -1)
+	x: int = deep_get(kwargs, DictPath("x"), -1)
+	deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
 
 	for item in themearray_flatten(array):
 		if deleted:
@@ -1478,17 +1566,6 @@ def addthemearray(win: curses.window, array: List[Union[ThemeRef, ThemeString]],
 		y, x = win.getyx()
 	return y, x
 
-class WidgetLineAttrs(IntFlag):
-	"""
-	Special properties used by lines in windowwidgets
-	"""
-
-	NORMAL = 0		# No specific attributes
-	SEPARATOR = 1		# Separators start a new category; they are not selectable
-	DISABLED = 2		# Disabled items are not selectable, but are not treated as a new category
-	UNSELECTABLE = 4	# Unselectable items are not selectable, but are not skipped when navigating
-	INVALID = 8		# Invalid items are not selectable; to be used for parse error etc.
-
 # This extracts the string without formatting;
 # once everything uses proper ThemeArray this wo not be necessary anymore
 def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> str:
@@ -1501,7 +1578,6 @@ def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, Them
 		Returns:
 			string (str): The unformatted string
 	"""
-
 	string = ""
 
 	if isinstance(themearray, ThemeArray):
@@ -1512,7 +1588,8 @@ def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, Them
 
 	return string
 
-def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]], max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]:
+def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]],
+				max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]:
 	output_format = type(themearray)
 	truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]] = []
 
@@ -1798,7 +1875,9 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]], maxwidt
 
 	return themearrays
 
-ignoreinput = False
+
+ignoreinput: bool = False
+
 
 # A generic window widget
 # items is a list of tuples, like so:
@@ -1815,7 +1894,7 @@ ignoreinput = False
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, items: List[Dict[str, Any]], **kwargs: Any) -> Union[Set, Tuple[int, Union[bool, int, str, None]], Union[bool, int, str, None]]:
 	global ignoreinput  # pylint: disable=global-statement
 
-	headers: List[str] = deep_get(kwargs, DictPath("headers"))
+	headers: Tuple[str] = deep_get(kwargs, DictPath("headers"))
 	title: str = deep_get(kwargs, DictPath("title"), "")
 	preselection: Union[str, Set[int]] = deep_get(kwargs, DictPath("preselection"), "")
 	cursor: bool = deep_get(kwargs, DictPath("cursor"), True)
@@ -1956,7 +2035,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 					tmp_selection = item["columns"][0][0][0]
 
 				if "retval" in item and item["retval"] == preselection or "retval" not in item and tmp_selection == preselection:
-					curypos, yoffset = move_cur_with_offset(0, height, yoffset, maxcurypos, maxyoffset, _y)
+					curypos, yoffset = move_cur_with_offset(0, yoffset, maxcurypos, maxyoffset, _y)
 					break
 		tagged_items = set()
 	elif isinstance(preselection, set):
@@ -2038,7 +2117,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		if headers is not None:
 			addthemearray(headerpad, headerarray, y = 0, x = 0)
 			headerxoffset = 0
-			if len(headers) > 0:
+			if headers:
 				headerxoffset = xoffset
 			headerpad.noutrefresh(0, headerxoffset, headerpadypos, xpos + 1, headerpadypos, xpos + width - 2)
 			window_tee_hline(win, 2, 0, width - 1, ThemeAttr("windowwidget", "boxdrawing"))
@@ -2070,7 +2149,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Live resizing windowwidget() is currently broken; this is a known issue.", "default")], stderr = True)
 			sys.exit(errno.ENOTSUP)
-		if c == 27:	# ESCAPE
+		if c == 27:  # ESCAPE
 			selection = ""
 			confirm_press = c
 			break
@@ -2101,7 +2180,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			# Find the next entry starting with the pressed letter; wrap around if the bottom is hit
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
 				tmp_char = str(items[yoffset + curypos]["columns"][0][0])[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
@@ -2115,7 +2194,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			# Find the previous entry starting with the pressed letter; wrap around if the top is hit
 			# stop if oldycurypos + oldyoffset is hit
 			while True:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1, wraparound = True)
 				lineattributes = items[yoffset + curypos]["lineattrs"]
 				tmp_char = str(items[yoffset + curypos]["columns"][0][0])[0]
 				if tmp_char.lower() == chr(c).lower() and lineattributes & WidgetLineAttrs.DISABLED == 0:
@@ -2128,34 +2207,34 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 		elif c == ord("\t") and cursor:
 			# Find next group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 				# OK, we found a group, now find the first not-group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
 				if (curypos + yoffset) == (maxcurypos + maxyoffset):
 					break
 		elif c == curses.KEY_BTAB and cursor:
 			# Find previous group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR == 0:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# OK, we found a group, now find the previous not-group
 			while items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 			# Finally find the first entry in that group
 			while (curypos + yoffset) > 0 and items[yoffset + curypos]["lineattrs"] & WidgetLineAttrs.SEPARATOR != 0:
-				curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+				curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 				if (curypos + yoffset) == 0:
 					break
 		elif c == curses.KEY_UP:
-			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+			curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 		elif c == curses.KEY_DOWN:
-			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
+			curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
 		elif c == curses.KEY_LEFT:
 			xoffset = max(xoffset - 1, 0)
 		elif c == curses.KEY_RIGHT:
@@ -2171,31 +2250,31 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 			curypos = maxcurypos
 			yoffset = maxyoffset
 		elif c == curses.KEY_PPAGE:
-			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -10)
+			curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -10)
 		elif c == curses.KEY_NPAGE:
-			curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +10)
+			curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +10)
 
 		# These only apply if we use a cursor
 		if cursor:
 			# Find the last acceptable line
 			if (yoffset + curypos) == (maxcurypos + maxyoffset):
 				while items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
-					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+					curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 			# We tried moving backwards; do we need to go farther?
 			if (yoffset + curypos) > (oldyoffset + oldcurypos):
 				while (yoffset + curypos) < len(items) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
-					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
+					curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
 				if (yoffset + curypos) == len(items) and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					yoffset = oldyoffset
 					curypos = oldcurypos
 			# Find the first acceptable line
 			elif (yoffset + curypos) == 0:
 				while items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
-					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, +1)
+					curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, +1)
 			# We tried moving backwards; do we need to go farther?
 			elif (yoffset + curypos) < (oldyoffset + oldcurypos):
 				while (yoffset + curypos) > 0 and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
-					curypos, yoffset = move_cur_with_offset(curypos, height, yoffset, maxcurypos, maxyoffset, -1)
+					curypos, yoffset = move_cur_with_offset(curypos, yoffset, maxcurypos, maxyoffset, -1)
 				if (yoffset + curypos) == 0 and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.SEPARATOR | WidgetLineAttrs.DISABLED) != 0:
 					curypos = oldcurypos + oldyoffset
 					yoffset = 0
@@ -2216,7 +2295,9 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, it
 
 	return selection
 
+
 label_headers = ["Label:", "Value:"]
+
 
 def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
 	"""
@@ -2240,7 +2321,9 @@ def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
 		})
 	return rlabels
 
-annotation_headers = ["Annotation:", "Value:"]
+
+annotation_headers: Tuple[str] = ("Annotation:", "Value:")
+
 
 def get_annotations(annotations: Optional[Dict]) -> Optional[List[Dict]]:
 	"""
@@ -2253,6 +2336,7 @@ def get_annotations(annotations: Optional[Dict]) -> Optional[List[Dict]]:
 	"""
 
 	return get_labels(annotations)
+
 
 # pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class UIProps:
@@ -2453,7 +2537,9 @@ class UIProps:
 		return self.listlen
 
 	def update_log_info(self, timestamps: Optional[List[datetime]],
-			    facilities: Optional[List[str]], severities: Optional[List[LogLevel]], messages: Optional[List[Union[str, ThemeArray, List[Union[ThemeString, ThemeRef]]]]]) -> None:
+			    facilities: Optional[List[str]],
+			    severities: Optional[List[LogLevel]],
+			    messages: Optional[List[Union[str, ThemeArray, List[Union[ThemeString, ThemeRef]]]]]) -> None:
 		self.timestamps = timestamps
 		self.facilities = facilities
 		self.severities = severities
@@ -2632,7 +2718,7 @@ class UIProps:
 				window_tee_hline(self.stdscr, self.logpadypos - 1, 0, self.maxx)
 			if self.borders:
 				window_tee_hline(self.stdscr, self.maxy - 2, 0, self.maxx)
-				if self.tspad is not None and self.tspadxpos != self.logpadxpos and self.loglen > 0:
+				if self.tspad is not None and self.tspadxpos != self.logpadxpos and self.loglen:
 					window_tee_vline(self.stdscr, self.logpadxpos - 1, self.logpadypos - 1, self.maxy - 2)
 			else:
 				# If the window lacks sideborders we want lines
@@ -2655,7 +2741,7 @@ class UIProps:
 			ThemeString(rtee, ThemeAttr("main", "default")),
 		]
 
-		if len(self.helpstring) > 0:
+		if self.helpstring:
 			timestamparray += [
 				ThemeString(self.helpstring, ThemeAttr("main", "statusbar")),
 				ThemeRef("separators", "statusbar"),
@@ -3070,22 +3156,25 @@ class UIProps:
 
 	# pylint: disable-next=too-many-arguments
 	def addthemearray(self, win: curses.window,
-			  array: List[Union[ThemeRef, ThemeString]], y: int = -1, x: int = -1, selected: Optional[bool] = None, deleted: bool = False) -> Tuple[int, int]:
+			  array: List[Union[ThemeRef, ThemeString]], **kwargs: Any) -> Tuple[int, int]:
 		"""
 		Add a ThemeArray to a curses window
 
 			Parameters:
 				win (curses.window): The curses window to operate on
 				array (list[union[ThemeRef, ThemeString]]): The themearray to add to the curses window
-				y (int): The y-coordinate (-1 to start from current cursor position)
-				x (int): The x-coordinate (-1 to start from current cursor position)
-				selected (bool): Should the selected version of the ThemeArray be used
-				deleted (bool): Should the theme be overridden as deleted?
+				**kwargs (dict[str, Any]): Keyword arguments
+					y (int): The y-coordinate (-1 to start from current cursor position)
+					x (int): The x-coordinate (-1 to start from current cursor position)
+					deleted (bool): Should the theme be overridden as deleted?
 			Returns:
 				(y, x):
 					y (int): The new y-coordinate
 					x (int): The new x-coordinate
 		"""
+		y: int = deep_get(kwargs, DictPath("y"), -1)
+		x: int = deep_get(kwargs, DictPath("x"), -1)
+		deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
 
 		for item in themearray_flatten(array):
 			if deleted:
@@ -3219,7 +3308,8 @@ class UIProps:
 				message = msg
 			else:
 				message = themearray_to_string(msg)
-			if searchkey in message:
+			# Case-insensitive search
+			if searchkey.lower() in message.lower():
 				self.search_matches.add(y)
 
 	def find_next_match(self) -> None:
@@ -3354,7 +3444,7 @@ class UIProps:
 			if y == pos:
 				break
 
-			if sortkey == "name" and current is not None and len(current) > 0:
+			if sortkey == "name" and current is not None and current:
 				if current[0] != entryval[0]:
 					current = entryval
 					newpos = y - pos
@@ -3369,7 +3459,7 @@ class UIProps:
 			y += 1
 
 		# If we do not match we will just end up with the old pos
-		if newpos == 0:
+		if not newpos:
 			self.move_cur_abs(0)
 		else:
 			self.move_cur_with_offset(newpos)
@@ -3398,7 +3488,7 @@ class UIProps:
 					tmp2 = [str(tmp2)]
 			for part in tmp2:
 				part = part[0:len(searchkey)].rstrip().lower()
-				if searchkey == part:
+				if searchkey.lower() == part:
 					offset = y - pos
 					if offset > 0:
 						match = True
@@ -3427,7 +3517,7 @@ class UIProps:
 					tmp2 = [str(tmp2)]
 			for part in tmp2:
 				part = part[0:len(searchkey)].rstrip().lower()
-				if searchkey == part:
+				if searchkey.lower() == part:
 					offset = y - pos
 					if offset < 0:
 						match = True
@@ -3451,7 +3541,7 @@ class UIProps:
 				match (InfoType): The unique match, the first partial match if no unique match is found, or None if no match is found
 		"""
 
-		if self.info is None or len(self.info) == 0 or name is None or len(name) == 0 or not hasattr(self.info[0], "name"):
+		if self.info is None or not self.info or name is None or not name or not hasattr(self.info[0], "name"):
 			return None
 
 		# Search within sort category
@@ -3529,14 +3619,20 @@ class UIProps:
 			valid_fields = []
 			for f in self.field_list:
 				valid_fields.append(f)
-			raise ValueError(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\nvalid fields are: {valid_fields}")
+			raise ValueError(f"Invalid sortcolumn: {self.sortcolumn} does not exist in field_list:\n"
+					 f"    Valid fields are: {valid_fields}")
 
 		sortkey1 = self.field_list[self.sortcolumn]["sortkey1"]
 		sortkey2 = self.field_list[self.sortcolumn]["sortkey2"]
 		return sortkey1, sortkey2
 
 	# pylint: disable-next=too-many-arguments,too-many-return-statements
-	def handle_mouse_events(self, win: curses.window, sorted_list: List[Type], activatedfun: Optional[Callable], extraref: Optional[str], data: Optional[bool]) -> Retval:
+	def handle_mouse_events(self,
+				win: curses.window,
+				sorted_list: List[Type],
+				activatedfun: Optional[Callable],
+				extraref: Optional[str],
+				data: Optional[bool]) -> Retval:
 		selected: Optional[Any]
 
 		try:
@@ -3733,7 +3829,7 @@ class UIProps:
 		if c == curses.KEY_RESIZE:
 			self.resize_window()
 			return Retval.MATCH
-		if c == 27:	# ESCAPE
+		if c == 27:  # ESCAPE
 			del self
 			return Retval.RETURNONE
 		if c == curses.KEY_MOUSE:
@@ -3899,8 +3995,8 @@ class UIProps:
 				if self.listpadheight < 2:
 					return Retval.MATCH
 
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
-				if searchkey is None or searchkey == "":
+				search_title = f"Search in “{self.sortcolumn}“: "
+				if not (searchkey := inputbox(self.stdscr, title = search_title)):
 					return Retval.MATCH
 
 				self.find_next_by_sortkey(self.info, searchkey)
@@ -3910,8 +4006,8 @@ class UIProps:
 					return Retval.MATCH
 
 				self.refresh = True
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
-				if searchkey is None or searchkey == "":
+				search_title = "Find: "
+				if not (searchkey := inputbox(self.stdscr, title = search_title)):
 					self.match_index = None
 					self.search_matches.clear()
 					return Retval.MATCH
@@ -3926,8 +4022,8 @@ class UIProps:
 				if self.listpadheight < 2:
 					return Retval.MATCH
 
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, f"Search in “{self.sortcolumn}“: ").rstrip().lower()
-				if searchkey is None or searchkey == "":
+				search_title = f"Search in “{self.sortcolumn}“: "
+				if not (searchkey := inputbox(self.stdscr, title = search_title)):
 					return Retval.MATCH
 
 				self.find_prev_by_sortkey(self.info, searchkey)
@@ -3937,8 +4033,8 @@ class UIProps:
 					return Retval.MATCH
 
 				self.refresh = True
-				searchkey = inputbox(self.stdscr, self.maxy // 2, 1, self.maxy - 1, self.maxx - 1, "Find: ")
-				if searchkey is None or searchkey == "":
+				search_title = "Find: "
+				if not (searchkey := inputbox(self.stdscr, title = search_title)):
 					self.match_index = None
 					self.search_matches.clear()
 					return Retval.MATCH
@@ -3956,7 +4052,7 @@ class UIProps:
 
 				self.find_next_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log or len(self.search_matches) == 0:
+				if self.maxyoffset == 0 or self.continuous_log or not self.search_matches:
 					return Retval.MATCH
 
 				self.refresh = True
@@ -3972,7 +4068,7 @@ class UIProps:
 
 				self.find_prev_by_sortkey(self.info, self.searchkey)
 			elif self.logpad is not None:
-				if self.maxyoffset == 0 or self.continuous_log or len(self.search_matches) == 0:
+				if not self.maxyoffset or self.continuous_log or not self.search_matches:
 					return Retval.MATCH
 
 				self.refresh = True
@@ -4102,7 +4198,7 @@ class UIProps:
 
 		first = True
 		for helptexts in helptext_groups:
-			if len(helptexts) == 0:
+			if not helptexts:
 				continue
 			if not first:
 				helptext.append(("", ""))
@@ -4199,7 +4295,7 @@ class UIProps:
 			self.resize_window()
 			return Retval.MATCH, {}
 
-		if c == 27:	# Either ESCAPE or ALT+<key>
+		if c == 27:  # Either ESCAPE or ALT+<key>
 			self.stdscr.nodelay(True)
 			c2 = self.stdscr.getch()
 			self.stdscr.nodelay(False)

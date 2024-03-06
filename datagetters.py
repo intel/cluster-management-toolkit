@@ -590,6 +590,7 @@ def datagetter_api_support(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str
 
 	return available_views, {}
 
+
 # Datagetters acceptable for direct use in view files
 datagetter_allowlist: Dict[str, Callable[[kubernetes_helper.KubernetesHelper, Dict, DictPath, Any], Tuple[Any, Dict]]] = {
 	"datagetter_container_status": datagetter_container_status,

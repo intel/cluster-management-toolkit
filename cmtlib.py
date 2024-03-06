@@ -219,15 +219,15 @@ def normalise_mem_bytes_to_str(mem_usage_bytes: int, fmt: str = "float") -> str:
 	mem_usage: float = 0
 
 	suffixes = (
-		"",	# 1024 ** 1
-		"Ki",	# 1024 ** 2
-		"Mi",	# 1024 ** 3
-		"Gi",	# 1024 ** 4
-		"Ti",	# 1024 ** 5
-		"Pi",	# 1024 ** 6
-		"Ei",	# 1024 ** 7
-		"Zi",	# 1024 ** 8
-		"Yi",	# 1024 ** 9
+		"",    # 1024 ** 1
+		"Ki",  # 1024 ** 2
+		"Mi",  # 1024 ** 3
+		"Gi",  # 1024 ** 4
+		"Ti",  # 1024 ** 5
+		"Pi",  # 1024 ** 6
+		"Ei",  # 1024 ** 7
+		"Zi",  # 1024 ** 8
+		"Yi",  # 1024 ** 9
 	)
 
 	if not isinstance(mem_usage_bytes, int):

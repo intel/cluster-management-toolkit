@@ -147,6 +147,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
 
 	return tmpobj
 
+
 # Objgetters acceptable for direct use in view files
 objgetter_allowlist = {
 	"objgetter_ansible_facts": objgetter_ansible_facts,

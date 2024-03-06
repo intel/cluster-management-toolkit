@@ -25,6 +25,7 @@ real_import = None
 
 import_override = {}
 
+
 def override_import(name: str, *args: List[Any], **kwargs: Any):
 	retval, exception = import_override.get(name, (None, None))
 	if exception:
@@ -33,70 +34,71 @@ def override_import(name: str, *args: List[Any], **kwargs: Any):
 		return retval
 	return real_import(name, *args, **kwargs)
 
+
 def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
 	global import_override
 
 	message = ""
 	result = True
-	loglevels = []
 	testobj = {"foo": "bar"}
 	fun = logparsers.json_dumps
 
 	if result:
 		import_override = {"ujson": (None, ModuleNotFoundError)}
 		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
+			with mock.patch("builtins.__import__", side_effect=override_import):
 				importlib.reload(logparsers)
 				_tmp = logparsers.json_dumps(testobj)
-		except Exception as e:
-			message = f"overriding import ujson or {fun.__name__} failed"
+		except Exception as e:  # pylint: disable=broad-except
+			message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
 			result = False
 
 	if result:
 		import_override = {"ujson": (None, None)}
 		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
+			with mock.patch("builtins.__import__", side_effect=override_import):
 				importlib.reload(logparsers)
 				_tmp = logparsers.json_dumps(testobj)
-		except Exception as e:
-			message = f"overriding import ujson or {fun.__name__} failed"
+		except Exception as e:  # pylint: disable=broad-except
+			message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
 			result = False
 
 	import_override = {}
 	return message, result
+
 
 def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
 	global import_override
 
 	message = ""
 	result = True
-	loglevels = []
 
 	if result:
 		import_override = {"validators": (None, ModuleNotFoundError)}
 		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
+			with mock.patch("builtins.__import__", side_effect=override_import):
 				importlib.reload(logparsers)
-		except Exception as e:
-			message = "Overriding import validators failed"
+		except Exception as e:  # pylint: disable=broad-except
+			message = f"Overriding import validators failed; exception {e}"
 			result = False
 
 	if result:
 		import_override = {"validators": (None, None)}
 		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
+			with mock.patch("builtins.__import__", side_effect=override_import):
 				importlib.reload(logparsers)
-		except Exception as e:
-			message = "Overriding import validators failed"
+		except Exception as e:  # pylint: disable=broad-except
+			message = f"Overriding import validators failed; exception {e}"
 			result = False
 
 	import_override = {}
 	return message, result
 
+
 def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
-	loglevels = []
+	loglevels: List[str] = []
 
 	fun = logparsers.get_loglevel_names
 	tmp = fun()
@@ -114,7 +116,6 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 		result = False
 	else:
 		loglevels = tmp
-		fun_str = "logparsers.name_to_loglevel"
 		fun = logparsers.name_to_loglevel
 		for indata in loglevels:
 			tmp = fun(indata)
@@ -138,6 +139,7 @@ def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple
 
 	return message, result
 
+
 def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 	verbose = False
 	message = ""
@@ -145,13 +147,12 @@ def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 
 	for indata in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
 		fun = logparsers.month_to_numerical
-		fun_str = "logparsers.month_to_numerical"
 		tmp = fun(indata)
 		if tmp is None:
-			message = f"{fun_str}() returned None with valid indata {indata}"
+			message = f"{fun.__name__}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, str):
-			message = f"{fun_str}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected str"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected str"
 			result = False
 		else:
 			if verbose:
@@ -161,24 +162,25 @@ def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
 		try:
 			indata = "NOT A MONTH"
 			fun(indata)
-			message = f"{fun_str}() silently accepted invalid indata ({indata})"
+			message = f"{fun.__name__}() silently accepted invalid indata ({indata})"
 			result = False
 		except ValueError:
 			pass
 
 	return message, result
 
-def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+
+def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
 	for indata in valid_indata:
 		tmp = fun(indata)
 		if tmp is None:
-			message = f"{fun_str}() returned None with valid indata {indata}"
+			message = f"{fun.__name__}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, LogLevel):
-			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected LogLevel"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected LogLevel"
 			result = False
 		else:
 			if verbose:
@@ -189,47 +191,52 @@ def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, fun_str: st
 		indata = "#"
 		tmp = fun(indata)
 		if tmp is not None:
-			message = f"{fun_str}(default = None) returned {tmp} with invalid indata ({indata}), expected None"
+			message = f"{fun.__name__}(default = None) returned {tmp} with invalid indata ({indata}), expected None"
 			result = False
 
 	if result:
 		# If we pass a default we should get that default back if the severity is invalid
-		tmp = fun(indata, default = LogLevel.NOTICE)
+		tmp = fun(indata, default=LogLevel.NOTICE)
 		if tmp is None:
-			message = f"{fun_str}(default = LogLevel.NOTICE) returned None with invalid indata ({indata}), expected LogLevel.NOTICE"
+			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned None with invalid indata ({indata}), expected LogLevel.NOTICE"
 			result = False
 		elif not isinstance(tmp, LogLevel):
-			message = f"{fun_str}(default = LogLevel.NOTICE) returned wrong type ({type(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel"
+			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned wrong type ({type(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel"
 			result = False
 		elif tmp != LogLevel.NOTICE:
-			message = f"{fun_str}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel.NOTICE"
+			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel.NOTICE"
 			result = False
 
 	return message, result
 
+
 def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata = ("F", "E", "W", "N", "C", "I", "D"), fun = logparsers.letter_to_severity, fun_str = "logparsers.letter_to_severity")
+	return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"), fun=logparsers.letter_to_severity)
+
 
 def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata = ("ERR", "WRN", "INF"), fun = logparsers.str_3letter_to_severity, fun_str = "logparsers.str_3letter_to_severity")
+	return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"), fun=logparsers.str_3letter_to_severity)
+
 
 def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata = ("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun = logparsers.str_4letter_to_severity, fun_str = "logparsers.str_4letter_to_severity")
+	return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun=logparsers.str_4letter_to_severity)
+
 
 def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata = ("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun = logparsers.str_to_severity, fun_str = "logparsers.str_to_severity")
+	return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun=logparsers.str_to_severity)
 
-def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+
+def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
 	for indata in valid_indata:
 		tmp = fun(indata)
 		if tmp is None:
-			message = f"{fun_str}() returned None with valid indata {indata}"
+			message = f"{fun.__name__}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, str):
-			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
 			result = False
 		else:
 			if verbose:
@@ -239,24 +246,28 @@ def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, fun_st
 		indata = -42
 		tmp = fun(indata)
 		if tmp is None:
-			message = f"{fun_str}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			message = f"{fun.__name__}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
 			result = False
 		elif tmp != "!ERROR IN LOGPARSER!":
-			message = f"{fun_str}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+			message = f"{fun.__name__}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
 			result = False
 
 	return message, result
 
+
 def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_letter_severity, fun_str = "logparsers.lvl_to_letter_severity")
+	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_letter_severity)
+
 
 def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_4letter_severity, fun_str = "logparsers.lvl_to_4letter_severity")
+	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_4letter_severity)
+
 
 def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata = (LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun = logparsers.lvl_to_word_severity, fun_str = "logparsers.lvl_to_word_severity")
+	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_word_severity)
 
-def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str, verbose: bool = False) -> Tuple[str, bool]:
+
+def generic_split_severity(valid_indata: Tuple[str], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 	default = LogLevel.INFO
@@ -264,18 +275,18 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str
 	for indata in valid_indata:
 		# indata is just a prefix; we want to test with a string prefixed by that prefix"
 		indata = f"{indata} something or another"
-		tmp = fun(indata, default = default)
+		tmp = fun(indata, default=default)
 		if tmp is None:
-			message = f"{fun_str}() returned None with valid indata {indata}"
+			message = f"{fun.__name__}() returned None with valid indata {indata}"
 			result = False
 		elif not isinstance(tmp, tuple):
-			message = f"{fun_str}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
 			result = False
 		elif len(tmp) != 2:
-			message = f"{fun_str}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
+			message = f"{fun.__name__}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
 			result = False
 		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
 			result = False
 		else:
 			if verbose:
@@ -283,32 +294,35 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, fun_str: str
 
 	if result:
 		indata = "NOT A VALID PREFIX"
-		tmp = fun(indata, default = default)
+		tmp = fun(indata, default=default)
 		if tmp is None:
-			message = f"{fun_str}() returned None for invalid indata {indata}, expected ({indata}, {default})"
+			message = f"{fun.__name__}() returned None for invalid indata {indata}, expected ({indata}, {default})"
 			result = False
 		elif not isinstance(tmp, tuple):
-			message = f"{fun_str}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
 			result = False
 		elif len(tmp) != 2:
-			message = f"{fun_str}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
+			message = f"{fun.__name__}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
 			result = False
 		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-			message = f"{fun_str}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
+			message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
 			result = False
 		elif tmp[0] != indata or tmp[1] != default:
-			message = f"{fun_str}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
+			message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
 			result = False
 
 	return message, result
 
+
 def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata = ("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]", "[notavalidseverity]"),
-				      fun = logparsers.split_bracketed_severity, fun_str = "logparsers.split_bracketed_severity", verbose = verbose)
+	return generic_split_severity(valid_indata=("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]", "[notavalidseverity]"),
+				      fun=logparsers.split_bracketed_severity, verbose=verbose)
+
 
 def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata = ("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
-				      fun = logparsers.split_colon_severity, fun_str = "logparsers.split_colon_severity", verbose = verbose)
+	return generic_split_severity(valid_indata=("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
+				      fun=logparsers.split_colon_severity, verbose=verbose)
+
 
 def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -387,25 +401,24 @@ def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 		"2020-02-20 113.47.41",
 	)
 
-	timestamp = datetime.now()
 	fun = logparsers.is_timestamp
-	fun_str = "logparsers.is_timestamp"
 
 	for indata in valid_indata:
 		tmp = fun(indata)
 		if not tmp:
-			message = f"{fun_str}() returned False with valid indata {indata}"
+			message = f"{fun.__name__}() returned False with valid indata {indata}"
 			result = False
 			break
 
 	for indata in invalid_indata:
 		tmp = fun(indata)
 		if tmp:
-			message = f"{fun_str}() returned True with invalid indata {indata}"
+			message = f"{fun.__name__}() returned True with invalid indata {indata}"
 			result = False
 			break
 
 	return message, result
+
 
 def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -440,25 +453,25 @@ def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 
 	timestamp = datetime.now()
 	fun = logparsers.split_iso_timestamp
-	fun_str = "logparsers.split_iso_timestamp"
 
 	for indata in valid_indata:
 		# indata is just a prefix; we want to test with a string prefixed by that prefix"
 		indata = f"{indata} something or another"
-		tmp = fun(indata, timestamp = timestamp)
+		tmp = fun(indata, timestamp=timestamp)
 		if tmp == (indata, timestamp):
-			message = f"{fun_str} failed to split timestamp from valid indata {indata}"
+			message = f"{fun.__name__} failed to split timestamp from valid indata {indata}"
 			result = False
 			break
 
 	if result:
 		indata = "something or another"
-		tmp = fun(indata, timestamp = timestamp)
+		tmp = fun(indata, timestamp=timestamp)
 		if tmp != (indata, timestamp):
-			message = f"{fun_str} did not return the indata {indata} unmodified"
+			message = f"{fun.__name__} did not return the indata {indata} unmodified"
 			result = False
 
 	return message, result
+
 
 def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -491,27 +504,25 @@ def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
 		"2020/02/20 13:47:41",
 	)
 
-	timestamp = datetime.now()
 	fun = logparsers.strip_iso_timestamp
-	fun_str = "logparsers.strip_iso_timestamp"
 
 	for indata in valid_indata:
 		# indata is just a prefix; we want to test with a string prefixed by that prefix"
 		indata = f"{indata} something or another"
 		tmp = fun(indata)
 		if tmp == indata:
-			message = f"{fun_str} failed to strip timestamp from valid indata {indata}"
+			message = f"{fun.__name__} failed to strip timestamp from valid indata {indata}"
 			result = False
 			break
 
 	return message, result
+
 
 def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
 	fun = logparsers.strip_iso_timestamp_with_tz
-	fun_str = "logparsers.strip_iso_timestamp_with_tz"
 
 	if result:
 		testdata = (
@@ -525,25 +536,25 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
 		for string, expected_result, expected_exception in testdata:
 			try:
 				if (tmp := fun(string)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {string}\n" \
 						  f"         output: {tmp}\n" \
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {string}\n" \
 							  f"      exception: {type(e)}\n" \
 							  f"       expected: {expected_exception}"
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {string}\n" \
 						  f"      exception: {type(e)}\n" \
 						  f"       expected: {expected_result}"
@@ -551,6 +562,7 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	return message, result
+
 
 def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -609,7 +621,7 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 
 		for string, remnants, fold_msg, expected_result, expected_remnants, expected_exception in testdata:
 			try:
-				tmp, _loglevel, facility, remnants = fun(string, [], fold_msg = fold_msg)
+				tmp, _loglevel, facility, remnants = fun(string, [], fold_msg=fold_msg)
 				if tmp != expected_result:
 					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"          input: {string}\n" \
@@ -617,7 +629,7 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -637,6 +649,7 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	return message, result
+
 
 def test_http(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -865,7 +878,7 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -885,6 +898,7 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	return message, result
+
 
 def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -929,7 +943,7 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -949,6 +963,7 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	return message, result
+
 
 def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
@@ -1051,8 +1066,7 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {expected_result}"
 					result = False
 					break
-			except Exception as e:
-				raise
+			except Exception as e:  # pylint: disable=broad-except
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
 						pass
@@ -1073,6 +1087,7 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
+
 def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
@@ -1082,7 +1097,7 @@ def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		try:
 			fun()
-		except Exception as e:
+		except Exception as e:  # pylint: disable=broad-except
 			message = f"{fun.__name__}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
 			result = False
@@ -1092,22 +1107,20 @@ def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		try:
 			tmp = fun()
-		except Exception as e:
-			if expected_exception is not None:
-				if isinstance(e, expected_exception):
-					pass
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_exception}"
-					result = False
-			else:
+			if not isinstance(tmp, set) or not tmp:
 				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"      exception: {type(e)}\n" \
-					  f"       expected: {expected_result}"
+					  f"           type: {type(tmp)}\n" \
+					  f"  expected type: {set}\n" \
+					  f"            len: {len(tmp)}\n" \
+					  f"       expected: > 0\n"
 				result = False
+		except Exception as e:  # pylint: disable=broad-except
+			message = f"{fun.__name__}() did not yield expected result:\n" \
+				  f"      exception: {type(e)}\n"
+			result = False
 
 	return message, result
+
 
 tests: Dict = {
 	("json_ujson",): {
@@ -1200,6 +1213,7 @@ tests: Dict = {
 	},
 }
 
+
 def main() -> int:
 	global real_import
 	real_import = builtins.__import__
@@ -1209,7 +1223,7 @@ def main() -> int:
 	verbose = False
 	failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
+	init_ansithemeprint(themefile=None)
 
 	# How many non-prepare testcases do we have?
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
@@ -1217,7 +1231,7 @@ def main() -> int:
 	for i, test in enumerate(tests):
 		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
 				ANSIThemeString(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose = verbose)
+		message, result = tests[test]["callable"](verbose=verbose)
 		if len(message) > 0:
 			ansithemeprint([ANSIThemeString("  FAIL", "error"),
 					ANSIThemeString(f": {message}", "default")])
@@ -1240,9 +1254,10 @@ def main() -> int:
 		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
 			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+					ANSIThemeString(testcase, "default")], stderr=True)
 
 	return fail
+
 
 if __name__ == "__main__":
 	main()

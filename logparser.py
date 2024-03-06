@@ -116,6 +116,7 @@ class logparser_configuration:
 	expand_tabs: bool = True
 	using_bundles: bool = False
 
+
 if json_is_ujson:
 	def json_dumps(obj: Dict[str, Any]) -> str:
 		"""
@@ -207,7 +208,7 @@ def letter_to_severity(letter: str, default: Optional[LogLevel] = None) -> Optio
 		"E": LogLevel.ERR,
 		"W": LogLevel.WARNING,
 		"N": LogLevel.NOTICE,
-		"C": LogLevel.NOTICE,	# Used by jupyter for the login token
+		"C": LogLevel.NOTICE,  # Used by jupyter for the login token
 		"I": LogLevel.INFO,
 		"D": LogLevel.DEBUG,
 	}
@@ -250,7 +251,7 @@ def str_4letter_to_severity(string: str, default: Optional[LogLevel] = None) -> 
 		"ERRO": LogLevel.ERR,
 		"WARN": LogLevel.WARNING,
 		"NOTI": LogLevel.NOTICE,
-		"SUCC": LogLevel.NOTICE,	# From KubeRay
+		"SUCC": LogLevel.NOTICE,  # From KubeRay
 		"INFO": LogLevel.INFO,
 		"DEBU": LogLevel.DEBUG,
 	}
@@ -369,8 +370,8 @@ def split_bracketed_severity(message: str, default: LogLevel = LogLevel.INFO) ->
 		"[warn]": LogLevel.WARNING,
 		"[notice]": LogLevel.NOTICE,
 		"[info]": LogLevel.INFO,
-		"[system]": LogLevel.INFO,	# MySQL seems to have its own loglevels
-		"[note]": LogLevel.INFO,	# none of which makes every much sense
+		"[system]": LogLevel.INFO,  # MySQL seems to have its own loglevels
+		"[note]": LogLevel.INFO,    # none of which makes every much sense
 		"[debug]": LogLevel.DEBUG,
 	}
 
@@ -694,23 +695,23 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	# Short format
 	if ipaddress:
-		tmp = re.match(r"( - - )"			# separator1
-			       r"(\[)"				# separator2
-			       r"(\d\d)"			# day
+		tmp = re.match(r"( - - )"                  # separator1
+			       r"(\[)"                     # separator2
+			       r"(\d\d)"                   # day
 			       r"/"
-			       r"([A-Z][a-z][a-z])"		# _month
+			       r"([A-Z][a-z][a-z])"        # _month
 			       r"/"
-			       r"(\d{4})"			# year
+			       r"(\d{4})"                  # year
 			       r" "
-			       r"(\d\d:\d\d:\d\d)"		# hms
-			       r"(\])"				# separator3
-			       r"(\s\")"			# separator4
-			       r"([A-Z]*?\s)"			# verb
-			       r"(\S*?)"			# address3
-			       r"(\s\S*?)"			# protocol
-			       r"(\"\s)"			# separator5
-			       r"(\d+?)"			# statuscode
-			       r"(\s+[\d-]+?$)", message)	# separator6
+			       r"(\d\d:\d\d:\d\d)"         # hms
+			       r"(\])"                     # separator3
+			       r"(\s\")"                   # separator4
+			       r"([A-Z]*?\s)"              # verb
+			       r"(\S*?)"                   # address3
+			       r"(\s\S*?)"                 # protocol
+			       r"(\"\s)"                   # separator5
+			       r"(\d+?)"                   # statuscode
+			       r"(\s+[\d-]+?$)", message)  # separator6
 
 		if tmp is not None:
 			address1 = ipaddress
@@ -841,17 +842,17 @@ def http(message: str, severity: Optional[LogLevel] = LogLevel.INFO, facility: s
 
 	# Alternate formats
 	tmp = re.match(r"^\|\s+"
-		       r"(\d{3})"		# statuscode
+		       r"(\d{3})"         # statuscode
 		       r"\s+\|\s+"
-		       r"([0-9.]+)"		# duration
-		       r"([^ ]*)"		# unit
+		       r"([0-9.]+)"       # duration
+		       r"([^ ]*)"         # unit
 		       r"\s+\|\s+"
-		       r"([^:^\s]*)"		# hostname
-		       r":(\d+?)"		# port
+		       r"([^:^\s]*)"      # hostname
+		       r":(\d+?)"         # port
 		       r"\s+\|\s+"
-		       r"([A-Z]+)"		# verb
+		       r"([A-Z]+)"        # verb
 		       r"\s+"
-		       r"(.*)", message)	# url
+		       r"(.*)", message)  # url
 
 	if tmp is not None:
 		statuscode = tmp[1]
@@ -1048,7 +1049,7 @@ def tab_separated(message: str, severity: Optional[LogLevel] = LogLevel.INFO, fa
 			(message, severity, facility, remnants)
 	"""
 
-	remnants:List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+	remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
 	messages = deep_get(options, DictPath("messages"), ["msg", "message"])
 	errors = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -2059,27 +2060,27 @@ def directory(message: str, fold_msg: bool = True, severity: Optional[LogLevel] 
 	if tmp is not None:
 		return facility, severity, message, remnants
 
-	tmp = re.match(r"^(.)"			# etype
-		       r"(.{9})"		# permissions
-		       r"(\+|\s)"		# acl
-		       r"(\s+)"			# space1
-		       r"(\d+)"			# linkcount
-		       r"(\s+)"			# space2
-		       r"([^\s]+)"		# owner
-		       r"(\s+)"			# space3
-		       r"([^\s]+)"		# group
-		       r"(\s+)"			# space4
-		       r"(\d+)"			# size part1
-		       r"(,\s+\d+|)"		# size part2
-		       r"(\s+)"			# space5
-		       r"([^\s]+)"		# month
-		       r"(\s+)"			# space6
-		       r"(\d+)"			# day
-		       r"(\s+)"			# space7
-		       r"([^\s]+)"		# yearortime
-		       r"(\s+)"			# space8
-		       r"(.+?)"			# name
-		       r"(=|\||/|)$", message)	# suffix
+	tmp = re.match(r"^(.)"                  # etype
+		       r"(.{9})"                # permissions
+		       r"(\+|\s)"               # acl
+		       r"(\s+)"                 # space1
+		       r"(\d+)"                 # linkcount
+		       r"(\s+)"                 # space2
+		       r"([^\s]+)"              # owner
+		       r"(\s+)"                 # space3
+		       r"([^\s]+)"              # group
+		       r"(\s+)"                 # space4
+		       r"(\d+)"                 # size part1
+		       r"(,\s+\d+|)"            # size part2
+		       r"(\s+)"                 # space5
+		       r"([^\s]+)"              # month
+		       r"(\s+)"                 # space6
+		       r"(\d+)"                 # day
+		       r"(\s+)"                 # space7
+		       r"([^\s]+)"              # yearortime
+		       r"(\s+)"                 # space8
+		       r"(.+?)"                 # name
+		       r"(=|\||/|)$", message)  # suffix
 	if tmp is None:
 		# This is unlikely to be a directory match
 		return facility, severity, message, remnants
@@ -2925,8 +2926,10 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]], fold_msg: bool
 
 	return facility, severity, rmessage, remnants
 
+
 Parser = namedtuple("Parser", "parser_name show_in_selector match_rules parser_rules")
 parsers = []
+
 
 def init_parser_list() -> None:
 	"""

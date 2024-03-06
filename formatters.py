@@ -579,7 +579,8 @@ def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Unio
 	kwargs["json"] = True
 	return format_yaml(lines, **kwargs)
 
-KEY_HEADERS = [
+
+KEY_HEADERS: Tuple[str] = (
 	"-----BEGIN CERTIFICATE-----",
 	"-----END CERTIFICATE-----",
 	"-----BEGIN CERTIFICATE REQUEST-----",
@@ -600,7 +601,8 @@ KEY_HEADERS = [
 	"-----END RSA PRIVATE KEY-----",
 	"-----BEGIN EC PRIVATE KEY-----",
 	"-----END EC PRIVATE KEY-----",
-]
+)
+
 
 def format_crt(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[ThemeRef, ThemeString]]]:
 	"""
@@ -944,12 +946,12 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union
 		if tmp is not None:
 			if tmp[1]:
 				dump += [
-					ThemeString(tmp[1], ThemeAttr("types", "generic")),	# whitespace
+					ThemeString(tmp[1], ThemeAttr("types", "generic")),  # whitespace
 				]
 			if tmp[2]:
 				if tmp[2] == "}":
 					dump += [
-						ThemeString(tmp[2], ThemeAttr("types", "generic")),	# block end
+						ThemeString(tmp[2], ThemeAttr("types", "generic")),  # block end
 					]
 				elif tmp[2].startswith("#"):
 					dump += [
@@ -962,7 +964,7 @@ def format_nginx(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union
 			if tmp[3]:
 				dump += [
 					ThemeString(tmp[3][:-1], ThemeAttr("types", "nginx_value")),
-					ThemeString(tmp[3][-1:], ThemeAttr("types", "generic")),	# block start / statement end
+					ThemeString(tmp[3][-1:], ThemeAttr("types", "generic")),  # block start / statement end
 				]
 			if tmp[4]:
 				dump += [
@@ -1418,6 +1420,7 @@ def format_ini(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Union[T
 		dumps.append(tmpline)
 	return dumps
 
+
 formatter_mapping = (
 	# (startswith, endswith, formatter)
 	("YAML", "YAML", format_yaml),
@@ -1441,6 +1444,7 @@ formatter_mapping = (
 	("NGINX", "NGINX", format_nginx),
 )
 
+
 def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[List[Union[ThemeRef, ThemeString]]]]:
 	"""
 	Identify what formatter to use, based either on a file ending or an explicit dataformat tag
@@ -1455,6 +1459,7 @@ def map_dataformat(dataformat: str) -> Callable[[Union[str, List[str]]], List[Li
 		if dataformat.startswith(prefix) and dataformat.endswith(suffix):  # type: ignore[arg-type]
 			return formatter_
 	return format_none
+
 
 # Formatters acceptable for direct use in view files
 formatter_allowlist: Dict[str, Callable] = {
@@ -1473,6 +1478,7 @@ formatter_allowlist: Dict[str, Callable] = {
 	"format_yaml": format_yaml,
 	"reformat_json": reformat_json,
 }
+
 
 # These are based on attributes of the name of the cmdata
 cmdata_format: List[Tuple[str, str, str, str, str]] = [

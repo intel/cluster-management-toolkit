@@ -1015,6 +1015,7 @@ def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 
 	return volume_properties
 
+
 # Itemgetters acceptable for direct use in view files
 itemgetter_allowlist = {
 	"get_allowed_ips": get_allowed_ips,

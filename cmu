@@ -32,8 +32,8 @@ import http.client
 # but it might not be available
 try:  # pragma: no cover
 	import ujson as json
-	# The exception raised by ujson when parsing fails is different
-	# from what json raises
+# The exception raised by ujson when parsing fails is different
+# from what json raises
 	DecodeException = ValueError
 except ModuleNotFoundError:  # pragma: no cover
 	import json  # type: ignore
@@ -44,7 +44,7 @@ from pathlib import Path, PurePath
 import re
 import socket
 import subprocess  # nosec
-from subprocess import PIPE, STDOUT # nosec
+from subprocess import PIPE, STDOUT  # nosec
 import sys
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
@@ -145,6 +145,11 @@ kh_cache: KubernetesResourceCache = None  # type: ignore
 executor = reexecutor.ReExecutor()
 async_data: Dict = {}
 
+override_tail_lines = None
+default_tail_lines = 4000
+
+force_refresh_apis = False
+
 def init_kubernetes_client() -> None:
 	"""
 	Initialise the Kubernetes client
@@ -155,9 +160,6 @@ def init_kubernetes_client() -> None:
 	if kubernetes_support:
 		kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, config_path = kube_config_file)
 		kh_cache = KubernetesResourceCache()
-
-override_tail_lines = None
-default_tail_lines = 4000
 
 def gather_cluster_info() -> None:
 	"""
@@ -348,7 +350,7 @@ def get_container_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Containers
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -419,7 +421,7 @@ def get_log_info(**kwargs: Any) -> List[Type]:
 	Infogetter for logs
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -1783,7 +1785,7 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, Them
 
 		Parameters:
 			obj (dict): The dict to dump
-			kwargs (Dict): Additional parameters
+			**kwargs (Dict): Additional parameters
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -1881,7 +1883,7 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStri
 
 		Parameters:
 			obj (dict): The dict to dump formatted as YAML
-			kwargs (Dict): Additional parameters
+			**kwargs (Dict): Additional parameters
 		Returns:
 			list[themearray]: A list of themearrays
 	"""
@@ -1910,7 +1912,7 @@ def get_promrules_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Prometheus Rules
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -1960,7 +1962,7 @@ def get_svcmon_endpoints_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Service Monitor Endpoints
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -2000,7 +2002,7 @@ def get_limit_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Limits
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -2051,7 +2053,7 @@ def get_auth_rule_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Istio Authorization Policy Rules
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -2108,7 +2110,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
 	Infogetter for Service Account secrets
 
 		Parameters:
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 		Returns:
 			info (list[InfoClass]): A list with info
 	"""
@@ -2764,7 +2766,7 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
 			uip.addthemearray(listpad, tagprefix, y = ypos, x = pos, deleted = is_deleted)
 			first = False
 
-		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, selected = is_selected, deleted = is_deleted)
+		uip.addthemearray(listpad, tmp, y = ypos, x = pos + tagprefixlen, deleted = is_deleted)
 
 def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 	"""
@@ -3299,13 +3301,14 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 					if queryfunc == "string":
 						# Not supported by inputbox widget
 						# querydefault = ""
-						string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
-						if string is None or string == "":
+						query_title = f"{query}: "
+						if not (string := curses_helper.inputbox(uip.stdscr, title = query_title)):
 							continue
 						selection_vars[queryval] = string
 					elif queryfunc == "confirm":
 						querydefault = False
-						if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault):
+						query_title = f"{query}?"
+						if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = querydefault):
 							continue
 					elif queryfunc == "filechooser":
 						# It is a programming error if either of these two are not set, so it is OK to get an exception
@@ -3357,7 +3360,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 						selection_vars["resource_path"] = (selected_file, selected_ptype)
 
 				if confirm:
-					if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Perform “{description}“?", default = False):
+					query_title = f"Perform “{description}“?"
+					if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 						continue
 
 				retval = actionfunc(uip, items = [], action = actionlist[action], values = selection_vars, kind = kind)
@@ -3438,8 +3442,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				uip.move_cur_with_offset(1)
 		elif c == ord("T") and is_taggable:
 			# Tag by pattern
-			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Tag “{(uip.sortcolumn).rstrip().lower()}“ matching: ")
-			if pattern is None or pattern == "":
+			tag_title = f"Tag “{uip.sortcolumn.rstrip().lower()}“ matching: "
+			if not (pattern := curses_helper.inputbox(uip.stdscr, title = tag_title)):
 				continue
 			compiled_pattern = re.compile(pattern)
 
@@ -3459,8 +3463,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				continue
 
 			# Untag by pattern
-			pattern = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Untag “{(uip.sortcolumn).rstrip().lower()}“ matching: ")
-			if pattern is None or pattern == "":
+			untag_title = f"Untag “{(uip.sortcolumn).rstrip().lower()}“ matching: "
+			if not (pattern := curses_helper.inputbox(uip.stdscr, title = untag_title)):
 				continue
 			compiled_pattern = re.compile(pattern)
 
@@ -3762,13 +3766,14 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 					if queryfunc == "string":
 						# Not supported by inputbox widget
 						# querydefault = ""
-						string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
-						if string is None or string == "":
+						query_title = f"{query}: "
+						if not (string := curses_helper.inputbox(uip.stdscr, title = query_title)):
 							continue
 						selection_vars[queryval] = string
 					elif queryfunc == "confirm":
 						querydefault = False
-						if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault):
+						query_title = f"{query}?"
+						if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = querydefault):
 							continue
 					elif queryfunc == "filechooser":
 						# It is a programming error if either of these two are not set, so it is OK to get an exception
@@ -3819,7 +3824,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 						selection_vars["resource_path"] = (selected_file, selected_ptype)
 
 				if confirm:
-					if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Are you sure you want to perform “{description}“?", default = False):
+					query_title = f"Are you sure you want to perform “{description}“?"
+					if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 						continue
 
 				selection_vars["_tagged_items"] = list(tagged_items)
@@ -3902,19 +3908,19 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 				if queryfunc == "string":
 					# Not supported by inputbox widget
 					# querydefault = ""
-					string = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"{query}: ")
-					if string is None or string == "":
+					query_title = f"{query}: "
+					if not (string := curses_helper.inputbox(uip.stdscr, title = query_title)):
 						continue
 					selection_vars = {queryval: string}
 				elif queryfunc == "confirm":
 					querydefault = False
-					if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"{query}?", default = querydefault):
+					query_title = f"{query}?"
+					if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = querydefault):
 						continue
 			if deep_get(value, DictPath("confirm")):
-				title = deep_get(value, DictPath("title"), "")
-
 				uip.force_update()
-				if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = title, default = False):
+				query_title = deep_get(value, DictPath("title"), "")
+				if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 					continue
 
 			selected = uip.get_selected()
@@ -4103,6 +4109,7 @@ def __fetch_package_versions(**kwargs):
 	curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, package_versions, title = title, headers = headers, cursor = False)
 	return Retval.MATCH, {}
 
+
 clusteroverview_shortcuts = {
 	"__common_shortcuts": [
 		"Toggle mouse on/off",
@@ -4220,6 +4227,7 @@ clusteroverview_shortcuts = {
 		"action_call": __resource_map_cursor,
 	},
 }
+
 
 def read_file_async(*args, **kwargs) -> Tuple[List[Any], List[StatusGroup]]:
 	file_not_found_status: str = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
@@ -4921,11 +4929,13 @@ def __update_cni(uip: UIProps, **kwargs):
 		return Retval.MATCH
 
 	# Try to download and install an update
-	if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"Update {cni} to version {candidate_version}:", default = False):
+	query_title = f"Update {cni} to version {candidate_version}:"
+	if curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 		update_cni(uip.stdscr, cni, cni_version, candidate_version)
 	uip.refresh_all()
 
 	return Retval.MATCH, {}
+
 
 cniloop_shortcuts = {
 	"__common_shortcuts": [
@@ -4945,6 +4955,7 @@ cniloop_shortcuts = {
 		"action_call": __update_cni,
 	},
 }
+
 
 def cniloop(stdscr: curses.window, view):
 	global executor  # pylint: disable=global-statement
@@ -5916,7 +5927,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 						break
 					if i == 0 and timestamps is not None:
 						uip.addthemearray(cast(curses.window, tspad), tsthemearray, y = y + yadd, x = 0)
-					ypos, xpos = uip.addthemearray(logpad, _line, y = y + yadd + i, x = 0, selected = current_match)
+					ypos, xpos = uip.addthemearray(logpad, _line, y = y + yadd + i, x = 0)
 					maxx = max(maxx, xpos)
 				yadd += i
 			uip.resize_logpad(-1, maxx)
@@ -6135,8 +6146,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 				elif widget == "inputbox":
 					selected = uip.get_selected()
 					w_title = deep_get(value, DictPath("inputtitle"), "")
-					w_result = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, w_title)
-					if w_result is None or len(w_result) == 0 or w_title == "":
+					if not (w_result := curses_helper.inputbox(uip.stdscr, title = w_title)):
 						continue
 					# This is necessary because we never go through the normal update cycle for the listpad and infopad
 					uip.refresh_infopad()
@@ -6154,7 +6164,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if w_confirm:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
-						if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False):
+						if not curses_helper.confirmationbox(uip.stdscr, title = w_confirmtitle, default = False):
 							continue
 				elif widget == "command":
 					w_args = deep_get(value, DictPath("widget_args"), {})
@@ -6179,11 +6189,12 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 
 					w_inputtitle = deep_get_with_fallback(value, [DictPath("widget_args#inputtitle"), DictPath("inputtitle")])
 					if w_inputtitle is not None:
-						w_input = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, title = w_inputtitle)
+						if not (w_input := curses_helper.inputbox(uip.stdscr, title = w_inputtitle)):
+							continue
 						w_command = w_input.split()
 					else:
 						w_command = deep_get_with_fallback(value, [DictPath("widget_args#command"), DictPath("command")], [])
-					if len(w_command) == 0:
+					if not w_command:
 						continue
 
 					w_waitforkeypress = deep_get(value, DictPath("widget_args#wait_for_keypress"), False)
@@ -6280,7 +6291,7 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if w_confirm:
 						curses.doupdate()
 						w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
-						if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = w_confirmtitle, default = False):
+						if not curses_helper.confirmationbox(uip.stdscr, title = w_confirmtitle, default = False):
 							continue
 					_values = {}
 					_values = {
@@ -6583,7 +6594,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 					curses_helper.progressbar(progressbar, y = uip.maxy // 2, minx = (uip.minx + 8), maxx = (uip.maxx - 8), progress = 100 - 100 * ((linecount - i) // linecount))
 					progressbar.timeout(10)
 					c = progressbar.getch()
-					if c == 27:	# ESCAPE
+					if c == 27:  # ESCAPE
 						return Retval.RETURNDONE
 
 				if isinstance(_line, tuple):
@@ -7162,7 +7173,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 			uip.continuous_log = False
 
 			if tail_lines == override_tail_lines:
-				if curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = "Show full log (Potentially very slow):", default = False):
+				query_title = "Show full log (Potentially very slow):"
+				if curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 					tail_lines = sys.maxsize
 			else:
 				tail_lines = override_tail_lines
@@ -7398,8 +7410,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 				rawprefix = "Raw "
 			else:
 				rawprefix = ""
-			filename = curses_helper.inputbox(uip.stdscr, uip.maxy // 2, 1, uip.maxy - 1, uip.maxx - 1, f"Export {rawprefix}log to file: ")
-			if filename is None or filename == "":
+			export_title = f"Export {rawprefix}log to file: "
+			if not (filename := curses_helper.inputbox(uip.stdscr, title = export_title)):
 				continue
 
 			# This is necessary because we never go through the normal update cycle for the logpad and infopad
@@ -7409,7 +7421,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
 			if os.path.exists(filename):
 				curses.doupdate()
-				if not curses_helper.confirmationbox(uip.stdscr, uip.maxy // 2, uip.maxx // 2, title = f"File “{filename}“ already exists; overwrite?:", default = False):
+				query_title = f"File “{filename}“ already exists; overwrite?:"
+				if not curses_helper.confirmationbox(uip.stdscr, title = query_title, default = False):
 					continue
 
 			data = ""
@@ -7453,7 +7466,7 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
 
 		Parameters:
 			stdscr (opaque): A curses stdscr reference
-			kwargs (dict): Additional parameters
+			**kwargs (dict): Additional parameters
 	"""
 
 	security_policy = SecurityPolicy.ALLOWLIST_RELAXED
@@ -8621,7 +8634,9 @@ def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs):
 	for node in items:
 		kh.uncordon_node(node)
 
-nodeplaybooks = {} # type: ignore
+
+nodeplaybooks = {}  # type: ignore
+
 
 def ssh_to_host(stdscr: curses.window, **kwargs):
 	"""
@@ -8996,8 +9011,6 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
 
 	return actions, action_list
 
-force_refresh_apis = False
-
 def format_selection_list(uip: UIProps, refresh_apis = False):
 	global force_refresh_apis  # pylint: disable=global-statement
 
@@ -9167,6 +9180,7 @@ def selectorloop(stdscr: curses.window, view: str) -> Retval:
 		if retval == Retval.RETURNFULL:
 			return retval
 
+
 listviewactions = {
 	"Apply configuration (local)": {
 		"description": "Apply configurations from file/Kustomization (autodetected)",
@@ -9312,7 +9326,8 @@ listviewactions = {
 	},
 }
 
-infoviews = {} # type: ignore
+
+infoviews = {}  # type: ignore
 
 # These functions are used to check whether an API is available
 def is_kubernetes_supported() -> bool:
@@ -9325,10 +9340,12 @@ def is_cluster_reachable() -> bool:
 		reachable = kh.is_cluster_reachable()
 	return reachable
 
+
 availability_checker_allowlist = {
 	"is_cluster_reachable": is_cluster_reachable,
 	"is_kubernetes_supported": is_kubernetes_supported,
 }
+
 
 # action calls acceptable for direct use in view files
 action_call_allowlist = {
@@ -9348,6 +9365,7 @@ action_call_allowlist = {
 	"view_yaml": view_yaml,
 }
 
+
 # Actionfuncs acceptable for direct use in view files
 actionfunc_allowlist = {
 	"action_view_pod_logs": action_view_pod_logs,
@@ -9363,12 +9381,14 @@ actionfunc_allowlist = {
 	"uncordon_node": uncordon_node,
 }
 
+
 # Activatedfuns acceptable for direct use in view files
 activatedfun_allowlist = {
 	"resourceinfodispatch": resourceinfodispatch,
 	"resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
 	"resourceinfodispatch_with_lookup_on_activation": resourceinfodispatch_with_lookup_on_activation,
 }
+
 
 # Infogetters acceptable for direct use in view files
 infogetter_allowlist = {
@@ -9402,6 +9422,7 @@ infogetter_allowlist = {
 	"get_traceflow": get_traceflow,
 }
 
+
 def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
 	field_list = []
 	fields = deep_get(kwargs, DictPath("fields"), [])
@@ -9414,10 +9435,12 @@ def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
 				field_list.append(field)
 	return field_list
 
+
 # Fieldgetters acceptable for direct use in view files
 fieldgetter_allowlist = {
 	"fieldgetter_api_server_version": fieldgetter_api_server_version,
 }
+
 
 # These views are always defined internally and cannot be disabled
 views_special = {
@@ -9460,7 +9483,9 @@ views_special = {
 	},
 }
 
+
 views = {**views_special}
+
 
 key_mappings = {
 	"f1": curses.KEY_F1,
@@ -10413,6 +10438,7 @@ def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
 		else:
 			raise
 
+
 COMMANDLINE = {
 	# This is purely for the benefit of the helptext generator
 	"View": {
@@ -10690,6 +10716,7 @@ COMMANDLINE = {
 	},
 }
 
+
 def main() -> None:
 	"""
 	Main function for the program
@@ -10789,6 +10816,7 @@ def main() -> None:
 				ANSIThemeString("“ instead.\n", "default")])
 
 	return command(options, args)
+
 
 if __name__ == "__main__":
 	main()

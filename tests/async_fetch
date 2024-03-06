@@ -25,7 +25,8 @@ from cmttypes import deep_get, DictPath, StatusGroup
 from kubernetes_helper import KubernetesHelper
 import reexecutor
 
-kh: KubernetesHelper = None # type: ignore
+kh: KubernetesHelper = None  # type: ignore
+
 
 def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
 	kind = deep_get(kwargs, DictPath("kind"))
@@ -38,12 +39,13 @@ def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, Li
 	extra_data = []
 
 	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
-	if len(sort_key) > 0:
-		vlist = natsorted(vlist, key = lambda x: deep_get(x, DictPath(sort_key), ""), reverse = sort_reverse)
+	if sort_key:
+		vlist = natsorted(vlist, key=lambda x: deep_get(x, DictPath(sort_key), ""), reverse=sort_reverse)
 	extra_data = _status
 	if limit is not None:
 		vlist = vlist[:limit]
 	return vlist, extra_data
+
 
 def main() -> None:
 	global kh
@@ -54,19 +56,19 @@ def main() -> None:
 	executor = reexecutor.ReExecutor()
 	executor.shutdown()
 
-	executor = reexecutor.ReExecutor(max_workers = 6)
+	executor = reexecutor.ReExecutor(max_workers=6)
 
 	fetches = 42
 
-	executor.trigger("node", 3, get_kubernetes_list_async, kind = ("Node", ""))
-	executor.trigger("pod", 3, get_kubernetes_list_async, kind = ("Pod", ""))
-	executor.trigger("namespace", 2, get_kubernetes_list_async, kind = ("Namespace", ""))
-	executor.trigger("secret", -1, get_kubernetes_list_async, kind = ("Secret", ""))
-	executor.trigger("configmap", 5, get_kubernetes_list_async, kind = ("ConfigMap", ""))
-	executor.update("configmap", kind = ("ConfigMap", ""))
-	executor.trigger("service", 2, get_kubernetes_list_async, kind = ("Service", ""))
+	executor.trigger("node", 3, get_kubernetes_list_async, kind=("Node", ""))
+	executor.trigger("pod", 3, get_kubernetes_list_async, kind=("Pod", ""))
+	executor.trigger("namespace", 2, get_kubernetes_list_async, kind=("Namespace", ""))
+	executor.trigger("secret", -1, get_kubernetes_list_async, kind=("Secret", ""))
+	executor.trigger("configmap", 5, get_kubernetes_list_async, kind=("ConfigMap", ""))
+	executor.update("configmap", kind=("ConfigMap", ""))
+	executor.trigger("service", 2, get_kubernetes_list_async, kind=("Service", ""))
 
-	executor.update("NonExisting", kind = ("ConfigMap", ""))
+	executor.update("NonExisting", kind=("ConfigMap", ""))
 
 	print(f"executor pool length: {len(executor)}")
 
@@ -114,6 +116,7 @@ def main() -> None:
 
 	executor.delete("configmap")
 	executor.shutdown()
+
 
 if __name__ == "__main__":
 	main()

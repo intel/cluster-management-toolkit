@@ -32,6 +32,7 @@ themepath = ""
 path = ""
 verbose = False
 
+
 class FindVisits(ast.NodeVisitor):
 	"""
 	Find visits to ANSIThemeString, ThemeAttr, and ThemeRef and output inconsistencies
@@ -155,6 +156,7 @@ class FindVisits(ast.NodeVisitor):
 					})
 		self.generic_visit(node)
 
+
 def usage() -> int:
 	"""
 	Display usage information
@@ -175,6 +177,7 @@ def usage() -> int:
 			ANSIThemeString("   Display this help and exit", "description")])
 	return 0
 
+
 def main() -> int:
 	"""
 	Main function for the program
@@ -185,7 +188,7 @@ def main() -> int:
 	global theme
 	global path
 
-	init_ansithemeprint(themefile = None)
+	init_ansithemeprint(themefile=None)
 
 	if len(sys.argv) == 2 and sys.argv[1] in ("--help", "help"):
 		return usage()
@@ -194,34 +197,34 @@ def main() -> int:
 		ansithemeprint([ANSIThemeString("check_theme_use", "programname"),
 				ANSIThemeString(": Program requires at least two arguments; ", "default"),
 				ANSIThemeString("THEMEPATH PYPATH", "argument"),
-				ANSIThemeString("...", "separator")], stderr = True)
+				ANSIThemeString("...", "separator")], stderr=True)
 		sys.exit(errno.EINVAL)
 
 	themepath = sys.argv[1]
 	paths = sys.argv[2:]
 
 	try:
-		with open(themepath, encoding = "utf-8") as f:
+		with open(themepath, encoding="utf-8") as f:
 			tmp = f.read()
 			theme = yaml.safe_load(tmp)
 	except FileNotFoundError:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": could not find theme file ", "default"),
 				ANSIThemeString(f"{themepath}", "path"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
+				ANSIThemeString("; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOENT)
 
 	p = None
 
 	for path in paths:
 		try:
-			with open(path, encoding = "utf-8") as f:
+			with open(path, encoding="utf-8") as f:
 				p = ast.parse(f.read())
 		except FileNotFoundError:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": could not find source file ", "default"),
 					ANSIThemeString(f"{path}", "path"),
-					ANSIThemeString("; aborting.", "default")], stderr = True)
+					ANSIThemeString("; aborting.", "default")], stderr=True)
 			sys.exit(errno.ENOENT)
 
 		if p is None:
@@ -230,6 +233,7 @@ def main() -> int:
 		fv = FindVisits()
 		fv.visit(p)
 	return 0
+
 
 if __name__ == "__main__":
 	main()
