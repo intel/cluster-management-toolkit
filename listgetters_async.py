@@ -24,26 +24,25 @@ def get_kubernetes_list(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int
 	"""
 	Fetch a list of Kubernetes objects, optionally with postprocessing
 
-		Parameters:
-			*args [Any]: Positional arguments (unused)
-			**kwargs (dict[str, Any]): Keyword arguments
-				kind ((str, str)): The Kubernetes kind (required)
-				namespace (str): The Kubernetes namespace (optional)
-				label_selector (str): A label selector (optional)
-				field_selector (str): A field selector (optional)
-				fetch_args (dict): Specific arguments (optional)
-					sort_key (str): The sort-key to use if sorting the list (optional)
-					sort_reverse (bool): Should the list be returned with reversed sort order? (optional)
-					postprocess (str): Post-processing (if any) to apply (optional)
-					limit (int): The max number of items to return (optional)
-				kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
-				kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
-		Returns:
-			([dict], int|str|[StatusGroup]):
-				[dict]: A list of Kubernetes objects
-				int|str|[StatusGroup]: Server status (int), unused (str), or the individual StatusGroup for all objects
+	    Parameters:
+	        *args [Any]: Positional arguments (unused)
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            kind ((str, str)): The Kubernetes kind (required)
+	            namespace (str): The Kubernetes namespace (optional)
+	            label_selector (str): A label selector (optional)
+	            field_selector (str): A field selector (optional)
+	            fetch_args (dict): Specific arguments (optional)
+	                sort_key (str): The sort-key to use if sorting the list (optional)
+	                sort_reverse (bool): Should the list be returned with reversed sort order? (optional)
+	                postprocess (str): Post-processing (if any) to apply (optional)
+	                limit (int): The max number of items to return (optional)
+	            kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+	            kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+	    Returns:
+	        ([dict], int|str|[StatusGroup]):
+	           [dict]: A list of Kubernetes objects
+	           int|str|[StatusGroup]: Server status (int), unused (str), or the individual StatusGroup for all objects
 	"""
-
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
 	kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -85,16 +84,15 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
 	"""
 	Get the list of Kubernetes contexts
 
-		Parameters:
-			**kwargs (dict[str, Any]): Keyword arguments
-				kubernetes_helper (KubernetesHelper): The KubernetesHelper object to use (required)
-				tag_prefix (str): The prefix to use for the tagged list item (optional)
-		Returns:
-			([dict], [str]):
-				[dict]: The list of context information
-				[str]: The list of API-servers for those contexts
+	    Parameters:
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            kubernetes_helper (KubernetesHelper): The KubernetesHelper object to use (required)
+	            tag_prefix (str): The prefix to use for the tagged list item (optional)
+	    Returns:
+	        ([dict], [str]):
+	            [dict]: The list of context information
+	            [str]: The list of API-servers for those contexts
 	"""
-
 	if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
 		raise ProgrammingError("get_context_list() called without kubernetes_helper")
 

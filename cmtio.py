@@ -33,10 +33,10 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: O
 			suffixes (list(str)): If partial_path doesn't exist, attempt the same path with suffix appended
 			fallback (str): The path to use if the provided path is empty or doesn't exist
 		Returns:
-			full_path (FilePath): The full path
-			status (bool): True if successful, False if fallback is returned
+			(FilePath, bool):
+				(FilePath): The full path
+				(bool): True if successful, False if fallback is returned
 	"""
-
 	partial_paths = []
 	full_path = None
 
@@ -80,9 +80,8 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 			separator (str): The separator to use between items
 			securitystatuses (set(SecurityStatus)): The set of security statuses
 		Returns:
-			securitystatus_str (str): The string of joined securitystatuses
+			(str): The string of joined securitystatuses
 	"""
-
 	securitystatus_str = ""
 
 	for securitystatus in sorted(securitystatuses):
@@ -102,18 +101,17 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 
 		Parameters:
 			path (FilePath): The path to the file to verify
-			parent_allowlist (list[str]): A list of acceptable file owners;
+			parent_allowlist ([str]): A list of acceptable file owners;
 				 by default [user, "root"]
-			owner_allowlist (list[str]): A list of acceptable file owners;
+			owner_allowlist ([str]): A list of acceptable file owners;
 				 by default [user, "root"]
-			checks (list[SecurityChecks]): A list of checks that should be performed
+			checks ([SecurityChecks]): A list of checks that should be performed
 			exit_on_critical (bool): By default check_path return SecurityStatus if a critical criteria violation
 				is found; this flag can be used to exit the program instead if the violation is critical.
 			message_on_error (bool): If this is set to true an error message will be printed to the console.
 		Returns:
-			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
-
 	# This is most likely a security violation; treat it as such
 	if "\x00" in path:
 		stripped_path = path.replace("\x00", "<NUL>")
@@ -355,7 +353,6 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 			cmttypes.FilePathAuditError
 			FileNotFoundError
 	"""
-
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.RESOLVES_TO_SELF,
@@ -400,7 +397,6 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			cmttypes.FilePathAuditError
 			FileNotFoundError
 	"""
-
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
 		SecurityChecks.RESOLVES_TO_SELF,
@@ -456,7 +452,6 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
-
 	if write_mode not in ("a", "ab", "w", "wb", "x", "xb"):
 		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x(b)“ (exclusive write (binary))")
 
@@ -524,16 +519,15 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 
 		Parameters:
 			path (FilePath): The path to read from
-			checks (list[SecurityChecks]): A list of checks that should be performed
+			checks ([SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 			read_mode (str): [r, rb] Read text or binary
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
-			string (union[str, bytes]): The read string
+			(union[str, bytes]): The read string
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
-
 	if read_mode not in ("r", "rb"):
 		raise ValueError(f"Invalid read mode “{read_mode}“; permitted modes are “r(b)“ (read (binary))")
 
@@ -614,15 +608,14 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 
 		Parameters:
 			path (FilePath): The path to read from
-			checks (list[SecurityChecks]): A list of checks that should be performed
+			checks ([SecurityChecks]): A list of checks that should be performed
 			directory_is_symlink (bool): The directory that the path points to is a symlink
 			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
 		Returns:
-			string (str): The read string
+			(str): The read string
 		Raises:
 			cmttypes.FilePathAuditError
 	"""
-
 	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r", temporary = temporary))
 
 def secure_which(path: FilePath, fallback_allowlist: List[str],
@@ -643,19 +636,18 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 	   path will be passed to shutil.which().
 
 		Parameters:
-			paths (list[FilePath]): A list of paths to the executable
+			paths ([FilePath]): A list of paths to the executable
 			security_policy (SecurityPolicy):
 				The policy to use when deciding whether or not
 				it is OK to use the file at the path.
 			executable (bool): Should the path point to an executable?
 		Returns:
-			path (FilePath): A path to the executable
+			(FilePath): A path to the executable
 		Exceptions:
 			FileNotFoundError: Raised whenever no executable could
 			be found that matched both path and security criteria
 			RuntimeError: The path loops
 	"""
-
 	fully_resolved_paths = []
 
 	for allowed_path in fallback_allowlist:
@@ -743,9 +735,8 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 		Returns:
-			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
-
 	if verbose:
 		ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Creating directory ", "default"),
 				   ansithemeprint.ANSIThemeString(f"{directory}", "path"),
@@ -804,9 +795,8 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 			permissions (int): The file permissions to use (None to use system defaults)
 		Returns:
-			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
-
 	if verbose:
 		ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Copying file ", "default"),
 				   ansithemeprint.ANSIThemeString(f"{src}", "path"),
@@ -908,9 +898,8 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			verbose (bool): Should extra debug messages be printed?
 			exit_on_failure (bool): True to exit on failure, False to return (when possible)
 		Returns:
-			list[SecurityStatus]: [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
-
 	user = getuser()
 
 	if verbose:
@@ -1048,13 +1037,12 @@ def execute_command(args: List[Union[FilePath, str]], env: Optional[Dict] = None
 	Executes a command
 
 		Parameters:
-			args (list[str]): The commandline
+			args ([str]): The commandline
 			env (dict): Environment variables to set
 			comparison (int): The value to compare retval to
 		Returns:
-			retval.returncode == comparison (bool): True if retval.returncode == comparison, False otherwise
+			(bool): True if retval.returncode == comparison, False otherwise
 	"""
-
 	if env is None:
 		retval = subprocess.run(args, check = False)
 	else:
@@ -1067,10 +1055,10 @@ def execute_command_with_response(args: List[str], env: Optional[Dict] = None) -
 	Executes a command and returns stdout
 
 		Parameters:
-			args (list[str]): The commandline
+			args ([str]): The commandline
 			env (dict): Environment variables to set
 		Returns:
-			stdout (str): The stdout from the execution
+			(str): The stdout from the execution
 	"""
 	if env is None:
 		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)

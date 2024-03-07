@@ -9,7 +9,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -1017,7 +1017,7 @@ def get_volume_properties(kh: kubernetes_helper.KubernetesHelper, obj: Dict, **k
 
 
 # Itemgetters acceptable for direct use in view files
-itemgetter_allowlist = {
+itemgetter_allowlist: Dict[str, Callable] = {
 	"get_allowed_ips": get_allowed_ips,
 	"get_endpoint_slices": get_endpoint_slices,
 	"get_image_list": get_image_list,

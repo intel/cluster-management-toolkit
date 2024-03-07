@@ -22,8 +22,8 @@ class ReExecutor:
 		"""
 		Init method for the ReExecutor() class
 
-			Parameters:
-				max_workers (int): The maximum number of worker threads to dimension
+		    Parameters:
+		        max_workers (int): The maximum number of worker threads to dimension
 		"""
 		if max_workers is not None:
 			self.executor = concurrent.futures.ThreadPoolExecutor(max_workers = max_workers)
@@ -36,8 +36,8 @@ class ReExecutor:
 		"""
 		Internal method for (re-)triggering a callable
 
-			Parameter:
-				key (str): The identifier for the callable to (re-)trigger
+		    Parameter:
+		        key (str): The identifier for the callable to (re-)trigger
 		"""
 		data = self.futures[key]
 		data["triggered"] = True
@@ -50,12 +50,12 @@ class ReExecutor:
 		"""
 		Trigger a callable
 
-			Parameter:
-				key (str): The identifier for the future to (re-)trigger
-				interval (int): Interval between each retrigger, or -1 to only run once
-				fn (callable): The callable to execute
-				*args (list): Positional arguments to pass to fn
-				**kwargs (dict): Keyword arguments to pass to fn
+		    Parameter:
+		        key (str): The identifier for the future to (re-)trigger
+		        interval (int): Interval between each retrigger, or -1 to only run once
+		        fn (callable): The callable to execute
+		        *args (list): Positional arguments to pass to fn
+		        **kwargs (dict): Keyword arguments to pass to fn
 		"""
 		with self.lock:
 			if key not in self.futures:
@@ -74,8 +74,8 @@ class ReExecutor:
 		"""
 		Retrigger a callable
 
-			Parameter:
-				key (str): The identifier for the callable to (re-)trigger
+		    Parameter:
+		        key (str): The identifier for the callable to (re-)trigger
 		"""
 		self.trigger(key, self.futures[key]["interval"], self.futures[key]["function"], self.futures[key]["args"], self.futures[key]["kwargs"])
 
@@ -83,9 +83,9 @@ class ReExecutor:
 		"""
 		Update one or several parameters for a callable; we currently only support updating keyword args
 
-			Parameters:
-				key (str): The identifier for the callable to update parameters for
-				kwargs (dict): The variables to update
+		    Parameters:
+		        key (str): The identifier for the callable to update parameters for
+		        kwargs (dict): The variables to update
 		"""
 		with self.lock:
 			if key in self.futures:
@@ -97,9 +97,9 @@ class ReExecutor:
 		"""
 		Get the parameters for a callable
 
-			Returns:
-				([args]): The arg list
-				({kwargs}): The kwargs dict
+		    Returns:
+		        ([args]): The arg list
+		        ({kwargs}): The kwargs dict
 		"""
 		if key in self.futures:
 			return self.futures[key]["args"], self.futures[key]["kwargs"]
@@ -109,10 +109,10 @@ class ReExecutor:
 		"""
 		Check if there's available data from a callable; if there is, return it
 
-			Parameters:
-				key (str): The identifier for the callable to update parameters for
-			Returns:
-				([Type], [Any]): (data, status) or ([], []) if no data is available
+		    Parameters:
+		        key (str): The identifier for the callable to update parameters for
+		    Returns:
+		        ([Type], [Any]): (data, status) or ([], []) if no data is available
 		"""
 		info = []
 		status = []
@@ -133,8 +133,8 @@ class ReExecutor:
 		"""
 		Delete a callable
 
-			Parameters:
-				key (str): The callable to delete
+		    Parameters:
+		        key (str): The callable to delete
 		"""
 		with self.lock:
 			if key in self.futures:
@@ -164,8 +164,8 @@ class ReExecutor:
 		"""
 		Returns the number of items in the executor pool
 
-			Returns:
-				(int): The number of items in the executor pool
+		    Returns:
+		        (int): The number of items in the executor pool
 		"""
 		return len(self.futures)
 
@@ -173,9 +173,9 @@ class ReExecutor:
 		"""
 		Check whether a resource is a part of the executor pool
 
-			Parameters:
-				future (str): The resource to check for
-			Returns:
-				(bool): True if the resource is in the pool, False otherwise
+		    Parameters:
+		        future (str): The resource to check for
+		    Returns:
+		        (bool): True if the resource is in the pool, False otherwise
 		"""
 		return future in self.futures

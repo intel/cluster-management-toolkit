@@ -50,7 +50,6 @@ class CMTLog:
 	To avoid logs flooding the system every log file is limited to 1MB,
 	and the number of log files limited to 100, hence setting an upper limit to 100MB worth of logs.
 	"""
-
 	log: List[Dict] = []
 	logtype = None
 	basename: Optional[FilePath] = None
@@ -193,10 +192,9 @@ class CMTLog:
 		"""
 		Add a new log message to a log
 
-			Parameters:
-				message ([str] or [[AnsiThemeString]]): Either a list of unformatted strings or a list of formatted strings
+		    Parameters:
+		        message ([str] or [[AnsiThemeString]]): Either a list of unformatted strings or a list of formatted strings
 		"""
-
 		# Figure out what the caller was
 		file = None
 		function = None
@@ -237,7 +235,6 @@ class CMTLog:
 		"""
 		Flush the log to storage
 		"""
-
 		if self.logtype == CMTLogType.AUDIT:
 			# Figure out what the caller was
 			file = None
@@ -275,6 +272,5 @@ class CMTLog:
 		"""
 		Close the log; this is not necessary from an I/O-perspective; it is intended to be used to detect logical errors in the code
 		"""
-
 		self.logtype = None
 		self.log = []

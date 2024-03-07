@@ -11,7 +11,7 @@ for cases where the obj provided from the list view is not sufficient
 
 from pathlib import Path, PurePath
 import sys
-from typing import Dict, List
+from typing import Callable, Dict, List
 # ujson is much faster than json,
 # but it might not be available
 try:
@@ -37,12 +37,11 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
 	"""
 	Get an obj by using ansible facts
 
-		Parameters:
-			obj (dict): The obj to use as reference
-		Returns:
-			ar (dict): An ansible facts object
+	    Parameters:
+	        obj (dict): The obj to use as reference
+	    Returns:
+	        (dict): An ansible facts object
 	"""
-
 	hostname = deep_get(obj, DictPath("name"), "")
 	get_facts_path = get_playbook_path(FilePath("get_facts.yaml"))
 	retval, ansible_results = ansible_run_playbook_on_selection(get_facts_path, [hostname])
@@ -59,14 +58,13 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
 
 def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
 	"""
-		Format a journalctl log message
+	Format a journalctl log message
 
-		Parameters:
-			obj (dict): The obj to get data from
-		Returns:
-			data (dict): A journalctl facts object
+	    Parameters:
+	        obj (dict): The obj to get data from
+	    Returns:
+	        (dict): A journalctl facts object
 	"""
-
 	data = {
 		# This should only be logs from one host, so we can get the hostname
 		"name": deep_get(obj[0], DictPath("name")),
@@ -81,12 +79,11 @@ def objgetter_ansible_log(obj: str) -> Dict:
 	"""
 	Get an obj from an ansible log entry
 
-		Parameters:
-			obj (dict): The obj to use as reference
-		Returns:
-			obj (dict): An ansible log entry
+	    Parameters:
+	        obj (dict): The obj to use as reference
+	    Returns:
+	        (dict): An ansible log entry
 	"""
-
 	tmpobj = {}
 
 	tmpobj = secure_read_yaml(FilePath(f"{obj}/metadata.yaml"))
@@ -149,7 +146,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
 
 
 # Objgetters acceptable for direct use in view files
-objgetter_allowlist = {
+objgetter_allowlist: Dict[str, Callable] = {
 	"objgetter_ansible_facts": objgetter_ansible_facts,
 	"objgetter_ansible_log": objgetter_ansible_log,
 	"objgetter_journalctl_log": objgetter_journalctl_log,

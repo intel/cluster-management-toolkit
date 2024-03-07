@@ -29,7 +29,8 @@ from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
 from ansithemeprint import ANSIThemeString, ansithemeprint
-from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityStatus, validate_arguments
+from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError
+from cmttypes import SecurityChecks, SecurityStatus, validate_arguments
 
 ansible_configuration: Dict = {
 	"ansible_forks": 10,
@@ -63,12 +64,11 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 	returns the path to the drop-in playbook with the highest priority
 	(or the same playbook in case there is no override)
 
-		Parameters:
-			playbook (str): The name of the playbook to get the path to
-		Returns:
-			path (FilePath): The playbook path with the highest priority
+	    Parameters:
+	        playbook (str): The name of the playbook to get the path to
+	    Returns:
+	        path (FilePath): The playbook path with the highest priority
 	"""
-
 	path = ""
 
 	if not isinstance(playbook, str):
@@ -100,12 +100,11 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 	"""
 	Populate a playbook list
 
-		Parameters:
-			paths (list[FilePath]): A list of paths to playbooks
-		Returns:
-			list[(description, playbookpath)]: A playbook list for use with run_playbooks()
+	    Parameters:
+	        paths (list[FilePath]): A list of paths to playbooks
+	    Returns:
+	        list[(description, playbookpath)]: A playbook list for use with run_playbooks()
 	"""
-
 	playbooks = []
 
 	yaml_regex = re.compile(r"^(.*)\.ya?ml$")
@@ -119,8 +118,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 			continue
 
 		# Only process playbooks
-		tmp = yaml_regex.match(pathname)
-		if tmp is None:
+		if (tmp := yaml_regex.match(pathname)) is None:
 			raise ValueError(f"The playbook filename “{pathname}“ does not end with .yaml or .yml; this is most likely a programming error.")
 
 		playbookname = tmp[1]
@@ -137,8 +135,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 			SecurityChecks.IS_DIR,
 		]
 
-		violations = check_path(playbook_dir, checks = checks)
-		if violations != [SecurityStatus.OK]:
+		if (violations := check_path(playbook_dir, checks = checks)) != [SecurityStatus.OK]:
 			violations_joined = join_securitystatus_set(",", set(violations))
 			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
 
@@ -157,8 +154,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 		d = secure_read_yaml(playbookpath, checks = checks)
 		description = None
-		t_description = deep_get(d[0], DictPath("vars#metadata#description"), "")
-		if t_description:
+		if (t_description := deep_get(d[0], DictPath("vars#metadata#description"), "")):
 			description = [ANSIThemeString(t_description, "play")]
 
 		if description is None or not description:
@@ -176,10 +172,9 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 	"""
 	Given a list of playbook paths, print a summary of the actions that will be performed
 
-		Parameters:
-			playbook (str): The name of the playbook to print a summary for
+	    Parameters:
+	        playbook (str): The name of the playbook to print a summary for
 	"""
-
 	if not isinstance(playbooks, list):
 		raise TypeError(f"playbooks is type: {type(playbooks)}, expected: {list}")
 
@@ -231,10 +226,9 @@ def ansible_get_inventory_dict() -> Dict:
 	"""
         Get the Ansible inventory and return it as a dict
 
-		Returns:
-			d (dict): A dictionary with an Ansible inventory
+	    Returns:
+	        d (dict): A dictionary with an Ansible inventory
 	"""
-
 	if not Path(ANSIBLE_INVENTORY).is_file():
 		return {
 			"all": {
@@ -256,21 +250,25 @@ def ansible_get_inventory_dict() -> Dict:
 
 	return d
 
-def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: bool = False,
-				 include_groupvars: bool = False, include_hostvars: bool = False,
-				 include_hosts: bool = True) -> List[Union[List[ANSIThemeString], str]]:
+def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeString], str]]:
 	"""
         Get the Ansible inventory and return it neatly formatted
 
-		Parameters:
-			groups (list[str]): What groups to include
-			highlight (bool): Apply syntax highlighting?
-			include_groupvars (bool): Should group variables be included
-			include_hostvars (bool): Should host variables be included
-			include_hosts (bool): Should hosts be included
-		Returns:
-			dump (list[str]): An unformatted list of strings or formatted list of themearrays
+	    Parameters:
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            groups (list[str]): What groups to include
+	            highlight (bool): Apply syntax highlighting?
+	            include_groupvars (bool): Should group variables be included
+	            include_hostvars (bool): Should host variables be included
+	            include_hosts (bool): Should hosts be included
+	    Returns:
+	        dump (list[str]): An unformatted list of strings or formatted list of themearrays
 	"""
+	groups: List[str] = deep_get(kwargs, DictPath("groups"), [])
+	highlight: bool = deep_get(kwargs, DictPath("highlight"), False)
+	include_groupvars: bool = deep_get(kwargs, DictPath("include_groupvars"), False)
+	include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
+	include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), False)
 
 	tmp = {}
 
@@ -280,7 +278,7 @@ def ansible_get_inventory_pretty(groups: Optional[List[str]] = None, highlight: 
 	d = secure_read_yaml(ANSIBLE_INVENTORY)
 
 	# We want the entire inventory
-	if groups is None or not groups:
+	if not groups:
 		tmp = d
 	else:
 		if not (isinstance(groups, list) and len(groups) > 0 and isinstance(groups[0], str)):
@@ -356,13 +354,12 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> List[str]:
 	"""
 	Get the list of hosts belonging to a group
 
-		Parameters:
-			inventory (FilePath): The inventory to use
-			group (str): The group to return hosts for
-		Returns:
-			hosts (list[str]): A list of hosts
+	    Parameters:
+	        inventory (FilePath): The inventory to use
+	        group (str): The group to return hosts for
+	    Returns:
+	        hosts (list[str]): A list of hosts
 	"""
-
 	hosts = []
 
 	if not Path(inventory).exists():
@@ -380,12 +377,11 @@ def ansible_get_groups(inventory: FilePath) -> List[str]:
 	"""
 	Get the list of groups in the inventory
 
-		Parameters:
-			inventory (FilePath): The inventory to use
-		Returns:
-			groups (list[str]): A list of groups
+	    Parameters:
+	        inventory (FilePath): The inventory to use
+	    Returns:
+	        groups (list[str]): A list of groups
 	"""
-
 	if not Path(inventory).exists():
 		return []
 
@@ -396,15 +392,14 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 	"""
 	Given an inventory, returns the groups a host belongs to
 
-		Parameters:
-			inventory_dict (dict): An Ansible inventory
-			host (str): The host to return groups for
-		Returns:
-			([str]): The list of groups the host belongs to
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory_dict (dict): An Ansible inventory
+	        host (str): The host to return groups for
+	    Returns:
+	        ([str]): The list of groups the host belongs to
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
-
 	validate_arguments(kwargs_properties = {
 				"__allof": ("inventory_dict", "host"),
 				"inventory_dict": {"types": (dict,)},
@@ -420,17 +415,19 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 
 	return groups
 
-def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, temporary: bool = False) -> bool:
+def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, **kwargs: Any) -> bool:
 	"""
 	Create a new inventory at the path given if no inventory exists
 
-		Parameters:
-			inventory (FilePath): A path where to create a new inventory (if non-existing)
-			overwrite (bool): True: Overwrite the existing inventory
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Return:
-			(bool): True if inventory was created, False if nothing was done
+	    Parameters:
+	        inventory (FilePath): A path where to create a new inventory (if non-existing)
+	        overwrite (bool): True: Overwrite the existing inventory
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Return:
+	        (bool): True if inventory was created, False if nothing was done
 	"""
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	if not isinstance(inventory, str):
 		raise TypeError(f"inventory is type: {type(inventory)}, expected str")
@@ -470,19 +467,21 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, tem
 
 	return True
 
-def ansible_create_groups(inventory: FilePath, groups: List[str], temporary: bool = False) -> bool:
+def ansible_create_groups(inventory: FilePath, groups: List[str], **kwargs: Any) -> bool:
 	"""
 	Create new groups
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			groups (list[str]): The groups to create
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			TypeError: group is not a str
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        groups (list[str]): The groups to create
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        TypeError: group is not a str
 	"""
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed: bool = False
 
@@ -512,20 +511,22 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], temporary: boo
 
 	return True
 
-def ansible_set_vars(inventory: FilePath, group: str, values: Dict, temporary: bool = False) -> bool:
+def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: Any) -> bool:
 	"""
 	Set one or several values for a group
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			group (str): The group to set variables for
-			values (dict): The values to set
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        group (str): The group to set variables for
+	        values (dict): The values to set
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -569,18 +570,17 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 	"""
 	Set one or several vars for the specified groups
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			groups (list[str]): The groups to set variables for
-			groupvars (list[(str, str|int)]): The values to set
-			kwargs (Dict):
-				temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        groups (list[str]): The groups to set variables for
+	        groupvars (list[(str, str|int)]): The values to set
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
-
 	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
@@ -624,18 +624,17 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 	"""
 	Set one or several vars for the specified hosts
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			groups (list[str]): The hosts to set variables for
-			hostvars (list[(str, str|int)]): The values to set
-			kwargs (Dict):
-				temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        groups (list[str]): The hosts to set variables for
+	        hostvars (list[(str, str|int)]): The values to set
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
-
 	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
@@ -672,20 +671,22 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 	return True
 
 # Unset one or several vars in the specified groups
-def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: List[str], temporary: bool = False) -> bool:
+def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: List[str], **kwargs: Any) -> bool:
 	"""
 	Unset one or several vars for the specified groups
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			groups (list[str]): The groups to unset variables for
-			groupvars (list[(str]): The values to unset
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        groups (list[str]): The groups to unset variables for
+	        groupvars (list[(str]): The values to unset
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -729,20 +730,22 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 	return True
 
 # Unset one or several vars for the specified host in the group all
-def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[str], temporary: bool = False) -> bool:
+def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[str], **kwargs: Any) -> bool:
 	"""
 	Unset one or several vars for the specified hosts
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			groups (list[str]): The hosts to unset variables for
-			hostvars (list[(str]): The values to unset
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        groups (list[str]): The hosts to unset variables for
+	        hostvars (list[(str]): The values to unset
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -780,21 +783,25 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 
 	return True
 
-def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", skip_all: bool = False, temporary: bool = False) -> bool:
+def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> bool:
 	"""
 	Add hosts to the ansible inventory; if the inventory does not exist, create it
 
-		Parameters:
-			inventory (FilePath): The path to the inventory
-			hosts (list[str]): The hosts to add to the inventory
-			group (str): The group to add the hosts to
-			skip_all (bool): If True we do not create a new inventory if it does not exist
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The path to the inventory
+	        hosts (list[str]): The hosts to add to the inventory
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            group (str): The group to add the hosts to
+	            skip_all (bool): If True we do not create a new inventory if it does not exist
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	group: str = deep_get(kwargs, DictPath("group"), "")
+	skip_all: bool = deep_get(kwargs, DictPath("skip_all"), False)
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -867,20 +874,23 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], group: str = "", sk
 	return True
 
 # Remove hosts from ansible groups
-def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[str] = None, temporary: bool = False) -> bool:
+def ansible_remove_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> bool:
 	"""
 	Remove hosts from the inventory
 
-		Parameters:
-			inventory (FilePath): The inventory to use
-			hosts (list[str]): The hosts to remove
-			group (str): The group to remove the hosts from
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The inventory to use
+	        hosts (list[str]): The hosts to remove
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            group (str): The group to remove the hosts from
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	group: str = deep_get(kwargs, DictPath("group"), "")
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -908,20 +918,23 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], group: Optional[
 
 	return True
 
-def ansible_remove_groups(inventory: FilePath, groups: List[str], force: bool = False, temporary: bool = False) -> bool:
+def ansible_remove_groups(inventory: FilePath, groups: List[str], **kwargs: Any) -> bool:
 	"""
 	Remove groups from the inventory
 
-		Parameters:
-			inventory (FilePath): The inventory to use
-			groups (list[str]): The groups to remove
-			force (bool): Force allows for removal of non-empty groups
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(bool): True on success, False on failure
-		Raises:
-			ArgumentValidationError: At least one of the arguments failed validation
+	    Parameters:
+	        inventory (FilePath): The inventory to use
+	        groups (list[str]): The groups to remove
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            force (bool): Force allows for removal of non-empty groups
+	            temporary (bool): Is the inventory a tempfile?
+	    Returns:
+	        (bool): True on success, False on failure
+	    Raises:
+	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
+	force: bool = deep_get(kwargs, DictPath("force"), False)
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	changed = False
 
@@ -960,10 +973,9 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 	"""
 	Returns a list of all available logs
 
-		Returns:
-			logs (tuple(full_name, name, date, path)): A list of full name, name, date, and path to logs
+	    Returns:
+	        logs (tuple(full_name, name, date, path)): A list of full name, name, date, and path to logs
 	"""
-
 	logs = []
 
 	timestamp_regex = re.compile(r"^(\d{4}-\d\d-\d\d_\d\d:\d\d:\d\d\.\d+)_(.*)")
@@ -979,18 +991,21 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 		logs.append((filename, name, FilePath(str(path)), date))
 	return logs
 
-def ansible_extract_failure(retval: int, error_msg_lines: List[str], skipped: bool = False, unreachable: bool = False) -> str:
+def ansible_extract_failure(retval: int, error_msg_lines: List[str], **kwargs: Any) -> str:
 	"""
 	Given error information from an ansible run, return a suitable error message
 
-		Parameters:
-			retval (int): The retval from the run
-			error_msg_lines (list[str]): A list of error messages
-			skipped (bool): Was the task skipped?
-			unreachable (bool): Was the target unreachable?
-		Returns:
-			status (str): A status string
+	    Parameters:
+	        retval (int): The retval from the run
+	        error_msg_lines (list[str]): A list of error messages
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            skipped (bool): Was the task skipped?
+	            unreachable (bool): Was the target unreachable?
+	    Returns:
+	        status (str): A status string
 	"""
+	skipped: bool = deep_get(kwargs, DictPath("skipped"), False)
+	unreachable: bool = deep_get(kwargs, DictPath("unreachable"), False)
 
 	status = ""
 
@@ -1035,15 +1050,14 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	"""
 	Extract a result from an Ansible play
 
-		Parameters:
-			event (dict): The output from the run
-		Returns:
-			(retval(int), result(dict)):
-				retval: 0 on success, -1 if host is unreachable, retval on other failure,
-				result: A dict
+	    Parameters:
+	        event (dict): The output from the run
+	    Returns:
+	        (retval(int), result(dict)):
+	            retval: 0 on success, -1 if host is unreachable, retval on other failure
+	            result: A dict
 	"""
-
-	__retval: Optional[int] = -1
+	retval_: Optional[int] = -1
 
 	# Special events
 	if deep_get(event, DictPath("event"), "") == "playbook_on_no_hosts_matched":
@@ -1051,7 +1065,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 			"task": "",
 			"start_date": "",
 			"end_date": "",
-			"retval": __retval,
+			"retval": retval_,
 			"no_hosts_matched": True,
 			"unreachable": False,
 			"status": "NO HOSTS MATCHED",
@@ -1063,7 +1077,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		}
 		return -1, d
 
-	if not (host := deep_get(event, DictPath("event_data#host"), "")):
+	if not deep_get(event, DictPath("event_data#host"), ""):
 		return 0, {}
 
 	if not (task := deep_get(event, DictPath("event_data#task"), "")):
@@ -1076,23 +1090,23 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	unreachable = deep_get(event, DictPath("event_data#res#unreachable"), False)
 
 	if unreachable:
-		__retval = -1
+		retval_ = -1
 	elif skipped or deep_get(event, DictPath("event"), "") == "runner_on_ok":
-		__retval = 0
+		retval_ = 0
 	elif failed:
-		__retval = -1
+		retval_ = -1
 	else:
-		__retval = deep_get(event, DictPath("event_data#res#rc"))
+		retval_ = deep_get(event, DictPath("event_data#res#rc"))
 
 	if task.startswith("hide_on_ok: "):
-		if not __retval:
-			__retval = None
+		if not retval_:
+			retval_ = None
 		else:
 			task = task[len("hide_on_ok: "):]
-	elif task == "Gathering Facts" and not __retval:
-		__retval = None
+	elif task == "Gathering Facts" and not retval_:
+		retval_ = None
 
-	if __retval is None:
+	if retval_ is None:
 		return 0, {}
 
 	msg = deep_get(event, DictPath("event_data#res#msg"), "")
@@ -1117,7 +1131,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		"task": task,
 		"start_date": start_date_timestamp,
 		"end_date": end_date_timestamp,
-		"retval": __retval,
+		"retval": retval_,
 		"no_hosts_matched": False,
 		"unreachable": unreachable,
 		"status": "UNKNOWN",
@@ -1128,7 +1142,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		"ansible_facts": ansible_facts,
 	}
 
-	if not unreachable and not __retval:
+	if not unreachable and not retval_:
 		d["status"] = "SUCCESS"
 
 	if msg_lines or stdout_lines or stderr_lines:
@@ -1140,7 +1154,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 		# XXX: Or can it be used to get a sequential log when there's both
 		# stdout and stderr?
 		if not stdout_lines and not stderr_lines and msg_lines:
-			if __retval:
+			if retval_:
 				d["stderr_lines"] = msg_lines
 			else:
 				d["msg_lines"] = msg_lines
@@ -1150,18 +1164,17 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	error_msg_lines = stderr_lines
 	if not error_msg_lines:
 		error_msg_lines = msg_lines
-	d["status"] = ansible_extract_failure(__retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
+	d["status"] = ansible_extract_failure(retval_, error_msg_lines, skipped = skipped, unreachable = unreachable)
 
-	return __retval, d
+	return retval_, d
 
 def ansible_delete_log(log: str) -> None:
 	"""
 	Delete a log file
 
-		Parameters:
-			log (str): The name of the log to delete
+	    Parameters:
+	        log (str): The name of the log to delete
 	"""
-
 	logpath = Path(f"{ANSIBLE_LOG_DIR}/{log}")
 	if logpath.exists():
 		for file in logpath.iterdir():
@@ -1172,12 +1185,11 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 	"""
 	Save an Ansible log entry to a file
 
-		Parameters:
-			start_date (date): A timestamp in the format YYYY-MM-DD_HH:MM:SS.ssssss
-			playbook (str): The name of the playbook
-			events (list[dict]): The list of Ansible runs
+	    Parameters:
+	        start_date (date): A timestamp in the format YYYY-MM-DD_HH:MM:SS.ssssss
+	        playbook (str): The name of the playbook
+	        events (list[dict]): The list of Ansible runs
 	"""
-
 	save_logs: bool = deep_get(ansible_configuration, DictPath("save_logs"), False)
 
 	if not save_logs:
@@ -1287,21 +1299,27 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
 
 # pylint: disable-next=too-many-arguments
-def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: List[str], stderr_lines: List[str], retval: int,
-			       unreachable: bool = False, skipped: bool = False, verbose: bool = False) -> None:
+def ansible_print_task_results(task: str,
+			       msg_lines: List[str],
+			       stdout_lines: List[str],
+			       stderr_lines: List[str], retval: int, **kwargs: Any) -> None:
 	"""
 	Pretty-print the result of an Ansible task run
 
-		Parameters:
-			task (str): The name of the task
-			msg_lines (list[str]): msg from tasks that does not split the output into stdout & stderr
-			stdout_lines (list[str]): output from stdout
-			stderr_lines (list[str]): output from stderr
-			retval (int): The return value from the task
-			unreachable (bool): Was the host unreachable?
-			skipped (bool): Was the task skipped?
-			verbose (bool): Should skipped tasks be outputted?
+	    Parameters:
+	        task (str): The name of the task
+	        msg_lines (list[str]): msg from tasks that does not split the output into stdout & stderr
+	        stdout_lines (list[str]): output from stdout
+	        stderr_lines (list[str]): output from stderr
+	        retval (int): The return value from the task
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            unreachable (bool): Was the host unreachable?
+	            skipped (bool): Was the task skipped?
+	            verbose (bool): Should skipped tasks be outputted?
 	"""
+	unreachable: bool = deep_get(kwargs, DictPath("unreachable"), False)
+	skipped: bool = deep_get(kwargs, DictPath("skipped"), False)
+	verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
 	if unreachable:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
@@ -1345,15 +1363,17 @@ def ansible_print_task_results(task: str, msg_lines: List[str], stdout_lines: Li
 			ansithemeprint([ANSIThemeString("<no output>", "none")])
 		ansithemeprint([ANSIThemeString("", "default")])
 
-def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool = False) -> None:
+def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any) -> None:
 	"""
 	Pretty-print the result of an Ansible play
 
-		Parameters:
-			retval (int): The return value from the play
-			ansible_results (opaque): The data from a playbook run
-			verbose (bool): Should skipped tasks be outputted?
+	    Parameters:
+	        retval (int): The return value from the play
+	        ansible_results (opaque): The data from a playbook run
+	        **kwargs (dict[str, Any]): Keyword arguments
+	                verbose (bool): Should skipped tasks be outputted?
 	"""
+	verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
 	count_total = 0
 	count_task_total = 0
@@ -1410,7 +1430,14 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 					msg_lines = deep_get(play, DictPath("msg_lines"), "")
 					stdout_lines = deep_get(play, DictPath("stdout_lines"), "")
 					stderr_lines = deep_get(play, DictPath("stderr_lines"), "")
-					ansible_print_task_results(task, msg_lines, stdout_lines, stderr_lines, retval, unreachable, skipped, verbose)
+					ansible_print_task_results(task,
+								   msg_lines,
+								   stdout_lines,
+								   stderr_lines,
+								   retval,
+								   unreachable = unreachable,
+								   skipped = skipped,
+								   verbose = verbose)
 
 				if not skipped or verbose:
 					print()
@@ -1456,20 +1483,20 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, verbose: bool
 				ANSIThemeString(f"{count_no_hosts_match}\n", "numerical"),
 				])
 
-def ansible_run_playbook(playbook: FilePath, inventory: Optional[Dict] = None, **kwargs: Any) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> Tuple[int, Dict]:
 	"""
 	Run a playbook
 
-		Parameters:
-			playbook (FilePath): The playbook to run
-			inventory (dict): An inventory dict with selection as the list of hosts to run on
-			kwargs (dict):
-				verbose (bool): Output status updates for every new Ansible event
-				quiet (bool): Disable console output
-		Returns:
-			(retval(int), ansible_results(dict)): The return value and results from the run
+	    Parameters:
+	        playbook (FilePath): The playbook to run
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            inventory (dict): An inventory dict with selection as the list of hosts to run on
+	            verbose (bool): Output status updates for every new Ansible event
+	            quiet (bool): Disable console output
+	    Returns:
+	        (retval(int), ansible_results(dict)): The return value and results from the run
 	"""
-
+	inventory: Optional[Dict] = deep_get(kwargs, DictPath("inventory"), None)
 	verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 	quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
@@ -1516,18 +1543,17 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	"""
 	Run a playbook on selected nodes
 
-		Parameters:
-			playbook (FilePath): The playbook to run
-			selection (list[str]): The hosts to run the play on
-			kwargs (dict):
-				values (dict): Extra values to set for the hosts
-				verbose (bool): Output status updates for every new Ansible event
-				quiet (bool): Disable console output
-		Returns:
-			The result from ansible_run_playbook()
-			retval = -errno.ENOENT if the inventory is missing or empty
+	    Parameters:
+	        playbook (FilePath): The playbook to run
+	        selection (list[str]): The hosts to run the play on
+	        kwargs (dict):
+	            values (dict): Extra values to set for the hosts
+	            verbose (bool): Output status updates for every new Ansible event
+	            quiet (bool): Disable console output
+	    Returns:
+	        The result from ansible_run_playbook()
+	        retval = -errno.ENOENT if the inventory is missing or empty
 	"""
-
 	# If ansible_ssh_pass system variable is not set, and ansible_sudo_pass is set,
 	# we set ansible_ssh_pass to ansible_become_pass; on systems where we already have a host key
 	# this will be ignored; the same goes for groups or hosts where ansible_ssh_pass is set,
@@ -1569,18 +1595,17 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	for host in selection:
 		d["selection"]["hosts"][host] = {}
 
-	return ansible_run_playbook(playbook, d, verbose = verbose, quiet = quiet)
+	return ansible_run_playbook(playbook, inventory = d, verbose = verbose, quiet = quiet)
 
 def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
 	Ping all selected hosts
 
-		Parameters:
-			selection (list[str]): A list of hostnames
-		Returns:
-			list[(hostname, status)]: The status of the pinged hosts
+	    Parameters:
+	        selection (list[str]): A list of hostnames
+	    Returns:
+	        list[(hostname, status)]: The status of the pinged hosts
 	"""
-
 	save_logs_tmp = deep_get(ansible_configuration, DictPath("save_logs"), False)
 	ansible_configuration["save_logs"] = False
 
@@ -1624,7 +1649,9 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 		for res in deep_get(data, DictPath("event_data#res#results"), []):
 			msg = deep_get(res, DictPath("msg"), "")
 			if msg:
-				ansithemeprint([ANSIThemeString("    ", "default"), ANSIThemeString("Error", "error"), ANSIThemeString(":", "default")])
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(":", "default")])
 				ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
 	elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")
@@ -1677,7 +1704,9 @@ def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
 		for res in deep_get(data, DictPath("event_data#res#results"), []):
 			msg = deep_get(res, DictPath("msg"), "")
 			if msg:
-				ansithemeprint([ANSIThemeString("    ", "default"), ANSIThemeString("Error", "error"), ANSIThemeString(":", "default")])
+				ansithemeprint([ANSIThemeString("    ", "default"),
+						ANSIThemeString("Error", "error"),
+						ANSIThemeString(":", "default")])
 				ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
 	elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
 		host = deep_get(data, DictPath("event_data#host"), "<unset>")

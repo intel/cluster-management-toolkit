@@ -23,12 +23,11 @@ def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
 	"""
 	Given a structured error message return a plaintext representation
 
-		Parameters:
-			msg ([[(str, str)]]): A structured message for format
-		Returns:
-			(str): The plaintext representation
+	    Parameters:
+	        msg ([[(str, str)]]): A structured message for format
+	    Returns:
+	        (str): The plaintext representation
 	"""
-
 	joined_strings = []
 
 	for line in msg:
@@ -43,14 +42,13 @@ def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) ->
 	"""
 	Given a dictionary and a path into that dictionary, get the value
 
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			path (DictPath): A dict path
-			default (Any): The default value to return if the dictionary, path is None, or result is None
-		Returns:
-			result (Any): The value from the path
+	    Parameters:
+	        dictionary (dict): The dict to get the value from
+	        path (DictPath): A dict path
+	        default (Any): The default value to return if the dictionary, path is None, or result is None
+	    Returns:
+	        result (Any): The value from the path
 	"""
-
 	if dictionary is None:
 		return default
 	if path is None or len(path) == 0:
@@ -67,18 +65,17 @@ class UnknownError(Exception):
 	Note: severity and formatted_msg use Any as type to avoid recursive imports,
 	but they are typically LogLevel and List[ANSIThemeString], respectively
 
-		Attributes:
-			message (str): Additional information about the error
-			severity (any): The severity
-			facility (str): A facility
-			formatted_msg (any); A formatted version of the message
-			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
-			file (str): The file the error occurred in (optional; normally taken from the frame)
-			function (str): The function the error occurred in (optional; normally taken from the frame)
-			lineno (str): The line the error occurred on (optional; normally taken from the frame)
-			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
+	    Attributes:
+	        message (str): Additional information about the error
+	        severity (any): The severity
+	        facility (str): A facility
+	        formatted_msg (any); A formatted version of the message
+	        timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+	        file (str): The file the error occurred in (optional; normally taken from the frame)
+	        function (str): The function the error occurred in (optional; normally taken from the frame)
+	        lineno (str): The line the error occurred on (optional; normally taken from the frame)
+	        ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
-
 	traceback: Optional[str] = None
 
 	def __init__(self, message: str, **kwargs: Any) -> None:
@@ -127,10 +124,9 @@ class UnknownError(Exception):
 		"""
 		Return a string representation of the exception
 
-			Returns:
-				(str): The string representation of the exception
+		    Returns:
+		        (str): The string representation of the exception
 		"""
-
 		if len(self.message) == 0:
 			message = "No further details were provided"
 		else:
@@ -142,10 +138,9 @@ class UnknownError(Exception):
 		"""
 		Return a dictionary containing structured information about the exception
 
-			Returns:
-				(dict): A dictionary with structured information
+		    Returns:
+		        (dict): A dictionary with structured information
 		"""
-
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -167,19 +162,18 @@ class ArgumentValidationError(Exception):
 	Note: severity use Any as type to avoid recursive imports,
 	but it is typically LogLevel.
 
-		Attributes:
-			message (str): Additional information about the error
-			subexception (Exception): Related standard exception
-			severity (any): The severity
-			facility (str): A facility
-			formatted_msg ([[(str,str)]]); A formatted version of the message
-			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
-			file (str): The file the error occurred in (optional; normally taken from the frame)
-			function (str): The function the error occurred in (optional; normally taken from the frame)
-			lineno (str): The line the error occurred on (optional; normally taken from the frame)
-			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
+	    Attributes:
+	        message (str): Additional information about the error
+	        subexception (Exception): Related standard exception
+	        severity (any): The severity
+	        facility (str): A facility
+	        formatted_msg ([[(str,str)]]); A formatted version of the message
+	        timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+	        file (str): The file the error occurred in (optional; normally taken from the frame)
+	        function (str): The function the error occurred in (optional; normally taken from the frame)
+	        lineno (str): The line the error occurred on (optional; normally taken from the frame)
+	        ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
-
 	traceback: Optional[str] = None
 
 	def __init__(self, **kwargs: Any) -> None:
@@ -233,10 +227,9 @@ class ArgumentValidationError(Exception):
 		"""
 		Return a string representation of the exception
 
-			Returns:
-				(str): The string representation of the exception
+		    Returns:
+		        (str): The string representation of the exception
 		"""
-
 		if self.subexception is None:
 			message = ""
 		else:
@@ -253,10 +246,9 @@ class ArgumentValidationError(Exception):
 		"""
 		Return a dictionary containing structured information about the exception
 
-			Returns:
-				(dict): A dictionary with structured information
+		    Returns:
+		        (dict): A dictionary with structured information
 		"""
-
 		return {
 			"exception": self.exception,
 			"subexception": self.subexception,
@@ -279,19 +271,18 @@ class ProgrammingError(Exception):
 	Note: severity and formatted_msg use Any as type to avoid recursive imports,
 	but they are typically LogLevel and List[ANSIThemeString], respectively
 
-		Attributes:
-			message (str): Additional information about the error
-			subexception (Exception): Related standard exception
-			severity (any): The severity
-			facility (str): A facility
-			formatted_msg (any); A formatted version of the message
-			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
-			file (str): The file the error occurred in (optional; normally taken from the frame)
-			function (str): The function the error occurred in (optional; normally taken from the frame)
-			lineno (str): The line the error occurred on (optional; normally taken from the frame)
-			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
+	    Attributes:
+	        message (str): Additional information about the error
+	        subexception (Exception): Related standard exception
+	        severity (any): The severity
+	        facility (str): A facility
+	        formatted_msg (any); A formatted version of the message
+	        timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+	        file (str): The file the error occurred in (optional; normally taken from the frame)
+	        function (str): The function the error occurred in (optional; normally taken from the frame)
+	        lineno (str): The line the error occurred on (optional; normally taken from the frame)
+	        ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
-
 	traceback: Optional[str] = None
 
 	def __init__(self, message: str, **kwargs: Any) -> None:
@@ -341,10 +332,9 @@ class ProgrammingError(Exception):
 		"""
 		Return a string representation of the exception
 
-			Returns:
-				(str): The string representation of the exception
+		    Returns:
+		        (str): The string representation of the exception
 		"""
-
 		if self.subexception is None:
 			message = ""
 		else:
@@ -361,10 +351,9 @@ class ProgrammingError(Exception):
 		"""
 		Return a dictionary containing structured information about the exception
 
-			Returns:
-				(dict): A dictionary with structured information
+		    Returns:
+		        (dict): A dictionary with structured information
 		"""
-
 		return {
 			"exception": self.exception,
 			"subexception": self.subexception,
@@ -387,19 +376,18 @@ class FilePathAuditError(Exception):
 	Note: severity and formatted_msg use Any as type to avoid recursive imports,
 	but they are typically LogLevel and List[ANSIThemeString], respectively
 
-		Attributes:
-			message (str): Additional information about the error
-			path (FilePath): The path being audited
-			severity (any): The severity
-			facility (str): A facility
-			formatted_msg (any); A formatted version of the message
-			timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
-			file (str): The file the error occurred in (optional; normally taken from the frame)
-			function (str): The function the error occurred in (optional; normally taken from the frame)
-			lineno (str): The line the error occurred on (optional; normally taken from the frame)
-			ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
+	    Attributes:
+	        message (str): Additional information about the error
+	        path (FilePath): The path being audited
+	        severity (any): The severity
+	        facility (str): A facility
+	        formatted_msg (any); A formatted version of the message
+	        timestamp (datetime): A timestamp (optional; normally taken from datetime.now())
+	        file (str): The file the error occurred in (optional; normally taken from the frame)
+	        function (str): The function the error occurred in (optional; normally taken from the frame)
+	        lineno (str): The line the error occurred on (optional; normally taken from the frame)
+	        ppid (str): The parent pid of the process (optional; normally taken from os.getppid())
 	"""
-
 	traceback: Optional[str] = None
 
 	def __init__(self, message: str, **kwargs: Any) -> None:
@@ -449,10 +437,9 @@ class FilePathAuditError(Exception):
 		"""
 		Return a string representation of the exception
 
-			Returns:
-				(str): The string representation of the exception
+		    Returns:
+		        (str): The string representation of the exception
 		"""
-
 		if self.path is None:
 			path = "<omitted>"
 		else:
@@ -470,10 +457,9 @@ class FilePathAuditError(Exception):
 		"""
 		Return a dictionary containing structured information about the exception
 
-			Returns:
-				(dict): A dictionary with structured information
+		    Returns:
+		        (dict): A dictionary with structured information
 		"""
-
 		return {
 			"exception": self.exception,
 			"message": self.message,
@@ -493,13 +479,12 @@ def validate_arguments(kwargs_properties: Dict[str, Any], kwargs: Any) -> None:
 	"""
 	Validates that the kwargs against the requirements in kwargs_properties
 
-		Parameters:
-			kwargs_properties ([dict]): The expected properties for kwargs
-			kwargs ([{str, Any}]): The kwargs to validate
-		Raises:
-			ArgumentValidationError (with subexception)
+	    Parameters:
+	        kwargs_properties ([dict]): The expected properties for kwargs
+	        kwargs ([{str, Any}]): The kwargs to validate
+	    Raises:
+	        ArgumentValidationError (with subexception)
 	"""
-
 	results: Dict = {}
 	msg: List[List[Tuple[str, str]]] = []
 	function = "<unknown>"  # This is just to make pylint happy
@@ -726,7 +711,6 @@ class HostNameStatus(Enum):
 	"""
 	Return values from validate_hostname()
 	"""
-
 	OK = auto()
 	DNS_SUBDOMAIN_EMPTY = auto()
 	DNS_SUBDOMAIN_TOO_LONG = auto()
@@ -743,7 +727,6 @@ class SecurityStatus(IntEnum):
 	"""
 	Return values from check_path()
 	"""
-
 	OK = auto()
 	# Critical
 	PERMISSIONS = auto()
@@ -768,7 +751,6 @@ class SecurityChecks(Enum):
 	"""
 	Checks that can be performed by check_path()
 	"""
-
 	PARENT_RESOLVES_TO_SELF = auto()
 	RESOLVES_TO_SELF = auto()
 	OWNER_IN_ALLOWLIST = auto()
@@ -833,10 +815,10 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
 	"""
 	Given a numerical loglevel, return its severity string
 
-		Parameters:
-			loglevel (int): The corresponding numerical loglevel
-		Returns:
-			severity (str): A severity string
+	    Parameters:
+	        loglevel (int): The corresponding numerical loglevel
+	    Returns:
+	        severity (str): A severity string
 	"""
 	return loglevel_mappings[min(LogLevel.DIFFSAME, loglevel)]
 
@@ -845,7 +827,6 @@ class Retval(Enum):
 	"""
 	Return values from the UI functions
 	"""
-
 	NOMATCH = 0     # No keypress matched/processed; further checks needed (if any)
 	MATCH = 1       # keypress matched/processed; no further action
 	RETURNONE = 2   # keypress matched/processed; return up one level
@@ -883,13 +864,12 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
 	"""
 	Given a dictionary, a path into that dictionary, and a value, set the path to that value
 
-		Parameters:
-			dictionary (dict): The dict to set the value in
-			path (DictPath): A dict path
-			value (any): The value to set
-			create_path (bool): If True the path will be created if it does not exist
+	    Parameters:
+	        dictionary (dict): The dict to set the value in
+	        path (DictPath): A dict path
+	        value (any): The value to set
+	        create_path (bool): If True the path will be created if it does not exist
 	"""
-
 	if dictionary is None or path is None or len(path) == 0:
 		raise ValueError(f"deep_set: dictionary {dictionary} or path {path} invalid/unset")
 
@@ -935,15 +915,14 @@ def deep_get_list(dictionary: Dict, paths: List[DictPath], default: Optional[Lis
 	"""
 	Given a dictionary and a list of paths into that dictionary, get all values
 
-		Parameters:
-			dictionary (dict): The dict to get the values from
-			path (List[DictPath]): A list of dict paths
-			default (List[Any]): The default value to return if the dictionary, paths, or results are None
-			fallback_on_empty (bool): Should "" be treated as None?
-		Returns:
-			result (List[Any]): The values from the paths
+	    Parameters:
+	        dictionary (dict): The dict to get the values from
+	        path (List[DictPath]): A list of dict paths
+	        default (List[Any]): The default value to return if the dictionary, paths, or results are None
+	        fallback_on_empty (bool): Should "" be treated as None?
+	    Returns:
+	        result (List[Any]): The values from the paths
 	"""
-
 	if dictionary is None or paths is None:
 		return default
 
@@ -963,11 +942,11 @@ def deep_get_with_fallback(obj: Dict, paths: List[DictPath], default: Optional[A
 	"""
 	Given a dictionary and a list of paths into that dictionary, get the value from the first path that has a value
 
-		Parameters:
-			dictionary (dict): The dict to get the value from
-			paths (list[DictPath]): A list of dict paths
-			default (any): The default value to return if the dictionary, path is None, or result is None
-			fallback_on_empty (bool): Should "" be treated as None?
+	    Parameters:
+	        dictionary (dict): The dict to get the value from
+	        paths (list[DictPath]): A list of dict paths
+	        default (any): The default value to return if the dictionary, path is None, or result is None
+	        fallback_on_empty (bool): Should "" be treated as None?
 	"""
 
 	if paths is None:

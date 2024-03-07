@@ -8,7 +8,7 @@ Get data for fields in a list; typically used to populate _extra_data
 """
 
 import copy
-from typing import Any, List
+from typing import Any, Callable, Dict, List
 
 from cmttypes import deep_get, DictPath, ProgrammingError
 
@@ -40,6 +40,6 @@ def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
 
 
 # Fieldgetters acceptable for direct use in view files
-fieldgetter_allowlist = {
+fieldgetter_allowlist: Dict[str, Callable] = {
 	"fieldgetter_api_server_version": fieldgetter_api_server_version,
 }

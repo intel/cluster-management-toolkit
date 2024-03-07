@@ -255,7 +255,7 @@ def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bo
 		tmp = fun(indata, formatting=formatting, separator=None)
 		expected_result = [ANSIThemeString(string="one", themeref="error"), ANSIThemeString(string="two", themeref="warning"), ANSIThemeString(string="three", themeref="error")]
 		for i, item in enumerate(tmp):
-			if tmp[i] != expected_result[i]:
+			if item != expected_result[i]:
 				message = f"{fun.__name__} did not yield a correctly formatted string from valid indata:\n    input: {repr(indata)}"
 				result = False
 

@@ -25,7 +25,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 try:
 	from natsort import natsorted
@@ -2043,7 +2043,7 @@ def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
 
 
 # Listgetters acceptable for direct use in view files
-listgetter_allowlist = {
+listgetter_allowlist: Dict[str, Callable] = {
 	# Used by listview, listpad
 	"generic_listgetter": generic_listgetter,
 	"get_metrics_list": get_metrics_list,

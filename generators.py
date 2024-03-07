@@ -1367,7 +1367,7 @@ def fieldgenerator(view: str, selected_namespace: str = "", **kwargs: Any) -> Tu
 
 
 # Generators acceptable for direct use in view files
-generator_allowlist = {
+generator_allowlist: Dict[str, Callable] = {
 	"generator_mem": generator_mem,
 	"generator_status": generator_status,
 }

@@ -1894,7 +1894,7 @@ ignoreinput: bool = False
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int, items: List[Dict[str, Any]], **kwargs: Any) -> Union[Set, Tuple[int, Union[bool, int, str, None]], Union[bool, int, str, None]]:
 	global ignoreinput  # pylint: disable=global-statement
 
-	headers: Tuple[str] = deep_get(kwargs, DictPath("headers"))
+	headers: Tuple[str, ...] = deep_get(kwargs, DictPath("headers"))
 	title: str = deep_get(kwargs, DictPath("title"), "")
 	preselection: Union[str, Set[int]] = deep_get(kwargs, DictPath("preselection"), "")
 	cursor: bool = deep_get(kwargs, DictPath("cursor"), True)
@@ -2322,7 +2322,7 @@ def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
 	return rlabels
 
 
-annotation_headers: Tuple[str] = ("Annotation:", "Value:")
+annotation_headers: Tuple[str, ...] = ("Annotation:", "Value:")
 
 
 def get_annotations(annotations: Optional[Dict]) -> Optional[List[Dict]]:

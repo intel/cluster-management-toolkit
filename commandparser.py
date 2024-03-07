@@ -9,7 +9,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import cast, Callable, Dict, List, Optional, Tuple
 
 import about
 
@@ -30,14 +30,13 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display version information
 
-		Parameters:
-			options (list[(str, str)]): Unused
-			args (dict): Unused
+	    Parameters:
+	        options (list[(str, str)]): Unused
+	        args (dict): Unused
 
-		Returns:
-			0
+	    Returns:
+	        0
 	"""
-
 	ansithemeprint([ANSIThemeString(f"{programname} ", "programname"),
 			ANSIThemeString(f"{programversion}", "version")])
 	ansithemeprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} ({about.PROGRAM_SUITE_NAME}) ", "programname"),
@@ -53,12 +52,11 @@ def __sub_usage(command: str) -> int:
 	"""
 	Display usage information for a single command
 
-		Parameters:
-			command (str): The command to show help for
-		Returns:
-			0
+	    Parameters:
+	        command (str): The command to show help for
+	    Returns:
+	        0
 	"""
-
 	assert commandline is not None
 
 	commandinfo = {}
@@ -142,14 +140,12 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display usage information
 
-		Parameters:
-			options (list[(opt, optarg)]): Options to use when executing this action
-			args (dict): Unused
-
-		Returns:
-			0
+	    Parameters:
+	        options (list[(opt, optarg)]): Options to use when executing this action
+	        args (dict): Unused
+	    Returns:
+	        0
 	"""
-
 	assert commandline is not None
 
 	has_commands: bool = False
@@ -400,13 +396,12 @@ def __command_usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 	"""
 	Display usage information for a single command
 
-		Parameters:
-			options (list[(str, str)]): Unused
-			args (dict): The command to show help for
-		Returns:
-			0
+	    Parameters:
+	        options (list[(str, str)]): Unused
+	        args (dict): The command to show help for
+	    Returns:
+	        0
 	"""
-
 	assert commandline is not None
 
 	if len(args) == 0:
@@ -517,18 +512,17 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 	"""
 	Parse the command line
 
-		Parameters:
-			__programname (str): The name of the program (used in usage and version information, and in error messages)
-			__programversion (str): The version of the program (used in version information)
-			__programdescription (str): The description of the program (used in usage information)
-			__programauthors (str): The authors of the program (used in version information)
-		Returns:
-			(command, options, args):
-				command (callable): The command to call
-				options (list[(str, str)]): The options to pass to the command
-				args (list[str]): The arguments to pass to the command
+	    Parameters:
+	        __programname (str): The name of the program (used in usage and version information, and in error messages)
+	        __programversion (str): The version of the program (used in version information)
+	        __programdescription (str): The description of the program (used in usage information)
+	        __programauthors (str): The authors of the program (used in version information)
+	    Returns:
+	        (Callable, [(str, str)], [str]):
+	            (Callable): The command to call
+	            (list[(str, str)]): The options to pass to the command
+	            (list[str]): The arguments to pass to the command
 	"""
-
 	global commandline  # pylint: disable=global-statement
 	global programname  # pylint: disable=global-statement
 	global programversion  # pylint: disable=global-statement
@@ -734,6 +728,6 @@ def parse_commandline(__programname: str, __programversion: str, __programdescri
 		# validate_argument() will terminate by default if validation fails
 		_result = cmtvalidators.validate_argument(args[i], arg["string"], validator_options)
 
-	options.append(("__commandname", commandname))
+	options.append(("__commandname", cast(str, commandname)))
 
 	return command, options, args

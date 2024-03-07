@@ -13,15 +13,18 @@ from cmtio import check_path, execute_command, join_securitystatus_set
 from cmttypes import FilePath, FilePathAuditError, SecurityStatus
 from networkio import get_github_version
 
-def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
+def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> bool:
 	"""
 	Patch the configuration for Calico
 
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
+	    Parameters:
+	        cni_path (FilePath): The path to the CNI configuration to patch
+	        pod_network_cidr (str): The CIDR for the pod network
+	    Returns:
+	        (bool): True on success, False on Failure
+	    Raises:
+	        FilePathAuditError
 	"""
-
 	violations = check_path(cni_path)
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -33,15 +36,18 @@ def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	return execute_command(args)
 
-def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
+def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> bool:
 	"""
 	Patch the configuration for Canal
 
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
+	    Parameters:
+	        cni_path (FilePath): The path to the CNI configuration to patch
+	        pod_network_cidr (str): The CIDR for the pod network
+	    Returns:
+	        (bool): True on success, False on Failure
+	    Raises:
+	        FilePathAuditError
 	"""
-
 	violations = check_path(cni_path)
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -63,15 +69,18 @@ def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	return execute_command(args)
 
-def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
+def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> bool:
 	"""
 	Patch the configuration for Flannel
 
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
+	    Parameters:
+	        cni_path (FilePath): The path to the CNI configuration to patch
+	        pod_network_cidr (str): The CIDR for the pod network
+	    Returns:
+	        (bool): True on success, False on Failure
+	    Raises:
+	        FilePathAuditError
 	"""
-
 	violations = check_path(cni_path)
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -83,15 +92,18 @@ def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> None:
 	args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
 	return execute_command(args)
 
-def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> None:
+def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
 	"""
 	Patch the configuration for Weave
 
-		Parameters:
-			cni_path (FilePath): The path to the CNI configuration to patch
-			pod_network_cidr (str): The CIDR for the pod network
+	    Parameters:
+	        cni_path (FilePath): The path to the CNI configuration to patch
+	        pod_network_cidr (str): The CIDR for the pod network
+	    Returns:
+	        (bool): True on success, False on Failure
+	    Raises:
+	        FilePathAuditError
 	"""
-
 	violations = check_path(cni_path)
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))

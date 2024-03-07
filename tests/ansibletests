@@ -245,7 +245,7 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 
 	if result:
 		with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
-			if (tmp := fun(["all"], False, False, False, False)):
+			if (tmp := fun(groups=["all"], highlight=False, include_groupvar=False, include_hostvars=False, include_hosts=False)):
 				message = f"{fun.__name__}() did not yield expected result:\n" \
 					  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \
 					  f"      exception: {type(e)}\n" \
@@ -292,6 +292,7 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 			try:
 				with mock.patch("ansible_helper.Path.is_file", return_value = True), mock.patch("ansible_helper.secure_read_yaml", return_value = inventory):
 					tmp = fun(groups, highlight, include_groupvars, include_hostvars, include_hosts)
+					tmp = fun(groups=groups, highlight=highlight, include_groupvar=include_groupvars, include_hostvars=hostvars, include_hosts=hosts)):
 				if not (isinstance(tmp, list) and len(tmp) > 0 and (isinstance(tmp[0], str) or len(tmp[0]) > 0 and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
 						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent = 17)}\n" \

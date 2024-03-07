@@ -173,8 +173,8 @@
     - name: "Remove containers-common"
       ansible.builtin.apt:
         pkg:
-        - "containers-common"
-        - "cri-o"
+          - "containers-common"
+          - "cri-o"
         state: "absent"
         force_apt_get: true
       when: "ansible_os_family == 'Debian'"

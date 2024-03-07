@@ -42,10 +42,9 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 	"""
 	Scan hosts and add their public ssh keys to .ssh/known_hosts
 
-		Parameters:
-			hosts (list[str]): A list of hostnames
+	    Parameters:
+	        hosts (list[str]): A list of hostnames
 	"""
-
 	known_hosts = FilePath(os.path.join(SSH_DIR, "known_hosts"))
 
 	# Note: Paramiko seems to have issues if .ssh/known_hosts does not exist,
@@ -114,15 +113,14 @@ def verify_checksum(checksum: bytes, checksum_type: str, data: bytearray, filena
 	"""
 	Checksum data against a checksum file
 
-		Parameters:
-			checksum (bytes): The downloaded checksum file
-			checksum_type (str): What hash should be used when calculating the checksum?
-			data (bytearray): The data to calculate the checksum of
-			filename (str): Used to identify the correct checksum entry in a file with multiple checksums (optional)
-		Returns:
-			retval (bool): True if the checksum matches, False if the checksum does not match
+	    Parameters:
+	        checksum (bytes): The downloaded checksum file
+	        checksum_type (str): What hash should be used when calculating the checksum?
+	        data (bytearray): The data to calculate the checksum of
+	        filename (str): Used to identify the correct checksum entry in a file with multiple checksums (optional)
+	    Returns:
+	        retval (bool): True if the checksum matches, False if the checksum does not match
 	"""
-
 	if checksum_type is None:
 		ansithemeprint.ansithemeprint([ANSIThemeString("Warning", "warning"),
 					       ANSIThemeString(": No checksum type provided; checksum ", "default"),
@@ -219,18 +217,17 @@ def download_files(directory: str,
 	Download files; if the file is a tar file it can extract a file.
 	If checksum information is provided it can also fetch a checksum and compare against.
 
-		Parameters:
-			directory (str): The path to extract the file to
-			fetch_urls (list[(url, filename, checksum_url, checksum_type)]):
-				url (str): The URL to download
-				filename (str): The name of the downloaded file
-				checksum_url (str): The URL to the checksum
-				checksum_type (str): The type of checksum
-			permissions (int): File permissions (*PLEASE* use octal!)
-		Returns:
-			True on success, False on failure
+	    Parameters:
+	        directory (str): The path to extract the file to
+	        fetch_urls (list[(url, filename, checksum_url, checksum_type)]):
+	            url (str): The URL to download
+	            filename (str): The name of the downloaded file
+	            checksum_url (str): The URL to the checksum
+	            checksum_type (str): The type of checksum
+	        permissions (int): File permissions (*PLEASE* use octal!)
+	    Returns:
+	        True on success, False on failure
 	"""
-
 	user = getuser()
 
 	# First check that the destination directory is safe; it has to be owned by the user,
@@ -392,13 +389,12 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
 	"""
 	Given a github repository find the latest released version
 
-		Parameters:
-			url (str): The github API URL to check for latest version
-			version_regex (str): A regex
-		Returns:
-			version ([str]): A list of version number elements, or None in case of failure
+	    Parameters:
+	        url (str): The github API URL to check for latest version
+	        version_regex (str): A regex
+	    Returns:
+	        version ([str]): A list of version number elements, or None in case of failure
 	"""
-
 	version: Optional[List[str]] = []
 
 	if url is not None:

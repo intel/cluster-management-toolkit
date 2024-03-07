@@ -19,11 +19,11 @@ def format_controller(controller: Tuple[Tuple[str, str], str], show_kind: str) -
 	"""
 	Reformat a controller kind + name tuple
 
-		Parameters:
-			controller ((str, str), str): The controller kind
-			show_kind (str): "short" / "full" / "mixed"
-		Returns:
-			(str, str): A tuple with a possibly reformatted controller kind + name
+	    Parameters:
+	        controller ((str, str), str): The controller kind
+	        show_kind (str): "short" / "full" / "mixed"
+	    Returns:
+	        (str, str): A tuple with a possibly reformatted controller kind + name
 	"""
 	if show_kind:
 		if show_kind == "short" or not controller[0][1]:
@@ -47,14 +47,17 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Pods
 
-		Parameters:
-			**kwargs (dict): Additional parameters
-		Returns:
-			info (list[InfoClass]): A list with info
+	    Parameters:
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            in_depth_node_status (bool): Should in-depth node status be shown?
+	            extra_vars (dict): Extra variables
+	            filters ([dict]): A dict of filters to apply
+	    Returns:
+	        info (list[InfoClass]): A list with info
 	"""
-	in_depth_node_status = deep_get(kwargs, DictPath("in_depth_node_status"), True)
-	extra_vars = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
-	filters = deep_get(kwargs, DictPath("filters"), [])
+	in_depth_node_status: bool = deep_get(kwargs, DictPath("in_depth_node_status"), True)
+	extra_vars: Dict[str, Any] = deep_get(kwargs, DictPath("extra_vars"), {"show_kind": "", "show_evicted": True})
+	filters: List[Dict[str, Any]] = deep_get(kwargs, DictPath("filters"), [])
 	info: List[Type] = []
 
 	if not (vlist := deep_get(kwargs, DictPath("vlist"))):
@@ -148,10 +151,11 @@ def get_node_info(**kwargs: Any) -> List[Type]:
 	"""
 	Infogetter for Nodes
 
-		Parameters:
-			kwargs (dict): Additional parameters
-		Returns:
-			info (list[InfoClass]): A list with info
+	    Parameters:
+	        **kwargs (dict[str, Any]): Keyword arguments
+	            vlist ([dict[str, Any]]): The list of Node objects
+	    Returns:
+	        info (list[InfoClass]): A list with info
 	"""
 	info: List[Type] = []
 
@@ -197,13 +201,13 @@ def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]
 	"""
 	Given the addresses list return all internal/external IPs and the hostname
 
-		Parameters:
-			addresses ([dict]): A list of address objects
-		Returns:
-			((str, [str], [str])):
-				(str): Hostname
-				([str]): Internal IPs
-				([str]): External IPs
+	    Parameters:
+	        addresses ([dict]): A list of address objects
+	    Returns:
+	        ((str, [str], [str])):
+	            (str): Hostname
+	            ([str]): Internal IPs
+	            ([str]): External IPs
 	"""
 	iips = []
 	eips = []

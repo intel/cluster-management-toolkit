@@ -580,7 +580,7 @@ def reformat_json(lines: Union[str, List[str]], **kwargs: Any) -> List[List[Unio
 	return format_yaml(lines, **kwargs)
 
 
-KEY_HEADERS: Tuple[str] = (
+KEY_HEADERS: Tuple[str, ...] = (
 	"-----BEGIN CERTIFICATE-----",
 	"-----END CERTIFICATE-----",
 	"-----BEGIN CERTIFICATE REQUEST-----",
