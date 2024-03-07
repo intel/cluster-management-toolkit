@@ -329,6 +329,14 @@
 					"description": "Extra data to pass to the infogetter",
 					"type": "object"
 				},
+				"extra_values_lookup": {
+					"description": "Extra values to lookup",
+					"type": "object"
+				},
+				"file_not_found_status": {
+					"description": "The status to show for FileNotFound",
+					"type": "string"
+				},
 				"formatter": {
 					"description": "If the infogetter is logpad_formatted() or logpad_files() this is used to decide what formatter to use",
 					"type": "string"
@@ -358,6 +366,10 @@
 							"$ref": "#/definitions/simple_path"
 						}
 					]
+				},
+				"paths": {
+					"description": "Paths to load files from",
+					"type": "array"
 				},
 				"used_path": {
 					"description": "The path to get used quota information from",
@@ -839,6 +851,7 @@
 				"count",
 				"dictfields",
 				"dictlist",
+				"fieldgetter",
 				"items",
 				"key_value",
 				"list",
