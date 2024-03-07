@@ -12,7 +12,7 @@ import sys
 
 COPYRIGHT = "Copyright © 2019-2024 Intel Corporation"
 
-LICENSE  = "This is free software; see the source for copying conditions.  There is NO\n"  # noqa: E221
+LICENSE  = "This is free software; see the source for copying conditions.  There is NO\n"
 LICENSE += "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 
 PROGRAM_SUITE_NAME = "CMT"
@@ -37,10 +37,12 @@ INVENTORY_PROGRAM_VERSION = "0.4.5"
 # We don't support Python-versions older than 3.8
 version_info = sys.version_info
 if version_info.major < 3 or version_info.minor < 8:  # pragma: no cover
-	installed_version = str(version_info.major)
-	installed_version += "." + str(version_info.minor)
-	installed_version += "." + str(version_info.micro)
-	msg = "Critical: Minimum supported Python-version is 3.8.0.\n"
-	msg += "Installed version is " + installed_version
-	msg += "; aborting."
-	sys.exit(msg)
+    # pylint: disable-next=invalid-name
+    installed_version = str(version_info.major)
+    installed_version += "." + str(version_info.minor)
+    installed_version += "." + str(version_info.micro)
+    # pylint: disable-next=invalid-name
+    msg = "Critical: Minimum supported Python-version is 3.8.0.\n"
+    msg += "Installed version is " + installed_version
+    msg += "; aborting."
+    sys.exit(msg)

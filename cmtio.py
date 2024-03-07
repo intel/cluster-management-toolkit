@@ -27,15 +27,15 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None, suffixes: O
 	"""
 	Given a path, filename or partial filename, expand it to its full path
 
-		Parameters:
-			path (str): A path, filename, or partial filename
-			search_paths (list(str)): The list of paths to attempt when a naked filename is passed
-			suffixes (list(str)): If partial_path doesn't exist, attempt the same path with suffix appended
-			fallback (str): The path to use if the provided path is empty or doesn't exist
-		Returns:
-			(FilePath, bool):
-				(FilePath): The full path
-				(bool): True if successful, False if fallback is returned
+	    Parameters:
+	        path (str): A path, filename, or partial filename
+	        search_paths (list(str)): The list of paths to attempt when a naked filename is passed
+	        suffixes (list(str)): If partial_path doesn't exist, attempt the same path with suffix appended
+	        fallback (str): The path to use if the provided path is empty or doesn't exist
+	    Returns:
+	        (FilePath, bool):
+	            (FilePath): The full path
+	            (bool): True if successful, False if fallback is returned
 	"""
 	partial_paths = []
 	full_path = None
@@ -76,11 +76,11 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 	"""
 	Given a set of violations, join it to a sorted string
 
-		Parameters:
-			separator (str): The separator to use between items
-			securitystatuses (set(SecurityStatus)): The set of security statuses
-		Returns:
-			(str): The string of joined securitystatuses
+	    Parameters:
+	        separator (str): The separator to use between items
+	        securitystatuses (set(SecurityStatus)): The set of security statuses
+	    Returns:
+	        (str): The string of joined securitystatuses
 	"""
 	securitystatus_str = ""
 
@@ -99,24 +99,30 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 	if the path fails to meet the criteria the function returns False and optionally
 	outputs an error message. Critical errors will either raise an exception or exit the program.
 
-		Parameters:
-			path (FilePath): The path to the file to verify
-			parent_allowlist ([str]): A list of acceptable file owners;
-				 by default [user, "root"]
-			owner_allowlist ([str]): A list of acceptable file owners;
-				 by default [user, "root"]
-			checks ([SecurityChecks]): A list of checks that should be performed
-			exit_on_critical (bool): By default check_path return SecurityStatus if a critical criteria violation
-				is found; this flag can be used to exit the program instead if the violation is critical.
-			message_on_error (bool): If this is set to true an error message will be printed to the console.
-		Returns:
-			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+	    Parameters:
+	        path (FilePath): The path to the file to verify
+	        parent_allowlist ([str]): A list of acceptable file owners;
+	                                  by default [user, "root"]
+	        owner_allowlist ([str]): A list of acceptable file owners;
+	                                 by default [user, "root"]
+	        checks ([SecurityChecks]): A list of checks that should be performed
+	        exit_on_critical (bool): By default check_path returns SecurityStatus
+	                                 if a critical criteria violation is found;
+	                                 this flag can be used to exit the program
+	                                 instead if the violation is critical
+	        message_on_error (bool): If this is set to true an error message
+	                                 will be printed to the console
+	    Returns:
+	        ([SecurityStatus]): [SecurityStatus.OK] if all criteria are met,
+	                            otherwise a list of all violated policies
 	"""
 	# This is most likely a security violation; treat it as such
 	if "\x00" in path:
 		stripped_path = path.replace("\x00", "<NUL>")
-		raise ValueError(f"Critical: the path {stripped_path} contains NUL-bytes (replaced here);\n"
-				  "this is either a programming error, a system error, file or memory corruption, or a deliberate attempt to bypass security; aborting.")
+		raise ValueError(f"Critical: the path {stripped_path} contains NUL-bytes:\n"
+				  "This is either a programming error, a system error, "
+				  "file or memory corruption, "
+				  "or a deliberate attempt to bypass security; aborting.")
 
 	violations = []
 
@@ -152,9 +158,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" does not exist", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PARENT_DOES_NOT_EXIST)
 		return violations
 
@@ -166,9 +172,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PARENT_IS_NOT_DIR)
 		return violations
 
@@ -178,13 +184,13 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
-			      ansithemeprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting = "emphasis", separator = ansithemeprint.ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST)
 
 	parent_path_stat = parent_entry.stat()
@@ -197,9 +203,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" is world writable", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PARENT_PERMISSIONS)
 
 	parent_entry_resolved = parent_entry.resolve()
@@ -217,9 +223,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF)
 
 	# Are there any path shenanigans going on?
@@ -236,9 +242,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PATH_NOT_RESOLVING_TO_SELF)
 
 	if not path_entry.exists():
@@ -254,13 +260,13 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
-			      ansithemeprint.ansithemestring_join_tuple_list(owner_allowlist, formatting = "emphasis", separator = ansithemeprint.ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_tuple_list(owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.OWNER_NOT_IN_ALLOWLIST)
 
 	path_stat = path_entry.stat()
@@ -273,9 +279,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" is world writable", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PERMISSIONS)
 
 	if path_entry.exists() and SecurityChecks.PERMISSIONS in checks and not os.access(path, os.R_OK):
@@ -286,9 +292,9 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(" cannot be read", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
-				ansithemeprint.ansithemeprint(msg, stderr = True)
+				ansithemeprint.ansithemeprint(msg, stderr=True)
 				sys.exit(errno.EINVAL)
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.PERMISSIONS)
 
 	if SecurityChecks.IS_SYMLINK in checks and not path_entry.is_symlink():
@@ -297,7 +303,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" exists but is not a symlink; this is either a configuration error or a security issue", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.IS_NOT_SYMLINK)
 
 	# is_file() returns True even if path is a symlink to a file rather than a file
@@ -307,7 +313,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" exists but is not a file; this is either a configuration error or a security issue", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.IS_NOT_FILE)
 
 	# is_file() returns True even if path is a symlink to a file rather than a file
@@ -317,7 +323,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" exists but is not a directory; this is either a configuration error or a security issue", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.IS_NOT_DIR)
 
 	if SecurityChecks.IS_NOT_EXECUTABLE in checks and os.access(path, os.X_OK) and not path_entry.is_dir():
@@ -326,7 +332,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is executable but should not be; skipping", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.IS_EXECUTABLE)
 
 	if SecurityChecks.IS_EXECUTABLE in checks and not os.access(path, os.X_OK):
@@ -335,7 +341,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" exists but is not executable; skipping", "default")]
-			ansithemeprint.ansithemeprint(msg, stderr = True)
+			ansithemeprint.ansithemeprint(msg, stderr=True)
 		violations.append(SecurityStatus.IS_NOT_EXECUTABLE)
 
 	if not violations:
@@ -347,11 +353,11 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 	"""
 	Remove a file
 
-		Parameters:
-			path (FilePath): The path to the file to remove
-		Raises:
-			cmttypes.FilePathAuditError
-			FileNotFoundError
+	    Parameters:
+	        path (FilePath): The path to the file to remove
+	    Raises:
+	        cmttypes.FilePathAuditError
+	        FileNotFoundError
 	"""
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -364,7 +370,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 		SecurityChecks.IS_FILE,
 	]
 
-	violations = check_path(path, checks = checks)
+	violations = check_path(path, checks=checks)
 
 	ignoring_non_existing = False
 
@@ -381,7 +387,7 @@ def secure_rm(path: FilePath, ignore_non_existing: bool = False) -> None:
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path=path)
 
 	if not ignoring_non_existing:
 		Path(path).unlink()
@@ -390,12 +396,12 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 	"""
 	Remove a directory
 
-		Parameters:
-			path (FilePath): The path to the directory to remove
-			ignore_non_existing (bool): Ignore non-existing directories
-		Raises:
-			cmttypes.FilePathAuditError
-			FileNotFoundError
+	    Parameters:
+	        path (FilePath): The path to the directory to remove
+	        ignore_non_existing (bool): Ignore non-existing directories
+	    Raises:
+	        cmttypes.FilePathAuditError
+	        FileNotFoundError
 	"""
 	checks = [
 		SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -408,7 +414,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 		SecurityChecks.IS_DIR,
 	]
 
-	violations = check_path(path, checks = checks)
+	violations = check_path(path, checks=checks)
 
 	ignoring_non_existing = False
 
@@ -425,7 +431,7 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path=path)
 
 	if not ignoring_non_existing:
 		violations = []
@@ -435,25 +441,26 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
 			if "[Errno 39] Directory not empty" in str(e):
 				violations.append(SecurityStatus.DIR_NOT_EMPTY)
 				violations_joined = join_securitystatus_set(",", set(violations))
-				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path) from e
+				raise FilePathAuditError(f"Violated rules: {violations_joined}", path=path) from e
 			raise OSError from e
 
 def secure_write_string(path: FilePath, string: str, permissions: Optional[int] = None, write_mode: str = "w", allow_relative_path: bool = False, temporary: bool = False) -> None:
 	"""
 	Write a string to a file in a safe manner
 
-		Parameters:
-			path (FilePath): The path to write to
-			string (str): The string to write
-			permissions (int): File permissions (None uses system defaults)
-			write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
-			allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Raises:
-			cmttypes.FilePathAuditError
+	    Parameters:
+	        path (FilePath): The path to write to
+	        string (str): The string to write
+	        permissions (int): File permissions (None uses system defaults)
+	        write_mode (str): [w, a, x, wb, ab, xb] Write, Append, Exclusive Write, text or binary
+	        allow_relative_path (bool): Is it acceptable to have the path not resolve to self?
+	        temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+	    Raises:
+	        cmttypes.FilePathAuditError
 	"""
 	if write_mode not in ("a", "ab", "w", "wb", "x", "xb"):
-		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x(b)“ (exclusive write (binary))")
+		raise ValueError(f"Invalid write mode “{write_mode}“; "
+				  "permitted modes: “a(b)“ (append (binary)), “w(b)“ (write (binary)) and “x(b)“ (exclusive write (binary))")
 
 	checks = [
 		SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
@@ -472,11 +479,11 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 			SecurityChecks.RESOLVES_TO_SELF,
 		]
 
-	violations = check_path(path, checks = checks)
+	violations = check_path(path, checks=checks)
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path=path)
 
 	if "b" in write_mode:
 		# We have no default recourse if this write fails, so if the caller can handle the failure
@@ -494,42 +501,42 @@ def secure_write_string(path: FilePath, string: str, permissions: Optional[int] 
 				# but pylint seems to stupid to realise this, so it complains
 				# about missing encoding, hence we have to override that warning
 				# pylint: disable-next=unspecified-encoding
-				with open(path, write_mode, opener = partial(os.open, mode = permissions)) as f:
+				with open(path, write_mode, opener=partial(os.open, mode=permissions)) as f:
 					f.write(string)
 		except FileExistsError as e:
 			if write_mode == "xb":
-				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path = path) from e
+				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path=path) from e
 	else:
 		# We have no default recourse if this write fails, so if the caller can handle the failure
 		# they have to capture the exception
 		try:
 			if permissions is None:
-				with open(path, write_mode, encoding = "utf-8") as f:
+				with open(path, write_mode, encoding="utf-8") as f:
 					f.write(string)
 			else:
-				with open(path, write_mode, opener = partial(os.open, mode = permissions), encoding = "utf-8") as f:
+				with open(path, write_mode, opener=partial(os.open, mode=permissions), encoding="utf-8") as f:
 					f.write(string)
 		except FileExistsError as e:
 			if write_mode == "x":
-				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path = path) from e
+				raise FilePathAuditError(f"Violated rules: {repr(SecurityStatus.EXISTS)}", path=path) from e
 
 def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, directory_is_symlink: bool = False, read_mode: str = "r", temporary: bool = False) -> Union[str, bytes]:
 	"""
 	Read the content of a file in a safe manner
 
-		Parameters:
-			path (FilePath): The path to read from
-			checks ([SecurityChecks]): A list of checks that should be performed
-			directory_is_symlink (bool): The directory that the path points to is a symlink
-			read_mode (str): [r, rb] Read text or binary
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(union[str, bytes]): The read string
-		Raises:
-			cmttypes.FilePathAuditError
+	    Parameters:
+	        path (FilePath): The path to read from
+	        checks ([SecurityChecks]): A list of checks that should be performed
+	        directory_is_symlink (bool): The directory that the path points to is a symlink
+	        read_mode (str): [r, rb] Read text or binary
+	        temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+	    Returns:
+	        (union[str, bytes]): The read string
+	    Raises:
+	        cmttypes.FilePathAuditError
 	"""
 	if read_mode not in ("r", "rb"):
-		raise ValueError(f"Invalid read mode “{read_mode}“; permitted modes are “r(b)“ (read (binary))")
+		raise ValueError(f"Invalid read mode “{read_mode}“; permitted modes: “r(b)“ (read (binary))")
 
 	if checks is None:
 		if directory_is_symlink:
@@ -550,10 +557,10 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 			if temporary:
 				checks.remove(SecurityChecks.PARENT_PERMISSIONS)
 
-			violations = check_path(parent_dir, checks = checks)
+			violations = check_path(parent_dir, checks=checks)
 			if violations != [SecurityStatus.OK]:
 				violations_joined = join_securitystatus_set(",", set(violations))
-				raise FilePathAuditError(f"Violated rules: {violations_joined}", path = parent_dir)
+				raise FilePathAuditError(f"Violated rules: {violations_joined}", path=parent_dir)
 
 			# We do not want to check that parent resolves to itself,
 			# because when we have an installation with links directly to the git repo
@@ -585,16 +592,16 @@ def secure_read(path: FilePath, checks: Optional[List[SecurityChecks]] = None, d
 		except ValueError:
 			pass
 
-	violations = check_path(path, checks = checks)
+	violations = check_path(path, checks=checks)
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
-		raise FilePathAuditError(f"Violated rules: {violations_joined}", path = path)
+		raise FilePathAuditError(f"Violated rules: {violations_joined}", path=path)
 
 	# We have no default recourse if this write fails, so if the caller can handle the failure
 	# they have to capture the exception
 	if read_mode == "r":
-		with open(path, "r", encoding = "utf-8", errors = "replace") as f:
+		with open(path, "r", encoding="utf-8", errors="replace") as f:
 			string: Union[str, bytes] = f.read()
 	else:
 		with open(path, "rb") as bf:
@@ -606,17 +613,17 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
 	"""
 	Read a string from a file in a safe manner
 
-		Parameters:
-			path (FilePath): The path to read from
-			checks ([SecurityChecks]): A list of checks that should be performed
-			directory_is_symlink (bool): The directory that the path points to is a symlink
-			temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
-		Returns:
-			(str): The read string
-		Raises:
-			cmttypes.FilePathAuditError
+	    Parameters:
+	        path (FilePath): The path to read from
+	        checks ([SecurityChecks]): A list of checks that should be performed
+	        directory_is_symlink (bool): The directory that the path points to is a symlink
+	        temporary (bool): Is the file a tempfile? If so we need to disable the check for parent permissions
+	    Returns:
+	        (str): The read string
+	    Raises:
+	        cmttypes.FilePathAuditError
 	"""
-	return cast(str, secure_read(path, checks = checks, directory_is_symlink = directory_is_symlink, read_mode = "r", temporary = temporary))
+	return cast(str, secure_read(path, checks=checks, directory_is_symlink=directory_is_symlink, read_mode="r", temporary=temporary))
 
 def secure_which(path: FilePath, fallback_allowlist: List[str],
 			security_policy: SecurityPolicy = SecurityPolicy.STRICT, executable: bool = True) -> FilePath:
@@ -635,18 +642,17 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 	3. If no matches are found in step 2, and security_policy permits,
 	   path will be passed to shutil.which().
 
-		Parameters:
-			paths ([FilePath]): A list of paths to the executable
-			security_policy (SecurityPolicy):
-				The policy to use when deciding whether or not
-				it is OK to use the file at the path.
-			executable (bool): Should the path point to an executable?
-		Returns:
-			(FilePath): A path to the executable
-		Exceptions:
-			FileNotFoundError: Raised whenever no executable could
-			be found that matched both path and security criteria
-			RuntimeError: The path loops
+	    Parameters:
+	        paths ([FilePath]): A list of paths to the executable
+	        security_policy (SecurityPolicy): The policy to use when deciding whether or not
+	                                          it is OK to use the file at the path.
+	        executable (bool): Should the path point to an executable?
+	    Returns:
+	        (FilePath): A path to the executable
+	    Exceptions:
+	        FileNotFoundError: Raised whenever no executable could be found
+	                           that matched both path and security criteria
+	        RuntimeError: The path loops
 	"""
 	fully_resolved_paths = []
 
@@ -669,7 +675,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 	else:
 		checks.append(SecurityChecks.PERMISSIONS)
 
-	violations = check_path(path, checks = checks)
+	violations = check_path(path, checks=checks)
 
 	if violations == [SecurityStatus.OK]:
 		return path
@@ -701,7 +707,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 	for directory in fallback_allowlist:
 		path = FilePath(os.path.join(directory, name))
 
-		violations = check_path(path, checks = checks)
+		violations = check_path(path, checks=checks)
 
 		if violations != [SecurityStatus.OK]:
 			if security_policy == SecurityPolicy.ALLOWLIST_STRICT:
@@ -729,13 +735,14 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = False, exist_ok: bool = True, exit_on_failure: bool = False) -> List[SecurityStatus]:
 	"""
 	Create a directory if it does not already exist
-		Parameters:
-			directory (str): The path to the directory to create
-			permissions (int): File permissions (None uses system defaults)
-			verbose (bool): Should extra debug messages be printed?
-			exit_on_failure (bool): True to exit on failure, False to return (when possible)
-		Returns:
-			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+	    Parameters:
+	        directory (str): The path to the directory to create
+	        permissions (int): File permissions (None uses system defaults)
+	        verbose (bool): Should extra debug messages be printed?
+	        exit_on_failure (bool): True to exit on failure, False to return (when possible)
+	    Returns:
+	        ([SecurityStatus]): [SecurityStatus.OK] if all criteria are met,
+	                            otherwise a list of all violated policies
 	"""
 	if verbose:
 		ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Creating directory ", "default"),
@@ -779,7 +786,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 	if violations in ([SecurityStatus.OK], [SecurityStatus.DOES_NOT_EXIST]):
 		violations = []
 		try:
-			Path(directory).mkdir(mode = permissions, exist_ok = exist_ok)
+			Path(directory).mkdir(mode=permissions, exist_ok=exist_ok)
 		except FileExistsError:
 			violations.append(SecurityStatus.EXISTS)
 
@@ -788,14 +795,14 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, permissions: Optional[int] = None) -> List[SecurityStatus]:
 	"""
 	Copy a file
-		Parameters:
-			src (str): The path to copy from
-			dst (str): The path to copy to
-			verbose (bool): Should extra debug messages be printed?
-			exit_on_failure (bool): True to exit on failure, False to return (when possible)
-			permissions (int): The file permissions to use (None to use system defaults)
-		Returns:
-			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+	    Parameters:
+	        src (str): The path to copy from
+	        dst (str): The path to copy to
+	        verbose (bool): Should extra debug messages be printed?
+	        exit_on_failure (bool): True to exit on failure, False to return (when possible)
+	        permissions (int): The file permissions to use (None to use system defaults)
+	    Returns:
+	        ([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
 	"""
 	if verbose:
 		ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Copying file ", "default"),
@@ -815,14 +822,14 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 		SecurityChecks.IS_FILE,
 	]
 
-	violations = check_path(src, checks = checks)
+	violations = check_path(src, checks=checks)
 	if violations != [SecurityStatus.OK]:
 		if verbose:
 			violations_joined = join_securitystatus_set(",", set(violations))
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 					   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{src}", "path"),
-					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return violations
@@ -839,7 +846,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 	]
 
 	dst_path_parent = PurePath(dst).parent
-	violations = check_path(FilePath(str(PurePath(dst).parent)), checks = checks)
+	violations = check_path(FilePath(str(PurePath(dst).parent)), checks=checks)
 
 	if violations != [SecurityStatus.OK]:
 		if verbose:
@@ -847,7 +854,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst_path_parent}", "path"),
-					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return violations
@@ -859,7 +866,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Error", "error"),
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
-					   ansithemeprint.ANSIThemeString(" already exists; refusing to overwrite.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(" already exists; refusing to overwrite.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.EXISTS]
@@ -873,7 +880,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 				content = fr.read()
 				fw.write(content)
 		else:
-			with open(src, "rb") as fr, open(dst, "xb", opener = partial(os.open, mode = permissions)) as fw:
+			with open(src, "rb") as fr, open(dst, "xb", opener=partial(os.open, mode=permissions)) as fw:
 				content = fr.read()
 				fw.write(content)
 	except PermissionError:
@@ -881,7 +888,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Error", "error"),
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
-					   ansithemeprint.ANSIThemeString(" cannot be written to (Permission denied).", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(" cannot be written to (Permission denied).", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			sys.exit(errno.EINVAL)
 		return [SecurityStatus.PERMISSIONS]
@@ -892,13 +899,14 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_fai
 def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_failure: bool = False, replace_existing: bool = False) -> List[SecurityStatus]:
 	"""
 	Create or replace a symlink
-		Parameters:
-			src (str): The path to link from
-			dst (str): The path to link to
-			verbose (bool): Should extra debug messages be printed?
-			exit_on_failure (bool): True to exit on failure, False to return (when possible)
-		Returns:
-			([SecurityStatus]): [SecurityStatus.OK] if all criteria are met, otherwise a list of all violated policies
+	    Parameters:
+	        src (str): The path to link from
+	        dst (str): The path to link to
+	        verbose (bool): Should extra debug messages be printed?
+	        exit_on_failure (bool): True to exit on failure, False to return (when possible)
+	    Returns:
+	        ([SecurityStatus]): [SecurityStatus.OK] if all criteria are met,
+	                            otherwise a list of all violated policies
 	"""
 	user = getuser()
 
@@ -920,13 +928,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 					   ansithemeprint.ANSIThemeString(": The target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
-					   ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(" does not resolve to itself; this is either a configuration error or a security issue.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 			sys.exit(errno.EINVAL)
 		if verbose:
-			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 		return [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF]
 
 	dst_path_parent_path = Path(dst_path_parent)
@@ -936,13 +944,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Error", "error"),
 					   ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
-					   ansithemeprint.ANSIThemeString(" is not a directory.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(" is not a directory.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 			sys.exit(errno.EINVAL)
 		if verbose:
-			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 		return [SecurityStatus.PARENT_IS_NOT_DIR]
 
 	if dst_path_parent_path.owner() not in ("root", user):
@@ -954,13 +962,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 					   ansithemeprint.ANSIThemeString("root", "emphasis"),
 					   ansithemeprint.ANSIThemeString(" or ", "default"),
 					   ansithemeprint.ANSIThemeString(user, "emphasis"),
-					   ansithemeprint.ANSIThemeString(".", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(".", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 			sys.exit(errno.EINVAL)
 		if verbose:
-			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 		return [SecurityStatus.PARENT_OWNER_NOT_IN_ALLOWLIST]
 
 	parent_path_stat = dst_path_parent_path.stat()
@@ -970,13 +978,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 		ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 				   ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 				   ansithemeprint.ANSIThemeString(f"{dst}", "path"),
-				   ansithemeprint.ANSIThemeString(" is world writable.", "default")], stderr = True)
+				   ansithemeprint.ANSIThemeString(" is world writable.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 			sys.exit(errno.EINVAL)
 		if verbose:
-			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 		return [SecurityStatus.PARENT_PERMISSIONS]
 
 	# Verify that the source path exists and that the owner and permissions are reliable; we do not make further assumptions
@@ -990,7 +998,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 		SecurityChecks.EXISTS,
 	]
 
-	violations = check_path(FilePath(str(src_path)), checks = checks)
+	violations = check_path(FilePath(str(src_path)), checks=checks)
 
 	if violations != [SecurityStatus.OK]:
 		violations_joined = join_securitystatus_set(",", set(violations))
@@ -998,13 +1006,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 					   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 					   ansithemeprint.ANSIThemeString(f"{src}", "path"),
-					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr = True)
+					   ansithemeprint.ANSIThemeString(f" violates the following security checks [{violations_joined}]; this is either a configuration error or a security issue.", "default")], stderr=True)
 		if exit_on_failure:  # pragma: no cover
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 			sys.exit(errno.EINVAL)
 		if verbose:
-			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+			ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 		return violations
 
 	# Since the parent path resolves safely, we can unlink dst_path if it is a symlink
@@ -1014,13 +1022,13 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False, exit_on_
 				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Critical", "critical"),
 						   ansithemeprint.ANSIThemeString(": The source path ", "default"),
 						   ansithemeprint.ANSIThemeString(f"{src}", "path"),
-						   ansithemeprint.ANSIThemeString(" exists and replace_existing = False.", "default")], stderr = True)
+						   ansithemeprint.ANSIThemeString(" exists and replace_existing=False.", "default")], stderr=True)
 			if exit_on_failure:  # pragma: no cover
 				if verbose:
-					ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr = True)
+					ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Aborting.", "default")], stderr=True)
 				sys.exit(errno.EEXIST)
 			if verbose:
-				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr = True)
+				ansithemeprint.ansithemeprint([ansithemeprint.ANSIThemeString("Refusing to create symlink.", "default")], stderr=True)
 			return [SecurityStatus.EXISTS]
 
 		dst_path.unlink()
@@ -1036,17 +1044,17 @@ def execute_command(args: List[Union[FilePath, str]], env: Optional[Dict] = None
 	"""
 	Executes a command
 
-		Parameters:
-			args ([str]): The commandline
-			env (dict): Environment variables to set
-			comparison (int): The value to compare retval to
-		Returns:
-			(bool): True if retval.returncode == comparison, False otherwise
+	    Parameters:
+	        args ([str]): The commandline
+	        env (dict): Environment variables to set
+	        comparison (int): The value to compare retval to
+	    Returns:
+	        (bool): True if retval.returncode == comparison, False otherwise
 	"""
 	if env is None:
-		retval = subprocess.run(args, check = False)
+		retval = subprocess.run(args, check=False)
 	else:
-		retval = subprocess.run(args, env = env, check = False)
+		retval = subprocess.run(args, env=env, check=False)
 	return retval.returncode == comparison
 
 # This executes a command with the output captured
@@ -1054,14 +1062,14 @@ def execute_command_with_response(args: List[str], env: Optional[Dict] = None) -
 	"""
 	Executes a command and returns stdout
 
-		Parameters:
-			args ([str]): The commandline
-			env (dict): Environment variables to set
-		Returns:
-			(str): The stdout from the execution
+	    Parameters:
+	        args ([str]): The commandline
+	        env (dict): Environment variables to set
+	    Returns:
+	        (str): The stdout from the execution
 	"""
 	if env is None:
-		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, check = False)
+		result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
 	else:
-		result = subprocess.run(args, stdout = PIPE, stderr = STDOUT, env = env, check = False)
-	return result.stdout.decode("utf-8", errors = "replace")
+		result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, env=env, check=False)
+	return result.stdout.decode("utf-8", errors="replace")

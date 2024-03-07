@@ -742,7 +742,9 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	for node in nodes:
 		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
-		node_status, _status_group, _taints, full_taints = get_node_status(node_info)
+		if node is None:
+			continue
+		node_status, _status_group, _taints, full_taints = get_node_status(cast(Dict[str, Any], node_info))
 		if node_status == "Unknown":
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)
@@ -832,7 +834,9 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 	for node in nodes:
 		node_info = kh.get_ref_by_kind_name_namespace(("Node", ""), node, "")
-		node_status, _status_group, _taints, full_taints = get_node_status(node_info)
+		if node is None:
+			continue
+		node_status, _status_group, _taints, full_taints = cast(Dict[str, Any], get_node_status(node_info))
 		if node_status == "Unknown":
 			ansithemeprint([ANSIThemeString("Critical", "critical"),
 					ANSIThemeString(": Failed to get node information; do you have a running cluster? Aborting.", "default")], stderr = True)

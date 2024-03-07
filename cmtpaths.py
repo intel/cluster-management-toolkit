@@ -85,108 +85,108 @@ DOT_ANSIBLE_PATH = FilePath(os.path.join(HOMEDIR, ".ansible"))
 
 # Accepted cryptos
 SSH_ARGS_STRICT_CRYPTOS = \
-	"aes256-gcm@openssh.com," \
-	"chacha20-poly1305@openssh.com," \
-	"aes256-ctr," \
-	"aes256-cbc"
+    "aes256-gcm@openssh.com," \
+    "chacha20-poly1305@openssh.com," \
+    "aes256-ctr," \
+    "aes256-cbc"
 
 SSH_ARGS_RELAXED_CRYPTOS = \
-	f"{SSH_ARGS_STRICT_CRYPTOS}"
-	# No additional cryptos
+    f"{SSH_ARGS_STRICT_CRYPTOS}"
+    # No additional cryptos
 
 # Accepted CA signature algorithms
 SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS = \
-	"rsa-sha2-512," \
-	"ecdsa-sha2-nistp521," \
-	"ecdsa-sha2-nistp384"
+    "rsa-sha2-512," \
+    "ecdsa-sha2-nistp521," \
+    "ecdsa-sha2-nistp384"
 
 SSH_ARGS_RELAXED_CA_SIGNATURE_ALGORITHMS = \
-	f"{SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS}," \
-	"ssh-ed25519," \
-	"rsa-sha2-256"
+    f"{SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS}," \
+    "ssh-ed25519," \
+    "rsa-sha2-256"
 
 # Accepted key exchange algorithms
 SSH_ARGS_STRICT_KEX = \
-	"ecdh-sha2-nistp521," \
-	"ecdh-sha2-nistp384"
+    "ecdh-sha2-nistp521," \
+    "ecdh-sha2-nistp384"
 
 SSH_ARGS_RELAXED_KEX = \
-	f"{SSH_ARGS_STRICT_KEX}"
-	# No additional KEXes
+    f"{SSH_ARGS_STRICT_KEX}"
+    # No additional KEXes
 
 # Accepted MACs
 SSH_ARGS_STRICT_MACS = \
-	"hmac-sha2-512-etm@openssh.com," \
-	"hmac-sha2-256-etm@openssh.com"
+    "hmac-sha2-512-etm@openssh.com," \
+    "hmac-sha2-256-etm@openssh.com"
 
 SSH_ARGS_RELAXED_MACS = \
-	f"{SSH_ARGS_STRICT_MACS}"
-	# No additional MACs
+    f"{SSH_ARGS_STRICT_MACS}"
+    # No additional MACs
 
 # Accepted host key algorithms
 SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS = \
-	"rsa-sha2-512," \
-	"rsa-sha2-512-cert-v01@openssh.com," \
-	"ecdsa-sha2-nistp521," \
-	"ecdsa-sha2-nistp521-cert-v01@openssh.com," \
-	"ecdsa-sha2-nistp384," \
-	"ecdsa-sha2-nistp384-cert-v01@openssh.com"
+    "rsa-sha2-512," \
+    "rsa-sha2-512-cert-v01@openssh.com," \
+    "ecdsa-sha2-nistp521," \
+    "ecdsa-sha2-nistp521-cert-v01@openssh.com," \
+    "ecdsa-sha2-nistp384," \
+    "ecdsa-sha2-nistp384-cert-v01@openssh.com"
 
 SSH_ARGS_RELAXED_HOST_KEY_ALGORITHMS = \
-	f"{SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS}," \
-	"ssh-ed25519," \
-	"ssh-ed25519-cert-v01@openssh.com," \
-	"sk-ssh-ed25519@openssh.com," \
-	"sk-ssh-ed25519-cert-v01@openssh.com"
+    f"{SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS}," \
+    "ssh-ed25519," \
+    "ssh-ed25519-cert-v01@openssh.com," \
+    "sk-ssh-ed25519@openssh.com," \
+    "sk-ssh-ed25519-cert-v01@openssh.com"
 
 # Accepted public key types
 SSH_ARGS_STRICT_PUB_KEY_TYPES = \
-	"rsa-sha2-512," \
-	"rsa-sha2-512-cert-v01@openssh.com," \
-	"ecdsa-sha2-nistp521," \
-	"ecdsa-sha2-nistp521-cert-v01@openssh.com," \
-	"ecdsa-sha2-nistp384," \
-	"ecdsa-sha2-nistp384-cert-v01@openssh.com"
+    "rsa-sha2-512," \
+    "rsa-sha2-512-cert-v01@openssh.com," \
+    "ecdsa-sha2-nistp521," \
+    "ecdsa-sha2-nistp521-cert-v01@openssh.com," \
+    "ecdsa-sha2-nistp384," \
+    "ecdsa-sha2-nistp384-cert-v01@openssh.com"
 
 SSH_ARGS_RELAXED_PUB_KEY_TYPES = \
-	f"{SSH_ARGS_STRICT_PUB_KEY_TYPES}," \
-	"rsa-sha2-256," \
-	"rsa-sha2-256-cert-v01@openssh.com," \
-	"ssh-ed25519," \
-	"ssh-ed25519-cert-v01@openssh.com," \
-	"sk-ssh-ed25519@openssh.com," \
-	"sk-ssh-ed25519-cert-v01@openssh.com"
+    f"{SSH_ARGS_STRICT_PUB_KEY_TYPES}," \
+    "rsa-sha2-256," \
+    "rsa-sha2-256-cert-v01@openssh.com," \
+    "ssh-ed25519," \
+    "ssh-ed25519-cert-v01@openssh.com," \
+    "sk-ssh-ed25519@openssh.com," \
+    "sk-ssh-ed25519-cert-v01@openssh.com"
 
 # Strict SSH configuration
 SSH_ARGS_STRICT: List[str] = [
-	# Accepted cryptos
-	"-c", SSH_ARGS_STRICT_CRYPTOS,
-	# Accepted CA signature algorithms
-	"-o", f"CASignatureAlgorithms={SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS}",
-	# Accepted key exchange algorithms
-	"-o", f"KexAlgorithms={SSH_ARGS_STRICT_KEX}",
-	# Accepted MACs
-	"-o", f"MACs={SSH_ARGS_STRICT_MACS}",
-	# Accepted host key algorithms
-	"-o", f"HostKeyAlgorithms={SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS}",
-	# Accepted public key types
-	"-o", f"PubkeyAcceptedKeyTypes={SSH_ARGS_STRICT_PUB_KEY_TYPES}",
+    # Accepted cryptos
+    "-c", SSH_ARGS_STRICT_CRYPTOS,
+    # Accepted CA signature algorithms
+    "-o", f"CASignatureAlgorithms={SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS}",
+    # Accepted key exchange algorithms
+    "-o", f"KexAlgorithms={SSH_ARGS_STRICT_KEX}",
+    # Accepted MACs
+    "-o", f"MACs={SSH_ARGS_STRICT_MACS}",
+    # Accepted host key algorithms
+    "-o", f"HostKeyAlgorithms={SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS}",
+    # Accepted public key types
+    "-o", f"PubkeyAcceptedKeyTypes={SSH_ARGS_STRICT_PUB_KEY_TYPES}",
 ]
 
 # Relaxed SSH configuration
 SSH_ARGS_RELAXED: List[str] = [
-	# Accepted cryptos
-	"-c", SSH_ARGS_RELAXED_CRYPTOS,
-	# Accepted CA signature algorithms
-	"-o", f"CASignatureAlgorithms={SSH_ARGS_RELAXED_CA_SIGNATURE_ALGORITHMS}",
-	# Accepted key exchange algorithms
-	"-o", f"KexAlgorithms={SSH_ARGS_RELAXED_KEX}",
-	# Accepted MACs
-	"-o", f"MACs={SSH_ARGS_RELAXED_MACS}",
-	# Accepted host key algorithms
-	"-o", f"HostKeyAlgorithms={SSH_ARGS_RELAXED_HOST_KEY_ALGORITHMS}",
-	# Accepted public key types
-	"-o", f"PubkeyAcceptedKeyTypes={SSH_ARGS_RELAXED_PUB_KEY_TYPES}",
+    # Accepted cryptos
+    "-c", SSH_ARGS_RELAXED_CRYPTOS,
+    # Accepted CA signature algorithms
+    "-o", f"CASignatureAlgorithms={SSH_ARGS_RELAXED_CA_SIGNATURE_ALGORITHMS}",
+    # Accepted key exchange algorithms
+    "-o", f"KexAlgorithms={SSH_ARGS_RELAXED_KEX}",
+    # Accepted MACs
+    "-o", f"MACs={SSH_ARGS_RELAXED_MACS}",
+    # Accepted host key algorithms
+    "-o", f"HostKeyAlgorithms={SSH_ARGS_RELAXED_HOST_KEY_ALGORITHMS}",
+    # Accepted public key types
+    "-o", f"PubkeyAcceptedKeyTypes={SSH_ARGS_RELAXED_PUB_KEY_TYPES}",
 ]
 
 SSH_KEYGEN_BIN_PATH = FilePath("/usr/bin/ssh-keygen")
