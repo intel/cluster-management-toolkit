@@ -39,19 +39,19 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], **kwargs: A
 	permissions: Optional[int] = deep_get(kwargs, DictPath("permissions"))
 	replace_empty: bool = deep_get(kwargs, DictPath("replace_empty"), False)
 	replace_null: bool = deep_get(kwargs, DictPath("replace_null"), False)
-	sort_keys: bool = deep_get(kwargs, DictPath("sort_keys"), bool)
+	sort_keys: bool = deep_get(kwargs, DictPath("sort_keys"), True)
 	write_mode: str = deep_get(kwargs, DictPath("write_mode"), "w")
-	temporary: bool = deep_get(kwargs, DictPath("temporary"), bool)
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	if write_mode not in ("a", "w", "x"):
 		raise ValueError(f"Invalid write mode “{write_mode}“; permitted modes are “a“ (append), “w“ (write) and “x“ (exclusive write)")
 
-	yaml_str = yaml.safe_dump(data, default_flow_style = False, sort_keys = sort_keys)
+	yaml_str = yaml.safe_dump(data, default_flow_style=False, sort_keys=sort_keys)
 	if replace_empty:
 		yaml_str = yaml_str.replace(r"''", "")
 	if replace_null:
 		yaml_str = yaml_str.replace(r"null", "")
-	cmtio.secure_write_string(path, yaml_str, permissions = permissions, write_mode = write_mode, temporary = temporary)
+	cmtio.secure_write_string(path, yaml_str, permissions=permissions, write_mode=write_mode, temporary=temporary)
 
 def secure_read_yaml(path: FilePath, **kwargs: Any) -> Any:
 	"""
@@ -73,10 +73,10 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Any:
 	        cmttypes.FilePathAuditError
 	"""
 	checks: Optional[List[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
-	directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), bool)
-	temporary: bool = deep_get(kwargs, DictPath("temporary"), bool)
+	directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
-	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink, temporary = temporary)
+	string = cmtio.secure_read_string(path, checks=checks, directory_is_symlink=directory_is_symlink, temporary=temporary)
 	return yaml.safe_load(string)
 
 def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Iterator[Any]:
@@ -100,8 +100,8 @@ def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Iterator[Any]:
 	        cmttypes.FilePathAuditError
 	"""
 	checks: Optional[List[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
-	directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), bool)
-	temporary: bool = deep_get(kwargs, DictPath("temporary"), bool)
+	directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)
+	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
-	string = cmtio.secure_read_string(path, checks = checks, directory_is_symlink = directory_is_symlink, temporary = temporary)
+	string = cmtio.secure_read_string(path, checks=checks, directory_is_symlink=directory_is_symlink, temporary=temporary)
 	return yaml.safe_load_all(string)

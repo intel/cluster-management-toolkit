@@ -135,9 +135,9 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 			SecurityChecks.IS_DIR,
 		]
 
-		if (violations := check_path(playbook_dir, checks = checks)) != [SecurityStatus.OK]:
+		if (violations := check_path(playbook_dir, checks=checks)) != [SecurityStatus.OK]:
 			violations_joined = join_securitystatus_set(",", set(violations))
-			raise FilePathAuditError(f"Violated rules: {violations_joined}", path = playbook_dir)
+			raise FilePathAuditError(f"Violated rules: {violations_joined}", path=playbook_dir)
 
 		# We do not want to check that parent resolves to itself,
 		# because when we have an installation with links directly to the git repo
@@ -152,7 +152,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 			SecurityChecks.IS_FILE,
 		]
 
-		d = secure_read_yaml(playbookpath, checks = checks)
+		d = secure_read_yaml(playbookpath, checks=checks)
 		description = None
 		if (t_description := deep_get(d[0], DictPath("vars#metadata#description"), "")):
 			description = [ANSIThemeString(t_description, "play")]
@@ -204,7 +204,7 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 			ANSIThemeString("Playbooks to be executed:", "action")])
 	for playbook in playbooks:
 		playbook_string, playbook_path = playbook
-		playbook_data = secure_read_yaml(FilePath(playbook_path), checks = checks)
+		playbook_data = secure_read_yaml(FilePath(playbook_path), checks=checks)
 
 		ansithemeprint(playbook_string +
 			       [ANSIThemeString(" (path: ", "default"),
@@ -215,7 +215,7 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
 		if not summary:
 			ansithemeprint([ANSIThemeString("      Error", "error"),
 					ANSIThemeString(": playbook lacks a summary; please file a bug report if this isn't a locally modified playbook!", "default")],
-				       stderr = True)
+				       stderr=True)
 		for section_description, section_data in summary.items():
 			ansithemeprint([ANSIThemeString(f"      {section_description}:", "emphasis")])
 			for section_item in section_data:
@@ -316,7 +316,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
 					deep_set(tmp, DictPath(f"{group}#hosts#{host}"), None)
 
 	dump: List[Union[List[ANSIThemeString], str]] = \
-		list(yaml.safe_dump(tmp, default_flow_style = False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines())
+		list(yaml.safe_dump(tmp, default_flow_style=False).replace(r"''", "").replace("null", "").replace("{}", "").splitlines())
 
 	if highlight and len(dump) > 0:
 		i = 0
@@ -400,12 +400,10 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 	    Raises:
 	        ArgumentValidationError: At least one of the arguments failed validation
 	"""
-	validate_arguments(kwargs_properties = {
-				"__allof": ("inventory_dict", "host"),
-				"inventory_dict": {"types": (dict,)},
-				"host": {"types": (str,), "range": (1, None)}}, kwargs = {
-					"inventory_dict": inventory_dict,
-					"host": host})
+	validate_arguments(kwargs_properties={"__allof": ("inventory_dict", "host"),
+					      "inventory_dict": {"types": (dict,)},
+					      "host": {"types": (str,), "range": (1, None)}},
+			   kwargs = {"inventory_dict": inventory_dict, "host": host})
 
 	groups = []
 
@@ -415,18 +413,19 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
 
 	return groups
 
-def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, **kwargs: Any) -> bool:
+def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
 	"""
 	Create a new inventory at the path given if no inventory exists
 
 	    Parameters:
 	        inventory (FilePath): A path where to create a new inventory (if non-existing)
-	        overwrite (bool): True: Overwrite the existing inventory
 	        **kwargs (dict[str, Any]): Keyword arguments
+	            overwrite (bool): True: Overwrite the existing inventory?
 	            temporary (bool): Is the inventory a tempfile?
 	    Return:
 	        (bool): True if inventory was created, False if nothing was done
 	"""
+	overwrite: bool = deep_get(kwargs, DictPath("overwrite"), False)
 	temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
 	if not isinstance(inventory, str):
@@ -440,7 +439,7 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, **k
 		return False
 
 	# If the ansible directory does not exist, create it
-	secure_mkdir(ANSIBLE_DIR, permissions = 0o755, exit_on_failure = True)
+	secure_mkdir(ANSIBLE_DIR, permissions=0o755, exit_on_failure=True)
 
 	# Create the basic yaml structure that we will write later on
 	d: Dict = {
@@ -455,15 +454,15 @@ def __ansible_create_inventory(inventory: FilePath, overwrite: bool = False, **k
 	}
 
 	if (ansible_user := deep_get(ansible_configuration, DictPath("ansible_user"))) is not None:
-		deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path = True)
+		deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path=True)
 
 	if (ansible_password := deep_get(ansible_configuration, DictPath("ansible_password"))) is not None:
-		deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_password, create_path = True)
+		deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_password, create_path=True)
 
 	if deep_get(ansible_configuration, DictPath("disable_strict_host_key_checking"), False):
-		deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path = True)
+		deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path=True)
 
-	secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, temporary = temporary)
+	secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, temporary=temporary)
 
 	return True
 
@@ -489,9 +488,9 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
 		return True
 
 	if not Path(inventory).is_file():
-		__ansible_create_inventory(inventory, overwrite = False, temporary = temporary)
+		__ansible_create_inventory(inventory, overwrite=False, temporary=temporary)
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for group in groups:
 		if not isinstance(group, str):
@@ -507,7 +506,7 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -530,21 +529,20 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: An
 
 	changed = False
 
-	validate_arguments(kwargs_properties = {
-				"__allof": ("inventory", "group", "values", "temporary"),
-				"inventory": {"types": (str,), "range": (1, None)},
-				"group": {"types": (str,), "range": (1, None)},
-				"values": {"types": (dict,), "range": (1, None)},
-				"temporary": {"types": (bool,)}}, kwargs = {
-					"inventory": inventory,
-					"group": group,
-					"values": values,
-					"temporary": temporary})
+	validate_arguments(kwargs_properties={"__allof": ("inventory", "group", "values", "temporary"),
+					      "inventory": {"types": (str,), "range": (1, None)},
+					      "group": {"types": (str,), "range": (1, None)},
+					      "values": {"types": (dict,), "range": (1, None)},
+					      "temporary": {"types": (bool,)}},
+			   kwargs={"inventory": inventory,
+				   "group": group,
+				   "values": values,
+				   "temporary": temporary})
 
 	if not Path(inventory).is_file():
-		__ansible_create_inventory(inventory, overwrite = False, temporary = temporary)
+		__ansible_create_inventory(inventory, overwrite=False, temporary=temporary)
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	# If the group does not exist we create it
 	if d.get(group) is None:
@@ -562,7 +560,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: An
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -596,7 +594,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 					"groupvars": groupvars,
 					"temporary": temporary})
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -615,7 +613,7 @@ def ansible_set_groupvars(inventory: FilePath, groups: List[str], groupvars: Lis
 			changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -650,7 +648,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 					"hostvars": hostvars,
 					"temporary": temporary})
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -666,7 +664,7 @@ def ansible_set_hostvars(inventory: FilePath, hosts: List[str], hostvars: List[T
 			changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -701,7 +699,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 					"groupvars": groupvars,
 					"temporary": temporary})
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for group in groups:
 		# Silently ignore non-existing groups
@@ -725,7 +723,7 @@ def ansible_unset_groupvars(inventory: FilePath, groups: List[str], groupvars: L
 			d[group].pop("vars", None)
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -760,7 +758,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 					"hostvars": hostvars,
 					"temporary": temporary})
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for host in hosts:
 		# Silently ignore non-existing hosts
@@ -779,7 +777,7 @@ def ansible_unset_hostvars(inventory: FilePath, hosts: List[str], hostvars: List
 			d["all"]["hosts"][host] = None
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -826,10 +824,10 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> b
 		if skip_all and group != "all":
 			changed = True
 		else:
-			__ansible_create_inventory(inventory, overwrite = False)
-			d = secure_read_yaml(inventory, temporary = temporary)
+			__ansible_create_inventory(inventory, overwrite=False)
+			d = secure_read_yaml(inventory, temporary=temporary)
 	else:
-		d = secure_read_yaml(inventory, temporary = temporary)
+		d = secure_read_yaml(inventory, temporary=temporary)
 
 	for host in hosts:
 		# Kubernetes doesn't like uppercase hostnames
@@ -869,7 +867,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> b
 				changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -905,7 +903,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -
 					"group": group,
 					"temporary": temporary})
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for host in hosts:
 		if group in d and d[group].get("hosts") is not None:
@@ -914,7 +912,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -
 				changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -952,7 +950,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
 	if not Path(inventory).is_file():
 		return False
 
-	d = secure_read_yaml(inventory, temporary = temporary)
+	d = secure_read_yaml(inventory, temporary=temporary)
 
 	for group in groups:
 		if d.get(group) is None:
@@ -965,7 +963,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
 		changed = True
 
 	if changed:
-		secure_write_yaml(inventory, d, permissions = 0o600, replace_empty = True, replace_null = True, temporary = temporary)
+		secure_write_yaml(inventory, d, permissions=0o600, replace_empty=True, replace_null=True, temporary=temporary)
 
 	return True
 
@@ -1164,7 +1162,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 	error_msg_lines = stderr_lines
 	if not error_msg_lines:
 		error_msg_lines = msg_lines
-	d["status"] = ansible_extract_failure(retval_, error_msg_lines, skipped = skipped, unreachable = unreachable)
+	d["status"] = ansible_extract_failure(retval_, error_msg_lines, skipped=skipped, unreachable=unreachable)
 
 	return retval_, d
 
@@ -1203,7 +1201,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			playbook_name = tmp[1]
 
 	directory_name = f"{start_date}_{playbook_name}".replace(" ", "_")
-	secure_mkdir(FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}"), exit_on_failure = True)
+	secure_mkdir(FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}"), exit_on_failure=True)
 
 	# Start by creating a file with metadata about the whole run
 	d = {
@@ -1212,7 +1210,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 	}
 
 	metadata_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/metadata.yaml")
-	secure_write_yaml(metadata_path, d, permissions = 0o600, sort_keys = False)
+	secure_write_yaml(metadata_path, d, permissions=0o600, sort_keys=False)
 
 	i = 0
 
@@ -1263,7 +1261,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 		error_msg_lines = stderr_lines
 		if not error_msg_lines:
 			error_msg_lines = msg_lines
-		status = ansible_extract_failure(retval, error_msg_lines, skipped = skipped, unreachable = unreachable)
+		status = ansible_extract_failure(retval, error_msg_lines, skipped=skipped, unreachable=unreachable)
 
 		d = {
 			"playbook": playbook_name,
@@ -1296,7 +1294,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 			d["stdout_lines"] = ["<no output>"]
 
 		logentry_path = FilePath(f"{ANSIBLE_LOG_DIR}/{directory_name}/{filename}")
-		secure_write_yaml(logentry_path, d, permissions = 0o600, sort_keys = False)
+		secure_write_yaml(logentry_path, d, permissions=0o600, sort_keys=False)
 
 # pylint: disable-next=too-many-arguments
 def ansible_print_task_results(task: str,
@@ -1323,11 +1321,11 @@ def ansible_print_task_results(task: str,
 
 	if unreachable:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
-				ANSIThemeString(f"{task}", "error")], stderr = True)
+				ANSIThemeString(f"{task}", "error")], stderr=True)
 	elif skipped:
 		if verbose:
 			ansithemeprint([ANSIThemeString("• ", "separator"),
-					ANSIThemeString(f"{task} [skipped]", "skip")], stderr = True)
+					ANSIThemeString(f"{task} [skipped]", "skip")], stderr=True)
 			ansithemeprint([ANSIThemeString("", "default")])
 		return
 	elif retval:
@@ -1335,7 +1333,7 @@ def ansible_print_task_results(task: str,
 				ANSIThemeString(f"{task}", "error"),
 				ANSIThemeString(" (retval: ", "default"),
 				ANSIThemeString(f"{retval}", "errorvalue"),
-				ANSIThemeString(")", "default")], stderr = True)
+				ANSIThemeString(")", "default")], stderr=True)
 	else:
 		ansithemeprint([ANSIThemeString("• ", "separator"),
 				ANSIThemeString(f"{task}", "success")])
@@ -1358,7 +1356,7 @@ def ansible_print_task_results(task: str,
 	if stderr_lines or retval:
 		ansithemeprint([ANSIThemeString("stderr:", "header")])
 		for line in stderr_lines:
-			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr = True)
+			ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr=True)
 		if not stderr_lines:
 			ansithemeprint([ANSIThemeString("<no output>", "none")])
 		ansithemeprint([ANSIThemeString("", "default")])
@@ -1385,7 +1383,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
 
 	if retval and not ansible_results:
 		ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
-				ANSIThemeString(f"{retval}", "errorvalue")], stderr = True)
+				ANSIThemeString(f"{retval}", "errorvalue")], stderr=True)
 	else:
 		for host in ansible_results:
 			count_total += 1
@@ -1519,8 +1517,8 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> Tuple[int, Dict]:
 	elif not quiet:
 		event_handler = __ansible_run_event_handler_cb
 
-	runner = ansible_runner.interface.run(json_mode = True, quiet = True, playbook = playbook, inventory = inventories, forks = forks,
-					      event_handler = event_handler, envvars = { "ANSIBLE_JINJA2_NATIVE": True })
+	runner = ansible_runner.interface.run(json_mode=True, quiet=True, playbook=playbook, inventory=inventories, forks=forks,
+					      event_handler=event_handler, envvars={"ANSIBLE_JINJA2_NATIVE": True})
 
 	retval = 0
 	if runner is not None:
@@ -1595,7 +1593,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath, selection: List[str], 
 	for host in selection:
 		d["selection"]["hosts"][host] = {}
 
-	return ansible_run_playbook(playbook, inventory = d, verbose = verbose, quiet = quiet)
+	return ansible_run_playbook(playbook, inventory=d, verbose=verbose, quiet=quiet)
 
 def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	"""
@@ -1614,13 +1612,12 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 	if selection is None:
 		selection = ansible_get_hosts_by_group(ANSIBLE_INVENTORY, "all")
 	else:
-		validate_arguments(kwargs_properties = {
-					"__allof": ("selection",),
-					"selection": {"types": (list,)}}, kwargs = {
-					"selection": selection})
+		validate_arguments(kwargs_properties={"__allof": ("selection",),
+						      "selection": {"types": (list,)}},
+				   kwargs={"selection": selection})
 
 	playbook_path = FilePath(os.path.join(ANSIBLE_PLAYBOOK_DIR, "ping.yaml"))
-	_retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection = selection, quiet = False)
+	_retval, ansible_results = ansible_run_playbook_on_selection(playbook_path, selection=selection, quiet=False)
 
 	for host in ansible_results:
 		for task in deep_get(ansible_results, DictPath(host), []):
@@ -1628,7 +1625,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
 			skipped = deep_get(task, DictPath("skipped"))
 			stderr_lines = deep_get(task, DictPath("stderr_lines"))
 			retval = deep_get(task, DictPath("retval"))
-			status = ansible_extract_failure(retval, stderr_lines, skipped = skipped, unreachable = unreachable)
+			status = ansible_extract_failure(retval, stderr_lines, skipped=skipped, unreachable=unreachable)
 			host_status.append((host, status))
 	ansible_configuration["save_logs"] = save_logs_tmp
 
