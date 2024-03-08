@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, date
 from typing import Callable, Dict, Tuple
 import yaml
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_arguments
+from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_args
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 
@@ -493,12 +493,11 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
 
 	return message, result
 
-def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
+def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	fun = validate_arguments
-	fun_str = "validate_arguments"
+	fun = validate_args
 
 	if result:
 		# Indata format:
@@ -506,7 +505,7 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 		testdata = (
 			# Empty data should pass
 			({}, {}, None),
-			# Now try arguments that are invalid for validate_arguments() itself
+			# Now try arguments that are invalid for validate_args() itself
 			({
 				"__allof": ("foo"), # Should be a dict; the missing comma turns it into just a string
 				"foo": {
@@ -616,11 +615,11 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 			 }, ArgumentValidationError),
 		)
 		for indata in testdata:
-			kwargs_properties, kwargs, expected_exception = indata
+			kwargs_spec, kwargs, expected_exception = indata
 			try:
-				fun(kwargs_properties, kwargs)
+				fun(kwargs_spec = kwargs_spec, kwargs)
 				if expected_exception is not None:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"kwargs_properties:\n" \
 						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
 						  f"           kwargs:\n" \
@@ -633,7 +632,7 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 					if isinstance(e, expected_exception):
 						pass
 					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
+						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"kwargs_properties:\n" \
 							  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
 							  f"           kwargs:\n" \
@@ -642,7 +641,7 @@ def test_validate_arguments(verbose: bool = False) -> Tuple[str, bool]:
 						result = False
 						break
 				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
+					message = f"{fun.__name__}() did not yield expected result:\n" \
 						  f"kwargs_properties:\n" \
 						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
 						  f"           kwargs:\n" \
@@ -759,8 +758,8 @@ tests: Dict = {
 		"callable": test_filepathauditerror,
 		"result": None,
 	},
-	("validate_arguments()", ): {
-		"callable": test_validate_arguments,
+	("validate_args()", ): {
+		"callable": test_validate_args,
 		"result": None,
 	},
 	("deep_get_list()", ): {

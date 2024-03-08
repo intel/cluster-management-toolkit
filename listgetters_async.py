@@ -22,7 +22,8 @@ import infogetters
 
 
 # pylint: disable-next=unused-argument,disable-next=too-many-locals
-def get_kubernetes_list(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
+def get_kubernetes_list(*args: Any,
+                        **kwargs: Any) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
     """
     Fetch a list of Kubernetes objects, optionally with postprocessing
 
@@ -35,15 +36,18 @@ def get_kubernetes_list(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int
                 field_selector (str): A field selector (optional)
                 fetch_args (dict): Specific arguments (optional)
                     sort_key (str): The sort-key to use if sorting the list (optional)
-                    sort_reverse (bool): Should the list be returned with reversed sort order? (optional)
+                    sort_reverse (bool): Should the list be returned
+                                         with reversed sort order? (optional)
                     postprocess (str): Post-processing (if any) to apply (optional)
                     limit (int): The max number of items to return (optional)
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
         Returns:
             ([dict], int|str|[StatusGroup]):
-               [dict]: A list of Kubernetes objects
-               int|str|[StatusGroup]: Server status (int), unused (str), or the individual StatusGroup for all objects
+                ([dict]): A list of Kubernetes objects
+                (int|str|[StatusGroup]): Server status (int),
+                                         unused (str),
+                                         or the individual StatusGroup for all objects
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
@@ -65,12 +69,15 @@ def get_kubernetes_list(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int
                                                   field_selector=field_selector,
                                                   resource_cache=kh_cache)
     if sort_key:
-        vlist = natsorted(vlist, key=lambda x: deep_get(x, DictPath(sort_key), ""), reverse=sort_reverse)
+        vlist = natsorted(vlist,
+                          key=lambda x: deep_get(x, DictPath(sort_key), ""), reverse=sort_reverse)
     if postprocess == "node":
         vlist = infogetters.get_node_info(**{"vlist": vlist})
         extra_data = [s.status_group for s in vlist]
     elif postprocess == "pod":
-        vlist = infogetters.get_pod_info(**{"vlist": vlist, "in_depth_node_status": False, "kubernetes_helper": kh})
+        vlist = infogetters.get_pod_info(**{"vlist": vlist,
+                                            "in_depth_node_status": False,
+                                            "kubernetes_helper": kh})
         extra_data = [s.status_group for s in vlist]
     else:
         extra_data = status

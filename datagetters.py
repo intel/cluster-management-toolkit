@@ -15,6 +15,7 @@ from cmtlib import get_since, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup, ProgrammingError
 from kubernetes_helper import get_node_status, kind_tuple_to_name, guess_kind
 
+
 def get_container_status(src_statuses: List[Dict], container: str) -> Tuple[str, StatusGroup, int, str, int]:
 	"""
 	Return the status for a container
