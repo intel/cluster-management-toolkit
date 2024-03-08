@@ -18,8 +18,8 @@
   tasks:
     - name: "Listing GPUs"
       ansible.builtin.shell: |
-        lspci -nn -d "*:*:0300"
-        lspci -nn -d "*:*:0301"
-        lspci -nn -d "*:*:0302"
-        lspci -nn -d "*:*:0380"
+        lspci -nn -d "::0300"
+        lspci -nn -d "::0301"
+        lspci -nn -d "::0302"
+        lspci -nn -d "::0380"
       changed_when: false
