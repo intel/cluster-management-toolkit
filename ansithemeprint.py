@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -381,7 +382,8 @@ def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSI
     return themearray
 
 
-def ansithemestring_join_tuple_list(items: Sequence[Union[str, ANSIThemeString]], **kwargs: Any) -> List[ANSIThemeString]:
+def ansithemestring_join_list(items: Sequence[Union[str, ANSIThemeString]],
+                                                        **kwargs: Any) -> List[ANSIThemeString]:
     """
     Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
 

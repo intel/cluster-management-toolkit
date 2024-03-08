@@ -234,11 +234,11 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemestring_join_tuple_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemestring_join_list(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	fun = ansithemeprint.ansithemestring_join_tuple_list
+	fun = ansithemeprint.ansithemestring_join_list
 
 	indata = ["one", ANSIThemeString("two", "warning"), "three"]
 	formatting = "error"
@@ -596,8 +596,8 @@ tests: Dict = {
 		"callable": test_ansithemeprint,
 		"result": None,
 	},
-	("ansithemestring_join_tuple_list", ): {
-		"callable": test_ansithemestring_join_tuple_list,
+	("ansithemestring_join_list", ): {
+		"callable": test_ansithemestring_join_list,
 		"result": None,
 	},
 	("ansithemestring basic methods", ): {

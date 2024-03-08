@@ -184,7 +184,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The parent of the target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
-			      ansithemeprint.ansithemestring_join_tuple_list(parent_owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_list(parent_owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))
@@ -260,7 +260,7 @@ def check_path(path: FilePath, parent_owner_allowlist: Optional[List[str]] = Non
 			       ansithemeprint.ANSIThemeString(": The target path ", "default"),
 			       ansithemeprint.ANSIThemeString(f"{path}", "path"),
 			       ansithemeprint.ANSIThemeString(" is not owned by one of (", "default")] +\
-			      ansithemeprint.ansithemestring_join_tuple_list(owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
+			      ansithemeprint.ansithemestring_join_list(owner_allowlist, formatting="emphasis", separator=ansithemeprint.ANSIThemeString(", ", "separator")) +\
 			      [ansithemeprint.ANSIThemeString(")", "default")]
 			if exit_on_critical:  # pragma: no cover
 				msg.append(ansithemeprint.ANSIThemeString("; aborting.", "default"))

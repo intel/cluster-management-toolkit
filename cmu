@@ -116,7 +116,7 @@ from kubernetes_helper import kubectl_get_version, make_selector, update_api_sta
 
 import checks
 
-from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, clear_screen, ansithemeinput, ansithemeprint
+from ansithemeprint import ANSIThemeString, ansithemestring_join_list, clear_screen, ansithemeinput, ansithemeprint
 
 import reexecutor
 
@@ -8577,7 +8577,7 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 	msg = [ANSIThemeString("Executing playbook “", "action"),
 	       ANSIThemeString(action.get("description"), "argument"),
 	       ANSIThemeString("“ on the following hosts: ", "action")] +\
-	       ansithemestring_join_tuple_list(items, formatting = "hostname", separator = ANSIThemeString(", ", "separator")) +\
+	       ansithemestring_join_list(items, formatting="hostname", separator=ANSIThemeString(", ", "separator")) +\
 	       [ANSIThemeString("\n", "action")]
 
 	curses.endwin()
@@ -10149,8 +10149,8 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 	if output_format == "default":
 		ansithemeprint([ANSIThemeString("Valid namespaces: ", "default")] +
-			       ansithemestring_join_tuple_list(namespaces, formatting = "namespace", separator = ANSIThemeString(", ", "separator")) +
-			       [ANSIThemeString(".", "separator")], color = color)
+			       ansithemestring_join_list(namespaces, formatting="namespace", separator=ANSIThemeString(", ", "separator")) +
+			       [ANSIThemeString(".", "separator")], color=color)
 	else:
 		if output_format == "csv":
 			separator = ","
@@ -10159,7 +10159,7 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 		elif output_format == "tsv":
 			separator = "\t"
 
-		ansithemeprint(ansithemestring_join_tuple_list(namespaces, formatting = "namespace", separator = ANSIThemeString(separator, "separator")), color = color)
+		ansithemeprint(ansithemestring_join_list(namespaces, formatting="namespace", separator=ANSIThemeString(separator, "separator")), color=color)
 
 # pylint: disable-next=unused-argument
 def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
@@ -10220,7 +10220,7 @@ def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
 			ANSIThemeString(f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"),
 			ANSIThemeString("Supported fields:", "header")])
 	for view, kind, fields in viewfields:
-		joined_fields = ansithemestring_join_tuple_list(fields, separator = ANSIThemeString(", ", "separator"))
+		joined_fields = ansithemestring_join_list(fields, separator=ANSIThemeString(", ", "separator"))
 		ansithemeprint([ANSIThemeString(f"{view.ljust(maxviewlen + 2)}{kind.ljust(maxkindlen + 2)}", "default")] + joined_fields)
 
 	ansithemeprint([ANSIThemeString("\nList views can be customised to only show select fields by editing “", "default"),

@@ -69,7 +69,7 @@ import kubernetes_helper
 from kubernetes_helper import get_node_roles
 
 from ansithemeprint import ANSIThemeString, ansithemeinput, ansithemeinput_password, ansithemeprint
-from ansithemeprint import ansithemestring_join_tuple_list, themearray_override_formatting
+from ansithemeprint import ansithemestring_join_list, themearray_override_formatting
 
 import checks
 
@@ -3507,15 +3507,15 @@ def show_configuration(action: str,
 
 	# If we fail to get the IP-address of any of the hostnames
 	# we output them here and abort.
-	if len(failures) > 0:
+	if failures:
 		ansithemeprint([ANSIThemeString("Errors", "error"),
 				ANSIThemeString(":", "default")], stderr = True)
 	for _error, hosts in failures.items():
-		hosts = ansithemestring_join_tuple_list(hosts, formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
+		hosts = ansithemestring_join_list(hosts, formatting="hostname", separator=ANSIThemeString(", ", "separator"))
 		ansithemeprint([ANSIThemeString(f"  {tmp[2]} (hosts: ", "default")] +
 				hosts +
 				[ANSIThemeString(")", "default")], stderr = True)
-	if len(failures) > 0:
+	if failures:
 		ansithemeprint([ANSIThemeString("Aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -3538,7 +3538,7 @@ def show_configuration(action: str,
 	if no_proxy_env is not None and no_proxy_env == "":
 		no_proxy_env = None
 
-	if len(action) > 0:
+	if action:
 		ansithemeprint([ANSIThemeString(action, "emphasis")])
 
 	ansithemeprint([ANSIThemeString("\n[Summary]", "phase")])

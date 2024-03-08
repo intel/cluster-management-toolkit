@@ -16,7 +16,7 @@ from unittest import mock
 import yaml
 
 from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_tuple_list
+from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_list
 import cmtlib
 import kubernetes_helper
 
@@ -1436,7 +1436,7 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
 					maxlens[2] = max(len(candidate_version), maxlens[2])
 
 				for package, installed_version, candidate_version, natsorted_versions in tmp:
-					joined_versions = ansithemestring_join_tuple_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
+					joined_versions = ansithemestring_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
 					ansithemeprint([ANSIThemeString(f"    {package}", "default"),
 							ANSIThemeString("".ljust(maxlens[0] - len(package) + 2), "default"),
 							ANSIThemeString(f"    {installed_version}", "default"),

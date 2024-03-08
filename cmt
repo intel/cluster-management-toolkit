@@ -66,7 +66,7 @@ from kubernetes_helper import list_contexts, get_node_roles, get_node_status, ku
 
 import checks
 
-from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint, ansithemeinput, ansithemeinput_password
+from ansithemeprint import ANSIThemeString, ansithemestring_join_list, ansithemeprint, ansithemeinput, ansithemeinput_password
 
 import about
 PROGRAMDESCRIPTION = "Commandline tool for managing Kubernetes clusters"
@@ -351,7 +351,7 @@ def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
 		ansithemeprint([ANSIThemeString("  • ", "separator"),
 				ANSIThemeString(f"{controlplane[0]} ", "emphasis"),
 				ANSIThemeString("(", "default")] +
-			       ansithemestring_join_tuple_list(controlplane[1], formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(controlplane[1], formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(")", "default")])
 
 	ansithemeprint([ANSIThemeString("\n• ", "separator"),
@@ -500,7 +500,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -589,7 +589,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -641,7 +641,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -725,8 +725,8 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -817,8 +817,8 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOENT)
 
 	if len(nodes) == 0:
@@ -933,20 +933,20 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are already part of the cluster; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(nodes + controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already part of the cluster; aborting.", "default")], stderr=True)
 			sys.exit(errno.EEXIST)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(nodes + controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already part of the cluster; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
 
 	if len(non_existing) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": No valid hosts specified; aborting.", "default")], stderr = True)
+				ANSIThemeString(": No valid hosts specified; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOENT)
 
 	# Check if the hosts are part of the inventory
@@ -960,17 +960,17 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if confirm:
 			input_retval = ansithemeinput([ANSIThemeString("\nWarning", "warning"),
 						       ANSIThemeString(": ", "default")] +
-						      ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+						      ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 						      [ANSIThemeString(" are not defined in the inventory; do you want to add them now? (No will abort the installation) [y/", "default"),
 						       ANSIThemeString("N", "emphasis"), ANSIThemeString("]: ", "default")])
 			if input_retval.lower() not in ("y", "yes"):
 				ansithemeprint([ANSIThemeString("\nAborting", "error"),
-						ANSIThemeString(": Nodes not added to the inventory.", "default")], stderr = True)
+						ANSIThemeString(": Nodes not added to the inventory.", "default")], stderr=True)
 				sys.exit(errno.EINTR)
 		else:
 			ansithemeprint([ANSIThemeString("\nNote", "note"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not defined in the inventory; adding them now.", "default")])
 
 	show_configuration(non_existing)
@@ -1144,20 +1144,20 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are already part of the cluster; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(nodes + controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already part of the cluster; aborting.", "default")], stderr=True)
 			sys.exit(errno.EEXIST)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(nodes + controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(nodes + controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already part of the cluster; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
 
 	if len(non_existing) == 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
-				ANSIThemeString(": No valid hosts specified; aborting.", "default")], stderr = True)
+				ANSIThemeString(": No valid hosts specified; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOENT)
 
 	# Check if the hosts are part of the inventory
@@ -1179,13 +1179,13 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if not ignore_non_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are not defined in the inventory; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are not defined in the inventory; aborting.", "default")], stderr=True)
 			sys.exit(errno.ENOENT)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not defined in the invetory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-non-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
@@ -1194,13 +1194,13 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(node_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are already listed as nodes in the inventory; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(node_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as nodes in the inventory; aborting.", "default")], stderr=True)
 			sys.exit(errno.EEXIST)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(node_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(node_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already listed as nodes in the inventory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
@@ -1209,13 +1209,13 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		if not ignore_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(control_plane_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are already listed as control planes in the inventory; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(control_plane_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are already listed as control planes in the inventory; aborting.", "default")], stderr=True)
 			sys.exit(errno.EEXIST)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(control_plane_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(control_plane_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are already listed as control planes in the inventory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
@@ -1513,31 +1513,31 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": Currently ", "default"),
 				ANSIThemeString("RKE2", "argument"),
-				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr = True)
+				ANSIThemeString(" is the only supported Kubernetes distro for SUSE; aborting.", "default")], stderr=True)
 		sys.exit(errno.ENOTSUP)
 
-	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind = ("Node", ""))
+	nodes, non_existing, controlplanes = get_selection(args[0].split(","), kind=("Node", ""))
 
 	if len(controlplanes) > 0 and args[0] != "ALL":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are control plane(s) and should be removed using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
+				ANSIThemeString("; aborting.", "default")], stderr=True)
 		sys.exit(errno.EINVAL)
 
 	if len(non_existing) > 0:
 		if not force:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
-				       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
+				       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
+				       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr=True)
 			sys.exit(errno.ENOENT)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not part of the cluster; attempting to purge them anyway since “", "description"),
 					ANSIThemeString("--force", "option"),
 					ANSIThemeString("“ was specified.", "default")])
@@ -1561,7 +1561,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 		# This might potentially be a list of hundreds of nodes; we don't want the list to scroll off-screen, but we also don't want to join them all to one line unless we have to
 		for node_chunk in chunk_list(nodes, chunksize):
 			ansithemeprint([ANSIThemeString("  • ", "separator")] +
-				       ansithemestring_join_tuple_list(node_chunk, formatting = "hostname", separator = ANSIThemeString(", ", "separator")))
+				       ansithemestring_join_list(node_chunk, formatting="hostname", separator=ANSIThemeString(", ", "separator")))
 
 	if confirm:
 		input_retval = ansithemeinput([ANSIThemeString("\nStart node removal? [y/", "default"),
@@ -1685,16 +1685,16 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 	if len(controlplanes) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are control plane(s) and should be removed using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
-				ANSIThemeString("; aborting.", "default")], stderr = True)
+				ANSIThemeString("; aborting.", "default")], stderr=True)
 		sys.exit(errno.EINVAL)
 
 	if len(nodes) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(nodes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(nodes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are still node(s) in the cluster; please run ", "default"),
 				ANSIThemeString(f"{about.TOOL_PROGRAM_NAME}", "programname"),
 				ANSIThemeString(" remove-node", "command"),
@@ -1713,13 +1713,13 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 		if not ignore_non_existing:
 			ansithemeprint([ANSIThemeString("Error", "error"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not in the inventory; aborting.", "default")], stderr = True)
 			sys.exit(errno.ENOENT)
 		else:
 			ansithemeprint([ANSIThemeString("Warning", "warning"),
 					ANSIThemeString(": ", "default")] +
-				       ansithemestring_join_tuple_list(not_in_inventory, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+				       ansithemestring_join_list(not_in_inventory, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 				       [ANSIThemeString(" are not in the inventory; ignoring them since “", "description"),
 					ANSIThemeString("--ignore-non-existing", "option"),
 					ANSIThemeString("“ was specified.", "default")])
@@ -1794,7 +1794,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(controlplanes) > 0 and args[0] != "ALL":
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(controlplanes, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(controlplanes, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are control plane(s) and should be upgraded using ", "default"),
 				ANSIThemeString(f"{about.ADMIN_PROGRAM_NAME}", "programname"),
 				ANSIThemeString("; aborting.", "default")], stderr = True)
@@ -1803,7 +1803,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 	if len(non_existing) > 0:
 		ansithemeprint([ANSIThemeString("Error", "error"),
 				ANSIThemeString(": ", "default")] +
-			       ansithemestring_join_tuple_list(non_existing, formatting = "hostname", separator = ANSIThemeString(",", "separator")) +
+			       ansithemestring_join_list(non_existing, formatting="hostname", separator=ANSIThemeString(",", "separator")) +
 			       [ANSIThemeString(" are not part of the cluster; aborting.", "default")], stderr = True)
 		sys.exit(errno.ENOENT)
 
@@ -2238,7 +2238,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 		name_len = max(name_len, len(name))
 		shortnames_len_tmp = 0
-		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		shortnames_formatted = ansithemestring_join_list(shortnames, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in shortnames_formatted:
 			shortnames_len_tmp += len(item)
 		shortnames_len = max(shortnames_len, shortnames_len_tmp)
@@ -2246,12 +2246,12 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 		namespaced_len = max(namespaced_len, len(f"{namespaced}"))
 		kind_len = max(kind_len, len(kind))
 		verbs_len_tmp = 0
-		verbs_formatted = ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		verbs_formatted = ansithemestring_join_list(verbs, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in verbs_formatted:
 			verbs_len_tmp += len(item)
 		verbs_len = max(verbs_len, verbs_len_tmp)
 		cmt_support_len_tmp = 0
-		cmt_support_formatted = ansithemestring_join_tuple_list(cmt_support, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		cmt_support_formatted = ansithemestring_join_list(cmt_support, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in cmt_support_formatted:
 			cmt_support_len_tmp += len(item)
 		cmt_support_len = max(cmt_support_len, cmt_support_len_tmp)
@@ -2407,21 +2407,21 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 					continue
 
 		shortnames_len_tmp = 0
-		shortnames_formatted = ansithemestring_join_tuple_list(shortnames, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		shortnames_formatted = ansithemestring_join_list(shortnames, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in shortnames_formatted:
 			shortnames_len_tmp += len(item)
 		if len(shortnames_formatted) == 0:
 			shortnames_formatted = [ANSIThemeString("", "default")]
 
 		verbs_len_tmp = 0
-		verbs_formatted = ansithemestring_join_tuple_list(verbs, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		verbs_formatted = ansithemestring_join_list(verbs, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in verbs_formatted:
 			verbs_len_tmp += len(item)
 		if len(verbs_formatted) == 0:
 			verbs_formatted = [ANSIThemeString("", "default")]
 
 		cmt_support_len_tmp = 0
-		cmt_support_formatted = ansithemestring_join_tuple_list(cmt_support, formatting = "default", separator = ANSIThemeString(",", "separator"))
+		cmt_support_formatted = ansithemestring_join_list(cmt_support, formatting="default", separator=ANSIThemeString(",", "separator"))
 		for item in cmt_support_formatted:
 			cmt_support_len_tmp += len(item)
 		if len(cmt_support_formatted) == 0:

@@ -30,7 +30,7 @@ from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PL
 from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR, KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
 from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE, SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
 import cmtlib
-from ansithemeprint import ANSIThemeString, ansithemestring_join_tuple_list, ansithemeprint
+from ansithemeprint import ANSIThemeString, ansithemestring_join_list, ansithemeprint
 
 from kubernetes_helper import kubectl_get_version
 
@@ -1598,7 +1598,7 @@ def check_control_plane(cluster_name: str, kubeconfig: Dict, cmtconfig_dict: Dic
 	playbookpath = FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("preflight_check.yaml")))
 
 	ansithemeprint([ANSIThemeString("[Checking whether ", "phase")] +
-		       ansithemestring_join_tuple_list(hosts, formatting="hostname") +
+		       ansithemestring_join_list(hosts, formatting="hostname") +
 		       [ANSIThemeString(" are suitable as control plane(s)]", "phase")])
 
 	extra_values = {
