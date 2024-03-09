@@ -182,8 +182,8 @@ class ANSIThemeString:
             themearray = []
             joined_string = ""
             for items in line:
-                if not (isinstance(items, tuple) and len(items) == 2
-                        and isinstance(items[0], str) and isinstance(items[1], str)):
+                if not (isinstance(items, tuple) and len(items) == 2 and
+                        isinstance(items[0], str) and isinstance(items[1], str)):
                     raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
                                            f"items={items} (type: {type(items)}, expected: tuple(str, str))",
                                            severity=LogLevel.ERR,

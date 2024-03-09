@@ -6103,12 +6103,13 @@ def genericinfoloop(stdscr: curses.window, obj, view: str, **kwargs):
 					if isinstance(w_itemgetter, str):
 						w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
 					w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
+					w_itemgetter_args["kubernetes_helper"] = kh
 					w_itemgetter_args["kh_cache"] = kh_cache
 					w_selectable = deep_get(value, DictPath("selectable"), False)
 					# w_kind = deep_get(value, DictPath("kind"), view)
 					if "_slow_task_msg" in w_itemgetter_args:
 						_w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2, message = deep_get(w_itemgetter_args, DictPath("_slow_task_msg")))
-					w_items = w_itemgetter(kh, obj, **w_itemgetter_args)
+					w_items = w_itemgetter(obj, **w_itemgetter_args)
 
 					# If the first element is an integer we assume that we've been provided
 					# a pre-formatted list. Otherwise we apply formatting if available.

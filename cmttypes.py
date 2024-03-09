@@ -581,20 +581,20 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
                 results[key] = {
                     "subexception": TypeError,
                     "msg": [(f"    {key}", "argument"),
-                         (" is ", "default"),
-                         ("None", "emphasis"),
-                         (" expected ", "default"),
-                        (f"{expected_types}", "emphasis")],
+                            (" is ", "default"),
+                            ("None", "emphasis"),
+                            (" expected ", "default"),
+                            (f"{expected_types}", "emphasis")],
                     "missing": True,
                 }
             else:
                 results[key] = {
                     "subexception": TypeError,
                     "msg": [(f"    {key}", "argument"),
-                         (" is ", "default"),
-                         ("None", "emphasis"),
-                         (" expected one of ", "default"),
-                        (f"{expected_types}", "emphasis")],
+                            (" is ", "default"),
+                            ("None", "emphasis"),
+                            (" expected one of ", "default"),
+                            (f"{expected_types}", "emphasis")],
                     "missing": True,
                 }
             # If kwarg is None there's nothing else we can check
