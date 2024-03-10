@@ -92,9 +92,8 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
         phase = deep_get(obj, DictPath("status#phase"))
         reason = deep_get(obj, DictPath("status#reason"), "").rstrip()
 
-        if not (deep_get(extra_vars, DictPath("show_evicted"), False) and
-                phase == "Failed" and
-                reason == "Evicted"):
+        if (not deep_get(extra_vars, DictPath("show_evicted"), False) and
+                phase == "Failed" and reason == "Evicted"):
             continue
 
         namespace = deep_get(obj, DictPath("metadata#namespace"))
@@ -126,7 +125,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
             container_statuses = deep_get(obj, DictPath("status#containerStatuses"), [])
             init_container_list = deep_get(obj, DictPath("spec#initContainers"), [])
             init_container_statuses = deep_get(obj, DictPath("status#initContainerStatuses"), [])
-            tolerations = itemgetters.get_pod_tolerations(kh, obj)
+            tolerations = itemgetters.get_pod_tolerations(obj)
             containers = get_containers(containers=init_container_list,
                                         container_statuses=init_container_statuses)
             containers += get_containers(containers=container_list,
@@ -148,7 +147,6 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
                 "tolerations": tolerations,
                 "containers": containers,
             }))
-
         else:
             # This is to speed up the cluster overview,
             # which doesn't use most of this information anyway;
@@ -163,7 +161,6 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
                 "status_group": status_group,
                 "node": nodename,
             }))
-
     return info
 
 
