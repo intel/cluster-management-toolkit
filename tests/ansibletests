@@ -275,6 +275,7 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 			(["all"], False, False, False, False, None),
 			(["all"], False, False, False, True, None),
 			(["all"], True, True, True, True, None),
+			(["all"], True, True, True, None, None),
 			([], True, True, True, True, None),
 			([], True, True, False, True, None),
 			([], True, True, False, True, None),
@@ -287,9 +288,10 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 		for indata in testdata:
 			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
 			try:
-				with mock.patch("ansible_helper.Path.is_file", return_value=True), mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
+				with mock.patch("ansible_helper.Path.is_file", return_value=True),
+				     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
 					tmp = fun(groups=groups, highlight=highlight, include_groupvar=include_groupvars, include_hostvars=include_hostvars, include_hosts=include_hosts)
-				if not (isinstance(tmp, list) and len(tmp) > 0 and (isinstance(tmp[0], str) or len(tmp[0]) > 0 and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
+				if not (isinstance(tmp, list) and tmp and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
 						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
 							  f"      exception: {type(e)}\n" \
