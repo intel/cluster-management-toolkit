@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string,line-too-long
 ''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
@@ -11,15 +11,13 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 # unit-tests for formatters.py
 
 import builtins
-from datetime import datetime, timezone
 import importlib
-import sys
 from typing import Any, Dict, List, Tuple
 from unittest import mock
 import yaml
 
 from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath, ProgrammingError, StatusGroup
+from cmttypes import deep_get, DictPath
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import formatters
 
@@ -29,1154 +27,1149 @@ real_import = None
 
 import_override = {}
 
+
 def override_import(name: str, *args: List[Any], **kwargs: Any):
-	retval, exception = import_override.get(name, (None, None))
-	if exception:
-		raise exception
-	if retval:
-		return retval
-	return real_import(name, *args, **kwargs)
+    retval, exception = import_override.get(name, (None, None))
+    if exception:
+        raise exception
+    if retval:
+        return retval
+    return real_import(name, *args, **kwargs)
+
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-	result = ""
-	dump = yaml.dump(data)
-	for line in dump.splitlines():
-		result += f"{' '.ljust(base_indent)}{line}\n"
-	return result
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
 
 def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
-	global import_override
+    global import_override
 
-	message = ""
-	result = True
-	loglevels = []
-	testobj = {"foo": "bar"}
-	fun = formatters.json_dumps
+    message = ""
+    result = True
+    loglevels = []
+    testobj = {"foo": "bar"}
+    fun = formatters.json_dumps
 
-	if result:
-		import_override = {"ujson": (None, ModuleNotFoundError)}
-		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
-				importlib.reload(formatters)
-				_tmp = formatters.json_dumps(testobj)
-		except Exception as e:
-			message = f"overriding import ujson or {fun.__name__} failed"
-			result = False
+    if result:
+        import_override = {"ujson": (None, ModuleNotFoundError)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(formatters)
+                _tmp = formatters.json_dumps(testobj)
+        except Exception as e:
+            message = f"overriding import ujson or {fun.__name__} failed"
+            result = False
 
-	if result:
-		import_override = {"ujson": (None, None)}
-		try:
-			with mock.patch("builtins.__import__", side_effect = override_import):
-				importlib.reload(formatters)
-				_tmp = formatters.json_dumps(testobj)
-		except Exception as e:
-			message = f"overriding import ujson or {fun.__name__} failed"
-			result = False
+    if result:
+        import_override = {"ujson": (None, None)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(formatters)
+                _tmp = formatters.json_dumps(testobj)
+        except Exception as e:
+            message = f"overriding import ujson or {fun.__name__} failed"
+            result = False
 
-	import_override = {}
-	return message, result
+    import_override = {}
+    return message, result
+
 
 def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.json_dumps
-	fun_str = "formatters.json_dumps"
+    fun = formatters.json_dumps
 
-	if result:
-		# Indata format:
-		# (dict, expected_result, expected_exception)
-		testdata = (
-			({"foo": "bar", "bar": 1}, "{\n  \"foo\": \"bar\",\n  \"bar\": 1\n}", None),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "          output:\n" \
-						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata}\"\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (dict, expected_result, expected_exception)
+        testdata = (
+            ({"foo": "bar", "bar": 1}, "{\n  \"foo\": \"bar\",\n  \"bar\": 1\n}", None),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "          output:\n" \
+                          f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata}\"\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_markdown
-	fun_str = "formatters.format_markdown"
+    fun = formatters.format_markdown
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("<!--- commented out\n"
-			 "lines -->"
-			 "# Header1\n"
-			 "text1\n"
-			 "## Header2\n"
-			 "_text2_\n"
-			 "### Header3\n"
-			 "__text3__\n"
-			 "#### Header4\n"
-			 "- item1\n"
-			 "- item2\n"
-			 "- item3\n"
-			 "```\n"
-			 "\n"
-			 "This is some code\n"
-			 "```\n"
-			 "The *code* has ended, but here's some embedded `code`", {"start": None, "end": None}, [
-				[ThemeString("Header1", ThemeAttr("types", "markdown_header_1"))],
-				[ThemeString("text1", ThemeAttr("types", "generic"))],
-				[ThemeString("Header2", ThemeAttr("types", "markdown_header_2"))],
-				[ThemeString("text2", ThemeAttr("types", "markdown_italics"))],
-				[ThemeString("Header3", ThemeAttr("types", "markdown_header_3"))],
-				[ThemeString("text3", ThemeAttr("types", "markdown_bold"))],
-				[ThemeString("Header4", ThemeAttr("types", "markdown_bold"))],
-				[ThemeRef("separators", "genericbullet"),
-				 ThemeString("item1", ThemeAttr("types", "generic"))],
-				[ThemeRef("separators", "genericbullet"),
-				 ThemeString("item2", ThemeAttr("types", "generic"))],
-				[ThemeRef("separators", "genericbullet"),
-				 ThemeString("item3", ThemeAttr("types", "generic"))],
-				[ThemeString("", ThemeAttr("types", "generic"))],
-				[ThemeString("This is some code", ThemeAttr("types", "markdown_code"))],
-				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
-				 ThemeString("code", ThemeAttr(context='types', key='markdown_italics'), False),
-				 ThemeString(" has ended, but here's some embedded ", ThemeAttr(context='types', key='generic'), False),
-				 ThemeString("code", ThemeAttr(context='types', key='markdown_code'), False)],
-			 ], None),
-			("    This is some code\n"
-			 "\n"
-			 "The **code** has ended.", {"start": None, "end": None}, [
-				[ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
-				[ThemeString("", ThemeAttr("types", "generic"))],
-				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
-				 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
-				 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
-			 ], None),
-			(["    This is some code",
-			  "",
-			  "The **code** has ended."], {"start": None, "end": None}, [
-				[ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
-				[ThemeString("", ThemeAttr("types", "generic"))],
-				[ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
-				 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
-				 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
-			 ], None),
-			(["====",
-			  "This is not code",
-			  "----"], {"start": "====", "end": "----"}, [
-				[ThemeString("This is not code", ThemeAttr("types", "generic"))],
-			 ], None),
-			(["_This is italics_"], {}, [
-				[ThemeString("This is italics", ThemeAttr("types", "markdown_italics"))],
-			 ], None),
-			(["This_is_not_italics"], {}, [
-				[ThemeString("This_is_not_italics", ThemeAttr("types", "generic"))],
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			if isinstance(indata, list):
-				indata_quoted = "\n".join(indata)
-			else:
-				indata_quoted = indata
-			indata_quoted = indata_quoted.replace("\n", "\\n")
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"          output: {repr(tmp)}\n" \
-					          f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata_quoted}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("<!--- commented out\n"
+             "lines -->"
+             "# Header1\n"
+             "text1\n"
+             "## Header2\n"
+             "_text2_\n"
+             "### Header3\n"
+             "__text3__\n"
+             "#### Header4\n"
+             "- item1\n"
+             "- item2\n"
+             "- item3\n"
+             "```\n"
+             "\n"
+             "This is some code\n"
+             "```\n"
+             "The *code* has ended, but here's some embedded `code`", {"start": None, "end": None}, [
+                [ThemeString("Header1", ThemeAttr("types", "markdown_header_1"))],
+                [ThemeString("text1", ThemeAttr("types", "generic"))],
+                [ThemeString("Header2", ThemeAttr("types", "markdown_header_2"))],
+                [ThemeString("text2", ThemeAttr("types", "markdown_italics"))],
+                [ThemeString("Header3", ThemeAttr("types", "markdown_header_3"))],
+                [ThemeString("text3", ThemeAttr("types", "markdown_bold"))],
+                [ThemeString("Header4", ThemeAttr("types", "markdown_bold"))],
+                [ThemeRef("separators", "genericbullet"),
+                 ThemeString("item1", ThemeAttr("types", "generic"))],
+                [ThemeRef("separators", "genericbullet"),
+                 ThemeString("item2", ThemeAttr("types", "generic"))],
+                [ThemeRef("separators", "genericbullet"),
+                 ThemeString("item3", ThemeAttr("types", "generic"))],
+                [ThemeString("", ThemeAttr("types", "generic"))],
+                [ThemeString("This is some code", ThemeAttr("types", "markdown_code"))],
+                [ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+                 ThemeString("code", ThemeAttr(context='types', key='markdown_italics'), False),
+                 ThemeString(" has ended, but here's some embedded ", ThemeAttr(context='types', key='generic'), False),
+                 ThemeString("code", ThemeAttr(context='types', key='markdown_code'), False)],
+             ], None),
+            ("    This is some code\n"
+             "\n"
+             "The **code** has ended.", {"start": None, "end": None}, [
+                [ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
+                [ThemeString("", ThemeAttr("types", "generic"))],
+                [ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+                 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
+                 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
+             ], None),
+            (["    This is some code",
+              "",
+              "The **code** has ended."], {"start": None, "end": None}, [
+                [ThemeString("    This is some code", ThemeAttr("types", "markdown_code"))],
+                [ThemeString("", ThemeAttr("types", "generic"))],
+                [ThemeString("The ", ThemeAttr(context='types', key='generic'), False),
+                 ThemeString("code", ThemeAttr(context='types', key='markdown_bold'), False),
+                 ThemeString(" has ended.", ThemeAttr(context='types', key='generic'), False)],
+             ], None),
+            (["====",
+              "This is not code",
+              "----"], {"start": "====", "end": "----"}, [
+                [ThemeString("This is not code", ThemeAttr("types", "generic"))],
+             ], None),
+            (["_This is italics_"], {}, [
+                [ThemeString("This is italics", ThemeAttr("types", "markdown_italics"))],
+             ], None),
+            (["This_is_not_italics"], {}, [
+                [ThemeString("This_is_not_italics", ThemeAttr("types", "generic"))],
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            if isinstance(indata, list):
+                indata_quoted = "\n".join(indata)
+            else:
+                indata_quoted = indata
+            indata_quoted = indata_quoted.replace("\n", "\\n")
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"          output: {repr(tmp)}\n" \
+                              f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata_quoted}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_binary(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_binary
-	fun_str = "formatters.format_binary"
+    fun = formatters.format_binary
 
-	try:
-		if (tmp := fun(f"\xff\x3f")) != [[ThemeString("Binary file; cannot view", ThemeAttr("types", "generic"))]]:
-			message = f"{fun_str}() did not yield expected result:\n" \
-				  f"           input: <binary>\n" \
-				   "          output:\n" \
-				  f"{dump_themearray(tmp)}\n" \
-				  f"        expected: {expected_result}"
-			result = False
-	except Exception as e:
-		if expected_exception is not None:
-			if isinstance(e, expected_exception):
-				pass
-			else:
-				message = f"{fun_str}() did not yield expected result:\n" \
-					  f"           input: <binary>\n" \
-					  f"       exception: {type(e)}\n" \
-					  f"        expected: {expected_exception}"
-				result = False
-		else:
-			message = f"{fun_str}() did not yield expected result:\n" \
-				  f"           input: <binary>\n" \
-				  f"       exception: {type(e)}\n" \
-				  f"        expected: {expected_result}"
-			result = False
-	return message, result
+    try:
+        if (tmp := fun("\xff\x3f")) != [[ThemeString("Binary file; cannot view", ThemeAttr("types", "generic"))]]:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"           input: <binary>\n" \
+                   "          output:\n" \
+                  f"{dump_themearray(tmp)}"
+            result = False
+    except Exception as e:
+        message = f"{fun.__name__}() did not yield expected result:\n" \
+              f"           input: <binary>\n" \
+              f"       exception: {type(e)}"
+        result = False
+    return message, result
+
 
 def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_ansible_line
-	fun_str = "formatters.format_ansible_line"
+    fun = formatters.format_ansible_line
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("Some random output from Ansible", None, [
-				ThemeString("Some random output from Ansible", ThemeAttr("types", "generic")),
-			 ], None),
-			("Another random output from Ansible", ThemeAttr("types", "value"), [
-				ThemeString("Another random output from Ansible", ThemeAttr("types", "value")),
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata, options)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{dump_themearray(tmp)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("Some random output from Ansible", None, [
+                ThemeString("Some random output from Ansible", ThemeAttr("types", "generic")),
+             ], None),
+            ("Another random output from Ansible", ThemeAttr("types", "value"), [
+                ThemeString("Another random output from Ansible", ThemeAttr("types", "value")),
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata, options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{dump_themearray(tmp)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_diff_line
-	fun_str = "formatters.format_diff_line"
+    fun = formatters.format_diff_line
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("+ formatter_mapping = (", {}, [
-				ThemeString("+ formatter_mapping = (", ThemeAttr("logview", "severity_diffplus")),
-			 ], None),
-			("- formatter_mapping = (", {}, [
-				ThemeString("- formatter_mapping = (", ThemeAttr("logview", "severity_diffminus")),
-			 ], None),
-			("  formatter_mapping = (", {}, [
-				ThemeString("  formatter_mapping = (", ThemeAttr("logview", "severity_diffsame")),
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{dump_themearray(tmp)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("+ formatter_mapping = (", {}, [
+                ThemeString("+ formatter_mapping = (", ThemeAttr("logview", "severity_diffplus")),
+             ], None),
+            ("- formatter_mapping = (", {}, [
+                ThemeString("- formatter_mapping = (", ThemeAttr("logview", "severity_diffminus")),
+             ], None),
+            ("  formatter_mapping = (", {}, [
+                ThemeString("  formatter_mapping = (", ThemeAttr("logview", "severity_diffsame")),
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{dump_themearray(tmp)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_yaml_line
-	fun_str = fun.__name__
+    fun = formatters.format_yaml_line
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("# A comment", {}, ([
-				ThemeString("# A comment", ThemeAttr("types", "yaml_comment")),
-			 ], []), None),
-			("# A comment", {"override_formatting": ThemeAttr("types", "generic")}, ([
-				ThemeString("# A comment", ThemeAttr("types", "generic")),
-			 ], []), None),
-			("    # Indented comment", {}, ([
-				ThemeString("    # Indented comment", ThemeAttr("types", "yaml_comment")),
-			 ], []), None),
-			("key: value", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("value", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("\"key\": \"value\"", {}, ([
-				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("\"config\": \"value1\"\\n\"value2\"\\n\"value3\"", {"expand_newline_fields": ("config",)}, ([
-				ThemeString("\"config\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"value1\"", ThemeAttr("types", "yaml_value")),
-			 ], [
-				[ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value2\"", ThemeAttr("types", "yaml_value"), False)],
-				[ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value3\"", ThemeAttr("types", "yaml_value"), False)],
-			 ]), None),
-			("\"key\": \"\033[0;4;37mvalue\"", {"value_strip_ansicodes": True}, ([
-				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("\"key\": \"val\\tue\"", {"value_expand_tabs": True}, ([
-				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"val    ue\"", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("\"key\": \"value\"", {"value_expand_tabs": True}, ([
-				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("\"key\": \"value\"", {}, ([
-				ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("key: &define", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("&", ThemeAttr("types", "yaml_reference")),
-				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
-			 ], []), None),
-			("key: &define '#112233'", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("&", ThemeAttr("types", "yaml_reference")),
-				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
-				ThemeString(" '#112233'", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("key: *define", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("*", ThemeAttr("types", "yaml_reference")),
-				ThemeString("define", ThemeAttr("types", "yaml_anchor")),
-			 ], []), None),
-			("key:", {"override_formatting": {"key": {"key": ThemeAttr("types", "generic")}}}, ([
-				ThemeString("key", ThemeAttr("types", "generic")),
-				ThemeString(":", ThemeAttr("types", "yaml_separator")),
-			 ], []), None),
-			("key: {", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("{", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("key: {", {}, ([
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(": ", ThemeAttr("types", "yaml_separator")),
-				ThemeString("{", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("}", {}, ([
-				ThemeString("}", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("- value", {}, ([
-				ThemeString("", ThemeAttr("types", "generic")),
-				ThemeRef("separators", "yaml_list"),
-				ThemeString("value", ThemeAttr("types", "yaml_value")),
-			 ], []), None),
-			("- key:", {}, ([
-				ThemeString("", ThemeAttr("types", "generic")),
-				ThemeRef("separators", "yaml_list"),
-				ThemeString("key", ThemeAttr("types", "yaml_key")),
-				ThemeString(':', ThemeAttr('types', 'yaml_separator'), False),
-			 ], []), None),
-			("- key:", {"override_formatting": "a"}, None, TypeError),
-			('  "error": "please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",',
-			 {
-				"override_formatting": {
-					'"msg"': {
-						'key': ThemeAttr('types', 'yaml_key'),
-						'value': ThemeAttr('logview', 'severity_info')
-					},
-					'"message"': {
-						'key': ThemeAttr('types', 'yaml_key'),
-						'value': ThemeAttr('logview', 'severity_info')
-					},
-					'"err"': {
-						'key': ThemeAttr('types', 'yaml_key_error'),
-						'value': ThemeAttr('logview', 'severity_error')
-					},
-					'"error"': {
-						'key': ThemeAttr('types', 'yaml_key_error'),
-						'value': ThemeAttr('logview', 'severity_error')
-					}
-				},
-				'expand_newline_fields': ('config', 'errorVerbose', 'stacktrace', 'status.message'),
-				'value_expand_tabs': True
-			}, ([
-				ThemeString('  "error"', ThemeAttr('types', 'yaml_key_error'), False),
-				ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
-				ThemeString('"please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",', ThemeAttr('logview', 'severity_error'), False),
-			 ], []), None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					output, remnants = tmp
-					print(f"  indata: {indata}")
-					print(f"     got: {output}")
-					print(f"expected: {expected_result[0]}")
-					print(f"remnants: {remnants}")
-					print(f"expected: {expected_result[1]}")
-					sys.exit()
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{dump_themearray(tmp)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("# A comment", {}, ([
+                ThemeString("# A comment", ThemeAttr("types", "yaml_comment")),
+             ], []), None),
+            ("# A comment", {"override_formatting": ThemeAttr("types", "generic")}, ([
+                ThemeString("# A comment", ThemeAttr("types", "generic")),
+             ], []), None),
+            ("    # Indented comment", {}, ([
+                ThemeString("    # Indented comment", ThemeAttr("types", "yaml_comment")),
+             ], []), None),
+            ("key: value", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("value", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("\"key\": \"value\"", {}, ([
+                ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("\"config\": \"value1\"\\n\"value2\"\\n\"value3\"", {"expand_newline_fields": ("config",)}, ([
+                ThemeString("\"config\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"value1\"", ThemeAttr("types", "yaml_value")),
+             ], [
+                [ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value2\"", ThemeAttr("types", "yaml_value"), False)],
+                [ThemeString("           ", ThemeAttr("types", "yaml_key"), False), ThemeString("\"value3\"", ThemeAttr("types", "yaml_value"), False)],
+             ]), None),
+            ("\"key\": \"\033[0;4;37mvalue\"", {"value_strip_ansicodes": True}, ([
+                ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("\"key\": \"val\\tue\"", {"value_expand_tabs": True}, ([
+                ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"val    ue\"", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("\"key\": \"value\"", {"value_expand_tabs": True}, ([
+                ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("\"key\": \"value\"", {}, ([
+                ThemeString("\"key\"", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("\"value\"", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("key: &define", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("&", ThemeAttr("types", "yaml_reference")),
+                ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+             ], []), None),
+            ("key: &define '#112233'", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("&", ThemeAttr("types", "yaml_reference")),
+                ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+                ThemeString(" '#112233'", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("key: *define", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("*", ThemeAttr("types", "yaml_reference")),
+                ThemeString("define", ThemeAttr("types", "yaml_anchor")),
+             ], []), None),
+            ("key:", {"override_formatting": {"key": {"key": ThemeAttr("types", "generic")}}}, ([
+                ThemeString("key", ThemeAttr("types", "generic")),
+                ThemeString(":", ThemeAttr("types", "yaml_separator")),
+             ], []), None),
+            ("key: {", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("{", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("key: {", {}, ([
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(": ", ThemeAttr("types", "yaml_separator")),
+                ThemeString("{", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("}", {}, ([
+                ThemeString("}", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("- value", {}, ([
+                ThemeString("", ThemeAttr("types", "generic")),
+                ThemeRef("separators", "yaml_list"),
+                ThemeString("value", ThemeAttr("types", "yaml_value")),
+             ], []), None),
+            ("- key:", {}, ([
+                ThemeString("", ThemeAttr("types", "generic")),
+                ThemeRef("separators", "yaml_list"),
+                ThemeString("key", ThemeAttr("types", "yaml_key")),
+                ThemeString(':', ThemeAttr('types', 'yaml_separator'), False),
+             ], []), None),
+            ("- key:", {"override_formatting": "a"}, None, TypeError),
+            ('  "error": "please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",',
+             {
+                "override_formatting": {
+                    '"msg"': {
+                        'key': ThemeAttr('types', 'yaml_key'),
+                        'value': ThemeAttr('logview', 'severity_info')
+                    },
+                    '"message"': {
+                        'key': ThemeAttr('types', 'yaml_key'),
+                        'value': ThemeAttr('logview', 'severity_info')
+                    },
+                    '"err"': {
+                        'key': ThemeAttr('types', 'yaml_key_error'),
+                        'value': ThemeAttr('logview', 'severity_error')
+                    },
+                    '"error"': {
+                        'key': ThemeAttr('types', 'yaml_key_error'),
+                        'value': ThemeAttr('logview', 'severity_error')
+                    }
+                },
+                'expand_newline_fields': ('config', 'errorVerbose', 'stacktrace', 'status.message'),
+                'value_expand_tabs': True
+            }, ([
+                ThemeString('  "error"', ThemeAttr('types', 'yaml_key_error'), False),
+                ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+                ThemeString('"please install istio or disable the istio ingress plugin: no matches for kind \\"Gateway\\" in version \\"networking.istio.io/v1beta1\\"",', ThemeAttr('logview', 'severity_error'), False),
+             ], []), None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    output, remnants = tmp
+                    print(f"  indata: {indata}")
+                    print(f"     got: {output}")
+                    print(f"expected: {expected_result[0]}")
+                    print(f"remnants: {remnants}")
+                    print(f"expected: {expected_result[1]}")
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{dump_themearray(tmp)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_crt
-	fun_str = "formatters.format_crt"
+    fun = formatters.format_crt
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("-----BEGIN CERTIFICATE-----\n"
-			 "FOOBARBAZ\n"
-			 "-----END CERTIFICATE-----", {}, [
-				[ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "separator"))],
-				[ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
-				[ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "separator"))],
-			 ], None),
-			(["-----BEGIN CERTIFICATE-----",
-			  "FOOBARBAZ",
-			  "-----END CERTIFICATE-----"], {}, [
-				[ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "separator"))],
-				[ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
-				[ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "separator"))],
-			 ], None),
-			("-----BEGIN CERTIFICATE-----\n"
-			 "FOOBARBAZ\n"
-			 "-----END CERTIFICATE-----", {"raw": True,}, [
-				[ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "generic"))],
-				[ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
-				[ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "generic"))],
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{dump_themearray(tmp)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("-----BEGIN CERTIFICATE-----\n"
+             "FOOBARBAZ\n"
+             "-----END CERTIFICATE-----", {}, [
+                [ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "separator"))],
+                [ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
+                [ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "separator"))],
+             ], None),
+            (["-----BEGIN CERTIFICATE-----",
+              "FOOBARBAZ",
+              "-----END CERTIFICATE-----"], {}, [
+                [ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "separator"))],
+                [ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
+                [ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "separator"))],
+             ], None),
+            ("-----BEGIN CERTIFICATE-----\n"
+             "FOOBARBAZ\n"
+             "-----END CERTIFICATE-----", {"raw": True,}, [
+                [ThemeString("-----BEGIN CERTIFICATE-----", ThemeAttr("types", "generic"))],
+                [ThemeString("FOOBARBAZ", ThemeAttr("types", "generic"))],
+                [ThemeString("-----END CERTIFICATE-----", ThemeAttr("types", "generic"))],
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{dump_themearray(tmp)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_ini
-	fun_str = "formatters.format_ini"
+    fun = formatters.format_ini
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("# comment\n"
-			 "[main]\n"
-			 "setting1 = foo\n"
-			 "setting2 = bar", {}, [
-				[ThemeString("# comment", ThemeAttr("types", "ini_comment"))],
-				[ThemeString("[main]", ThemeAttr("types", "ini_section"))],
-				[ThemeString("setting1", ThemeAttr("types", "ini_key")),
-				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
-				 ThemeString("foo", ThemeAttr("types", "ini_value"))],
-				[ThemeString("setting2", ThemeAttr("types", "ini_key")),
-				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
-				 ThemeString("bar", ThemeAttr("types", "ini_value"))],
-			 ], None),
-			(["# comment",
-			  "[main]",
-			  "  setting1 = foo",
-			  "  setting2 = bar"], {}, [
-				[ThemeString("# comment", ThemeAttr("types", "ini_comment"))],
-				[ThemeString("[main]", ThemeAttr("types", "ini_section"))],
-				[ThemeString("  ", ThemeAttr("types", "generic")),
-				 ThemeString("setting1", ThemeAttr("types", "ini_key")),
-				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
-				 ThemeString("foo", ThemeAttr("types", "ini_value"))],
-				[ThemeString("  ", ThemeAttr("types", "generic")),
-				 ThemeString("setting2", ThemeAttr("types", "ini_key")),
-				 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
-				 ThemeString("bar", ThemeAttr("types", "ini_value"))],
-			 ], None),
-			(["# comment",
-			  "[main]",
-			  "setting1 = foo",
-			  "setting2 = bar"], {"raw": True}, [
-				[ThemeString("# comment", ThemeAttr("types", "generic"))],
-				[ThemeString("[main]", ThemeAttr("types", "generic"))],
-				[ThemeString("setting1 = foo", ThemeAttr("types", "generic"))],
-				[ThemeString("setting2 = bar", ThemeAttr("types", "generic"))],
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			if isinstance(indata, list):
-				indata_quoted = "\n".join(indata)
-			else:
-				indata_quoted = indata
-			indata_quoted = indata_quoted.replace('\n', '\\n')
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata_quoted}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("# comment\n"
+             "[main]\n"
+             "setting1 = foo\n"
+             "setting2 = bar", {}, [
+                [ThemeString("# comment", ThemeAttr("types", "ini_comment"))],
+                [ThemeString("[main]", ThemeAttr("types", "ini_section"))],
+                [ThemeString("setting1", ThemeAttr("types", "ini_key")),
+                 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
+                 ThemeString("foo", ThemeAttr("types", "ini_value"))],
+                [ThemeString("setting2", ThemeAttr("types", "ini_key")),
+                 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
+                 ThemeString("bar", ThemeAttr("types", "ini_value"))],
+             ], None),
+            (["# comment",
+              "[main]",
+              "  setting1 = foo",
+              "  setting2 = bar"], {}, [
+                [ThemeString("# comment", ThemeAttr("types", "ini_comment"))],
+                [ThemeString("[main]", ThemeAttr("types", "ini_section"))],
+                [ThemeString("  ", ThemeAttr("types", "generic")),
+                 ThemeString("setting1", ThemeAttr("types", "ini_key")),
+                 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
+                 ThemeString("foo", ThemeAttr("types", "ini_value"))],
+                [ThemeString("  ", ThemeAttr("types", "generic")),
+                 ThemeString("setting2", ThemeAttr("types", "ini_key")),
+                 ThemeString(" = ", ThemeAttr("types", "ini_key_separator")),
+                 ThemeString("bar", ThemeAttr("types", "ini_value"))],
+             ], None),
+            (["# comment",
+              "[main]",
+              "setting1 = foo",
+              "setting2 = bar"], {"raw": True}, [
+                [ThemeString("# comment", ThemeAttr("types", "generic"))],
+                [ThemeString("[main]", ThemeAttr("types", "generic"))],
+                [ThemeString("setting1 = foo", ThemeAttr("types", "generic"))],
+                [ThemeString("setting2 = bar", ThemeAttr("types", "generic"))],
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            if isinstance(indata, list):
+                indata_quoted = "\n".join(indata)
+            else:
+                indata_quoted = indata
+            indata_quoted = indata_quoted.replace('\n', '\\n')
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata_quoted}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_caddyfile
+    fun = formatters.format_caddyfile
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			([".:53 {",
-			  "    # comment",
-			  "",
-			  "}"], {},
-			 [
-				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    # comment', ThemeAttr('types', 'caddyfile_comment'), False)],
-				[ThemeString('', ThemeAttr('types', 'generic'), False)],
-				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
-			], None),
-			([".:53 {",
-			  "    errors",
-			  "    health {",
-			  "       lameduck 5s",
-			  "    }",
-			  "    ready",
-			  "    kubernetes cluster.local in-addr.arpa ip6.arpa {",
-			  "       pods insecure",
-			  "       fallthrough in-addr.arpa ip6.arpa",
-			  "       ttl 30",
-			  "    }",
-			  "    prometheus :9153",
-			  "    forward . /etc/resolv.conf {",
-			  "       max_concurrent 1000",
-			  "    }",
-			  "    cache 30",
-			  "    loop",
-			  "    reload",
-			  "    loadbalance",
-			  "}"], {},
-			 [
-				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
-			], None),
-			(".:53 {\n" \
-			 "    errors\n" \
-			 "    health {\n" \
-			 "       lameduck 5s\n" \
-			 "    }\n" \
-			 "    ready\n" \
-			 "    kubernetes cluster.local in-addr.arpa ip6.arpa {\n" \
-			 "       pods insecure\n" \
-			 "       fallthrough in-addr.arpa ip6.arpa\n" \
-			 "       ttl 30\n" \
-			 "    }\n" \
-			 "    prometheus :9153\n" \
-			 "    forward . /etc/resolv.conf {\n" \
-			 "       max_concurrent 1000\n" \
-			 "    }\n" \
-			 "    cache 30\n" \
-			 "    loop\n" \
-			 "    reload\n" \
-			 "    loadbalance\n" \
-			 "}", {},
-			 [
-				[ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
-				 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
-				 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
-				 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
-				[ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
-			], None),
-			([".:53 {",
-			  "    # comment",
-			  "}"], {"raw": True},
-			 [
-				[ThemeString('.:53 {', ThemeAttr('types', 'generic'), False)],
-				[ThemeString('    # comment', ThemeAttr('types', 'generic'), False)],
-				[ThemeString('}', ThemeAttr('types', 'generic'), False)]
-			], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			if isinstance(indata, list):
-				indata_quoted = "\n".join(indata)
-			else:
-				indata_quoted = indata
-			indata_quoted = indata_quoted.replace('\n', '\\n')
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__indata__}() did not yield expected result:\n" \
-							  f"           input: \"{indata_quoted}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__indata__}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ([".:53 {",
+              "    # comment",
+              "",
+              "}"], {},
+             [
+                [ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    # comment', ThemeAttr('types', 'caddyfile_comment'), False)],
+                [ThemeString('', ThemeAttr('types', 'generic'), False)],
+                [ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+            ], None),
+            ([".:53 {",
+              "    errors",
+              "    health {",
+              "       lameduck 5s",
+              "    }",
+              "    ready",
+              "    kubernetes cluster.local in-addr.arpa ip6.arpa {",
+              "       pods insecure",
+              "       fallthrough in-addr.arpa ip6.arpa",
+              "       ttl 30",
+              "    }",
+              "    prometheus :9153",
+              "    forward . /etc/resolv.conf {",
+              "       max_concurrent 1000",
+              "    }",
+              "    cache 30",
+              "    loop",
+              "    reload",
+              "    loadbalance",
+              "}"], {},
+             [
+                [ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+            ], None),
+            (".:53 {\n" \
+             "    errors\n" \
+             "    health {\n" \
+             "       lameduck 5s\n" \
+             "    }\n" \
+             "    ready\n" \
+             "    kubernetes cluster.local in-addr.arpa ip6.arpa {\n" \
+             "       pods insecure\n" \
+             "       fallthrough in-addr.arpa ip6.arpa\n" \
+             "       ttl 30\n" \
+             "    }\n" \
+             "    prometheus :9153\n" \
+             "    forward . /etc/resolv.conf {\n" \
+             "       max_concurrent 1000\n" \
+             "    }\n" \
+             "    cache 30\n" \
+             "    loop\n" \
+             "    reload\n" \
+             "    loadbalance\n" \
+             "}", {},
+             [
+                [ThemeString('.:53', ThemeAttr('types', 'caddyfile_site'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('errors', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('health', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('lameduck', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 5s', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('ready', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('kubernetes', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' cluster.local in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('pods', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' insecure', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('fallthrough', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' in-addr.arpa ip6.arpa', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('ttl', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('prometheus', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' :9153', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('forward', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' . /etc/resolv.conf', ThemeAttr('types', 'caddyfile_argument'), False),
+                 ThemeString(' ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('{', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('       ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('max_concurrent', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 1000', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_block'), False),
+                 ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('cache', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString(' 30', ThemeAttr('types', 'caddyfile_argument'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('loop', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('reload', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('    ', ThemeAttr('types', 'caddyfile_directive'), False),
+                 ThemeString('loadbalance', ThemeAttr('types', 'caddyfile_directive'), False)],
+                [ThemeString('}', ThemeAttr('types', 'caddyfile_block'), False)]
+            ], None),
+            ([".:53 {",
+              "    # comment",
+              "}"], {"raw": True},
+             [
+                [ThemeString('.:53 {', ThemeAttr('types', 'generic'), False)],
+                [ThemeString('    # comment', ThemeAttr('types', 'generic'), False)],
+                [ThemeString('}', ThemeAttr('types', 'generic'), False)]
+            ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            if isinstance(indata, list):
+                indata_quoted = "\n".join(indata)
+            else:
+                indata_quoted = indata
+            indata_quoted = indata_quoted.replace('\n', '\\n')
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__indata__}() did not yield expected result:\n" \
+                              f"           input: \"{indata_quoted}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__indata__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.format_python_traceback
-	fun_str = "formatters.format_python_traceback"
+    fun = formatters.format_python_traceback
 
-	if result:
-		# Indata format:
-		# (lines, options, expected_result, expected_exception)
-		testdata = (
-			("Traceback (most recent call last):\n"
-			 " File \"<stdin>\", line 1, in <module>\n"
-			 "ZeroDivisionError: division by zero", {}, [
-				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
-				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<stdin>", ThemeAttr("types", "path")),
-				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("1", ThemeAttr("types", "lineno")),
-				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<module>", ThemeAttr("types", "path"))],
-				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
-				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
-			 ], None),
-			(["Traceback (most recent call last):",
-			  " File \"<stdin>\", line 1, in <module>",
-			  "ZeroDivisionError: division by zero"], {}, [
-				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
-				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<stdin>", ThemeAttr("types", "path")),
-				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("1", ThemeAttr("types", "lineno")),
-				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<module>", ThemeAttr("types", "path"))],
-				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
-				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
-			 ], None),
-			(["",
-			  "Traceback (most recent call last):",
-			  " File \"<stdin>\", line 1, in <module>",
-			  "ZeroDivisionError: division by zero"], {}, [
-				[ThemeString("", ThemeAttr("logview", "severity_info"))],
-				[ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
-				[ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<stdin>", ThemeAttr("types", "path")),
-				 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("1", ThemeAttr("types", "lineno")),
-				 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
-				 ThemeString("<module>", ThemeAttr("types", "path"))],
-				[ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
-				 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
-			 ], None),
-		)
-		for indata, options, expected_result, expected_exception in testdata:
-			if isinstance(indata, list):
-				indata_quoted = "\n".join(indata)
-			else:
-				indata_quoted = indata
-			indata_quoted = indata_quoted.replace('\n', '\\n')
-			try:
-				if (tmp := fun(indata, **options)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						   "          output:\n" \
-						  f"{yaml_dump(tmp, base_indent = 17)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: \"{indata_quoted}\"\n" \
-							   "         options:\n" \
-							  f"{yaml_dump(options, base_indent = 17)}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: \"{indata_quoted}\"\n" \
-						   "         options:\n" \
-						  f"{yaml_dump(options, base_indent = 17)}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (lines, options, expected_result, expected_exception)
+        testdata = (
+            ("Traceback (most recent call last):\n"
+             " File \"<stdin>\", line 1, in <module>\n"
+             "ZeroDivisionError: division by zero", {}, [
+                [ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+                [ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<stdin>", ThemeAttr("types", "path")),
+                 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("1", ThemeAttr("types", "lineno")),
+                 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<module>", ThemeAttr("types", "path"))],
+                [ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+                 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
+             ], None),
+            (["Traceback (most recent call last):",
+              " File \"<stdin>\", line 1, in <module>",
+              "ZeroDivisionError: division by zero"], {}, [
+                [ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+                [ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<stdin>", ThemeAttr("types", "path")),
+                 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("1", ThemeAttr("types", "lineno")),
+                 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<module>", ThemeAttr("types", "path"))],
+                [ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+                 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
+             ], None),
+            (["",
+              "Traceback (most recent call last):",
+              " File \"<stdin>\", line 1, in <module>",
+              "ZeroDivisionError: division by zero"], {}, [
+                [ThemeString("", ThemeAttr("logview", "severity_info"))],
+                [ThemeString("Traceback (most recent call last):", ThemeAttr("logview", "severity_error"))],
+                [ThemeString(" File \"", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<stdin>", ThemeAttr("types", "path")),
+                 ThemeString("\", line ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("1", ThemeAttr("types", "lineno")),
+                 ThemeString(", in ", ThemeAttr("logview", "severity_info")),
+                 ThemeString("<module>", ThemeAttr("types", "path"))],
+                [ThemeString("ZeroDivisionError:", ThemeAttr("logview", "severity_error")),
+                 ThemeString(" division by zero", ThemeAttr("logview", "severity_info"))],
+             ], None),
+        )
+        for indata, options, expected_result, expected_exception in testdata:
+            if isinstance(indata, list):
+                indata_quoted = "\n".join(indata)
+            else:
+                indata_quoted = indata
+            indata_quoted = indata_quoted.replace('\n', '\\n')
+            try:
+                if (tmp := fun(indata, **options)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                           "          output:\n" \
+                          f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: \"{indata_quoted}\"\n" \
+                               "         options:\n" \
+                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: \"{indata_quoted}\"\n" \
+                           "         options:\n" \
+                          f"{yaml_dump(options, base_indent = 17)}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_map_dataformat(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = formatters.map_dataformat
-	fun_str = "formatters.map_dataformat"
+    fun = formatters.map_dataformat
 
-	if result:
-		# Indata format:
-		# (kind, expected_result, expected_exception)
-		testdata = (
-			("YAML", formatters.format_yaml, None),
-			("file.yaml", formatters.format_yaml, None),
-			("foo.notarecognisedformat", formatters.format_none, None),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: {indata}\n" \
-						  f"          output: {tmp}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"           input: {indata}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"           input: {indata}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (kind, expected_result, expected_exception)
+        testdata = (
+            ("YAML", formatters.format_yaml, None),
+            ("file.yaml", formatters.format_yaml, None),
+            ("foo.notarecognisedformat", formatters.format_none, None),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                # pylint: disable-next=comparison-with-callable
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: {indata}\n" \
+                          f"          output: {tmp}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: {indata}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 tests: Dict = {
-	("json_ujson",): {
-		"callable": test_json_ujson,
-		"result": None,
-	},
-	("format_json_dumps",): {
-		"callable": test_json_dumps,
-		"result": None,
-	},
-	("format_markdown",): {
-		"callable": test_format_markdown,
-		"result": None,
-	},
-	("format_binary",): {
-		"callable": test_format_binary,
-		"result": None,
-	},
-	("format_ansible_line",): {
-		"callable": test_format_ansible_line,
-		"result": None,
-	},
-	("format_diff_line",): {
-		"callable": test_format_diff_line,
-		"result": None,
-	},
-	("format_yaml_line",): {
-		"callable": test_format_yaml_line,
-		"result": None,
-	},
-	("format_crt",): {
-		"callable": test_format_crt,
-		"result": None,
-	},
-	("format_ini",): {
-		"callable": test_format_ini,
-		"result": None,
-	},
-	("format_caddyfile",): {
-		"callable": test_format_caddyfile,
-		"result": None,
-	},
-	("format_python_traceback",): {
-		"callable": test_format_python_traceback,
-		"result": None,
-	},
-	("map_dataformat",): {
-		"callable": test_map_dataformat,
-		"result": None,
-	},
+    ("json_ujson",): {
+        "callable": test_json_ujson,
+        "result": None,
+    },
+    ("format_json_dumps",): {
+        "callable": test_json_dumps,
+        "result": None,
+    },
+    ("format_markdown",): {
+        "callable": test_format_markdown,
+        "result": None,
+    },
+    ("format_binary",): {
+        "callable": test_format_binary,
+        "result": None,
+    },
+    ("format_ansible_line",): {
+        "callable": test_format_ansible_line,
+        "result": None,
+    },
+    ("format_diff_line",): {
+        "callable": test_format_diff_line,
+        "result": None,
+    },
+    ("format_yaml_line",): {
+        "callable": test_format_yaml_line,
+        "result": None,
+    },
+    ("format_crt",): {
+        "callable": test_format_crt,
+        "result": None,
+    },
+    ("format_ini",): {
+        "callable": test_format_ini,
+        "result": None,
+    },
+    ("format_caddyfile",): {
+        "callable": test_format_caddyfile,
+        "result": None,
+    },
+    ("format_python_traceback",): {
+        "callable": test_format_python_traceback,
+        "result": None,
+    },
+    ("map_dataformat",): {
+        "callable": test_map_dataformat,
+        "result": None,
+    },
 }
 
+
 def main() -> int:
-	global tests
-	global real_import
-	real_import = builtins.__import__
+    global tests
+    global real_import
+    real_import = builtins.__import__
 
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
-	read_theme(DEFAULT_THEME_FILE, DEFAULT_THEME_FILE)
+    init_ansithemeprint(themefile=None)
+    read_theme(DEFAULT_THEME_FILE, DEFAULT_THEME_FILE)
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
-	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose = verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                ANSIThemeString(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeString("  FAIL", "error"),
+                    ANSIThemeString(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeString("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	if fail > 0:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-	if fail > 0:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+    if fail:
+        ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeString("  • ", "separator"),
+                    ANSIThemeString(testcase, "default")], stderr=True)
 
-	return fail
+    return fail
+
 
 if __name__ == "__main__":
-	main()
+    main()

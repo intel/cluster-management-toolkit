@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string,line-too-long
 ''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
 __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
@@ -12,806 +12,810 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 
 import copy
 from datetime import datetime, timedelta, date
-from typing import Callable, Dict, Tuple
+from typing import Dict, Tuple
 import yaml
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_args
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 
+
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-	result = ""
-	dump = yaml.dump(data)
-	for line in dump.splitlines():
-		result += f"{' '.ljust(base_indent)}{line}\n"
-	return result
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
 
 def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	indata = {
-		"a": 1,
-		"b": {
-			"c": 2,
-		},
-	}
+    indata = {
+        "a": 1,
+        "b": {
+            "c": 2,
+        },
+    }
 
-	path1 = DictPath("a")
-	expected_result1 = 1
-	path2 = DictPath("b#c")
-	expected_result2 = 2
+    path1 = DictPath("a")
+    expected_result1 = 1
+    path2 = DictPath("b#c")
+    expected_result2 = 2
 
-	fun = deep_get
-	fun_str = "deep_get"
+    fun = deep_get
 
-	if result:
-		if (tmp := fun(None, path1, default = "fallback")) != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		if (tmp := fun(indata, None, default = "fallback")) != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		if (tmp := fun(indata, DictPath(""), default = "fallback")) != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		if (tmp := fun(indata, path1)) != expected_result1:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
-			result = False
-	if result:
-		if (tmp := fun(indata, path2)) != expected_result2:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
-			result = False
+    if result:
+        if (tmp := fun(None, path1, default="fallback")) != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        if (tmp := fun(indata, None, default="fallback")) != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        if (tmp := fun(indata, DictPath(""), default="fallback")) != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        if (tmp := fun(indata, path1)) != expected_result1:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            result = False
+    if result:
+        if (tmp := fun(indata, path2)) != expected_result2:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_deep_get_with_fallback(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	indata = {
-		"a": 1,
-		"b": {
-			"c": 2,
-		},
-		"d": "",
-	}
+    indata = {
+        "a": 1,
+        "b": {
+            "c": 2,
+        },
+        "d": "",
+    }
 
-	path1 = [DictPath("a"), DictPath("b#c")]
-	expected_result1 = 1
-	path2 = [DictPath("c"), DictPath("b#c")]
-	expected_result2 = 2
-	path3 = [DictPath("d")]
-	expected_result3 = ""
-	path4 = [DictPath("c")]
-	expected_result4 = "fallback"
-	path5 = [DictPath("d"), DictPath("b#c")]
-	expected_result5 = 2
+    path1 = [DictPath("a"), DictPath("b#c")]
+    expected_result1 = 1
+    path2 = [DictPath("c"), DictPath("b#c")]
+    expected_result2 = 2
+    path3 = [DictPath("d")]
+    expected_result3 = ""
+    path4 = [DictPath("c")]
+    expected_result4 = "fallback"
+    path5 = [DictPath("d"), DictPath("b#c")]
+    expected_result5 = 2
 
-	fun = deep_get_with_fallback
-	fun_str = "deep_get_with_fallback"
+    fun = deep_get_with_fallback
 
-	if result:
-		tmp = fun(None, path1, default = "fallback")
-		if tmp != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		tmp = fun(indata, None, default = "fallback")
-		if tmp != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		tmp = fun(indata, DictPath(""), default = "fallback")
-		if tmp != "fallback":
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
-			result = False
-	if result:
-		tmp = fun(indata, path1)
-		if tmp != expected_result1:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
-			result = False
-	if result:
-		tmp = fun(indata, path2)
-		if tmp != expected_result2:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
-			result = False
-	if result:
-		tmp = fun(indata, path3)
-		if tmp != expected_result3:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
-			result = False
-	if result:
-		tmp = fun(indata, path4, default = "fallback")
-		if tmp != expected_result4:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path4}\n      output: {tmp}\n    expected: {expected_result4}"
-			result = False
-	if result:
-		tmp = fun(indata, path5, fallback_on_empty = True)
-		if tmp != expected_result5:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path5}\n      output: {tmp}\n    expected: {expected_result5}"
-			result = False
+    if result:
+        tmp = fun(None, path1, default="fallback")
+        if tmp != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        tmp = fun(indata, None, default="fallback")
+        if tmp != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        tmp = fun(indata, DictPath(""), default="fallback")
+        if tmp != "fallback":
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
+            result = False
+    if result:
+        tmp = fun(indata, path1)
+        if tmp != expected_result1:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            result = False
+    if result:
+        tmp = fun(indata, path2)
+        if tmp != expected_result2:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            result = False
+    if result:
+        tmp = fun(indata, path3)
+        if tmp != expected_result3:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
+            result = False
+    if result:
+        tmp = fun(indata, path4, default="fallback")
+        if tmp != expected_result4:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path4}\n      output: {tmp}\n    expected: {expected_result4}"
+            result = False
+    if result:
+        tmp = fun(indata, path5, fallback_on_empty=True)
+        if tmp != expected_result5:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path5}\n      output: {tmp}\n    expected: {expected_result5}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	indata = {
-		"a": 1,
-		"b": {
-			"c": 2,
-		},
-		"e": [],
-	}
+    indata = {
+        "a": 1,
+        "b": {
+            "c": 2,
+        },
+        "e": [],
+    }
 
-	path1 = DictPath("a")
-	expected_result1 = 2
-	path2 = DictPath("b#c")
-	expected_result2 = 1
-	path3 = DictPath("c#d")
-	expected_result3 = 4
-	path4 = DictPath("e#f")
-	expected_result4 = 4
+    path1 = DictPath("a")
+    expected_result1 = 2
+    path2 = DictPath("b#c")
+    expected_result2 = 1
+    path3 = DictPath("c#d")
+    expected_result3 = 4
+    path4 = DictPath("e#f")
+    expected_result4 = 4
 
-	fun = deep_set
-	fun_str = "deep_set"
+    fun = deep_set
 
-	if result:
-		try:
-			fun(None, path1, value = expected_result1)
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: ValueError"
-			result = False
-		except ValueError:
-			pass
-	if result:
-		indata_copy = copy.deepcopy(indata)
-		fun(indata_copy, path1, value = expected_result1)
-		if (tmp := deep_get(indata_copy, path1)) != expected_result1:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
-			result = False
-	if result:
-		indata_copy = copy.deepcopy(indata)
-		fun(indata_copy, path2, value = expected_result2)
-		if (tmp := deep_get(indata_copy, path2)) != expected_result2:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
-			result = False
-	if result:
-		indata_copy = copy.deepcopy(indata)
-		try:
-			fun(indata_copy, path3, value = expected_result2)
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: ValueError"
-			result = False
-		except ValueError:
-			pass
-	if result:
-		indata_copy = copy.deepcopy(indata)
-		fun(indata_copy, path3, value = expected_result3, create_path = True)
-		if (tmp := deep_get(indata_copy, path3)) != expected_result3:
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
-			result = False
-	if result:
-		indata_copy = copy.deepcopy(indata)
-		try:
-			fun(indata_copy, path4, value = expected_result3, create_path = True)
-			message = f"{fun_str} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
-			result = False
-		except ValueError:
-			pass
+    if result:
+        try:
+            fun(None, path1, value=expected_result1)
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n    expected: ValueError"
+            result = False
+        except ValueError:
+            pass
+    if result:
+        indata_copy = copy.deepcopy(indata)
+        fun(indata_copy, path1, value=expected_result1)
+        if (tmp := deep_get(indata_copy, path1)) != expected_result1:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            result = False
+    if result:
+        indata_copy = copy.deepcopy(indata)
+        fun(indata_copy, path2, value=expected_result2)
+        if (tmp := deep_get(indata_copy, path2)) != expected_result2:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            result = False
+    if result:
+        indata_copy = copy.deepcopy(indata)
+        try:
+            fun(indata_copy, path3, value=expected_result2)
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: ValueError"
+            result = False
+        except ValueError:
+            pass
+    if result:
+        indata_copy = copy.deepcopy(indata)
+        fun(indata_copy, path3, value=expected_result3, create_path=True)
+        if (tmp := deep_get(indata_copy, path3)) != expected_result3:
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
+            result = False
+    if result:
+        indata_copy = copy.deepcopy(indata)
+        try:
+            fun(indata_copy, path4, value=expected_result3, create_path=True)
+            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result4}"
+            result = False
+        except ValueError:
+            pass
 
-	return message, result
+    return message, result
+
 
 def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
+    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
-	indata = {
-		"severity": LogLevel.ERR,
-		"facility": "facility",
-		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
-		"timestamp": none_timestamp,
-		"file": "thisfile",
-		"function": "thatfunction",
-		"lineno": "42",
-		"ppid": "1234567",
-	}
+    indata = {
+        "severity": LogLevel.ERR,
+        "facility": "facility",
+        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "timestamp": none_timestamp,
+        "file": "thisfile",
+        "function": "thatfunction",
+        "lineno": "42",
+        "ppid": "1234567",
+    }
 
-	fun = UnknownError
-	fun_str = "UnknownError"
+    fun = UnknownError
 
-	if result:
-		try:
-			raise fun("message1", **indata)
-		except fun as e:
-			exception_dict = e.exception_dict()
-			expected_data = copy.deepcopy(indata)
-			diff = False
-			message = ""
-			for key, value in exception_dict.items():
-				# These are populated by the exception
-				if key in ("message", "exception", "traceback"):
-					continue
-				expected_value = deep_get(expected_data, DictPath(key), "")
-				if value != expected_value:
-					if not diff:
-						message = f"{fun_str} returned incorrect output:\n"
-					message = f"    {value}    {expected_value}"
-					diff = True
-					result = False
-			try:
-				if (tmp := str(e)) != "message1":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"message1\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-	if result:
-		try:
-			raise fun("message2")
-		except fun:
-			pass
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
-	if result:
-		try:
-			raise fun("")
-		except fun as e:
-			try:
-				if (tmp := str(e)) != "No further details were provided":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
+    if result:
+        try:
+            raise fun("message1", **indata)
+        except fun as e:
+            exception_dict = e.exception_dict()
+            expected_data = copy.deepcopy(indata)
+            diff = False
+            message = ""
+            for key, value in exception_dict.items():
+                # These are populated by the exception
+                if key in ("message", "exception", "traceback"):
+                    continue
+                expected_value = deep_get(expected_data, DictPath(key), "")
+                if value != expected_value:
+                    if not diff:
+                        message = f"{fun.__name__} returned incorrect output:\n"
+                    message = f"    {value}    {expected_value}"
+                    diff = True
+                    result = False
+            try:
+                if (tmp := str(e)) != "message1":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"message1\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+    if result:
+        try:
+            raise fun("message2")
+        except fun:
+            pass
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
+    if result:
+        try:
+            raise fun("")
+        except fun as e:
+            try:
+                if (tmp := str(e)) != "No further details were provided":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
+    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
-	indata = {
-		"message": "Error: an error message.",
-		"subexception": ValueError,
-		"severity": LogLevel.ERR,
-		"facility": "facility",
-		"formatted_msg": [[("Error", "error"), (": an error message.", "default")]],
-		"timestamp": none_timestamp,
-		"file": "thisfile",
-		"function": "thatfunction",
-		"lineno": "42",
-		"ppid": "1234567",
-	}
+    indata = {
+        "message": "Error: an error message.",
+        "subexception": ValueError,
+        "severity": LogLevel.ERR,
+        "facility": "facility",
+        "formatted_msg": [[("Error", "error"), (": an error message.", "default")]],
+        "timestamp": none_timestamp,
+        "file": "thisfile",
+        "function": "thatfunction",
+        "lineno": "42",
+        "ppid": "1234567",
+    }
 
-	fun = ArgumentValidationError
-	fun_str = "ArgumentValidationError"
+    fun = ArgumentValidationError
 
-	if result:
-		try:
-			raise fun(**indata)
-		except fun as e:
-			exception_dict = e.exception_dict()
-			expected_data = copy.deepcopy(indata)
-			diff = False
-			message = ""
-			for key, value in exception_dict.items():
-				# These are populated by the exception
-				if key in ("message", "exception", "traceback"):
-					continue
-				expected_value = deep_get(expected_data, DictPath(key), "")
-				if value != expected_value:
-					if not diff:
-						message = f"{fun_str} returned incorrect output:\n"
-					message = f"    {value}    {expected_value}"
-					diff = True
-					result = False
-			try:
-				if (tmp := str(e)) != "(<class 'ValueError'>): Error: an error message.":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): Error: An error message.\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"(<class 'ValueError'>): Error: an error message.\""
-				result = False
-	if result:
-		try:
-			raise fun(formatted_msg = [[("Error", "error"), (": an error message.", "default")]])
-		except fun:
-			pass
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
-	if result:
-		try:
-			raise fun()
-		except fun as e:
-			try:
-				if (tmp := str(e)) != "No further details were provided":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
+    if result:
+        try:
+            raise fun(**indata)
+        except fun as e:
+            exception_dict = e.exception_dict()
+            expected_data = copy.deepcopy(indata)
+            diff = False
+            message = ""
+            for key, value in exception_dict.items():
+                # These are populated by the exception
+                if key in ("message", "exception", "traceback"):
+                    continue
+                expected_value = deep_get(expected_data, DictPath(key), "")
+                if value != expected_value:
+                    if not diff:
+                        message = f"{fun.__name__} returned incorrect output:\n"
+                    message = f"    {value}    {expected_value}"
+                    diff = True
+                    result = False
+            try:
+                if (tmp := str(e)) != "(<class 'ValueError'>): Error: an error message.":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): Error: An error message.\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"(<class 'ValueError'>): Error: an error message.\""
+                result = False
+    if result:
+        try:
+            raise fun(formatted_msg=[[("Error", "error"), (": an error message.", "default")]])
+        except fun:
+            pass
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
+    if result:
+        try:
+            raise fun()
+        except fun as e:
+            try:
+                if (tmp := str(e)) != "No further details were provided":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
+    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
-	indata = {
-		"subexception": ValueError,
-		"severity": LogLevel.ERR,
-		"facility": "facility",
-		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
-		"timestamp": none_timestamp,
-		"file": "thisfile",
-		"function": "thatfunction",
-		"lineno": "42",
-		"ppid": "1234567",
-	}
+    indata = {
+        "subexception": ValueError,
+        "severity": LogLevel.ERR,
+        "facility": "facility",
+        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "timestamp": none_timestamp,
+        "file": "thisfile",
+        "function": "thatfunction",
+        "lineno": "42",
+        "ppid": "1234567",
+    }
 
-	fun = ProgrammingError
-	fun_str = "ProgrammingError"
+    fun = ProgrammingError
 
-	if result:
-		try:
-			raise fun("message1", **indata)
-		except fun as e:
-			exception_dict = e.exception_dict()
-			expected_data = copy.deepcopy(indata)
-			diff = False
-			message = ""
-			for key, value in exception_dict.items():
-				# These are populated by the exception
-				if key in ("message", "exception", "traceback"):
-					continue
-				expected_value = deep_get(expected_data, DictPath(key), "")
-				if value != expected_value:
-					if not diff:
-						message = f"{fun_str} returned incorrect output:\n"
-					message = f"    {value}    {expected_value}"
-					diff = True
-					result = False
-			try:
-				if (tmp := str(e)) != "(<class 'ValueError'>): message1":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): message1\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-	if result:
-		try:
-			raise fun("message2")
-		except fun:
-			pass
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
-	if result:
-		try:
-			raise fun("")
-		except fun as e:
-			try:
-				if (tmp := str(e)) != "No further details were provided":
-					message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
+    if result:
+        try:
+            raise fun("message1", **indata)
+        except fun as e:
+            exception_dict = e.exception_dict()
+            expected_data = copy.deepcopy(indata)
+            diff = False
+            message = ""
+            for key, value in exception_dict.items():
+                # These are populated by the exception
+                if key in ("message", "exception", "traceback"):
+                    continue
+                expected_value = deep_get(expected_data, DictPath(key), "")
+                if value != expected_value:
+                    if not diff:
+                        message = f"{fun.__name__} returned incorrect output:\n"
+                    message = f"    {value}    {expected_value}"
+                    diff = True
+                    result = False
+            try:
+                if (tmp := str(e)) != "(<class 'ValueError'>): message1":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): message1\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+    if result:
+        try:
+            raise fun("message2")
+        except fun:
+            pass
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
+    if result:
+        try:
+            raise fun("")
+        except fun as e:
+            try:
+                if (tmp := str(e)) != "No further details were provided":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days = 1)).astimezone()
+    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
-	indata = {
-		"path": FilePath("/etc/passwd"),
-		"severity": LogLevel.ERR,
-		"facility": "facility",
-		"formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
-		"timestamp": none_timestamp,
-		"file": "thisfile",
-		"function": "thatfunction",
-		"lineno": "42",
-		"ppid": "1234567",
-	}
+    indata = {
+        "path": FilePath("/etc/passwd"),
+        "severity": LogLevel.ERR,
+        "facility": "facility",
+        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "timestamp": none_timestamp,
+        "file": "thisfile",
+        "function": "thatfunction",
+        "lineno": "42",
+        "ppid": "1234567",
+    }
 
-	fun = FilePathAuditError
-	fun_str = "FilePathAuditError"
+    fun = FilePathAuditError
 
-	if result:
-		try:
-			raise fun("message1", **indata)
-		except fun as e:
-			exception_dict = e.exception_dict()
-			expected_data = copy.deepcopy(indata)
-			diff = False
-			message = ""
-			for key, value in exception_dict.items():
-				# These are populated by the exception
-				if key in ("message", "exception", "traceback"):
-					continue
-				expected_value = deep_get(expected_data, DictPath(key), "")
-				if value != expected_value:
-					if not diff:
-						message = f"{fun_str} returned incorrect output:\n"
-					message = f"    {value}    {expected_value}"
-					diff = True
-					result = False
-			try:
-				if (tmp := str(e)) != "Security policy violation for path /etc/passwd.  message1":
-					message = f"{fun_str} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path /etc/passwd.  message1\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-	if result:
-		try:
-			raise fun("message2")
-		except fun:
-			pass
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
-	if result:
-		try:
-			raise fun("")
-		except fun as e:
-			try:
-				if (tmp := str(e)) != "Security policy violation for path <omitted>.  No further details were provided":
-					message = f"{fun_str} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path <omitted>.  No further details were provided\""
-					result = False
-			except Exception as e:
-				message = f"{fun_str}.__str__() raised {e} instead of returning \"message1\""
-				result = False
-		except Exception as e:
-			message = f"{fun_str} raised {e} instead of {fun_str}"
-			result = False
+    if result:
+        try:
+            raise fun("message1", **indata)
+        except fun as e:
+            exception_dict = e.exception_dict()
+            expected_data = copy.deepcopy(indata)
+            diff = False
+            message = ""
+            for key, value in exception_dict.items():
+                # These are populated by the exception
+                if key in ("message", "exception", "traceback"):
+                    continue
+                expected_value = deep_get(expected_data, DictPath(key), "")
+                if value != expected_value:
+                    if not diff:
+                        message = f"{fun.__name__} returned incorrect output:\n"
+                    message = f"    {value}    {expected_value}"
+                    diff = True
+                    result = False
+            try:
+                if (tmp := str(e)) != "Security policy violation for path /etc/passwd.  message1":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path /etc/passwd.  message1\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+    if result:
+        try:
+            raise fun("message2")
+        except fun:
+            pass
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
+    if result:
+        try:
+            raise fun("")
+        except fun as e:
+            try:
+                if (tmp := str(e)) != "Security policy violation for path <omitted>.  No further details were provided":
+                    message = f"{fun.__name__} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path <omitted>.  No further details were provided\""
+                    result = False
+            except Exception as e2:
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__} raised {e} instead of {fun.__name__}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = validate_args
+    fun = validate_args
 
-	if result:
-		# Indata format:
-		# (kwargs_properties, kwargs, expected_exception)
-		testdata = (
-			# Empty data should pass
-			({}, {}, None),
-			# Now try arguments that are invalid for validate_args() itself
-			({
-				"__allof": ("foo"), # Should be a dict; the missing comma turns it into just a string
-				"foo": {
-					"types": (int, ),
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo"), # Should be a dict; the missing comma turns it into just a string
-				"foo": {
-					"types": (int, ),
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int), # Should be a dict; the missing comma turns it into just a string
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int, ),
-					"range": ("foo", 4), # Should be int|float
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int, ),
-					"range": (1, 2, 4), # Should have 2 elements
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int, ),
-					"range": (1, ), # Should have 2 elements
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int, ),
-					"range": (0, 4),
-					"none": 1, # Should be bool
-				},
-			}, {"foo": 1}, ArgumentValidationError),
-			# Now let's validate arguments instead of the validator...
-			({
-				"__anyof": ("foo",),
-				"foo": {
-					"types": (int, ),
-					"range": (0, 4),
-				},
-			}, {"foo": 1}, None),
-			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (None, 4)}}, {
-				"foo": 1,	# OK
-			}, None),
-			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, None)}}, {
-				"foo": 1,	# OK
-			}, None),
-			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (2, 4)}}, {
-				"foo": 1,	# Out of range <
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, 0)}}, {
-				"foo": 1,	# Out of range >
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (list,)}}, {
-				"foo": 1,	# Invalid type
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
-				"foo": "bar",	# OK
-			}, None),
-			({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
-				"foo": None,	# None
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (str, dict,)}}, {
-				"foo": None,	# None
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (str,), "none": True}}, {
-				"foo": None,	# OK
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (int,float,), "none": True}}, {
-				"foo": "bar",	# OK
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (0, 5)}}, {
-				"foo": "bar",	# OK
-			}, None),
-			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (5, 7)}}, {
-				"foo": "bar",	# Out of range < len(str)
-			}, ArgumentValidationError),
-			({"__anyof": ("foo",), "foo": {"types": (str,), "range": (1, 2)}}, {
-				"foo": "bar",	# Out of range > len(str)
-			}, ArgumentValidationError),
-			({"__allof": ("foo","bar",), # "bar" is missing
-			  "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
-			({"__anyof": ("foo","bar",), # "bar" is missing, but that's OK
-			  "foo": {"types": (int,)}}, {"foo": 1}, None),
-			({"__anyof": ("bar",), # None of the keys in __anyof exists; that's NOT ok
-			  "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
-			({"__allof": ("foo", "bar",),
-			  "foo": {"types": (int,)}, "bar": {"types": (int,)}}, {"foo": 1, "bar": 2}, None),
-			({"__allof": ("foo", "bar",),
-			  "foo": {"types": (str,)}, "bar": {"types": (str,)}}, {
-				"foo": 1,	# Wrong type
-				"bar": 2,	# Wrong type
-			 }, ArgumentValidationError),
-		)
-		for indata in testdata:
-			kwargs_spec, kwargs, expected_exception = indata
-			try:
-				fun(kwargs_spec = kwargs_spec, kwargs)
-				if expected_exception is not None:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"kwargs_properties:\n" \
-						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
-						  f"           kwargs:\n" \
-						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
-						  f"         expected: {expected_exception}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"kwargs_properties:\n" \
-							  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
-							  f"           kwargs:\n" \
-							  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
-							  f"         expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"kwargs_properties:\n" \
-						  f"{yaml_dump(kwargs_properties, base_indent = 19)}\n" \
-						  f"           kwargs:\n" \
-						  f"{yaml_dump(kwargs, base_indent = 19)}\n" \
-						  f"         expected: {expected_result}\n" \
-						  f"        exception: {repr(e).split('(')[0]}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (kwargs_spec, kwargs, expected_exception)
+        testdata = (
+            # Empty data should pass
+            ({}, {}, None),
+            # Now try arguments that are invalid for validate_args() itself
+            ({
+                "__allof": ("foo"),  # Should be a dict; the missing comma turns it into just a string
+                "foo": {
+                    "types": (int, ),
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo"),  # Should be a dict; the missing comma turns it into just a string
+                "foo": {
+                    "types": (int, ),
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int),  # Should be a dict; the missing comma turns it into just a string
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int, ),
+                    "range": ("foo", 4),  # Should be int|float
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int, ),
+                    "range": (1, 2, 4),  # Should have 2 elements
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int, ),
+                    "range": (1, ),  # Should have 2 elements
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int, ),
+                    "range": (0, 4),
+                    "none": 1,  # Should be bool
+                },
+            }, {"foo": 1}, ArgumentValidationError),
+            # Now let's validate arguments instead of the validator...
+            ({
+                "__anyof": ("foo",),
+                "foo": {
+                    "types": (int, ),
+                    "range": (0, 4),
+                },
+            }, {"foo": 1}, None),
+            ({"__anyof": ("foo",), "foo": {"types": (int,), "range": (None, 4)}}, {
+                "foo": 1,    # OK
+            }, None),
+            ({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, None)}}, {
+                "foo": 1,    # OK
+            }, None),
+            ({"__anyof": ("foo",), "foo": {"types": (int,), "range": (2, 4)}}, {
+                "foo": 1,    # Out of range <
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (int,), "range": (0, 0)}}, {
+                "foo": 1,    # Out of range >
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (list,)}}, {
+                "foo": 1,    # Invalid type
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
+                "foo": "bar",    # OK
+            }, None),
+            ({"__anyof": ("foo",), "foo": {"types": (str,)}}, {
+                "foo": None,    # None
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (str, dict,)}}, {
+                "foo": None,    # None
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (str,), "none": True}}, {
+                "foo": None,    # OK
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (int, float,), "none": True}}, {
+                "foo": "bar",    # OK
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (str,), "range": (0, 5)}}, {
+                "foo": "bar",    # OK
+            }, None),
+            ({"__anyof": ("foo",), "foo": {"types": (str,), "range": (5, 7)}}, {
+                "foo": "bar",    # Out of range < len(str)
+            }, ArgumentValidationError),
+            ({"__anyof": ("foo",), "foo": {"types": (str,), "range": (1, 2)}}, {
+                "foo": "bar",    # Out of range > len(str)
+            }, ArgumentValidationError),
+            ({"__allof": ("foo", "bar"),  # "bar" is missing
+              "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
+            ({"__anyof": ("foo", "bar"),  # "bar" is missing, but that's OK
+              "foo": {"types": (int,)}}, {"foo": 1}, None),
+            ({"__anyof": ("bar",),  # None of the keys in __anyof exists; that's NOT ok
+              "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
+            ({"__allof": ("foo", "bar",),
+              "foo": {"types": (int,)}, "bar": {"types": (int,)}}, {"foo": 1, "bar": 2}, None),
+            ({"__allof": ("foo", "bar",),
+              "foo": {"types": (str,)}, "bar": {"types": (str,)}}, {
+                "foo": 1,    # Wrong type
+                "bar": 2,    # Wrong type
+             }, ArgumentValidationError),
+        )
+        for indata in testdata:
+            kwargs_spec, kwargs, expected_exception = indata
+            try:
+                fun(kwargs_spec=kwargs_spec, kwargs=kwargs)
+                if expected_exception is not None:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"   kwargs_spec:\n" \
+                          f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                          f"         kwargs:\n" \
+                          f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                          f"       expected: {expected_exception}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"    kwargs_spec:\n" \
+                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                              f"         kwargs:\n" \
+                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                              f"       expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"   kwargs_spec:\n" \
+                          f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                          f"         kwargs:\n" \
+                          f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                          f"      exception: {repr(e).split('(')[0]}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = deep_get_list
-	fun_str = "deep_get_list"
+    fun = deep_get_list
 
-	if result:
-		obj = {'spec': {'ports': [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
-					  {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}]}}
+    if result:
+        obj = {'spec': {'ports': [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
+                      {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}]}}
 
-		# Indata format:
-		# (paths, default, fallback_on_empty, expected_result, expected_exception)
-		testdata = (
-			(["spec#ports"], [], False, [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
-						     {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
-			(["spec#ports#name"], [], False, ["port1", "port2"], None),
-			(["spec#ports#protocol", "spec#ports#name"], [], False, ["TCP", "UDP"], None),
-			(["nonExistingPath", "spec#ports#name"], [], True, ["port1", "port2"], None),
-			([], [], False, [], None),
-			(None, [], False, [], None),
-			([None], [], False, [], None),
-			([""], [], False, [], None),
-			([""], ["foo"], True, ["foo"], None),
-			(["nonExistingPath"], ["fallback"], True, ["fallback"], None),
-		)
-		for indata in testdata:
-			paths, default, fallback_on_empty, expected_result, expected_exception = indata
-			try:
-				tmp = fun(dictionary = obj, paths = paths, default = default, fallback_on_empty = fallback_on_empty)
-				if tmp != expected_result:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"            paths: {paths}\n" \
-						  f"          default: {default}\n" \
-						  f"fallback_on_empty: {fallback_on_empty}\n" \
-						  f"           result: {tmp}\n" \
-						  f"         expected: {expected_result}\n"
+        # Indata format:
+        # (paths, default, fallback_on_empty, expected_result, expected_exception)
+        testdata = (
+            (["spec#ports"], [], False, [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
+                             {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
+            (["spec#ports#name"], [], False, ["port1", "port2"], None),
+            (["spec#ports#protocol", "spec#ports#name"], [], False, ["TCP", "UDP"], None),
+            (["nonExistingPath", "spec#ports#name"], [], True, ["port1", "port2"], None),
+            ([], [], False, [], None),
+            (None, [], False, [], None),
+            ([None], [], False, [], None),
+            ([""], [], False, [], None),
+            ([""], ["foo"], True, ["foo"], None),
+            (["nonExistingPath"], ["fallback"], True, ["fallback"], None),
+        )
+        for indata in testdata:
+            paths, default, fallback_on_empty, expected_result, expected_exception = indata
+            try:
+                tmp = fun(dictionary=obj, paths=paths, default=default, fallback_on_empty=fallback_on_empty)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"            paths: {paths}\n" \
+                          f"          default: {default}\n" \
+                          f"fallback_on_empty: {fallback_on_empty}\n" \
+                          f"           result: {tmp}\n" \
+                          f"         expected: {expected_result}\n"
 
-				if expected_exception is not None:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"         expected: {expected_exception}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun_str}() did not yield expected result:\n" \
-							  f"         expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun_str}() did not yield expected result:\n" \
-						  f"         expected: {expected_result}\n" \
-						  f"        exception: {repr(e).split('(')[0]}\n"
-					result = False
-					break
-	return message, result
+                if expected_exception is not None:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"         expected: {expected_exception}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"         expected: {expected_result}\n" \
+                          f"        exception: {repr(e).split('(')[0]}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	indata = LogLevel.ERR
-	expected_result = "Error"
+    indata = LogLevel.ERR
+    expected_result = "Error"
 
-	fun = loglevel_to_name
-	fun_str = "loglevel_to_name"
+    fun = loglevel_to_name
 
-	if result:
-		if (tmp := fun(indata)) != expected_result:
-			message = f"{fun_str} returned incorrect output:\n      output: {tmp}\n    expected: {expected_result}"
-			result = False
+    if result:
+        if (tmp := fun(indata)) != expected_result:
+            message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: {expected_result}"
+            result = False
 
-	return message, result
+    return message, result
+
 
 tests: Dict = {
-	("deep_get()", ): {
-		"callable": test_deep_get,
-		"result": None,
-	},
-	("deep_get_with_fallback()", ): {
-		"callable": test_deep_get_with_fallback,
-		"result": None,
-	},
-	("deep_set()", ): {
-		"callable": test_deep_set,
-		"result": None,
-	},
-	("UnknownError", ): {
-		"callable": test_unknownerror,
-		"result": None,
-	},
-	("ArgumentValidationError", ): {
-		"callable": test_argumentvalidationerror,
-		"result": None,
-	},
-	("ProgrammingError", ): {
-		"callable": test_programmingerror,
-		"result": None,
-	},
-	("FilePathAuditError", ): {
-		"callable": test_filepathauditerror,
-		"result": None,
-	},
-	("validate_args()", ): {
-		"callable": test_validate_args,
-		"result": None,
-	},
-	("deep_get_list()", ): {
-		"callable": test_deep_get_list,
-		"result": None,
-	},
-	("loglevel_to_name()", ): {
-		"callable": test_loglevel_to_name,
-		"result": None,
-	},
+    ("deep_get()", ): {
+        "callable": test_deep_get,
+        "result": None,
+    },
+    ("deep_get_with_fallback()", ): {
+        "callable": test_deep_get_with_fallback,
+        "result": None,
+    },
+    ("deep_set()", ): {
+        "callable": test_deep_set,
+        "result": None,
+    },
+    ("UnknownError", ): {
+        "callable": test_unknownerror,
+        "result": None,
+    },
+    ("ArgumentValidationError", ): {
+        "callable": test_argumentvalidationerror,
+        "result": None,
+    },
+    ("ProgrammingError", ): {
+        "callable": test_programmingerror,
+        "result": None,
+    },
+    ("FilePathAuditError", ): {
+        "callable": test_filepathauditerror,
+        "result": None,
+    },
+    ("validate_args()", ): {
+        "callable": test_validate_args,
+        "result": None,
+    },
+    ("deep_get_list()", ): {
+        "callable": test_deep_get_list,
+        "result": None,
+    },
+    ("loglevel_to_name()", ): {
+        "callable": test_loglevel_to_name,
+        "result": None,
+    },
 }
 
+
 def main() -> int:
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
+    init_ansithemeprint(themefile=None)
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
-	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose = verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeString(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeString("  FAIL", "error"),
+                            ANSIThemeString(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeString("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	if fail > 0:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-	if fail > 0:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+    if fail:
+        ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeString("  • ", "separator"),
+                            ANSIThemeString(testcase, "default")], stderr=True)
 
-	return fail
+    return fail
+
 
 if __name__ == "__main__":
-	main()
+    main()

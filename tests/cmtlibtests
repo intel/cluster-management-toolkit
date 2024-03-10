@@ -1350,6 +1350,7 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
 			("ID=debian", False, "debian", None),
 			("ID=ubuntu\nID_LIKE=debian", False, "debian", None),
 			("ID=\"suse opensuse\"", False, "suse", None),
+			("ID=\"fedora\"", False, "fedora", None),
 			("ID=", False, "", None),
 			("ID=", True, "", None),
 			("", False, "", None),
