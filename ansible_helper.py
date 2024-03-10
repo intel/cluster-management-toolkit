@@ -284,7 +284,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
     highlight: bool = deep_get(kwargs, DictPath("highlight"), False)
     include_groupvars: bool = deep_get(kwargs, DictPath("include_groupvars"), False)
     include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
-    include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), False)
+    include_hosts: bool = deep_get(kwargs, DictPath("include_hosts"), True)
 
     tmp = {}
 
