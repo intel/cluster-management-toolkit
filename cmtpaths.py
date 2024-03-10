@@ -26,6 +26,10 @@ LOGS_DIRNAME = "logs"
 CMT_LOGS_DIR = FilePath(str(PurePath(CMTDIR).joinpath(LOGS_DIRNAME)))
 VERSION_CACHE_DIRNAME = "version-cache"
 VERSION_CACHE_DIR = FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME)))
+VERSION_CACHE_LAST_UPDATED_PATH = \
+    FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME, "last-updated")))
+SOFTWARE_SOURCES_DIRNAME = "sources"
+SOFTWARE_SOURCES_DIR = FilePath(str(PurePath(CMTDIR).joinpath(SOFTWARE_SOURCES_DIRNAME)))
 AUDIT_LOG_BASENAME = "audit_log_"
 DEBUG_LOG_BASENAME = "debug_log_"
 

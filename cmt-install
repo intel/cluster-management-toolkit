@@ -19,15 +19,21 @@ import sys
 from typing import Dict, List, Set, Tuple, Union
 
 from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
-from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME, BINDIR, HOMEDIR, CMTDIR
-from cmtpaths import CMT_LOGS_DIR, VERSION_CACHE_DIR
-from cmtpaths import DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
-from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR, CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
-from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR, CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
+from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME
+from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, VERSION_CACHE_DIR
+from cmtpaths import DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR
+from cmtpaths import CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
+from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
+from cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
+from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
+from cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, CMT_CONFIG_FILE, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME, PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
+from cmtpaths import ANSIBLE_PLAYBOOK_DIRNAME, CMT_CONFIG_FILENAME
+from cmtpaths import PARSER_DIRNAME, THEME_DIRNAME, VIEW_DIRNAME
+from cmtpaths import SOFTWARE_SOURCES_DIRNAME, SOFTWARE_SOURCES_DIR
 
-from cmtio import execute_command_with_response, secure_copy, secure_mkdir, secure_symlink, secure_which
+from cmtio import execute_command_with_response
+from cmtio import secure_copy, secure_mkdir, secure_symlink, secure_which
 
 from commandparser import parse_commandline
 from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemeinput
@@ -69,6 +75,7 @@ EXECUTABLE_SYMLINKS = [
 ]
 
 MISC_SYMLINKS = [
+    (FilePath(os.path.join(os.getcwd(), SOFTWARE_SOURCES_DIRNAME)), SOFTWARE_SOURCES_DIR),
     (FilePath(os.path.join(os.getcwd(), ANSIBLE_PLAYBOOK_DIRNAME)), ANSIBLE_PLAYBOOK_DIR),
     (FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
     (FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),

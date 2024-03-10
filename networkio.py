@@ -8,11 +8,12 @@
 Network I/O helpers
 """
 
+from datetime import datetime
 import errno
 from getpass import getuser
 import hashlib
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import re
 import shutil
 import socket
@@ -20,16 +21,22 @@ import sys
 import tarfile
 import tempfile
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import paramiko
 
 import cmtlib
-from cmtio_yaml import secure_read_yaml
+from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-from cmtpaths import SSH_DIR
+from cmtpaths import SSH_DIR, SOFTWARE_SOURCES_DIR
+from cmtpaths import VERSION_CACHE_DIR,  VERSION_CACHE_LAST_UPDATED_PATH
 from ansithemeprint import ansithemeprint, ANSIThemeString
 from cmttypes import deep_get, DictPath, FilePath
+
+try:
+	from natsort import natsorted
+except ModuleNotFoundError:  # pragma: no cover
+	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
     import urllib3
@@ -404,7 +411,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
             url (str): The github API URL to check for latest version
             version_regex (str): A regex
         Returns:
-            version ([str]): A list of version number elements, or None in case of failure
+            ([str]): A list of version number elements, or None in case of failure
     """
     version: Optional[List[str]] = []
 
@@ -420,6 +427,174 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
                 tmp = _version_regex.match(line)
                 if tmp is not None:
                     version = list(tmp.groups())
+                    change
                     break
 
     return version
+
+
+def get_kubernetes_version(**kwargs: Any) -> str:
+    """
+    Extract the latest upstream Kubernetes version from the release notes
+
+        Parameters:
+            path (FilePath): The path to the release notes
+        Returns:
+            (str): The version string, or an empty string if not available
+    """
+    tmp_release_notes_path: Optional[FilePath] = deep_get(kwargs, DictPath("path"))
+    version = ""
+    changelog_version = ""
+
+    if tmp_release_notes_path:
+        release_notes_path = \
+            FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath(tmp_release_notes_path)))
+        d = secure_read_yaml(release_notes_path)
+        try:
+            # First the backup path
+            version = f"{d['schedules'][0]['release']}.0"
+        except KeyError:
+            pass
+        try:
+            version = d["schedules"][0]["previousPatches"][0]["release"]
+        except KeyError:
+            pass
+    if version:
+        changelog_version = version.rsplit(".", maxsplit=1)[0]
+    return version, changelog_version
+
+
+fetch_function_allowlist = {
+    "get_kubernetes_version": get_kubernetes_version,
+}
+
+
+def update_version_cache(**kwargs: Any) -> None:
+    """
+    Fetch the latest kubernetes version
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                software_sources_dir (FilePath): Path to the software-sources dir (optional)
+                                                 Default: "{HOME}/software-sources"
+                verbose (bool): True for verbose output about actions
+                force (bool): Force update the cache even if the interval isn't exceeded
+    """
+    software_sources_dir = deep_get(kwargs,
+                                    DictPath("software_sources_dir"), SOFTWARE_SOURCES_DIR)
+    verbose = deep_get(kwargs, DictPath("verbose"), False)
+    force = deep_get(kwargs, DictPath("force"), False)
+    # Substitute {HOME}/ for {HOMEDIR}
+    if software_sources_dir.startswith(("{HOME}/", "{HOME}\\")):
+        software_sources_dir = \
+            FilePath(str(PurePath(HOMEDIR).joinpath(software_sources_dir[len('{HOME}/'):])))
+
+    if not Path(software_sources_dir).is_dir():
+        sys.exit(f"{software_sources_dir} does not exist; "
+                 "you may need to (re-)run `cmt-install`; aborting.")
+
+    sources = {}
+    for path in natsorted(Path(software_sources_dir).iterdir()):
+        if not str(path).endswith((".yml", ".yaml")):
+            continue
+        source = secure_read_yaml(FilePath(str(path)), directory_is_symlink=True)
+        for key, data in source.items():
+            if verbose and key in sources:
+                old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
+                ansithemeprint([ANSIThemeString("Note", "note"),
+                                ANSIThemeString(": overriding entry ", "default"),
+                                ANSIThemeString(f"{key}", "emphasis"),
+                                ANSIThemeString(" from ", "default"),
+                                ANSIThemeString(f"{old_path}", "path"),
+                                ANSIThemeString(" with entry from ", "default"),
+                                ANSIThemeString(f"{path}", "path")])
+                sources.pop(key)
+            sources[key] = data
+    if Path(VERSION_CACHE_LAST_UPDATED_PATH).is_file():
+        last_update_data = secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH)
+    else:
+        last_update_data = {}
+    if last_update_data is None:
+        last_update_data = {}
+
+    for key, data in sources.items():
+        description = deep_get(data, DictPath("description"), "<none>")
+        interval = deep_get(data, DictPath("interval"), 60 * 60)
+        version_last_updated = deep_get(last_update_data, DictPath(f"{key}#version"))
+        if version_last_updated:
+            version_age = datetime.now() - version_last_updated
+        else:
+            version_age = None
+        changelog_last_updated = deep_get(last_update_data, DictPath(f"{key}#changelog"))
+        if changelog_last_updated:
+            changelog_age = datetime.now() - changelog_last_updated
+        else:
+            changelog_age = None
+        tmp_pre_fetch_function = deep_get(data, DictPath("candidate_version#pre_fetch_function"))
+        pre_fetch_function = deep_get(fetch_function_allowlist,
+                                      DictPath(tmp_pre_fetch_function))
+        pre_fetch_args = deep_get(data, DictPath("candidate_version#pre_fetch_args"))
+        tmp_post_fetch_function = deep_get(data, DictPath("candidate_version#post_fetch_function"))
+        post_fetch_function = deep_get(fetch_function_allowlist,
+                                       DictPath(tmp_post_fetch_function))
+        post_fetch_args = deep_get(data, DictPath("candidate_version#post_fetch_args"))
+
+        tmp_candidate_version_regex = deep_get(data, DictPath("candidate_version#regex"), "")
+        candidate_version_regex = rf"{tmp_candidate_version_regex}"
+        candidate_version_urls = deep_get(data, DictPath("candidate_version#urls"), [])
+
+        update_version = False
+        update_changelog = False
+
+        # By default we only update the cache once per hour unless forced
+        # or the configuration says differently
+        if force or not version_age or version_age.days > 0 or version_age.seconds > interval:
+            update_version = True
+        if force or not changelog_age or changelog_age.days > 0 or changelog_age.seconds > interval:
+            update_changelog = True
+
+        if pre_fetch_function and update_version:
+                version, changelog_version = pre_fetch_function(**pre_fetch_args)
+        fetch_urls = []
+        for candidate_version_url in candidate_version_urls:
+            url = deep_get(candidate_version_url, DictPath("url"))
+            dest = deep_get(candidate_version_url, DictPath("dest"))
+            fetch_urls.append((url, dest, None, None))
+        if fetch_urls and update_version:
+            if not download_files(VERSION_CACHE_DIR, fetch_urls):
+                ansithemeprint([ANSIThemeString("Error", "error"),
+                                ANSIThemeString(": Failed to fetch ", "default"),
+                                ANSIThemeString(f"{url}", "url"),
+                                ANSIThemeString("; skipping.", "default")], stderr=True)
+            else:
+                if key not in last_update_data:
+                    last_update_data[key] = {}
+                last_update_data[key]["version"] = datetime.now()
+                secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
+                                  last_update_data, permissions = 0o644)
+        if post_fetch_function:
+            version, changelog_version = post_fetch_function(**post_fetch_args)
+
+        # We (hopefully) have a version now; time to fetch the changelog (if requested)
+        if update_changelog:
+            changelog_urls = deep_get(data, DictPath("changelog#urls"), [])
+            fetch_urls = []
+            for changelog_url in changelog_urls:
+                url = deep_get(changelog_url, DictPath("url"))
+                if "<<<version>>>" in url and changelog_version == "":
+                    continue
+                url = cmtlib.substitute_string(url, {"<<<version>>>": changelog_version})
+                dest = deep_get(changelog_url, DictPath("dest"))
+                fetch_urls.append((url, dest, None, None))
+            if fetch_urls:
+                if not download_files(VERSION_CACHE_DIR, fetch_urls):
+                     ansithemeprint([ANSIThemeString("Error", "error"),
+                                     ANSIThemeString(": Failed to fetch ", "default"),
+                                     ANSIThemeString(f"{url}", "url"),
+                                     ANSIThemeString("; skipping.", "default")], stderr=True)
+                else:
+                    if key not in last_update_data:
+                        last_update_data[key] = {}
+                    last_update_data[key]["changelog"] = datetime.now()
+                    secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
+                                      last_update_data, permissions = 0o644)
