@@ -1570,6 +1570,7 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("", "kubeapps", "vhost.conf", "vhost.conf", "NGINX"),
     ("", "kubeapps", "k8s-api-proxy.conf", "k8s-api-proxy.conf", "NGINX"),
     ("", "linkerd-config", "values", "", "YAML"),
+    ("", "nfd-master-conf", "nfd-master.conf", "", "YAML"),
     ("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
     ("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
     ("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
