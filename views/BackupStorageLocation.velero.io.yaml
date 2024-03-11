@@ -9,7 +9,7 @@ listview:
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "phase", "last_validated", "default", "age"]
+      fields: ["namespace", "name", "phase", "last_validated", "default", "age", "message"]
   fields:
     default:
       header: "Default:"
@@ -17,27 +17,63 @@ listview:
       type: "bool"
     last_validated:
       header: "Last Validated:"
-      path: "status#lastValidated"
+      path: "status#lastValidationTime"
       type: "age"
+    message:
+      header: "Message:"
+      path: "status#message"
+      type: "str"
     phase:
       header: "Phase:"
       path: "status#phase"
       type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Available":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "Unavailable":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
 infoview:
   name: "Backup Storage Location Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["default", "object_storage", "provider"]
+        fields: ["default", "message", "object_storage", "provider", "phase"]
     rows:
       default:
         header: [["Default:", ["main", "infoheader"]]]
         path: "spec#default"
         type: "bool"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        type: "str"
       object_storage:
         header: [["Object Storage:", ["main", "infoheader"]]]
         path: "spec#objectStorage#bucket"
         type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Available":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Unavailable":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       provider:
         header: [["Provider:", ["main", "infoheader"]]]
         path: "spec#provider"
