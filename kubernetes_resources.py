@@ -3618,6 +3618,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/velero.io/v1/"],
         "api": "backupstoragelocations",
     },
+    ("DataDownload", "velero.io"): {
+        "api_paths": ["apis/velero.io/v2alpha1/"],
+        "api": "datadownloads",
+    },
+    ("DataUpload", "velero.io"): {
+        "api_paths": ["apis/velero.io/v2alpha1/"],
+        "api": "datauploads",
+    },
     ("DeleteBackupRequest", "velero.io"): {
         "api_paths": ["apis/velero.io/v1/"],
         "api": "deletebackuprequests",
