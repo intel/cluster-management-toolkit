@@ -1,8 +1,13 @@
 #! /bin/sh
-# vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -16,14 +21,14 @@ from typing import cast, Iterable, List, Optional, Tuple
 import yaml
 
 try:
-	import jsonschema
+    import jsonschema
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-jsonschema")
+    sys.exit("ModuleNotFoundError: you probably need to install python3-jsonschema")
 
 try:
-	from natsort import natsorted
+    from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
+    sys.exit("ModuleNotFoundError: you probably need to install python3-natsort")
 
 __version__ = "0.4"
 
@@ -31,252 +36,265 @@ failed_files = []
 
 
 def usage() -> None:
-	"""
-	Display usage information for the program.
-	"""
+    """
+    Display usage information for the program.
+    """
 
-	print("validate_yaml [OPTION]... TYPE")
-	print("validate_yaml [OPTION]... TYPE PATH...")
-	print("validate_yaml [OPTION]... SCHEMA PATH...")
-	print("")
-	print("Validate YAML files used by CMT")
-	print("")
-	print("themes|views|parsers                 Validate all YAML-files in the default directory for the specified type")
-	print("themes|views|parsers|SCHEMA PATH...  Validate all YAML-files at PATH for the specified type")
-	print("                                     if PATH is a directory, or the specified file if PATH is a file")
-	print("")
-	print("If no arguments are specified all YAML-files will be validated")
-	print("If SCHEMA isn't one of themes|views|parsers it's be expected to be a path to a valid JSON schema file")
-	print("")
-	print("Built-in paths are relative to the base directory of the CMT source code")
-	print("")
-	print("Note: Validating Ansible playbooks is out of scope for this program; use ansible-lint")
-	print("")
-	print("Global Options:")
-	print("-A,--abort-on-failure  Stop validation immediately if one file fails; normally all files are validated")
-	print("-S,--summary           Show a summary even when using --quiet")
-	print("-N,--no-summary        Don't show a summary even when using --verbose")
-	print("-R,--resume-from PATH  After a failed validation run resume validation from this file")
-	print("-q,--quiet             Be less verbose")
-	print("-v,--verbose           Be more verbose")
-	print("")
-	print("help|--help            Display this help and exit")
-	print("version|--version      Output version information and exit")
+    print("validate_yaml [OPTION]... TYPE")
+    print("validate_yaml [OPTION]... TYPE PATH...")
+    print("validate_yaml [OPTION]... SCHEMA PATH...")
+    print("")
+    print("Validate YAML files used by CMT")
+    print("")
+    print("themes|views|parsers                 Validate all YAML-files in the default")
+    print("                                       directory for the specified type")
+    print("themes|views|parsers|SCHEMA PATH...  Validate all YAML-files at PATH")
+    print("                                       for the specified type if PATH")
+    print("                                       is a directory, or the specified")
+    print("                                       file if PATH is a file")
+    print("")
+    print("If no arguments are specified all YAML-files will be validated")
+    print("If SCHEMA isn't one of themes|views|parsers it's be expected")
+    print("to be a path to a valid JSON schema file")
+    print("")
+    print("Built-in paths are relative to the base directory of the CMT source code")
+    print("")
+    print("Note: Validating Ansible playbooks is out of scope for this program;")
+    print("use ansible-lint")
+    print("")
+    print("Global Options:")
+    print("-A,--abort-on-failure  Stop validation immediately if one file fails;")
+    print("                         normally all files are validated")
+    print("-S,--summary           Show a summary even when using --quiet")
+    print("-N,--no-summary        Don't show a summary even when using --verbose")
+    print("-R,--resume-from PATH  After a failed validation run resume validation")
+    print("                         from this file")
+    print("-q,--quiet             Be less verbose")
+    print("-v,--verbose           Be more verbose")
+    print("")
+    print("help|--help            Display this help and exit")
+    print("version|--version      Output version information and exit")
 
 
 def version() -> None:
-	"""
-	Display version information for the program.
-	"""
+    """
+    Display version information for the program.
+    """
 
-	print(f"validate_yaml {__version__}")
-
-
-def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail: bool) -> Tuple[Optional[str], int, str]:
-	"""
-	Validate a YAML file against a JSON schema
-
-		Parameters:
-			(yaml_path, schema_path, verbose, abort_on_fail):
-				yaml_path (str): A path to a YAML file
-				schema_path (str): A path to the JSON schema to validate the YAML file against
-				verbose (int): The verbosity for output
-				abort_on_fail (bool): If true abort on first failure
-
-		Returns:
-			(file, retval, msg):
-				file (str): The processed file
-				retval (int): -1 for skipped files, 0 on success, 1 on failure
-				msg (str): The debug message
-	"""
-
-	retval = 0
-	msg = ""
-	file = None
-
-	if not yaml_path.endswith((".yaml", ".yml")):
-		if verbose > 2:
-			msg = f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n"
-		retval = -1
-	elif yaml_path.endswith("BUNDLE.yaml"):
-		if verbose > 2:
-			msg = f"\n{yaml_path} is a bundle; skipping.\n"
-		retval = -1
-	elif not os.path.isfile(yaml_path):
-		if verbose > 1:
-			msg = f"\n{yaml_path} is not a file; skipping.\n"
-		retval = -1
-	else:
-		yaml_data = {}
-
-		with open(schema_path, "r", encoding="utf-8") as f:
-			try:
-				schema = json.load(f)
-			except json.decoder.JSONDecodeError as e:
-				sys.exit(f"\nThe schema file {schema_path} is not valid JSON:" + f"\njson.decoder.JSONDecodeError: {e}")
-
-		try:
-			with open(yaml_path, "r", encoding="utf-8") as f:
-				yaml_data = yaml.safe_load(f)
-		except yaml.scanner.ScannerError as e:
-			sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
-		except yaml.parser.ParserError as e:
-			sys.exit(f"ParserError: {str(e)}\n\ninvalid YAML; aborting.")
-
-		if verbose > 1:
-			msg = f"Validating {yaml_path} with {schema_path}"
-
-		try:
-			jsonschema.validate(schema=schema, instance=yaml_data)
-		except jsonschema.exceptions.SchemaError as e:
-			msg += f"\nFailed to validate schema {schema_path}"
-			msg += f"\njsonschema.exceptions.SchemaError: {e}"
-			sys.exit(msg)
-		except jsonschema.exceptions.ValidationError as e:
-			tmp_msg = f"\n  Failed to validate {yaml_path} using {schema_path}\n" + f"\njsonschema.exceptions.ValidationError: {e}\n"
-			if abort_on_fail:
-				sys.exit(msg + tmp_msg)
-			elif verbose > 2:
-				msg += tmp_msg
-			file = yaml_path
-			retval = 1
-
-	return file, retval, msg
+    print(f"validate_yaml {__version__}")
 
 
+# pylint: disable-next=too-many-branches
+def validate_file(yaml_path: str, schema_path: str,
+                  verbose: int, abort_on_fail: bool) -> Tuple[Optional[str], int, str]:
+    """
+    Validate a YAML file against a JSON schema
+
+        Parameters:
+            (yaml_path, schema_path, verbose, abort_on_fail):
+                yaml_path (str): A path to a YAML file
+                schema_path (str): A path to the JSON schema to validate the YAML file against
+                verbose (int): The verbosity for output
+                abort_on_fail (bool): If true abort on first failure
+
+        Returns:
+            (file, retval, msg):
+                file (str): The processed file
+                retval (int): -1 for skipped files, 0 on success, 1 on failure
+                msg (str): The debug message
+    """
+
+    retval = 0
+    msg = ""
+    file = None
+
+    if not yaml_path.endswith((".yaml", ".yml")):
+        if verbose > 2:
+            msg = f"\n{yaml_path} does not end in .yaml or .yml; skipping.\n"
+        retval = -1
+    elif yaml_path.endswith("BUNDLE.yaml"):
+        if verbose > 2:
+            msg = f"\n{yaml_path} is a bundle; skipping.\n"
+        retval = -1
+    elif not os.path.isfile(yaml_path):
+        if verbose > 1:
+            msg = f"\n{yaml_path} is not a file; skipping.\n"
+        retval = -1
+    else:
+        yaml_data = {}
+
+        with open(schema_path, "r", encoding="utf-8") as f:
+            try:
+                schema = json.load(f)
+            except json.decoder.JSONDecodeError as e:
+                sys.exit(f"\nThe schema file {schema_path} is not valid JSON:"
+                         f"\njson.decoder.JSONDecodeError: {e}")
+
+        try:
+            with open(yaml_path, "r", encoding="utf-8") as f:
+                yaml_data = yaml.safe_load(f)
+        except yaml.scanner.ScannerError as e:
+            sys.exit(f"ScannerError: {str(e)}\n\ninvalid YAML; aborting.")
+        except yaml.parser.ParserError as e:
+            sys.exit(f"ParserError: {str(e)}\n\ninvalid YAML; aborting.")
+
+        if verbose > 1:
+            msg = f"Validating {yaml_path} with {schema_path}"
+
+        try:
+            jsonschema.validate(schema=schema, instance=yaml_data)
+        except jsonschema.exceptions.SchemaError as e:
+            msg += f"\nFailed to validate schema {schema_path}"
+            msg += f"\njsonschema.exceptions.SchemaError: {e}"
+            sys.exit(msg)
+        except jsonschema.exceptions.ValidationError as e:
+            tmp_msg = f"\n  Failed to validate {yaml_path} using {schema_path}\n" \
+                      + f"\njsonschema.exceptions.ValidationError: {e}\n"
+            if abort_on_fail:
+                sys.exit(msg + tmp_msg)
+            elif verbose > 2:
+                msg += tmp_msg
+            file = yaml_path
+            retval = 1
+
+    return file, retval, msg
+
+
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def main() -> int:
-	"""
-	Main function for the program
-	"""
-	abort_on_fail = False
-	verbose = 1
-	no_summary = None
+    """
+    Main function for the program
+    """
+    abort_on_fail = False
+    verbose = 1
+    no_summary = None
 
-	i = 1
-	schema = ""
-	schema_path = ""
-	yaml_paths: List[Tuple[str, str]] = []
-	resume_from = None
+    i = 1
+    schema = ""
+    schema_path = ""
+    yaml_paths: List[Tuple[str, str]] = []
+    resume_from = None
 
-	while i < len(sys.argv):
-		if sys.argv[i] in ["help", "--help"]:
-			usage()
-			sys.exit(0)
-		if sys.argv[i] in ["version", "--version"]:
-			version()
-			sys.exit(0)
-		elif sys.argv[i] in ["-q", "--quiet"]:
-			if verbose > 0:
-				verbose -= 1
-		elif sys.argv[i] in ["-v", "--verbose"]:
-			if verbose < 3:
-				verbose += 1
-		elif sys.argv[i] in ["-A", "--abort-on-failure"]:
-			abort_on_fail = True
-		elif sys.argv[i] in ["-S", "--summary"]:
-			no_summary = False
-		elif sys.argv[i] in ["-N", "--no-summary"]:
-			no_summary = True
-		elif sys.argv[i] in ["-R", "--resume-from"]:
-			i += 1
-			if i < len(sys.argv):
-				resume_from = sys.argv[i]
-				if not os.path.isfile(resume_from):
-					sys.exit("The --resume-from PATH has to be a file")
-			else:
-				sys.exit("Too few arguments; --resume-from requires a PATH")
-		else:
-			# If schema hasn't been set this is the schema to use;
-			# either an alias {views,themes,parsers} or a full path
-			if len(schema) == 0:
-				schema = sys.argv[i]
-				if schema in ["themes", "views", "parsers"]:
-					schema_path = f"tests/schemas/{schema}.json"
-				else:
-					schema_path = schema
-					if not os.path.isfile(schema_path) or not schema_path.lower().endswith(".json"):
-						sys.exit("SCHEMA has to be a path to a JSON schema file or one of {parsers,themes,views}")
-			else:
-				# This is a path to validate
-				yaml_paths.append((sys.argv[i], schema_path))
-		i += 1
+    while i < len(sys.argv):
+        if sys.argv[i] in ("help", "--help"):
+            usage()
+            sys.exit(0)
+        if sys.argv[i] in ("version", "--version"):
+            version()
+            sys.exit(0)
+        elif sys.argv[i] in ("-q", "--quiet"):
+            if verbose > 0:
+                verbose -= 1
+        elif sys.argv[i] in ("-v", "--verbose"):
+            if verbose < 3:
+                verbose += 1
+        elif sys.argv[i] in ("-A", "--abort-on-failure"):
+            abort_on_fail = True
+        elif sys.argv[i] in ("-S", "--summary"):
+            no_summary = False
+        elif sys.argv[i] in ("-N", "--no-summary"):
+            no_summary = True
+        elif sys.argv[i] in ("-R", "--resume-from"):
+            i += 1
+            if i < len(sys.argv):
+                resume_from = sys.argv[i]
+                if not os.path.isfile(resume_from):
+                    sys.exit("The --resume-from PATH has to be a file")
+            else:
+                sys.exit("Too few arguments; --resume-from requires a PATH")
+        else:
+            # If schema hasn't been set this is the schema to use;
+            # either an alias {views,themes,parsers} or a full path
+            if not schema:
+                schema = sys.argv[i]
+                if schema in ["themes", "views", "parsers"]:
+                    schema_path = f"tests/schemas/{schema}.json"
+                else:
+                    schema_path = schema
+                    if not os.path.isfile(schema_path) or not schema_path.lower().endswith(".json"):
+                        sys.exit("SCHEMA has to be a path to a JSON schema file"
+                                 " or one of {parsers,themes,views}")
+            else:
+                # This is a path to validate
+                yaml_paths.append((sys.argv[i], schema_path))
+        i += 1
 
-	# This way it's possible to disable the summary even when verbose
-	if no_summary is None:
-		if verbose > 0:
-			no_summary = False
-		else:
-			no_summary = True
+    # This way it's possible to disable the summary even when verbose
+    if no_summary is None:
+        if verbose > 0:
+            no_summary = False
+        else:
+            no_summary = True
 
-	if len(yaml_paths) == 0:
-		if schema in ["parsers", "themes", "views"]:
-			yaml_paths += [(schema, schema_path)]
-		else:
-			yaml_paths = [
-				("themes", "tests/schemas/themes.json"),
-				("views", "tests/schemas/views.json"),
-				("parsers", "tests/schemas/parsers.json"),
-			]
+    if not yaml_paths:
+        if schema in ["parsers", "themes", "views"]:
+            yaml_paths += [(schema, schema_path)]
+        else:
+            yaml_paths = [
+                ("themes", "tests/schemas/themes.json"),
+                ("views", "tests/schemas/views.json"),
+                ("parsers", "tests/schemas/parsers.json"),
+            ]
 
-	count = 0
-	fail = 0
-	skip = 0
+    count = 0
+    fail = 0
+    skip = 0
 
-	args = []
+    args = []
 
-	for yaml_path, schema_path in yaml_paths:
-		if not os.path.isfile(schema_path):
-			sys.exit(f"schema {schema_path} does not exist or is not a file; aborting.")
+    for yaml_path, schema_path in yaml_paths:
+        if not os.path.isfile(schema_path):
+            sys.exit(f"schema {schema_path} does not exist or is not a file; aborting.")
 
-		if os.path.isfile(yaml_path):
-			if resume_from is not None:
-				if yaml_path == resume_from:
-					args.append((yaml_path, schema_path, verbose, abort_on_fail))
-					resume_from = None
-			else:
-				args.append((yaml_path, schema_path, verbose, abort_on_fail))
-		elif os.path.isdir(yaml_path):
-			for path in os.listdir(yaml_path):
-				if resume_from is not None:
-					if f"{yaml_path}/{path}" == resume_from:
-						args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
-						resume_from = None
-				else:
-					args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
+        if os.path.isfile(yaml_path):
+            if resume_from is not None:
+                if yaml_path == resume_from:
+                    args.append((yaml_path, schema_path, verbose, abort_on_fail))
+                    resume_from = None
+            else:
+                args.append((yaml_path, schema_path, verbose, abort_on_fail))
+        elif os.path.isdir(yaml_path):
+            for path in os.listdir(yaml_path):
+                if resume_from is not None:
+                    if f"{yaml_path}/{path}" == resume_from:
+                        args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
+                        resume_from = None
+                else:
+                    args.append((f"{yaml_path}/{path}", schema_path, verbose, abort_on_fail))
 
-	with Pool() as pool:
-		result = pool.starmap(validate_file, cast(Iterable, natsorted(args)))
+    with Pool() as pool:
+        result = pool.starmap(validate_file, cast(Iterable, natsorted(args)))
 
-		for file, retval, msg in result:
-			if msg:
-				print(msg)
+        for file, retval, msg in result:
+            if msg:
+                print(msg)
 
-			if retval == -1:
-				skip += 1
-			else:
-				fail += retval
-			count += 1
-			if file is not None:
-				failed_files.append(file)
+            if retval == -1:
+                skip += 1
+            else:
+                fail += retval
+            count += 1
+            if file is not None:
+                failed_files.append(file)
 
-	if not no_summary:
-		print("\nSummary:")
-		if not abort_on_fail:
-			print(f"     fail: {fail}")
-		print(f"     skip: {skip}")
-		print(f"  success: {count - fail - skip}")
-		print(f"    total: {count}")
+    if not no_summary:
+        print("\nSummary:")
+        if not abort_on_fail:
+            print(f"     fail: {fail}")
+        print(f"     skip: {skip}")
+        print(f"  success: {count - fail - skip}")
+        print(f"    total: {count}")
 
-		if fail:
-			print("\n\nThe following files failed validation:")
-			print("---")
-			for file in failed_files:
-				print(f"  {file}")
+        if fail:
+            print("\n\nThe following files failed validation:")
+            print("---")
+            for file in failed_files:
+                print(f"  {file}")
 
-	if fail:
-		sys.exit(fail)
-	return 0
+    if fail:
+        sys.exit(fail)
+    return 0
 
 
 if __name__ == "__main__":
-	main()
+    main()
