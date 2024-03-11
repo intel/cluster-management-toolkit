@@ -2284,14 +2284,14 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 			if output_format == "entry":
 				entry = ""
 				if current_api_group != api_group:
-					entry += f"\t# {api_group}\n"
-				entry += f"\t(\"{kind}\", \"{api_group}\"): "
+					entry += f"    # {api_group}\n"
+				entry += f"    (\"{kind}\", \"{api_group}\"): "
 				entry += "{\n"
-				entry += f"\t\t\"api_paths\": [\"{api_path}\"],\n"
-				entry += f"\t\t\"api\": \"{name}\",\n"
+				entry += f"        \"api_paths\": [\"{api_path}\"],\n"
+				entry += f"        \"api\": \"{name}\",\n"
 				if not namespaced:
-					entry += "\t\t\"namespaced\": False,\n"
-				entry += "\t},"
+					entry += "        \"namespaced\": False,\n"
+				entry += "    },"
 				print(entry)
 			else:
 				if len(output) > 0:
