@@ -144,11 +144,10 @@ def validate_file(yaml_path: str, schema_path: str, verbose: int, abort_on_fail:
 	return file, retval, msg
 
 
-def main() -> None:
+def main() -> int:
 	"""
 	Main function for the program
 	"""
-
 	abort_on_fail = False
 	verbose = 1
 	no_summary = None
@@ -249,7 +248,7 @@ def main() -> None:
 		result = pool.starmap(validate_file, cast(Iterable, natsorted(args)))
 
 		for file, retval, msg in result:
-			if len(msg) > 0:
+			if msg:
 				print(msg)
 
 			if retval == -1:
@@ -268,11 +267,15 @@ def main() -> None:
 		print(f"  success: {count - fail - skip}")
 		print(f"    total: {count}")
 
-		if fail > 0:
+		if fail:
 			print("\n\nThe following files failed validation:")
 			print("---")
 			for file in failed_files:
 				print(f"  {file}")
+
+	if fail:
+		sys.exit(fail)
+	return 0
 
 
 if __name__ == "__main__":

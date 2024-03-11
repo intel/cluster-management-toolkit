@@ -206,7 +206,31 @@ def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
     fun = kubernetes_helper.kubectl_get_version
 
     if result:
-        tmp = fun()
+        mock_response = \
+            'clientVersion:\n' \
+            '  buildDate: "2023-08-24T11:23:10Z"\n' \
+            '  compiler: gc\n' \
+            '  gitCommit: 8dc49c4b984b897d423aab4971090e1879eb4f23\n' \
+            '  gitTreeState: clean\n' \
+            '  gitVersion: v1.28.1\n' \
+            '  goVersion: go1.20.7\n' \
+            '  major: "1"\n' \
+            '  minor: "28"\n' \
+            '  platform: linux/amd64\n' \
+            'kustomizeVersion: v5.0.4-0.20230601165947-6ce0bf390ce3\n' \
+            'serverVersion:\n' \
+            '  buildDate: "2023-08-24T11:16:30Z"\n' \
+            '  compiler: gc\n' \
+            '  gitCommit: 8dc49c4b984b897d423aab4971090e1879eb4f23\n' \
+            '  gitTreeState: clean\n' \
+            '  gitVersion: v1.28.1\n' \
+            '  goVersion: go1.20.7\n' \
+            '  major: "1"\n' \
+            '  minor: "28"\n' \
+            '  platform: linux/amd64'
+
+        with mock.patch("kubernetes_helper.execute_command_with_response", return_value=mock_response):
+            tmp = fun()
         if not (isinstance(tmp, tuple) and len(tmp) == 6 and \
                     isinstance(tmp[0], int) and isinstance(tmp[1], int) and \
                     isinstance(tmp[2], str) and \
@@ -931,6 +955,10 @@ tests: Dict = {
         "callable": test_update_api_status,
         "result": None,
     },
+    ("kubectl_get_version()",): {
+        "callable": test_kubectl_get_version,
+        "result": None,
+    },
     ("get_node_status()",): {
         "callable": test_get_node_status,
         "result": None,
@@ -946,10 +974,6 @@ tests: Dict = {
 }
 
 tests_with_cluster = {
-    ("kubectl_get_version()",): {
-        "callable": test_kubectl_get_version,
-        "result": None,
-    },
     ("get_ref_by_kind_name_namespace() (Developer mode)",): {
         "callable": test_get_ref_by_kind_name_namespace,
         "result": None,
@@ -994,19 +1018,20 @@ def main() -> int:
             failed_testcases.append(f"{i}: {', '.join(test)}")
 
     ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-    if fail > 0:
+    if fail:
         ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
     else:
         ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
     ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-    if fail > 0:
+    if fail:
         ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
             ansithemeprint([ANSIThemeString("  • ", "separator"),
                     ANSIThemeString(testcase, "default")], stderr=True)
+            sys.exit(fail)
 
-    return fail
+    return 0
 
 
 if __name__ == "__main__":

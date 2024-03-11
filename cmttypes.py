@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.

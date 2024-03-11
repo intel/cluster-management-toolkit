@@ -13,6 +13,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 import builtins
 from datetime import datetime
 import importlib
+import sys
 from typing import Any, Callable, Dict, List, Tuple
 from unittest import mock
 
@@ -1244,19 +1245,20 @@ def main() -> int:
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
 	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	if fail > 0:
+	if fail:
 		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
 	else:
 		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
 	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-	if fail > 0:
+	if fail:
 		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
 			ansithemeprint([ANSIThemeString("  • ", "separator"),
 					ANSIThemeString(testcase, "default")], stderr=True)
+		sys.exit(fail)
 
-	return fail
+	return 0
 
 
 if __name__ == "__main__":

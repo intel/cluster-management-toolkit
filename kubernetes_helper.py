@@ -34,7 +34,8 @@ from typing import Any, AnyStr, cast, Dict, List, Optional, Sequence, Tuple, Uni
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import yaml; "
+	         "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
@@ -42,13 +43,16 @@ from cryptography.hazmat.primitives import serialization
 try:
 	import urllib3
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import urllib3; you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import urllib3; "
+	         "you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
 from cmtpaths import HOMEDIR, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 import cmtlib
 #from cmtlog import debuglog
 #from cmttypes import LogLevel
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, FilePath, FilePathAuditError, ProgrammingError, SecurityChecks, SecurityPolicy, StatusGroup
+from cmttypes import deep_get, deep_get_with_fallback, DictPath
+from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+from cmttypes import SecurityChecks, SecurityPolicy, StatusGroup
 from cmtio import execute_command_with_response, secure_which
 from cmtio import secure_read
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
@@ -72,6 +76,7 @@ CIPHERS = [
 
 renew_lock = threading.Lock()
 
+
 def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetime]]:
 	"""
 	Given a Pod object, return the total number of restarts for all containers
@@ -85,7 +90,6 @@ def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetim
 				(int|datetime): The timestamp for the last restart
 						or -1 if number of restarts = 0
 	"""
-
 	restarts = 0
 	restarted_at: Union[int, datetime] = -1
 
@@ -102,6 +106,7 @@ def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetim
 		restarted_at = -1
 	return restarts, restarted_at
 
+
 def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Dict[str, Any]]) -> List[Tuple[str, str]]:
 	"""
 	Given a list of containers and a list of container statuses,
@@ -111,7 +116,7 @@ def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Di
 			containers ([dict]): The list of container info
 			container_statuses ([dict]): The list of container statuses
 		Returns:
-			[[str]]: The list of container info
+			([(str, str)]): The list of container info
 	"""
 	container_dict = {}
 	container_list = []
@@ -133,6 +138,7 @@ def get_containers(containers: List[Dict[str, Any]], container_statuses: List[Di
 
 	return container_list
 
+
 def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[Tuple[str, str], str]:
 	"""
 	Given an owner reference list, extract the controller (if any)
@@ -141,8 +147,8 @@ def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[
 			owner_references ([dict]): The list of owner references
 		Returns:
 			(((str, str), str)): A tuple made up of:
-				kind ((str, str)): The controller kind
-				name (str): The controller name
+				((str, str)): The controller kind
+				(str): The controller name
 	"""
 	controller = (("", ""), "")
 	if owner_references is not None:
@@ -161,6 +167,7 @@ def get_controller_from_owner_references(owner_references: List[Dict]) -> Tuple[
 
 	return controller
 
+
 def get_node_roles(node: Dict) -> List[str]:
 	"""
 	Get a list of the roles that the node belongs to
@@ -168,9 +175,8 @@ def get_node_roles(node: Dict) -> List[str]:
 		Parameters:
 			node (dict): The node object
 		Returns:
-			roles (list[str]): THe roles that the node belongs to
+			([str]): THe roles that the node belongs to
 	"""
-
 	roles: List[str] = []
 
 	node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
@@ -188,11 +194,16 @@ def get_node_roles(node: Dict) -> List[str]:
 
 	return roles
 
-# We could probably merge this into the list above?
+
+# We could probably merge this into kubernetes_resources?
 def resource_kind_to_rtype(resource: Tuple[str, str]) -> str:
 	"""
-	Given a kind return a resource type (basically a summary
-	of what type is).
+	Given a kind return a resource type (basically a summary of what type is).
+
+		Parameters:
+			resource ((str, str)): The resource
+		Returns:
+			(str): A Resource type
 	"""
 	rtypes = {
 		("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
@@ -246,14 +257,13 @@ def resource_kind_to_rtype(resource: Tuple[str, str]) -> str:
 		("VulnerabilityReport", "aquasecurity.github.io"): "[report]",
 		("Workflow", "argoproj.io"): "[controller]",
 	}
-
 	return rtypes.get(resource, "[unknown]")
+
 
 class KubernetesResourceCache:
 	"""
 	A class for caching Kubernetes resources
 	"""
-
 	updated = False
 
 	def __init__(self) -> None:
@@ -376,7 +386,6 @@ class KubernetesResourceCache:
 			Returns:
 				(int): The number of cached kinds
 		"""
-
 		if self.resource_cache is None:
 			return 0
 		return len(self.resource_cache)
@@ -394,6 +403,7 @@ class KubernetesResourceCache:
 			return 0
 
 		return len(deep_get(self.resource_cache[kind], DictPath("resources"), {}))
+
 
 class PoolManagerContext:
 	"""
@@ -460,6 +470,7 @@ class PoolManagerContext:
 			self.pool_manager.clear()
 		self.pool_manager = None
 
+
 def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 	"""
 	Given a kind tuple, return a string representation
@@ -469,9 +480,8 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 				kind (str): The kind
 				api_group (str): The API-group
 		Returns:
-			name (str): The string representation of kind + API-group
+			(str): The string representation of kind + API-group
 	"""
-
 	name = ""
 
 	if kind in kubernetes_resources:
@@ -479,6 +489,7 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 		name = f"{api}.{kind[1]}"
 		name = name.rstrip(".")
 	return name
+
 
 def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 	"""
@@ -492,14 +503,13 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 				kind (str): The API-name
 				api_group (str): The API-group
 		Returns:
-			kind (kind, api_group):
-				kind (str): The Kubernetes kind
-				api_group (str): The API-group
+			(str, str):
+				(str): The Kubernetes kind
+				(str): The API-group
 		Raises:
 			NameError: No matching API could be found
 			TypeError: kind is not a str or (str, str) tuple
 	"""
-
 	if not isinstance(kind, (str, tuple)):
 		raise TypeError("kind must be str or (str, str)")
 	if isinstance(kind, tuple) and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
@@ -520,7 +530,8 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 
 	guess = None
 
-	# If we have a tuple that didn't match we can try matching it against the api + api_group instead.
+	# If we have a tuple that didn't match we can try
+	# matching it against the api + api_group instead.
 	# To do that we need to scan.
 	for resource_kind, resource_data in kubernetes_resources.items():
 		api_name = deep_get(resource_data, DictPath("api"))
@@ -559,9 +570,11 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
 
 	raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
 
+
 def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: bool = False, local: bool = False) -> None:
 	"""
-	Update kubernetes_resources for a kind to indicate whether or not there are list and infoviews for them
+	Update kubernetes_resources for a kind to indicate
+	whether or not there are list and infoviews for them
 
 		Parameters:
 			kind ((kind, api_group)): The kind tuple
@@ -584,22 +597,25 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False, infoview: b
 	kubernetes_resources[kind]["info"] = infoview
 	kubernetes_resources[kind]["local"] = local
 
+
 def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[int], Optional[int], str]:
 	"""
 	Get kubectl & API-server version
 
 		Returns:
-			(kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version):
-				kubectl_major_version (int): Major client version
-				kubectl_minor_version (int): Minor client version
-				kubectl_git_version (str): Client GIT version
-				server_major_version (int): Major API-server version
-				server_minor_version (int): Minor API-server version
-				server_git_version (str): API-server GIT version
+			(int, int, str, int, int, str):
+				(int): Major client version
+				(int): Minor client version
+				(str): Client GIT version
+				(int): Major API-server version
+				(int): Minor API-server version
+				(str): API-server GIT version
 	"""
 	# Check kubectl version
 	try:
-		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"), fallback_allowlist = ["/etc/alternatives"], security_policy = SecurityPolicy.ALLOWLIST_RELAXED)
+		kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
+					    fallback_allowlist=["/etc/alternatives"],
+					    security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
 	except FileNotFoundError:  # pragma: no cover
 		return -1, -1, "", -1, -1, ""
 
@@ -631,6 +647,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str, Optional[i
 		server_git_version = "<unavailable>"
 
 	return kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version
+
 
 def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Dict]]:
 	"""

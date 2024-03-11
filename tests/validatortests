@@ -10,6 +10,7 @@ __doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 
 
 import builtins
 import importlib
+import sys
 from typing import Any, Dict, List, Tuple
 from unittest import mock
 import yaml
@@ -78,7 +79,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		expected_status = True
 		expected_result = True
 		for indata in valid_indata:
-			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			status, retval = fun(indata, error_on_failure=True)
 			if status != expected_status:
 				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
@@ -92,7 +93,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		expected_status = True
 		expected_result = False
 		for indata in valid_indata:
-			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			status, retval = fun(indata, error_on_failure=True)
 			if status != expected_status:
 				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
@@ -105,7 +106,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
 		invalid_indata = (None, 2, "2", "f", "foo")
 		expected_status = False
 		for indata in invalid_indata:
-			status, retval = fun(indata, error_on_failure = True, exit_on_failure = False)
+			status, retval = fun(indata, error_on_failure=True)
 			if status != expected_status:
 				message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
 				result = False
@@ -135,7 +136,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
 		)
 		for indata, range_min, range_max, expected_status, expected_exception in testdata:
 			try:
-				status = fun(range_min, range_max, indata, error_on_failure = True, exit_on_failure = False)
+				status = fun(range_min, range_max, indata, error_on_failure=True, exit_on_failure=False)
 				if status != expected_status:
 					message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n      output: {status}\n    expected: {expected_status}"
 					result = False
@@ -918,7 +919,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			options["message_on_failure"] = True
 			options["exit_on_failure"] = False
 			try:
-				if (status := fun(arg = arg, arg_string = arg_string, options = options)) != expected_status:
+				if (status := fun(arg=arg, arg_string=arg_string, options=options)) != expected_status:
 					message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n      output: {status}\n    expected: {expected_status}"
 					result = False
 					break
@@ -969,7 +970,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
 		)
 		for rtype, indata, expected_status, expected_exception in testdata:
 			try:
-				if (status := fun(rtype = rtype, name = indata)) != expected_status:
+				if (status := fun(rtype=rtype, name=indata)) != expected_status:
 					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"       rtype: {rtype}\n" \
@@ -1049,7 +1050,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
 		)
 		for indata, message_on_error, expected_status, expected_exception in testdata:
 			try:
-				if (status := fun(fqdn = indata, message_on_error = message_on_error)) != expected_status:
+				if (status := fun(fqdn=indata, message_on_error=message_on_error)) != expected_status:
 					message = f"{fun.__name__}() did not yield expected status:\n" \
 						  f"       input: {indata}\n" \
 						  f"      output: {status}\n" \
@@ -1134,19 +1135,20 @@ def main() -> int:
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
 	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	if fail > 0:
+	if fail:
 		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
 	else:
 		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
 	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-	if fail > 0:
+	if fail:
 		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
 			ansithemeprint([ANSIThemeString("  • ", "separator"),
 					ANSIThemeString(testcase, "default")], stderr = True)
+		sys.exit(fail)
 
-	return fail
+	return 0
 
 if __name__ == "__main__":
 	main()

@@ -669,18 +669,19 @@ def main() -> int:
 			fail += 1
 
 	print("\n\033[0;4;37mSummary:\033[0m")
-	if fail > 0:
+	if fail:
 		print(f"\033[1;31m  FAIL: {fail}\033[0m")
 	else:
 		print(f"\033[0;31m  FAIL: {fail}\033[0m")
 	print(f"\033[1;32m  PASS: {success}\033[0m")
 
-	if fail > 0:
+	if fail:
 		print("\n\033[0;4;37mFailed testcases:\033[0m")
 		for testcase in failed_testcases:
 			print(f"\033[38;5;240m  • \033[0m{testcase}", file=sys.stderr)
+		sys.exit(fail)
 
-	return fail
+	return 0
 
 
 if __name__ == "__main__":

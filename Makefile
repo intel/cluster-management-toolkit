@@ -64,7 +64,7 @@ coverage: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in tests/atptests tests/cmtlibtests tests/cursestests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
-		$$cmd run --branch --append $$test ;\
+		$$cmd run --branch --append $$test || exit 1 ;\
 	done ;\
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear ;\
@@ -95,9 +95,9 @@ coverage-ansible: setup_tests
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/cmtlibtests --include-ansible\n\n" ;\
-	$$cmd run --branch --append tests/cmtlibtests --include-ansible ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-ansible || exit 1 ;\
 	printf -- "\n\n  Running: tests/ansibletests\n\n" ;\
-	$$cmd run --branch --append tests/ansibletests ;\
+	$$cmd run --branch --append tests/ansibletests || exit 1 ;\
 	$$cmd report --sort cover --precision 1 ;\
 	$$cmd html --precision 1 ;\
 	$$cmd json
@@ -111,11 +111,11 @@ coverage-cluster: setup_tests
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
-	$$cmd run --branch --append tests/async_fetch ;\
+	$$cmd run --branch --append tests/async_fetch || exit 1 ;\
 	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
-	$$cmd run --branch --append tests/khtests --include-cluster ;\
+	$$cmd run --branch --append tests/khtests --include-cluster || exit 1 ;\
 	printf -- "\n\n  Running: tests/cmtlibtests --include-cluster\n\n" ;\
-	$$cmd run --branch --append tests/cmtlibtests --include-cluster ;\
+	$$cmd run --branch --append tests/cmtlibtests --include-cluster || exit 1 ;\
 	$$cmd report --sort cover --precision 1 ;\
 	$$cmd html --precision 1 ;\
 	$$cmd json
