@@ -288,7 +288,7 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 		for indata in testdata:
 			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
 			try:
-				with mock.patch("ansible_helper.Path.is_file", return_value=True),
+				with mock.patch("ansible_helper.Path.is_file", return_value=True), \
 				     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
 					tmp = fun(groups=groups, highlight=highlight, include_groupvar=include_groupvars, include_hostvars=include_hostvars, include_hosts=include_hosts)
 				if not (isinstance(tmp, list) and tmp and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
