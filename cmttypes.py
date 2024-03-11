@@ -517,22 +517,20 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
 
     anyof = deep_get(kwargs_spec, DictPath("__anyof"), ())
     allof = deep_get(kwargs_spec, DictPath("__allof"), ())
-    if not (isinstance(anyof, tuple) and
-            isinstance(allof, tuple) and
-            isinstance(kwargs_spec, dict) and
-            isinstance(kwargs, dict)):
+    if not (isinstance(anyof, tuple) and isinstance(allof, tuple)
+            and isinstance(kwargs_spec, dict) and isinstance(kwargs, dict)):
         msg = [
-            [( "validate_arguments()", "emphasis"),
-             ( " called with invalid argument(s):", "error")],
-            [( "    __anyof", "argument"), (" is ", "default"), (f"{type(anyof)}", "argument"),
-             ( " expected ", "default"), (f"{repr(tuple)}", "emphasis")],
-            [( "    __allof", "argument"), (" is ", "default"), (f"{type(allof)}", "argument"),
-             ( " expected ", "default"), (f"{repr(tuple)}", "emphasis")],
-            [( "    kwargs_spec", "argument"), (" is ", "default"),
+            [("validate_arguments()", "emphasis"),
+             (" called with invalid argument(s):", "error")],
+            [("    __anyof", "argument"), (" is ", "default"), (f"{type(anyof)}", "argument"),
+             (" expected ", "default"), (f"{repr(tuple)}", "emphasis")],
+            [("    __allof", "argument"), (" is ", "default"), (f"{type(allof)}", "argument"),
+             (" expected ", "default"), (f"{repr(tuple)}", "emphasis")],
+            [("    kwargs_spec", "argument"), (" is ", "default"),
              (f"{type(kwargs_spec)}", "argument"),
-             ( " expected ", "default"), (f"{repr(dict)}", "emphasis")],
-            [( "    kwargs", "argument"), (" is ", "default"), (f"{type(kwargs)}", "argument"),
-             ( " expected ", "default"), (f"{repr(dict)}", "emphasis")],
+             (" expected ", "default"), (f"{repr(dict)}", "emphasis")],
+            [("    kwargs", "argument"), (" is ", "default"), (f"{type(kwargs)}", "argument"),
+             (" expected ", "default"), (f"{repr(dict)}", "emphasis")],
         ]
 
         raise ArgumentValidationError(subexception=TypeError, formatted_msg=msg)
@@ -547,34 +545,33 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
         min_max = deep_get(data, DictPath("range"))
         kwarg = deep_get(kwargs, DictPath(key))
         # pylint: disable-next=too-many-boolean-expressions
-        if (expected_types is None or not isinstance(expected_types, tuple) or
-            not isinstance(none_acceptable, bool) or
-            (min_max is not None and
-             (not isinstance(min_max, tuple) or len(min_max) != 2 or
-              not (min_max[0] is None or isinstance(min_max[0], (int, float))) or
-              not (min_max[1] is None or isinstance(min_max[1], (int, float)))))):
+        if (expected_types is None or not isinstance(expected_types, tuple)
+            or not isinstance(none_acceptable, bool)
+            or (min_max is not None
+                and (not isinstance(min_max, tuple) or len(min_max) != 2
+                     or not (min_max[0] is None or isinstance(min_max[0], (int, float)))
+                     or not (min_max[1] is None or isinstance(min_max[1], (int, float)))))):
             msg = [
-                [( "validate_arguments()", "emphasis"),
-                 ( " called with invalid argument(s):", "error")],
-                [( "    types", "argument"),
-                 ( " is ", "default"),
+                [("validate_arguments()", "emphasis"),
+                 (" called with invalid argument(s):", "error")],
+                [("    types", "argument"),
+                 (" is ", "default"),
                  (f"{type(expected_types)}", "argument"),
-                 ( " expected ", "default"),
+                 (" expected ", "default"),
                  (f"{repr(tuple)}", "emphasis")],
-                [( "    none", "argument"),
-                 ( " is ", "default"),
+                [("    none", "argument"),
+                 (" is ", "default"),
                  (f"{type(none_acceptable)}", "argument"),
-                 ( " expected ", "default"),
+                 (" expected ", "default"),
                  (f"{repr(bool)}", "emphasis")],
-                [( "    range", "argument"),
-                 ( " is ", "default"),
+                [("    range", "argument"),
+                 (" is ", "default"),
                  (f"{type(min_max)}", "argument"),
-                 ( " expected ", "default"),
-                 ( "((int|float, int|float))", "emphasis")],
+                 (" expected ", "default"),
+                 ("((int|float, int|float))", "emphasis")],
             ]
 
             raise ArgumentValidationError(subexception=TypeError, formatted_msg=msg)
-
 
         if kwarg is None and not none_acceptable:
             if len(expected_types) == 1:
@@ -605,10 +602,10 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
                 results[key] = {
                     "subexception": TypeError,
                     "msg": [(f"    {key}", "argument"),
-                        ( " is ", "default"),
-                        (f"{type(kwarg)}", "emphasis"),
-                        ( " expected ", "default"),
-                        (f"{expected_types}", "emphasis")],
+                            (" is ", "default"),
+                            (f"{type(kwarg)}", "emphasis"),
+                            (" expected ", "default"),
+                            (f"{expected_types}", "emphasis")],
                 }
             else:
                 results[key] = {
@@ -639,13 +636,13 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
                     results[key] = {
                         "subexception": ValueError,
                         "msg": [(f"    {key}", "argument"),
-                                ( "=", "default"),
+                                ("=", "default"),
                                 (f"{kwarg}", "emphasis"),
-                                ( ", valid range is [", "default"),
+                                (", valid range is [", "default"),
                                 (f"{minval_str}", "numerical"),
-                                ( ", ", "default"),
+                                (", ", "default"),
                                 (f"{maxval_str}", "numerical"),
-                                ( "]", "default")],
+                                ("]", "default")],
                     }
                     continue
             else:
@@ -671,7 +668,7 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
     if anyof and not anyexists:
         msg = [
             [(f"{function}()", "emphasis"), (" called with invalid argument(s):", "error")],
-            [ ("    At least one of the following arguments must be present:", "default")],
+            [("    At least one of the following arguments must be present:", "default")],
         ]
         for key in anyof:
             msg.append([(f"{key}", "argument")])
@@ -683,7 +680,7 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
     if missing:
         msg = [
             [(f"{function}()", "emphasis"), (" called with invalid argument(s):", "error")],
-            [ ("    The following arguments are missing but must be present:", "default")],
+            [("    The following arguments are missing but must be present:", "default")],
         ]
         for key in missing:
             msg.append([(f"{key}", "argument")])
@@ -700,7 +697,7 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
             if not msg:
                 msg = [
                     [(f"{function}()", "emphasis"),
-                      (" called with invalid argument(s):", "error")],
+                     (" called with invalid argument(s):", "error")],
                 ]
             msg.append(submsg)
 

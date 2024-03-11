@@ -56,8 +56,8 @@ def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
             allowed_ips.append({
                 "lineattrs": WidgetLineAttrs.NORMAL,
                 "columns": [[ThemeString(f"{ip}", ThemeAttr("windowwidget", "default")),
-                         ThemeString("/", ThemeAttr("windowwidget", "dim")),
-                         ThemeString(f"{mask}", ThemeAttr("windowwidget", "default"))]],
+                             ThemeString("/", ThemeAttr("windowwidget", "dim")),
+                             ThemeString(f"{mask}", ThemeAttr("windowwidget", "default"))]],
             })
         else:
             allowed_ips.append({
@@ -234,6 +234,7 @@ def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
     return vlist
 
 
+# pylint: disable-next=too-many-branches
 def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
     """
     Get data in list format
@@ -332,6 +333,7 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
     return vlist
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
     """
     Get the specified fields from a dict list in list format
@@ -345,6 +347,7 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
     """
     vlist: List[Any] = []
 
+    # pylint: disable-next=too-many-nested-blocks
     if "path" in kwargs and "fields" in kwargs:
         raw_path = deep_get(kwargs, DictPath("path"))
         if isinstance(raw_path, str):
@@ -362,44 +365,39 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
                 if isinstance(field, dict):
                     default = deep_get(field, DictPath("default"), "")
                     field = deep_get(field, DictPath("name"))
-                _value = deep_get(item, DictPath(field), default)
-                if (isinstance(_value, list) or
-                        (i < len(fields) and
-                         i < len(override_types) and
-                         override_types[i] == "list")):
-                    value = ", ".join(_value)
-                elif (isinstance(_value, dict) or
-                        (i < len(fields) and
-                         i < len(override_types) and
-                         override_types[i] == "dict")):
-                    value = ", ".join(f"{key}:{val}" for (key, val) in _value.items())
+                value_ = deep_get(item, DictPath(field), default)
+                if (isinstance(value_, list)
+                        or (i < len(fields) and i < len(override_types)
+                            and override_types[i] == "list")):
+                    value = ", ".join(value_)
+                elif (isinstance(value_, dict)
+                        or (i < len(fields) and i < len(override_types)
+                            and override_types[i] == "dict")):
+                    value = ", ".join(f"{key}:{val}" for (key, val) in value_.items())
                 # We do not need to check for bool, since it is a subclass of int
-                elif (isinstance(_value, (int, float)) or
-                        (i < len(fields) and
-                         i < len(override_types) and
-                         override_types[i] == "str")):
-                    value = str(_value)
-                elif isinstance(_value, str):
-                    if (i < len(fields) and
-                            i < len(override_types) and
-                            override_types[i] == "timestamp"):
-                        if _value is None:
+                elif (isinstance(value_, (int, float))
+                        or (i < len(fields) and i < len(override_types)
+                            and override_types[i] == "str")):
+                    value = str(value_)
+                elif isinstance(value_, str):
+                    if (i < len(fields) and i < len(override_types)
+                            and override_types[i] == "timestamp"):
+                        if value_ is None:
                             value = "<unset>"
                         else:
-                            timestamp = timestamp_to_datetime(_value)
+                            timestamp = timestamp_to_datetime(value_)
                             value = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
-                    elif (i < len(fields) and
-                            i < len(override_types) and
-                            override_types[i] == "age"):
-                        if _value is None:
+                    elif (i < len(fields) and i < len(override_types)
+                            and override_types[i] == "age"):
+                        if value_ is None:
                             value = "<unset>"
                         else:
-                            timestamp = timestamp_to_datetime(_value)
+                            timestamp = timestamp_to_datetime(value_)
                             value = cmtlib.seconds_to_age(get_since(timestamp))
                     else:
-                        value = _value
+                        value = value_
                 else:
-                    raise ValueError(f"Unhandled type {type(_value)} for {field}={value}")
+                    raise ValueError(f"Unhandled type {type(value_)} for {field}={value}")
                 tmp.append(value)
             if pass_ref:
                 vlist.append({"fields": tmp, "ref": item})
@@ -426,7 +424,7 @@ def get_package_version_list(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[st
     return package_versions
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
     """
     Get a list of pod affinities
@@ -468,18 +466,25 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
                     topology = deep_get(selector, DictPath("topologyKey"), "")
                     # We are combining a few different policies,
                     # so the expressions can be in various places; not simultaneously though
-                    # hence += should be OK. The best thing would probably be to use deep_get_with_fallback though.
-                    selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchExpressions"), []))
-                    selectors += make_set_expression(deep_get(selector, DictPath("labelSelector#matchFields"), []))
-                    selectors += make_set_expression(deep_get(selector, DictPath("preference#matchExpressions"), []))
-                    selectors += make_set_expression(deep_get(selector, DictPath("preference#matchFields"), []))
-                    selectors += make_set_expression(deep_get(selector, DictPath("matchExpressions"), []))
-                    selectors += make_set_expression(deep_get(selector, DictPath("matchFields"), []))
-                    affinities.append((atype, f"{scheduling}{weight}", execution, selectors, topology))
+                    # hence += should be OK.
+                    # The best thing would probably be to use deep_get_with_fallback though.
+                    paths = [
+                        DictPath("labelSelector#matchExpressions"),
+                        DictPath("labelSelector#matchFields"),
+                        DictPath("preference#matchExpressions"),
+                        DictPath("preference#matchFields"),
+                        DictPath("matchExpressions"),
+                        DictPath("matchFields"),
+                    ]
+
+                    for path in paths:
+                        selectors += make_set_expression(deep_get(selector, path, []))
+                    affinities.append((atype, f"{scheduling}{weight}",
+                                       execution, selectors, topology))
     return affinities
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
     """
     Get a list of all pods referencing a configmap
@@ -559,7 +564,7 @@ def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str
     return vlist
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
     Get a prepopulated list of actions;
@@ -754,8 +759,8 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
 
     for subset in subsets:
         # Keep track of whether we have not ready addresses
-        if (deep_get(subset, DictPath("notReadyAddresses")) is not None and
-                deep_get(subset, DictPath("notReadyAddresses"))):
+        if (deep_get(subset, DictPath("notReadyAddresses")) is not None
+                and deep_get(subset, DictPath("notReadyAddresses"))):
             notready += 1
 
         if deep_get(subset, DictPath("addresses")) is None:
@@ -795,7 +800,7 @@ def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
              DictPath("spec#securityContext#runAsNonRoot"),
              DictPath("spec#template#spec#securityContext#runAsNonRoot")])),
         ("Run as Group",
-        deep_get_with_fallback(obj, [
+         deep_get_with_fallback(obj, [
              DictPath("spec#securityContext#runAsGroup"),
              DictPath("spec#template#spec#securityContext#runAsGroup")])),
         ("FS Group",
@@ -847,7 +852,7 @@ def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     return security_policies
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_svc_port_target_endpoints(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str]]:
     """
     Get the Service port target endpoints

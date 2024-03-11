@@ -240,7 +240,8 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
     if len(dnslabels) == 1:
         return HostNameStatus.OK
 
-    if not (dnslabels[-1:][0][0].isascii() and dnslabels[-1:][0][0].isalpha() and len(dnslabels[-1:][0]) > 1):
+    if not (dnslabels[-1:][0][0].isascii()
+            and dnslabels[-1:][0][0].isalpha() and len(dnslabels[-1:][0]) > 1):
         # The dnslabel is OK if either of these apply:
         # * It only has one field (it doesn't have a tld)
         # * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
@@ -482,9 +483,7 @@ def validator_taint(string: str, validator: str, **kwargs: Any) -> bool:
                            stderr=True)
             ansithemeprint([ANSIThemeString("Valid options are: ", "description")],
                            stderr=True)
-            ansithemeprint(ansithemestring_join_list(valid_effects,
-                                                     formatting="argument",
-                                                     separator=ANSIThemeString(", ", "separator")),
+            ansithemeprint(ansithemestring_join_list(valid_effects, formatting="argument"),
                            stderr=True)
         valid = False
     return valid
@@ -497,7 +496,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
 
         Parameters:
             arg (str): The argument to validate
-            arg_string (ansithemearray): A ansithemearray with the formatted representation of the expected data format
+            arg_string (ansithemearray): A ansithemearray with the formatted
+                                         representation of the expected data format
             options (dict): Options to pass to the validators
         Returns:
             (bool): True on success, False on failure
@@ -548,7 +548,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid hostname or path.", "default")], stderr=True)
+                                    ANSIThemeString("“ is not a valid hostname or path.",
+                                                    "default")], stderr=True)
                 result = False
                 break
             if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
@@ -556,15 +557,19 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid IP-address.", "default")], stderr=True)
+                                    ANSIThemeString("“ is not a valid IP-address.",
+                                                    "default")], stderr=True)
                 result = False
                 break
-            if validator == "hostname_or_ip" and not valid_dns_label and not valid_ipv4_address and not valid_ipv6_address:
+            if validator == "hostname_or_ip" and not valid_dns_label \
+                    and not valid_ipv4_address and not valid_ipv6_address:
                 if error_on_failure:
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is neither a valid hostname nor a valid IP-address.", "default")], stderr=True)
+                                    ANSIThemeString("“ is neither a valid hostname "
+                                                    "nor a valid IP-address.",
+                                                    "default")], stderr=True)
                 result = False
                 break
         elif validator in ("taint", "untaint"):
@@ -586,13 +591,12 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "argument"),
-                                    ANSIThemeString("“ is not a valid argument for ", "default"),
-                                   ] + arg_string + [ANSIThemeString(".", "default")],
+                                    ANSIThemeString("“ is not a valid argument for ", "default")]
+                                   + arg_string + [ANSIThemeString(".", "default")],
                                    stderr=True)
-                    ansithemeprint([ANSIThemeString("Valid options are: ", "description")], stderr=True)
-                    ansithemeprint(ansithemestring_join_list(allowlist,
-                                                             formatting="argument",
-                                                             separator=ANSIThemeString(", ", "separator")),
+                    ansithemeprint([ANSIThemeString("Valid options are: ",
+                                                    "description")], stderr=True)
+                    ansithemeprint(ansithemestring_join_list(allowlist, formatting="argument"),
                                    stderr=True)
                 break
         elif validator == "regex":
@@ -602,8 +606,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "argument"),
-                                    ANSIThemeString("“ is not a valid argument for ", "default"),
-                                   ] + arg_string + [ANSIThemeString(".", "default")], stderr=True)
+                                    ANSIThemeString("“ is not a valid argument for ", "default")]
+                                   + arg_string + [ANSIThemeString(".", "default")], stderr=True)
                 result = False
                 break
         elif validator == "url":
@@ -617,7 +621,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
                                     ANSIThemeString(": “", "default"),
                                     ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid URL.", "default")], stderr=True)
+                                    ANSIThemeString("“ is not a valid URL.", "default")],
+                                   stderr=True)
                 result = False
                 break
         elif validator == "":
@@ -625,8 +630,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
             unformatted_msg = f"{programname}: no validator defined for argument " + \
                               ansithemearray_to_str(arg_string) + "."
             formatted_msg = [[ANSIThemeString(f"{programname}", "emphasis"),
-                              ANSIThemeString(": no validator defined for argument ", "default"),
-                             ] + arg_string + [ANSIThemeString(".", "default")]]
+                              ANSIThemeString(": no validator defined for argument ", "default")]
+                             + arg_string + [ANSIThemeString(".", "default")]]
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,

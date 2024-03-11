@@ -1,8 +1,11 @@
 #! /bin/sh
 # vim: filetype=python
-# pylint: disable=too-many-lines,wrong-import-position
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
@@ -11,6 +14,8 @@
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
+
+# pylint: disable=too-many-lines,wrong-import-position
 
 import errno
 from getpass import getuser
@@ -730,7 +735,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
         ansithemeprint(ansithemestring_join_list(sorted_groups, formatting="hostname",
                                                  separator=ANSIThemeString(separator,
                                                                            "separator")),
-                                                 color=color)
+                       color=color)
     else:
         for item in ansible_get_inventory_pretty(groups=None, highlight=True,
                                                  include_groupvars=include_groupvars,
@@ -1152,20 +1157,20 @@ COMMANDLINE = {
     "Add Groups": {
         "command": ["add-group", "add-groups"],
         "values": [ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Add ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" to inventory", "description")],
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" to inventory", "description")],
         "options": {
             "--vars": {
                 "values": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "description": [ANSIThemeString("Set these group variables", "description")],
                 "requires_arg": True,
                 "validation": {
@@ -1180,8 +1185,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1194,18 +1199,18 @@ COMMANDLINE = {
     "Add Hosts to Inventory": {
         "command": ["add-host", "add-hosts"],
         "values": [ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Add ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" to inventory", "description")],
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" to inventory", "description")],
         "options": {
             "--groups": {
                 "values": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "description": [ANSIThemeString("Add the hosts to these groups", "description")],
                 "requires_arg": True,
                 "validation": {
@@ -1217,10 +1222,10 @@ COMMANDLINE = {
             },
             "--vars": {
                 "values": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "description": [ANSIThemeString("Set these host variables", "description")],
                 "requires_arg": True,
                 "validation": {
@@ -1235,8 +1240,8 @@ COMMANDLINE = {
             {
                 "name": "hosts",
                 "string": [ANSIThemeString("HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "hostname_or_ip",
                     "list_separator": ",",
@@ -1247,8 +1252,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1262,36 +1267,36 @@ COMMANDLINE = {
     "Add Hosts to Groups": {
         "command": ["add-host", "add-hosts"],
         "values": [ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("... ", "argument"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("... ", "argument"),
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Add ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" to ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" to ", "description"),
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
     },
     "Inventory": {
         "command": ["inventory", "inv"],
         "values": [ANSIThemeString("[", "separator"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument"),
-               ANSIThemeString("]", "separator")],
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument"),
+                   ANSIThemeString("]", "separator")],
         "description": [ANSIThemeString("Show inventory, optionally limited to ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "options": {
             "--color": {
                 "values": [ANSIThemeString("WHEN", "argument")],
-                "description": \
-                    [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+                "description": [
+                    ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid arguments are: ", "description")],
                     [ANSIThemeString("always", "argument"),
@@ -1320,8 +1325,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1337,8 +1342,8 @@ COMMANDLINE = {
         "options": {
             "--color": {
                 "values": [ANSIThemeString("WHEN", "argument")],
-                "description": \
-                    [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+                "description": [
+                    ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid arguments are: ", "description")],
                     [ANSIThemeString("always", "argument"),
@@ -1362,7 +1367,7 @@ COMMANDLINE = {
             "--format": {
                 "values": [ANSIThemeString("FORMAT", "argument")],
                 "description": [ANSIThemeString("Format the output as ", "description"),
-                        ANSIThemeString("FORMAT", "description")],
+                                ANSIThemeString("FORMAT", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid formats are: ", "description")],
                     [ANSIThemeString("default", "argument"),
@@ -1397,8 +1402,8 @@ COMMANDLINE = {
         "options": {
             "--color": {
                 "values": [ANSIThemeString("WHEN", "argument")],
-                "description": \
-                    [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+                "description": [
+                    ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid arguments are: ", "description")],
                     [ANSIThemeString("always", "argument"),
@@ -1422,7 +1427,7 @@ COMMANDLINE = {
             "--format": {
                 "values": [ANSIThemeString("FORMAT", "argument")],
                 "description": [ANSIThemeString("Format the output as ", "description"),
-                        ANSIThemeString("FORMAT", "description")],
+                                ANSIThemeString("FORMAT", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid formats are: ", "description")],
                     [ANSIThemeString("default", "argument"),
@@ -1454,29 +1459,29 @@ COMMANDLINE = {
     "Ping": {
         "command": ["ping"],
         "values": [ANSIThemeString("[", "separator"),
-               ANSIThemeString("GROUP/HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument"),
-               ANSIThemeString("]", "separator")],
+                   ANSIThemeString("GROUP/HOST", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument"),
+                   ANSIThemeString("]", "separator")],
         "description": [ANSIThemeString("Ansible ping ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" or ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" (Default: “", "description"),
-                ANSIThemeString("all", "argument"),
-                ANSIThemeString("“)", "description")],
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" or ", "description"),
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" (Default: “", "description"),
+                        ANSIThemeString("all", "argument"),
+                        ANSIThemeString("“)", "description")],
         "optional_args": [
             {
                 "name": "groups_or_hosts",
                 "string": [ANSIThemeString("[", "separator"),
-                       ANSIThemeString("GROUP/HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument"),
-                       ANSIThemeString("]", "separator")],
+                           ANSIThemeString("GROUP/HOST", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument"),
+                           ANSIThemeString("]", "separator")],
                 "validation": {
                     "validator": "hostname_or_ip",
                 },
@@ -1486,8 +1491,8 @@ COMMANDLINE = {
     },
     "Rebuild Inventory": {
         "command": ["rebuild-inventory"],
-        "description": \
-            [ANSIThemeString("Create inventory for an existing Kubernetes cluster", "description")],
+        "description": [
+            ANSIThemeString("Create inventory for an existing Kubernetes cluster", "description")],
         "extended_description": [
             [ANSIThemeString("In cases where the cluster has not been created", "description")],
             [ANSIThemeString("using ", "description"),
@@ -1500,8 +1505,8 @@ COMMANDLINE = {
         "options": {
             "--force": {
                 "description": [ANSIThemeString("Allow an ", "description"),
-                            ANSIThemeString("existing", "emphasis"),
-                        ANSIThemeString(" inventory to be overwritten", "description")],
+                                ANSIThemeString("existing", "emphasis"),
+                                ANSIThemeString(" inventory to be overwritten", "description")],
             },
         },
         "callback": rebuild_inventory,
@@ -1509,13 +1514,13 @@ COMMANDLINE = {
     "Remove Groups": {
         "command": ["remove-group", "remove-groups"],
         "values": [ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Remove ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" from inventory", "description")],
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" from inventory", "description")],
         "extended_description": [
             [ANSIThemeString("Note", "note"),
              ANSIThemeString(": Removing the group “", "description"),
@@ -1525,16 +1530,16 @@ COMMANDLINE = {
         "options": {
             "--force": {
                 "description": [ANSIThemeString("Allow removal of ", "description"),
-                        ANSIThemeString("non-empty", "emphasis"),
-                        ANSIThemeString(" groups", "description")],
+                                ANSIThemeString("non-empty", "emphasis"),
+                                ANSIThemeString(" groups", "description")],
             },
         },
         "required_args": [
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1547,27 +1552,28 @@ COMMANDLINE = {
     "Remove Hosts from ALL Groups": {
         "command": ["remove-host", "remove-hosts"],
         "values": [ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("... ", "argument"),
-               ANSIThemeString("all", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("... ", "argument"),
+                   ANSIThemeString("all", "argument")],
         "description": [ANSIThemeString("Remove ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" from inventory", "description")],
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" from inventory", "description")],
         "options": {
             "--force": {
                 "description": [ANSIThemeString("Allow ", "description"),
-                        ANSIThemeString("complete", "emphasis"),
-                        ANSIThemeString(" removal of hosts from inventory", "description")],
+                                ANSIThemeString("complete", "emphasis"),
+                                ANSIThemeString(" removal of hosts from inventory",
+                                                "description")],
             },
         },
         "required_args": [
             {
                 "name": "hosts",
                 "string": [ANSIThemeString("HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "hostname_or_ip",
                     "list_separator": ",",
@@ -1576,8 +1582,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1591,19 +1597,19 @@ COMMANDLINE = {
     "Remove Hosts": {
         "command": ["remove-host", "remove-hosts"],
         "values": [ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("... ", "argument"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("... ", "argument"),
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Remove ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" from ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" from ", "description"),
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
     },
     "List Playbooks": {
         "command": ["list-playbooks"],
@@ -1611,8 +1617,8 @@ COMMANDLINE = {
         "options": {
             "--color": {
                 "values": [ANSIThemeString("WHEN", "argument")],
-                "description": \
-                    [ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
+                "description": [
+                    ANSIThemeString("WHEN should the output use ANSI-colors", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid arguments are: ", "description")],
                     [ANSIThemeString("always", "argument"),
@@ -1636,7 +1642,7 @@ COMMANDLINE = {
             "--format": {
                 "values": [ANSIThemeString("FORMAT", "argument")],
                 "description": [ANSIThemeString("Format the output as ", "description"),
-                        ANSIThemeString("FORMAT", "description")],
+                                ANSIThemeString("FORMAT", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid formats are: ", "description")],
                     [ANSIThemeString("default", "argument"),
@@ -1665,21 +1671,21 @@ COMMANDLINE = {
     "Run Playbook": {
         "command": ["run"],
         "values": [ANSIThemeString("PLAYBOOK ", "argument"),
-               ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument"),
-               ANSIThemeString("|", "separator"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString("HOST", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument"),
+                   ANSIThemeString("|", "separator"),
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Run playbook on ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" or ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" or ", "description"),
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "options": {
             "--verbose": {
                 "description": [ANSIThemeString("Be more verbose", "description")],
@@ -1697,12 +1703,12 @@ COMMANDLINE = {
             {
                 "name": "hosts_or_groups",
                 "string": [ANSIThemeString("HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument"),
-                       ANSIThemeString("|", "argument"),
-                       ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument"),
+                           ANSIThemeString("|", "argument"),
+                           ANSIThemeString("GROUP", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_-]*$",
@@ -1715,16 +1721,16 @@ COMMANDLINE = {
     "Set Global Variables": {
         "command": ["set-var", "set-vars"],
         "values": [ANSIThemeString("KEY", "argument"),
-               ANSIThemeString(":", "separator"),
-               ANSIThemeString("VALUE", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(":", "separator"),
+                   ANSIThemeString("VALUE", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Set global ", "description"),
-                ANSIThemeString("KEY", "argument"),
-                ANSIThemeString(":", "separator"),
-                ANSIThemeString("VALUE", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("KEY", "argument"),
+                        ANSIThemeString(":", "separator"),
+                        ANSIThemeString("VALUE", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "extended_description": [
             [ANSIThemeString("Setting global variables is equivalent to setting", "description")],
             [ANSIThemeString("variables for the group “", "description"),
@@ -1735,10 +1741,10 @@ COMMANDLINE = {
             {
                 "name": "global_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     # The key is limited, the value is free-form
@@ -1752,31 +1758,31 @@ COMMANDLINE = {
     "Set Group Variables": {
         "command": ["set-group-var", "set-group-vars"],
         "values": [ANSIThemeString("KEY", "argument"),
-               ANSIThemeString(":", "separator"),
-               ANSIThemeString("VALUE", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("... ", "argument"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(":", "separator"),
+                   ANSIThemeString("VALUE", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("... ", "argument"),
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Set ", "description"),
-                ANSIThemeString("KEY", "argument"),
-                ANSIThemeString(":", "separator"),
-                ANSIThemeString("VALUE", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" for ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("KEY", "argument"),
+                        ANSIThemeString(":", "separator"),
+                        ANSIThemeString("VALUE", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" for ", "description"),
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "required_args": [
             {
                 "name": "group_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     # The key is limited, the value is free-form
@@ -1787,8 +1793,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1801,31 +1807,31 @@ COMMANDLINE = {
     "Set Host Variables": {
         "command": ["set-host-var", "set-host-vars"],
         "values": [ANSIThemeString("KEY", "argument"),
-               ANSIThemeString(":", "separator"),
-               ANSIThemeString("VALUE", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("... ", "argument"),
-               ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString(":", "separator"),
+                   ANSIThemeString("VALUE", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("... ", "argument"),
+                   ANSIThemeString("HOST", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Set ", "description"),
-                ANSIThemeString("KEY", "argument"),
-                ANSIThemeString(":", "separator"),
-                ANSIThemeString("VALUE", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument"),
-                ANSIThemeString(" for ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("KEY", "argument"),
+                        ANSIThemeString(":", "separator"),
+                        ANSIThemeString("VALUE", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument"),
+                        ANSIThemeString(" for ", "description"),
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "required_args": [
             {
                 "name": "host_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     # The key is limited, the value is free-form
@@ -1836,8 +1842,8 @@ COMMANDLINE = {
             {
                 "name": "hosts",
                 "string": [ANSIThemeString("HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "hostname_or_ip",
                     "list_separator": ",",
@@ -1850,7 +1856,7 @@ COMMANDLINE = {
         "command": ["unset-var", "unset-vars"],
         "values": [ANSIThemeString("KEY", "argument")],
         "description": [ANSIThemeString("Unset global ", "description"),
-                ANSIThemeString("KEY", "argument")],
+                        ANSIThemeString("KEY", "argument")],
         "extended_description": [
             [ANSIThemeString("Unsetting global variables is equivalent to", "description")],
             [ANSIThemeString("unsetting variables for the group “", "description"),
@@ -1861,10 +1867,10 @@ COMMANDLINE = {
             {
                 "name": "global_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1877,23 +1883,23 @@ COMMANDLINE = {
     "Unset Group Variables": {
         "command": ["unset-group-var", "unset-group-vars"],
         "values": [ANSIThemeString("KEY ", "argument"),
-               ANSIThemeString("GROUP", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString("GROUP", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Unset ", "description"),
-                ANSIThemeString("KEY", "argument"),
-                ANSIThemeString(" for ", "description"),
-                ANSIThemeString("GROUP", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("KEY", "argument"),
+                        ANSIThemeString(" for ", "description"),
+                        ANSIThemeString("GROUP", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "required_args": [
             {
                 "name": "group_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1903,8 +1909,8 @@ COMMANDLINE = {
             {
                 "name": "groups",
                 "string": [ANSIThemeString("GROUP", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1917,23 +1923,23 @@ COMMANDLINE = {
     "Unset Host Variables": {
         "command": ["unset-host-var", "unset-host-vars"],
         "values": [ANSIThemeString("KEY ", "argument"),
-               ANSIThemeString("HOST", "argument"),
-               ANSIThemeString(",", "separator"),
-               ANSIThemeString("...", "argument")],
+                   ANSIThemeString("HOST", "argument"),
+                   ANSIThemeString(",", "separator"),
+                   ANSIThemeString("...", "argument")],
         "description": [ANSIThemeString("Unset ", "description"),
-                ANSIThemeString("KEY", "argument"),
-                ANSIThemeString(" for ", "description"),
-                ANSIThemeString("HOST", "argument"),
-                ANSIThemeString(",", "separator"),
-                ANSIThemeString("...", "argument")],
+                        ANSIThemeString("KEY", "argument"),
+                        ANSIThemeString(" for ", "description"),
+                        ANSIThemeString("HOST", "argument"),
+                        ANSIThemeString(",", "separator"),
+                        ANSIThemeString("...", "argument")],
         "required_args": [
             {
                 "name": "host_vars",
                 "string": [ANSIThemeString("KEY", "argument"),
-                       ANSIThemeString(":", "separator"),
-                       ANSIThemeString("VALUE", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(":", "separator"),
+                           ANSIThemeString("VALUE", "argument"),
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "regex",
                     "regex": r"^[a-z_][a-z0-9_]*$",
@@ -1943,8 +1949,8 @@ COMMANDLINE = {
             {
                 "name": "hosts",
                 "string": [ANSIThemeString("HOST", "argument"),
-                       ANSIThemeString(",", "separator"),
-                       ANSIThemeString("...", "argument")],
+                           ANSIThemeString(",", "separator"),
+                           ANSIThemeString("...", "argument")],
                 "validation": {
                     "validator": "hostname_or_ip",
                     "list_separator": ",",

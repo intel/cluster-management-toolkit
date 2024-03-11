@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -387,8 +388,8 @@ def datagetter_endpoint_ips(obj: Dict[str, Any],
 # Maybe this can be replaced with generic_listgetter()?
 # pylint: disable-next=too-many-branches,unused-argument
 def datagetter_regex_split_to_tuples(obj: Dict[str, Any],
-                                     **kwargs: Any) -> \
-                                        Tuple[List[Union[str, Tuple[str, str]]], Dict]:
+                                     **kwargs: Any) -> Tuple[List[Union[str, Tuple[str, str]]],
+                                                             Dict]:
     """
     A datagetter that uses a regex to split a path into tuples
 
@@ -440,7 +441,8 @@ def datagetter_regex_split_to_tuples(obj: Dict[str, Any],
     return list_fields, {}
 
 
-# pylint: disable-next=too-many-locals,too-many-return-statements,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals
+# pylint: disable-next=too-many-return-statements,too-many-branches,too-many-statements
 def get_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, StatusGroup]:
     """
     Get status for a Pod
@@ -478,9 +480,8 @@ def get_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, StatusGroup
             condition_status = deep_get(condition, DictPath("status"))
             reason = deep_get(condition, DictPath("reason"), "")
 
-            if (condition_type == "PodScheduled" and
-                    condition_status == "False" and
-                    reason == "Unschedulable"):
+            if condition_type == "PodScheduled" and \
+                    condition_status == "False" and reason == "Unschedulable":
                 status = reason
                 status_group = StatusGroup.NOT_OK
                 break

@@ -1,7 +1,11 @@
 #! /bin/sh
 # vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
@@ -16,15 +20,6 @@
 
 # pylint: disable=line-too-long
 
-"""
-This program is used to install, upgrade and uninstall nodes for Kubernetes clusters,
-and to perform various other tasks; eventually this is meant to have most of the
-features available in cmu
-
-For usage, see:
-	cmt help
-"""
-
 import errno
 from getpass import getuser
 import hashlib
@@ -37,7 +32,8 @@ from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
 try:
 	import yaml
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import yaml; you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
+	sys.exit("ModuleNotFoundError: Could not import yaml; "
+	         "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization

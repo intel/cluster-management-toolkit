@@ -46,7 +46,7 @@ def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], **kwargs: A
 
     if write_mode not in ("a", "w", "x"):
         raise ValueError(f"Invalid write mode “{write_mode}“; "
-                          "permitted modes: “a“ (append), “w“ (write) and “x“ (exclusive write)")
+                         "permitted modes: “a“ (append), “w“ (write) and “x“ (exclusive write)")
 
     yaml_str = yaml.safe_dump(data, default_flow_style=False, sort_keys=sort_keys)
     if replace_empty:

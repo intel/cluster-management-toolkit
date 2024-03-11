@@ -269,9 +269,7 @@ def format_none(lines: Union[str, List[str]],
 
 
 # pylint: disable-next=unused-argument
-def format_ansible_line(line: str,
-                        override_formatting: Optional[Union[ThemeAttr, Dict]] = None) -> \
-                            List[Union[ThemeRef, ThemeString]]:
+def format_ansible_line(line: str, **kwargs: Any) -> List[Union[ThemeRef, ThemeString]]:
     """
     Formats a single line of an Ansible play
 
@@ -281,6 +279,8 @@ def format_ansible_line(line: str,
         Returns:
             (themearray): A themearray
     """
+    override_formatting: Optional[Union[ThemeAttr, Dict]] = \
+        deep_get(kwargs, DictPath("override_formatting"))
     tmpline: List[Union[ThemeRef, ThemeString]] = []
     if override_formatting is None:
         formatting = ThemeAttr("types", "generic")
@@ -407,9 +407,10 @@ def format_yaml_line(line: str,
     else:
         tmp = yaml_key_reference_value_regex.match(line)
 
-        if (tmp is not None and
-                (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"") or
-                 (not tmp[1].strip().startswith("\"") and not tmp[1].strip().endswith("\"")))):
+        if (tmp is not None
+                and (tmp[1].strip().startswith("\"") and tmp[1].strip().endswith("\"")
+                     or (not tmp[1].strip().startswith("\"")
+                         and not tmp[1].strip().endswith("\"")))):
             key = tmp[1]
             separator = tmp[2]
             reference = tmp[3]
@@ -467,7 +468,8 @@ def format_yaml_line(line: str,
                         value_line_indent = len(value_line) - len(value_line.lstrip(" \""))
                     else:
                         remnants.append([
-                            ThemeString("".ljust(value_line_indent + len(key + separator + reference)), _key_format),
+                            ThemeString("".ljust(value_line_indent
+                                        + len(key + separator + reference)), _key_format),
                             ThemeString(f"{value_line}", _value_format),
                         ])
             else:
@@ -547,8 +549,8 @@ def format_yaml(lines: Union[str, List[str]],
         else:
             split_dump = obj.splitlines()
         first = True
-        if (split_dump and "\n" not in obj and
-                split_dump[0].startswith("'") and split_dump[0].endswith("'")):
+        if (split_dump and "\n" not in obj
+                and split_dump[0].startswith("'") and split_dump[0].endswith("'")):
             split_dump[0] = split_dump[0][1:-1]
 
         for line in split_dump:
@@ -1181,11 +1183,11 @@ def format_xml(lines: Union[str, List[str]],
                     continue
             if before == line:
                 raise SyntaxError(f"XML syntax highlighter parse failure at line #{i + 1}:\n"
-                           "{lines}\n"
-                           "Parsed fragments of line:\n"
-                           "{tmpline}\n"
-                           "Unparsed fragments of line:\n"
-                           "{line}")
+                                  "{lines}\n"
+                                  "Parsed fragments of line:\n"
+                                  "{tmpline}\n"
+                                  "Unparsed fragments of line:\n"
+                                  "{line}")
 
         dumps.append(tmpline)
         i += 1
@@ -1703,10 +1705,10 @@ def identify_cmdata(cmdata_name: str, cm_name: str,
     if not dataformat:
         for match_cm_namespace, match_cm_name, \
                 match_cmdata_prefix, match_cmdata_suffix, dataformat in cmdata_format:
-            if ((not match_cm_namespace or match_cm_namespace == cm_namespace) and
-                    cm_name.startswith(match_cm_name) and
-                    cmdata_name.startswith(match_cmdata_prefix) and
-                    cmdata_name.endswith(match_cmdata_suffix)):
+            if ((not match_cm_namespace or match_cm_namespace == cm_namespace)
+                    and cm_name.startswith(match_cm_name)
+                    and cmdata_name.startswith(match_cmdata_prefix)
+                    and cmdata_name.endswith(match_cmdata_suffix)):
                 break
 
     formatter = map_dataformat(dataformat)

@@ -46,7 +46,7 @@ KNOWN_PV_TYPES = {
         "type": "Ceph",
         "properties": {
             "Path:": {"path": "path", "default": "/"},
-#            "Monitors:": {"path": "monitors", "processor": field_processor_list},
+            # "Monitors:": {"path": "monitors", "processor": field_processor_list},
             "Read Only:": {"path": "readOnly", "default": "False"},
             "Rados User": {"path": "user", "default": "admin"},
             # Should be a shortcut to a secret; needs formatting
@@ -84,8 +84,8 @@ KNOWN_PV_TYPES = {
         "type": "Fibre Channel Volume",
         "properties": {
             "Filesystem Type:": {"path": "fsType", "default": "ext4"},
-#           "WorldWide Identifiers:": {"path": "wwids", "processor": field_processor_list},
-#           "Target WorldWide Names:": {"path": "targetWWNs", "processor": field_processor_list},
+            # "WorldWide Identifiers:": {"path": "wwids", "processor": field_processor_list},
+            # "Target WorldWide Names:": {"path": "targetWWNs", "processor": field_processor_list},
             "Logical Unit Number:": {"path": "lun"},
             "Read Only:": {"path": "readOnly", "default": "False"},
         },
@@ -146,7 +146,7 @@ KNOWN_PV_TYPES = {
             "iSCSI Qualified Name:": {"path": "iqn"},
             "Logical Unit Number:": {"path": "lun"},
             "Target Portal:": {"path": "targetPortal"},
-#            "Target Portals:": {"path": "targetPortals", "processor": field_processor_list},
+            # "Target Portals:": {"path": "targetPortals", "processor": field_processor_list},
             "Filesystem Type:": {"path": "fsType", "default": "ext4"},
             "Chap Auth Discovery:": {"path": "chapAuthDiscovery"},
             "Chap Auth Session:": {"path": "chapAuthSession"},
@@ -187,14 +187,14 @@ KNOWN_PV_TYPES = {
         "description": "Quobyte mount that lasts the lifetime of a pod",
         "properties": {
             "Volume Name:": {"path": "volume"},
-#            "Registry:": {
-#                "path": "registry",
-#                "processor": field_processor_str_to_list,
-#                "formatting": {
-#                    "iskeyvalue": True,
-#                    "field_separators": [ThemeRef("separators", "host")]
-#                }
-#            }, # str(host:port, host:port, ...)
+            # "Registry:": {
+            #     "path": "registry",
+            #     "processor": field_processor_str_to_list,
+            #     "formatting": {
+            #         "iskeyvalue": True,
+            #         "field_separators": [ThemeRef("separators", "host")]
+            #     }
+            # }, # str(host:port, host:port, ...)
             "Read Only:": {"path": "readOnly", "default": "False"},
             "Tenant:": {"path": "tenant"},
             "User:": {"path": "user", "default": "<service account user>"},
@@ -208,7 +208,7 @@ KNOWN_PV_TYPES = {
             "Image:": {"path": "image"},
             "Pool:": {"path": "pool", "default": "rbd"},
             "Filesystem Type:": {"path": "fsType", "default": "ext4"},
-#            "Monitors:": {"path": "monitors", "processor": field_processor_list},
+            # "Monitors:": {"path": "monitors", "processor": field_processor_list},
             "Read Only:": {"path": "readOnly"},
             "Rados User": {"path": "user", "default": "admin"},
             "Keyring:": {"path": "keyring", "default": "/etc/ceph/keyring"},

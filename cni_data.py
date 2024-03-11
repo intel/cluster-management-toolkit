@@ -121,7 +121,8 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
     if not (retval := execute_command(args)):
         return retval
 
-    sedstr_add_new = fr's#^\(.*\)\(- name: INIT_CONTAINER\)$#\1- name: IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
+    sedstr_add_new = fr's#^\(.*\)\(- name: INIT_CONTAINER\)$#\1- name: " \
+                     f"IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
     args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
     return execute_command(args)
 
@@ -130,11 +131,13 @@ cni_data: Dict[str, Any] = {
     "antrea": {
         "CNI": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/antrea-io/antrea/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/antrea-io/antrea/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://raw.githubusercontent.com/antrea-io/antrea/<<<version>>>/build/yamls/antrea.yml",
+                    "url": "https://raw.githubusercontent.com/"
+                           "antrea-io/antrea/<<<version>>>/build/yamls/antrea.yml",
                     "filename": "antrea.yaml",
                 }
             ]
@@ -143,14 +146,17 @@ cni_data: Dict[str, Any] = {
     "calico": {
         "executable": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/projectcalico/calico/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "version_command": ["kubectl", "calico", "version"],
             "version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/calicoctl-linux-<<<arch>>>",
-                    "checksum_url": "https://github.com/projectcalico/calico/releases/download/<<<version>>>/SHA256SUMS",
+                    "url": "https://github.com/projectcalico/"
+                           "calico/releases/download/<<<version>>>/calicoctl-linux-<<<arch>>>",
+                    "checksum_url": "https://github.com/projectcalico/"
+                                    "calico/releases/download/<<<version>>>/SHA256SUMS",
                     "checksum_type": "sha256",
                     "filename": "kubectl-calico",
                 }
@@ -160,14 +166,17 @@ cni_data: Dict[str, Any] = {
             "version_command": ["kubectl", "calico", "version"],
             "version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/projectcalico/calico/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/tigera-operator.yaml",
+                    "url": "https://raw.githubusercontent.com/projectcalico/"
+                           "calico/<<<version>>>/manifests/tigera-operator.yaml",
                     "filename": "tigera-operator-<<<version>>>.yaml",
                 }, {
-                    "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/custom-resources.yaml",
+                    "url": "https://raw.githubusercontent.com/projectcalico/"
+                           "calico/<<<version>>>/manifests/custom-resources.yaml",
                     "filename": "calico-custom-resources-<<<version>>>.yaml",
                     "patch": __patch_cni_calico,
                 }
@@ -177,11 +186,13 @@ cni_data: Dict[str, Any] = {
     "canal": {
         "CNI": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/projectcalico/calico/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/projectcalico/calico/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://raw.githubusercontent.com/projectcalico/calico/<<<version>>>/manifests/canal.yaml",
+                    "url": "https://raw.githubusercontent.com/projectcalico/"
+                           "calico/<<<version>>>/manifests/canal.yaml",
                     "filename": "canal.yaml",
                     "patch": __patch_cni_canal,
                 }
@@ -192,12 +203,16 @@ cni_data: Dict[str, Any] = {
         "executable": {
             "version_command": ["cilium", "--context", "<<<context>>>", "version"],
             "version_regex": r"^cilium-cli: (v)(\d+)(\.)(\d+)(\.)(\d+) .*$",
-            "candidate_version_url": "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
+            "candidate_version_url":
+                "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
-                    "checksum_url": "https://github.com/cilium/cilium-cli/releases/download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
+                    "url": "https://github.com/cilium/cilium-cli/releases/"
+                           "download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz",
+                    "checksum_url":
+                        "https://github.com/cilium/cilium-cli/releases/"
+                        "download/<<<version>>>/cilium-linux-<<<arch>>>.tar.gz.sha256sum",
                     "checksum_type": "sha256",
                     "filename": "cilium",
                 }
@@ -216,11 +231,13 @@ cni_data: Dict[str, Any] = {
     "flannel": {
         "CNI": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/flannel-io/flannel/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/flannel-io/flannel/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://github.com/flannel-io/flannel/releases/download/<<<version>>>/kube-flannel.yml",
+                    "url": "https://github.com/flannel-io/flannel/releases/"
+                           "download/<<<version>>>/kube-flannel.yml",
                     "filename": "flannel.yaml",
                     "patch": __patch_cni_flannel,
                 }
@@ -230,11 +247,13 @@ cni_data: Dict[str, Any] = {
     "kube-router": {
         "CNI": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://raw.githubusercontent.com/cloudnativelabs/kube-router/<<<version>>>/daemonset/kubeadm-kuberouter.yaml",
+                    "url": "https://raw.githubusercontent.com/cloudnativelabs/"
+                           "kube-router/<<<version>>>/daemonset/kubeadm-kuberouter.yaml",
                     "filename": "kube-router.yaml",
                 }
             ]
@@ -243,11 +262,13 @@ cni_data: Dict[str, Any] = {
     "weave": {
         "CNI": {
             "candidate_version_function": get_github_version,
-            "candidate_version_url": "https://api.github.com/repos/weaveworks/weave/releases/latest",
+            "candidate_version_url":
+                "https://api.github.com/repos/weaveworks/weave/releases/latest",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
-                    "url": "https://github.com/weaveworks/weave/releases/download/<<<version>>>/weave-daemonset-k8s-1.11.yaml",
+                    "url": "https://github.com/weaveworks/weave/releases/"
+                           "download/<<<version>>>/weave-daemonset-k8s-1.11.yaml",
                     "filename": "weave.yaml",
                     "patch": __patch_cni_weave,
                 }

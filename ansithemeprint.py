@@ -134,7 +134,8 @@ class ANSIThemeString:
         return self.string == themestring.string and self.themeref == themestring.themeref
 
     @classmethod
-    def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> Tuple[str, List[List["ANSIThemeString"]]]:
+    def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> \
+            Tuple[str, List[List["ANSIThemeString"]]]:
         """
         Given a structured error message return both its string and ANSIThemeArray representations;
         the main use-case for this is to feed into enhanced exceptions that accept
@@ -149,10 +150,12 @@ class ANSIThemeString:
         themearray_list = []
 
         if not isinstance(msg, list):
-            raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
+            raise ProgrammingError("ANSIThemeString.format_error_msg() "
+                                   "called with invalid argument(s):\n"
                                    f"msg={msg} (type: {type(msg)}, expected: list)",
                                    severity=LogLevel.ERR,
-                                   formatted_msg=[[("ANSIThemeString.format_error_msg()", "emphasis"),
+                                   formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                                    "emphasis"),
                                                    (" called with invalid argument(s):", "error")],
                                                   [("msg = ", "default"),
                                                    (f"{msg}", "argument"),
@@ -160,43 +163,47 @@ class ANSIThemeString:
                                                    (f"{type(msg)}", "argument"),
                                                    (", expected: ", "default"),
                                                    ("list", "argument"),
-                                                   (")", "default")],
-                                                 ])
+                                                   (")", "default")]])
 
         for line in msg:
             if not isinstance(line, list):
-                raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
+                raise ProgrammingError("ANSIThemeString.format_error_msg() "
+                                       "called with invalid argument(s):\n"
                                        f"line={line} (type: {type(line)}, expected: list)",
                                        severity=LogLevel.ERR,
-                                       formatted_msg=[[("ANSIThemeString.format_error_msg()", "emphasis"),
-                                                       (" called with invalid argument(s):", "error")],
+                                       formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                                        "emphasis"),
+                                                       (" called with invalid argument(s):",
+                                                        "error")],
                                                       [("line=", "default"),
                                                        (f"{line}", "argument"),
                                                        (" (type: ", "default"),
                                                        (f"{type(line)}", "argument"),
                                                        (", expected: ", "default"),
                                                        ("list", "argument"),
-                                                       (")", "default")],
-                                                     ])
+                                                       (")", "default")]])
 
             themearray = []
             joined_string = ""
             for items in line:
-                if not (isinstance(items, tuple) and len(items) == 2 and
-                        isinstance(items[0], str) and isinstance(items[1], str)):
-                    raise ProgrammingError("ANSIThemeString.format_error_msg() called with invalid argument(s):\n"
-                                           f"items={items} (type: {type(items)}, expected: tuple(str, str))",
+                if not (isinstance(items, tuple) and len(items) == 2
+                        and isinstance(items[0], str) and isinstance(items[1], str)):
+                    raise ProgrammingError("ANSIThemeString.format_error_msg() "
+                                           "called with invalid argument(s):\n"
+                                           f"items={items} (type: {type(items)}, "
+                                           "expected: tuple(str, str))",
                                            severity=LogLevel.ERR,
-                                           formatted_msg=[[("ANSIThemeString.format_error_msg()", "emphasis"),
-                                                           (" called with invalid argument(s):", "error")],
+                                           formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                                            "emphasis"),
+                                                           (" called with invalid argument(s):",
+                                                            "error")],
                                                           [("items=", "default"),
                                                            (f"{items}", "argument"),
                                                            (" (type: ", "default"),
                                                            (f"{type(items)}", "argument"),
                                                            (", expected: ", "default"),
                                                            ("tuple(str, str)", "argument"),
-                                                           (")", "default")],
-                                                         ])
+                                                           (")", "default")]])
 
                 string, formatting = items
                 joined_string += string
@@ -282,7 +289,7 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
     for themestring in themearray:
         if not isinstance(themestring, ANSIThemeString):
             raise TypeError("__themarray_to_string() only accepts arrays "
-                    f"of AnsiThemeString; this themearray consists of:\n{themearray}")
+                            f"of AnsiThemeString; this themearray consists of:\n{themearray}")
 
         theme_string = str(themestring)
         string += theme_string
@@ -306,12 +313,12 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> s
 
     if theme is None or themepath is None:
         raise ProgrammingError("ansithemearray_to_str() used without calling "
-                       "init_ansithemestring() first; this is a programming error.")
+                               "init_ansithemestring() first; this is a programming error.")
     string: str = ""
     for themestring in themearray:
         if not isinstance(themestring, ANSIThemeString):
             raise TypeError("ansithemearray_to_str() only accepts arrays of AnsiThemeString; "
-                    f"this themearray consists of:\n{themearray}")
+                            f"this themearray consists of:\n{themearray}")
 
         theme_attr_ref = themestring.themeref
         theme_string = str(themestring)
@@ -323,7 +330,7 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> s
                 string += f"{attr}{theme_string}{reset}"
             else:
                 raise KeyError(f"attribute (\"term\", \"{theme_attr_ref}\") "
-                           f"does not exist in {themepath}")
+                               f"does not exist in {themepath}")
         else:
             string += theme_string
 
@@ -334,7 +341,7 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> s
 
 
 def themearray_override_formatting(themearray: List[ANSIThemeString],
-                   formatting: Optional[str]) -> List[ANSIThemeString]:
+                                   formatting: Optional[str]) -> List[ANSIThemeString]:
     """
     Override the formatting of an ANSIThemeArray (List[ANSIThemeString])
 
@@ -383,7 +390,7 @@ def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSI
 
 
 def ansithemestring_join_list(items: Sequence[Union[str, ANSIThemeString]],
-                                                        **kwargs: Any) -> List[ANSIThemeString]:
+                              **kwargs: Any) -> List[ANSIThemeString]:
     """
     Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
 
@@ -442,7 +449,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
 
     if theme is None or themepath is None:
         raise ProgrammingError("ansithemeinput() used without calling init_ansithemeprint() first; "
-                       "this is a programming error.")
+                               "this is a programming error.")
 
     if color == "auto":
         if not sys.stdout.isatty():  # pragma: no cover
@@ -455,8 +462,8 @@ def ansithemeinput(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
         use_color = False
     else:
         raise ValueError("Incorrect value for color passed to ansithemeinput(); "
-                 "the only valid values are ”always”, ”auto”, and ”never”; "
-                 "this is a programming error.")
+                         "the only valid values are ”always”, ”auto”, and ”never”; "
+                         "this is a programming error.")
 
     string = ansithemearray_to_str(themearray, color=use_color)
     try:
@@ -489,7 +496,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], **kwargs: Any) ->
 
     if theme is None or themepath is None:
         raise ProgrammingError("ansithemeinput_password() used without calling "
-                       "init_ansithemeprint() first; this is a programming error.")
+                               "init_ansithemeprint() first; this is a programming error.")
 
     if color == "auto":
         if not sys.stdout.isatty():  # pragma: no cover
@@ -502,8 +509,8 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], **kwargs: Any) ->
         use_color = False
     else:
         raise ValueError("Incorrect value for color passed to ansithemeinput_password(); "
-                 "the only valid values are ”always”, ”auto”, and ”never”; "
-                 "this is a programming error.")
+                         "the only valid values are ”always”, ”auto”, and ”never”; "
+                         "this is a programming error.")
 
     string = ansithemearray_to_str(themearray, color=use_color)
     try:
@@ -536,7 +543,7 @@ def ansithemeprint(themearray: List[ANSIThemeString], **kwargs: Any) -> None:
 
     if theme is None or themepath is None:
         raise ProgrammingError("ansithemeprint() used without calling init_ansithemeprint() first; "
-                       "this is a programming error.")
+                               "this is a programming error.")
 
     if color == "auto":
         if stderr and not sys.stderr.isatty():  # pragma: no cover
@@ -551,8 +558,8 @@ def ansithemeprint(themearray: List[ANSIThemeString], **kwargs: Any) -> None:
         use_color = False
     else:
         raise ValueError("Incorrect value for color passed to ansithemeprint(); "
-                 "the only valid values are ”always”, ”auto”, and ”never”; "
-                 "this is a programming error.")
+                         "the only valid values are ”always”, ”auto”, and ”never”; "
+                         "this is a programming error.")
 
     string = ansithemearray_to_str(themearray, color=use_color)
 

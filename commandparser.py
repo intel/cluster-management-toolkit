@@ -70,26 +70,26 @@ def __sub_usage(command: str) -> int:
         if command in deep_get(value, DictPath("command"), {}):
             commandstring = deep_get(value, DictPath("command_alias"), command)
             headerstring = [ANSIThemeString(f"{programname}", "programname"),
-                    ANSIThemeString(f" {commandstring}", "command")]
+                            ANSIThemeString(f" {commandstring}", "command")]
             commandinfo = value
             command_found = True
             break
 
     if not command_found:
         ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                ANSIThemeString(": unrecognised command “", "default"),
-                ANSIThemeString(f"{command}", "command"),
-                ANSIThemeString("“.", "default")], stderr=True)
+                        ANSIThemeString(": unrecognised command “", "default"),
+                        ANSIThemeString(f"{command}", "command"),
+                        ANSIThemeString("“.", "default")], stderr=True)
         ansithemeprint([ANSIThemeString("Try “", "default"),
-                ANSIThemeString(f"{programname} ", "programname"),
-                ANSIThemeString("help", "command"),
-                ANSIThemeString("“ for more information.", "default")], stderr=True)
+                        ANSIThemeString(f"{programname} ", "programname"),
+                        ANSIThemeString("help", "command"),
+                        ANSIThemeString("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     if headerstring is None:
         ansithemeprint([ANSIThemeString("Error", "warning"),
                         ANSIThemeString(": Could not find help entry for command "
-                                       f"{command}; aborting.", "default")], stderr=True)
+                                        f"{command}; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     values = deep_get(commandinfo, DictPath("values"), [])
@@ -99,9 +99,9 @@ def __sub_usage(command: str) -> int:
 
     if options:
         headerstring += [ANSIThemeString(" [", "separator"),
-                 ANSIThemeString("OPTION", "option"),
-                 ANSIThemeString("]", "separator"),
-                 ANSIThemeString("...", "option")]
+                         ANSIThemeString("OPTION", "option"),
+                         ANSIThemeString("]", "separator"),
+                         ANSIThemeString("...", "option")]
     if values:
         headerstring += [ANSIThemeString(" ", "separator")] + values
 
@@ -357,9 +357,9 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     # cmd[1]: formatted description
     for cmd in commands:
         if output_format == "default":
-            if (themearray_len(cmd[0]) > 27 or
-                    themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or
-                    themearray_len(cmd[1]) > 51):
+            if themearray_len(cmd[0]) > 27 or \
+                    themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or \
+                    themearray_len(cmd[1]) > 51:
                 output.append(cmd[0])
                 string = themearray_ljust([ANSIThemeString("", "default")], 29) + cmd[1]
                 output.append(string)
@@ -467,14 +467,14 @@ COMMANDLINEDEFAULTS = {
         "command": ["help"],
         "values": [ANSIThemeString("COMMAND", "argument")],
         "description": [ANSIThemeString("Display help about ", "description"),
-                ANSIThemeString("COMMAND", "argument"),
-                ANSIThemeString(" and exit", "description")],
+                        ANSIThemeString("COMMAND", "argument"),
+                        ANSIThemeString(" and exit", "description")],
         "options": {
             "--format": {
                 "values": [ANSIThemeString("FORMAT", "argument")],
                 "description": [ANSIThemeString("Output the help as ", "description"),
-                        ANSIThemeString("FORMAT", "argument"),
-                        ANSIThemeString(" instead", "description")],
+                                ANSIThemeString("FORMAT", "argument"),
+                                ANSIThemeString(" instead", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid formats are:", "description")],
                     [ANSIThemeString("default", "argument"),
@@ -499,8 +499,8 @@ COMMANDLINEDEFAULTS = {
             "--format": {
                 "values": [ANSIThemeString("FORMAT", "argument")],
                 "description": [ANSIThemeString("Output the help as ", "description"),
-                        ANSIThemeString("FORMAT", "argument"),
-                        ANSIThemeString(" instead", "description")],
+                                ANSIThemeString("FORMAT", "argument"),
+                                ANSIThemeString(" instead", "description")],
                 "extended_description": [
                     [ANSIThemeString("Valid formats are:", "description")],
                     [ANSIThemeString("default", "argument"),
@@ -534,13 +534,15 @@ def parse_commandline(__programname: str, __programversion: str,
                       argv: List[str],
                       __commandline: Dict,
                       default_command: Optional[str] = None,
-                      theme: Optional[FilePath] = None) -> \
-                          Tuple[Callable, List[Tuple[str, str]], List[str]]:
+                      theme: Optional[FilePath] = None) -> Tuple[Callable,
+                                                                 List[Tuple[str, str]],
+                                                                 List[str]]:
     """
     Parse the command line
 
         Parameters:
-            __programname (str): The name of the program (used in usage and version information, and in error messages)
+            __programname (str): The name of the program
+                                 (used in usage and version information, and in error messages)
             __programversion (str): The version of the program (used in version information)
             __programdescription (str): The description of the program (used in usage information)
             __programauthors (str): The authors of the program (used in version information)
@@ -595,13 +597,16 @@ def parse_commandline(__programname: str, __programversion: str,
 
         # Have we got a command to execute?
         if command is None:
-            commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, argv[i])
+            commandname, command, key, min_args, max_args, \
+                required_args, optional_args = __find_command(commandline, argv[i])
 
             if command is None:
                 if default_command is not None:
-                    commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
+                    commandname, command, key, min_args, max_args, required_args, \
+                        optional_args = __find_command(commandline, default_command)
                 elif "__*" in commandline:
-                    commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, "*")
+                    commandname, command, key, min_args, max_args, required_args, \
+                        optional_args = __find_command(commandline, "*")
 
                 if command is None:
                     ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
@@ -620,9 +625,9 @@ def parse_commandline(__programname: str, __programversion: str,
         # OK, we have a command, time to check for options
         elif argv[i].startswith("-"):
             # All commands except [--]help and [--]version have their own help pages
-            if (argv[i] == "--help" and
-                commandname not in ("--help", "help", "--version", "version") and
-                not commandname.startswith("__")):
+            if argv[i] == "--help" and \
+                    commandname not in ("--help", "help", "--version", "version") and \
+                    not commandname.startswith("__"):
                 __sub_usage(commandname)
                 sys.exit()
 
@@ -644,15 +649,15 @@ def parse_commandline(__programname: str, __programversion: str,
                 match = None
                 __key = key
                 for opt in deep_get(commandline, DictPath(f"{__key}#options"), {}):
-                    if (isinstance(opt, str) and argv[i] == opt or
-                        isinstance(opt, tuple) and argv[i] in opt):
+                    if isinstance(opt, str) and argv[i] == opt or \
+                            isinstance(opt, tuple) and argv[i] in opt:
                         match = opt
                         break
                 # Check global options
                 if match is None:
                     for opt in deep_get(commandline, DictPath("__global_options#options"), {}):
-                        if (isinstance(opt, str) and
-                            argv[i] == opt or isinstance(opt, tuple) and argv[i] in opt):
+                        if isinstance(opt, str) and \
+                                argv[i] == opt or isinstance(opt, tuple) and argv[i] in opt:
                             __key = "__global_options"
                             match = opt
                             break
@@ -701,24 +706,28 @@ def parse_commandline(__programname: str, __programversion: str,
                                      DictPath(f"{__key}#options#{option}#validation"), {})
 
                         # validate_argument() will terminate by default if validation fails
-                        _result = cmtvalidators.validate_argument(arg, [ANSIThemeString(f"{option}", "option")], validator_options)
+                        _result = cmtvalidators.validate_argument(arg,
+                                                                  [ANSIThemeString(f"{option}",
+                                                                                   "option")],
+                                                                  validator_options)
                     options.append((option, arg))
         else:
             args.append(argv[i])
         i += 1
 
     if command is None and default_command is not None:
-        commandname, command, key, min_args, max_args, required_args, optional_args = __find_command(commandline, default_command)
+        commandname, command, key, min_args, max_args, required_args, \
+            optional_args = __find_command(commandline, default_command)
 
     if not max_args and args:
         ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                ANSIThemeString(": “", "default"),
-                ANSIThemeString(f"{commandname}", "command"),
-                ANSIThemeString("“ does not accept arguments.", "default")], stderr=True)
+                        ANSIThemeString(": “", "default"),
+                        ANSIThemeString(f"{commandname}", "command"),
+                        ANSIThemeString("“ does not accept arguments.", "default")], stderr=True)
         ansithemeprint([ANSIThemeString("Try “", "default"),
-                ANSIThemeString(f"{programname} ", "programname"),
-                ANSIThemeString("help", "command"),
-                ANSIThemeString("“ for more information.", "default")], stderr=True)
+                        ANSIThemeString(f"{programname} ", "programname"),
+                        ANSIThemeString("help", "command"),
+                        ANSIThemeString("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
     elif len(args) < min_args and min_args != max_args:
         ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
@@ -757,7 +766,7 @@ def parse_commandline(__programname: str, __programversion: str,
     # The command was called without any command and no default was defined; this is an error
     if command is None:
         ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                ANSIThemeString(": missing operand.", "default")], stderr=True)
+                        ANSIThemeString(": missing operand.", "default")], stderr=True)
         ansithemeprint([ANSIThemeString("Try “", "default"),
                         ANSIThemeString(f"{programname} ", "programname"),
                         ANSIThemeString("help", "command"),

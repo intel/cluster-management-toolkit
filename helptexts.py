@@ -17,16 +17,16 @@ from curses_helper import ThemeAttr, ThemeString
 
 about = [
     [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],  # pylint: disable=line-too-long
-    [ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],  # pylint: disable=line-too-long
-    [ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))],  # pylint: disable=line-too-long
-    [ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],  # pylint: disable=line-too-long
-    [ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],  # pylint: disable=line-too-long
+    [ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
     [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))],  # pylint: disable=line-too-long
-    [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))],  # pylint: disable=line-too-long
+    [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
     [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],  # pylint: disable=line-too-long
+    [ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],  # noqa: E501 pylint: disable=line-too-long
     [ThemeString("", ThemeAttr("main", "about_text"))],
     [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))],
     [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))],

@@ -92,8 +92,8 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
         phase = deep_get(obj, DictPath("status#phase"))
         reason = deep_get(obj, DictPath("status#reason"), "").rstrip()
 
-        if (not deep_get(extra_vars, DictPath("show_evicted"), False) and
-                phase == "Failed" and reason == "Evicted"):
+        if (not deep_get(extra_vars, DictPath("show_evicted"), False)
+                and phase == "Failed" and reason == "Evicted"):
             continue
 
         namespace = deep_get(obj, DictPath("metadata#namespace"))

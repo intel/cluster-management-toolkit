@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -28,15 +29,16 @@ import paramiko
 import cmtlib
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-from cmtpaths import SSH_DIR, SOFTWARE_SOURCES_DIR
-from cmtpaths import VERSION_CACHE_DIR,  VERSION_CACHE_LAST_UPDATED_PATH
+from cmtpaths import HOMEDIR, SSH_DIR, SOFTWARE_SOURCES_DIR
+from cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH
 from ansithemeprint import ansithemeprint, ANSIThemeString
 from cmttypes import deep_get, DictPath, FilePath
 
 try:
-	from natsort import natsorted
+    from natsort import natsorted
 except ModuleNotFoundError:  # pragma: no cover
-	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
+    sys.exit("ModuleNotFoundError: Could not import natsort; "
+             "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 try:
     import urllib3
@@ -101,7 +103,8 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
             transport.close()
         except paramiko.SSHException:
             ansithemeprint([ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": Failed to get server key from remote host ", "default"),
+                            ANSIThemeString(": Failed to get server key from remote host ",
+                                            "default"),
                             ANSIThemeString(host, "hostname"),
                             ANSIThemeString("; aborting.", "default")], stderr=True)
             sys.exit(errno.EIO)
@@ -313,7 +316,8 @@ def download_files(directory: str,
                 r1 = spm.request("GET", checksum_url)  # type: ignore
             else:
                 ansithemeprint([ANSIThemeString("Error", "error"),
-                                ANSIThemeString(": Unknown or missing protocol; Checksum URL ", "default"),
+                                ANSIThemeString(": Unknown or missing protocol; "
+                                                "Checksum URL ", "default"),
                                 ANSIThemeString(f"{checksum_url}", "url")], stderr=True)
                 retval = False
                 break
@@ -346,13 +350,14 @@ def download_files(directory: str,
                 break
 
             # If we have a checksum we need to confirm that the downloaded file matches the checksum
-            if (checksum is not None and
-                    checksum_type is not None and
-                    not verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url))):
+            if checksum is not None and \
+                    checksum_type is not None and \
+                    not verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)):
                 ansithemeprint([ANSIThemeString("Critical", "error"),
                                 ANSIThemeString(": File downloaded from ", "default"),
                                 ANSIThemeString(f"{url}", "url"),
-                                ANSIThemeString(" did not match its expected checksum; aborting.", "default")], stderr=True)
+                                ANSIThemeString(" did not match its expected checksum; "
+                                                "aborting.", "default")], stderr=True)
                 retval = False
                 break
 
@@ -372,7 +377,8 @@ def download_files(directory: str,
                             ansithemeprint([ANSIThemeString("Critical", "critical"),
                                             ANSIThemeString(": ", "default"),
                                             ANSIThemeString(f"{filename}", "path"),
-                                            ANSIThemeString(" is not a part of archive; aborting.", "default")], stderr=True)
+                                            ANSIThemeString(" is not a part of archive; "
+                                                            "aborting.", "default")], stderr=True)
                             sys.exit(errno.ENOENT)
 
                         with tempfile.NamedTemporaryFile(delete=False) as f2:
@@ -427,9 +433,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
                 tmp = _version_regex.match(line)
                 if tmp is not None:
                     version = list(tmp.groups())
-                    change
                     break
-
     return version
 
 
@@ -469,6 +473,7 @@ fetch_function_allowlist = {
 }
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def update_version_cache(**kwargs: Any) -> None:
     """
     Fetch the latest kubernetes version
@@ -518,7 +523,7 @@ def update_version_cache(**kwargs: Any) -> None:
         last_update_data = {}
 
     for key, data in sources.items():
-        description = deep_get(data, DictPath("description"), "<none>")
+        # description = deep_get(data, DictPath("description"), "<none>")
         interval = deep_get(data, DictPath("interval"), 60 * 60)
         version_last_updated = deep_get(last_update_data, DictPath(f"{key}#version"))
         if version_last_updated:
@@ -539,8 +544,8 @@ def update_version_cache(**kwargs: Any) -> None:
                                        DictPath(tmp_post_fetch_function))
         post_fetch_args = deep_get(data, DictPath("candidate_version#post_fetch_args"))
 
-        tmp_candidate_version_regex = deep_get(data, DictPath("candidate_version#regex"), "")
-        candidate_version_regex = rf"{tmp_candidate_version_regex}"
+        # tmp_candidate_version_regex = deep_get(data, DictPath("candidate_version#regex"), "")
+        # candidate_version_regex = rf"{tmp_candidate_version_regex}"
         candidate_version_urls = deep_get(data, DictPath("candidate_version#urls"), [])
 
         update_version = False
@@ -554,7 +559,7 @@ def update_version_cache(**kwargs: Any) -> None:
             update_changelog = True
 
         if pre_fetch_function and update_version:
-                version, changelog_version = pre_fetch_function(**pre_fetch_args)
+            _version, changelog_version = pre_fetch_function(**pre_fetch_args)
         fetch_urls = []
         for candidate_version_url in candidate_version_urls:
             url = deep_get(candidate_version_url, DictPath("url"))
@@ -571,9 +576,9 @@ def update_version_cache(**kwargs: Any) -> None:
                     last_update_data[key] = {}
                 last_update_data[key]["version"] = datetime.now()
                 secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
-                                  last_update_data, permissions = 0o644)
+                                  last_update_data, permissions=0o644)
         if post_fetch_function:
-            version, changelog_version = post_fetch_function(**post_fetch_args)
+            _version, changelog_version = post_fetch_function(**post_fetch_args)
 
         # We (hopefully) have a version now; time to fetch the changelog (if requested)
         if update_changelog:
@@ -588,13 +593,13 @@ def update_version_cache(**kwargs: Any) -> None:
                 fetch_urls.append((url, dest, None, None))
             if fetch_urls:
                 if not download_files(VERSION_CACHE_DIR, fetch_urls):
-                     ansithemeprint([ANSIThemeString("Error", "error"),
-                                     ANSIThemeString(": Failed to fetch ", "default"),
-                                     ANSIThemeString(f"{url}", "url"),
-                                     ANSIThemeString("; skipping.", "default")], stderr=True)
+                    ansithemeprint([ANSIThemeString("Error", "error"),
+                                    ANSIThemeString(": Failed to fetch ", "default"),
+                                    ANSIThemeString(f"{url}", "url"),
+                                    ANSIThemeString("; skipping.", "default")], stderr=True)
                 else:
                     if key not in last_update_data:
                         last_update_data[key] = {}
                     last_update_data[key]["changelog"] = datetime.now()
                     secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
-                                      last_update_data, permissions = 0o644)
+                                      last_update_data, permissions=0o644)

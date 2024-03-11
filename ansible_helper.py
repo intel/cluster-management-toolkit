@@ -100,8 +100,8 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 
 
 # Add all playbooks in the array
-def populate_playbooks_from_paths(paths: List[FilePath]) -> \
-                                                    List[Tuple[List[ANSIThemeString], FilePath]]:
+def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeString],
+                                                                       FilePath]]:
     """
     Populate a playbook list
 
@@ -127,7 +127,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> \
         # Only process playbooks
         if (tmp := yaml_regex.match(pathname)) is None:
             raise ValueError(f"The playbook filename “{pathname}“ does not end with "
-                              ".yaml or .yml; this is most likely a programming error.")
+                             ".yaml or .yml; this is most likely a programming error.")
 
         playbookname = tmp[1]
 
@@ -190,12 +190,10 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
     if not playbooks:
         raise ValueError("playbooks is empty")
 
-    if not (isinstance(playbooks[0], tuple) and
-            len(playbooks[0]) == 2 and
-            isinstance(playbooks[0][0], list) and
-            isinstance(playbooks[0][1], str)):
+    if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2
+            and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
         raise TypeError("playbooks[] is wrong type; "
-                       f"expected: [([{ANSIThemeString}], {FilePath})]")
+                        f"expected: [([{ANSIThemeString}], {FilePath})]")
 
     # We do not want to check that parent resolves to itself,
     # because when we have an installation with links directly to the git repo
@@ -216,10 +214,9 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
         playbook_string, playbook_path = playbook
         playbook_data = secure_read_yaml(FilePath(playbook_path), checks=checks)
 
-        ansithemeprint(playbook_string +
-                       [ANSIThemeString(" (path: ", "default"),
-                        ANSIThemeString(f"{playbook_path}", "path"),
-                        ANSIThemeString(")", "default")])
+        ansithemeprint(playbook_string + [ANSIThemeString(" (path: ", "default"),
+                                          ANSIThemeString(f"{playbook_path}", "path"),
+                                          ANSIThemeString(")", "default")])
         # None of our playbooks have more than one play per file
         summary = deep_get(playbook_data[0], DictPath("vars#metadata#summary"), {})
         if not summary:
@@ -1412,7 +1409,8 @@ def ansible_print_task_results(task: str,
     if stderr_lines or retval:
         ansithemeprint([ANSIThemeString("stderr:", "header")])
         for line in stderr_lines:
-            ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")], stderr=True)
+            ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")],
+                           stderr=True)
         if not stderr_lines:
             ansithemeprint([ANSIThemeString("<no output>", "none")])
         ansithemeprint([ANSIThemeString("", "default")])

@@ -186,9 +186,9 @@ flake8:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning flake8 to check Python code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE) $(python_executables) *.py ;\
+	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 $(python_executables) *.py ;\
 	printf -- "\n\nRunning flake8 to check Python test case code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE_TEST) $(python_test_executables)
+	$$cmd --ignore $(FLAKE8_IGNORE_TEST) --max-line-length 100 $(python_test_executables)
 
 regexploit:
 	@cmd=regexploit-py ;\

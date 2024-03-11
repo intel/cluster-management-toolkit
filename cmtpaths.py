@@ -96,7 +96,7 @@ SSH_ARGS_STRICT_CRYPTOS = \
 
 SSH_ARGS_RELAXED_CRYPTOS = \
     f"{SSH_ARGS_STRICT_CRYPTOS}"
-    # No additional cryptos
+# No additional cryptos
 
 # Accepted CA signature algorithms
 SSH_ARGS_STRICT_CA_SIGNATURE_ALGORITHMS = \
@@ -116,7 +116,7 @@ SSH_ARGS_STRICT_KEX = \
 
 SSH_ARGS_RELAXED_KEX = \
     f"{SSH_ARGS_STRICT_KEX}"
-    # No additional KEXes
+# No additional KEXes
 
 # Accepted MACs
 SSH_ARGS_STRICT_MACS = \
@@ -125,7 +125,7 @@ SSH_ARGS_STRICT_MACS = \
 
 SSH_ARGS_RELAXED_MACS = \
     f"{SSH_ARGS_STRICT_MACS}"
-    # No additional MACs
+# No additional MACs
 
 # Accepted host key algorithms
 SSH_ARGS_STRICT_HOST_KEY_ALGORITHMS = \
