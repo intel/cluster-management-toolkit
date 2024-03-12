@@ -505,6 +505,7 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
     return name
 
 
+# pylint: disable-next=too-many-branches
 def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
     """
     Given a Kind without API-group, or (API-name, API-group)
@@ -673,6 +674,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str,
         server_major_version, server_minor_version, server_git_version
 
 
+# pylint: disable-next=too-many-branches
 def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Dict]]:
     """
     Given a node dict, extract the node status
@@ -895,7 +897,8 @@ class KubernetesHelper:
     A class used for interacting with a Kubernetes cluster
     """
 
-    # XXX: There doesn't seem to be any better type-hint for NamedTemporaryFile for the time being.
+    # There doesn't seem to be any better type-hint than Any
+    # for NamedTemporaryFile for the time being.
     tmp_ca_certs_file: Any = None
     tmp_cert_file: Any = None
     tmp_key_file: Any = None
@@ -994,6 +997,7 @@ class KubernetesHelper:
 
         return clusters
 
+    # pylint: disable-next=too-many-locals
     def renew_token(self, cluster_name: str, context_name: str) -> None:
         """
         Renew the authentication token, if applicable
@@ -1078,7 +1082,7 @@ class KubernetesHelper:
                 if tmp is not None:
                     self.token = tmp[1]
 
-    # pylint: disable-next=too-many-return-statements
+    # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
     def set_context(self, config_path: Optional[FilePath] = None,
                     name: Optional[str] = None, unchanged_is_success: bool = False) -> bool:
         """
@@ -1123,9 +1127,8 @@ class KubernetesHelper:
         except FileNotFoundError:
             return False
         except FilePathAuditError as e:
-            if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
-                return False
-            if "SecurityStatus.PERMISSIONS" in str(e):
+            if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) \
+               or "SecurityStatus.PERMISSIONS" in str(e):
                 return False
             raise
 
@@ -1239,12 +1242,10 @@ class KubernetesHelper:
                 self.token = deep_get(user, DictPath("user#token"))
                 break
 
-        # We do not have the cert or token needed to access the server
-        if self.token is None and (cert is None or key is None):
-            return False
-
-        # We cannot authenticate the server correctly
-        if ca_certs is None and not self.insecuretlsskipverify:
+        # We either do not have the cert or token needed to access the server
+        # or we cannot authenticate the server correctly
+        if self.token is None and (cert is None or key is None) \
+           or ca_certs is None and not self.insecuretlsskipverify:
             return False
 
         # OK, we've got the cluster IP and port,
@@ -1325,6 +1326,7 @@ class KubernetesHelper:
         return deep_get(nodes[0], DictPath("spec#podCIDR"))
 
     # CNI detection helpers
+    # pylint: disable-next=too-many-locals,too-many-branches
     def __identify_cni(self, cni_name: str, controller_kind: Tuple[str, str],
                        controller_selector: str,
                        container_name: str) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
@@ -1366,26 +1368,31 @@ class KubernetesHelper:
                 self.get_list_by_kind_namespace(("Pod", ""), "",
                                                 label_selector=match_label_selector)
 
-            if vlist2 is not None and vlist2:
-                for obj2 in vlist2:
-                    # Try to get the version
-                    for container in deep_get(obj2, DictPath("status#containerStatuses"), []):
-                        if deep_get(container, DictPath("name"), "") == container_name:
-                            image_version = get_image_version(deep_get(container,
-                                                                       DictPath("image"), ""))
+            if vlist is None or not vlist:
+                continue
 
-                            if image_version != "<undefined>":
-                                image_version_tuple = cmtlib.versiontuple(image_version)
-                                cni_version_tuple = cmtlib.versiontuple(cni_version)
-                                if cni_version is None:
-                                    cni_version = image_version
-                                    pod_matches += 1
-                                elif image_version_tuple > cni_version_tuple:
-                                    cni_version = image_version
-                                    pod_matches += 1
-                                elif image_version != cni_version:
-                                    cni_version = image_version
-                                    pod_matches += 1
+            for obj2 in vlist2:
+                # Try to get the version
+                for container in deep_get(obj2, DictPath("status#containerStatuses"), []):
+                    if deep_get(container, DictPath("name"), "") == container_name:
+                        image_version = get_image_version(deep_get(container,
+                                                                   DictPath("image"), ""))
+
+                        if image_version == "<undefined>":
+                            continue
+
+                        image_version_tuple = cmtlib.versiontuple(image_version)
+                        if cni_version is None:
+                            cni_version = image_version
+                            pod_matches += 1
+                            continue
+                        cni_version_tuple = cmtlib.versiontuple(cni_version)
+                        if image_version_tuple > cni_version_tuple:
+                            cni_version = image_version
+                            pod_matches += 1
+                        elif image_version != cni_version:
+                            cni_version = image_version
+                            pod_matches += 1
 
         if cni_version is None:
             cni_version = "<unknown>"
@@ -1553,6 +1560,7 @@ class KubernetesHelper:
 
         return join_token
 
+    # pylint: disable-next=too-many-locals
     def get_ca_cert_hash(self) -> str:
         """
         Returns the CA certificate hash
@@ -1671,7 +1679,7 @@ class KubernetesHelper:
             latest_api = latest_api[:-len("/")]
         return latest_api
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
     def get_api_resources(self) -> Tuple[int, List[Tuple]]:
         """
         Return information about all API-resources available in the cluster
@@ -1691,24 +1699,24 @@ class KubernetesHelper:
         # First get all core APIs
         method = "GET"
         url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-              "{self.control_plane_path}/api/v1"
+              f"{self.control_plane_path}/api/v1"
         with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
                                 ca_certs_file=self.ca_certs_file, token=self.token,
                                 insecuretlsskipverify=self.insecuretlsskipverify) as pool_manager:
             raw_data, _message, status = \
                 self.__rest_helper_generic_json(pool_manager=pool_manager, method=method, url=url)
 
-            if status == 200 and raw_data is not None:
-                # Success
-                try:
-                    core_apis = json.loads(raw_data)
-                except DecodeException:
-                    # We got a response, but the data is malformed
-                    return 42422, []
-            else:
+            if status != 200 or raw_data is None:
                 # Something went wrong
                 self.cluster_unreachable = True
                 return status, []
+
+            # Success
+            try:
+                core_apis = json.loads(raw_data)
+            except DecodeException:
+                # We got a response, but the data is malformed
+                return 42422, []
 
             group_version = deep_get(core_apis, DictPath("groupVersion"), "")
 
@@ -1737,7 +1745,7 @@ class KubernetesHelper:
             aggregated_data = {}
 
             url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-                  "{self.control_plane_path}/apis"
+                  f"{self.control_plane_path}/apis"
             with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
                                     ca_certs_file=self.ca_certs_file, token=self.token,
                                     insecuretlsskipverify=self.insecuretlsskipverify) \
@@ -1804,7 +1812,7 @@ class KubernetesHelper:
                             # This should not happen, but ignore it
                             continue
                         url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-                              "{self.control_plane_path}/apis/{group_version}"
+                              f"{self.control_plane_path}/apis/{group_version}"
                         raw_data, _message, status = \
                             self.__rest_helper_generic_json(pool_manager=pool_manager,
                                                             method=method, url=url)
@@ -1841,6 +1849,7 @@ class KubernetesHelper:
         return status, api_resources
 
     # TODO: This should ideally be modified to use get_api_resources()
+    # pylint: disable-next=too-many-locals,too-many-return-statements,too-many-branches,too-many-statements  # noqa: E501
     def get_available_kinds(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
         """
         Return a dict of Kinds known by both kubernetes_helper and the API-server
@@ -1872,25 +1881,24 @@ class KubernetesHelper:
         core_apis = {}
 
         url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-              "{self.control_plane_path}/api/v1"
+              f"{self.control_plane_path}/api/v1"
         with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
                                 ca_certs_file=self.ca_certs_file, token=self.token,
                                 insecuretlsskipverify=self.insecuretlsskipverify) as pool_manager:
             raw_data, _message, status = self.__rest_helper_generic_json(pool_manager=pool_manager,
                                                                          method=method, url=url)
 
-            if status == 200 and raw_data is not None:
-                # Success
-                try:
-                    core_apis = json.loads(raw_data)
-                except DecodeException:
-                    # We got a response, but the data is malformed
-                    return kubernetes_resources, 42422, False
-            else:
+            if status != 200 or raw_data is None:
                 self.cluster_unreachable = True
                 # We could not get the core APIs; there is no use continuing
                 modified = True
                 return kubernetes_resources, status, modified
+            # Success
+            try:
+                core_apis = json.loads(raw_data)
+            except DecodeException:
+                # We got a response, but the data is malformed
+                return kubernetes_resources, 42422, False
 
             # Flush the entire API list
             for _resource_kind, resource_data in kubernetes_resources.items():
@@ -1932,7 +1940,7 @@ class KubernetesHelper:
             aggregated_data = {}
 
             url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-                  "{self.control_plane_path}/apis"
+                  f"{self.control_plane_path}/apis"
             raw_data, _message, status = \
                 self.__rest_helper_generic_json(pool_manager=pool_manager, method=method,
                                                 url=url, header_params=header_params)
@@ -1996,7 +2004,7 @@ class KubernetesHelper:
                         # This should not happen, but ignore it
                         continue
                     url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-                          "{self.control_plane_path}/apis/{version_}"
+                          f"{self.control_plane_path}/apis/{version_}"
                     raw_data, _message, status = \
                         self.__rest_helper_generic_json(pool_manager=pool_manager,
                                                         method=method, url=url)
@@ -2011,9 +2019,8 @@ class KubernetesHelper:
                         continue
 
                     for resource in deep_get(data, DictPath("resources"), []):
-                        if "list" not in deep_get(resource, DictPath("verbs"), []):
-                            continue
-                        if not (kind_ := deep_get(resource, DictPath("kind"), "")):
+                        if "list" not in deep_get(resource, DictPath("verbs"), []) \
+                           or not (kind_ := deep_get(resource, DictPath("kind"), "")):
                             continue
                         if (kind_, name) in kubernetes_resources \
                                 and f"apis/{version_}/" in \
@@ -2056,14 +2063,18 @@ class KubernetesHelper:
                 vlist.append(resource_kind)
         return vlist
 
-    # pylint: disable-next=too-many-arguments
-    def __rest_helper_generic_json(self, *, pool_manager: Tuple[urllib3.PoolManager,
-                                   urllib3.ProxyManager], method: Optional[str] = None,
-                                   url: Optional[str] = None, header_params: Optional[Dict] = None,
-                                   query_params: Optional[List[Optional[Tuple[str, Any]]]] = None,
-                                   body: Optional[bytes] = None, retries: int = 3,
-                                   connect_timeout: float = 3.0) -> Tuple[Union[AnyStr, None],
-                                                                          str, int]:
+    # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+    def __rest_helper_generic_json(self, *,
+                                   pool_manager: Union[urllib3.PoolManager, urllib3.ProxyManager],
+                                   **kwargs: Any) -> Tuple[Union[AnyStr, None], str, int]:
+        method: Optional[str] = deep_get(kwargs, DictPath("method"))
+        url: Optional[str] = deep_get(kwargs, DictPath("url"))
+        header_params: Optional[Dict] = deep_get(kwargs, DictPath("header_params"))
+        query_params: Optional[List[Optional[Tuple[str, Any]]]] = \
+            deep_get(kwargs, DictPath("query_params"))
+        body: Optional[bytes] = deep_get(kwargs, DictPath("body"))
+        retries: int = deep_get(kwargs, DictPath("retries"), 3)
+        connect_timeout: float = deep_get(kwargs, DictPath("connect_timeout"), 3.0)
 
         if pool_manager is None:
             raise ProgrammingError("__rest_helper_generic_json() "
@@ -2254,8 +2265,11 @@ class KubernetesHelper:
 
         return data, message, status
 
-    def __rest_helper_post(self, kind: Tuple[str, str], *, name: str = "", namespace: str = "",
-                           body: Optional[bytes] = None) -> Tuple[str, int]:
+    # pylint: disable-next=too-many-locals
+    def __rest_helper_post(self, kind: Tuple[str, str], **kwargs: Any) -> Tuple[str, int]:
+        name: str = deep_get(kwargs, DictPath("name"), "")
+        namespace: str = deep_get(kwargs, DictPath("namespace"), "")
+        body: Optional[bytes] = deep_get(kwargs, DictPath("body"))
         method = "POST"
 
         if body is None or not body:
@@ -2311,10 +2325,13 @@ class KubernetesHelper:
 
         return message, status
 
-    # pylint: disable-next=too-many-arguments
-    def __rest_helper_patch(self, kind: Tuple[str, str], *, name: str, namespace: str = "",
-                            strategic_merge: bool = True, subresource: str = "",
-                            body: Optional[bytes] = None) -> Tuple[str, int]:
+    # pylint: disable-next=too-many-locals
+    def __rest_helper_patch(self, kind: Tuple[str, str], *, name: str,
+                            **kwargs: Any) -> Tuple[str, int]:
+        namespace: str = deep_get(kwargs, DictPath("namespace"), "")
+        strategic_merge: bool = deep_get(kwargs, DictPath("strategic_merge"), True)
+        subresource: str = deep_get(kwargs, DictPath("subresource"), "")
+        body: Optional[bytes] = deep_get(kwargs, DictPath("body"), None)
         method = "PATCH"
 
         header_params = {
@@ -2380,6 +2397,7 @@ class KubernetesHelper:
 
         return message, status
 
+    # pylint: disable-next=too-many-locals
     def __rest_helper_delete(self, kind: Tuple[str, str], *,
                              name: str, **kwargs) -> Tuple[str, int]:
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
@@ -2437,12 +2455,16 @@ class KubernetesHelper:
     # and None for other requests; this way lists the result can be handled
     # unconditionally in for loops
 
-    # pylint: disable-next=too-many-arguments
-    def __rest_helper_get(self, *, kind: Optional[Tuple[str, str]] = None,
-                          raw_path: Optional[str] = None, name: str = "", namespace: str = "",
-                          label_selector: str = "",
-                          field_selector: str = "") -> Tuple[Union[Optional[Dict],
-                                                                   List[Optional[Dict]]], int]:
+    # pylint: disable-next=too-many-locals,too-many-branches
+    def __rest_helper_get(self, **kwargs: Any) -> Tuple[Union[Optional[Dict], List[Optional[Dict]]],
+                                                        int]:
+        kind: Optional[Tuple[str, str]] = deep_get(kwargs, DictPath("kind"))
+        raw_path: Optional[str] = deep_get(kwargs, DictPath("raw_path"))
+        name: str = deep_get(kwargs, DictPath("name"), "")
+        namespace: str = deep_get(kwargs, DictPath("namespace"), "")
+        label_selector: str = deep_get(kwargs, DictPath("label_selector"), "")
+        field_selector: str = deep_get(kwargs, DictPath("field_selector"), "")
+
         if kind is None and raw_path is None:
             raise ValueError("__rest_helper_get API called with kind None and raw_path None; "
                              "this is most likely a programming error")
@@ -2589,6 +2611,7 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_post(kind=kind, body=body)
 
+    # pylint: disable-next=too-many-locals
     def taint_node(self, node: str, taints: List[Dict],
                    new_taint: Tuple[str, Optional[str], Optional[str], Optional[str]],
                    overwrite: bool = False) -> Tuple[str, int]:
@@ -2766,7 +2789,7 @@ class KubernetesHelper:
 
         query_params: List[Optional[Tuple[str, Any]]] = []
         url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-              "{self.control_plane_path}/metrics"
+              f"{self.control_plane_path}/metrics"
         with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
                                 ca_certs_file=self.ca_certs_file, token=self.token,
                                 insecuretlsskipverify=self.insecuretlsskipverify) as pool_manager:
@@ -2963,6 +2986,7 @@ class KubernetesHelper:
         ref = cast(dict, ref)
         return ref
 
+    # pylint: disable-next=too-many-locals
     def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
                                           namespace: str, **kwargs: Any) \
             -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
