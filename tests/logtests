@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
@@ -13,7 +13,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-# unit-tests for logparser.py
+# pylint: disable=too-many-lines,missing-function-docstring,line-too-long
 
 import builtins
 from datetime import datetime
@@ -21,1250 +21,1520 @@ import importlib
 import sys
 from typing import Any, Callable, Dict, List, Tuple
 from unittest import mock
+import yaml
 
 from cmttypes import deep_get, DictPath, LogLevel, ProgrammingError
 from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
 import logparser as logparsers
-from curses_helper import ThemeString, ThemeAttr
+from curses_helper import ThemeString, ThemeAttr, ThemeRef
 
-real_import = None
+real_import = None  # pylint: disable=invalid-name
 
 import_override = {}
 
 
 def override_import(name: str, *args: List[Any], **kwargs: Any):
-	retval, exception = import_override.get(name, (None, None))
-	if exception:
-		raise exception
-	if retval:
-		return retval
-	return real_import(name, *args, **kwargs)
+    retval, exception = import_override.get(name, (None, None))
+    if exception:
+        raise exception
+    if retval:
+        return retval
+    return real_import(name, *args, **kwargs)
 
 
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+# pylint: disable-next=unused-argument
 def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
-	global import_override
+    global import_override  # pylint: disable=global-statement
 
-	message = ""
-	result = True
-	testobj = {"foo": "bar"}
-	fun = logparsers.json_dumps
+    message = ""
+    result = True
+    testobj = {"foo": "bar"}
+    fun = logparsers.json_dumps
 
-	if result:
-		import_override = {"ujson": (None, ModuleNotFoundError)}
-		try:
-			with mock.patch("builtins.__import__", side_effect=override_import):
-				importlib.reload(logparsers)
-				_tmp = logparsers.json_dumps(testobj)
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
-			result = False
+    if result:
+        import_override = {"ujson": (None, ModuleNotFoundError)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(logparsers)
+                _tmp = logparsers.json_dumps(testobj)
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
+            result = False
 
-	if result:
-		import_override = {"ujson": (None, None)}
-		try:
-			with mock.patch("builtins.__import__", side_effect=override_import):
-				importlib.reload(logparsers)
-				_tmp = logparsers.json_dumps(testobj)
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
-			result = False
+    if result:
+        import_override = {"ujson": (None, None)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(logparsers)
+                _tmp = logparsers.json_dumps(testobj)
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"overriding import ujson or {fun.__name__} failed; exception {e}"
+            result = False
 
-	import_override = {}
-	return message, result
+    import_override = {}
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
-	global import_override
+    global import_override  # pylint: disable=global-statement
 
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	if result:
-		import_override = {"validators": (None, ModuleNotFoundError)}
-		try:
-			with mock.patch("builtins.__import__", side_effect=override_import):
-				importlib.reload(logparsers)
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"Overriding import validators failed; exception {e}"
-			result = False
+    if result:
+        import_override = {"validators": (None, ModuleNotFoundError)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(logparsers)
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"Overriding import validators failed; exception {e}"
+            result = False
 
-	if result:
-		import_override = {"validators": (None, None)}
-		try:
-			with mock.patch("builtins.__import__", side_effect=override_import):
-				importlib.reload(logparsers)
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"Overriding import validators failed; exception {e}"
-			result = False
+    if result:
+        import_override = {"validators": (None, None)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(logparsers)
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"Overriding import validators failed; exception {e}"
+            result = False
 
-	import_override = {}
-	return message, result
+    import_override = {}
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_get_loglevel_names_and_name_to_loglevel(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
-	loglevels: List[str] = []
+    message = ""
+    result = True
+    loglevels: List[str] = []
 
-	fun = logparsers.get_loglevel_names
-	tmp = fun()
-	if verbose:
-		print(f"  loglevel_names: {tmp}")
+    fun = logparsers.get_loglevel_names
+    tmp = fun()
+    if verbose:
+        print(f"  loglevel_names: {tmp}")
 
-	if tmp is None:
-		message = f"{fun.__name__}() returned None"
-		result = False
-	elif not isinstance(tmp, list):
-		message = f"{fun.__name__}() returned wrong type ({type(tmp)}), expected list"
-		result = False
-	elif not tmp:
-		message = "{fun.__name__}() returned an empty list"
-		result = False
-	else:
-		loglevels = tmp
-		fun = logparsers.name_to_loglevel
-		for indata in loglevels:
-			tmp = fun(indata)
-			if tmp is None:
-				message = f"{fun.__name__}() returned None for valid indata {indata}"
-			elif not isinstance(tmp, LogLevel):
-				message = f"{fun.__name__}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected LogLevel"
-				result = False
-				break
-			if verbose:
-				print(f"  <{tmp}>: {indata}")
+    if tmp is None:
+        message = f"{fun.__name__}() returned None"
+        result = False
+    elif not isinstance(tmp, list):
+        message = f"{fun.__name__}() returned wrong type ({type(tmp)}), expected list"
+        result = False
+    elif not tmp:
+        message = "{fun.__name__}() returned an empty list"
+        result = False
+    else:
+        loglevels = tmp
+        fun = logparsers.name_to_loglevel
+        for indata in loglevels:
+            tmp = fun(indata)
+            if tmp is None:
+                message = f"{fun.__name__}() returned None for valid indata {indata}"
+            elif not isinstance(tmp, LogLevel):
+                message = f"{fun.__name__}() returned wrong type ({type(tmp)}) " \
+                          f"with valid indata {indata}, expected LogLevel"
+                result = False
+                break
+            if verbose:
+                print(f"  <{tmp}>: {indata}")
 
-	if result:
-		try:
-			indata = "NOT A LOGLEVEL"
-			fun(indata)
-			message = f"{fun.__name__}() silently accepted invalid indata {indata}"
-			result = False
-		except ProgrammingError:
-			pass
+    if result:
+        try:
+            indata = "NOT A LOGLEVEL"
+            fun(indata)
+            message = f"{fun.__name__}() silently accepted invalid indata {indata}"
+            result = False
+        except ProgrammingError:
+            pass
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_month_to_numerical(verbose: bool = False) -> Tuple[str, bool]:
-	verbose = False
-	message = ""
-	result = True
+    verbose = False
+    message = ""
+    result = True
 
-	for indata in ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"):
-		fun = logparsers.month_to_numerical
-		tmp = fun(indata)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None with valid indata {indata}"
-			result = False
-		elif not isinstance(tmp, str):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) with valid indata {indata}, expected str"
-			result = False
-		else:
-			if verbose:
-				print(f"{tmp}: {indata.capitalize()}")
+    for indata in ("jan", "feb", "mar", "apr", "may", "jun",
+                   "jul", "aug", "sep", "oct", "nov", "dec"):
+        fun = logparsers.month_to_numerical
+        tmp = fun(indata)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None with valid indata {indata}"
+            result = False
+        elif not isinstance(tmp, str):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) " \
+                      f"with valid indata {indata}, expected str"
+            result = False
+        else:
+            if verbose:
+                print(f"{tmp}: {indata.capitalize()}")
 
-	if result:
-		try:
-			indata = "NOT A MONTH"
-			fun(indata)
-			message = f"{fun.__name__}() silently accepted invalid indata ({indata})"
-			result = False
-		except ValueError:
-			pass
+    if result:
+        try:
+            indata = "NOT A MONTH"
+            fun(indata)
+            message = f"{fun.__name__}() silently accepted invalid indata ({indata})"
+            result = False
+        except ValueError:
+            pass
 
-	return message, result
-
-
-def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
-
-	for indata in valid_indata:
-		tmp = fun(indata)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None with valid indata {indata}"
-			result = False
-		elif not isinstance(tmp, LogLevel):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected LogLevel"
-			result = False
-		else:
-			if verbose:
-				print(f"<{indata}>: {fun(indata)}")
-
-	if result:
-		# If we don't pass a default we should get None
-		indata = "#"
-		tmp = fun(indata)
-		if tmp is not None:
-			message = f"{fun.__name__}(default = None) returned {tmp} with invalid indata ({indata}), expected None"
-			result = False
-
-	if result:
-		# If we pass a default we should get that default back if the severity is invalid
-		tmp = fun(indata, default=LogLevel.NOTICE)
-		if tmp is None:
-			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned None with invalid indata ({indata}), expected LogLevel.NOTICE"
-			result = False
-		elif not isinstance(tmp, LogLevel):
-			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned wrong type ({type(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel"
-			result = False
-		elif tmp != LogLevel.NOTICE:
-			message = f"{fun.__name__}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) with invalid indata {indata} with default = LogLevel.NOTICE, expected LogLevel.NOTICE"
-			result = False
-
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
+def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable,
+                            verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    for indata in valid_indata:
+        tmp = fun(indata)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None with valid indata {indata}"
+            result = False
+        elif not isinstance(tmp, LogLevel):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) " \
+                      f"for valid indata {indata}, expected LogLevel"
+            result = False
+        else:
+            if verbose:
+                print(f"<{indata}>: {fun(indata)}")
+
+    if result:
+        # If we don't pass a default we should get None
+        indata = "#"
+        tmp = fun(indata)
+        if tmp is not None:
+            message = f"{fun.__name__}(default = None) returned {tmp} with " \
+                      f"invalid indata ({indata}), expected None"
+            result = False
+
+    if result:
+        # If we pass a default we should get that default back if the severity is invalid
+        tmp = fun(indata, default=LogLevel.NOTICE)
+        if tmp is None:
+            message = f"{fun.__name__}(default = LogLevel.NOTICE) returned None with " \
+                      f"invalid indata ({indata}), expected LogLevel.NOTICE"
+            result = False
+        elif not isinstance(tmp, LogLevel):
+            message = f"{fun.__name__}(default = LogLevel.NOTICE) returned wrong type " \
+                      f"({type(tmp)}) with invalid indata {indata} with " \
+                      "default = LogLevel.NOTICE, expected LogLevel"
+            result = False
+        elif tmp != LogLevel.NOTICE:
+            message = f"{fun.__name__}(default = LogLevel.NOTICE) returned value ({repr(tmp)}) " \
+                      f"with invalid indata {indata} with default = LogLevel.NOTICE, " \
+                      "expected LogLevel.NOTICE"
+            result = False
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
 def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"), fun=logparsers.letter_to_severity)
+    return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"), fun=logparsers.letter_to_severity)
 
 
+# pylint: disable-next=unused-argument
 def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"), fun=logparsers.str_3letter_to_severity)
+    return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"), fun=logparsers.str_3letter_to_severity)
 
 
+# pylint: disable-next=unused-argument
 def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun=logparsers.str_4letter_to_severity)
+    return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun=logparsers.str_4letter_to_severity)
 
 
+# pylint: disable-next=unused-argument
 def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun=logparsers.str_to_severity)
+    return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun=logparsers.str_to_severity)
 
 
+# pylint: disable-next=unused-argument
 def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	for indata in valid_indata:
-		tmp = fun(indata)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None with valid indata {indata}"
-			result = False
-		elif not isinstance(tmp, str):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
-			result = False
-		else:
-			if verbose:
-				print(f"<{indata}>: {fun(indata)}")
+    for indata in valid_indata:
+        tmp = fun(indata)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None with valid indata {indata}"
+            result = False
+        elif not isinstance(tmp, str):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
+            result = False
+        else:
+            if verbose:
+                print(f"<{indata}>: {fun(indata)}")
 
-	if result:
-		indata = -42
-		tmp = fun(indata)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
-			result = False
-		elif tmp != "!ERROR IN LOGPARSER!":
-			message = f"{fun.__name__}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
-			result = False
+    if result:
+        indata = -42
+        tmp = fun(indata)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+            result = False
+        elif tmp != "!ERROR IN LOGPARSER!":
+            message = f"{fun.__name__}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+            result = False
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_letter_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_letter_severity)
 
 
+# pylint: disable-next=unused-argument
 def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_4letter_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_4letter_severity)
 
 
+# pylint: disable-next=unused-argument
 def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_word_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_word_severity)
 
 
+# pylint: disable-next=unused-argument
 def generic_split_severity(valid_indata: Tuple[str], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
-	default = LogLevel.INFO
+    message = ""
+    result = True
+    default = LogLevel.INFO
 
-	for indata in valid_indata:
-		# indata is just a prefix; we want to test with a string prefixed by that prefix"
-		indata = f"{indata} something or another"
-		tmp = fun(indata, default=default)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None with valid indata {indata}"
-			result = False
-		elif not isinstance(tmp, tuple):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
-			result = False
-		elif len(tmp) != 2:
-			message = f"{fun.__name__}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
-			result = False
-		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
-			result = False
-		else:
-			if verbose:
-				print(f"<{indata}, default = {default}>: {fun(indata, default = default)}")
+    for indata in valid_indata:
+        # indata is just a prefix; we want to test with a string prefixed by that prefix"
+        indata = f"{indata} something or another"
+        tmp = fun(indata, default=default)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None with valid indata {indata}"
+            result = False
+        elif not isinstance(tmp, tuple):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
+            result = False
+        elif len(tmp) != 2:
+            message = f"{fun.__name__}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
+            result = False
+        elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
+            result = False
+        else:
+            if verbose:
+                print(f"<{indata}, default = {default}>: {fun(indata, default = default)}")
 
-	if result:
-		indata = "NOT A VALID PREFIX"
-		tmp = fun(indata, default=default)
-		if tmp is None:
-			message = f"{fun.__name__}() returned None for invalid indata {indata}, expected ({indata}, {default})"
-			result = False
-		elif not isinstance(tmp, tuple):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
-			result = False
-		elif len(tmp) != 2:
-			message = f"{fun.__name__}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
-			result = False
-		elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-			message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
-			result = False
-		elif tmp[0] != indata or tmp[1] != default:
-			message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
-			result = False
+    if result:
+        indata = "NOT A VALID PREFIX"
+        tmp = fun(indata, default=default)
+        if tmp is None:
+            message = f"{fun.__name__}() returned None for invalid indata {indata}, expected ({indata}, {default})"
+            result = False
+        elif not isinstance(tmp, tuple):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
+            result = False
+        elif len(tmp) != 2:
+            message = f"{fun.__name__}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
+            result = False
+        elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
+            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
+            result = False
+        elif tmp[0] != indata or tmp[1] != default:
+            message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
+            result = False
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_split_bracketed_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata=("[fatal]", "[alert]", "[error]", "[err]", "[warning]", "[warn]", "[notice]", "[info]", "[system]", "[note]", "[debug]", "[notavalidseverity]"),
-				      fun=logparsers.split_bracketed_severity, verbose=verbose)
+    return generic_split_severity(valid_indata=("[fatal]", "[alert]", "[error]", "[err]",
+                                                "[warning]", "[warn]", "[notice]", "[info]",
+                                                "[system]", "[note]", "[debug]",
+                                                "[notavalidseverity]"),
+                                  fun=logparsers.split_bracketed_severity, verbose=verbose)
 
 
+# pylint: disable-next=unused-argument
 def test_split_colon_severity(verbose: bool = False) -> Tuple[str, bool]:
-	return generic_split_severity(valid_indata=("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:", "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
-				      fun=logparsers.split_colon_severity, verbose=verbose)
+    return generic_split_severity(valid_indata=("CRITICAL:", "ERROR:", "WARNING:", "NOTICE:",
+                                                "NOTE:", "INFO:", "DEBUG:", "NOTAVALIDSEVERITY:"),
+                                  fun=logparsers.split_colon_severity, verbose=verbose)
 
 
+# pylint: disable-next=unused-argument
+def test_substitute_bullets(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = logparsers.substitute_bullets
+
+    if result:
+        testdata = (
+            # Indata format:
+            # (string, prefix, expected_result, expected_exception)
+            ("*Bulleted message", "* ", "*Bulleted message", None),
+            ("*Bulleted message", "*", "•Bulleted message", None),
+            ("* Bulleted message", "* ", "• Bulleted message", None),
+            ("* * Bulleted message", "* ", "• * Bulleted message", None),
+            ("Non-Bulleted message", "* ", "Non-Bulleted message", None),
+            ("Bullet * inside * message", "* ", "Bullet * inside * message", None),
+        )
+
+        for indata, prefix, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata, prefix)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
 def test_is_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	valid_indata = (
-		"1.677757754464991e+09",
-		"2020-02-20 13:47:41",
-		"2020-02-20 13.47.41",
-		"2020-02-20 13:47:41Z",
-		"2020-02-20 13.47.41Z",
-		"2020-02-20 13:47:41.224Z",
-		"2020-02-20 13:47:41,224Z",
-		"2020-02-20 13.47.41.224Z",
-		"2020-02-20 13.47.41,224Z",
-		"2020-02-20 13:47:41.22422424 +03:00",
-		"2020-02-20 13:47:41,22422424 +03:00",
-		"2020-02-20 13.47.41.22422424 +03:00",
-		"2020-02-20 13.47.41,22422424 +03:00",
-		"2020-02-20 13:47:41.22422424 -03:00",
-		"2020-02-20 13:47:41,22422424 -03:00",
-		"2020-02-20 13.47.41.22422424 -03:00",
-		"2020-02-20 13.47.41,22422424 -03:00",
-		"2020-02-20 13:47:41.22422424 +03.00",
-		"2020-02-20 13:47:41,22422424 +03.00",
-		"2020-02-20 13.47.41.22422424 +03.00",
-		"2020-02-20 13.47.41,22422424 +03.00",
-		"2020-02-20 13:47:41.22422424 -03.00",
-		"2020-02-20 13:47:41,22422424 -03.00",
-		"2020-02-20 13.47.41.22422424 -03.00",
-		"2020-02-20 13.47.41,22422424 -03.00",
-		"2020-02-20 13:47:41.224224 +03:00",
-		"2020-02-20 13:47:41,224224 +03:00",
-		"2020-02-20 13.47.41.224224 +03:00",
-		"2020-02-20 13.47.41,224224 +03:00",
-		"2020-02-20 13:47:41.224224 -03:00",
-		"2020-02-20 13:47:41,224224 -03:00",
-		"2020-02-20 13.47.41.224224 -03:00",
-		"2020-02-20 13.47.41,224224 -03:00",
-		"2020-02-20 13:47:41.224224 +03.00",
-		"2020-02-20 13:47:41,224224 +03.00",
-		"2020-02-20 13.47.41.224224 +03.00",
-		"2020-02-20 13.47.41,224224 +03.00",
-		"2020-02-20 13:47:41.224224 -03.00",
-		"2020-02-20 13:47:41,224224 -03.00",
-		"2020-02-20 13.47.41.224224 -03.00",
-		"2020-02-20 13.47.41,224224 -03.00",
-		"2020-02-20 13:47:41.224 +03:00",
-		"2020-02-20 13:47:41,224 +03:00",
-		"2020-02-20 13.47.41.224 +03:00",
-		"2020-02-20 13.47.41,224 +03:00",
-		"2020-02-20 13:47:41.224 -03:00",
-		"2020-02-20 13:47:41,224 -03:00",
-		"2020-02-20 13.47.41.224 -03:00",
-		"2020-02-20 13.47.41,224 -03:00",
-		"2020-02-20 13:47:41.224 +03.00",
-		"2020-02-20 13:47:41,224 +03.00",
-		"2020-02-20 13.47.41.224 +03.00",
-		"2020-02-20 13.47.41,224 +03.00",
-		"2020-02-20 13:47:41.224 -03.00",
-		"2020-02-20 13:47:41,224 -03.00",
-		"2020-02-20 13.47.41.224 -03.00",
-		"2020-02-20 13.47.41,224 -03.00",
-		"2020-02-20 13:47:41.224233",
-		"2020-02-20 13:47:41,224233",
-		"2020-02-20 13:47:41.224233Z",
-		"2020-02-20 13:47:41,224233Z",
-		"2020-02-20 13:47:41.22423343",
-		"2020-02-20 13:47:41,22423343",
-		"2020-02-20 13:47:41.22423343Z",
-		"2020-02-20 13:47:41,22423343Z",
-	)
+    valid_indata = (
+        "1.677757754464991e+09",
+        "2020-02-20 13:47:41",
+        "2020-02-20 13.47.41",
+        "2020-02-20 13:47:41Z",
+        "2020-02-20 13.47.41Z",
+        "2020-02-20 13:47:41.224Z",
+        "2020-02-20 13:47:41,224Z",
+        "2020-02-20 13.47.41.224Z",
+        "2020-02-20 13.47.41,224Z",
+        "2020-02-20 13:47:41.22422424 +03:00",
+        "2020-02-20 13:47:41,22422424 +03:00",
+        "2020-02-20 13.47.41.22422424 +03:00",
+        "2020-02-20 13.47.41,22422424 +03:00",
+        "2020-02-20 13:47:41.22422424 -03:00",
+        "2020-02-20 13:47:41,22422424 -03:00",
+        "2020-02-20 13.47.41.22422424 -03:00",
+        "2020-02-20 13.47.41,22422424 -03:00",
+        "2020-02-20 13:47:41.22422424 +03.00",
+        "2020-02-20 13:47:41,22422424 +03.00",
+        "2020-02-20 13.47.41.22422424 +03.00",
+        "2020-02-20 13.47.41,22422424 +03.00",
+        "2020-02-20 13:47:41.22422424 -03.00",
+        "2020-02-20 13:47:41,22422424 -03.00",
+        "2020-02-20 13.47.41.22422424 -03.00",
+        "2020-02-20 13.47.41,22422424 -03.00",
+        "2020-02-20 13:47:41.224224 +03:00",
+        "2020-02-20 13:47:41,224224 +03:00",
+        "2020-02-20 13.47.41.224224 +03:00",
+        "2020-02-20 13.47.41,224224 +03:00",
+        "2020-02-20 13:47:41.224224 -03:00",
+        "2020-02-20 13:47:41,224224 -03:00",
+        "2020-02-20 13.47.41.224224 -03:00",
+        "2020-02-20 13.47.41,224224 -03:00",
+        "2020-02-20 13:47:41.224224 +03.00",
+        "2020-02-20 13:47:41,224224 +03.00",
+        "2020-02-20 13.47.41.224224 +03.00",
+        "2020-02-20 13.47.41,224224 +03.00",
+        "2020-02-20 13:47:41.224224 -03.00",
+        "2020-02-20 13:47:41,224224 -03.00",
+        "2020-02-20 13.47.41.224224 -03.00",
+        "2020-02-20 13.47.41,224224 -03.00",
+        "2020-02-20 13:47:41.224 +03:00",
+        "2020-02-20 13:47:41,224 +03:00",
+        "2020-02-20 13.47.41.224 +03:00",
+        "2020-02-20 13.47.41,224 +03:00",
+        "2020-02-20 13:47:41.224 -03:00",
+        "2020-02-20 13:47:41,224 -03:00",
+        "2020-02-20 13.47.41.224 -03:00",
+        "2020-02-20 13.47.41,224 -03:00",
+        "2020-02-20 13:47:41.224 +03.00",
+        "2020-02-20 13:47:41,224 +03.00",
+        "2020-02-20 13.47.41.224 +03.00",
+        "2020-02-20 13.47.41,224 +03.00",
+        "2020-02-20 13:47:41.224 -03.00",
+        "2020-02-20 13:47:41,224 -03.00",
+        "2020-02-20 13.47.41.224 -03.00",
+        "2020-02-20 13.47.41,224 -03.00",
+        "2020-02-20 13:47:41.224233",
+        "2020-02-20 13:47:41,224233",
+        "2020-02-20 13:47:41.224233Z",
+        "2020-02-20 13:47:41,224233Z",
+        "2020-02-20 13:47:41.22423343",
+        "2020-02-20 13:47:41,22423343",
+        "2020-02-20 13:47:41.22423343Z",
+        "2020-02-20 13:47:41,22423343Z",
+    )
 
-	invalid_indata = (
-		"2020%02%20 13:47:41",
-		"2020-02-20 113.47.41",
-	)
+    invalid_indata = (
+        "2020%02%20 13:47:41",
+        "2020-02-20 113.47.41",
+    )
 
-	fun = logparsers.is_timestamp
+    fun = logparsers.is_timestamp
 
-	for indata in valid_indata:
-		tmp = fun(indata)
-		if not tmp:
-			message = f"{fun.__name__}() returned False with valid indata {indata}"
-			result = False
-			break
+    for indata in valid_indata:
+        tmp = fun(indata)
+        if not tmp:
+            message = f"{fun.__name__}() returned False with valid indata {indata}"
+            result = False
+            break
 
-	for indata in invalid_indata:
-		tmp = fun(indata)
-		if tmp:
-			message = f"{fun.__name__}() returned True with invalid indata {indata}"
-			result = False
-			break
+    for indata in invalid_indata:
+        tmp = fun(indata)
+        if tmp:
+            message = f"{fun.__name__}() returned True with invalid indata {indata}"
+            result = False
+            break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_split_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	valid_indata = (
-		"[2020-02-07 13:12:24.224]",
-		"[2020-02-07 13:12:24,224]",
-		"2020-02-07T13:12:24.224Z",
-		"2020-02-13T12:06:18.011345 +03:00",
-		"2020-02-13T12:06:18.011345 -03:00",
-		"2020-09-23T17:12:32.18396709+03:00",
-		"2020-02-13T12:06:18.011345 +03:00",
-		"2020-02-13T12:06:18.011345 -03:00",
-		"2020-09-23T17:12:32.183967091+03:00",
-		"2020-09-23T17:12:32.183967091-03:00",
-		"2020-02-13 12:06:18+03:00",
-		"2020-02-13 12:06:18-03:00",
-		"[2020-02-13 12:06:18 +03:00]",
-		"[2020-02-13 12:06:18 -03:00]",
-		"2020-02-13T12:06:18+0300",
-		"2020-02-13T12:06:18-0300",
-		"2020-02-20 13:47:41.008416",
-		"2020-02-20 13:47:41.008416:",
-		"2020/02/20 13:47:41.008416",
-		"2020-02-20 13:47:41.008416Z",
-		"[2021-12-18T20:15:36Z]",
-		"2021-12-18T20:15:36Z",
-		"2020-02-20 13:47:41",
-		"2020/02/20 13:47:41",
-	)
+    valid_indata = (
+        "[2020-02-07 13:12:24.224]",
+        "[2020-02-07 13:12:24,224]",
+        "2020-02-07T13:12:24.224Z",
+        "2020-02-13T12:06:18.011345 +03:00",
+        "2020-02-13T12:06:18.011345 -03:00",
+        "2020-09-23T17:12:32.18396709+03:00",
+        "2020-02-13T12:06:18.011345 +03:00",
+        "2020-02-13T12:06:18.011345 -03:00",
+        "2020-09-23T17:12:32.183967091+03:00",
+        "2020-09-23T17:12:32.183967091-03:00",
+        "2020-02-13 12:06:18+03:00",
+        "2020-02-13 12:06:18-03:00",
+        "[2020-02-13 12:06:18 +03:00]",
+        "[2020-02-13 12:06:18 -03:00]",
+        "2020-02-13T12:06:18+0300",
+        "2020-02-13T12:06:18-0300",
+        "2020-02-20 13:47:41.008416",
+        "2020-02-20 13:47:41.008416:",
+        "2020/02/20 13:47:41.008416",
+        "2020-02-20 13:47:41.008416Z",
+        "[2021-12-18T20:15:36Z]",
+        "2021-12-18T20:15:36Z",
+        "2020-02-20 13:47:41",
+        "2020/02/20 13:47:41",
+    )
 
-	timestamp = datetime.now()
-	fun = logparsers.split_iso_timestamp
+    timestamp = datetime.now()
+    fun = logparsers.split_iso_timestamp
 
-	for indata in valid_indata:
-		# indata is just a prefix; we want to test with a string prefixed by that prefix"
-		indata = f"{indata} something or another"
-		tmp = fun(indata, timestamp=timestamp)
-		if tmp == (indata, timestamp):
-			message = f"{fun.__name__} failed to split timestamp from valid indata {indata}"
-			result = False
-			break
+    for indata in valid_indata:
+        # indata is just a prefix; we want to test with a string prefixed by that prefix"
+        indata = f"{indata} something or another"
+        tmp = fun(indata, timestamp=timestamp)
+        if tmp == (indata, timestamp):
+            message = f"{fun.__name__} failed to split timestamp from valid indata {indata}"
+            result = False
+            break
 
-	if result:
-		indata = "something or another"
-		tmp = fun(indata, timestamp=timestamp)
-		if tmp != (indata, timestamp):
-			message = f"{fun.__name__} did not return the indata {indata} unmodified"
-			result = False
+    if result:
+        indata = "something or another"
+        tmp = fun(indata, timestamp=timestamp)
+        if tmp != (indata, timestamp):
+            message = f"{fun.__name__} did not return the indata {indata} unmodified"
+            result = False
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_strip_iso_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	valid_indata = (
-		"[2020-02-07 13:12:24.224]",
-		"[2020-02-07 13:12:24,224]",
-		"2020-02-07T13:12:24.224Z",
-		"2020-02-13T12:06:18.011345 +03:00",
-		"2020-02-13T12:06:18.011345 -03:00",
-		"2020-09-23T17:12:32.18396709+03:00",
-		"2020-02-13T12:06:18.011345 +03:00",
-		"2020-02-13T12:06:18.011345 -03:00",
-		"2020-09-23T17:12:32.183967091+03:00",
-		"2020-09-23T17:12:32.183967091-03:00",
-		"2020-02-13 12:06:18+03:00",
-		"2020-02-13 12:06:18-03:00",
-		"[2020-02-13 12:06:18 +03:00]",
-		"[2020-02-13 12:06:18 -03:00]",
-		"2020-02-13T12:06:18+0300",
-		"2020-02-13T12:06:18-0300",
-		"2020-02-20 13:47:41.008416",
-		"2020-02-20 13:47:41.008416:",
-		"2020/02/20 13:47:41.008416",
-		"2020-02-20 13:47:41.008416Z",
-		"[2021-12-18T20:15:36Z]",
-		"2021-12-18T20:15:36Z",
-		"2020-02-20 13:47:41",
-		"2020/02/20 13:47:41",
-	)
+    valid_indata = (
+        "[2020-02-07 13:12:24.224]",
+        "[2020-02-07 13:12:24,224]",
+        "2020-02-07T13:12:24.224Z",
+        "2020-02-13T12:06:18.011345 +03:00",
+        "2020-02-13T12:06:18.011345 -03:00",
+        "2020-09-23T17:12:32.18396709+03:00",
+        "2020-02-13T12:06:18.011345 +03:00",
+        "2020-02-13T12:06:18.011345 -03:00",
+        "2020-09-23T17:12:32.183967091+03:00",
+        "2020-09-23T17:12:32.183967091-03:00",
+        "2020-02-13 12:06:18+03:00",
+        "2020-02-13 12:06:18-03:00",
+        "[2020-02-13 12:06:18 +03:00]",
+        "[2020-02-13 12:06:18 -03:00]",
+        "2020-02-13T12:06:18+0300",
+        "2020-02-13T12:06:18-0300",
+        "2020-02-20 13:47:41.008416",
+        "2020-02-20 13:47:41.008416:",
+        "2020/02/20 13:47:41.008416",
+        "2020-02-20 13:47:41.008416Z",
+        "[2021-12-18T20:15:36Z]",
+        "2021-12-18T20:15:36Z",
+        "2020-02-20 13:47:41",
+        "2020/02/20 13:47:41",
+    )
 
-	fun = logparsers.strip_iso_timestamp
+    fun = logparsers.strip_iso_timestamp
 
-	for indata in valid_indata:
-		# indata is just a prefix; we want to test with a string prefixed by that prefix"
-		indata = f"{indata} something or another"
-		tmp = fun(indata)
-		if tmp == indata:
-			message = f"{fun.__name__} failed to strip timestamp from valid indata {indata}"
-			result = False
-			break
+    for indata in valid_indata:
+        # indata is just a prefix; we want to test with a string prefixed by that prefix"
+        indata = f"{indata} something or another"
+        tmp = fun(indata)
+        if tmp == indata:
+            message = f"{fun.__name__} failed to strip timestamp from valid indata {indata}"
+            result = False
+            break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.strip_iso_timestamp_with_tz
+    fun = logparsers.strip_iso_timestamp_with_tz
 
-	if result:
-		testdata = (
-			# Indata format:
-			# (string, expected_result, expected_exception)
-			("2020-02-20 13:47:01.531 GMT", "", None),
-			("2020-02-20 13:47:01.531 GMT with some other data", "with some other data", None),
-			("2020-02-20 13:47:01.531", "2020-02-20 13:47:01.531", None),
-		)
+    if result:
+        testdata = (
+            # Indata format:
+            # (string, expected_result, expected_exception)
+            ("2020-02-20 13:47:01.531 GMT", "", None),
+            ("2020-02-20 13:47:01.531 GMT with some other data", "with some other data", None),
+            ("2020-02-20 13:47:01.531", "2020-02-20 13:47:01.531", None),
+        )
 
-		for string, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(string)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:  # pylint: disable=broad-except
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+        for string, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(string)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument,too-many-locals
 def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.iptables
+    fun = logparsers.iptables
 
-	if result:
-		testdata = (
-			# Indata format:
-			# (string, fold_msg, remnants, expected_result, expected_remnants, expected_exception)
-			("/sbin/iptables", [], False,
-			 [ThemeString('/sbin/iptables', ThemeAttr('types', 'iptables_programname'), False)], [], None),
-			("# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024", [], False,
-			 [ThemeString('# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024',
-			  ThemeAttr('types', 'iptables_comment'), False)], [], None),
-			("*filter", [], False,
-			 [ThemeString('*filter', ThemeAttr('types', 'iptables_table'), False)], [], None),
-			("*filter # Trailing comment", [], False,
-			 [ThemeString('*filter', ThemeAttr('types', 'iptables_table'), False),
-			  ThemeString(' ', ThemeAttr('types', 'iptables_comment'), False),
-			  ThemeString('', ThemeAttr('types', 'iptables_comment'), False)], [], None),
-			(":INPUT ACCEPT [402864269:151316188286]", [], False,
-			 [ThemeString(':INPUT', ThemeAttr('types', 'iptables_chain'), False),
-			  ThemeString(' ACCEPT', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' [402864269:151316188286]', ThemeAttr('types', 'iptables_argument'), False)], [], None),
-			("COMMIT", [], False,
-			 [ThemeString('COMMIT', ThemeAttr('types', 'iptables_command'), False)], [], None),
-			("-A DOCKER -i docker0 -j RETURN", [], False,
-			 [ThemeString(' DOCKER', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -i', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' docker0', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' RETURN', ThemeAttr('types', 'iptables_argument'), False)], [], None),
-			("-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE", [], False,
-			 [ThemeString(' POSTROUTING', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -s', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' 172.17.0.0/16', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' !', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -o', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' docker0', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' MASQUERADE', ThemeAttr('types', 'iptables_argument'), False)], [], None),
-			("-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER", [], False,
-			 [ThemeString(' OUTPUT', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' !', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -d', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' 127.0.0.0/8', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -m', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' addrtype', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' --dst-type', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' LOCAL', ThemeAttr('types', 'iptables_argument'), False),
-			  ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
-			  ThemeString(' DOCKER', ThemeAttr('types', 'iptables_argument'), False)], [], None),
-		)
+    if result:
+        testdata = (
+            # Indata format:
+            # (string, fold_msg, remnants, expected_result, expected_remnants, expected_exception)
+            ("/sbin/iptables", [], False,
+             [ThemeString('/sbin/iptables', ThemeAttr('types', 'iptables_programname'), False)], [], None),
+            ("# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024", [], False,
+             [ThemeString('# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024',
+              ThemeAttr('types', 'iptables_comment'), False)], [], None),
+            ("*filter", [], False,
+             [ThemeString('*filter', ThemeAttr('types', 'iptables_table'), False)], [], None),
+            ("*filter # Trailing comment", [], False,
+             [ThemeString('*filter', ThemeAttr('types', 'iptables_table'), False),
+              ThemeString(' ', ThemeAttr('types', 'iptables_comment'), False),
+              ThemeString('', ThemeAttr('types', 'iptables_comment'), False)], [], None),
+            (":INPUT ACCEPT [402864269:151316188286]", [], False,
+             [ThemeString(':INPUT', ThemeAttr('types', 'iptables_chain'), False),
+              ThemeString(' ACCEPT', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' [402864269:151316188286]', ThemeAttr('types', 'iptables_argument'), False)], [], None),
+            ("COMMIT", [], False,
+             [ThemeString('COMMIT', ThemeAttr('types', 'iptables_command'), False)], [], None),
+            ("-A DOCKER -i docker0 -j RETURN", [], False,
+             [ThemeString(' DOCKER', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -i', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' docker0', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' RETURN', ThemeAttr('types', 'iptables_argument'), False)], [], None),
+            ("-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE", [], False,
+             [ThemeString(' POSTROUTING', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -s', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' 172.17.0.0/16', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' !', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -o', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' docker0', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' MASQUERADE', ThemeAttr('types', 'iptables_argument'), False)], [], None),
+            ("-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER", [], False,
+             [ThemeString(' OUTPUT', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' !', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -d', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' 127.0.0.0/8', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -m', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' addrtype', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' --dst-type', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' LOCAL', ThemeAttr('types', 'iptables_argument'), False),
+              ThemeString(' -j', ThemeAttr('types', 'iptables_option'), False),
+              ThemeString(' DOCKER', ThemeAttr('types', 'iptables_argument'), False)], [], None),
+        )
 
-		for string, remnants, fold_msg, expected_result, expected_remnants, expected_exception in testdata:
-			try:
-				tmp, _loglevel, facility, remnants = fun(string, [], fold_msg=fold_msg)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:  # pylint: disable=broad-except
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+        for string, _remnants, fold_msg, expected_result, \
+                _expected_remnants, expected_exception in testdata:
+            try:
+                tmp, _loglevel, _facility, _remnants = fun(string, [], fold_msg=fold_msg)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_http(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.http
+    fun = logparsers.http
 
-	if result:
-		testdata = (
-			# Indata format:
-			# (string, fold_msg, expected_result, expected_remnants, expected_exception)
-			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 400 -',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('400', ThemeAttr('logview', 'severity_error'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 300 -',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-			('10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] "GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283 HTTP/1.1" 404 528 "-" "Grafana/8.3.10" 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4',
-			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
-			 [ThemeString('10.32.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[2023-02-20 11:38:13 +0000]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
-			  ThemeString(' 528 "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('Grafana/8.3.10', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4', ThemeAttr('types', 'generic'), False)], None),
-			('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
-			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
-			 [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[2022-04-06 18:50:45]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-			('10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"',
-			 LogLevel.INFO, "", True, {"reformat_timestamps": True},
-			 [ThemeString('10.244.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[2022-00-29 10:34:20 +0000]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/v0/healthz', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('301', ThemeAttr('logview', 'severity_warning'), False),
-			  ThemeString(' 178 "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('kube-probe/1.23', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('', ThemeAttr('types', 'generic'), False)], None),
-			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
-			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 300 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
-			('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 404 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/ready', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
-			  ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
-			('10.245.0.1 - - [01/Mar/2024:14:04:03 +0000] "GET /api/v1/status/buildinfo HTTP/1.1" 200 186 "-" "Grafana/8.5.27" 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('10.245.0.1', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[01/Mar/2024:14:04:03 +0000]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/api/v1/status/buildinfo', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
-			  ThemeString(' 186 "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('Grafana/8.5.27', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80', ThemeAttr('types', 'generic'), False)], None),
-			('10.245.96.15 - - [28/Feb/2024:16:25:59 +0000] "GET /sd-shared-gpu-7b5548d864-pz77r.png HTTP/1.1" 304 0 "http://sd-preview.val.cluster:27080/" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[28/Feb/2024:16:25:59 +0000]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/sd-shared-gpu-7b5548d864-pz77r.png', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('304', ThemeAttr('logview', 'severity_warning'), False),
-			  ThemeString(' 0 "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('http://sd-preview.val.cluster:27080/', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
-			('10.245.96.15 - - [28/Feb/2024:16:29:57 +0000] "GET / HTTP/1.1" 200 1026 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
-			 LogLevel.INFO, "", True, {},
-			 [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
-			  ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('[28/Feb/2024:16:29:57 +0000]', ThemeAttr('logview', 'timestamp'), False),
-			  ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('/', ThemeAttr('logview', 'url'), False),
-			  ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
-			  ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
-			  ThemeString(' 1026 "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('-', ThemeAttr('logview', 'url'), False),
-			  ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
-			  ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
-			  ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
-		)
+    if result:
+        testdata = (
+            # Indata format:
+            # (string, fold_msg, expected_result, expected_remnants, expected_exception)
+            ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 400 -',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('400', ThemeAttr('logview', 'severity_error'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 300 -',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[06/May/2022:18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] "GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283 HTTP/1.1" 404 528 "-" "Grafana/8.3.10" 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4',
+             LogLevel.INFO, "", True, {"reformat_timestamps": True},
+             [ThemeString('10.32.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[2023-02-20 11:38:13 +0000]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
+              ThemeString(' 528 "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('Grafana/8.3.10', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4', ThemeAttr('types', 'generic'), False)], None),
+            ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
+             LogLevel.INFO, "", True, {"reformat_timestamps": True},
+             [ThemeString('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[2022-04-06 18:50:45]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"',
+             LogLevel.INFO, "", True, {"reformat_timestamps": True},
+             [ThemeString('10.244.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[2022-00-29 10:34:20 +0000]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/v0/healthz', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('301', ThemeAttr('logview', 'severity_warning'), False),
+              ThemeString(' 178 "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('kube-probe/1.23', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('', ThemeAttr('types', 'generic'), False)], None),
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 300 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('300', ThemeAttr('logview', 'severity_warning'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 404 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/ready', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('404', ThemeAttr('logview', 'severity_error'), False),
+              ThemeString(' -', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 5', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 0', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' - "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('kube-probe/1.25', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('0823108e-89da-41f6-9663-ff0e7003f098', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('internalkourier', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False)], None),
+            ('10.245.0.1 - - [01/Mar/2024:14:04:03 +0000] "GET /api/v1/status/buildinfo HTTP/1.1" 200 186 "-" "Grafana/8.5.27" 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('10.245.0.1', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[01/Mar/2024:14:04:03 +0000]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/api/v1/status/buildinfo', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+              ThemeString(' 186 "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('Grafana/8.5.27', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80', ThemeAttr('types', 'generic'), False)], None),
+            ('10.245.96.15 - - [28/Feb/2024:16:25:59 +0000] "GET /sd-shared-gpu-7b5548d864-pz77r.png HTTP/1.1" 304 0 "http://sd-preview.val.cluster:27080/" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[28/Feb/2024:16:25:59 +0000]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/sd-shared-gpu-7b5548d864-pz77r.png', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('304', ThemeAttr('logview', 'severity_warning'), False),
+              ThemeString(' 0 "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('http://sd-preview.val.cluster:27080/', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
+            ('10.245.96.15 - - [28/Feb/2024:16:29:57 +0000] "GET / HTTP/1.1" 200 1026 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+             LogLevel.INFO, "", True, {},
+             [ThemeString('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
+              ThemeString(' - - ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('[28/Feb/2024:16:29:57 +0000]', ThemeAttr('logview', 'timestamp'), False),
+              ThemeString(' "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('GET ', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('/', ThemeAttr('logview', 'url'), False),
+              ThemeString(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
+              ThemeString('" ', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('200', ThemeAttr('logview', 'severity_notice'), False),
+              ThemeString(' 1026 "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('-', ThemeAttr('logview', 'url'), False),
+              ThemeString('" "', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+              ThemeString('"', ThemeAttr('logview', 'severity_info'), False),
+              ThemeString(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
+        )
 
-		for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
-			try:
-				tmp, severity, facility = fun(string, severity, facility, fold_msg, options)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:  # pylint: disable=broad-except
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+        for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+            try:
+                tmp, severity, facility = fun(string, severity=severity, facility=facility, fold_msg=fold_msg, options=options)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.split_glog
+    fun = logparsers.split_glog
 
-	if result:
-		testdata = (
-			# Indata format:
-			# (string, fold_msg, expected_result, expected_remnants, expected_exception)
-			('E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
-			 LogLevel.INFO, "",
-			 ("foo", LogLevel.ERR, "server_chttp2.cc:40", [], True), None),
-			('I0511 14:31:10.500543       1 start.go:76] bar',
-			 LogLevel.INFO, "",
-			 ("bar", LogLevel.INFO, "start.go:76", [], True), None),
-			('I0511 14:31:10.500543       1 start.go:76]',
-			 LogLevel.INFO, "",
-			 ("", LogLevel.INFO, "start.go:76", [], True), None),
-			('I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178] buggy',
-			 LogLevel.INFO, "",
-			 ("buggy", LogLevel.INFO, "tlsconfig.go:178", [], True), None),
-			('Not a match',
-			 LogLevel.INFO, "",
-			 ("Not a match", LogLevel.INFO, "", [], False), None),
-			('Not a match',
-			 None, "",
-			 ("Not a match", LogLevel.INFO, "", [], False), None),
-			('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
-			 LogLevel.INFO, "",
-			 ("ERROR: logging before flag.Parse", LogLevel.ERR, "server_chttp2.cc:40", [([ThemeString('foo', ThemeAttr('logview', 'severity_error'), False)], LogLevel.ERR)], True), None),
-		)
+    if result:
+        testdata = (
+            # Indata format:
+            # (string, fold_msg, expected_result, expected_remnants, expected_exception)
+            ('E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
+             LogLevel.INFO, "",
+             ("foo", LogLevel.ERR, "server_chttp2.cc:40", [], True), None),
+            ('I0511 14:31:10.500543       1 start.go:76] bar',
+             LogLevel.INFO, "",
+             ("bar", LogLevel.INFO, "start.go:76", [], True), None),
+            ('I0511 14:31:10.500543       1 start.go:76]',
+             LogLevel.INFO, "",
+             ("", LogLevel.INFO, "start.go:76", [], True), None),
+            ('I0417 09:32:43.32022-04-17T09:32:43.343052189Z 41605       1 tlsconfig.go:178] buggy',
+             LogLevel.INFO, "",
+             ("buggy", LogLevel.INFO, "tlsconfig.go:178", [], True), None),
+            ('Not a match',
+             LogLevel.INFO, "",
+             ("Not a match", LogLevel.INFO, "", [], False), None),
+            ('Not a match',
+             None, "",
+             ("Not a match", LogLevel.INFO, "", [], False), None),
+            ('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
+             LogLevel.INFO, "",
+             ("ERROR: logging before flag.Parse", LogLevel.ERR, "server_chttp2.cc:40", [([ThemeString('foo', ThemeAttr('logview', 'severity_error'), False)], LogLevel.ERR)], True), None),
+        )
 
-		for string, severity, facility, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(string, severity, facility)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:  # pylint: disable=broad-except
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+        for string, severity, facility, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(string, severity=severity, facility=facility)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
 def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.tab_separated
+    fun = logparsers.tab_separated
 
-	if result:
-		testdata = (
-			# Indata format:
-			# (string, severity, facility, fold_msg, options, expected_result, expected_exception)
-			('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
-			 LogLevel.INFO, "",
-			 False, {},
-			 ('Metrics server is starting to listen',
-			  LogLevel.INFO, "controller-runtime.metrics",
-			  [
-				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-				([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
-				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
-				  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
-			  ]),
-			 None),
-			('1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
-			 LogLevel.INFO, "",
-			 False, {},
-			 ('Metrics server is starting to listen',
-			  LogLevel.INFO, "controller-runtime.metrics",
-			  [
-				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-				([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
-				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
-				  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-			  ]),
-			 None),
-			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager',
-			 LogLevel.INFO, "",
-			 False, {},
-			 ('starting manager',
-			  LogLevel.INFO, "setup",
-			  [
-			  ]),
-			 None),
-			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version": "v1.0"}',
-			 LogLevel.INFO, "",
-			 False, {"options": {"versions": ["version"]}},
-			 ('foo',
-			  LogLevel.INFO, "setup",
-			  [
-				([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-				([ThemeString('  "version"', ThemeAttr('types', 'yaml_key'), False),
-				  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
-				  ThemeString('"v1.0"', ThemeAttr('logview', 'severity_notice'), False)], LogLevel.INFO),
-				([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
-			  ]),
-			 None),
-			('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version: "v1.0"}',
-			 LogLevel.INFO, "",
-			 False, {"options": {"versions": ["version"]}},
-			 ('foo {"version: "v1.0"}',
-			  LogLevel.INFO, "setup",
-			  [
-			  ]),
-			 None),
-			('2022-12-13T22:23:45.808Z\tnot-severity\tsetup\tstarting manager',
-			 None, "",
-			 False, {},
-			 ('starting manager',
-			  LogLevel.INFO, "setup",
-			  [
-			  ]),
-			 None),
-			('2022-12-13T22:23:45.808Z\tINFO\tSETUP\tstarting manager',
-			 LogLevel.INFO, "",
-			 False, {},
-			 ('SETUP starting manager',
-			  LogLevel.INFO, "",
-			  [
-			  ]),
-			 None),
-			('INFO\tsetup\tstarting manager',
-			 LogLevel.INFO, "",
-			 False, {},
-			 ('INFO\tsetup\tstarting manager',
-			  LogLevel.INFO, "",
-			  [
-			  ]),
-			 None),
-		)
+    if result:
+        # 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
+        # 2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager
+        # 1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
+        # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
+        # or
+        #             secondssinceepoch\tSEVERITY\t{facility if lowercase, else message}[\tjson]
+        testdata = (
+            # Indata format:
+            # (string, severity, facility, fold_msg, options, expected_result, expected_exception)
+            ('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+             LogLevel.INFO, "",
+             False, {},
+             ('Metrics server is starting to listen',
+              LogLevel.INFO, "controller-runtime.metrics",
+              [
+                ([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+                ([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+                  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+                  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+                ([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
+              ]),
+             None),
+            ('1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+             LogLevel.INFO, "",
+             False, {},
+             ('Metrics server is starting to listen',
+              LogLevel.INFO, "controller-runtime.metrics",
+              [
+                ([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+                ([ThemeString('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+                  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+                  ThemeString('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+                ([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+              ]),
+             None),
+            ('2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager',
+             LogLevel.INFO, "",
+             False, {},
+             ('starting manager',
+              LogLevel.INFO, "setup",
+              [
+              ]),
+             None),
+            ('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version": "v1.0"}',
+             LogLevel.INFO, "",
+             False, {"versions": ["version"]},
+             ('foo',
+              LogLevel.INFO, "setup",
+              [
+                ([ThemeString('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+                ([ThemeString('  "version"', ThemeAttr('types', 'yaml_key'), False),
+                  ThemeString(': ', ThemeAttr('types', 'yaml_separator'), False),
+                  ThemeString('"v1.0"', ThemeAttr('logview', 'severity_notice'), False)], LogLevel.INFO),
+                ([ThemeString('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
+              ]),
+             None),
+            ('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version: "v1.0"}',
+             LogLevel.INFO, "",
+             False, {"versions": ["version"]},
+             ('foo {"version: "v1.0"}',
+              LogLevel.INFO, "setup",
+              [
+              ]),
+             None),
+            ('2022-12-13T22:23:45.808Z\tnot-severity\tsetup\tstarting manager',
+             None, "",
+             False, {},
+             ('starting manager',
+              LogLevel.INFO, "setup",
+              [
+              ]),
+             None),
+            ('2022-12-13T22:23:45.808Z\tINFO\tSETUP\tstarting manager',
+             LogLevel.INFO, "",
+             False, {},
+             ('SETUP starting manager',
+              LogLevel.INFO, "",
+              [
+              ]),
+             None),
+            ('INFO\tsetup\tstarting manager',
+             LogLevel.INFO, "",
+             False, {},
+             ('INFO\tsetup\tstarting manager',
+              LogLevel.INFO, "",
+              [
+              ]),
+             None),
+        )
 
-		for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(string, severity, facility, fold_msg, **options)
-				if tmp[0] != expected_result[0] or tmp[1] != expected_result[1] or tmp[2] != expected_result[2] or tmp[3] != expected_result[3]:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:  # pylint: disable=broad-except
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+        for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(string, severity=severity, facility=facility, fold_msg=fold_msg, options=options)
+                if tmp[0] != expected_result[0] or tmp[1] != expected_result[1] or tmp[2] != expected_result[2] or tmp[3] != expected_result[3]:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
+# pylint: disable-next=unused-argument
+def test___split_severity_facility_style(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    # fun = logparsers.__split_severity_facility_style
+    # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
+
+    message = "[TEST NOT IMPLEMENTED]"
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_split_json_style(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    # fun = logparsers.split_json_style
+
+    message = "[TEST NOT IMPLEMENTED]"
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_merge_message(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    # fun = logparsers.merge_message
+
+    message = "[TEST NOT IMPLEMENTED]"
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_split_json_style_raw(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    # fun = logparsers.split_json_style_raw
+
+    message = "[TEST NOT IMPLEMENTED]"
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_json_event(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    # fun = logparsers.json_event
+
+    message = "[TEST NOT IMPLEMENTED]"
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
+def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = logparsers.modinfo
+
+    if result:
+        testdata = (
+            ('filename:       /lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', [
+                ThemeString('filename', ThemeAttr('types', 'key'), False),
+                ThemeRef('separators', 'keyvalue', False),
+                ThemeString('       ', ThemeAttr('types', 'generic'), False),
+                ThemeString('/lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', ThemeAttr('types', 'value'), False)], None),
+            ('license:        GPL v2', [
+                ThemeString('license', ThemeAttr('types', 'key'), False),
+                ThemeRef('separators', 'keyvalue', False),
+                ThemeString('        ', ThemeAttr('types', 'generic'), False),
+                ThemeString('GPL v2', ThemeAttr('types', 'value'), False)], None),
+            ('author:         Intel Corporation, <linux.nics@intel.com>', [
+                ThemeString('author', ThemeAttr('types', 'key'), False),
+                ThemeRef('separators', 'keyvalue', False),
+                ThemeString('         ', ThemeAttr('types', 'generic'), False),
+                ThemeString('Intel Corporation, <linux.nics@intel.com>', ThemeAttr('types', 'value'), False)], None),
+            ('		EB:2E:B6:75:F9:B7:A2:4B:CA:DE:76:C3:76:6D:2D:CD:57:71:26:B6:',
+             '\t\tEB:2E:B6:75:F9:B7:A2:4B:CA:DE:76:C3:76:6D:2D:CD:57:71:26:B6:', None),
+            ('parm:           debug:Debug level (0=none,...,16=all) (int)', [
+                ThemeString('parm', ThemeAttr('types', 'key'), False),
+                ThemeRef('separators', 'keyvalue', False),
+                ThemeString('           ', ThemeAttr('types', 'generic'), False),
+                ThemeString('debug:Debug level (0=none,...,16=all) (int)', ThemeAttr('types', 'value'), False)], None),
+        )
+
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                _facility, _severity, themearray, _remnants = fun(indata)
+                if themearray != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output:\n" \
+                          f"{yaml_dump(themearray, base_indent = 17)}\n" \
+                          f"       expected:\n" \
+                          f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input:\n" \
+                              f"{indata}" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input:\n" \
+                              f"{indata}" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected:\n" \
+                          f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
 def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = logparsers.init_parser_list
+    fun = logparsers.init_parser_list
 
-	if result:
-		try:
-			fun()
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
+    if result:
+        try:
+            fun()
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
 
-	fun = logparsers.get_parser_list
+    fun = logparsers.get_parser_list
 
-	if result:
-		try:
-			tmp = fun()
-			if not isinstance(tmp, set) or not tmp:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"           type: {type(tmp)}\n" \
-					  f"  expected type: {set}\n" \
-					  f"            len: {len(tmp)}\n" \
-					  f"       expected: > 0\n"
-				result = False
-		except Exception as e:  # pylint: disable=broad-except
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
+    if result:
+        try:
+            tmp = fun()
+            if not isinstance(tmp, set) or not tmp or len(tmp) <= 2:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"           type: {type(tmp)}\n" \
+                      f"  expected type: {set}\n" \
+                      f"            len: {len(tmp)}\n" \
+                      f"       expected: > 2\n"
+                result = False
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
 
-	return message, result
+    return message, result
 
 
 tests: Dict = {
-	("json_ujson",): {
-		"callable": test_json_ujson,
-		"result": None,
-	},
-	("import_validators",): {
-		"callable": test_import_validators,
-		"result": None,
-	},
-	("get_loglevel_names()", "name_to_loglevel()"): {
-		"callable": test_get_loglevel_names_and_name_to_loglevel,
-		"result": None,
-	},
-	("month_to_numerical()",): {
-		"callable": test_month_to_numerical,
-		"result": None,
-	},
-	("letter_to_severity",): {
-		"callable": test_letter_to_severity,
-		"result": None,
-	},
-	("str_3letter_to_severity",): {
-		"callable": test_str_3letter_to_severity,
-		"result": None,
-	},
-	("str_4letter_to_severity",): {
-		"callable": test_str_4letter_to_severity,
-		"result": None,
-	},
-	("str_to_severity",): {
-		"callable": test_str_to_severity,
-		"result": None,
-	},
-	("lvl_to_letter_severity",): {
-		"callable": test_lvl_to_letter_severity,
-		"result": None,
-	},
-	("lvl_to_4letter_severity",): {
-		"callable": test_lvl_to_4letter_severity,
-		"result": None,
-	},
-	("lvl_to_word_severity",): {
-		"callable": test_lvl_to_word_severity,
-		"result": None,
-	},
-	("split_bracketed_severity",): {
-		"callable": test_split_bracketed_severity,
-		"result": None,
-	},
-	("split_colon_severity",): {
-		"callable": test_split_colon_severity,
-		"result": None,
-	},
-	("is_timestamp",): {
-		"callable": test_is_timestamp,
-		"result": None,
-	},
-	("test_split_iso_timestamp",): {
-		"callable": test_split_iso_timestamp,
-		"result": None,
-	},
-	("test_strip_iso_timestamp",): {
-		"callable": test_strip_iso_timestamp,
-		"result": None,
-	},
-	("test_strip_iso_timestamp_with_tz",): {
-		"callable": test_strip_iso_timestamp_with_tz,
-		"result": None,
-	},
-	("test_iptables",): {
-		"callable": test_iptables,
-		"result": None,
-	},
-	("test_http",): {
-		"callable": test_http,
-		"result": None,
-	},
-	("test_split_glog",): {
-		"callable": test_split_glog,
-		"result": None,
-	},
-	("test_tab_separated",): {
-		"callable": test_tab_separated,
-		"result": None,
-	},
-	("test_parser_list",): {
-		"callable": test_parser_list,
-		"result": None,
-	},
+    ("json_ujson",): {
+        "callable": test_json_ujson,
+        "result": None,
+    },
+    ("import_validators",): {
+        "callable": test_import_validators,
+        "result": None,
+    },
+    ("get_loglevel_names()", "name_to_loglevel()"): {
+        "callable": test_get_loglevel_names_and_name_to_loglevel,
+        "result": None,
+    },
+    ("month_to_numerical()",): {
+        "callable": test_month_to_numerical,
+        "result": None,
+    },
+    ("letter_to_severity",): {
+        "callable": test_letter_to_severity,
+        "result": None,
+    },
+    ("str_3letter_to_severity",): {
+        "callable": test_str_3letter_to_severity,
+        "result": None,
+    },
+    ("str_4letter_to_severity",): {
+        "callable": test_str_4letter_to_severity,
+        "result": None,
+    },
+    ("str_to_severity",): {
+        "callable": test_str_to_severity,
+        "result": None,
+    },
+    ("lvl_to_letter_severity",): {
+        "callable": test_lvl_to_letter_severity,
+        "result": None,
+    },
+    ("lvl_to_4letter_severity",): {
+        "callable": test_lvl_to_4letter_severity,
+        "result": None,
+    },
+    ("lvl_to_word_severity",): {
+        "callable": test_lvl_to_word_severity,
+        "result": None,
+    },
+    ("split_bracketed_severity",): {
+        "callable": test_split_bracketed_severity,
+        "result": None,
+    },
+    ("split_colon_severity",): {
+        "callable": test_split_colon_severity,
+        "result": None,
+    },
+    ("substitute_bullets",): {
+        "callable": test_substitute_bullets,
+        "result": None,
+    },
+    ("is_timestamp",): {
+        "callable": test_is_timestamp,
+        "result": None,
+    },
+    ("test_split_iso_timestamp",): {
+        "callable": test_split_iso_timestamp,
+        "result": None,
+    },
+    ("test_strip_iso_timestamp",): {
+        "callable": test_strip_iso_timestamp,
+        "result": None,
+    },
+    ("test_strip_iso_timestamp_with_tz",): {
+        "callable": test_strip_iso_timestamp_with_tz,
+        "result": None,
+    },
+    ("test_iptables",): {
+        "callable": test_iptables,
+        "result": None,
+    },
+    ("test_http",): {
+        "callable": test_http,
+        "result": None,
+    },
+    ("test_split_glog",): {
+        "callable": test_split_glog,
+        "result": None,
+    },
+    ("test_tab_separated",): {
+        "callable": test_tab_separated,
+        "result": None,
+    },
+    ("test___split_severity_facility_style",): {
+        "callable": test___split_severity_facility_style,
+        "result": None,
+    },
+    ("test_split_json_style",): {
+        "callable": test_split_json_style,
+        "result": None,
+    },
+    ("test_merge_message",): {
+        "callable": test_merge_message,
+        "result": None,
+    },
+    ("test_split_json_style_raw",): {
+        "callable": test_split_json_style_raw,
+        "result": None,
+    },
+    ("test_json_event",): {
+        "callable": test_json_event,
+        "result": None,
+    },
+    ("test_modinfo",): {
+        "callable": test_modinfo,
+        "result": None,
+    },
+    ("test_parser_list",): {
+        "callable": test_parser_list,
+        "result": None,
+    },
 }
 
 
 def main() -> int:
-	global real_import
-	real_import = builtins.__import__
+    global real_import  # pylint: disable=global-statement
+    real_import = builtins.__import__
 
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile=None)
+    init_ansithemeprint(themefile=None)
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    # How many non-prepare testcases do we have?
+    # pylint: disable-next=consider-using-dict-items
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
-	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose=verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeString(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if not result:
+            ansithemeprint([ANSIThemeString("  FAIL", "error"),
+                            ANSIThemeString(f": {message}", "default")])
+        else:
+            if message:
+                ansithemeprint([ANSIThemeString("  WARN", "warning"),
+                                ANSIThemeString(f": {message}", "default")])
+            else:
+                ansithemeprint([ANSIThemeString("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
-	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
 
-	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr=True)
-		sys.exit(fail)
+    if fail:
+        ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeString("  • ", "separator"),
+                            ANSIThemeString(testcase, "default")], stderr=True)
+        sys.exit(fail)
 
-	return 0
+    return 0
 
 
 if __name__ == "__main__":
-	main()
+    main()

@@ -74,7 +74,7 @@ from cmtvalidators import validate_name
 from commandparser import parse_commandline
 
 import logparser as logparsers
-from logparser import logparser, logparser_initialised, LogLevel, logparser_configuration
+from logparser import logparser, logparser_initialised, LogLevel, LogparserConfiguration
 from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity
 from logparser import loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
 import curses_helper
@@ -6973,7 +6973,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 					statusarray2 += [
 						ThemeString(f"{parser[0]}", ThemeAttr("statusbar", "highlight")),
 					]
-				if uip.maxx - uip.minx > 128 and logparser_configuration.using_bundles:
+				if uip.maxx - uip.minx > 128 and LogparserConfiguration.using_bundles:
 					statusarray2 += [
 						ThemeString(" (Bundle)", ThemeAttr("statusbar", "dim")),
 					]
@@ -7268,11 +7268,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 				retval = False
 				option_path = deep_get(option, DictPath("retval"))
 				if option_path is not None:
-					retval = getattr(logparser_configuration, option_path, False)
+					retval = getattr(LogparserConfiguration, option_path, False)
 				if retval:
 					preselection.add(i)
 
-			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, option_list, title = "Parser options", cursor = True, preselection = preselection, taggable = True)
+			tmpselection = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx, uip.maxy // 2, uip.maxx // 2, option_list, title="Parser options", cursor=True, preselection=preselection, taggable=True)
 			selection = None
 			if tmpselection is not None and tmpselection != "":
 				selection = tmpselection
@@ -7284,8 +7284,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 				modified_options = preselection.symmetric_difference(selection)
 				for i in modified_options:
 					option_path = deep_get(option_list[i], DictPath("retval"))
-					value = not getattr(logparser_configuration, option_path, False)
-					setattr(logparser_configuration, option_path, value)
+					value = not getattr(LogparserConfiguration, option_path, False)
+					setattr(LogparserConfiguration, option_path, value)
 
 				uip.yoffset = 0
 				uip.xoffset = 0
