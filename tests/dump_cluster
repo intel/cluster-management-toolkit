@@ -1,8 +1,13 @@
 #! /bin/sh
-# vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 
 """
 This program is used to dump the "external" state of the cluster;
@@ -19,7 +24,7 @@ This is only intended for use-cases such as offline development,
 debugging, etc.
 
 For usage, see:
-	dump_cluster help
+    dump_cluster help
 """
 
 import errno
@@ -32,66 +37,72 @@ from cmtio_yaml import secure_write_yaml
 programname = "dump_cluster"
 programversion = "v0.1"
 
+
 def usage():
-	print(f"{programname} PATH [API]...")
-	print()
-	print("Dump Kubernetes data")
-	print()
-	print("PATH is the directory to dump to.")
-	print("[API]... (optional) are the APIs to dump data for;")
-	print("if not specified data will be dumped for all APIs.")
-	sys.exit(0)
+    print(f"{programname} PATH [API]...")
+    print()
+    print("Dump Kubernetes data")
+    print()
+    print("PATH is the directory to dump to.")
+    print("[API]... (optional) are the APIs to dump data for;")
+    print("if not specified data will be dumped for all APIs.")
+    sys.exit(0)
+
 
 def version():
-	print(f"{programname} {programversion}")
-	sys.exit(0)
+    print(f"{programname} {programversion}")
+    sys.exit(0)
+
 
 def main() -> int:
-	"""
-	Main function for the program
-	"""
+    """
+    Main function for the program
+    """
 
-	# Before doing anything else, make sure that the user is not running as root
-	if os.geteuid() == 0:
-		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+    # Before doing anything else, make sure that the user is not running as root
+    if os.geteuid() == 0:
+        sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
-	if len(sys.argv) < 2:
-		print(f"{programname} requires a PATH to dump to", file = sys.stderr)
-		sys.exit(errno.EINVAL)
+    if len(sys.argv) < 2:
+        print(f"{programname} requires a PATH to dump to", file=sys.stderr)
+        sys.exit(errno.EINVAL)
 
-	if "help" in sys.argv or "--help" in sys.argv:
-		usage()
-	if "version" in sys.argv or "--version" in sys.argv:
-		version()
+    if "help" in sys.argv or "--help" in sys.argv:
+        usage()
+    if "version" in sys.argv or "--version" in sys.argv:
+        version()
 
-	path = sys.argv[1]
-	apis = sys.argv[2:]
+    path = sys.argv[1]
+    apis = sys.argv[2:]
 
-	if not os.path.isdir(path):
-		print(f"{programname}: PATH isn't a directory or doesn't exist")
-		sys.exit(errno.ENOENT)
+    if not os.path.isdir(path):
+        print(f"{programname}: PATH isn't a directory or doesn't exist")
+        sys.exit(errno.ENOENT)
 
-	if not apis:
-		apis = list(kubernetes_helper.kubernetes_resources.keys())
+    if not apis:
+        apis = list(kubernetes_helper.kubernetes_resources.keys())
 
-	kh = kubernetes_helper.KubernetesHelper(programname, programversion)
+    kh = kubernetes_helper.KubernetesHelper(programname, programversion)
 
-	for api in apis:
-		if isinstance(api, str):
-			if "." in api:
-				kind = tuple(api.split(".", maxsplit = 1))
-			else:
-				kind = (api, "")
-			pathkind = api
-		else:
-			kind = api
-			if not kind[1]:
-				pathkind = kind[0]
-			else:
-				pathkind = ".".join(kind)
-		vlist, status = kh.get_list_by_kind_namespace(kind, "")
-		if vlist:
-			secure_write_yaml(f"{path}/{pathkind}.yaml", vlist)
+    for api in apis:
+        if isinstance(api, str):
+            if "." in api:
+                kind = tuple(api.split(".", maxsplit=1))
+            else:
+                kind = (api, "")
+            pathkind = api
+        else:
+            kind = api
+            if not kind[1]:
+                pathkind = kind[0]
+            else:
+                pathkind = ".".join(kind)
+        vlist, status = kh.get_list_by_kind_namespace(kind, "")
+        if vlist:
+            secure_write_yaml(f"{path}/{pathkind}.yaml", vlist)
+
+    return 0
+
 
 if __name__ == "__main__":
-	main()
+    main()

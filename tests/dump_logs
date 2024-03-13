@@ -1,8 +1,13 @@
 #! /bin/sh
-# vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 
 """
 This program is used to dump the pod logs of the cluster;
@@ -15,14 +20,12 @@ This is only intended for use-cases such as offline development,
 debugging, etc.
 
 For usage, see:
-	dump_logs help
+    dump_logs help
 """
 
 import errno
 import os
-import re
 import sys
-import yaml
 
 import kubernetes_helper
 from cmtio import secure_write_string
@@ -31,130 +34,134 @@ from cmttypes import deep_get, DictPath
 programname = "dump_cluster"
 programversion = "v0.1"
 
-def usage():
-	print(f"{programname} PATH [NAMESPACE/][POD[:CONTAINERNAME][;TYPE[,...]]]...")
-	print()
-	print("Dump Kubernetes pod container logs")
-	print()
-	print("PATH is the directory to dump to.")
-	print("[POD]... (optional) are the pods to dump data for;")
-	print("if not specified data will be dumped for all pods.")
-	print()
-	print("If NAMESPACE is specified only pods belonging to namespace NAMESPACE")
-	print("will be considered.")
-	print()
-	print("If CONTAINERNAME is specified only the log for the named")
-	print("container will be dumped. Use \":\" for all containers.")
-	print()
-	print("If ;TYPE is specified only logs of that type will be dumped.")
-	print("TYPE can be \"normal\", which dumps normal logs,")
-	print("\"init\" for init-containers, or \"emphemeral\" for ephemeral containers.")
-	print("Leave empty or specify \"all\" for all types.")
 
-	sys.exit(0)
+def usage():
+    print(f"{programname} PATH [NAMESPACE/][POD[:CONTAINERNAME][;TYPE[,...]]]...")
+    print()
+    print("Dump Kubernetes pod container logs")
+    print()
+    print("PATH is the directory to dump to.")
+    print("[POD]... (optional) are the pods to dump data for;")
+    print("if not specified data will be dumped for all pods.")
+    print()
+    print("If NAMESPACE is specified only pods belonging to namespace NAMESPACE")
+    print("will be considered.")
+    print()
+    print("If CONTAINERNAME is specified only the log for the named")
+    print("container will be dumped. Use \":\" for all containers.")
+    print()
+    print("If ;TYPE is specified only logs of that type will be dumped.")
+    print("TYPE can be \"normal\", which dumps normal logs,")
+    print("\"init\" for init-containers, or \"emphemeral\" for ephemeral containers.")
+    print("Leave empty or specify \"all\" for all types.")
+    sys.exit(0)
+
 
 def version():
-	print(f"{programname} {programversion}")
-	sys.exit(0)
+    print(f"{programname} {programversion}")
+    sys.exit(0)
+
 
 def main() -> int:
-	"""
-	Main function for the program
-	"""
+    """
+    Main function for the program
+    """
 
-	# Before doing anything else, make sure that the user is not running as root
-	if os.geteuid() == 0:
-		sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+    # Before doing anything else, make sure that the user is not running as root
+    if os.geteuid() == 0:
+        sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
-	if len(sys.argv) < 2:
-		print(f"{programname} requires a PATH to dump to", file = sys.stderr)
-		sys.exit(errno.EINVAL)
+    if len(sys.argv) < 2:
+        print(f"{programname} requires a PATH to dump to", file=sys.stderr)
+        sys.exit(errno.EINVAL)
 
-	if "help" in sys.argv or "--help" in sys.argv:
-		usage()
-	if "version" in sys.argv or "--version" in sys.argv:
-		version()
+    if "help" in sys.argv or "--help" in sys.argv:
+        usage()
+    if "version" in sys.argv or "--version" in sys.argv:
+        version()
 
-	path = sys.argv[1]
+    path = sys.argv[1]
 
-	if not os.path.isdir(path):
-		print(f"{programname}: PATH isn't a directory or doesn't exist")
-		sys.exit(errno.ENOENT)
+    if not os.path.isdir(path):
+        print(f"{programname}: PATH isn't a directory or doesn't exist")
+        sys.exit(errno.ENOENT)
 
-	kh = kubernetes_helper.KubernetesHelper(programname, programversion)
-	pods, status = kh.get_list_by_kind_namespace(("Pod"), "")
-	if status != 200:
-		sys.exit("cluster failed to return the list of pods")
+    kh = kubernetes_helper.KubernetesHelper(programname, programversion)
+    pods, status = kh.get_list_by_kind_namespace(("Pod"), "")
+    if status != 200:
+        sys.exit("cluster failed to return the list of pods")
 
-	types = ["spec#containers", "spec#initContainers", "spec#ephemeralContainers"]
-	for pod in pods:
-		namespace = deep_get(pod, DictPath("metadata#namespace"), "UNKNOWN")
-		name = deep_get(pod, DictPath("metadata#name"), "UNKNOWN")
-		for container_path in types:
-			for container in deep_get(pod, DictPath(container_path), []):
-				container_name = deep_get(container, DictPath("name"), "UNKNOWN")
-				if "init" in container_path:
-					container_type = "init"
-				elif "ephemeral" in container_path:
-					container_type = "ephemeral"
-				else:
-					container_type = "normal"
-				filepath = f"{path}/{namespace}_{name}_{container_name}_{container_type}.txt"
-				log, status = kh.read_namespaced_pod_log(name, namespace, container_name, tail_lines = None)
-				if status != 200:
-					continue
-				if log:
-					secure_write_string(filepath, log)
+    types = ["spec#containers", "spec#initContainers", "spec#ephemeralContainers"]
+    for pod in pods:
+        namespace = deep_get(pod, DictPath("metadata#namespace"), "UNKNOWN")
+        name = deep_get(pod, DictPath("metadata#name"), "UNKNOWN")
+        for container_path in types:
+            for container in deep_get(pod, DictPath(container_path), []):
+                container_name = deep_get(container, DictPath("name"), "UNKNOWN")
+                if "init" in container_path:
+                    container_type = "init"
+                elif "ephemeral" in container_path:
+                    container_type = "ephemeral"
+                else:
+                    container_type = "normal"
+                filepath = f"{path}/{namespace}_{name}_{container_name}_{container_type}.txt"
+                log, status = kh.read_namespaced_pod_log(name, namespace,
+                                                         container_name, tail_lines=None)
+                if status != 200:
+                    continue
+                if log:
+                    secure_write_string(filepath, log)
 
-	# FIXME
-	"""
-	pod_selectors = {}
+    # FIXME
+    """
+    pod_selectors = {}
 
-	log_selector_regex = re.compile(r"^(.+?/)?(.+?)?(:.+?)?(=.+?)?$")
-	for selector in sys.argv[2:]:
-		tmp = log_selector_regex.match(pod)
-		namespaces = None
-		if tmp[1] is not None:
-			namespaces = tmp[1].split("/", maxsplit = 1)[0].split(",")
-		else:
-			namespaces = ["*"]
-		if tmp[2] is not None:
-			pods = tmp[2].split(",")
-		containers = None
-		if tmp[3] is not None:
-			containers = tmp[3].split(":", maxsplit = 1)[1].split(",")
-		types = []
-		if tmp[4] is not None:
-			tmp_types = tmp[4].split("=", maxsplit = 1)[1].split(",")
-			for tmp_type in tmp_types:
-				if tmp_type == "all":
-					types = ["spec#containers", "spec#initContainers", "spec#ephemeralContainers"]
-					break
-				if tmp_type == "normal":
-					types.append("spec#containers")
-				elif tmp_type == "init":
-					types.append("spec#initContainers")
-				elif tmp_type == "ephemeral":
-					types.append("spec#ephemeralContainers")
-				else:
-					sys.exit(f"Invalid container formal {tmp_type}")
-		for namespace in namespaces:
-			if namespace not in pod_selectors:
-				pod_selectors[namespace] = {}
-			pod_selectors[namespace]["selector"].append(pods, containers, types)
+    log_selector_regex = re.compile(r"^(.+?/)?(.+?)?(:.+?)?(=.+?)?$")
+    for selector in sys.argv[2:]:
+        tmp = log_selector_regex.match(pod)
+        namespaces = None
+        if tmp[1] is not None:
+            namespaces = tmp[1].split("/", maxsplit = 1)[0].split(",")
+        else:
+            namespaces = ["*"]
+        if tmp[2] is not None:
+            pods = tmp[2].split(",")
+        containers = None
+        if tmp[3] is not None:
+            containers = tmp[3].split(":", maxsplit = 1)[1].split(",")
+        types = []
+        if tmp[4] is not None:
+            tmp_types = tmp[4].split("=", maxsplit = 1)[1].split(",")
+            for tmp_type in tmp_types:
+                if tmp_type == "all":
+                    types = ["spec#containers", "spec#initContainers", "spec#ephemeralContainers"]
+                    break
+                if tmp_type == "normal":
+                    types.append("spec#containers")
+                elif tmp_type == "init":
+                    types.append("spec#initContainers")
+                elif tmp_type == "ephemeral":
+                    types.append("spec#ephemeralContainers")
+                else:
+                    sys.exit(f"Invalid container formal {tmp_type}")
+        for namespace in namespaces:
+            if namespace not in pod_selectors:
+                pod_selectors[namespace] = {}
+            pod_selectors[namespace]["selector"].append(pods, containers, types)
 
-	for pod in pods:
-		namespace = deep_get(pod, DictPath("metadata#namespace"))
-		# If len(pod_selectors) == 1 all selectors are in "*" and thus we want all namespaces
-		if namespace not in pod_selectors and len(pod_selectors) > 1:
-			continue
-		name = deep_get(pod, DictPath("metadata#name"))
-		match = False
-		for selector in deep_get(pod_selectors[namespace], []):
-			name_selector, container_selector, types_selector = selector
-			if name in name_selector:
-				continue
-	"""
+    for pod in pods:
+        namespace = deep_get(pod, DictPath("metadata#namespace"))
+        # If len(pod_selectors) == 1 all selectors are in "*" and thus we want all namespaces
+        if namespace not in pod_selectors and len(pod_selectors) > 1:
+            continue
+        name = deep_get(pod, DictPath("metadata#name"))
+        match = False
+        for selector in deep_get(pod_selectors[namespace], []):
+            name_selector, container_selector, types_selector = selector
+            if name in name_selector:
+                continue
+    """
+
 
 if __name__ == "__main__":
-	main()
+    main()
