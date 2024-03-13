@@ -1,8 +1,13 @@
 #! /bin/sh
-# vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -16,9 +21,10 @@ import time
 from typing import Any, List, Tuple, Union
 
 try:
-	from natsort import natsorted
+    from natsort import natsorted
 except ModuleNotFoundError:
-	sys.exit("ModuleNotFoundError: Could not import natsort; you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
+    sys.exit("ModuleNotFoundError: Could not import natsort; "
+             "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
 import about
 from cmttypes import deep_get, DictPath, StatusGroup
@@ -29,94 +35,96 @@ kh: KubernetesHelper = None  # type: ignore
 
 
 def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
-	kind = deep_get(kwargs, DictPath("kind"))
-	namespace = deep_get(kwargs, DictPath("namespace"), "")
-	fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
-	sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
-	sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
-	postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
-	limit = deep_get(fetch_args, DictPath("limit"))
-	extra_data = []
+    kind = deep_get(kwargs, DictPath("kind"))
+    namespace = deep_get(kwargs, DictPath("namespace"), "")
+    fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
+    sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
+    sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
+    limit = deep_get(fetch_args, DictPath("limit"))
+    extra_data = []
 
-	vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
-	if sort_key:
-		vlist = natsorted(vlist, key=lambda x: deep_get(x, DictPath(sort_key), ""), reverse=sort_reverse)
-	extra_data = _status
-	if limit is not None:
-		vlist = vlist[:limit]
-	return vlist, extra_data
+    vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
+    if sort_key:
+        vlist = natsorted(vlist, key=lambda x: deep_get(x, DictPath(sort_key), ""),
+                          reverse=sort_reverse)
+    extra_data = _status
+    if limit is not None:
+        vlist = vlist[:limit]
+    return vlist, extra_data
 
 
 def main() -> None:
-	global kh
+    global kh
 
-	kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
+    kh = KubernetesHelper(about.PROGRAM_SUITE_NAME, about.PROGRAM_SUITE_VERSION, None)
 
-	# Just to get coverage
-	executor = reexecutor.ReExecutor()
-	executor.shutdown()
+    # Just to get coverage
+    executor = reexecutor.ReExecutor()
+    executor.shutdown()
 
-	executor = reexecutor.ReExecutor(max_workers=6)
+    executor = reexecutor.ReExecutor(max_workers=6)
 
-	fetches = 42
+    fetches = 42
 
-	executor.trigger("node", 3, get_kubernetes_list_async, kind=("Node", ""))
-	executor.trigger("pod", 3, get_kubernetes_list_async, kind=("Pod", ""))
-	executor.trigger("namespace", 2, get_kubernetes_list_async, kind=("Namespace", ""))
-	executor.trigger("secret", -1, get_kubernetes_list_async, kind=("Secret", ""))
-	executor.trigger("configmap", 5, get_kubernetes_list_async, kind=("ConfigMap", ""))
-	executor.update("configmap", kind=("ConfigMap", ""))
-	executor.trigger("service", 2, get_kubernetes_list_async, kind=("Service", ""))
+    executor.trigger("node", 3, get_kubernetes_list_async, kind=("Node", ""))
+    executor.trigger("pod", 3, get_kubernetes_list_async, kind=("Pod", ""))
+    executor.trigger("namespace", 2, get_kubernetes_list_async, kind=("Namespace", ""))
+    executor.trigger("secret", -1, get_kubernetes_list_async, kind=("Secret", ""))
+    executor.trigger("configmap", 5, get_kubernetes_list_async, kind=("ConfigMap", ""))
+    executor.update("configmap", kind=("ConfigMap", ""))
+    executor.trigger("service", 2, get_kubernetes_list_async, kind=("Service", ""))
 
-	executor.update("NonExisting", kind=("ConfigMap", ""))
+    executor.update("NonExisting", kind=("ConfigMap", ""))
 
-	print(f"executor pool length: {len(executor)}")
+    print(f"executor pool length: {len(executor)}")
 
-	if "foo" in executor:
-		print("Error: executor doesn't contain 'foo', but claims that it does")
-	if "node" not in executor:
-		print("Error: executor contain 'node', but claims that it doesn't")
+    if "foo" in executor:
+        print("Error: executor doesn't contain 'foo', but claims that it does")
+    if "node" not in executor:
+        print("Error: executor contain 'node', but claims that it doesn't")
 
-	while True:
-		time.sleep(1)
-		if (result := executor.get("node")) != ([], []):
-			nodeinfo, node_statuses = result
-			print(f"got nodeinfo: len: {len(nodeinfo)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("pod")) != ([], []):
-			podinfo, pod_statuses = result
-			print(f"got podinfo: len: {len(podinfo)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("event")) != ([], []):
-			events, _status = result
-			print(f"got events: len: {len(events)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("namespace")) != ([], []):
-			namespaces, _status = result
-			print(f"got namespaces: len: {len(namespaces)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("secret")) != ([], []):
-			secrets, _status = result
-			print(f"got secrets: len: {len(secrets)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("configmap")) != ([], []):
-			configmaps, _status = result
-			print(f"got configmaps: len: {len(configmaps)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
-		if (result := executor.get("service")) != ([], []):
-			services, _status = result
-			print(f"got services: len: {len(services)}; timestamp: {datetime.now().strftime('%S')}")
-			fetches -= 1
+    while True:
+        time.sleep(1)
+        if (result := executor.get("node")) != ([], []):
+            nodeinfo, node_statuses = result
+            print(f"got nodeinfo: len: {len(nodeinfo)}; timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("pod")) != ([], []):
+            podinfo, pod_statuses = result
+            print(f"got podinfo: len: {len(podinfo)}; timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("event")) != ([], []):
+            events, _status = result
+            print(f"got events: len: {len(events)}; timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("namespace")) != ([], []):
+            namespaces, _status = result
+            print(f"got namespaces: len: {len(namespaces)}; "
+                  f"timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("secret")) != ([], []):
+            secrets, _status = result
+            print(f"got secrets: len: {len(secrets)}; timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("configmap")) != ([], []):
+            configmaps, _status = result
+            print(f"got configmaps: len: {len(configmaps)}; "
+                  f"timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
+        if (result := executor.get("service")) != ([], []):
+            services, _status = result
+            print(f"got services: len: {len(services)}; timestamp: {datetime.now().strftime('%S')}")
+            fetches -= 1
 
-		if fetches < 0:
-			break
-	print("params for configmap:")
-	print(executor.get_parameters("configmap"))
-	print(executor.get_parameters("NonExisting"))
+        if fetches < 0:
+            break
+    print("params for configmap:")
+    print(executor.get_parameters("configmap"))
+    print(executor.get_parameters("NonExisting"))
 
-	executor.delete("configmap")
-	executor.shutdown()
+    executor.delete("configmap")
+    executor.shutdown()
 
 
 if __name__ == "__main__":
-	main()
+    main()
