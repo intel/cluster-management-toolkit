@@ -1373,26 +1373,25 @@ class KubernetesHelper:
 
             for obj2 in vlist2:
                 # Try to get the version
-                for container in deep_get(obj2, DictPath("status#containerStatuses"), []):
-                    if deep_get(container, DictPath("name"), "") == container_name:
-                        image_version = get_image_version(deep_get(container,
-                                                                   DictPath("image"), ""))
+                for container in deep_get(obj2, DictPath("spec#containers"), []):
+                    if deep_get(container, DictPath("name"), "") != container_name:
+                        continue
+                    image_version = get_image_version(deep_get(container, DictPath("image"), ""))
+                    if image_version == "<undefined>":
+                        continue
 
-                        if image_version == "<undefined>":
-                            continue
-
-                        image_version_tuple = cmtlib.versiontuple(image_version)
-                        if cni_version is None:
-                            cni_version = image_version
-                            pod_matches += 1
-                            continue
-                        cni_version_tuple = cmtlib.versiontuple(cni_version)
-                        if image_version_tuple > cni_version_tuple:
-                            cni_version = image_version
-                            pod_matches += 1
-                        elif image_version != cni_version:
-                            cni_version = image_version
-                            pod_matches += 1
+                    image_version_tuple = cmtlib.versiontuple(image_version)
+                    if cni_version is None:
+                        cni_version = image_version
+                        pod_matches += 1
+                        continue
+                    cni_version_tuple = cmtlib.versiontuple(cni_version)
+                    if image_version_tuple > cni_version_tuple:
+                        cni_version = image_version
+                        pod_matches += 1
+                    elif image_version != cni_version:
+                        cni_version = image_version
+                        pod_matches += 1
 
         if cni_version is None:
             cni_version = "<unknown>"
