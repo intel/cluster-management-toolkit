@@ -5,6 +5,7 @@
     container_name: "trivy-operator"
   parser_rules:
   - name: "ts_8601"
+  - name: "glog"
   - name: "json"
     options:
       errors:
@@ -12,6 +13,11 @@
       - "status.reason"
       versions:
       - "Version"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
 - name: "trivy"
   show_in_selector: false
   matchkeys:
