@@ -2251,8 +2251,8 @@ def key_value_with_leading_message(message: str,
 # Messages on the format:
 # <key>:<whitespace>...<value>
 # pylint: disable-next=unused-argument
-def modinfo(message: str, **kwargs: Any) ->\
-            Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+def modinfo(message: str, **kwargs: Any) \
+        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
     facility = ""
     severity = LogLevel.INFO
     remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
@@ -2558,9 +2558,9 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
 
 
 # pylint: disable-next=unused-argument
-def python_traceback(message: str, **kwargs: Any) ->\
-                Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
-                      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+def python_traceback(message: str, **kwargs: Any) \
+        -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
+                 List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
     remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
 
     if message == "Traceback (most recent call last):":

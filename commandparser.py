@@ -529,7 +529,6 @@ COMMANDLINEDEFAULTS = {
 }
 
 
-# pylint: disable-next=line-too-long
 def parse_commandline(__programname: str, __programversion: str,
                       __programdescription: str, __programauthors: str,
                       argv: List[str],

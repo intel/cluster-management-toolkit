@@ -279,8 +279,8 @@ def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int,
 
 def format_numerical_with_units(string: str, ftype: str,
                                 selected: bool, non_units: Optional[Set] = None,
-                                separator_lookup: Optional[Dict] = None) ->\
-                                    List[Union[ThemeRef, ThemeString]]:
+                                separator_lookup: Optional[Dict] = None) \
+        -> List[Union[ThemeRef, ThemeString]]:
     substring = ""
     array: List[Union[ThemeRef, ThemeString]] = []
     numeric = None

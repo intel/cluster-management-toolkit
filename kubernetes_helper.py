@@ -1038,7 +1038,7 @@ class KubernetesHelper:
         # This only applies for CRC
         if "crc" in cluster_name:
             url = "https://oauth-openshift.apps-crc.testing/oauth/" \
-                    "authorize?response_type=token&client_id=openshift-challenging-client"
+                  "authorize?response_type=token&client_id=openshift-challenging-client"
             auth = f"{name}:{password}".encode("ascii")
 
             header_params = {
@@ -1055,7 +1055,7 @@ class KubernetesHelper:
                 with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
                                         ca_certs_file=self.ca_certs_file, token=self.token,
                                         insecuretlsskipverify=self.insecuretlsskipverify) \
-                                            as pool_manager:
+                        as pool_manager:
                     result = pool_manager.request("GET", url, headers=header_params,
                                                   timeout=urllib3.Timeout(connect=connect_timeout),
                                                   redirect=False)  # type: ignore

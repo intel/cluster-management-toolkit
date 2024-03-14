@@ -446,19 +446,19 @@ def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
             filesize = disksize_to_human(fstat.st_size)
 
             vlist.append({
+                "filename": filename,
+                "mtime": mtime,
+                "ctime": ctime,
+                "filesize": filesize,
+                "ref": {
                     "filename": filename,
+                    "filepath": FilePath(str(filepath)),
+                    "filesize": filesize,
                     "mtime": mtime,
                     "ctime": ctime,
-                    "filesize": filesize,
-                    "ref": {
-                        "filename": filename,
-                        "filepath": FilePath(str(filepath)),
-                        "filesize": filesize,
-                        "mtime": mtime,
-                        "ctime": ctime,
-                    },
-                    "kind": kind,
-                })
+                },
+                "kind": kind,
+            })
 
     return vlist, 200
 
@@ -862,46 +862,46 @@ def get_pod_resource_list(obj: Dict[str, Any],
     # OK, we have the controller kind (and thus trivy_selector);
     # time to fire off the requests for lists.
     for resource, kwargs in (
-            ("event",
-             {"kind": ("Event", ""), "namespace": pod_namespace,
-              "field_selector": make_selector({
-                 "involvedObject.name": pod_name,
-                 "involvedObject.namespace": pod_namespace})}),
-            ("pod_disruption_budget",
-             {"kind": ("PodDisruptionBudget", "policy"),
-              "namespace": pod_namespace}),
-            ("pod_metrics",
-             {"kind": ("PodMetrics", "metrics.k8s.io")}),
-            ("config_audit_report",
-             {"kind": ("ConfigAuditReport", "aquasecurity.github.io"),
-              "namespace": pod_namespace,
-              "label_selector": trivy_selector}),
-            ("infra_assessment_report",
-             {"kind": ("InfraAssessmentReport", "aquasecurity.github.io"),
-              "namespace": pod_namespace,
-              "label_selector": trivy_selector}),
-            ("vulnerability_report",
-             {"kind": ("VulnerabilityReport", "aquasecurity.github.io"),
-              "namespace": pod_namespace,
-              "label_selector": trivy_selector}),
-            ("exposed_secret_report",
-             {"kind": ("ExposedSecretReport", "aquasecurity.github.io"),
-              "namespace": pod_namespace,
-              "label_selector": trivy_selector}),
-            ("sbom_report",
-             {"kind": ("SbomReport", "aquasecurity.github.io"),
-              "namespace": pod_namespace,
-              "label_selector": trivy_selector}),
-            ("antrea_agent",
-             {"kind": ("AntreaAgentInfo", "crd.antrea.io")}),
-            ("antrea_controller",
-             {"kind": ("AntreaControllerInfo", "crd.antrea.io")}),
-            ("service",
-             {"kind": ("Service", ""), "namespace": pod_namespace}),
-            ("resourceclaim",
-             {"kind": ("ResourceClaim", "resource.k8s.io"),
-              "namespace": pod_namespace}),
-            ):
+            ("event", {
+                "kind": ("Event", ""),
+                "namespace": pod_namespace,
+                "field_selector": make_selector({
+                    "involvedObject.name": pod_name,
+                    "involvedObject.namespace": pod_namespace})}),
+            ("pod_disruption_budget", {
+                "kind": ("PodDisruptionBudget", "policy"),
+                "namespace": pod_namespace}),
+            ("pod_metrics", {
+                "kind": ("PodMetrics", "metrics.k8s.io")}),
+            ("config_audit_report", {
+                "kind": ("ConfigAuditReport", "aquasecurity.github.io"),
+                "namespace": pod_namespace,
+                "label_selector": trivy_selector}),
+            ("infra_assessment_report", {
+                "kind": ("InfraAssessmentReport", "aquasecurity.github.io"),
+                "namespace": pod_namespace,
+                "label_selector": trivy_selector}),
+            ("vulnerability_report", {
+                "kind": ("VulnerabilityReport", "aquasecurity.github.io"),
+                "namespace": pod_namespace,
+                "label_selector": trivy_selector}),
+            ("exposed_secret_report", {
+                "kind": ("ExposedSecretReport", "aquasecurity.github.io"),
+                "namespace": pod_namespace,
+                "label_selector": trivy_selector}),
+            ("sbom_report", {
+                "kind": ("SbomReport", "aquasecurity.github.io"),
+                "namespace": pod_namespace,
+                "label_selector": trivy_selector}),
+            ("antrea_agent", {
+                "kind": ("AntreaAgentInfo", "crd.antrea.io")}),
+            ("antrea_controller", {
+                "kind": ("AntreaControllerInfo", "crd.antrea.io")}),
+            ("service", {
+                "kind": ("Service", ""), "namespace": pod_namespace}),
+            ("resourceclaim", {
+                "kind": ("ResourceClaim", "resource.k8s.io"),
+                "namespace": pod_namespace})):
         kind = deep_get(kwargs, DictPath("kind"))
         if "kubernetes_helper" not in kwargs:
             kwargs["kubernetes_helper"] = kh
