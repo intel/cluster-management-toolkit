@@ -9,6 +9,13 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
+import errno
+import os
+import sys
+
+import kubernetes_helper
+from cmtio_yaml import secure_write_yaml
+
 """
 This program is used to dump the "external" state of the cluster;
 it does so exclusively using REST requests to the API-server.
@@ -26,13 +33,6 @@ debugging, etc.
 For usage, see:
     dump_cluster help
 """
-
-import errno
-import os
-import sys
-
-import kubernetes_helper
-from cmtio_yaml import secure_write_yaml
 
 programname = "dump_cluster"
 programversion = "v0.1"
@@ -97,7 +97,7 @@ def main() -> int:
                 pathkind = kind[0]
             else:
                 pathkind = ".".join(kind)
-        vlist, status = kh.get_list_by_kind_namespace(kind, "")
+        vlist, _status = kh.get_list_by_kind_namespace(kind, "")
         if vlist:
             secure_write_yaml(f"{path}/{pathkind}.yaml", vlist)
 

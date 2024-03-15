@@ -9,6 +9,14 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
+import errno
+import os
+import sys
+
+import kubernetes_helper
+from cmtio import secure_write_string
+from cmttypes import deep_get, DictPath
+
 """
 This program is used to dump the pod logs of the cluster;
 it does so exclusively using REST requests to the API-server.
@@ -22,14 +30,6 @@ debugging, etc.
 For usage, see:
     dump_logs help
 """
-
-import errno
-import os
-import sys
-
-import kubernetes_helper
-from cmtio import secure_write_string
-from cmttypes import deep_get, DictPath
 
 programname = "dump_cluster"
 programversion = "v0.1"

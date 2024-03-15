@@ -38,7 +38,7 @@ from cmttypes import FilePathAuditError, ProgrammingError
 from cmttypes import SecurityChecks, SecurityStatus
 from cmttypes import deep_get, loglevel_to_name, stgroup_mapping
 
-from ansithemeprint import ANSIThemeString, ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint
 
 import cmtlib
 
@@ -64,7 +64,7 @@ class ThemeAttr(NamedTuple):
         return f"ThemeAttr('{self.context}', '{self.key}')"
 
 
-class ThemeString:
+class ThemeStr:
     """
     A themed string
 
@@ -79,7 +79,7 @@ class ThemeString:
                 and isinstance(themeattr, ThemeAttr)
                 and (selected is None or isinstance(selected, bool))):
             msg = [
-                [("ThemeString()", "emphasis"),
+                [("ThemeStr()", "emphasis"),
                  (" initialised with invalid argument(s):", "error")],
                 [("string = ", "default"),
                  (f"{string}", "argument"),
@@ -104,7 +104,7 @@ class ThemeString:
                  (")", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    subexception=TypeError,
@@ -122,20 +122,20 @@ class ThemeString:
         return len(self.string)
 
     def __repr__(self) -> str:
-        return f"ThemeString('{self.string}', {repr(self.themeattr)}, {self.selected})"
+        return f"ThemeStr('{self.string}', {repr(self.themeattr)}, {self.selected})"
 
     def get_themeattr(self) -> ThemeAttr:
         """
-        Return the ThemeAttr attribute of the ThemeString
+        Return the ThemeAttr attribute of the ThemeStr
 
             Returns:
-                (ThemeAttr): The ThemeAttr attribute of the ThemeString
+                (ThemeAttr): The ThemeAttr attribute of the ThemeStr
         """
         return self.themeattr
 
     def set_themeattr(self, themeattr: ThemeAttr) -> None:
         """
-        Replace the ThemeAttr attribute of the ThemeString
+        Replace the ThemeAttr attribute of the ThemeStr
 
             Parameters:
                 themeattr (ThemeAttr): The new ThemeAttr attribute to use
@@ -144,15 +144,15 @@ class ThemeString:
 
     def get_selected(self) -> bool:
         """
-        Return the selected attribute of the ThemeString
+        Return the selected attribute of the ThemeStr
 
             Returns:
-                (bool): The selected attribute of the ThemeString
+                (bool): The selected attribute of the ThemeStr
         """
         return self.selected
 
     def __eq__(self, obj: Any) -> bool:
-        if not isinstance(obj, ThemeString):
+        if not isinstance(obj, ThemeStr):
             return False
 
         return repr(obj) == repr(self)
@@ -198,7 +198,7 @@ class ThemeRef:
                  ("bool", "argument"),
                  (")", "default")],
             ]
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -220,7 +220,7 @@ class ThemeRef:
                  (") does not exist.", "error")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -244,7 +244,7 @@ class ThemeRef:
     def __repr__(self) -> str:
         return f"ThemeRef('{self.context}', '{self.key}', {self.selected})"
 
-    def to_themearray(self) -> List[ThemeString]:
+    def to_themearray(self) -> List[ThemeStr]:
         """
         Return the themearray representation of the ThemeRef
 
@@ -270,14 +270,14 @@ class ThemeRef:
                  (") does not exist.", "error")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
                                    formatted_msg=formatted_msg)
         for string, themeattr in array:
-            themearray.append(ThemeString(string,
+            themearray.append(ThemeStr(string,
                               ThemeAttr(themeattr[0], themeattr[1]),
                               self.selected))
         return themearray
@@ -303,13 +303,13 @@ class ThemeArray:
     An array of themed strings and references to themed strings
 
         Parameters:
-            [ThemeString|ThemeRef]: The themearray
+            [ThemeStr|ThemeRef]: The themearray
             selected (bool): Selected or unselected formatting;
                              passing this parameter overrides
                              individual members of the ThemeArray
     """
 
-    def __init__(self, array: List[Union[ThemeRef, ThemeString]],
+    def __init__(self, array: List[Union[ThemeRef, ThemeStr]],
                  selected: Optional[bool] = None) -> None:
         if array is None:
             msg = [
@@ -317,7 +317,7 @@ class ThemeArray:
                  (" initialised with an empty array", "error")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -344,16 +344,16 @@ class ThemeArray:
                  (")", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
                                    facility=str(themefile),
                                    formatted_msg=formatted_msg)
 
-        newarray: List[Union[ThemeRef, ThemeString]] = []
+        newarray: List[Union[ThemeRef, ThemeStr]] = []
         for item in array:
-            if not isinstance(item, (ThemeRef, ThemeString)):
+            if not isinstance(item, (ThemeRef, ThemeStr)):
                 msg = [
                     [("ThemeArray()", "emphasis"),
                      (" initialised with invalid argument(s):", "error")],
@@ -364,11 +364,11 @@ class ThemeArray:
                      (", expected: ", "default"),
                      ("ThemeRef", "argument"),
                      (" or ", "default"),
-                     ("ThemeString", "argument"),
+                     ("ThemeStr", "argument"),
                      (")", "default")],
                 ]
 
-                unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+                unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
                 raise ProgrammingError(unformatted_msg,
                                        severity=LogLevel.ERR,
@@ -376,22 +376,22 @@ class ThemeArray:
                                        formatted_msg=formatted_msg)
             if selected is None:
                 newarray.append(item)
-            elif isinstance(item, ThemeString):
-                newarray.append(ThemeString(item.string, item.themeattr, selected=selected))
+            elif isinstance(item, ThemeStr):
+                newarray.append(ThemeStr(item.string, item.themeattr, selected=selected))
             elif isinstance(item, ThemeRef):
                 newarray.append(ThemeRef(item.context, item.key, selected=selected))
 
         self.array = newarray
 
-    def append(self, item: Union[ThemeRef, ThemeString]) -> None:
+    def append(self, item: Union[ThemeRef, ThemeStr]) -> None:
         """
-        Append a ThemeRef or ThemeString to the ThemeArray
+        Append a ThemeRef or ThemeStr to the ThemeArray
 
             Parameters:
-                item (union(ThemeRef, ThemeString)): The item to append
+                item (union(ThemeRef, ThemeStr)): The item to append
         """
 
-        if not isinstance(item, (ThemeRef, ThemeString)):
+        if not isinstance(item, (ThemeRef, ThemeStr)):
             msg = [
                 [("ThemeArray.append()", "emphasis"),
                  (" called with invalid argument(s):", "error")],
@@ -402,11 +402,11 @@ class ThemeArray:
                  (", expected: ", "default"),
                  ("ThemeRef", "argument"),
                  (" or ", "default"),
-                 ("ThemeString", "argument"),
+                 ("ThemeStr", "argument"),
                  (")", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -415,7 +415,7 @@ class ThemeArray:
         self.array.append(item)
 
     def __add__(self, array: Union["ThemeArray",
-                List[Union[ThemeRef, ThemeString]]]) -> "ThemeArray":
+                List[Union[ThemeRef, ThemeStr]]]) -> "ThemeArray":
         if isinstance(array, ThemeArray):
             return ThemeArray(self.to_list() + array.to_list())
 
@@ -430,11 +430,11 @@ class ThemeArray:
                  (", expected: ", "default"),
                  ("ThemeArray", "argument"),
                  (" or ", "default"),
-                 ("[ThemeRef|ThemeString]", "argument"),
+                 ("[ThemeRef|ThemeStr]", "argument"),
                  (")", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -472,12 +472,12 @@ class ThemeArray:
 
         return repr(obj) == repr(self)
 
-    def to_list(self) -> List[Union[ThemeRef, ThemeString]]:
+    def to_list(self) -> List[Union[ThemeRef, ThemeStr]]:
         """
-        Return the ThemeArray as a list of ThemeRef|ThemeString
+        Return the ThemeArray as a list of ThemeRef|ThemeStr
 
             Returns:
-                ([ThemeRef|ThemeArray]): The list of ThemeRef|ThemeString
+                ([ThemeRef|ThemeArray]): The list of ThemeRef|ThemeStr
         """
         return self.array
 
@@ -487,7 +487,7 @@ class CursesConfiguration:
     """
     Configuration options for the curses UI
     """
-    abouttext: Optional[List[Tuple[int, List[ThemeString]]]] = None
+    abouttext: Optional[List[Tuple[int, List[ThemeStr]]]] = None
     mousescroll_enable: bool = False
     mousescroll_up: int = 0b10000000000000000
     mousescroll_down: int = 0b1000000000000000000000000000
@@ -524,8 +524,8 @@ def format_helptext(helptext: List[Tuple[str, str]]) -> List[Dict]:
     for key, description in helptext:
         formatted_helptext.append({
             "lineattrs": WidgetLineAttrs.NORMAL,
-            "columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))],
-                        [ThemeString(description, ThemeAttr("windowwidget", "default"))]],
+            "columns": [[ThemeStr(key, ThemeAttr("windowwidget", "highlight"))],
+                        [ThemeStr(description, ThemeAttr("windowwidget", "default"))]],
             "retval": None,
         })
 
@@ -581,32 +581,32 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
     if not isinstance(attr, str):
         # debuglog.add([
-        #         [ANSIThemeString("Invalid color attribute used in theme; "
+        #         [ANSIThemeStr("Invalid color attribute used in theme; "
         #                          "attribute has to be a string and one of:", "default")],
-        #         [ANSIThemeString("“", "default"),
-        #          ANSIThemeString("normal", "emphasis"),
-        #          ANSIThemeString("“, “", "default"),
-        #          ANSIThemeString("bright", "emphasis"),
-        #          ANSIThemeString("“.", "default")],
-        #         [ANSIThemeString("Using “", "default"),
-        #          ANSIThemeString("normal", "emphasis"),
-        #          ANSIThemeString("“ as fallback.", "default")],
+        #         [ANSIThemeStr("“", "default"),
+        #          ANSIThemeStr("normal", "emphasis"),
+        #          ANSIThemeStr("“, “", "default"),
+        #          ANSIThemeStr("bright", "emphasis"),
+        #          ANSIThemeStr("“.", "default")],
+        #         [ANSIThemeStr("Using “", "default"),
+        #          ANSIThemeStr("normal", "emphasis"),
+        #          ANSIThemeStr("“ as fallback.", "default")],
         #        ], severity = LogLevel.ERR, facility = str(themefile))
         attr = "normal"
     elif attr not in ["normal", "bright"]:
         # debuglog.add([
-        #         [ANSIThemeString("Invalid color attribute “", "default"),
-        #          ANSIThemeString(f"{attr}", "emphasis"),
-        #          ANSIThemeString("“ used in theme; "
+        #         [ANSIThemeStr("Invalid color attribute “", "default"),
+        #          ANSIThemeStr(f"{attr}", "emphasis"),
+        #          ANSIThemeStr("“ used in theme; "
         #                          "attribute has to be a string and one of:", "default")],
-        #         [ANSIThemeString("“", "default"),
-        #          ANSIThemeString("normal", "emphasis"),
-        #          ANSIThemeString("“, “", "default"),
-        #          ANSIThemeString("bright", "emphasis"),
-        #          ANSIThemeString("“.", "default")],
-        #         [ANSIThemeString("Using “", "default"),
-        #          ANSIThemeString("normal", "emphasis"),
-        #          ANSIThemeString("“ as fallback.", "default")],
+        #         [ANSIThemeStr("“", "default"),
+        #          ANSIThemeStr("normal", "emphasis"),
+        #          ANSIThemeStr("“, “", "default"),
+        #          ANSIThemeStr("bright", "emphasis"),
+        #          ANSIThemeStr("“.", "default")],
+        #         [ANSIThemeStr("Using “", "default"),
+        #          ANSIThemeStr("normal", "emphasis"),
+        #          ANSIThemeStr("“ as fallback.", "default")],
         #        ], severity = LogLevel.ERR, facility = str(themefile))
         attr = "normal"
     if isinstance(col, str):
@@ -614,11 +614,11 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
     if not isinstance(col, str) or col not in color_map:
         # debuglog.add([
-        #         [ANSIThemeString("Invalid color type “", "default"),
-        #          ANSIThemeString(f"{col}", "emphasis"),
-        #          ANSIThemeString("“ used in theme; "
+        #         [ANSIThemeStr("Invalid color type “", "default"),
+        #          ANSIThemeStr(f"{col}", "emphasis"),
+        #          ANSIThemeStr("“ used in theme; "
         #                          "color has to be a string and one of:", "default"),
-        #          ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
+        #          ANSIThemeStr("“" + "“, ".join(color_map.keys()) +  "“", "default")],
         #        ], severity = LogLevel.ERR, facility = str(themefile))
         raise ValueError("Invalid color type used in theme; "
                          f"color has to be a string and one of: {', '.join(color_map.keys())}")
@@ -630,10 +630,10 @@ def __color_name_to_curses_color(color: Tuple[str, str], color_type: str) -> int
 
     if (curses_color := deep_get(color_map, DictPath(col))) is None:
         # debuglog.add([
-        #         [ANSIThemeString("Invalid {color_type} color “", "default"),
-        #          ANSIThemeString(f"{col}", "emphasis"),
-        #          ANSIThemeString("“ used in theme; valid colors are:", "default"),
-        #          ANSIThemeString("“" + "“, ".join(color_map.keys()) +  "“", "default")],
+        #         [ANSIThemeStr("Invalid {color_type} color “", "default"),
+        #          ANSIThemeStr(f"{col}", "emphasis"),
+        #          ANSIThemeStr("“ used in theme; valid colors are:", "default"),
+        #          ANSIThemeStr("“" + "“, ".join(color_map.keys()) +  "“", "default")],
         #        ], severity = LogLevel.ERR, facility = str(themefile))
         raise ValueError(f"Invalid {color_type} color {col} used in theme; "
                          f"valid colors are: {', '.join(color_map.keys())}")
@@ -660,12 +660,12 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
 
     if fg == bg:
         # debuglog.add([
-        #         [ANSIThemeString("__init_pair()", "emphasis"),
-        #          ANSIThemeString(" called with a color pair where fg == bg (", "error"),
-        #          ANSIThemeString(f"{fg}", "argument"),
-        #          ANSIThemeString(",", "error"),
-        #          ANSIThemeString(f"{bg}", "argument"),
-        #          ANSIThemeString(")", "error")],
+        #         [ANSIThemeStr("__init_pair()", "emphasis"),
+        #          ANSIThemeStr(" called with a color pair where fg == bg (", "error"),
+        #          ANSIThemeStr(f"{fg}", "argument"),
+        #          ANSIThemeStr(",", "error"),
+        #          ANSIThemeStr(f"{bg}", "argument"),
+        #          ANSIThemeStr(")", "error")],
         #        ], severity = LogLevel.ERR, facility = str(themefile))
         raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg})")
 
@@ -674,12 +674,12 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
     except (curses.error, ValueError) as e:
         if str(e) in ("init_pair() returned ERR", "Color number is greater than COLORS-1 (7)."):
             # debuglog.add([
-            #         [ANSIThemeString("init_pair()", "emphasis"),
-            #          ANSIThemeString(" failed; attempting to limit fg & bg to ", "error"),
-            #          ANSIThemeString("0", "argument"),
-            #          ANSIThemeString("-", "error"),
-            #          ANSIThemeString("7", "argument"),
-            #          ANSIThemeString(")", "error")],
+            #         [ANSIThemeStr("init_pair()", "emphasis"),
+            #          ANSIThemeStr(" failed; attempting to limit fg & bg to ", "error"),
+            #          ANSIThemeStr("0", "argument"),
+            #          ANSIThemeStr("-", "error"),
+            #          ANSIThemeStr("7", "argument"),
+            #          ANSIThemeStr(")", "error")],
             #        ], severity = LogLevel.DEBUG, facility = str(themefile))
 
             # Most likely we failed due to the terminal only
@@ -691,12 +691,12 @@ def __init_pair(pair: str, color_pair: Tuple[int, int], color_nr: int) -> None:
                 bright_black_remapped = True
             if fg & 7 == bg & 7:
                 # debuglog.add([
-                #         [ANSIThemeString("__init_pair()", "emphasis"),
-                #          ANSIThemeString(" called with a color pair where fg == bg (", "error"),
-                #          ANSIThemeString(f"{fg}", "argument"),
-                #          ANSIThemeString(",", "error"),
-                #          ANSIThemeString(f"{bg}", "argument"),
-                #          ANSIThemeString(f"{bright_black_remapped}", "argument")],
+                #         [ANSIThemeStr("__init_pair()", "emphasis"),
+                #          ANSIThemeStr(" called with a color pair where fg == bg (", "error"),
+                #          ANSIThemeStr(f"{fg}", "argument"),
+                #          ANSIThemeStr(",", "error"),
+                #          ANSIThemeStr(f"{bg}", "argument"),
+                #          ANSIThemeStr(f"{bright_black_remapped}", "argument")],
                 #        ], severity = LogLevel.ERR, facility = str(themefile))
                 raise ValueError(f"The theme contains a color pair ({pair}) where fg == bg ({bg}; "
                                  f"bright black remapped: {bright_black_remapped})") from e
@@ -743,7 +743,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
                   "and the defaultthemefile paths are empty", "error")],
             ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                subexception=FileNotFoundError,
@@ -842,8 +842,8 @@ def dump_themearray(themearray: List[Any]) -> NoReturn:
     """
     tmp = ""
     for substr in themearray:
-        if isinstance(substr, ThemeString):
-            tmp += "ThemeString:\n"
+        if isinstance(substr, ThemeStr):
+            tmp += "ThemeStr:\n"
             tmp += f"          str: “{substr}“\n"
             tmp += f"       strlen: “{len(substr)}“\n"
             tmp += f"         attr: {substr.themeattr}\n"
@@ -906,10 +906,10 @@ def window_tee_hline(win: curses.window, y: int,
     if formatting is None:
         formatting = ThemeAttr("main", "default")
 
-    hlinearray: List[Union[ThemeRef, ThemeString]] = [
-        ThemeString(ltee, formatting),
-        ThemeString("".rjust(end - start - 1, hline), formatting),
-        ThemeString(rtee, formatting),
+    hlinearray: List[Union[ThemeRef, ThemeStr]] = [
+        ThemeStr(ltee, formatting),
+        ThemeStr("".rjust(end - start - 1, hline), formatting),
+        ThemeStr(rtee, formatting),
     ]
 
     addthemearray(win, hlinearray, y=y, x=start)
@@ -936,13 +936,13 @@ def window_tee_vline(win: curses.window, x: int,
 
     y = start
 
-    addthemearray(win, [ThemeString(ttee, formatting)], y=y, x=x)
+    addthemearray(win, [ThemeStr(ttee, formatting)], y=y, x=x)
 
     while y < end:
         y += 1
-        addthemearray(win, [ThemeString(vline, formatting)], y=y, x=x)
+        addthemearray(win, [ThemeStr(vline, formatting)], y=y, x=x)
 
-    addthemearray(win, [ThemeString(btee, formatting)], y=end, x=x)
+    addthemearray(win, [ThemeStr(btee, formatting)], y=end, x=x)
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals
@@ -981,29 +981,29 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int,
 
     # We only need a scrollbar if we can actually scroll
     if maxoffset > 0:
-        addthemearray(win, [ThemeString(arrowup,
+        addthemearray(win, [ThemeStr(arrowup,
                                         ThemeAttr("main", "scrollbar_arrows"))], y=miny, x=x)
         upperarrow = (miny, x)
         y = miny + 1
         while y < maxy:
-            addthemearray(win, [ThemeString(scrollbar, ThemeAttr("main", "scrollbar"))], y=y, x=x)
+            addthemearray(win, [ThemeStr(scrollbar, ThemeAttr("main", "scrollbar"))], y=y, x=x)
             y += 1
-        addthemearray(win, [ThemeString(arrowdown,
+        addthemearray(win, [ThemeStr(arrowdown,
                                         ThemeAttr("main", "scrollbar_arrows"))], y=maxy, x=x)
         lowerarrow = (maxy, x)
         curpos = miny + 1 + int((maxy - miny) * (yoffset / (maxoffset)))
         curpos = min(curpos, maxy - 3)
         vdragger = (curpos, x, 3)
-        addthemearray(win, [ThemeString(verticaldragger_upper,
+        addthemearray(win, [ThemeStr(verticaldragger_upper,
                                         ThemeAttr("main", "dragger"))], y=curpos + 0, x=x)
-        addthemearray(win, [ThemeString(verticaldragger_midpoint,
+        addthemearray(win, [ThemeStr(verticaldragger_midpoint,
                                         ThemeAttr("main", "dragger_midpoint"))], y=curpos + 1, x=x)
-        addthemearray(win, [ThemeString(verticaldragger_lower,
+        addthemearray(win, [ThemeStr(verticaldragger_lower,
                                         ThemeAttr("main", "dragger"))], y=curpos + 2, x=x)
     # But we might need to cover up the lack of one if the window has been resized
     else:
         for y in range(miny, maxy + 1):
-            addthemearray(win, [ThemeString(vline, clear_color)], y=y, x=x)
+            addthemearray(win, [ThemeStr(vline, clear_color)], y=y, x=x)
 
     # (y, x Upper arrow), (y, x Lower arrow), (y, x, len vertical dragger)
     return upperarrow, lowerarrow, vdragger
@@ -1045,20 +1045,20 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int,
 
     maxoffset = width - (maxx - minx) - 1
 
-    scrollbararray: List[Union[ThemeRef, ThemeString]] = []
+    scrollbararray: List[Union[ThemeRef, ThemeStr]] = []
 
     # We only need a scrollbar if we can actually scroll
     if maxoffset > 0:
         scrollbararray += [
-            ThemeString(arrowleft, ThemeAttr("main", "scrollbar_arrows")),
+            ThemeStr(arrowleft, ThemeAttr("main", "scrollbar_arrows")),
         ]
         leftarrow = (y, minx)
 
         scrollbararray += [
-            ThemeString("".rjust(maxx - minx - 1, scrollbar), ThemeAttr("main", "scrollbar")),
+            ThemeStr("".rjust(maxx - minx - 1, scrollbar), ThemeAttr("main", "scrollbar")),
         ]
         scrollbararray += [
-            ThemeString(arrowright, ThemeAttr("main", "scrollbar_arrows")),
+            ThemeStr(arrowright, ThemeAttr("main", "scrollbar_arrows")),
         ]
         rightarrow = (y, maxx)
 
@@ -1067,12 +1067,12 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int,
 
         addthemearray(win, scrollbararray, y=y, x=minx)
 
-        draggerarray: List[Union[ThemeRef, ThemeString]] = [
-            ThemeString(f"{horizontaldragger_left}{horizontaldragger_left}",
+        draggerarray: List[Union[ThemeRef, ThemeStr]] = [
+            ThemeStr(f"{horizontaldragger_left}{horizontaldragger_left}",
                         ThemeAttr("main", "dragger")),
-            ThemeString(f"{horizontaldragger_midpoint}",
+            ThemeStr(f"{horizontaldragger_midpoint}",
                         ThemeAttr("main", "dragger_midpoint")),
-            ThemeString(f"{horizontaldragger_right}{horizontaldragger_right}",
+            ThemeStr(f"{horizontaldragger_right}{horizontaldragger_right}",
                         ThemeAttr("main", "dragger")),
         ]
 
@@ -1081,7 +1081,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int,
     # But we might need to cover up the lack of one if the window has been resized
     else:
         scrollbararray += [
-            ThemeString("".rjust(maxx - minx + 1, hline), clear_color),
+            ThemeStr("".rjust(maxx - minx + 1, hline), clear_color),
         ]
         addthemearray(win, scrollbararray, y=y, x=minx)
 
@@ -1090,7 +1090,7 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int,
 
 
 def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup],
-                     selected: int) -> List[List[Union[ThemeRef, ThemeString]]]:
+                     selected: int) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
     Given [StatusGroup] and an index to the selected item and the max width,
     generate an array of themearrays
@@ -1102,7 +1102,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup],
         Returns:
             ([ThemeArray]): A list of themearrays
     """
-    heatmap: List[Union[ThemeRef, ThemeString]] = []
+    heatmap: List[Union[ThemeRef, ThemeStr]] = []
 
     if not stgroups:
         return []
@@ -1123,14 +1123,14 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup],
                 refarray = current_status.to_themearray()
                 if len(refarray) > 1:
                     raise ValueError("generate_heatmap() cannot handle ThemeRef "
-                                     "with multiple ThemeString")
+                                     "with multiple ThemeStr")
                 refthemestr = refarray[0]
                 refstr = str(refthemestr)
                 refattr = refthemestr.get_themeattr()
                 is_selected = refthemestr.get_selected()
                 newstr = (refstr * (status_width // len(refstr))
                           + refstr[0:status_width % len(refstr)])
-                heatmap.append(ThemeString(newstr, refattr, selected=is_selected))
+                heatmap.append(ThemeStr(newstr, refattr, selected=is_selected))
             current_status = new_status
             status_width = 1
         else:
@@ -1141,7 +1141,7 @@ def generate_heatmap(maxwidth: int, stgroups: List[StatusGroup],
 
 # pylint: disable-next=too-many-arguments,too-many-locals
 def percentagebar(minx: int, maxx: int, total: int,
-                  subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeString]]:
+                  subsets: List[Tuple[int, ThemeRef]]) -> List[Union[ThemeRef, ThemeStr]]:
     """
     Draw a bar of multiple subsets that sum up to a total
 
@@ -1158,7 +1158,7 @@ def percentagebar(minx: int, maxx: int, total: int,
         Returns:
             (ThemeArray): The themearray with the percentage bar
     """
-    themearray: List[Union[ThemeRef, ThemeString]] = []
+    themearray: List[Union[ThemeRef, ThemeStr]] = []
 
     bar_width = maxx - minx + 1
     subset_total = 0
@@ -1171,15 +1171,15 @@ def percentagebar(minx: int, maxx: int, total: int,
             refarray = themeref.to_themearray()
             if len(refarray) > 1:
                 raise ValueError("parcentagebar() cannot handle ThemeRef "
-                                 "with multiple ThemeString")
+                                 "with multiple ThemeStr")
             refthemestr = refarray[0]
             refstr = str(refthemestr)
             refattr = refthemestr.get_themeattr()
             newstr = refstr * (subset_width // len(refstr)) + refstr[0:subset_width % len(refstr)]
-            themearray.append(ThemeString(newstr, refattr))
+            themearray.append(ThemeStr(newstr, refattr))
 
     # Pad to full width
-    themearray.append(ThemeString("".ljust(bar_width - subset_total),
+    themearray.append(ThemeStr("".ljust(bar_width - subset_total),
                                   ThemeAttr("types", "generic")))
     return themearray
 
@@ -1296,7 +1296,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int,
              (")", "default")],
         ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -1313,7 +1313,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int,
             [("Negative progress is not supported; this is not a regression bar.", "default")],
         ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -1328,7 +1328,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int,
               "By definition, that is the most anyone can give.", "default")],
         ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -1351,15 +1351,15 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int,
     for x in range(0, width - 2):
         try:
             if x < (width * progress) // 100:
-                addthemearray(win, [ThemeString(solidblock, ThemeAttr("main", "progressbar"))],
+                addthemearray(win, [ThemeStr(solidblock, ThemeAttr("main", "progressbar"))],
                               y=1, x=x + 1)
             else:
-                addthemearray(win, [ThemeString(dimmedblock, ThemeAttr("main", "progressbar"))],
+                addthemearray(win, [ThemeStr(dimmedblock, ThemeAttr("main", "progressbar"))],
                               y=1, x=x + 1)
         except curses.error:
             curses.endwin()
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Live resizing progressbar() is currently broken; "
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Live resizing progressbar() is currently broken; "
                                             "this is a known issue.", "default")], stderr=True)
             sys.exit(errno.ENOTSUP)
 
@@ -1589,13 +1589,13 @@ def move_cur_with_offset(curypos: int, yoffset: int,
 
 
 def addthemearray(win: curses.window,
-                  array: List[Union[ThemeRef, ThemeString]], **kwargs: Any) -> Tuple[int, int]:
+                  array: List[Union[ThemeRef, ThemeStr]], **kwargs: Any) -> Tuple[int, int]:
     """
     Add a ThemeArray to a curses window
 
         Parameters:
             win (curses.window): The curses window to operate on
-            array ([ThemeRef|ThemeString]): The themearray to add to the curses window
+            array ([ThemeRef|ThemeStr]): The themearray to add to the curses window
             **kwargs (dict[str, Any]): Keyword arguments
                 y (int): The y-coordinate (-1 to start from current cursor position)
                 x (int): The x-coordinate (-1 to start from current cursor position)
@@ -1625,9 +1625,9 @@ def addthemearray(win: curses.window,
 
 # This extracts the string without formatting;
 # once everything uses proper ThemeArray this wo not be necessary anymore
-def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> str:
+def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]) -> str:
     """
-    Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeString]],
+    Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeStr]],
     return an unformatted string
 
         Parameters:
@@ -1646,10 +1646,10 @@ def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, Them
     return string
 
 
-def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]],
-                        max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]:
+def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]],
+                        max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]:
     output_format = type(themearray)
-    truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]] = []
+    truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]] = []
 
     # For the time being (until we implement proper iteration
     # over ThemeArray elements) this is needed.
@@ -1666,21 +1666,21 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
             string = str(element)
             attr = element.get_themeattr()
             selected = element.get_selected()
-            truncated_themearray.append(ThemeString(string[0:max_element_len],
+            truncated_themearray.append(ThemeStr(string[0:max_element_len],
                                                     attr, selected=selected))
             break
         truncated_themearray.append(element)
 
     if output_format == ThemeArray:
-        truncated_themearray = ThemeArray(cast(List[Union[ThemeRef, ThemeString]],
+        truncated_themearray = ThemeArray(cast(List[Union[ThemeRef, ThemeStr]],
                                                truncated_themearray))
 
     return truncated_themearray
 
 
-def themearray_len(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeString]]]) -> int:
+def themearray_len(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]) -> int:
     """
-    Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeString]],
+    Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeStr]],
     return its length
 
         Parameters:
@@ -1709,16 +1709,16 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
 
     if tmp_attr is None:
         # debuglog.add([
-        #         [ANSIThemeString("Could not find the tuple (", "default"),
-        #          ANSIThemeString(f"{context}", "emphasis"),
-        #          ANSIThemeString(", ", "default"),
-        #          ANSIThemeString(f"{key}", "emphasis"),
-        #          ANSIThemeString(") in theme.", "default")],
-        #         [ANSIThemeString("Using (", "default"),
-        #          ANSIThemeString("main", "emphasis"),
-        #          ANSIThemeString(", ", "default"),
-        #          ANSIThemeString("default", "emphasis"),
-        #          ANSIThemeString(") as fallback.", "default")],
+        #         [ANSIThemeStr("Could not find the tuple (", "default"),
+        #          ANSIThemeStr(f"{context}", "emphasis"),
+        #          ANSIThemeStr(", ", "default"),
+        #          ANSIThemeStr(f"{key}", "emphasis"),
+        #          ANSIThemeStr(") in theme.", "default")],
+        #         [ANSIThemeStr("Using (", "default"),
+        #          ANSIThemeStr("main", "emphasis"),
+        #          ANSIThemeStr(", ", "default"),
+        #          ANSIThemeStr("default", "emphasis"),
+        #          ANSIThemeStr(") as fallback.", "default")],
         #        ], severity=LogLevel.ERR, facility=str(themefile))
         tmp_attr = deep_get(theme, DictPath("main#default"))
 
@@ -1746,20 +1746,20 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
     for item in attr:
         # if not isinstance(item, str):
         #     debuglog.add([
-        #             [ANSIThemeString("Invalid text attribute used in theme; "
+        #             [ANSIThemeStr("Invalid text attribute used in theme; "
         #                              "attribute has to be a string and one of:", "default")],
-        #             [ANSIThemeString("“", "default"),
-        #              ANSIThemeString("dim", "emphasis"),
-        #              ANSIThemeString("“, “", "default"),
-        #              ANSIThemeString("normal", "emphasis"),
-        #              ANSIThemeString("“, “", "default"),
-        #              ANSIThemeString("bold", "emphasis"),
-        #              ANSIThemeString("“, “", "default"),
-        #              ANSIThemeString("underline", "emphasis"),
-        #              ANSIThemeString("“.", "default")],
-        #             [ANSIThemeString("Using “", "default"),
-        #              ANSIThemeString("normal", "emphasis"),
-        #              ANSIThemeString("“ as fallback.", "default")],
+        #             [ANSIThemeStr("“", "default"),
+        #              ANSIThemeStr("dim", "emphasis"),
+        #              ANSIThemeStr("“, “", "default"),
+        #              ANSIThemeStr("normal", "emphasis"),
+        #              ANSIThemeStr("“, “", "default"),
+        #              ANSIThemeStr("bold", "emphasis"),
+        #              ANSIThemeStr("“, “", "default"),
+        #              ANSIThemeStr("underline", "emphasis"),
+        #              ANSIThemeStr("“.", "default")],
+        #             [ANSIThemeStr("Using “", "default"),
+        #              ANSIThemeStr("normal", "emphasis"),
+        #              ANSIThemeStr("“ as fallback.", "default")],
         #     ], severity=LogLevel.ERR, facility=str(themefile))
         if item == "dim":
             tmp |= curses.A_DIM
@@ -1771,21 +1771,21 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
             tmp |= curses.A_UNDERLINE
         else:
             # debuglog.add([
-            #         [ANSIThemeString("Invalid text attribute “", "default"),
-            #          ANSIThemeString(f"{item}", "emphasis"),
-            #          ANSIThemeString("“ used in theme; attribute has to be one of:", "default")],
-            #         [ANSIThemeString("“", "default"),
-            #          ANSIThemeString("dim", "emphasis"),
-            #          ANSIThemeString("“, “", "default"),
-            #          ANSIThemeString("normal", "emphasis"),
-            #          ANSIThemeString("“, “", "default"),
-            #          ANSIThemeString("bold", "emphasis"),
-            #          ANSIThemeString("“, “", "default"),
-            #          ANSIThemeString("underline", "emphasis"),
-            #          ANSIThemeString("“.", "default")],
-            #         [ANSIThemeString("Using “", "default"),
-            #          ANSIThemeString("normal", "emphasis"),
-            #          ANSIThemeString("“ as fallback.", "default")],
+            #         [ANSIThemeStr("Invalid text attribute “", "default"),
+            #          ANSIThemeStr(f"{item}", "emphasis"),
+            #          ANSIThemeStr("“ used in theme; attribute has to be one of:", "default")],
+            #         [ANSIThemeStr("“", "default"),
+            #          ANSIThemeStr("dim", "emphasis"),
+            #          ANSIThemeStr("“, “", "default"),
+            #          ANSIThemeStr("normal", "emphasis"),
+            #          ANSIThemeStr("“, “", "default"),
+            #          ANSIThemeStr("bold", "emphasis"),
+            #          ANSIThemeStr("“, “", "default"),
+            #          ANSIThemeStr("underline", "emphasis"),
+            #          ANSIThemeStr("“.", "default")],
+            #         [ANSIThemeStr("Using “", "default"),
+            #          ANSIThemeStr("normal", "emphasis"),
+            #          ANSIThemeStr("“ as fallback.", "default")],
             # ], severity=LogLevel.ERR, facility=str(themefile))
             tmp |= curses.A_NORMAL
     curses_attrs = tmp
@@ -1793,12 +1793,12 @@ def themeattr_to_curses(themeattr: ThemeAttr, selected: bool = False) -> Tuple[i
     curses_col = __color[col][selected]
     if curses_col is None:
         # debuglog.add([
-        #         [ANSIThemeString("themeattr_to_curses()", "emphasis")],
-        #         [ANSIThemeString("called with non-existing (color, selected) tuple ", "error")],
-        #         [ANSIThemeString(f"{col}", "argument")],
-        #         [ANSIThemeString(", ", "error")],
-        #         [ANSIThemeString(f"{selected}", "argument")],
-        #         [ANSIThemeString(").", "error")],
+        #         [ANSIThemeStr("themeattr_to_curses()", "emphasis")],
+        #         [ANSIThemeStr("called with non-existing (color, selected) tuple ", "error")],
+        #         [ANSIThemeStr(f"{col}", "argument")],
+        #         [ANSIThemeStr(", ", "error")],
+        #         [ANSIThemeStr(f"{selected}", "argument")],
+        #         [ANSIThemeStr(").", "error")],
         # ], severity=LogLevel.ERR, facility=str(themefile))
         raise KeyError(f"themeattr_to_curses: (color: {col}, selected: {selected}) not found")
     return curses_col, curses_attrs
@@ -1818,13 +1818,13 @@ def themeattr_to_curses_merged(themeattr: ThemeAttr, selected: bool = False) -> 
     return curses_col | curses_attrs
 
 
-def themestring_to_cursestuple(themestring: ThemeString,
+def themestring_to_cursestuple(themestring: ThemeStr,
                                selected: Optional[bool] = None) -> Tuple[str, int]:
     """
     Given a themestring returns a cursestuple
 
         Parameters:
-            themestring (ThemeString): The ThemeString to convert
+            themestring (ThemeStr): The ThemeStr to convert
             selected (bool): [optional] True is selected, False otherwise
         Returns:
             (str, int): A curses tuple for use with addformattedarray()
@@ -1840,10 +1840,10 @@ def themestring_to_cursestuple(themestring: ThemeString,
     return (string, themeattr_to_curses_merged(themeattr, selected))
 
 
-def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]],
-                       selected: Optional[bool] = None) -> List[ThemeString]:
+def themearray_flatten(themearray: List[Union[ThemeRef, ThemeStr]],
+                       selected: Optional[bool] = None) -> List[ThemeStr]:
     """
-    Replace all ThemeRefs in a ThemeArray with ThemeString
+    Replace all ThemeRefs in a ThemeArray with ThemeStr
 
         Parameters:
             themearray (ThemeArray): The themearray to flatten
@@ -1856,7 +1856,7 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]],
     themearray_flattened = []
 
     for item in themearray:
-        if isinstance(item, ThemeString):
+        if isinstance(item, ThemeStr):
             themearray_flattened.append(item)
         elif isinstance(item, ThemeRef):
             themearray_flattened += item.to_themearray()
@@ -1871,11 +1871,11 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]],
                  (", expected: ", "default"),
                  ("ThemeRef", "argument"),
                  (" or ", "default"),
-                 ("ThemeString", "argument"),
+                 ("ThemeStr", "argument"),
                  (")", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -1885,10 +1885,10 @@ def themearray_flatten(themearray: List[Union[ThemeRef, ThemeString]],
     return themearray_flattened
 
 
-def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]],
+def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeStr]],
                          maxwidth: int = -1, wrap_marker: bool = True,
                          selected: Optional[bool] = None) -> List[List[Union[ThemeRef,
-                                                                             ThemeString]]]:
+                                                                             ThemeStr]]]:
     """
     Given a themearray, split it into multiple lines, each maxwidth long
 
@@ -1912,8 +1912,8 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]],
     else:
         linebreaklen = 0
 
-    themearrays: List[List[Union[ThemeRef, ThemeString]]] = []
-    tmp_themearray: List[Union[ThemeRef, ThemeString]] = []
+    themearrays: List[List[Union[ThemeRef, ThemeStr]]] = []
+    tmp_themearray: List[Union[ThemeRef, ThemeStr]] = []
     tmplen = 0
     i = 0
 
@@ -1929,11 +1929,11 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeString]],
             string = str(themearray_flattened[i])
             themeattr = themearray_flattened[i].get_themeattr()
 
-            tmp_themearray.append(ThemeString(string[:maxwidth - linebreaklen - tmplen],
+            tmp_themearray.append(ThemeStr(string[:maxwidth - linebreaklen - tmplen],
                                               themeattr))
             if wrap_marker:
                 tmp_themearray += linebreak
-            themearray_flattened[i] = ThemeString(string[maxwidth - linebreaklen - tmplen:],
+            themearray_flattened[i] = ThemeStr(string[maxwidth - linebreaklen - tmplen:],
                                                   themeattr)
             themearrays.append(tmp_themearray)
             tmp_themearray = []
@@ -2089,24 +2089,24 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
     selection: Union[int, str, None] = None
     curypos = 0
 
-    headerarray: List[Union[ThemeRef, ThemeString]] = []
+    headerarray: List[Union[ThemeRef, ThemeStr]] = []
 
     # Generate headers
     if headers is not None:
         if taggable:
-            headerarray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "highlight")))
+            headerarray.append(ThemeStr(f"{tagprefix}", ThemeAttr("windowwidget", "highlight")))
         for i in range(0, columns):
             extrapad = padwidth
             if i == columns - 1:
                 extrapad = 0
-            headerarray.append(ThemeString((headers[i].ljust(lengths[i] + extrapad)),
+            headerarray.append(ThemeStr((headers[i].ljust(lengths[i] + extrapad)),
                                            ThemeAttr("windowwidget", "header")))
 
     # Move to preselection
     if isinstance(preselection, str):
         if preselection != "":
             for y_, item in enumerate(items):
-                if isinstance(item["columns"][0][0], ThemeString):
+                if isinstance(item["columns"][0][0], ThemeStr):
                     tmp_selection = str(item["columns"][0][0])
                 else:
                     tmp_selection = item["columns"][0][0][0]
@@ -2133,21 +2133,21 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                 selected_ = False
 
             lineattributes = item["lineattrs"]
-            linearray: List[Union[ThemeRef, ThemeString]] = []
+            linearray: List[Union[ThemeRef, ThemeStr]] = []
 
             if taggable:
                 if y_ in tagged_items:
-                    linearray.append(ThemeString(f"{tagprefix}", ThemeAttr("windowwidget", "tag")))
+                    linearray.append(ThemeStr(f"{tagprefix}", ThemeAttr("windowwidget", "tag")))
                 else:
-                    linearray.append(ThemeString("".ljust(tagprefixlen),
+                    linearray.append(ThemeStr("".ljust(tagprefixlen),
                                                  ThemeAttr("windowwidget", "tag")))
 
             for _x, column in enumerate(item["columns"]):
-                themearray: List[Union[ThemeRef, ThemeString]] = []
+                themearray: List[Union[ThemeRef, ThemeStr]] = []
                 length = 0
 
                 for string in column:
-                    if isinstance(string, ThemeString):
+                    if isinstance(string, ThemeStr):
                         tmpstring = str(string)
                         attribute = string.themeattr
                     elif isinstance(string, ThemeRef):
@@ -2163,11 +2163,11 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
                     if lineattributes & (WidgetLineAttrs.INVALID) != 0:
                         attribute = ThemeAttr("windowwidget", "alert")
-                        themearray.append(ThemeString(tmpstring, attribute, selected_))
+                        themearray.append(ThemeStr(tmpstring, attribute, selected_))
                     elif lineattributes \
                             & (WidgetLineAttrs.DISABLED | WidgetLineAttrs.UNSELECTABLE) != 0:
                         attribute = ThemeAttr("windowwidget", "dim")
-                        themearray.append(ThemeString(tmpstring, attribute, selected_))
+                        themearray.append(ThemeStr(tmpstring, attribute, selected_))
                     elif lineattributes & WidgetLineAttrs.SEPARATOR != 0:
                         if attribute == ThemeAttr("windowwidget", "default"):
                             attribute = ThemeAttr("windowwidget", "highlight")
@@ -2177,19 +2177,19 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                         lpadstr = "".ljust(lpad, "─")
                         rpadstr = "".rjust(rpad, "─")
 
-                        themearray.append(ThemeString(lpadstr,
+                        themearray.append(ThemeStr(lpadstr,
                                                       ThemeAttr("windowwidget", "highlight"),
                                           selected_))
-                        themearray.append(ThemeString(tmpstring, attribute, selected_))
-                        themearray.append(ThemeString(rpadstr,
+                        themearray.append(ThemeStr(tmpstring, attribute, selected_))
+                        themearray.append(ThemeStr(rpadstr,
                                                       ThemeAttr("windowwidget", "highlight"),
                                           selected_))
                     else:
-                        themearray.append(ThemeString(tmpstring, attribute, selected_))
+                        themearray.append(ThemeStr(tmpstring, attribute, selected_))
 
                 if lineattributes & WidgetLineAttrs.SEPARATOR == 0:
                     padstring = "".ljust(lengths[_x] - length + padwidth)
-                    themearray.append(ThemeString(padstring, attribute, selected_))
+                    themearray.append(ThemeStr(padstring, attribute, selected_))
 
                 linearray += themearray
 
@@ -2237,8 +2237,8 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         # The following inputs terminate the loop
         if c == curses.KEY_RESIZE:
             curses.endwin()
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Live resizing windowwidget() is currently broken; "
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Live resizing windowwidget() is currently broken; "
                                             "this is a known issue.", "default")], stderr=True)
             sys.exit(errno.ENOTSUP)
         if c == 27:  # ESCAPE
@@ -2437,8 +2437,8 @@ def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
     for key, value in labels.items():
         rlabels.append({
             "lineattrs": WidgetLineAttrs.NORMAL,
-            "columns": [[ThemeString(key, ThemeAttr("windowwidget", "highlight"))],
-                        [ThemeString(value.replace("\n", "\\n"),
+            "columns": [[ThemeStr(key, ThemeAttr("windowwidget", "highlight"))],
+                        [ThemeStr(value.replace("\n", "\\n"),
                                      ThemeAttr("windowwidget", "default"))]],
             "retval": None,
         })
@@ -2582,7 +2582,7 @@ class UIProps:
         self.facilities: Optional[List[str]] = None
         self.severities: Optional[List[LogLevel]] = None
         self.messages: Optional[List[Union[str, ThemeArray,
-                                           List[Union[ThemeString, ThemeRef]]]]] = None
+                                           List[Union[ThemeStr, ThemeRef]]]]] = None
         # For checking clicks/drags of the scrollbars
         self.leftarrow = -1, -1
         self.rightarrow = -1, -1
@@ -2667,7 +2667,7 @@ class UIProps:
                         facilities: Optional[List[str]],
                         severities: Optional[List[LogLevel]],
                         messages: Optional[List[Union[str, ThemeArray,
-                                                      List[Union[ThemeString,
+                                                      List[Union[ThemeStr,
                                                                  ThemeRef]]]]]) -> None:
         self.timestamps = timestamps
         self.facilities = facilities
@@ -2823,7 +2823,7 @@ class UIProps:
         if not self.borders:
             for y in range(self.logpadypos, self.maxy - 1):
                 self.addthemearray(self.stdscr,
-                                   [ThemeString(" ", ThemeAttr("main", "default"))],
+                                   [ThemeStr(" ", ThemeAttr("main", "default"))],
                                    y=y, x=self.maxx)
 
         self.draw_winheader()
@@ -2839,23 +2839,23 @@ class UIProps:
             if not self.borders:
                 if self.headerpadypos > 1:
                     self.addthemearray(self.stdscr,
-                                       [ThemeString(hline, ThemeAttr("main", "default"))],
+                                       [ThemeStr(hline, ThemeAttr("main", "default"))],
                                        y=self.headerpadypos - 1, x=0)
                     self.addthemearray(self.stdscr,
-                                       [ThemeString(hline, ThemeAttr("main", "default"))],
+                                       [ThemeStr(hline, ThemeAttr("main", "default"))],
                                        y=self.headerpadypos - 1, x=self.maxx)
                 self.addthemearray(self.stdscr,
-                                   [ThemeString(hline, ThemeAttr("main", "default"))],
+                                   [ThemeStr(hline, ThemeAttr("main", "default"))],
                                    y=self.headerpadypos + 1, x=0)
                 self.addthemearray(self.stdscr,
-                                   [ThemeString(hline, ThemeAttr("main", "default"))],
+                                   [ThemeStr(hline, ThemeAttr("main", "default"))],
                                    y=self.headerpadypos + 1, x=self.maxx)
         elif self.listpad is not None and not self.borders:
             self.addthemearray(self.stdscr,
-                               [ThemeString(" ", ThemeAttr("main", "default"))],
+                               [ThemeStr(" ", ThemeAttr("main", "default"))],
                                y=self.listpadypos - 1, x=0)
             self.addthemearray(self.stdscr,
-                               [ThemeString(" ", ThemeAttr("main", "default"))],
+                               [ThemeStr(" ", ThemeAttr("main", "default"))],
                                y=self.listpadypos - 1, x=self.maxx)
 
         if self.logpad is not None:
@@ -2869,10 +2869,10 @@ class UIProps:
             else:
                 # If the window lacks sideborders we want lines
                 self.addthemearray(self.stdscr,
-                                   [ThemeString(hline, ThemeAttr("main", "default"))],
+                                   [ThemeStr(hline, ThemeAttr("main", "default"))],
                                    y=self.logpadypos - 1, x=0)
                 self.addthemearray(self.stdscr,
-                                   [ThemeString(hline, ThemeAttr("main", "default"))],
+                                   [ThemeStr(hline, ThemeAttr("main", "default"))],
                                    y=self.logpadypos - 1, x=self.maxx)
 
         self.reset_update_delay()
@@ -2887,13 +2887,13 @@ class UIProps:
         rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
         ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
 
-        timestamparray: List[Union[ThemeRef, ThemeString]] = [
-            ThemeString(rtee, ThemeAttr("main", "default")),
+        timestamparray: List[Union[ThemeRef, ThemeStr]] = [
+            ThemeStr(rtee, ThemeAttr("main", "default")),
         ]
 
         if self.helpstring:
             timestamparray += [
-                ThemeString(self.helpstring, ThemeAttr("main", "statusbar")),
+                ThemeStr(self.helpstring, ThemeAttr("main", "statusbar")),
                 ThemeRef("separators", "statusbar"),
             ]
         if update == "pending":
@@ -2901,12 +2901,12 @@ class UIProps:
                 ThemeRef("separators", "statusbar_pending"),
             ]
         timestamparray += [
-            ThemeString(self.last_timestamp_update, ThemeAttr("main", "last_update")),
+            ThemeStr(self.last_timestamp_update, ThemeAttr("main", "last_update")),
         ]
 
         if self.borders:
             timestamparray += [
-                ThemeString(ltee, ThemeAttr("main", "default")),
+                ThemeStr(ltee, ThemeAttr("main", "default")),
             ]
 
         xpos -= themearray_len(timestamparray)
@@ -2919,21 +2919,21 @@ class UIProps:
             ltee = deep_get(theme, DictPath("boxdrawing#ltee"))
             rtee = deep_get(theme, DictPath("boxdrawing#rtee"))
 
-            winheaderarray: List[Union[ThemeRef, ThemeString]] = []
+            winheaderarray: List[Union[ThemeRef, ThemeStr]] = []
 
             if self.borders:
                 winheaderarray += [
-                    ThemeString(rtee, ThemeAttr("main", "default")),
+                    ThemeStr(rtee, ThemeAttr("main", "default")),
                 ]
 
             winheaderarray += [
                 ThemeRef("separators", "mainheader_prefix"),
-                ThemeString(f"{self.windowheader}", ThemeAttr("main", "header")),
+                ThemeStr(f"{self.windowheader}", ThemeAttr("main", "header")),
                 ThemeRef("separators", "mainheader_suffix"),
             ]
             if self.borders:
                 winheaderarray += [
-                    ThemeString(ltee, ThemeAttr("main", "default")),
+                    ThemeStr(ltee, ThemeAttr("main", "default")),
                 ]
                 self.addthemearray(self.stdscr, winheaderarray, y=0, x=1)
             else:
@@ -2944,10 +2944,10 @@ class UIProps:
             bl = deep_get(theme, DictPath("boxdrawing#llcorner"))
             br = deep_get(theme, DictPath("boxdrawing#lrcorner"))
             self.addthemearray(self.stdscr,
-                               [ThemeString(bl, ThemeAttr("main", "default"))],
+                               [ThemeStr(bl, ThemeAttr("main", "default"))],
                                y=self.maxy - 2, x=0)
             self.addthemearray(self.stdscr,
-                               [ThemeString(br, ThemeAttr("main", "default"))],
+                               [ThemeStr(br, ThemeAttr("main", "default"))],
                                y=self.maxy - 2, x=self.maxx)
 
         # The extra status can change,
@@ -2955,9 +2955,9 @@ class UIProps:
         self.draw_winheader()
 
         mousestatus = "On" if get_mousemask() == -1 else "Off"
-        mousearray: List[Union[ThemeRef, ThemeString]] = [
-            ThemeString("Mouse: ", ThemeAttr("statusbar", "infoheader")),
-            ThemeString(f"{mousestatus}", ThemeAttr("statusbar", "highlight"))
+        mousearray: List[Union[ThemeRef, ThemeStr]] = [
+            ThemeStr("Mouse: ", ThemeAttr("statusbar", "infoheader")),
+            ThemeStr(f"{mousestatus}", ThemeAttr("statusbar", "highlight"))
         ]
         xpos = self.maxx - themearray_len(mousearray) + 1
         if self.statusbar is not None:
@@ -2965,12 +2965,12 @@ class UIProps:
         ycurpos = self.curypos + self.yoffset
         maxypos = self.maxcurypos + self.maxyoffset
         if ycurpos >= 0 and maxypos >= 0:
-            curposarray: List[Union[ThemeRef, ThemeString]] = [
-                ThemeString("Line: ", ThemeAttr("statusbar", "infoheader")),
-                ThemeString(f"{ycurpos + 1}".rjust(len(str(maxypos + 1))),
+            curposarray: List[Union[ThemeRef, ThemeStr]] = [
+                ThemeStr("Line: ", ThemeAttr("statusbar", "infoheader")),
+                ThemeStr(f"{ycurpos + 1}".rjust(len(str(maxypos + 1))),
                             ThemeAttr("statusbar", "highlight")),
                 ThemeRef("separators", "statusbar_fraction"),
-                ThemeString(f"{maxypos + 1}", ThemeAttr("statusbar", "highlight"))
+                ThemeStr(f"{maxypos + 1}", ThemeAttr("statusbar", "highlight"))
             ]
             xpos = self.maxx - themearray_len(curposarray) + 1
             if self.statusbar is not None:
@@ -3254,7 +3254,7 @@ class UIProps:
             if self.borders:
                 for i in range(0, self.tspadwidth):
                     self.addthemearray(self.stdscr,
-                                       [ThemeString(hline, ThemeAttr("main", "default"))],
+                                       [ThemeStr(hline, ThemeAttr("main", "default"))],
                                        y=self.maxy - 2, x=1 + i)
                 try:
                     self.tspad.noutrefresh(0, 0, self.tspadypos, tspadxpos,
@@ -3341,13 +3341,13 @@ class UIProps:
 
     # pylint: disable-next=too-many-arguments,too-many-locals
     def addthemearray(self, win: curses.window,
-                      array: List[Union[ThemeRef, ThemeString]], **kwargs: Any) -> Tuple[int, int]:
+                      array: List[Union[ThemeRef, ThemeStr]], **kwargs: Any) -> Tuple[int, int]:
         """
         Add a ThemeArray to a curses window
 
             Parameters:
                 win (curses.window): The curses window to operate on
-                array ([ThemeRef|ThemeString]): The themearray to add to the curses window
+                array ([ThemeRef|ThemeStr]): The themearray to add to the curses window
                 **kwargs (dict[str, Any]): Keyword arguments
                     y (int): The y-coordinate (-1 to start from current cursor position)
                     x (int): The x-coordinate (-1 to start from current cursor position)
@@ -3479,7 +3479,7 @@ class UIProps:
 
     def find_all_matches_by_searchkey(self,
                                       messages: Optional[List[Union[str, ThemeArray,
-                                                                    List[Union[ThemeString,
+                                                                    List[Union[ThemeStr,
                                                                                ThemeRef]]]]],
                                       searchkey: str) -> None:
         self.match_index = None

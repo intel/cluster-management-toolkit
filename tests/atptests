@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Tuple
 from unittest import mock
 
 import ansithemeprint
-from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeStr
 
 from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from cmttypes import FilePath, FilePathAuditError, ProgrammingError
@@ -49,7 +49,7 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
     fun = ansithemeprint.ansithemearray_to_str
 
     try:
-        fun([ANSIThemeString("foo", "default")])
+        fun([ANSIThemeStr("foo", "default")])
         message = f"{fun.__name__} did not raise an exception even though theme " \
                   "or themepath are uninitialized"
         result = False
@@ -60,7 +60,7 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
         fun = ansithemeprint.ansithemeprint
 
         try:
-            fun([ANSIThemeString("foo", "default")], stderr=False, color="auto")
+            fun([ANSIThemeStr("foo", "default")], stderr=False, color="auto")
             message = f"{fun.__name__} did not raise an exception even though theme " \
                       "or themepath are uninitialized"
             result = False
@@ -86,7 +86,7 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
             importlib.reload(ansithemeprint)
             if not ansithemeprint.USE_FALLBACK_THEME:
                 message = f"{fun.__name__} did not set USE_FALLBACK_THEME " \
-                           "when importing yaml failed"
+                          "when importing yaml failed"
                 result = False
     except Exception as e:  # pylint: disable=broad-except
         message = f"{fun.__name__} did not use the fallback theme " \
@@ -96,8 +96,8 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
     import_override = {}
 
     importlib.reload(ansithemeprint)
-    global ANSIThemeString
-    ANSIThemeString = importlib.reload(ansithemeprint).ANSIThemeString
+    global ANSIThemeStr
+    ANSIThemeStr = importlib.reload(ansithemeprint).ANSIThemeStr
 
     return message, result
 
@@ -155,7 +155,7 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    fun = ANSIThemeString.format_error_msg
+    fun = ANSIThemeStr.format_error_msg
 
     if result:
         testdata = (
@@ -163,10 +163,10 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
             # (indata, expected_result, expected_exception)
             ([[("This", "error"), (" is ", "warning"), ("a", "note")], [("new line", "default")]],
              ("This is a\nnew line",
-              [[ANSIThemeString("This", "error"),
-                ANSIThemeString(" is ", "warning"),
-                ANSIThemeString("a", "note")],
-               [ANSIThemeString("new line", "default")]]),
+              [[ANSIThemeStr("This", "error"),
+                ANSIThemeStr(" is ", "warning"),
+                ANSIThemeStr("a", "note")],
+               [ANSIThemeStr("new line", "default")]]),
              None),
             (1, None, ProgrammingError),
             ([1], None, ProgrammingError),
@@ -178,9 +178,9 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -189,16 +189,16 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -213,7 +213,7 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
     fun = ansithemeprint.ansithemeprint
 
     try:
-        indata = [ANSIThemeString("  Formatted message (theme: path, color: always)", "path")]
+        indata = [ANSIThemeStr("  Formatted message (theme: path, color: always)", "path")]
         fun(indata, stderr=False, color="auto")
     except ProgrammingError:
         message = f"{fun.__name__} raised an exception even though " \
@@ -221,8 +221,8 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
         result = False
 
     try:
-        indata = [ANSIThemeString("  Formatted message (theme: argument, color: always)",
-                                  "argument")]
+        indata = [ANSIThemeStr("  Formatted message (theme: argument, color: always)",
+                               "argument")]
         fun(indata, stderr=True, color="always")
     except ProgrammingError:
         message = f"{fun.__name__} raised an exception even though " \
@@ -230,7 +230,7 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
         result = False
 
     try:
-        indata = [ANSIThemeString("  Formatted message (theme: error, color: never)", "option")]
+        indata = [ANSIThemeStr("  Formatted message (theme: error, color: never)", "option")]
         fun(indata, stderr=False, color="never")
     except ProgrammingError:
         message = f"{fun.__name__} raised an exception even though theme " \
@@ -238,7 +238,7 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
         result = False
 
     try:
-        indata = [ANSIThemeString("  Formatted message (theme: error, color: never)", "ok")]
+        indata = [ANSIThemeStr("  Formatted message (theme: error, color: never)", "ok")]
         fun(indata, stderr=False, color="incorrect value")
         message = f"{fun.__name__} did not raise an exception for invalid " \
                   "input for color:\n    input: {repr(indata)}"
@@ -250,21 +250,21 @@ def test_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemestring_join_list(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemestr_join_list(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    fun = ansithemeprint.ansithemestring_join_list
+    fun = ansithemeprint.ansithemestr_join_list
 
-    indata = ["one", ANSIThemeString("two", "warning"), "three"]
+    indata = ["one", ANSIThemeStr("two", "warning"), "three"]
     formatting = "error"
 
     tmp = fun(indata, formatting=formatting)
-    expected_result = [ANSIThemeString(string="one", themeref="error"),
-                       ANSIThemeString(string=", ", themeref="separator"),
-                       ANSIThemeString(string="two", themeref="warning"),
-                       ANSIThemeString(string=", ", themeref="separator"),
-                       ANSIThemeString(string="three", themeref="error")]
+    expected_result = [ANSIThemeStr(string="one", themeref="error"),
+                       ANSIThemeStr(string=", ", themeref="separator"),
+                       ANSIThemeStr(string="two", themeref="warning"),
+                       ANSIThemeStr(string=", ", themeref="separator"),
+                       ANSIThemeStr(string="three", themeref="error")]
 
     for i, item in enumerate(tmp):
         if item != expected_result[i]:
@@ -275,9 +275,9 @@ def test_ansithemestring_join_list(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         tmp = fun(indata, formatting=formatting, separator=None)
-        expected_result = [ANSIThemeString(string="one", themeref="error"),
-                           ANSIThemeString(string="two", themeref="warning"),
-                           ANSIThemeString(string="three", themeref="error")]
+        expected_result = [ANSIThemeStr(string="one", themeref="error"),
+                           ANSIThemeStr(string="two", themeref="warning"),
+                           ANSIThemeStr(string="three", themeref="error")]
         for i, item in enumerate(tmp):
             if item != expected_result[i]:
                 message = f"{fun.__name__} did not yield a correctly formatted string " \
@@ -289,13 +289,13 @@ def test_ansithemestring_join_list(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
-def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, bool]:
+def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    fun = ANSIThemeString
+    fun = ANSIThemeStr
 
-    # Initialise ANSIThemeStrings with invalid string type
+    # Initialise ANSIThemeStrs with invalid string type
     try:
         indata = 1
         tmp = fun(indata, "warning")
@@ -306,7 +306,7 @@ def test_ansithemestring_basic_operations(verbose: bool = False) -> Tuple[str, b
     except TypeError:
         pass
 
-    # Initialise ANSIThemeStrings with invalid themeref type
+    # Initialise ANSIThemeStrs with invalid themeref type
     try:
         indata = 1
         tmp = fun("test", indata)
@@ -370,13 +370,13 @@ def test_themearray_ljust(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeString("1", "default"),
-              ANSIThemeString("2", "ok"),
-              ANSIThemeString("3", "ok")]
-    expected_result = [ANSIThemeString("1", "default"),
-                       ANSIThemeString("2", "ok"),
-                       ANSIThemeString("3", "ok"),
-                       ANSIThemeString("   ", "default")]
+    indata = [ANSIThemeStr("1", "default"),
+              ANSIThemeStr("2", "ok"),
+              ANSIThemeStr("3", "ok")]
+    expected_result = [ANSIThemeStr("1", "default"),
+                       ANSIThemeStr("2", "ok"),
+                       ANSIThemeStr("3", "ok"),
+                       ANSIThemeStr("   ", "default")]
 
     fun = ansithemeprint.themearray_ljust
 
@@ -402,9 +402,9 @@ def test_themearray_len(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeString("1", "default"),
-              ANSIThemeString("2", "ok"),
-              ANSIThemeString("3", "ok")]
+    indata = [ANSIThemeStr("1", "default"),
+              ANSIThemeStr("2", "ok"),
+              ANSIThemeStr("3", "ok")]
     expected_result = 3
 
     fun = ansithemeprint.themearray_len
@@ -424,13 +424,13 @@ def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, boo
     message = ""
     result = True
 
-    indata = [ANSIThemeString("1", "default"),
-              ANSIThemeString("2", "ok"),
-              ANSIThemeString("3", "ok")]
+    indata = [ANSIThemeStr("1", "default"),
+              ANSIThemeStr("2", "ok"),
+              ANSIThemeStr("3", "ok")]
     formatting = "warning"
-    expected_result = [ANSIThemeString("1", "warning"),
-                       ANSIThemeString("2", "warning"),
-                       ANSIThemeString("3", "warning")]
+    expected_result = [ANSIThemeStr("1", "warning"),
+                       ANSIThemeStr("2", "warning"),
+                       ANSIThemeStr("3", "warning")]
 
     fun = ansithemeprint.themearray_override_formatting
 
@@ -442,9 +442,9 @@ def test_themearray_override_formatting(verbose: bool = False) -> Tuple[str, boo
         result = False
 
     if result:
-        expected_result = [ANSIThemeString("1", "default"),
-                           ANSIThemeString("2", "ok"),
-                           ANSIThemeString("3", "ok")]
+        expected_result = [ANSIThemeStr("1", "default"),
+                           ANSIThemeStr("2", "ok"),
+                           ANSIThemeStr("3", "ok")]
         if (tmp := fun(indata, formatting=None)) != expected_result:
             message = f"{fun.__name__} returned incorrect output:\n" \
                       f"       input: {indata})\n" \
@@ -460,9 +460,9 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeString("1", "default"),
-              ANSIThemeString("2", "ok"),
-              ANSIThemeString("3", "ok")]
+    indata = [ANSIThemeStr("1", "default"),
+              ANSIThemeStr("2", "ok"),
+              ANSIThemeStr("3", "ok")]
     expected_result = "123"
 
     fun = ansithemeprint.__themearray_to_raw_string  # pylint: disable=protected-access
@@ -475,7 +475,7 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
         result = False
 
     if result:
-        indata = ["1", ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
+        indata = ["1", ANSIThemeStr("2", "ok"), ANSIThemeStr("3", "ok")]
         try:
             tmp = fun(indata)
             message = f"{fun.__name__}() silently accepted invalid indata:\n" \
@@ -494,9 +494,9 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeString("1", "default"),
-              ANSIThemeString("2", "ok"),
-              ANSIThemeString("3", "ok")]
+    indata = [ANSIThemeStr("1", "default"),
+              ANSIThemeStr("2", "ok"),
+              ANSIThemeStr("3", "ok")]
 
     fun = ansithemeprint.ansithemearray_to_str
 
@@ -530,7 +530,7 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
             result = False
 
     if result:
-        indata = ["1", ANSIThemeString("2", "ok"), ANSIThemeString("3", "ok")]
+        indata = ["1", ANSIThemeStr("2", "ok"), ANSIThemeStr("3", "ok")]
         try:
             tmp = fun(indata, color=True)
             message = f"{fun.__name__} silently accepted invalid indata:\n" \
@@ -543,9 +543,9 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
             pass
 
     if result:
-        indata = [ANSIThemeString("1", "nonexistingkey"),
-                  ANSIThemeString("2", "ok"),
-                  ANSIThemeString("3", "ok")]
+        indata = [ANSIThemeStr("1", "nonexistingkey"),
+                  ANSIThemeStr("2", "ok"),
+                  ANSIThemeStr("3", "ok")]
         try:
             tmp = fun(indata, color=True)
             message = f"{fun.__name__} silently accepted invalid indata:\n" \
@@ -557,7 +557,7 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
 
     # This is for coverage only
     if result:
-        indata = [ANSIThemeString("", "ok")]
+        indata = [ANSIThemeStr("", "ok")]
         tmp = fun(indata, color=False)
 
     return message, result
@@ -573,28 +573,28 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
         # (fun, mocked_fun, prompt, mocked_input, color, expected_result, expected_exception)
         testdata = (
             (ansithemeprint.ansithemeinput, "builtins.input",
-             [ANSIThemeString("  Please input the string \"test1\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test1\": ", "option")],
              "always", "test1", "test1", None),
             (ansithemeprint.ansithemeinput, "builtins.input",
-             [ANSIThemeString("  Please input the string \"test2\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test2\": ", "option")],
              "auto", "test2", "test2", None),
             (ansithemeprint.ansithemeinput, "builtins.input",
-             [ANSIThemeString("  Please input the string \"test3\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test3\": ", "option")],
              "never", "test3", "test3", None),
             (ansithemeprint.ansithemeinput, "builtins.input",
-             [ANSIThemeString("  Please input the string \"test3\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test3\": ", "option")],
              "invalid value", "test3", None, ValueError),
             (ansithemeprint.ansithemeinput_password, "getpass.getpass",
-             [ANSIThemeString("  Please input the string \"test4\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test4\": ", "option")],
              "always", "test4", "test4", None),
             (ansithemeprint.ansithemeinput_password, "getpass.getpass",
-             [ANSIThemeString("  Please input the string \"test5\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test5\": ", "option")],
              "auto", "test5", "test5", None),
             (ansithemeprint.ansithemeinput_password, "getpass.getpass",
-             [ANSIThemeString("  Please input the string \"test6\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test6\": ", "option")],
              "never", "test6", "test6", None),
             (ansithemeprint.ansithemeinput_password, "getpass.getpass",
-             [ANSIThemeString("  Please input the string \"test6\": ", "option")],
+             [ANSIThemeStr("  Please input the string \"test6\": ", "option")],
              "invalid value", "test6", None, ValueError),
         )
 
@@ -607,10 +607,10 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
                         tmp = fun(prompt, color=color)
                     if tmp != expected_result:
                         message = f"{fun.__name__}() returned incorrect result:\n" \
-                              f"           prompt: {prompt}\n" \
-                              f"     mocked input: {mocked_input}\n" \
-                              f"            color: {color}\n" \
-                              f"  expected result: {expected_result}"
+                                  f"           prompt: {prompt}\n" \
+                                  f"     mocked input: {mocked_input}\n" \
+                                  f"            color: {color}\n" \
+                                  f"  expected result: {expected_result}"
                         result = False
                         break
                 else:
@@ -618,18 +618,18 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
                     if tmp != expected_result:
                         message = f"{fun.__name__}() returned incorrect result " \
                                   "(did you type the correct string?):\n" \
-                              f"           prompt: {prompt}\n" \
-                              f"            input: {tmp}\n" \
-                              f"            color: {color}\n" \
-                              f"  expected result: {expected_result}"
+                                  f"           prompt: {prompt}\n" \
+                                  f"            input: {tmp}\n" \
+                                  f"            color: {color}\n" \
+                                  f"  expected result: {expected_result}"
                         result = False
                         break
 
                 if expected_exception is not None:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           prompt: {prompt}\n" \
-                          f"            color: {color}\n" \
-                          f"         expected: {expected_exception}\n"
+                              f"           prompt: {prompt}\n" \
+                              f"            color: {color}\n" \
+                              f"         expected: {expected_exception}\n"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -638,17 +638,17 @@ def test_ansithemeinput(verbose: bool = False, mock_input: bool = True) -> Tuple
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           prompt: {prompt}\n" \
-                              f"            color: {color}\n" \
-                              f"         expected: {expected_exception}\n"
+                                  f"           prompt: {prompt}\n" \
+                                  f"            color: {color}\n" \
+                                  f"         expected: {expected_exception}\n"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           prompt: {prompt}\n" \
-                          f"            color: {color}\n" \
-                          f"         expected: {expected_result}\n" \
-                          f"        exception: {repr(e).split('(')[0]}\n"
+                              f"           prompt: {prompt}\n" \
+                              f"            color: {color}\n" \
+                              f"         expected: {expected_result}\n" \
+                              f"        exception: {repr(e).split('(')[0]}\n"
                     result = False
                     break
 
@@ -696,12 +696,12 @@ tests: Dict = {
         "callable": test_ansithemeprint,
         "result": None,
     },
-    ("ansithemestring_join_list", ): {
-        "callable": test_ansithemestring_join_list,
+    ("ansithemestr_join_list", ): {
+        "callable": test_ansithemestr_join_list,
         "result": None,
     },
-    ("ansithemestring basic methods", ): {
-        "callable": test_ansithemestring_basic_operations,
+    ("ansithemestr basic methods", ): {
+        "callable": test_ansithemestr_basic_operations,
         "result": None,
     },
     ("themearray_ljust", ): {

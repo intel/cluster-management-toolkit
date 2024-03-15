@@ -353,7 +353,7 @@ atptests-manual: setup_tests
 	(cd tests && ./atptests --include-clear --include-input)
 
 check_theme_use: setup_tests
-	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeString and ANSIThemeString are valid\n\n"; \
+	@printf -- "\n\nRunning check_theme_use to check that all verifiable uses of ThemeStr and ANSIThemeStr are valid\n\n"; \
 	for theme in themes/*.yaml; do \
 		printf -- "\nChecking against theme file $$theme:\n" ;\
 		printf -- "---\n" ;\

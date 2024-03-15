@@ -31,7 +31,7 @@ except ModuleNotFoundError:
     USE_FALLBACK_THEME = True
 
 
-class ANSIThemeString:
+class ANSIThemeStr:
     """
     A themed string for printing with ANSI control codes
 
@@ -42,92 +42,92 @@ class ANSIThemeString:
 
     def __init__(self, string: str, themeref: str) -> None:
         """
-        Initialize an ANSIThemeString
+        Initialize an ANSIThemeStr
 
             Parameters:
                 string (str): The string to format
                 themeref (str): The reference to the formatting to use
         """
         if not isinstance(string, str) or not isinstance(themeref, str):
-            raise TypeError("ANSIThemeString only accepts (str, str)")
+            raise TypeError("ANSIThemeStr only accepts (str, str)")
         self.string = string
         self.themeref = themeref
 
     def __str__(self) -> str:
         """
-        Return the string part of the ANSIThemeString
+        Return the string part of the ANSIThemeStr
 
             Returns:
-                (str): The string part of the ANSIThemeString
+                (str): The string part of the ANSIThemeStr
         """
         return self.string
 
     def __len__(self) -> int:
         """
-        Return the length to the ANSIThemeString
+        Return the length to the ANSIThemeStr
 
             Returns:
-                (int): The length of the ANSIThemeString
+                (int): The length of the ANSIThemeStr
         """
         return len(self.string)
 
     def __repr__(self) -> str:
-        return f"ANSIThemeString(string=\"{self.string}\", themeref=\"{self.themeref}\")"
+        return f"ANSIThemeStr(string=\"{self.string}\", themeref=\"{self.themeref}\")"
 
-    def format(self, themeref: str) -> "ANSIThemeString":
+    def format(self, themeref: str) -> "ANSIThemeStr":
         """
-        Apply new formatting to the ANSIThemeString
+        Apply new formatting to the ANSIThemeStr
 
             Parameters:
-                (str): The reference to the formatting part of the ANSIThemeString
+                (str): The reference to the formatting part of the ANSIThemeStr
             Returns:
-                (ANSIThemeString): The ANSIThemeString with new formatting applied
+                (ANSIThemeStr): The ANSIThemeStr with new formatting applied
         """
         self.themeref = themeref
         return self
 
     def get_themeref(self) -> str:
         """
-        Return the reference to the formatting part of the ANSIThemeString
+        Return the reference to the formatting part of the ANSIThemeStr
 
             Returns:
-                (str): The reference to the formatting part of the ANSIThemeString
+                (str): The reference to the formatting part of the ANSIThemeStr
         """
         return self.themeref
 
-    def upper(self) -> "ANSIThemeString":
+    def upper(self) -> "ANSIThemeStr":
         """
-        Return the upper-case version of the ANSIThemeString
+        Return the upper-case version of the ANSIThemeStr
 
             Returns:
-                (ANSIThemeString): The upper-case version of the ANSIThemeString
+                (ANSIThemeStr): The upper-case version of the ANSIThemeStr
         """
-        return ANSIThemeString(self.string.upper(), self.themeref)
+        return ANSIThemeStr(self.string.upper(), self.themeref)
 
-    def lower(self) -> "ANSIThemeString":
+    def lower(self) -> "ANSIThemeStr":
         """
-        Return the lower-case version of the ANSIThemeString
-
-            Returns:
-                (ANSIThemeString): The lower-case version of the ANSIThemeString
-        """
-        return ANSIThemeString(self.string.lower(), self.themeref)
-
-    def capitalize(self) -> "ANSIThemeString":
-        """
-        Return the capitalised version of the ANSIThemeString
+        Return the lower-case version of the ANSIThemeStr
 
             Returns:
-                (ANSIThemeString): The capitalized version of the ANSIThemeString
+                (ANSIThemeStr): The lower-case version of the ANSIThemeStr
         """
-        return ANSIThemeString(self.string.capitalize(), self.themeref)
+        return ANSIThemeStr(self.string.lower(), self.themeref)
+
+    def capitalize(self) -> "ANSIThemeStr":
+        """
+        Return the capitalised version of the ANSIThemeStr
+
+            Returns:
+                (ANSIThemeStr): The capitalized version of the ANSIThemeStr
+        """
+        return ANSIThemeStr(self.string.capitalize(), self.themeref)
 
     def __eq__(self, themestring: Any) -> bool:
         """
-        Compare two ANSIThemeStrings and return True if both string and formatting are identical
+        Compare two ANSIThemeStrs and return True if both string and formatting are identical
 
             Parameters:
-                themestring (ANSIThemeString): The ANSIThemeString to compare to
+                themestring (ANSIThemeStr): The ANSIThemeStr to compare to
             Returns:
                 (bool): True if the strings match, False if not
         """
@@ -135,7 +135,7 @@ class ANSIThemeString:
 
     @classmethod
     def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> \
-            Tuple[str, List[List["ANSIThemeString"]]]:
+            Tuple[str, List[List["ANSIThemeStr"]]]:
         """
         Given a structured error message return both its string and ANSIThemeArray representations;
         the main use-case for this is to feed into enhanced exceptions that accept
@@ -150,11 +150,11 @@ class ANSIThemeString:
         themearray_list = []
 
         if not isinstance(msg, list):
-            raise ProgrammingError("ANSIThemeString.format_error_msg() "
+            raise ProgrammingError("ANSIThemeStr.format_error_msg() "
                                    "called with invalid argument(s):\n"
                                    f"msg={msg} (type: {type(msg)}, expected: list)",
                                    severity=LogLevel.ERR,
-                                   formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                   formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                     "emphasis"),
                                                    (" called with invalid argument(s):", "error")],
                                                   [("msg = ", "default"),
@@ -167,11 +167,11 @@ class ANSIThemeString:
 
         for line in msg:
             if not isinstance(line, list):
-                raise ProgrammingError("ANSIThemeString.format_error_msg() "
+                raise ProgrammingError("ANSIThemeStr.format_error_msg() "
                                        "called with invalid argument(s):\n"
                                        f"line={line} (type: {type(line)}, expected: list)",
                                        severity=LogLevel.ERR,
-                                       formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                       formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                         "emphasis"),
                                                        (" called with invalid argument(s):",
                                                         "error")],
@@ -188,12 +188,12 @@ class ANSIThemeString:
             for items in line:
                 if not (isinstance(items, tuple) and len(items) == 2
                         and isinstance(items[0], str) and isinstance(items[1], str)):
-                    raise ProgrammingError("ANSIThemeString.format_error_msg() "
+                    raise ProgrammingError("ANSIThemeStr.format_error_msg() "
                                            "called with invalid argument(s):\n"
                                            f"items={items} (type: {type(items)}, "
                                            "expected: tuple(str, str))",
                                            severity=LogLevel.ERR,
-                                           formatted_msg=[[("ANSIThemeString.format_error_msg()",
+                                           formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                             "emphasis"),
                                                            (" called with invalid argument(s):",
                                                             "error")],
@@ -207,7 +207,7 @@ class ANSIThemeString:
 
                 string, formatting = items
                 joined_string += string
-                themearray.append(ANSIThemeString(string, formatting))
+                themearray.append(ANSIThemeStr(string, formatting))
             themearray_list.append(copy.deepcopy(themearray))
             joined_strings.append(joined_string)
 
@@ -276,20 +276,20 @@ def clear_screen() -> int:
     return subprocess.run([cpath], check=False).returncode
 
 
-def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
+def __themearray_to_raw_string(themearray: List[ANSIThemeStr]) -> str:
     """
-    Strip the formatting from an ANSIThemeArray (List[ANSIThemeString])
+    Strip the formatting from an ANSIThemeArray (List[ANSIThemeStr])
 
         Parameters:
-            themearray ([ANSIThemeString]): The array to strip formatting from
+            themearray ([ANSIThemeStr]): The array to strip formatting from
         Returns:
             (str): The stripped string
     """
     string: str = ""
     for themestring in themearray:
-        if not isinstance(themestring, ANSIThemeString):
+        if not isinstance(themestring, ANSIThemeStr):
             raise TypeError("__themarray_to_string() only accepts arrays "
-                            f"of AnsiThemeString; this themearray consists of:\n{themearray}")
+                            f"of AnsiThemeStr; this themearray consists of:\n{themearray}")
 
         theme_string = str(themestring)
         string += theme_string
@@ -297,13 +297,13 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeString]) -> str:
     return string
 
 
-def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
+def ansithemearray_to_str(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
     """
-    Convert an ANSIThemeArray (List[ANSIThemeString]) to a string,
+    Convert an ANSIThemeArray (List[ANSIThemeStr]) to a string,
     conditionally with ANSI-formatting
 
         Parameters:
-            themearray ([ANSIThemeString]): The array to strip formatting from
+            themearray ([ANSIThemeStr]): The array to strip formatting from
             **kwargs (dict[str, Any]): Keyword arguments
                 color (bool): True to emit ANSI-formatting, False to output a plain string
         Returns:
@@ -313,11 +313,11 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> s
 
     if theme is None or themepath is None:
         raise ProgrammingError("ansithemearray_to_str() used without calling "
-                               "init_ansithemestring() first; this is a programming error.")
+                               "init_ansithemestr() first; this is a programming error.")
     string: str = ""
     for themestring in themearray:
-        if not isinstance(themestring, ANSIThemeString):
-            raise TypeError("ansithemearray_to_str() only accepts arrays of AnsiThemeString; "
+        if not isinstance(themestring, ANSIThemeStr):
+            raise TypeError("ansithemearray_to_str() only accepts arrays of AnsiThemeStr; "
                             f"this themearray consists of:\n{themearray}")
 
         theme_attr_ref = themestring.themeref
@@ -340,16 +340,16 @@ def ansithemearray_to_str(themearray: List[ANSIThemeString], **kwargs: Any) -> s
     return string
 
 
-def themearray_override_formatting(themearray: List[ANSIThemeString],
-                                   formatting: Optional[str]) -> List[ANSIThemeString]:
+def themearray_override_formatting(themearray: List[ANSIThemeStr],
+                                   formatting: Optional[str]) -> List[ANSIThemeStr]:
     """
-    Override the formatting of an ANSIThemeArray (List[ANSIThemeString])
+    Override the formatting of an ANSIThemeArray (List[ANSIThemeStr])
 
         Parameters:
-            themearray ([ANSIThemeString]): The themearray to reformat
+            themearray ([ANSIThemeStr]): The themearray to reformat
             formatting (str): The new formatting to apply
         Return:
-            ([ANSIThemeString]): The reformatted ANSIThemeArray
+            ([ANSIThemeStr]): The reformatted ANSIThemeArray
     """
     new_themearray = []
 
@@ -362,58 +362,58 @@ def themearray_override_formatting(themearray: List[ANSIThemeString],
     return new_themearray
 
 
-def themearray_len(themearray: List[ANSIThemeString]) -> int:
+def themearray_len(themearray: List[ANSIThemeStr]) -> int:
     """
     Return the length of a themearray
 
         Parameters:
-            themearray ([ANSIThemeString]): The themearray to return the length of
+            themearray ([ANSIThemeStr]): The themearray to return the length of
         Return:
             The length of the themearray
     """
     return sum(map(len, themearray))
 
 
-def themearray_ljust(themearray: List[ANSIThemeString], width: int) -> List[ANSIThemeString]:
+def themearray_ljust(themearray: List[ANSIThemeStr], width: int) -> List[ANSIThemeStr]:
     """
-    Return a ljust:ed themearray (will always pad with ANSIThemeString("", "default"))
+    Return a ljust:ed themearray (will always pad with ANSIThemeStr("", "default"))
 
         Parameters:
-            themearray ([ANSIThemeString]): The themearray to ljust
+            themearray ([ANSIThemeStr]): The themearray to ljust
         Return:
             The ljust:ed themearray
     """
     tlen = themearray_len(themearray)
     if tlen < width:
-        themearray = themearray + [ANSIThemeString("".ljust(width - tlen), "default")]
+        themearray = themearray + [ANSIThemeStr("".ljust(width - tlen), "default")]
     return themearray
 
 
-def ansithemestring_join_list(items: Sequence[Union[str, ANSIThemeString]],
-                              **kwargs: Any) -> List[ANSIThemeString]:
+def ansithemestr_join_list(items: Sequence[Union[str, ANSIThemeStr]],
+                           **kwargs: Any) -> List[ANSIThemeStr]:
     """
-    Given a list of ANSIThemeStrings or strings + formatting, join them separated by a separator
+    Given a list of ANSIThemeStrs or strings + formatting, join them separated by a separator
 
         Parameters:
-            items ([Union(str, ANSIThemeString)]): The items to join into an ANSIThemeString list
+            items ([Union(str, ANSIThemeStr)]): The items to join into an ANSIThemeStr list
             **kwargs (dict[str, Any]): Keyword arguments
                 formatting (str): The formatting to use if the list is a string-list
-                separator (ANSIThemeString): The list separator to use
+                separator (ANSIThemeStr): The list separator to use
         Return:
-            themearray ([ANSIThemeString]): The resulting ANSIThemeString list
+            themearray ([ANSIThemeStr]): The resulting ANSIThemeStr list
     """
     formatting: str = deep_get(kwargs, DictPath("formatting"), "default")
     if "separator" in kwargs:
-        separator: Optional[ANSIThemeString] = deep_get(kwargs, DictPath("separator"))
+        separator: Optional[ANSIThemeStr] = deep_get(kwargs, DictPath("separator"))
     else:
-        separator = ANSIThemeString(", ", "separator")
+        separator = ANSIThemeStr(", ", "separator")
 
     themearray = []
     first = True
 
     for item in items:
         if isinstance(item, str):
-            tmpitem = ANSIThemeString(item, formatting)
+            tmpitem = ANSIThemeStr(item, formatting)
         else:
             tmpitem = item
 
@@ -427,7 +427,7 @@ def ansithemestring_join_list(items: Sequence[Union[str, ANSIThemeString]],
     return themearray
 
 
-def ansithemeinput(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
+def ansithemeinput(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Print a themearray and input a string;
     a themearray is a list of format strings of the format:
@@ -474,7 +474,7 @@ def ansithemeinput(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
     return tmp.replace("\x00", "<NUL>")
 
 
-def ansithemeinput_password(themearray: List[ANSIThemeString], **kwargs: Any) -> str:
+def ansithemeinput_password(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Print a themearray and input a password;
     a themearray is a list of format strings of the format:
@@ -521,14 +521,14 @@ def ansithemeinput_password(themearray: List[ANSIThemeString], **kwargs: Any) ->
     return tmp.replace("\x00", "<NUL>")
 
 
-def ansithemeprint(themearray: List[ANSIThemeString], **kwargs: Any) -> None:
+def ansithemeprint(themearray: List[ANSIThemeStr], **kwargs: Any) -> None:
     """
     Print a themearray;
     a themearray is a list of format strings of the format:
     (string, theme_attr_ref); context is implicitly understood to be term
 
         Parameters:
-            themearray ([ANSIThemeString]): The themearray to print
+            themearray ([ANSIThemeStr]): The themearray to print
             **kwargs (dict[str, Any]): Keyword arguments
                 stderr (bool): True to print to stderr, False to print to stdout
                 color (str):
@@ -632,8 +632,8 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
                 raise
             # In practice this shouldn't happen since check_path should cover this
             theme = FALLBACK_THEME
-            ansithemeprint([ANSIThemeString("Warning", "warning"),
-                            ANSIThemeString(": themefile ”", "default"),
-                            ANSIThemeString(f"{themefile}", "path"),
-                            ANSIThemeString("” does not exist; "
-                            "using built-in fallback theme.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                            ANSIThemeStr(": themefile ”", "default"),
+                            ANSIThemeStr(f"{themefile}", "path"),
+                            ANSIThemeStr("” does not exist; "
+                                         "using built-in fallback theme.", "default")], stderr=True)

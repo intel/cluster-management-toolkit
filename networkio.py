@@ -31,7 +31,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from cmtpaths import HOMEDIR, SSH_DIR, SOFTWARE_SOURCES_DIR
 from cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH
-from ansithemeprint import ansithemeprint, ANSIThemeString
+from ansithemeprint import ansithemeprint, ANSIThemeStr
 from cmttypes import deep_get, DictPath, FilePath
 
 try:
@@ -65,10 +65,10 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
     try:
         hostfile = paramiko.HostKeys(filename=known_hosts)
     except IOError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Failed to open/read “", "default"),
-                        ANSIThemeString(known_hosts, "path"),
-                        ANSIThemeString("“; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Failed to open/read “", "default"),
+                        ANSIThemeStr(known_hosts, "path"),
+                        ANSIThemeStr("“; aborting.", "default")], stderr=True)
         sys.exit(errno.EIO)
 
     for host in hosts:
@@ -81,20 +81,20 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
                 continue
             tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
             if tmp is not None:
-                ansithemeprint([ANSIThemeString("Error", "error"),
-                                ANSIThemeString(": ", "default"),
-                                ANSIThemeString(f"{tmp[2]} (hostname: ", "default"),
-                                ANSIThemeString(f"{host}", "hostname"),
-                                ANSIThemeString("); aborting.", "default")],
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": ", "default"),
+                                ANSIThemeStr(f"{tmp[2]} (hostname: ", "default"),
+                                ANSIThemeStr(f"{host}", "hostname"),
+                                ANSIThemeStr("); aborting.", "default")],
                                stderr=True)
             else:
-                ansithemeprint([ANSIThemeString("Error", "error"),
-                                ANSIThemeString(": Could not extract errno from ", "default"),
-                                ANSIThemeString(f"{e}; aborting.", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Could not extract errno from ", "default"),
+                                ANSIThemeStr(f"{e}; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
         except paramiko.ssh_exception.SSHException as e:
-            ansithemeprint([ANSIThemeString("\nError", "error"),
-                            ANSIThemeString(f": {e}; aborting.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("\nError", "error"),
+                            ANSIThemeStr(f": {e}; aborting.", "default")], stderr=True)
             sys.exit(errno.EIO)
 
         try:
@@ -102,11 +102,11 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
             key = transport.get_remote_server_key()
             transport.close()
         except paramiko.SSHException:
-            ansithemeprint([ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": Failed to get server key from remote host ",
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Failed to get server key from remote host ",
                                             "default"),
-                            ANSIThemeString(host, "hostname"),
-                            ANSIThemeString("; aborting.", "default")], stderr=True)
+                            ANSIThemeStr(host, "hostname"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.EIO)
 
         hostfile.add(hostname=host, key=key, keytype=key.get_name())
@@ -114,10 +114,10 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
     try:
         hostfile.save(filename=known_hosts)
     except IOError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Failed to save modifications to “", "default"),
-                        ANSIThemeString(known_hosts, "path"),
-                        ANSIThemeString("“; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Failed to save modifications to “", "default"),
+                        ANSIThemeStr(known_hosts, "path"),
+                        ANSIThemeStr("“; aborting.", "default")], stderr=True)
         sys.exit(errno.EIO)
 
 
@@ -156,25 +156,25 @@ def verify_checksum(checksum: bytes,
                     False if the checksum does not match
     """
     if checksum_type is None:
-        ansithemeprint([ANSIThemeString("Warning", "warning"),
-                        ANSIThemeString(": No checksum type provided; checksum ", "default"),
-                        ANSIThemeString("not", "emphasis"),
-                        ANSIThemeString(" verified", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": No checksum type provided; checksum ", "default"),
+                        ANSIThemeStr("not", "emphasis"),
+                        ANSIThemeStr(" verified", "default")], stderr=True)
         return True
 
     if (hashfun := deep_get(checksum_functions, DictPath(f"{checksum_type}"))) is None:
         return False
 
     if checksum_type == "md5":
-        ansithemeprint([ANSIThemeString("Warning", "warning"),
-                        ANSIThemeString(": Use of MD5 checksums is ", "default"),
-                        ANSIThemeString("strongly", "emphasis"),
-                        ANSIThemeString(" discouraged", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": Use of MD5 checksums is ", "default"),
+                        ANSIThemeStr("strongly", "emphasis"),
+                        ANSIThemeStr(" discouraged", "default")], stderr=True)
     elif checksum_type in ("sha", "sha1"):
-        ansithemeprint([ANSIThemeString("Warning", "warning"),
-                        ANSIThemeString(": Use of SHA1 checksums is ", "default"),
-                        ANSIThemeString("strongly", "emphasis"),
-                        ANSIThemeString(" discouraged", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": Use of SHA1 checksums is ", "default"),
+                        ANSIThemeStr("strongly", "emphasis"),
+                        ANSIThemeStr(" discouraged", "default")], stderr=True)
 
     m = hashfun()
     m.update(data)
@@ -249,41 +249,41 @@ def download_files(directory: str,
     path = Path(directory)
     resolved_path = path.resolve()
     if path != resolved_path:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": The target path ", "default"),
-                        ANSIThemeString(f"{directory}", "path"),
-                        ANSIThemeString(" does not resolve to itself; "
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": The target path ", "default"),
+                        ANSIThemeStr(f"{directory}", "path"),
+                        ANSIThemeStr(" does not resolve to itself; "
                                         "this is either a configuration error "
                                         "or a security issue; aborting.", "default")],
                        stderr=True)
         sys.exit(errno.EINVAL)
 
     if path.owner() != user:
-        ansithemeprint([ANSIThemeString("Error", "error"),
-                        ANSIThemeString(": The target path ", "default"),
-                        ANSIThemeString(f"{directory}", "path"),
-                        ANSIThemeString(" is not owned by ", "default"),
-                        ANSIThemeString(user, "emphasis"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": The target path ", "default"),
+                        ANSIThemeStr(f"{directory}", "path"),
+                        ANSIThemeStr(" is not owned by ", "default"),
+                        ANSIThemeStr(user, "emphasis"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     path_stat = path.stat()
     path_permissions = path_stat.st_mode & 0o002
 
     if path_permissions:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": The target path ", "default"),
-                        ANSIThemeString(f"{directory}", "path"),
-                        ANSIThemeString(" is world writable", "default"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": The target path ", "default"),
+                        ANSIThemeStr(f"{directory}", "path"),
+                        ANSIThemeStr(" is world writable", "default"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     if not path.is_dir():
-        ansithemeprint([ANSIThemeString("Error", "error"),
-                        ANSIThemeString(": The target path ", "default"),
-                        ANSIThemeString(f"{directory}", "path"),
-                        ANSIThemeString(" is not a directory", "default"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": The target path ", "default"),
+                        ANSIThemeStr(f"{directory}", "path"),
+                        ANSIThemeStr(" is not a directory", "default"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     # OK, the destination is not a symlink and does not contain ".." or similar,
@@ -315,10 +315,10 @@ def download_files(directory: str,
             elif checksum_url.startswith("https://"):
                 r1 = spm.request("GET", checksum_url)  # type: ignore
             else:
-                ansithemeprint([ANSIThemeString("Error", "error"),
-                                ANSIThemeString(": Unknown or missing protocol; "
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Unknown or missing protocol; "
                                                 "Checksum URL ", "default"),
-                                ANSIThemeString(f"{checksum_url}", "url")], stderr=True)
+                                ANSIThemeStr(f"{checksum_url}", "url")], stderr=True)
                 retval = False
                 break
 
@@ -333,19 +333,19 @@ def download_files(directory: str,
         elif url.startswith("https://"):
             r1 = spm.request("GET", url)  # type: ignore
         else:
-            ansithemeprint([ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": Unknown or missing protocol; URL ", "default"),
-                            ANSIThemeString(f"{url}", "url")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Unknown or missing protocol; URL ", "default"),
+                            ANSIThemeStr(f"{url}", "url")], stderr=True)
             retval = False
             continue
 
         if r1.status == 200:
             # Check that we actually got any data
             if not r1.data:
-                ansithemeprint([ANSIThemeString("Critical", "error"),
-                                ANSIThemeString(": File downloaded from ", "default"),
-                                ANSIThemeString(f"{url}", "url"),
-                                ANSIThemeString(" is empty; aborting.", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("Critical", "error"),
+                                ANSIThemeStr(": File downloaded from ", "default"),
+                                ANSIThemeStr(f"{url}", "url"),
+                                ANSIThemeStr(" is empty; aborting.", "default")], stderr=True)
                 retval = False
                 break
 
@@ -353,10 +353,10 @@ def download_files(directory: str,
             if checksum is not None and \
                     checksum_type is not None and \
                     not verify_checksum(checksum, checksum_type, r1.data, os.path.basename(url)):
-                ansithemeprint([ANSIThemeString("Critical", "error"),
-                                ANSIThemeString(": File downloaded from ", "default"),
-                                ANSIThemeString(f"{url}", "url"),
-                                ANSIThemeString(" did not match its expected checksum; "
+                ansithemeprint([ANSIThemeStr("Critical", "error"),
+                                ANSIThemeStr(": File downloaded from ", "default"),
+                                ANSIThemeStr(f"{url}", "url"),
+                                ANSIThemeStr(" did not match its expected checksum; "
                                                 "aborting.", "default")], stderr=True)
                 retval = False
                 break
@@ -374,10 +374,10 @@ def download_files(directory: str,
                     with tarfile.open(name=f.name, mode="r") as tf:
                         members = tf.getnames()
                         if filename not in members:
-                            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                                            ANSIThemeString(": ", "default"),
-                                            ANSIThemeString(f"{filename}", "path"),
-                                            ANSIThemeString(" is not a part of archive; "
+                            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                                            ANSIThemeStr(": ", "default"),
+                                            ANSIThemeStr(f"{filename}", "path"),
+                                            ANSIThemeStr(" is not a part of archive; "
                                                             "aborting.", "default")], stderr=True)
                             sys.exit(errno.ENOENT)
 
@@ -396,11 +396,11 @@ def download_files(directory: str,
                     # Here we atomically move it in place
                     shutil.move(f.name, f"{directory}/{filename}")
         else:
-            ansithemeprint([ANSIThemeString("Error ", "error"),
-                            ANSIThemeString(": Failed to fetch URL ", "default"),
-                            ANSIThemeString(f"{url}", "url"),
-                            ANSIThemeString("; HTTP code: ", "default"),
-                            ANSIThemeString(f"{r1.status}", "errorvalue")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Error ", "error"),
+                            ANSIThemeStr(": Failed to fetch URL ", "default"),
+                            ANSIThemeStr(f"{url}", "url"),
+                            ANSIThemeStr("; HTTP code: ", "default"),
+                            ANSIThemeStr(f"{r1.status}", "errorvalue")], stderr=True)
             retval = False
             continue
     pm.clear()  # type: ignore
@@ -437,7 +437,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
     return version
 
 
-def get_kubernetes_version(**kwargs: Any) -> str:
+def get_kubernetes_version(**kwargs: Any) -> Tuple[str, str]:
     """
     Extract the latest upstream Kubernetes version from the release notes
 
@@ -498,7 +498,7 @@ def update_version_cache(**kwargs: Any) -> None:
         sys.exit(f"{software_sources_dir} does not exist; "
                  "you may need to (re-)run `cmt-install`; aborting.")
 
-    sources = {}
+    sources: Dict = {}
     for path in natsorted(Path(software_sources_dir).iterdir()):
         if not str(path).endswith((".yml", ".yaml")):
             continue
@@ -506,13 +506,13 @@ def update_version_cache(**kwargs: Any) -> None:
         for key, data in source.items():
             if verbose and key in sources:
                 old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
-                ansithemeprint([ANSIThemeString("Note", "note"),
-                                ANSIThemeString(": overriding entry ", "default"),
-                                ANSIThemeString(f"{key}", "emphasis"),
-                                ANSIThemeString(" from ", "default"),
-                                ANSIThemeString(f"{old_path}", "path"),
-                                ANSIThemeString(" with entry from ", "default"),
-                                ANSIThemeString(f"{path}", "path")])
+                ansithemeprint([ANSIThemeStr("Note", "note"),
+                                ANSIThemeStr(": overriding entry ", "default"),
+                                ANSIThemeStr(f"{key}", "emphasis"),
+                                ANSIThemeStr(" from ", "default"),
+                                ANSIThemeStr(f"{old_path}", "path"),
+                                ANSIThemeStr(" with entry from ", "default"),
+                                ANSIThemeStr(f"{path}", "path")])
                 sources.pop(key)
             sources[key] = data
     if Path(VERSION_CACHE_LAST_UPDATED_PATH).is_file():
@@ -567,10 +567,10 @@ def update_version_cache(**kwargs: Any) -> None:
             fetch_urls.append((url, dest, None, None))
         if fetch_urls and update_version:
             if not download_files(VERSION_CACHE_DIR, fetch_urls):
-                ansithemeprint([ANSIThemeString("Error", "error"),
-                                ANSIThemeString(": Failed to fetch ", "default"),
-                                ANSIThemeString(f"{url}", "url"),
-                                ANSIThemeString("; skipping.", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Failed to fetch ", "default"),
+                                ANSIThemeStr(f"{url}", "url"),
+                                ANSIThemeStr("; skipping.", "default")], stderr=True)
             else:
                 if key not in last_update_data:
                     last_update_data[key] = {}
@@ -593,10 +593,10 @@ def update_version_cache(**kwargs: Any) -> None:
                 fetch_urls.append((url, dest, None, None))
             if fetch_urls:
                 if not download_files(VERSION_CACHE_DIR, fetch_urls):
-                    ansithemeprint([ANSIThemeString("Error", "error"),
-                                    ANSIThemeString(": Failed to fetch ", "default"),
-                                    ANSIThemeString(f"{url}", "url"),
-                                    ANSIThemeString("; skipping.", "default")], stderr=True)
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": Failed to fetch ", "default"),
+                                    ANSIThemeStr(f"{url}", "url"),
+                                    ANSIThemeStr("; skipping.", "default")], stderr=True)
                 else:
                     if key not in last_update_data:
                         last_update_data[key] = {}

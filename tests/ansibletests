@@ -27,7 +27,7 @@ import cmtlib
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 from cmttypes import deep_get, deep_set, DictPath, FilePath, ArgumentValidationError, FilePathAuditError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import ansible_helper
 
 TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybooks")))
@@ -52,7 +52,7 @@ def test_get_playbook_path(verbose: bool = False) -> Tuple[str, bool]:
 		 ["/NONEXISTINGPATH", "{HOME}/NONEXISTINGPATH2", "/etc/hosts", ANSIBLE_PLAYBOOK_DIR], create_path = True)
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
 
 		# Indata format:
 		# (playbook, expected_result, expected_exception)
@@ -99,26 +99,26 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
 	fun = ansible_helper.populate_playbooks_from_paths
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
 
 		# Indata format:
 		# (playbook, expected_result, expected_exception)
 		testdata = (
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")],
-			 [([ANSIThemeString(string="  • ", themeref="separator"),
-			    ANSIThemeString(string="Get package versions", themeref="play")],
+			 [([ANSIThemeStr(string="  • ", themeref="separator"),
+			    ANSIThemeStr(string="Get package versions", themeref="play")],
 			   os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml"))], None),
 			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
 			([os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml")],
-			 [([ANSIThemeString(string="  • ", themeref="separator"),
-			   ANSIThemeString(string="Hostname test playbook; local, lacks summary", themeref="play")],
+			 [([ANSIThemeStr(string="  • ", themeref="separator"),
+			   ANSIThemeStr(string="Hostname test playbook; local, lacks summary", themeref="play")],
 			   os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml"))], None),
 			([os.path.join(TEST_PLAYBOOKS_DIR, ".hostname.yml")], [], None),
 			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml")],
-			 [([ANSIThemeString(string="  • ", themeref="separator"),
-			    ANSIThemeString(string="Running “", themeref="play"),
-			    ANSIThemeString(string="uptime", themeref="programname"),
-			    ANSIThemeString(string="“", themeref="play")],
+			 [([ANSIThemeStr(string="  • ", themeref="separator"),
+			    ANSIThemeStr(string="Running “", themeref="play"),
+			    ANSIThemeStr(string="uptime", themeref="programname"),
+			    ANSIThemeStr(string="“", themeref="play")],
 			   os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"))], None),
 			([os.path.join(TEST_PLAYBOOKS_DIR, "~uptime.yaml")], [], None),
 			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.json")], None, ValueError),
@@ -163,8 +163,8 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
 	fun = ansible_helper.ansible_print_action_summary
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": These testcases only works correctly if the playbooks have not been overridden.", "default")])
-		ansithemeprint([ANSIThemeString("      ", "note"), ANSIThemeString("  Manual sanity checking is necessary for these test results.\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden.", "default")])
+		ansithemeprint([ANSIThemeStr("      ", "note"), ANSIThemeStr("  Manual sanity checking is necessary for these test results.\n", "default")])
 
 		# Indata format:
 		# (playbook, expected_result, expected_exception)
@@ -251,7 +251,7 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 				message = f"{fun.__name__}() did not yield expected result:\n" \
 					  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
 					  f"      exception: {type(e)}\n" \
-					  f"  expected type: [str|[ANSIThemeString]]"
+					  f"  expected type: [str|[ANSIThemeStr]]"
 				result = False
 	if result:
 		inventory = {
@@ -296,11 +296,11 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 				with mock.patch("ansible_helper.Path.is_file", return_value=True), \
 				     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
 					tmp = fun(groups=groups, highlight=highlight, include_groupvar=include_groupvars, include_hostvars=include_hostvars, include_hosts=include_hosts)
-				if not (isinstance(tmp, list) and tmp and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeString))):
+				if not (isinstance(tmp, list) and tmp and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeStr))):
 						message = f"{fun.__name__}() did not yield expected result:\n" \
 							  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
 							  f"      exception: {type(e)}\n" \
-							   "  expected type: [str|[ANSIThemeString]]"
+							   "  expected type: [str|[ANSIThemeStr]]"
 						result = False
 						break
 			except Exception as e:
@@ -1675,7 +1675,7 @@ def test_ansible_print_task_results(verbose: bool = False) -> Tuple[str, bool]:
 	fun = ansible_helper.ansible_print_task_results
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 
 		# Indata format:
 		# (retval, task, msg_lines, stdout_lines, stderr_lines, skipped, unreachable, verbose, expected_exception)
@@ -1841,7 +1841,7 @@ def test_ansible_ping(verbose: bool = False) -> Tuple[str, bool]:
 	fun = ansible_helper.ansible_ping
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": This check can potentially be very slow.\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": This check can potentially be very slow.\n", "default")])
 
 		# Indata format:
 		# (inventory, expected_result, expected_exception)
@@ -2025,32 +2025,32 @@ def main() -> int:
 			continue
 		if i > end_at_task:
 			break
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeStr(f" {', '.join(test)}:", "default")])
 		message, result = tests[test]["callable"](verbose=verbose)
 		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {message}", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			ansithemeprint([ANSIThemeStr("  PASS", "success")])
 			success += 1
 		tests[test]["result"] = result
 		if not result:
 			fail += 1
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
 	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
 	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
 	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr=True)
+			ansithemeprint([ANSIThemeStr("  • ", "separator"),
+					ANSIThemeStr(testcase, "default")], stderr=True)
 		sys.exit(fail)
 
 	return 0

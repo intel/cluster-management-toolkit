@@ -12,10 +12,8 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-import faulthandler
-faulthandler.enable()
-
 from datetime import datetime
+import faulthandler
 import sys
 import time
 from typing import Any, List, Tuple, Union
@@ -30,6 +28,8 @@ import about
 from cmttypes import deep_get, DictPath, StatusGroup
 from kubernetes_helper import KubernetesHelper
 import reexecutor
+
+faulthandler.enable()
 
 kh: KubernetesHelper = None  # type: ignore
 

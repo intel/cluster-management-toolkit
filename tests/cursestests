@@ -25,9 +25,9 @@ import cmtlib
 from cmtio import expand_path
 from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
 from cmttypes import deep_get, DictPath, ProgrammingError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import curses_helper
-from curses_helper import ThemeAttr, ThemeRef, ThemeString, ThemeArray, WidgetLineAttrs
+from curses_helper import ThemeAttr, ThemeRef, ThemeStr, ThemeArray, WidgetLineAttrs
 
 TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 
@@ -44,7 +44,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 	message = ""
 	result = True
 
-	fun = curses_helper.ThemeString
+	fun = curses_helper.ThemeStr
 
 	if result:
 		try:
@@ -83,7 +83,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 		# Indata format:
 		testdata = (
 			("A test string", ThemeAttr("types", "generic"),
-			 "ThemeString('A test string', ThemeAttr('types', 'generic'), False)", None),
+			 "ThemeStr('A test string', ThemeAttr('types', 'generic'), False)", None),
 			(None, ThemeAttr("types", "generic"),
 			 None, ProgrammingError),
 		)
@@ -117,7 +117,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	if result:
-		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		indata = ThemeStr("123", ThemeAttr("types", "generic"))
 		tmp = len(indata)
 		if tmp != 3:
 			message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
@@ -127,8 +127,8 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		str1 = ThemeString("123", ThemeAttr("types", "generic"))
-		str2 = ThemeString("124", ThemeAttr("types", "generic"))
+		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
+		str2 = ThemeStr("124", ThemeAttr("types", "generic"))
 		tmp = str1 == str2
 		if tmp:
 			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
@@ -138,8 +138,8 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		str1 = ThemeString("123", ThemeAttr("types", "generic"))
-		str2 = ThemeString("123", ThemeAttr("types", "generic"))
+		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
+		str2 = ThemeStr("123", ThemeAttr("types", "generic"))
 		tmp = str1 == str2
 		if not tmp:
 			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
@@ -149,7 +149,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		indata = ThemeStr("123", ThemeAttr("types", "generic"))
 		tmp = str(indata)
 		if tmp != "123":
 			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
@@ -159,7 +159,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		str1 = ThemeString("123", ThemeAttr("types", "generic"))
+		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
 		str2 = "a"
 		tmp = str1 == str2
 		if tmp:
@@ -170,7 +170,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		indata = ThemeString("123", ThemeAttr("types", "generic"))
+		indata = ThemeStr("123", ThemeAttr("types", "generic"))
 		try:
 			tmp = indata.get_themeattr()
 			if tmp != ThemeAttr("types", "generic"):
@@ -187,7 +187,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		indata = ThemeString("http://www.intel.com", ThemeAttr("types", "generic"))
+		indata = ThemeStr("http://www.intel.com", ThemeAttr("types", "generic"))
 		try:
 			indata.set_themeattr(ThemeAttr("types", "url"))
 			tmp = indata.get_themeattr()
@@ -205,7 +205,7 @@ def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
 			result = False
 
 	if result:
-		indata = ThemeString("1", ThemeAttr("types", "generic"), True)
+		indata = ThemeStr("1", ThemeAttr("types", "generic"), True)
 		try:
 			tmp = indata.get_selected()
 			if not tmp:
@@ -316,34 +316,34 @@ def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
 		indata = ThemeRef("strings", "status_critical", False)
 		try:
 			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeString('■', ThemeAttr('main', 'status_critical'), False)]":
+			if repr(tmp) != "[ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]":
 				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
+					  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
 				result = False
 		except Exception as e:
 			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), False)]"
+				  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
 			result = False
 
 	if result:
 		indata = ThemeRef("strings", "status_critical", True)
 		try:
 			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeString('█', ThemeAttr('main', 'status_critical'), True)]":
+			if repr(tmp) != "[ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]":
 				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
 					  f"          input: {repr(indata)}\n" \
 					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeString('■', ThemeAttr('main', 'status_critical'), True)]"
+					  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), True)]"
 				result = False
 		except Exception as e:
 			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
 				  f"          input: {repr(indata)}\n" \
 				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeString('█', ThemeAttr('main', 'status_critical'), True)]"
+				  f"       expected: [ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]"
 
 			result = False
 
@@ -443,27 +443,27 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 	if result:
 		# Indata format:
 		testdata = (
-			([ThemeString("Hello ", ThemeAttr("types", "generic")),
-			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+			  ThemeStr("World", ThemeAttr("types", "emphasis")),
 			 ], False,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
-				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
-			([ThemeString("Hello ", ThemeAttr("types", "generic"), False),
-			  ThemeString("World", ThemeAttr("types", "emphasis"), False),
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
+			([ThemeStr("Hello ", ThemeAttr("types", "generic"), False),
+			  ThemeStr("World", ThemeAttr("types", "emphasis"), False),
 			 ], True,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), True), "
-				     "ThemeString('World', ThemeAttr('types', 'emphasis'), True)])", None),
-			([ThemeString("Hello ", ThemeAttr("types", "generic")),
-			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), True), "
+				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), True)])", None),
+			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+			  ThemeStr("World", ThemeAttr("types", "emphasis")),
 			 ], None,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
-				    "ThemeString('World', ThemeAttr('types', 'emphasis'), False)])", None),
-			([ThemeString("Hello ", ThemeAttr("types", "generic")),
-			  ThemeString("World", ThemeAttr("types", "emphasis")),
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+				    "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
+			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+			  ThemeStr("World", ThemeAttr("types", "emphasis")),
 			  ThemeRef("separators", "matchbullet"),
 			 ], False,
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'generic'), False), "
-				     "ThemeString('World', ThemeAttr('types', 'emphasis'), False), "
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), False), "
 				     "ThemeRef('separators', 'matchbullet', False)])", None),
 			(None, False, None, ProgrammingError),
 			("a", False, None, ProgrammingError),
@@ -499,10 +499,10 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	if result:
-		base = ThemeArray([ThemeString("Hello World", ThemeAttr("types", "emphasis"))], False)
+		base = ThemeArray([ThemeStr("Hello World", ThemeAttr("types", "emphasis"))], False)
 		testdata = (
 			(ThemeRef("separators", "matchbullet", True),
-			 "ThemeArray([ThemeString('Hello World', ThemeAttr('types', 'emphasis'), False), ThemeRef('separators', 'matchbullet', True)])", None),
+			 "ThemeArray([ThemeStr('Hello World', ThemeAttr('types', 'emphasis'), False), ThemeRef('separators', 'matchbullet', True)])", None),
 			(None,
 			 None, ProgrammingError),
 		)
@@ -549,12 +549,12 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	if result:
-		base = ThemeArray([ThemeString("Hello ", ThemeAttr("types", "emphasis"))], False)
+		base = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "emphasis"))], False)
 		testdata = (
-			(ThemeArray([ThemeString("World", ThemeAttr("types", "generic"))], False),
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeString('World', ThemeAttr('types', 'generic'), False)])", None),
-			([ThemeString("World", ThemeAttr("types", "generic"), False)],
-			 "ThemeArray([ThemeString('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeString('World', ThemeAttr('types', 'generic'), False)])", None),
+			(ThemeArray([ThemeStr("World", ThemeAttr("types", "generic"))], False),
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
+			([ThemeStr("World", ThemeAttr("types", "generic"), False)],
+			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
 			(None,
 			 None, ProgrammingError),
 		)
@@ -601,8 +601,8 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 					break
 
 	if result:
-		indata = ThemeArray([ThemeString("Hello ", ThemeAttr("types", "generic")),
-				     ThemeString("World", ThemeAttr("types", "emphasis"))])
+		indata = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+				     ThemeStr("World", ThemeAttr("types", "emphasis"))])
 		tmp = str(indata)
 		if tmp != "Hello World":
 			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
@@ -613,9 +613,9 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		testdata = (
-			(ThemeArray([ThemeString("12345", ThemeAttr("types", "generic"))], False),
+			(ThemeArray([ThemeStr("12345", ThemeAttr("types", "generic"))], False),
 			 5, None),
-			(ThemeArray([ThemeString("", ThemeAttr("types", "generic"), False)]),
+			(ThemeArray([ThemeStr("", ThemeAttr("types", "generic"), False)]),
 			 0, None),
 			# "–"; this needs to be modified if the separator changes, so don't!
 			(ThemeArray([ThemeRef("separators", "range", False)]),
@@ -660,13 +660,13 @@ def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
 
 	if result:
 		testdata = (
-			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
-			 ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+			 ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
 			 True, None),
-			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
-			 ThemeArray([ThemeString("B", ThemeAttr("types", "generic"))], False),
+			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+			 ThemeArray([ThemeStr("B", ThemeAttr("types", "generic"))], False),
 			 False, None),
-			(ThemeArray([ThemeString("A", ThemeAttr("types", "generic"))], False),
+			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
 			 "3",
 			 False, None),
 		)
@@ -726,12 +726,12 @@ def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
 		testdata = (
 			([("[F1] / [Shift] + H", "Show this helptext"), ("[Ctrl] + X", "Exit program")],
 			 [{"lineattrs": WidgetLineAttrs.NORMAL,
-			   "columns": [[ThemeString("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
-				       [ThemeString("Show this helptext", ThemeAttr("windowwidget", "default"))]],
+			   "columns": [[ThemeStr("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
+				       [ThemeStr("Show this helptext", ThemeAttr("windowwidget", "default"))]],
 			   "retval": None},
 			  {"lineattrs": WidgetLineAttrs.NORMAL,
-			   "columns": [[ThemeString("[Ctrl] + X", ThemeAttr("windowwidget", "highlight"))],
-				       [ThemeString("Exit program", ThemeAttr("windowwidget", "default"))]],
+			   "columns": [[ThemeStr("[Ctrl] + X", ThemeAttr("windowwidget", "highlight"))],
+				       [ThemeStr("Exit program", ThemeAttr("windowwidget", "default"))]],
 			   "retval": None}], None),
 		)
 		for indata in testdata:
@@ -955,7 +955,7 @@ def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
 
 
 tests: Dict = {
-	("ThemeString()",): {
+	("ThemeStr()",): {
 		"callable": test_themestring,
 		"result": None,
 	},
@@ -1014,32 +1014,32 @@ def main() -> int:
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
 	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeStr(f" {', '.join(test)}:", "default")])
 		message, result = tests[test]["callable"](verbose=verbose)
 		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {message}", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			ansithemeprint([ANSIThemeStr("  PASS", "success")])
 			success += 1
 		tests[test]["result"] = result
 		if not result:
 			fail += 1
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
 	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
 	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
 	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr=True)
+			ansithemeprint([ANSIThemeStr("  • ", "separator"),
+					ANSIThemeStr(testcase, "default")], stderr=True)
 		sys.exit(fail)
 
 	return 0

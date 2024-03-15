@@ -31,7 +31,7 @@ from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from cmtpaths import HOMEDIR
 from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import ANSIBLE_INVENTORY
-from ansithemeprint import ANSIThemeString, ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint
 from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError
 from cmttypes import SecurityChecks, SecurityStatus, validate_args
 
@@ -101,7 +101,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 
 
 # Add all playbooks in the array
-def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeString],
+def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeStr],
                                                                        FilePath]]:
     """
     Populate a playbook list
@@ -109,8 +109,8 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
         Parameters:
             paths ([FilePath]): A list of paths to playbooks
         Returns:
-            [([ANSIThemeString], FilePath)]:
-                ([ANSIThemeString]): An ansithemearray with the namer of the playbook
+            [([ANSIThemeStr], FilePath)]:
+                ([ANSIThemeStr]): An ansithemearray with the namer of the playbook
                 (FilePath): The path to the playbook
     """
     playbooks = []
@@ -165,20 +165,20 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
         d = secure_read_yaml(playbookpath, checks=checks)
         description = None
         if (t_description := deep_get(d[0], DictPath("vars#metadata#description"), "")):
-            description = [ANSIThemeString(t_description, "play")]
+            description = [ANSIThemeStr(t_description, "play")]
 
         if description is None or not description:
-            description = [ANSIThemeString("Running “", "play"),
-                           ANSIThemeString(playbookname, "programname"),
-                           ANSIThemeString("“", "play")]
+            description = [ANSIThemeStr("Running “", "play"),
+                           ANSIThemeStr(playbookname, "programname"),
+                           ANSIThemeStr("“", "play")]
 
         # If there's no description we fallback to just using the filename
-        playbooks.append(([ANSIThemeString("  • ", "separator")] + description, playbookpath))
+        playbooks.append(([ANSIThemeStr("  • ", "separator")] + description, playbookpath))
     return playbooks
 
 
 # pylint: disable-next=unused-argument
-def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], FilePath]]) -> None:
+def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]]) -> None:
     """
     Given a list of playbook paths, print a summary of the actions that will be performed
 
@@ -194,7 +194,7 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
     if not (isinstance(playbooks[0], tuple) and len(playbooks[0]) == 2
             and isinstance(playbooks[0][0], list) and isinstance(playbooks[0][1], str)):
         raise TypeError("playbooks[] is wrong type; "
-                        f"expected: [([{ANSIThemeString}], {FilePath})]")
+                        f"expected: [([{ANSIThemeStr}], {FilePath})]")
 
     # We do not want to check that parent resolves to itself,
     # because when we have an installation with links directly to the git repo
@@ -209,28 +209,28 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeString], Fi
         SecurityChecks.IS_FILE,
     ]
 
-    ansithemeprint([ANSIThemeString("\n• ", "separator"),
-                    ANSIThemeString("Playbooks to be executed:", "action")])
+    ansithemeprint([ANSIThemeStr("\n• ", "separator"),
+                    ANSIThemeStr("Playbooks to be executed:", "action")])
     for playbook in playbooks:
         playbook_string, playbook_path = playbook
         playbook_data = secure_read_yaml(FilePath(playbook_path), checks=checks)
 
-        ansithemeprint(playbook_string + [ANSIThemeString(" (path: ", "default"),
-                                          ANSIThemeString(f"{playbook_path}", "path"),
-                                          ANSIThemeString(")", "default")])
+        ansithemeprint(playbook_string + [ANSIThemeStr(" (path: ", "default"),
+                                          ANSIThemeStr(f"{playbook_path}", "path"),
+                                          ANSIThemeStr(")", "default")])
         # None of our playbooks have more than one play per file
         summary = deep_get(playbook_data[0], DictPath("vars#metadata#summary"), {})
         if not summary:
-            ansithemeprint([ANSIThemeString("      Error", "error"),
-                            ANSIThemeString(": playbook lacks a summary; "
+            ansithemeprint([ANSIThemeStr("      Error", "error"),
+                            ANSIThemeStr(": playbook lacks a summary; "
                                             "please file a bug report unless it's a "
                                             "locally modified playbook!", "default")],
                            stderr=True)
         for section_description, section_data in summary.items():
-            ansithemeprint([ANSIThemeString(f"      {section_description}:", "emphasis")])
+            ansithemeprint([ANSIThemeStr(f"      {section_description}:", "emphasis")])
             for section_item in section_data:
                 description = deep_get(section_item, DictPath("description"), "")
-                ansithemeprint([ANSIThemeString(f"        {description}", "default")])
+                ansithemeprint([ANSIThemeStr(f"        {description}", "default")])
 
 
 def ansible_get_inventory_dict() -> Dict:
@@ -263,7 +263,7 @@ def ansible_get_inventory_dict() -> Dict:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeString], str]]:
+def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr], str]]:
     """
         Get the Ansible inventory and return it neatly formatted
 
@@ -275,7 +275,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
                 include_hostvars (bool): Should host variables be included
                 include_hosts (bool): Should hosts be included
         Returns:
-            ([str|[ANSIThemeString]]): An unformatted list of strings
+            ([str|[ANSIThemeStr]]): An unformatted list of strings
                                        or a formatted list of themearrays
     """
     groups: List[str] = deep_get(kwargs, DictPath("groups"), [])
@@ -331,8 +331,8 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
 
     tmp_dump = yaml.safe_dump(tmp, default_flow_style=False)
     tmp_dump = tmp_dump.replace(r"''", "").replace("null", "").replace("{}", "")
-    dump: List[Union[List[ANSIThemeString], str]] = []
-    cast(List[Union[List[ANSIThemeString], str]], tmp_dump.splitlines())
+    dump: List[Union[List[ANSIThemeStr], str]] = []
+    cast(List[Union[List[ANSIThemeStr], str]], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
         i = 0
@@ -345,9 +345,9 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
                 indent = tmp2[1]
                 listmarker = tmp2[2]
                 item = tmp2[4]
-                dump.append([ANSIThemeString(indent, "default"),
-                             ANSIThemeString(listmarker, "yaml_list"),
-                             ANSIThemeString(item, "yaml_value")])
+                dump.append([ANSIThemeStr(indent, "default"),
+                             ANSIThemeStr(listmarker, "yaml_list"),
+                             ANSIThemeStr(item, "yaml_value")])
                 continue
 
             # Is it key: value?
@@ -356,13 +356,13 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStri
                 key = tmp2[1]
                 separator = tmp2[2]
                 value = tmp2[3]
-                dump.append([ANSIThemeString(key, "yaml_key"),
-                             ANSIThemeString(separator, "yaml_key_separator"),
-                             ANSIThemeString(value, "yaml_value")])
+                dump.append([ANSIThemeStr(key, "yaml_key"),
+                             ANSIThemeStr(separator, "yaml_key_separator"),
+                             ANSIThemeStr(value, "yaml_value")])
                 continue
 
             # Nope, then we will use default format
-            dump.append([ANSIThemeString(cast(str, tmp_dump[i]), "default")])
+            dump.append([ANSIThemeStr(cast(str, tmp_dump[i]), "default")])
     else:
         dump = list(tmp_dump.splitlines())
 
@@ -1374,47 +1374,47 @@ def ansible_print_task_results(task: str,
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     if unreachable:
-        ansithemeprint([ANSIThemeString("• ", "separator"),
-                        ANSIThemeString(f"{task}", "error")], stderr=True)
+        ansithemeprint([ANSIThemeStr("• ", "separator"),
+                        ANSIThemeStr(f"{task}", "error")], stderr=True)
     elif skipped:
         if verbose:
-            ansithemeprint([ANSIThemeString("• ", "separator"),
-                            ANSIThemeString(f"{task} [skipped]", "skip")], stderr=True)
-            ansithemeprint([ANSIThemeString("", "default")])
+            ansithemeprint([ANSIThemeStr("• ", "separator"),
+                            ANSIThemeStr(f"{task} [skipped]", "skip")], stderr=True)
+            ansithemeprint([ANSIThemeStr("", "default")])
         return
     elif retval:
-        ansithemeprint([ANSIThemeString("• ", "separator"),
-                        ANSIThemeString(f"{task}", "error"),
-                        ANSIThemeString(" (retval: ", "default"),
-                        ANSIThemeString(f"{retval}", "errorvalue"),
-                        ANSIThemeString(")", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("• ", "separator"),
+                        ANSIThemeStr(f"{task}", "error"),
+                        ANSIThemeStr(" (retval: ", "default"),
+                        ANSIThemeStr(f"{retval}", "errorvalue"),
+                        ANSIThemeStr(")", "default")], stderr=True)
     else:
-        ansithemeprint([ANSIThemeString("• ", "separator"),
-                        ANSIThemeString(f"{task}", "success")])
+        ansithemeprint([ANSIThemeStr("• ", "separator"),
+                        ANSIThemeStr(f"{task}", "success")])
 
     if msg_lines:
-        ansithemeprint([ANSIThemeString("msg:", "header")])
+        ansithemeprint([ANSIThemeStr("msg:", "header")])
         for line in msg_lines:
-            ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
-        ansithemeprint([ANSIThemeString("", "default")])
+            ansithemeprint([ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
+        ansithemeprint([ANSIThemeStr("", "default")])
 
     if stdout_lines or not msg_lines and not stderr_lines:
-        ansithemeprint([ANSIThemeString("stdout:", "header")])
+        ansithemeprint([ANSIThemeStr("stdout:", "header")])
         for line in stdout_lines:
-            ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")])
+            ansithemeprint([ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
         if not stdout_lines:
-            ansithemeprint([ANSIThemeString("<no output>", "none")])
-        ansithemeprint([ANSIThemeString("", "default")])
+            ansithemeprint([ANSIThemeStr("<no output>", "none")])
+        ansithemeprint([ANSIThemeStr("", "default")])
 
     # If retval is not 0 we do not really care if stderr is empty
     if stderr_lines or retval:
-        ansithemeprint([ANSIThemeString("stderr:", "header")])
+        ansithemeprint([ANSIThemeStr("stderr:", "header")])
         for line in stderr_lines:
-            ansithemeprint([ANSIThemeString(line.replace("\x00", "<NUL>"), "default")],
+            ansithemeprint([ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")],
                            stderr=True)
         if not stderr_lines:
-            ansithemeprint([ANSIThemeString("<no output>", "none")])
-        ansithemeprint([ANSIThemeString("", "default")])
+            ansithemeprint([ANSIThemeStr("<no output>", "none")])
+        ansithemeprint([ANSIThemeStr("", "default")])
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
@@ -1439,8 +1439,8 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
     count_fail = 0
 
     if retval and not ansible_results:
-        ansithemeprint([ANSIThemeString("Failed to execute playbook; retval: ", "error"),
-                        ANSIThemeString(f"{retval}", "errorvalue")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Failed to execute playbook; retval: ", "error"),
+                        ANSIThemeStr(f"{retval}", "errorvalue")], stderr=True)
     else:
         for host in ansible_results:
             count_total += 1
@@ -1461,15 +1461,15 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
                     header_output = True
 
                     if no_hosts_matched:
-                        ansithemeprint([ANSIThemeString("[No hosts matched]", "error")])
+                        ansithemeprint([ANSIThemeStr("[No hosts matched]", "error")])
                     elif unreachable:
-                        ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
+                        ansithemeprint([ANSIThemeStr(f"[{host}]", "error")])
                     elif skipped:
-                        ansithemeprint([ANSIThemeString(f"[{host}]", "skip")])
+                        ansithemeprint([ANSIThemeStr(f"[{host}]", "skip")])
                     elif not retval:
-                        ansithemeprint([ANSIThemeString(f"[{host}]", "success")])
+                        ansithemeprint([ANSIThemeStr(f"[{host}]", "success")])
                     else:
-                        ansithemeprint([ANSIThemeString(f"[{host}]", "error")])
+                        ansithemeprint([ANSIThemeStr(f"[{host}]", "error")])
                 if no_hosts_matched:
                     count_no_hosts_match += 1
                 elif unreachable:
@@ -1515,27 +1515,27 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
         if count_no_hosts_match > 0:
             no_hosts_matched_formatting = "error"
 
-        ansithemeprint([ANSIThemeString("Summary:", "default")])
-        ansithemeprint([ANSIThemeString("Total Plays: ", "phase"),
-                        ANSIThemeString(f"{count_total}", "numerical"),
-                        ANSIThemeString(" / ", "separator"),
-                        ANSIThemeString("Tasks: ", "phase"),
-                        ANSIThemeString(f"{count_task_total}", "numerical"),
-                        ANSIThemeString(", ", "separator"),
-                        ANSIThemeString("Successful: ", successful_formatting),
-                        ANSIThemeString(f"{count_success}", "numerical"),
-                        ANSIThemeString(", ", "separator"),
-                        ANSIThemeString("Failed: ", failed_formatting),
-                        ANSIThemeString(f"{count_fail}", "numerical"),
-                        ANSIThemeString(", ", "separator"),
-                        ANSIThemeString("Skipped: ", "skip"),
-                        ANSIThemeString(f"{count_skip}", "numerical"),
-                        ANSIThemeString(", ", "separator"),
-                        ANSIThemeString("Unreachable: ", unreachable_formatting),
-                        ANSIThemeString(f"{count_unreachable}", "numerical"),
-                        ANSIThemeString(", ", "separator"),
-                        ANSIThemeString("No hosts matched: ", no_hosts_matched_formatting),
-                        ANSIThemeString(f"{count_no_hosts_match}\n", "numerical")])
+        ansithemeprint([ANSIThemeStr("Summary:", "default")])
+        ansithemeprint([ANSIThemeStr("Total Plays: ", "phase"),
+                        ANSIThemeStr(f"{count_total}", "numerical"),
+                        ANSIThemeStr(" / ", "separator"),
+                        ANSIThemeStr("Tasks: ", "phase"),
+                        ANSIThemeStr(f"{count_task_total}", "numerical"),
+                        ANSIThemeStr(", ", "separator"),
+                        ANSIThemeStr("Successful: ", successful_formatting),
+                        ANSIThemeStr(f"{count_success}", "numerical"),
+                        ANSIThemeStr(", ", "separator"),
+                        ANSIThemeStr("Failed: ", failed_formatting),
+                        ANSIThemeStr(f"{count_fail}", "numerical"),
+                        ANSIThemeStr(", ", "separator"),
+                        ANSIThemeStr("Skipped: ", "skip"),
+                        ANSIThemeStr(f"{count_skip}", "numerical"),
+                        ANSIThemeStr(", ", "separator"),
+                        ANSIThemeStr("Unreachable: ", unreachable_formatting),
+                        ANSIThemeStr(f"{count_unreachable}", "numerical"),
+                        ANSIThemeStr(", ", "separator"),
+                        ANSIThemeStr("No hosts matched: ", no_hosts_matched_formatting),
+                        ANSIThemeStr(f"{count_no_hosts_match}\n", "numerical")])
 
 
 # pylint: disable-next=too-many-locals
@@ -1710,33 +1710,33 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
     if deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("failed", "error"),
-                        ANSIThemeString(" on ", "default"),
-                        ANSIThemeString(f"{host}", "hostname")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("failed", "error"),
+                        ANSIThemeStr(" on ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname")])
         for res in deep_get(data, DictPath("event_data#res#results"), []):
             msg = deep_get(res, DictPath("msg"), "")
             if msg:
-                ansithemeprint([ANSIThemeString("    ", "default"),
-                                ANSIThemeString("Error", "error"),
-                                ANSIThemeString(":", "default")])
-                ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
+                ansithemeprint([ANSIThemeStr("    ", "default"),
+                                ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(":", "default")])
+                ansithemeprint([ANSIThemeStr(f"      {msg}", "default")])
     elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("failed", "error"),
-                        ANSIThemeString("; ", "default"),
-                        ANSIThemeString(f"{host}", "hostname"),
-                        ANSIThemeString(" unreachable", "default")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("failed", "error"),
+                        ANSIThemeStr("; ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname"),
+                        ANSIThemeStr(" unreachable", "default")])
     return True
 
 
@@ -1744,64 +1744,64 @@ def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
     if deep_get(data, DictPath("event"), "") == "runner_on_start":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("started", "phase"),
-                        ANSIThemeString(" on ", "default"),
-                        ANSIThemeString(f"{host}", "hostname")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("started", "phase"),
+                        ANSIThemeStr(" on ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname")])
     elif deep_get(data, DictPath("event"), "") in ("runner_on_ok", "runner_on_async_ok"):
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("succeeded", "success"),
-                        ANSIThemeString(" on ", "default"),
-                        ANSIThemeString(f"{host}", "hostname")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("succeeded", "success"),
+                        ANSIThemeStr(" on ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname")])
     elif deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("failed", "error"),
-                        ANSIThemeString(" on ", "default"),
-                        ANSIThemeString(f"{host}", "hostname")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("failed", "error"),
+                        ANSIThemeStr(" on ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname")])
         for res in deep_get(data, DictPath("event_data#res#results"), []):
             msg = deep_get(res, DictPath("msg"), "")
             if msg:
-                ansithemeprint([ANSIThemeString("    ", "default"),
-                                ANSIThemeString("Error", "error"),
-                                ANSIThemeString(":", "default")])
-                ansithemeprint([ANSIThemeString(f"      {msg}", "default")])
+                ansithemeprint([ANSIThemeStr("    ", "default"),
+                                ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(":", "default")])
+                ansithemeprint([ANSIThemeStr(f"      {msg}", "default")])
     elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("failed", "error"),
-                        ANSIThemeString("; ", "default"),
-                        ANSIThemeString(f"{host}", "hostname"),
-                        ANSIThemeString(" unreachable", "default")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("failed", "error"),
+                        ANSIThemeStr("; ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname"),
+                        ANSIThemeStr(" unreachable", "default")])
     elif deep_get(data, DictPath("event"), "") == "runner_on_skipped":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
-        ansithemeprint([ANSIThemeString("  • ", "separator"),
-                        ANSIThemeString("Task", "action"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{task}", "play"),
-                        ANSIThemeString(" ", "default"),
-                        ANSIThemeString("skipped", "none"),
-                        ANSIThemeString(" on ", "default"),
-                        ANSIThemeString(f"{host}", "hostname")])
+        ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                        ANSIThemeStr("Task", "action"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{task}", "play"),
+                        ANSIThemeStr(" ", "default"),
+                        ANSIThemeStr("skipped", "none"),
+                        ANSIThemeStr(" on ", "default"),
+                        ANSIThemeStr(f"{host}", "hostname")])
     return True

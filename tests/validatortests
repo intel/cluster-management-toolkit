@@ -16,7 +16,7 @@ from unittest import mock
 import yaml
 
 from cmttypes import deep_get, DictPath, ProgrammingError, HostNameStatus, ArgumentValidationError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import cmtvalidators
 
 # unit-tests for cmtvalidators.py
@@ -168,11 +168,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "ok",
-					"arg_string": [ANSIThemeString("ok", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("maybe", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("nope", "option")],
+					"arg_string": [ANSIThemeStr("ok", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("maybe", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("nope", "option")],
 					"options": {
 						"validator": "allowlist",
 						"list_separator": None,
@@ -187,11 +187,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "not_ok",
-					"arg_string": [ANSIThemeString("ok", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("maybe", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("nope", "option")],
+					"arg_string": [ANSIThemeStr("ok", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("maybe", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("nope", "option")],
 					"options": {
 						"validator": "allowlist",
 						"list_separator": None,
@@ -206,9 +206,9 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "true",
-					"arg_string": [ANSIThemeString("true", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("false", "option")],
+					"arg_string": [ANSIThemeStr("true", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("false", "option")],
 					"options": {
 						"validator": "bool",
 						"list_separator": None,
@@ -223,9 +223,9 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "foo",
-					"arg_string": [ANSIThemeString("true", "option"),
-						       ANSIThemeString("|", "separator"),
-						       ANSIThemeString("false", "option")],
+					"arg_string": [ANSIThemeStr("true", "option"),
+						       ANSIThemeStr("|", "separator"),
+						       ANSIThemeStr("false", "option")],
 					"options": {
 						"validator": "bool",
 						"list_separator": None,
@@ -240,9 +240,9 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "1,2,3,4",
-					"arg_string": [ANSIThemeString("INTEGER", "option"),
-						       ANSIThemeString(",", "separator"),
-						       ANSIThemeString("...", "option")],
+					"arg_string": [ANSIThemeStr("INTEGER", "option"),
+						       ANSIThemeStr(",", "separator"),
+						       ANSIThemeStr("...", "option")],
 					"options": {
 						"validator": "int",
 						"list_separator": ",",
@@ -257,9 +257,9 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "1,2,4,3",
-					"arg_string": [ANSIThemeString("INTEGER", "option"),
-						       ANSIThemeString(",", "separator"),
-						       ANSIThemeString("...", "option")],
+					"arg_string": [ANSIThemeStr("INTEGER", "option"),
+						       ANSIThemeStr(",", "separator"),
+						       ANSIThemeStr("...", "option")],
 					"options": {
 						"validator": "int",
 						"list_separator": ",",
@@ -274,7 +274,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "0xdeadbeef",
-					"arg_string": [ANSIThemeString("HEX", "option")],
+					"arg_string": [ANSIThemeStr("HEX", "option")],
 					"options": {
 						"validator": "regex",
 						"list_separator": None,
@@ -289,7 +289,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "0xdeadbeefg",
-					"arg_string": [ANSIThemeString("HEX", "option")],
+					"arg_string": [ANSIThemeStr("HEX", "option")],
 					"options": {
 						"validator": "regex",
 						"list_separator": None,
@@ -304,7 +304,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "https://mirrors.edge.kernel.org/pub/",
-					"arg_string": [ANSIThemeString("URL", "option")],
+					"arg_string": [ANSIThemeStr("URL", "option")],
 					"options": {
 						"validator": "url",
 						"list_separator": None,
@@ -319,7 +319,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "mirrors.edge.kernel.org/pub/",
-					"arg_string": [ANSIThemeString("URL", "option")],
+					"arg_string": [ANSIThemeStr("URL", "option")],
 					"options": {
 						"validator": "url",
 						"list_separator": None,
@@ -334,7 +334,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "-mirrors.edge.kernel.org/pub/",
-					"arg_string": [ANSIThemeString("URL", "option")],
+					"arg_string": [ANSIThemeStr("URL", "option")],
 					"options": {
 						"validator": "url",
 						"list_separator": None,
@@ -349,7 +349,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/bin/sh",
-					"arg_string": [ANSIThemeString("PATH", "option")],
+					"arg_string": [ANSIThemeStr("PATH", "option")],
 					"options": {
 						"validator": "path",
 						"list_separator": None,
@@ -364,7 +364,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/bin/thiscommanddoesnotexist",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "path",
 						"list_separator": None,
@@ -379,7 +379,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0/8",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -394,7 +394,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0/33",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -409,7 +409,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0/0",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -424,7 +424,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0/foo",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -439,7 +439,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -454,7 +454,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334/24",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -469,7 +469,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334/129",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -484,7 +484,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334/0",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -499,7 +499,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334/foo",
-					"arg_string": [ANSIThemeString("CIDR", "option")],
+					"arg_string": [ANSIThemeStr("CIDR", "option")],
 					"options": {
 						"validator": "cidr",
 						"list_separator": None,
@@ -514,7 +514,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "ip",
 						"list_separator": None,
@@ -529,7 +529,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "484.0.0.0",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "ip",
 						"list_separator": None,
@@ -544,7 +544,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "ip",
 						"list_separator": None,
@@ -559,7 +559,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "20001:0db8:85a3:0000:0000:8a2e:0370:7334",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "ip",
 						"list_separator": None,
@@ -574,7 +574,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "10.0.0.0",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "hostname_or_ip",
 						"list_separator": None,
@@ -589,7 +589,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "484.0.0.0",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "hostname_or_ip",
 						"list_separator": None,
@@ -604,7 +604,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "hostname_or_ip",
 						"list_separator": None,
@@ -619,7 +619,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "20001:0db8:85a3:0000:0000:8a2e:0370:7334",
-					"arg_string": [ANSIThemeString("IP", "option")],
+					"arg_string": [ANSIThemeStr("IP", "option")],
 					"options": {
 						"validator": "hostname_or_ip",
 						"list_separator": None,
@@ -634,7 +634,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/etc/hostname",
-					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
+					"arg_string": [ANSIThemeStr("HOSTNAME", "option")],
 					"options": {
 						"validator": "hostname",
 						"list_separator": None,
@@ -649,7 +649,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/etc/hostname",
-					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
+					"arg_string": [ANSIThemeStr("HOSTNAME", "option")],
 					"options": {
 						"validator": "hostname_or_ip",
 						"list_separator": None,
@@ -664,7 +664,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/etc/hostname",
-					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
+					"arg_string": [ANSIThemeStr("HOSTNAME", "option")],
 					"options": {
 						"validator": "hostname_or_path",
 						"list_separator": None,
@@ -679,7 +679,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "/bin/thiscommanddoesnotexist",
-					"arg_string": [ANSIThemeString("HOSTNAME", "option")],
+					"arg_string": [ANSIThemeStr("HOSTNAME", "option")],
 					"options": {
 						"validator": "hostname_or_path",
 						"list_separator": None,
@@ -694,11 +694,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node=True:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -713,11 +713,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": ".NotAValidKey:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -732,11 +732,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node=#:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -751,11 +751,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -770,11 +770,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node=True",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -789,11 +789,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -808,11 +808,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node=True:NotAValidEffect",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("EFFECT", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("EFFECT", "argument")],
 					"options": {
 						"validator": "taint",
 						"list_separator": None,
@@ -827,11 +827,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node=True:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("[EFFECT]", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("[EFFECT]", "argument")],
 					"options": {
 						"validator": "untaint",
 						"list_separator": None,
@@ -846,11 +846,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node:NoSchedule",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("[EFFECT]", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("[EFFECT]", "argument")],
 					"options": {
 						"validator": "untaint",
 						"list_separator": None,
@@ -865,11 +865,11 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "node:",
-					"arg_string": [ANSIThemeString("KEY", "argument"),
-						       ANSIThemeString("[=", "separator"),
-						       ANSIThemeString("VALUE", "argument"),
-						       ANSIThemeString("]:", "separator"),
-						       ANSIThemeString("[EFFECT]", "argument")],
+					"arg_string": [ANSIThemeStr("KEY", "argument"),
+						       ANSIThemeStr("[=", "separator"),
+						       ANSIThemeStr("VALUE", "argument"),
+						       ANSIThemeStr("]:", "separator"),
+						       ANSIThemeStr("[EFFECT]", "argument")],
 					"options": {
 						"validator": "untaint",
 						"list_separator": None,
@@ -884,7 +884,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "foobar",
-					"arg_string": [ANSIThemeString("ARGUMENT", "argument")],
+					"arg_string": [ANSIThemeStr("ARGUMENT", "argument")],
 					"options": {
 						"validator": "",
 						"list_separator": None,
@@ -899,7 +899,7 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 			(
 				{
 					"arg": "foobar",
-					"arg_string": [ANSIThemeString("ARGUMENT", "argument")],
+					"arg_string": [ANSIThemeStr("ARGUMENT", "argument")],
 					"options": {
 						"validator": "doesnotexist",
 						"list_separator": None,
@@ -1120,32 +1120,32 @@ def main() -> int:
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
 	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeStr(f" {', '.join(test)}:", "default")])
 		message, result = tests[test]["callable"](verbose = verbose)
 		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {message}", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			ansithemeprint([ANSIThemeStr("  PASS", "success")])
 			success += 1
 		tests[test]["result"] = result
 		if not result:
 			fail += 1
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
 	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
 	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
 	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+			ansithemeprint([ANSIThemeStr("  • ", "separator"),
+					ANSIThemeStr(testcase, "default")], stderr = True)
 		sys.exit(fail)
 
 	return 0

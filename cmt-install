@@ -43,7 +43,7 @@ from cmtio import execute_command_with_response
 from cmtio import secure_copy, secure_mkdir, secure_symlink, secure_which
 
 from commandparser import parse_commandline
-from ansithemeprint import ANSIThemeString, ansithemeprint, ansithemeinput
+from ansithemeprint import ANSIThemeStr, ansithemeprint, ansithemeinput
 
 import about
 PROGRAMDESCRIPTION = f"Setup {about.PROGRAM_SUITE_FULL_NAME}"
@@ -251,11 +251,11 @@ def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = F
             _violations = secure_symlink(src, dst, verbose=verbose, replace_existing=True)
         except PermissionError:
             print()
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Could not write to ", "default"),
-                            ANSIThemeString(f"{dst}", "path"),
-                            ANSIThemeString("; permissions or ownership are incorrect; aborting.",
-                                            "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Could not write to ", "default"),
+                            ANSIThemeStr(f"{dst}", "path"),
+                            ANSIThemeStr("; permissions or ownership are incorrect; aborting.",
+                                         "default")], stderr=True)
             sys.exit(errno.EPERM)
 
 
@@ -287,10 +287,10 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
                                  fallback_allowlist=[],
                                  security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("sudo", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("sudo", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     try:
@@ -298,10 +298,10 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
                                    fallback_allowlist=[],
                                    security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("zypper", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("zypper", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     if isinstance(packages, set):
@@ -332,16 +332,16 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
             args = [zypper_path, "versioncmp", pkg_version, recommended_minimum]
             result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
             if "older" in result.stdout.decode("utf-8").splitlines():
-                ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
-                                ANSIThemeString(" The installed version of package ", "default"),
-                                ANSIThemeString(f"{pkg}", "path"),
-                                ANSIThemeString(" (", "default"),
-                                ANSIThemeString(f"{pkg_version}", "version"),
-                                ANSIThemeString(") is older than the recommended "
-                                                "minimum version: ", "default"),
-                                ANSIThemeString(f"{recommended_minimum}", "version")], stderr=True)
-                ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
-                                ANSIThemeString(f" {reason}\n", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("\nWarning:", "warning"),
+                                ANSIThemeStr(" The installed version of package ", "default"),
+                                ANSIThemeStr(f"{pkg}", "path"),
+                                ANSIThemeStr(" (", "default"),
+                                ANSIThemeStr(f"{pkg_version}", "version"),
+                                ANSIThemeStr(") is older than the recommended "
+                                             "minimum version: ", "default"),
+                                ANSIThemeStr(f"{recommended_minimum}", "version")], stderr=True)
+                ansithemeprint([ANSIThemeStr("   Risk:", "emphasis"),
+                                ANSIThemeStr(f" {reason}\n", "default")], stderr=True)
 
 
 # pylint: disable-next=unused-argument,too-many-locals
@@ -358,10 +358,10 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
                                  fallback_allowlist=[],
                                  security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("sudo", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("sudo", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     try:
@@ -369,10 +369,10 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
                                 fallback_allowlist=["/usr/bin"],
                                 security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("yum", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("yum", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     rpmdev_vercmp_path = None
@@ -382,11 +382,11 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
                                           fallback_allowlist=[],
                                           security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Warning", "warning"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("rpmdev-vercmp", "path"),
-                        ANSIThemeString("; will not be able to compare package versions.",
-                                        "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("rpmdev-vercmp", "path"),
+                        ANSIThemeStr("; will not be able to compare package versions.",
+                                     "default")], stderr=True)
 
     if isinstance(packages, set):
         packages = dict.fromkeys(packages, {})
@@ -417,16 +417,16 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
             args = [yum_path, "versioncmp", pkg_version, recommended_minimum]
             result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
             if "older" in result.stdout.decode("utf-8").splitlines():
-                ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
-                                ANSIThemeString(" The installed version of package ", "default"),
-                                ANSIThemeString(f"{pkg}", "path"),
-                                ANSIThemeString(" (", "default"),
-                                ANSIThemeString(f"{pkg_version}", "version"),
-                                ANSIThemeString(") is older than the recommended "
-                                                "minimum version: ", "default"),
-                                ANSIThemeString(f"{recommended_minimum}", "version")], stderr=True)
-                ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
-                                ANSIThemeString(f" {reason}\n", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("\nWarning:", "warning"),
+                                ANSIThemeStr(" The installed version of package ", "default"),
+                                ANSIThemeStr(f"{pkg}", "path"),
+                                ANSIThemeStr(" (", "default"),
+                                ANSIThemeStr(f"{pkg_version}", "version"),
+                                ANSIThemeStr(") is older than the recommended "
+                                             "minimum version: ", "default"),
+                                ANSIThemeStr(f"{recommended_minimum}", "version")], stderr=True)
+                ansithemeprint([ANSIThemeStr("   Risk:", "emphasis"),
+                                ANSIThemeStr(f" {reason}\n", "default")], stderr=True)
 
 
 # pylint: disable-next=unused-argument,too-many-locals
@@ -443,10 +443,10 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
                                  fallback_allowlist=[],
                                  security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("sudo", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("sudo", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     try:
@@ -454,10 +454,10 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
                                     fallback_allowlist=[],
                                     security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("apt-get", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("apt-get", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     args = [sudo_path, apt_get_path, "install"] + list(packages.keys())
@@ -469,10 +469,10 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
                                       fallback_allowlist=[],
                                       security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("apt-cache", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("apt-cache", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     try:
@@ -480,10 +480,10 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
                                  fallback_allowlist=[],
                                  security_policy=SecurityPolicy.STRICT)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("dpkg", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("dpkg", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     # Check if the installed versions are new enough
@@ -507,16 +507,16 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
             args = [dpkg_path, "--compare-versions", recommended_minimum, "lt", pkg_version]
             retval = subprocess.run(args, check=False).returncode
             if retval == 1:
-                ansithemeprint([ANSIThemeString("\nWarning:", "warning"),
-                                ANSIThemeString(" The installed version of package ", "default"),
-                                ANSIThemeString(f"{pkg}", "path"),
-                                ANSIThemeString(" (", "default"),
-                                ANSIThemeString(f"{pkg_version}", "version"),
-                                ANSIThemeString(") is older than the recommended "
-                                                "minimum version: ", "default"),
-                                ANSIThemeString(f"{recommended_minimum}", "version")], stderr=True)
-                ansithemeprint([ANSIThemeString("   Risk:", "emphasis"),
-                                ANSIThemeString(f" {reason}\n", "default")], stderr=True)
+                ansithemeprint([ANSIThemeStr("\nWarning:", "warning"),
+                                ANSIThemeStr(" The installed version of package ", "default"),
+                                ANSIThemeStr(f"{pkg}", "path"),
+                                ANSIThemeStr(" (", "default"),
+                                ANSIThemeStr(f"{pkg_version}", "version"),
+                                ANSIThemeStr(") is older than the recommended "
+                                             "minimum version: ", "default"),
+                                ANSIThemeStr(f"{recommended_minimum}", "version")], stderr=True)
+                ansithemeprint([ANSIThemeStr("   Risk:", "emphasis"),
+                                ANSIThemeStr(f" {reason}\n", "default")], stderr=True)
 
 
 def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) -> Dict:
@@ -579,10 +579,10 @@ def install_software_with_pip(packages: List[str],
                                  fallback_allowlist=["/bin", "/usr/bin"],
                                  security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Critical", "critical"),
-                        ANSIThemeString(": Could not find ", "default"),
-                        ANSIThemeString("pip3", "path"),
-                        ANSIThemeString("; aborting.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                        ANSIThemeStr(": Could not find ", "default"),
+                        ANSIThemeStr("pip3", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
     args = [pip3_path, "install"]
     if pip_proxy:
@@ -621,10 +621,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
                                           fallback_allowlist=[],
                                           security_policy=SecurityPolicy.STRICT)
         except FileNotFoundError:
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Could not find ", "default"),
-                            ANSIThemeString("apt-cache", "path"),
-                            ANSIThemeString("; aborting.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Could not find ", "default"),
+                            ANSIThemeStr("apt-cache", "path"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
 
         args = [apt_cache_path, "madison"] + list(packages.keys())
@@ -651,10 +651,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
                                        fallback_allowlist=[],
                                        security_policy=SecurityPolicy.STRICT)
         except FileNotFoundError:
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Could not find ", "default"),
-                            ANSIThemeString("zypper", "path"),
-                            ANSIThemeString("; aborting.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Could not find ", "default"),
+                            ANSIThemeStr("zypper", "path"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
 
         args = [zypper_path, "info"] + list(packages.keys())
@@ -683,10 +683,10 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
                                     fallback_allowlist=["/usr/bin"],
                                     security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
         except FileNotFoundError:
-            ansithemeprint([ANSIThemeString("Critical", "critical"),
-                            ANSIThemeString(": Could not find ", "default"),
-                            ANSIThemeString("yum", "path"),
-                            ANSIThemeString("; aborting.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                            ANSIThemeStr(": Could not find ", "default"),
+                            ANSIThemeStr("yum", "path"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
 
         args = [yum_path, "list", "-q"] + list(packages.keys())
@@ -764,11 +764,11 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
                                    security_policy=SecurityPolicy.ALLOWLIST_STRICT,
                                    executable=False)
     except FileNotFoundError:
-        ansithemeprint([ANSIThemeString("Error:", "error"),
-                        ANSIThemeString(" Cannot find an “", "default"),
-                        ANSIThemeString("os-release", "path"),
-                        ANSIThemeString("“ file to determine OS distribution; aborting.",
-                                        "default")])
+        ansithemeprint([ANSIThemeStr("Error:", "error"),
+                        ANSIThemeStr(" Cannot find an “", "default"),
+                        ANSIThemeStr("os-release", "path"),
+                        ANSIThemeStr("“ file to determine OS distribution; aborting.",
+                                     "default")])
         sys.exit(errno.ENOENT)
 
     distro = None
@@ -796,48 +796,48 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
         distro = distro_id
 
     if distro is None or not distro:
-        ansithemeprint([ANSIThemeString("Error:", "error"),
-                        ANSIThemeString(" Cannot read ID_LIKE from “", "default"),
-                        ANSIThemeString("os-release", "path"),
-                        ANSIThemeString("“ file to determine OS distribution; aborting.",
-                                        "default")])
+        ansithemeprint([ANSIThemeStr("Error:", "error"),
+                        ANSIThemeStr(" Cannot read ID_LIKE from “", "default"),
+                        ANSIThemeStr("os-release", "path"),
+                        ANSIThemeStr("“ file to determine OS distribution; aborting.",
+                                     "default")])
         sys.exit(errno.ENOENT)
 
     if distro == "suse opensuse":
         distro = "suse"
 
     if distro not in ("debian", "suse", "rhel", "fedora"):
-        ansithemeprint([ANSIThemeString("Error:", "error"),
-                        ANSIThemeString(" distro “", "default"),
-                        ANSIThemeString(f"{distro}", "path"),
-                        ANSIThemeString("“ is not supported.", "default")])
-        ansithemeprint([ANSIThemeString("Currently only distros based on ", "default"),
-                        ANSIThemeString("Debian", "programname"),
-                        ANSIThemeString(", ", "default"),
-                        ANSIThemeString("Red Hat", "programname"),
-                        ANSIThemeString(", or ", "default"),
-                        ANSIThemeString("SUSE", "programname"),
-                        ANSIThemeString(" are supported.", "default")])
+        ansithemeprint([ANSIThemeStr("Error:", "error"),
+                        ANSIThemeStr(" distro “", "default"),
+                        ANSIThemeStr(f"{distro}", "path"),
+                        ANSIThemeStr("“ is not supported.", "default")])
+        ansithemeprint([ANSIThemeStr("Currently only distros based on ", "default"),
+                        ANSIThemeStr("Debian", "programname"),
+                        ANSIThemeStr(", ", "default"),
+                        ANSIThemeStr("Red Hat", "programname"),
+                        ANSIThemeStr(", or ", "default"),
+                        ANSIThemeStr("SUSE", "programname"),
+                        ANSIThemeStr(" are supported.", "default")])
         sys.exit(errno.ENOTSUP)
 
     if distro == "suse":
-        ansithemeprint([ANSIThemeString("Note:", "note"),
-                        ANSIThemeString(" on SUSE distros older than OpenSUSE 16 "
-                                        "you need to install “", "default"),
-                        ANSIThemeString("pip", "programname"),
-                        ANSIThemeString("“ manually;", "default")])
-        ansithemeprint([ANSIThemeString("depending on your SP-level this may be, for instance, “",
-                                        "default"),
-                        ANSIThemeString("python310-pip", "programname"),
-                        ANSIThemeString("“.\n", "default")])
+        ansithemeprint([ANSIThemeStr("Note:", "note"),
+                        ANSIThemeStr(" on SUSE distros older than OpenSUSE 16 "
+                                     "you need to install “", "default"),
+                        ANSIThemeStr("pip", "programname"),
+                        ANSIThemeStr("“ manually;", "default")])
+        ansithemeprint([ANSIThemeStr("depending on your SP-level this may be, for instance, “",
+                                     "default"),
+                        ANSIThemeStr("python310-pip", "programname"),
+                        ANSIThemeStr("“.\n", "default")])
     elif distro in ("fedora", "rhel"):
-        ansithemeprint([ANSIThemeString("Note:", "note"),
-                        ANSIThemeString(" on Red Hat distros older than RHEL 9 "
-                                        "you need to install a newer version", "default")])
-        ansithemeprint([ANSIThemeString("of python3 and set it as the default version "
-                                        "(using ", "default"),
-                        ANSIThemeString("update-alternatives", "programname"),
-                        ANSIThemeString(").\n", "default")])
+        ansithemeprint([ANSIThemeStr("Note:", "note"),
+                        ANSIThemeStr(" on Red Hat distros older than RHEL 9 "
+                                     "you need to install a newer version", "default")])
+        ansithemeprint([ANSIThemeStr("of python3 and set it as the default version "
+                                     "(using ", "default"),
+                        ANSIThemeStr("update-alternatives", "programname"),
+                        ANSIThemeStr(").\n", "default")])
 
     pkgs_without_fallback: Dict = trim_package_list(packages=PACKAGES_WITHOUT_FALLBACK,
                                                     distro=distro)
@@ -845,64 +845,64 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
                                                      distro=distro, fallback=True)
 
     if confirm:
-        ansithemeprint([ANSIThemeString("Important:", "warning"),
-                        ANSIThemeString(" The following actions will be taken "
-                                        "that will modify the system:", "default")])
+        ansithemeprint([ANSIThemeStr("Important:", "warning"),
+                        ANSIThemeStr(" The following actions will be taken "
+                                     "that will modify the system:", "default")])
         pkgs: List[str] = []
         pkgs_fallback: List[str] = []
 
         if install_dependencies:
             pkgs, pkgs_fallback = install_software_with_pip_fallback(pkgs_with_pip_fallback,
                                                                      dryrun=True, distro=distro)
-            ansithemeprint([ANSIThemeString("\n• ", "separator"),
-                            ANSIThemeString("Install the following system software "
-                                            "(+ any dependencies):", "action")])
-            ansithemeprint([ANSIThemeString("  Note", "warning"),
-                            ANSIThemeString(": This requires sudo permissions", "emphasis")])
+            ansithemeprint([ANSIThemeStr("\n• ", "separator"),
+                            ANSIThemeStr("Install the following system software "
+                                         "(+ any dependencies):", "action")])
+            ansithemeprint([ANSIThemeStr("  Note", "warning"),
+                            ANSIThemeStr(": This requires sudo permissions", "emphasis")])
             for pkg in pkgs_without_fallback:
-                ansithemeprint([ANSIThemeString(f"    {pkg}", "path")])
+                ansithemeprint([ANSIThemeStr(f"    {pkg}", "path")])
             for pkg in pkgs:
-                ansithemeprint([ANSIThemeString(f"    {pkg}", "path")])
+                ansithemeprint([ANSIThemeStr(f"    {pkg}", "path")])
             for pkg in pkgs_fallback:
-                ansithemeprint([ANSIThemeString(f"    {pkg}", "path"),
-                                ANSIThemeString(" (Using package from PIP)", "emphasis")])
+                ansithemeprint([ANSIThemeStr(f"    {pkg}", "path"),
+                                ANSIThemeStr(" (Using package from PIP)", "emphasis")])
 
-        ansithemeprint([ANSIThemeString("\n• ", "separator"),
-                        ANSIThemeString("Create the following new directories:", "action")])
+        ansithemeprint([ANSIThemeStr("\n• ", "separator"),
+                        ANSIThemeStr("Create the following new directories:", "action")])
         for name, _permissions in DIRECTORIES:
-            ansithemeprint([ANSIThemeString(f"    {name}", "path")])
-        ansithemeprint([ANSIThemeString("\n• ", "separator"),
-                        ANSIThemeString("Install the following configuration files:", "action")])
+            ansithemeprint([ANSIThemeStr(f"    {name}", "path")])
+        ansithemeprint([ANSIThemeStr("\n• ", "separator"),
+                        ANSIThemeStr("Install the following configuration files:", "action")])
         for src, dst, _permissions in CONFIGURATION_FILES:
-            ansithemeprint([ANSIThemeString(f"     {dst}", "path")])
-        ansithemeprint([ANSIThemeString("\n• ", "separator"),
-                        ANSIThemeString("Create the following symlinks:", "action")])
+            ansithemeprint([ANSIThemeStr(f"     {dst}", "path")])
+        ansithemeprint([ANSIThemeStr("\n• ", "separator"),
+                        ANSIThemeStr("Create the following symlinks:", "action")])
         for src, dst in MISC_SYMLINKS:
-            ansithemeprint([ANSIThemeString(f"    {src}", "path"),
-                            ANSIThemeString(" ⇨ ", "emphasis"),
-                            ANSIThemeString(f"{dst}", "path")])
+            ansithemeprint([ANSIThemeStr(f"    {src}", "path"),
+                            ANSIThemeStr(" ⇨ ", "emphasis"),
+                            ANSIThemeStr(f"{dst}", "path")])
         for src, dst in EXECUTABLE_SYMLINKS:
-            ansithemeprint([ANSIThemeString(f"    {src}", "path"),
-                            ANSIThemeString(" ⇨ ", "emphasis"),
-                            ANSIThemeString(f"{dst}", "path")])
+            ansithemeprint([ANSIThemeStr(f"    {src}", "path"),
+                            ANSIThemeStr(" ⇨ ", "emphasis"),
+                            ANSIThemeStr(f"{dst}", "path")])
 
         if install_dependencies and not allow_fallback and pkgs_fallback:
-            ansithemeprint([ANSIThemeString("\n", "default"),
-                            ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": Installation would require fallback to PIP, but “",
-                                            "default"),
-                            ANSIThemeString("--no-fallback", "option"),
-                            ANSIThemeString("“ was specified; aborting.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("\n", "default"),
+                            ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Installation would require fallback to PIP, but “",
+                                         "default"),
+                            ANSIThemeStr("--no-fallback", "option"),
+                            ANSIThemeStr("“ was specified; aborting.", "default")], stderr=True)
             sys.exit(errno.EINVAL)
 
-        retval = ansithemeinput([ANSIThemeString("\nInstall ", "default"),
-                                 ANSIThemeString(about.PROGRAM_SUITE_NAME, "programname"),
-                                 ANSIThemeString("? [y/", "default"),
-                                 ANSIThemeString("N", "emphasis"),
-                                 ANSIThemeString("]: ", "default")])
+        retval = ansithemeinput([ANSIThemeStr("\nInstall ", "default"),
+                                 ANSIThemeStr(about.PROGRAM_SUITE_NAME, "programname"),
+                                 ANSIThemeStr("? [y/", "default"),
+                                 ANSIThemeStr("N", "emphasis"),
+                                 ANSIThemeStr("]: ", "default")])
         if retval.lower() not in ("y", "yes"):
-            ansithemeprint([ANSIThemeString("\nAborting:", "error"),
-                            ANSIThemeString(" User stopped installation.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("\nAborting:", "error"),
+                            ANSIThemeStr(" User stopped installation.", "default")], stderr=True)
             sys.exit(errno.EINTR)
 
     if install_dependencies:
@@ -915,15 +915,15 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
     create_symlinks(symlinks=MISC_SYMLINKS + EXECUTABLE_SYMLINKS, verbose=verbose)
 
     if not bindir_exists:
-        ansithemeprint([ANSIThemeString("\nWarning", "warning"),
-                        ANSIThemeString(": ", "default"),
-                        ANSIThemeString(f"{BINDIR}", "path"),
-                        ANSIThemeString(" did not exist before installation; "
-                                        "you will most likely need to ", "default"),
-                        ANSIThemeString("logout and login again (or spawn a new "
-                                        "shell/terminal) to have it added to ", "default"),
-                        ANSIThemeString("$PATH", "argument"),
-                        ANSIThemeString(".", "default")])
+        ansithemeprint([ANSIThemeStr("\nWarning", "warning"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{BINDIR}", "path"),
+                        ANSIThemeStr(" did not exist before installation; "
+                                     "you will most likely need to ", "default"),
+                        ANSIThemeStr("logout and login again (or spawn a new "
+                                     "shell/terminal) to have it added to ", "default"),
+                        ANSIThemeStr("$PATH", "argument"),
+                        ANSIThemeStr(".", "default")])
 
     return 0
 
@@ -932,30 +932,30 @@ COMMANDLINE = {
     # Default command
     "__global_options": {
         "command": ["__global_options"],
-        "description": [ANSIThemeString("", "")],
+        "description": [ANSIThemeStr("", "")],
         "options": {
             "--no-dependencies": {
-                "description": [ANSIThemeString("Do not install dependencies", "description")],
+                "description": [ANSIThemeStr("Do not install dependencies", "description")],
             },
             "--no-fallback": {
                 "description": [
-                    ANSIThemeString("Do not fallback to Python packages from PIP", "description")],
+                    ANSIThemeStr("Do not fallback to Python packages from PIP", "description")],
                 "extended_description": [
-                    [ANSIThemeString("If a distribution package cannot be found", "description")],
-                    [ANSIThemeString("cmt-install", "programname"),
-                     ANSIThemeString(" will, by default, install packages", "description")],
-                    [ANSIThemeString("using PIP.", "description")],
-                    [ANSIThemeString("This option can be used to disable that behaviour",
-                                     "description")],
+                    [ANSIThemeStr("If a distribution package cannot be found", "description")],
+                    [ANSIThemeStr("cmt-install", "programname"),
+                     ANSIThemeStr(" will, by default, install packages", "description")],
+                    [ANSIThemeStr("using PIP.", "description")],
+                    [ANSIThemeStr("This option can be used to disable that behaviour",
+                                  "description")],
                 ],
             },
             "--pip-proxy": {
-                "values": [ANSIThemeString("PROXY", "argument")],
-                "description": [ANSIThemeString("Proxy to use for PIP", "description")],
+                "values": [ANSIThemeStr("PROXY", "argument")],
+                "description": [ANSIThemeStr("Proxy to use for PIP", "description")],
                 "extended_description": [
-                    [ANSIThemeString("HTTPS proxy to use if fallback packages", "description")],
-                    [ANSIThemeString("are installed from PIP. Format:", "description")],
-                    [ANSIThemeString("[user:passwd@]proxy:port", "argument")],
+                    [ANSIThemeStr("HTTPS proxy to use if fallback packages", "description")],
+                    [ANSIThemeStr("are installed from PIP. Format:", "description")],
+                    [ANSIThemeStr("[user:passwd@]proxy:port", "argument")],
                 ],
                 "requires_arg": True,
                 "validation": {
@@ -963,21 +963,21 @@ COMMANDLINE = {
                 },
             },
             "--verbose": {
-                "description": [ANSIThemeString("Be more verbose", "description")],
+                "description": [ANSIThemeStr("Be more verbose", "description")],
             },
             "-Y": {
-                "description": [ANSIThemeString("Do not ask for confirmation", "description")],
+                "description": [ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
     },
     "__default": {
         "command": ["__default"],
-        "description": [ANSIThemeString("", "")],
+        "description": [ANSIThemeStr("", "")],
         "callback": install,
     },
     "spacer1": {
         "command": [""],
-        "description": [ANSIThemeString("", "")],
+        "description": [ANSIThemeStr("", "")],
     },
 }
 

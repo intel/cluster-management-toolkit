@@ -30,7 +30,7 @@ from cmtio import check_path, expand_path, join_securitystatus_set, execute_comm
 from cmtio import secure_copy, secure_mkdir, secure_read, secure_read_string, secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
 from cmtio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
 from networkio import verify_checksum
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
 
 from cmtpaths import HOMEDIR
@@ -1778,8 +1778,8 @@ def main() -> int:
 	for testcase, testcase_data in testcases.items():
 		prepare = deep_get(testcase_data, DictPath("prepare"), False)
 		if not prepare:
-			ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-					ANSIThemeString(f" {testcase}:", "default")])
+			ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+					ANSIThemeStr(f" {testcase}:", "default")])
 			testcase_data["index"] = i
 
 		test = deep_get(testcase_data, DictPath("test"))
@@ -1789,11 +1789,11 @@ def main() -> int:
 		if failed == 1:
 			fail += 1
 			failed_testcases.append(f"{i}: {testcase}")
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {msg}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {msg}", "default")])
 		else:
 			if not prepare:
-				ansithemeprint([ANSIThemeString("  PASS", "success")])
+				ansithemeprint([ANSIThemeStr("  PASS", "success")])
 				success += 1
 
 		if not prepare:
@@ -1804,8 +1804,8 @@ def main() -> int:
 	for testcase, testcase_data in testcases.items():
 		prepare = deep_get(testcase_data, DictPath("prepare"), False)
 		if not prepare:
-			ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-					ANSIThemeString(f" {testcase}:", "default")])
+			ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+					ANSIThemeStr(f" {testcase}:", "default")])
 			testcase_data["index"] = i
 
 		test = deep_get(testcase_data, DictPath("test"))
@@ -1815,28 +1815,28 @@ def main() -> int:
 		if failed == 1:
 			fail += 1
 			failed_testcases.append(f"{i}: {testcase}")
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {msg}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {msg}", "default")])
 		else:
 			if not prepare:
-				ansithemeprint([ANSIThemeString("  PASS", "success")])
+				ansithemeprint([ANSIThemeStr("  PASS", "success")])
 				success += 1
 
 		if not prepare:
 			i += 1
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
 	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
 	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
 	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr=True)
+			ansithemeprint([ANSIThemeStr("  • ", "separator"),
+					ANSIThemeStr(testcase, "default")], stderr=True)
 		sys.exit(fail)
 
 	return 0

@@ -22,7 +22,7 @@ import yaml
 
 import cmtlib
 from cmttypes import deep_get, deep_set, DictPath, StatusGroup
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import kubernetes_helper
 
 # unit-tests for kubernetes_helper.py
@@ -246,15 +246,15 @@ def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
                   f"        expected: (type: {tuple}, len: 6)"
             result = False
         else:
-            ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+            ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 
             kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = tmp
-            ansithemeprint([ANSIThemeString("    kubectl major version: ", "emphasis"), ANSIThemeString(f"{kubectl_major_version}", "version")])
-            ansithemeprint([ANSIThemeString("    kubectl minor version: ", "emphasis"), ANSIThemeString(f"{kubectl_minor_version}", "version")])
-            ansithemeprint([ANSIThemeString("      kubectl git version: ", "emphasis"), ANSIThemeString(f"{kubectl_git_version}", "version")])
-            ansithemeprint([ANSIThemeString("     server major version: ", "emphasis"), ANSIThemeString(f"{server_major_version}", "version")])
-            ansithemeprint([ANSIThemeString("     server minor version: ", "emphasis"), ANSIThemeString(f"{server_minor_version}", "version")])
-            ansithemeprint([ANSIThemeString("       server git version: ", "emphasis"), ANSIThemeString(f"{server_git_version}", "version")])
+            ansithemeprint([ANSIThemeStr("    kubectl major version: ", "emphasis"), ANSIThemeStr(f"{kubectl_major_version}", "version")])
+            ansithemeprint([ANSIThemeStr("    kubectl minor version: ", "emphasis"), ANSIThemeStr(f"{kubectl_minor_version}", "version")])
+            ansithemeprint([ANSIThemeStr("      kubectl git version: ", "emphasis"), ANSIThemeStr(f"{kubectl_git_version}", "version")])
+            ansithemeprint([ANSIThemeStr("     server major version: ", "emphasis"), ANSIThemeStr(f"{server_major_version}", "version")])
+            ansithemeprint([ANSIThemeStr("     server minor version: ", "emphasis"), ANSIThemeStr(f"{server_minor_version}", "version")])
+            ansithemeprint([ANSIThemeStr("       server git version: ", "emphasis"), ANSIThemeStr(f"{server_git_version}", "version")])
     return message, result
 
 
@@ -1008,32 +1008,32 @@ def main() -> int:
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
     for i, test in enumerate(tests):
-        ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-                ANSIThemeString(f" {', '.join(test)}:", "default")])
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                ANSIThemeStr(f" {', '.join(test)}:", "default")])
         message, result = tests[test]["callable"](verbose=verbose)
         if len(message) > 0:
-            ansithemeprint([ANSIThemeString("  FAIL", "error"),
-                    ANSIThemeString(f": {message}", "default")])
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                    ANSIThemeStr(f": {message}", "default")])
         else:
-            ansithemeprint([ANSIThemeString("  PASS", "success")])
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
             success += 1
         tests[test]["result"] = result
         if not result:
             fail += 1
             failed_testcases.append(f"{i}: {', '.join(test)}")
 
-    ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
     if fail:
-        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
     else:
-        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-    ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
     if fail:
-        ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
-            ansithemeprint([ANSIThemeString("  • ", "separator"),
-                    ANSIThemeString(testcase, "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                    ANSIThemeStr(testcase, "default")], stderr=True)
             sys.exit(fail)
 
     return 0

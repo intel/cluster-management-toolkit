@@ -15,7 +15,7 @@ from typing import cast, Callable, Dict, List, Optional, Tuple
 import about
 
 import cmtlib
-from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeStr
 from ansithemeprint import ansithemeprint, init_ansithemeprint, themearray_len, themearray_ljust
 from cmttypes import deep_get, DictPath, FilePath
 import cmtvalidators
@@ -39,11 +39,11 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
         Returns:
             0
     """
-    ansithemeprint([ANSIThemeString(f"{programname} ", "programname"),
-                    ANSIThemeString(f"{programversion}", "version")])
-    ansithemeprint([ANSIThemeString(f"{about.PROGRAM_SUITE_FULL_NAME} "
+    ansithemeprint([ANSIThemeStr(f"{programname} ", "programname"),
+                    ANSIThemeStr(f"{programversion}", "version")])
+    ansithemeprint([ANSIThemeStr(f"{about.PROGRAM_SUITE_FULL_NAME} "
                                     f"({about.PROGRAM_SUITE_NAME}) ", "programname"),
-                    ANSIThemeString(f"{about.PROGRAM_SUITE_VERSION}", "version")])
+                    ANSIThemeStr(f"{about.PROGRAM_SUITE_VERSION}", "version")])
     print()
     print(about.COPYRIGHT)
     print(about.LICENSE)
@@ -70,26 +70,26 @@ def __sub_usage(command: str) -> int:
     for _key, value in commandline.items():
         if command in deep_get(value, DictPath("command"), {}):
             commandstring = deep_get(value, DictPath("command_alias"), command)
-            headerstring = [ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(f" {commandstring}", "command")]
+            headerstring = [ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(f" {commandstring}", "command")]
             commandinfo = value
             command_found = True
             break
 
     if not command_found:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": unrecognised command “", "default"),
-                        ANSIThemeString(f"{command}", "command"),
-                        ANSIThemeString("“.", "default")], stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": unrecognised command “", "default"),
+                        ANSIThemeStr(f"{command}", "command"),
+                        ANSIThemeStr("“.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     if headerstring is None:
-        ansithemeprint([ANSIThemeString("Error", "warning"),
-                        ANSIThemeString(": Could not find help entry for command "
+        ansithemeprint([ANSIThemeStr("Error", "warning"),
+                        ANSIThemeStr(": Could not find help entry for command "
                                         f"{command}; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
@@ -99,12 +99,12 @@ def __sub_usage(command: str) -> int:
     extended_description = deep_get(commandinfo, DictPath("extended_description"), [])
 
     if options:
-        headerstring += [ANSIThemeString(" [", "separator"),
-                         ANSIThemeString("OPTION", "option"),
-                         ANSIThemeString("]", "separator"),
-                         ANSIThemeString("...", "option")]
+        headerstring += [ANSIThemeStr(" [", "separator"),
+                         ANSIThemeStr("OPTION", "option"),
+                         ANSIThemeStr("]", "separator"),
+                         ANSIThemeStr("...", "option")]
     if values:
-        headerstring += [ANSIThemeString(" ", "separator")] + values
+        headerstring += [ANSIThemeStr(" ", "separator")] + values
 
     ansithemeprint(headerstring)
     print()
@@ -112,7 +112,7 @@ def __sub_usage(command: str) -> int:
     print()
     if extended_description:
         for line in extended_description:
-            ansithemeprint([ANSIThemeString("  ", "description")] + line)
+            ansithemeprint([ANSIThemeStr("  ", "description")] + line)
         print()
 
     if options:
@@ -122,22 +122,22 @@ def __sub_usage(command: str) -> int:
                                                                   DictPath("values"), ""))
             max_optionlen = max(max_optionlen, optionlen)
 
-        ansithemeprint([ANSIThemeString("Options:", "description")])
+        ansithemeprint([ANSIThemeStr("Options:", "description")])
         for option, optiondata in options.items():
-            optionline = [ANSIThemeString(f"  {option}", "option")]
+            optionline = [ANSIThemeStr(f"  {option}", "option")]
             values = deep_get(optiondata, DictPath("values"), [])
             description = deep_get(optiondata, DictPath("description"), [])
             extended_description = deep_get(optiondata, DictPath("extended_description"), [])
 
             if values:
-                optionline += [ANSIThemeString(" ", "option")] + values
+                optionline += [ANSIThemeStr(" ", "option")] + values
             pad = " ".rjust(max_optionlen - themearray_len(optionline))
-            optionline += [ANSIThemeString(pad, "description")] + description
+            optionline += [ANSIThemeStr(pad, "description")] + description
             ansithemeprint(optionline)
 
             pad = " ".rjust(max_optionlen)
             for extended_line in extended_description:
-                ansithemeprint([ANSIThemeString(pad, "description")] + extended_line)
+                ansithemeprint([ANSIThemeStr(pad, "description")] + extended_line)
 
     return 0
 
@@ -159,7 +159,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     has_options: bool = False
     has_args: bool = False
 
-    output: List[List[ANSIThemeString]] = []
+    output: List[List[ANSIThemeStr]] = []
     output_format = "default"
 
     for opt, optarg in options:
@@ -192,65 +192,65 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
         has_options = True
 
     if output_format == "default":
-        headerstring = [ANSIThemeString(f"{programname}", "programname")]
+        headerstring = [ANSIThemeStr(f"{programname}", "programname")]
     elif output_format == "markdown":
-        headerstring = [ANSIThemeString(f"# ___{programname}___", "default")]
+        headerstring = [ANSIThemeStr(f"# ___{programname}___", "default")]
 
     if has_commands:
         if output_format == "default":
-            headerstring += [ANSIThemeString(" COMMAND", "command")]
+            headerstring += [ANSIThemeStr(" COMMAND", "command")]
         elif output_format == "markdown":
-            headerstring += [ANSIThemeString(" __COMMAND__", "default")]
+            headerstring += [ANSIThemeStr(" __COMMAND__", "default")]
 
     if has_options:
         if output_format == "default":
-            headerstring += [ANSIThemeString(" [", "separator"),
-                             ANSIThemeString("OPTION", "option"),
-                             ANSIThemeString("]", "separator"),
-                             ANSIThemeString("...", "option")]
+            headerstring += [ANSIThemeStr(" [", "separator"),
+                             ANSIThemeStr("OPTION", "option"),
+                             ANSIThemeStr("]", "separator"),
+                             ANSIThemeStr("...", "option")]
         elif output_format == "markdown":
-            headerstring += [ANSIThemeString(" _\\[OPTION\\]_...", "default")]
+            headerstring += [ANSIThemeStr(" _\\[OPTION\\]_...", "default")]
     if has_args:
         if output_format == "default":
-            headerstring += [ANSIThemeString(" [", "separator"),
-                             ANSIThemeString("ARGUMENT", "argument"),
-                             ANSIThemeString("]", "separator"),
-                             ANSIThemeString("...", "argument")]
+            headerstring += [ANSIThemeStr(" [", "separator"),
+                             ANSIThemeStr("ARGUMENT", "argument"),
+                             ANSIThemeStr("]", "separator"),
+                             ANSIThemeStr("...", "argument")]
         elif output_format == "markdown":
-            headerstring += [ANSIThemeString(" _\\[ARGUMENT\\]_...", "default")]
+            headerstring += [ANSIThemeStr(" _\\[ARGUMENT\\]_...", "default")]
 
     output.append(headerstring)
-    output.append([ANSIThemeString("", "default")])
-    output.append([ANSIThemeString(programdescription, "description")])
-    output.append([ANSIThemeString("", "default")])
+    output.append([ANSIThemeStr("", "default")])
+    output.append([ANSIThemeStr(programdescription, "description")])
+    output.append([ANSIThemeStr("", "default")])
 
     if has_commands:
         if output_format == "default":
-            output.append([ANSIThemeString("Commands:", "description")])
+            output.append([ANSIThemeStr("Commands:", "description")])
         elif output_format == "markdown":
-            output.append([ANSIThemeString("## Commands:", "description")])
+            output.append([ANSIThemeStr("## Commands:", "description")])
     else:
         if output_format == "default":
-            output.append([ANSIThemeString("Global Options:", "description")])
+            output.append([ANSIThemeStr("Global Options:", "description")])
         elif output_format == "markdown":
-            output.append([ANSIThemeString("## Global Options:", "description")])
+            output.append([ANSIThemeStr("## Global Options:", "description")])
 
     for key, value in commandline.items():
         if key in ("__default", "extended_description", "__*"):
             continue
 
         if key.startswith("spacer"):
-            commands.append(([ANSIThemeString("  ", "default")],
-                             [ANSIThemeString("  ", "default")]))
+            commands.append(([ANSIThemeStr("  ", "default")],
+                             [ANSIThemeStr("  ", "default")]))
             continue
 
         if key == "__global_options" and has_commands:
             if output_format == "default":
-                commands.append(([ANSIThemeString("Global Options:", "description")],
-                                 [ANSIThemeString("", "default")]))
+                commands.append(([ANSIThemeStr("Global Options:", "description")],
+                                 [ANSIThemeStr("", "default")]))
             elif output_format == "markdown":
-                commands.append(([ANSIThemeString("### _Global Options:_", "description")],
-                                 [ANSIThemeString("", "default")]))
+                commands.append(([ANSIThemeStr("### _Global Options:_", "description")],
+                                 [ANSIThemeStr("", "default")]))
 
         tmp = []
         separator = "|"
@@ -259,21 +259,21 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                 continue
 
             if tmp:
-                tmp.append(ANSIThemeString(f"{separator}", "separator"))
-            tmp.append(ANSIThemeString(f"{cmd}", "command"))
+                tmp.append(ANSIThemeStr(f"{separator}", "separator"))
+            tmp.append(ANSIThemeStr(f"{cmd}", "command"))
         if tmp and output_format == "markdown":
-            tmp.insert(0, ANSIThemeString("### ", "command"))
+            tmp.insert(0, ANSIThemeStr("### ", "command"))
 
         values = deep_get(value, DictPath("values"))
         if values is not None:
             if output_format == "default":
-                tmp.append(ANSIThemeString(" ", "default"))
+                tmp.append(ANSIThemeStr(" ", "default"))
             elif output_format == "markdown":
-                tmp.append(ANSIThemeString(" _", "default"))
+                tmp.append(ANSIThemeStr(" _", "default"))
             for part in values:
                 tmp.append(part)
             if output_format == "markdown":
-                tmp.append(ANSIThemeString("_", "default"))
+                tmp.append(ANSIThemeStr("_", "default"))
 
         tlen = themearray_len(tmp)
         maxlen = max(maxlen, tlen)
@@ -282,77 +282,77 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             if output_format == "default":
                 commands.append((tmp, description))
             elif output_format == "markdown":
-                description.insert(0, ANSIThemeString("#### ", "default"))
+                description.insert(0, ANSIThemeStr("#### ", "default"))
                 commands.append((tmp, description))
-                commands.append(([ANSIThemeString("  ", "default")],
-                                 [ANSIThemeString("  ", "default")]))
+                commands.append(([ANSIThemeStr("  ", "default")],
+                                 [ANSIThemeStr("  ", "default")]))
 
         extended_description = deep_get(value, DictPath("extended_description"), [])
         if output_format == "default":
             for line in extended_description:
-                commands.append(([ANSIThemeString("", "default")], line))
+                commands.append(([ANSIThemeStr("", "default")], line))
         elif output_format == "markdown":
             tmp_extended_description = []
             for i, line in enumerate(extended_description):
                 if i:
-                    tmp_extended_description += [ANSIThemeString(" ", "default")]
+                    tmp_extended_description += [ANSIThemeStr(" ", "default")]
                 tmp_extended_description += line
             if tmp_extended_description:
-                commands.append(([ANSIThemeString("", "default")], tmp_extended_description))
-                commands.append(([ANSIThemeString("  ", "default")],
-                                 [ANSIThemeString("  ", "default")]))
+                commands.append(([ANSIThemeStr("", "default")], tmp_extended_description))
+                commands.append(([ANSIThemeStr("  ", "default")],
+                                 [ANSIThemeStr("  ", "default")]))
 
         options = deep_get(value, DictPath("options"), [])
         for option in options:
             indent = ""
             if tmp:
                 indent = "  "
-            tmp2 = [ANSIThemeString(f"{indent}", "option")]
+            tmp2 = [ANSIThemeStr(f"{indent}", "option")]
             if isinstance(option, tuple):
                 for _opt in option:
                     # The first string is the initial indentation
                     if len(tmp2) > 1:
-                        tmp2.append(ANSIThemeString("  ", "separator"))
+                        tmp2.append(ANSIThemeStr("  ", "separator"))
                     if output_format == "default":
-                        tmp2.append(ANSIThemeString(f"{_opt}", "option"))
+                        tmp2.append(ANSIThemeStr(f"{_opt}", "option"))
                     elif output_format == "markdown":
-                        tmp2.append(ANSIThemeString(f"__{_opt}__", "option"))
+                        tmp2.append(ANSIThemeStr(f"__{_opt}__", "option"))
             elif key.startswith("__"):
                 if output_format == "default":
-                    tmp2.append(ANSIThemeString(f"  {option}", "option"))
+                    tmp2.append(ANSIThemeStr(f"  {option}", "option"))
                 elif output_format == "markdown":
-                    tmp2.append(ANSIThemeString(f"  __{option}__", "option"))
+                    tmp2.append(ANSIThemeStr(f"  __{option}__", "option"))
             else:
                 if output_format == "default":
-                    tmp2.append(ANSIThemeString(f"{option}", "option"))
+                    tmp2.append(ANSIThemeStr(f"{option}", "option"))
                 elif output_format == "markdown":
-                    tmp2.append(ANSIThemeString(f"__{option}__", "option"))
+                    tmp2.append(ANSIThemeStr(f"__{option}__", "option"))
             values = deep_get(value, DictPath(f"options#{option}#values"))
             if values is not None:
-                tmp2.append(ANSIThemeString(" ", "default"))
+                tmp2.append(ANSIThemeStr(" ", "default"))
                 if output_format == "markdown":
-                    tmp2.append(ANSIThemeString("_", "default"))
+                    tmp2.append(ANSIThemeStr("_", "default"))
 
                 for part in values:
                     tmp2.append(part)
                 if output_format == "markdown":
-                    tmp2.append(ANSIThemeString("_", "default"))
+                    tmp2.append(ANSIThemeStr("_", "default"))
             tlen = themearray_len(tmp2)
             maxlen = max(maxlen, tlen)
             description = deep_get(value, DictPath(f"options#{option}#description"))
             if indent:
-                description = [ANSIThemeString(indent, "default")] + description
+                description = [ANSIThemeStr(indent, "default")] + description
             if output_format == "markdown":
-                description.append(ANSIThemeString("  ", "default"))
+                description.append(ANSIThemeStr("  ", "default"))
             commands.append((tmp2, description))
             extended_description = deep_get(value,
                                             DictPath("options#{option}#extended_description"), [])
             for line in extended_description:
                 if indent:
-                    commands.append(([ANSIThemeString("", "default")],
-                                     [ANSIThemeString(indent, "default")] + line))
+                    commands.append(([ANSIThemeStr("", "default")],
+                                     [ANSIThemeStr(indent, "default")] + line))
                 else:
-                    commands.append(([ANSIThemeString("", "default")], line))
+                    commands.append(([ANSIThemeStr("", "default")], line))
 
     # cmd[0]: formatted cmd/option
     # cmd[1]: formatted description
@@ -362,7 +362,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                     themearray_len(cmd[0]) + 2 + themearray_len(cmd[1]) > 79 or \
                     themearray_len(cmd[1]) > 51:
                 output.append(cmd[0])
-                string = themearray_ljust([ANSIThemeString("", "default")], 29) + cmd[1]
+                string = themearray_ljust([ANSIThemeStr("", "default")], 29) + cmd[1]
                 output.append(string)
                 # if themearray_len(string) > 79:
                 #     sys.exit(f"FIXME: {themearray_len(string)} > 79 characters; "
@@ -375,7 +375,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             output.append(cmd[1])
 
     if "extended_description" in commandline:
-        output.append([ANSIThemeString("", "default")])
+        output.append([ANSIThemeStr("", "default")])
         for line in deep_get(commandline, DictPath("extended_description"), []):
             output.append(line)
 
@@ -394,13 +394,13 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                     stripped, rcount = cmtlib.rstrip_count(stripped, " ")
                     if stripped and not stripped.startswith("__") and not stripped.endswith("__"):
                         string = "".ljust(lcount) + f"__{stripped}__" + "".ljust(rcount)
-                        segment = ANSIThemeString(string, themeref)
+                        segment = ANSIThemeStr(string, themeref)
                 elif themeref in ("argument", "note", "path", "version"):
                     stripped, lcount = cmtlib.lstrip_count(string, " ")
                     stripped, rcount = cmtlib.rstrip_count(stripped, " ")
                     if stripped and not stripped.startswith("_") and not stripped.endswith("_"):
                         string = "".ljust(lcount) + f"_{stripped}_" + "".ljust(rcount)
-                        segment = ANSIThemeString(string, themeref)
+                        segment = ANSIThemeStr(string, themeref)
                 # elif themeref not in ("command", "default",
                 #                       "description", "programname", "separator"):
                 #     sys.exit(themeref)
@@ -466,21 +466,21 @@ def __find_command(__commandline: Dict, arg: str) -> \
 COMMANDLINEDEFAULTS = {
     "Help": {
         "command": ["help"],
-        "values": [ANSIThemeString("COMMAND", "argument")],
-        "description": [ANSIThemeString("Display help about ", "description"),
-                        ANSIThemeString("COMMAND", "argument"),
-                        ANSIThemeString(" and exit", "description")],
+        "values": [ANSIThemeStr("COMMAND", "argument")],
+        "description": [ANSIThemeStr("Display help about ", "description"),
+                        ANSIThemeStr("COMMAND", "argument"),
+                        ANSIThemeStr(" and exit", "description")],
         "options": {
             "--format": {
-                "values": [ANSIThemeString("FORMAT", "argument")],
-                "description": [ANSIThemeString("Output the help as ", "description"),
-                                ANSIThemeString("FORMAT", "argument"),
-                                ANSIThemeString(" instead", "description")],
+                "values": [ANSIThemeStr("FORMAT", "argument")],
+                "description": [ANSIThemeStr("Output the help as ", "description"),
+                                ANSIThemeStr("FORMAT", "argument"),
+                                ANSIThemeStr(" instead", "description")],
                 "extended_description": [
-                    [ANSIThemeString("Valid formats are:", "description")],
-                    [ANSIThemeString("default", "argument"),
-                     ANSIThemeString(", ", "separator"),
-                     ANSIThemeString("markdown", "argument")],
+                    [ANSIThemeStr("Valid formats are:", "description")],
+                    [ANSIThemeStr("default", "argument"),
+                     ANSIThemeStr(", ", "separator"),
+                     ANSIThemeStr("markdown", "argument")],
                 ],
                 "requires_arg": True,
                 "validation": {
@@ -495,18 +495,18 @@ COMMANDLINEDEFAULTS = {
     },
     "Help2": {
         "command": ["help", "--help"],
-        "description": [ANSIThemeString("Display this help and exit", "description")],
+        "description": [ANSIThemeStr("Display this help and exit", "description")],
         "options": {
             "--format": {
-                "values": [ANSIThemeString("FORMAT", "argument")],
-                "description": [ANSIThemeString("Output the help as ", "description"),
-                                ANSIThemeString("FORMAT", "argument"),
-                                ANSIThemeString(" instead", "description")],
+                "values": [ANSIThemeStr("FORMAT", "argument")],
+                "description": [ANSIThemeStr("Output the help as ", "description"),
+                                ANSIThemeStr("FORMAT", "argument"),
+                                ANSIThemeStr(" instead", "description")],
                 "extended_description": [
-                    [ANSIThemeString("Valid formats are:", "description")],
-                    [ANSIThemeString("default", "argument"),
-                     ANSIThemeString(", ", "separator"),
-                     ANSIThemeString("markdown", "argument")],
+                    [ANSIThemeStr("Valid formats are:", "description")],
+                    [ANSIThemeStr("default", "argument"),
+                     ANSIThemeStr(", ", "separator"),
+                     ANSIThemeStr("markdown", "argument")],
                 ],
                 "requires_arg": True,
                 "validation": {
@@ -521,7 +521,7 @@ COMMANDLINEDEFAULTS = {
     },
     "Version": {
         "command": ["version", "--version"],
-        "description": [ANSIThemeString("Output version information and exit", "description")],
+        "description": [ANSIThemeStr("Output version information and exit", "description")],
         "min_args": 0,
         "max_args": 0,
         "callback": __version,
@@ -585,13 +585,13 @@ def parse_commandline(__programname: str, __programversion: str,
 
     while i < len(argv):
         if "\x00" in argv[i]:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": argument “", "default"),
-                            ANSIThemeString(argv[i].replace("\x00", "<NUL>"), "command"),
-                            ANSIThemeString("“ contains NUL-bytes (replaced here);\n", "default"),
-                            ANSIThemeString("this is either a programming error, a system error, "
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": argument “", "default"),
+                            ANSIThemeStr(argv[i].replace("\x00", "<NUL>"), "command"),
+                            ANSIThemeStr("“ contains NUL-bytes (replaced here);\n", "default"),
+                            ANSIThemeStr("this is either a programming error, a system error, "
                                             "file or memory corruption, ", "default"),
-                            ANSIThemeString("or a deliberate attempt to bypass "
+                            ANSIThemeStr("or a deliberate attempt to bypass "
                                             "security; aborting.", "default")], stderr=True)
             sys.exit(errno.EINVAL)
 
@@ -609,14 +609,14 @@ def parse_commandline(__programname: str, __programversion: str,
                         optional_args = __find_command(commandline, "*")
 
                 if command is None:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": unrecognised command “", "default"),
-                                    ANSIThemeString(f"{argv[i]}", "command"),
-                                    ANSIThemeString("“.", "default")], stderr=True)
-                    ansithemeprint([ANSIThemeString("Try “", "default"),
-                                    ANSIThemeString(f"{programname} ", "programname"),
-                                    ANSIThemeString("help", "command"),
-                                    ANSIThemeString("“ for more information.", "default")],
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": unrecognised command “", "default"),
+                                    ANSIThemeStr(f"{argv[i]}", "command"),
+                                    ANSIThemeStr("“.", "default")], stderr=True)
+                    ansithemeprint([ANSIThemeStr("Try “", "default"),
+                                    ANSIThemeStr(f"{programname} ", "programname"),
+                                    ANSIThemeStr("help", "command"),
+                                    ANSIThemeStr("“ for more information.", "default")],
                                    stderr=True)
                     sys.exit(errno.EINVAL)
 
@@ -633,15 +633,15 @@ def parse_commandline(__programname: str, __programversion: str,
 
             if len(args) > 0:
                 # I came here to have an argument, but this is an option!
-                ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                ANSIThemeString(": option “", "default"),
-                                ANSIThemeString(f"{argv[i]}", "option"),
-                                ANSIThemeString("“ found after arguments.", "default")],
+                ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                ANSIThemeStr(": option “", "default"),
+                                ANSIThemeStr(f"{argv[i]}", "option"),
+                                ANSIThemeStr("“ found after arguments.", "default")],
                                stderr=True)
-                ansithemeprint([ANSIThemeString("Try “", "default"),
-                                ANSIThemeString(f"{programname} ", "programname"),
-                                ANSIThemeString("help", "command"),
-                                ANSIThemeString("“ for more information.", "default")],
+                ansithemeprint([ANSIThemeStr("Try “", "default"),
+                                ANSIThemeStr(f"{programname} ", "programname"),
+                                ANSIThemeStr("help", "command"),
+                                ANSIThemeStr("“ for more information.", "default")],
                                stderr=True)
                 sys.exit(errno.EINVAL)
             else:
@@ -663,16 +663,16 @@ def parse_commandline(__programname: str, __programversion: str,
                             break
 
                 if match is None:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{commandname}", "command"),
-                                    ANSIThemeString("“ does not support option “", "default"),
-                                    ANSIThemeString(f"{argv[i]}", "option"),
-                                    ANSIThemeString("“.", "default")], stderr=True)
-                    ansithemeprint([ANSIThemeString("Try “", "default"),
-                                    ANSIThemeString(f"{programname} ", "programname"),
-                                    ANSIThemeString("help", "command"),
-                                    ANSIThemeString("“ for more information.", "default")],
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{commandname}", "command"),
+                                    ANSIThemeStr("“ does not support option “", "default"),
+                                    ANSIThemeStr(f"{argv[i]}", "option"),
+                                    ANSIThemeStr("“.", "default")], stderr=True)
+                    ansithemeprint([ANSIThemeStr("Try “", "default"),
+                                    ANSIThemeStr(f"{programname} ", "programname"),
+                                    ANSIThemeStr("help", "command"),
+                                    ANSIThemeStr("“ for more information.", "default")],
                                    stderr=True)
                     sys.exit(errno.EINVAL)
                 else:
@@ -687,15 +687,15 @@ def parse_commandline(__programname: str, __programversion: str,
                     if requires_arg:
                         i += 1
                         if i >= len(argv):
-                            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                            ANSIThemeString(": “", "default"),
-                                            ANSIThemeString(f"{option}", "option"),
-                                            ANSIThemeString("“ requires an argument.", "default")],
+                            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                            ANSIThemeStr(": “", "default"),
+                                            ANSIThemeStr(f"{option}", "option"),
+                                            ANSIThemeStr("“ requires an argument.", "default")],
                                            stderr=True)
-                            ansithemeprint([ANSIThemeString("Try “", "default"),
-                                            ANSIThemeString(f"{programname} ", "programname"),
-                                            ANSIThemeString("help", "command"),
-                                            ANSIThemeString("“ for more information.", "default")],
+                            ansithemeprint([ANSIThemeStr("Try “", "default"),
+                                            ANSIThemeStr(f"{programname} ", "programname"),
+                                            ANSIThemeStr("help", "command"),
+                                            ANSIThemeStr("“ for more information.", "default")],
                                            stderr=True)
                             sys.exit(errno.EINVAL)
                         arg = argv[i]
@@ -707,7 +707,7 @@ def parse_commandline(__programname: str, __programversion: str,
 
                         # validate_argument() will terminate by default if validation fails
                         _result = cmtvalidators.validate_argument(arg,
-                                                                  [ANSIThemeString(f"{option}",
+                                                                  [ANSIThemeStr(f"{option}",
                                                                                    "option")],
                                                                   validator_options)
                     options.append((option, arg))
@@ -720,57 +720,57 @@ def parse_commandline(__programname: str, __programversion: str,
             optional_args = __find_command(commandline, default_command)
 
     if not max_args and args:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{commandname}", "command"),
-                        ANSIThemeString("“ does not accept arguments.", "default")], stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{commandname}", "command"),
+                        ANSIThemeStr("“ does not accept arguments.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
     elif len(args) < min_args and min_args != max_args:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{commandname}", "command"),
-                        ANSIThemeString(f"“ requires at least {min_args} arguments.", "default")],
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{commandname}", "command"),
+                        ANSIThemeStr(f"“ requires at least {min_args} arguments.", "default")],
                        stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
     elif len(args) != min_args and min_args == max_args:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{commandname}", "command"),
-                        ANSIThemeString(f"“ requires exactly {min_args} arguments.", "default")],
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{commandname}", "command"),
+                        ANSIThemeStr(f"“ requires exactly {min_args} arguments.", "default")],
                        stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
     elif len(args) > max_args:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{commandname}", "command"),
-                        ANSIThemeString(f"“ requires at most {max_args} arguments.", "default")],
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{commandname}", "command"),
+                        ANSIThemeStr(f"“ requires at most {max_args} arguments.", "default")],
                        stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
     # The command was called without any command and no default was defined; this is an error
     if command is None:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": missing operand.", "default")], stderr=True)
-        ansithemeprint([ANSIThemeString("Try “", "default"),
-                        ANSIThemeString(f"{programname} ", "programname"),
-                        ANSIThemeString("help", "command"),
-                        ANSIThemeString("“ for more information.", "default")],
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": missing operand.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("Try “", "default"),
+                        ANSIThemeStr(f"{programname} ", "programname"),
+                        ANSIThemeStr("help", "command"),
+                        ANSIThemeStr("“ for more information.", "default")],
                        stderr=True)
         sys.exit(errno.EINVAL)
     else:

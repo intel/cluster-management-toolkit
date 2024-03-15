@@ -20,7 +20,7 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from curses_helper import ThemeAttr, ThemeString, WidgetLineAttrs
+from curses_helper import ThemeAttr, ThemeStr, WidgetLineAttrs
 
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, ProgrammingError
 
@@ -56,14 +56,14 @@ def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
             mask = tmp[2]
             allowed_ips.append({
                 "lineattrs": WidgetLineAttrs.NORMAL,
-                "columns": [[ThemeString(f"{ip}", ThemeAttr("windowwidget", "default")),
-                             ThemeString("/", ThemeAttr("windowwidget", "dim")),
-                             ThemeString(f"{mask}", ThemeAttr("windowwidget", "default"))]],
+                "columns": [[ThemeStr(f"{ip}", ThemeAttr("windowwidget", "default")),
+                             ThemeStr("/", ThemeAttr("windowwidget", "dim")),
+                             ThemeStr(f"{mask}", ThemeAttr("windowwidget", "default"))]],
             })
         else:
             allowed_ips.append({
                 "lineattrs": WidgetLineAttrs.NORMAL,
-                "columns": [[ThemeString(f"{addr}", ThemeAttr("windowwidget", "default"))]],
+                "columns": [[ThemeStr(f"{addr}", ThemeAttr("windowwidget", "default"))]],
             })
 
     return allowed_ips

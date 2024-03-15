@@ -2250,15 +2250,15 @@ class KubernetesHelper:
                       f"header_params: {header_params}"
         else:
             # debuglog.add([
-            #        [ANSIThemeString("__rest_helper_generic_json():", "emphasis")],
-            #        [ANSIThemeString(f"Unhandled error: {result.status}", "error")],
-            #        [ANSIThemeString("method: ", "emphasis"),
-            #         ANSIThemeString(f"{method}", "argument")],
-            #        [ANSIThemeString("URL: ", "emphasis"),
-            #         ANSIThemeString(f"{url}", "argument")],
-            #        [ANSIThemeString("header_params: ", "emphasis"),
-            #         ANSIThemeString(f"{header_params}", "argument")],
-            #       ], severity = LogLevel.ERR)
+            #        [ANSIThemeStr("__rest_helper_generic_json():", "emphasis")],
+            #        [ANSIThemeStr(f"Unhandled error: {result.status}", "error")],
+            #        [ANSIThemeStr("method: ", "emphasis"),
+            #         ANSIThemeStr(f"{method}", "argument")],
+            #        [ANSIThemeStr("URL: ", "emphasis"),
+            #         ANSIThemeStr(f"{url}", "argument")],
+            #        [ANSIThemeStr("header_params: ", "emphasis"),
+            #         ANSIThemeStr(f"{header_params}", "argument")],
+            #       ], severity=LogLevel.ERR)
             sys.exit(f"__rest_helper_generic_json():\nUnhandled error: {result.status}\n"
                      f"method: {method}\nURL: {url}\nheader_params: {header_params}")
 

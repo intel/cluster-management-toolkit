@@ -17,7 +17,7 @@ import re
 import sys
 from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
-from ansithemeprint import ANSIThemeString, ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint
 from cmttypes import deep_get, deep_get_with_fallback, DictPath
 from cmttypes import FilePath, SecurityPolicy, ProgrammingError, LogLevel
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
@@ -539,7 +539,7 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
              (")", "default")],
         ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -986,16 +986,16 @@ def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
     vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
     if status != 200:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": API-server returned ", "default"),
-                            ANSIThemeString(f"{status}", "errorvalue")], stderr=True)
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": API-server returned ", "default"),
+                            ANSIThemeStr(f"{status}", "errorvalue")], stderr=True)
         if exit_on_failure:  # pragma: no cover
             sys.exit(errno.EINVAL)
         return "<unknown>", status
     if vlist is None:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString("Error", "error"),
-                            ANSIThemeString(": API-server did not return any data", "default")],
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": API-server did not return any data", "default")],
                            stderr=True)
         if exit_on_failure:  # pragma: no cover
             sys.exit(errno.EINVAL)
@@ -1065,8 +1065,8 @@ def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
                     tmp_k8s_distro = "kubeadm"
             if tmp_k8s_distro is not None:
                 if k8s_distro is not None:
-                    ansithemeprint([ANSIThemeString("Critical", "critical"),
-                                    ANSIThemeString(": The control planes are reporting "
+                    ansithemeprint([ANSIThemeStr("Critical", "critical"),
+                                    ANSIThemeStr(": The control planes are reporting "
                                                     "conflicting Kubernetes distros; "
                                                     "aborting.", "default")], stderr=True)
                     sys.exit(errno.EINVAL)
@@ -1105,10 +1105,10 @@ def identify_distro(**kwargs: Any) -> str:
                                          security_policy=SecurityPolicy.ALLOWLIST_STRICT,
                                          executable=False)
     except FileNotFoundError:  # pragma: no cover
-        ansithemeprint([ANSIThemeString("Error:", "error"),
-                        ANSIThemeString(" Cannot find an “", "default"),
-                        ANSIThemeString("os-release", "path"),
-                        ANSIThemeString("“ file to determine OS distribution; aborting.",
+        ansithemeprint([ANSIThemeStr("Error:", "error"),
+                        ANSIThemeStr(" Cannot find an “", "default"),
+                        ANSIThemeStr("os-release", "path"),
+                        ANSIThemeStr("“ file to determine OS distribution; aborting.",
                                         "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
@@ -1138,10 +1138,10 @@ def identify_distro(**kwargs: Any) -> str:
 
     if distro is None or not distro:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString("Error:", "error"),
-                            ANSIThemeString(" Cannot read ID / ID_LIKE from “", "default"),
-                            ANSIThemeString("os-release", "path"),
-                            ANSIThemeString("“ file to determine OS distribution",
+            ansithemeprint([ANSIThemeStr("Error:", "error"),
+                            ANSIThemeStr(" Cannot read ID / ID_LIKE from “", "default"),
+                            ANSIThemeStr("os-release", "path"),
+                            ANSIThemeStr("“ file to determine OS distribution",
                                             "default")], stderr=True)
         if exit_on_failure:  # pragma: no cover
             sys.exit(errno.ENOENT)

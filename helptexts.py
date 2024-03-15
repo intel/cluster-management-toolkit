@@ -10,33 +10,33 @@ This module contains helptexts for cmu
 from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION
 from about import UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from curses_helper import ThemeAttr, ThemeString
+from curses_helper import ThemeAttr, ThemeStr
 
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines
 
 about = [
-    [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeString("v", ThemeAttr("main", "about_text")), ThemeString(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],  # noqa: E501 pylint: disable=line-too-long
-    [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Author(s):", ThemeAttr("main", "about_text_highlight"))],
-    [ThemeString(" David Weinehall", ThemeAttr("main", "about_text"))],
-    [ThemeString("", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Testing:", ThemeAttr("main", "about_text_highlight"))],
-    [ThemeString(" Valtteri Rantala", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Ukri Niemimuukko", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Eero Tamminen", ThemeAttr("main", "about_text"))],
-    [ThemeString(" Alexey Fomenko", ThemeAttr("main", "about_text"))],
-    [ThemeString("", ThemeAttr("main", "about_text"))],
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
+    [ThemeStr("    ◢███ ██████  ████ ◣  ◢█████  ████ █████████    ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("    ████         ████ █◣◢██████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("    ████         ████ ████◤████       ████         ", ThemeAttr("main", "logo_bright"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("    ████         ████ ◥██◤ ████       ████         ", ThemeAttr("main", "logo_medium"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("    ◥███ ██████  ████  ◥◤  ████       ████         ", ThemeAttr("main", "logo_dark"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
+    [ThemeStr(f" {PROGRAM_SUITE_FULL_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeStr("v", ThemeAttr("main", "about_text")), ThemeStr(f"{PROGRAM_SUITE_VERSION} ", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr(f" {UI_PROGRAM_NAME} ", ThemeAttr("main", "about_text_highlight")), ThemeStr("v", ThemeAttr("main", "about_text")), ThemeStr(f"{UI_PROGRAM_VERSION}", ThemeAttr("main", "about_version"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Copyright © 2019-2024 Intel Corporation", ThemeAttr("main", "about_text_highlight"))],  # noqa: E501 pylint: disable=line-too-long
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Author(s):", ThemeAttr("main", "about_text_highlight"))],
+    [ThemeStr(" David Weinehall", ThemeAttr("main", "about_text"))],
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Testing:", ThemeAttr("main", "about_text_highlight"))],
+    [ThemeStr(" Valtteri Rantala", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Ukri Niemimuukko", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Eero Tamminen", ThemeAttr("main", "about_text"))],
+    [ThemeStr(" Alexey Fomenko", ThemeAttr("main", "about_text"))],
+    [ThemeStr("", ThemeAttr("main", "about_text"))],
 ]
 
 toggleborders = [

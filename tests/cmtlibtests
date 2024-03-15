@@ -21,7 +21,7 @@ from unittest import mock
 import yaml
 
 from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint, ansithemestring_join_list
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint, ansithemestr_join_list
 import cmtlib
 import kubernetes_helper
 
@@ -1237,7 +1237,7 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
 	fun = cmtlib.get_package_versions
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Warning", "warning"), ANSIThemeString(": This unit-test is slow:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Warning", "warning"), ANSIThemeStr(": This unit-test is slow:\n", "default")])
 
 		# Indata format:
 		# (hostname, expected_result, expected_exception)
@@ -1257,15 +1257,15 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: [(str, str), ...]"
 					result = False
 					break
-				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 				maxlen = 0
 				for name, _version in tmp:
 					maxlen = max(len(name), maxlen)
 
 				for name, version in tmp:
-					ansithemeprint([ANSIThemeString(f"    {name}", "default"),
-							ANSIThemeString("".ljust(maxlen - len(name) + 2), "default"),
-							ANSIThemeString(f"{version}", "version")])
+					ansithemeprint([ANSIThemeStr(f"    {name}", "default"),
+							ANSIThemeStr("".ljust(maxlen - len(name) + 2), "default"),
+							ANSIThemeStr(f"{version}", "version")])
 			except Exception as e:
 				if expected_exception is not None:
 					if isinstance(e, expected_exception):
@@ -1405,7 +1405,7 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
 		fun = cmtlib.check_versions_yum
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple distros:\n", "default")])
 
 		# Indata format:
 		# (package, checker, checker_str, expected_exception)
@@ -1434,7 +1434,7 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
 						  f"       expected: {list}"
 					result = False
 					break
-				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
+				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 				maxlens = [0, 0, 0]
 				for package, installed_version, candidate_version, _natsorted_versions in tmp:
 					maxlens[0] = max(len(package), maxlens[0])
@@ -1442,13 +1442,13 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
 					maxlens[2] = max(len(candidate_version), maxlens[2])
 
 				for package, installed_version, candidate_version, natsorted_versions in tmp:
-					joined_versions = ansithemestring_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeString(", ", "separator"))
-					ansithemeprint([ANSIThemeString(f"    {package}", "default"),
-							ANSIThemeString("".ljust(maxlens[0] - len(package) + 2), "default"),
-							ANSIThemeString(f"    {installed_version}", "default"),
-							ANSIThemeString("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
-							ANSIThemeString(f"    {candidate_version}", "default"),
-							ANSIThemeString("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
+					joined_versions = ansithemestr_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeStr(", ", "separator"))
+					ansithemeprint([ANSIThemeStr(f"    {package}", "default"),
+							ANSIThemeStr("".ljust(maxlens[0] - len(package) + 2), "default"),
+							ANSIThemeStr(f"    {installed_version}", "default"),
+							ANSIThemeStr("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
+							ANSIThemeStr(f"    {candidate_version}", "default"),
+							ANSIThemeStr("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
 							+ joined_versions)
 			except FileNotFoundError as e:
 				if "secure_which() could not find an acceptable match for apt" in str(e) or \
@@ -1483,7 +1483,7 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
 	k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
 
 	if result:
-		ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
+		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
 		try:
 			tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False)
 			if tmp not in k8s_distros:
@@ -1493,9 +1493,9 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
 					  f"       expected: one of {', '.join(k8s_distros)}"
 				result = False
 			else:
-				ansithemeprint([ANSIThemeString("  Note", "note"), ANSIThemeString(": Manual sanity check necessary:\n", "default")])
-				ansithemeprint([ANSIThemeString("    Identified k8s distro: ", "default"),
-						ANSIThemeString(f"{tmp}", "programname")])
+				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+				ansithemeprint([ANSIThemeStr("    Identified k8s distro: ", "default"),
+						ANSIThemeStr(f"{tmp}", "programname")])
 		except Exception as e:
 			message = f"{fun.__name__}() did not yield expected result:\n" \
 				  f"      exception: {type(e)}\n"
@@ -1666,32 +1666,32 @@ def main() -> int:
 	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
 	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeString(f" {', '.join(test)}:", "default")])
+		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+				ANSIThemeStr(f" {', '.join(test)}:", "default")])
 		message, result = tests[test]["callable"](verbose = verbose)
 		if len(message) > 0:
-			ansithemeprint([ANSIThemeString("  FAIL", "error"),
-					ANSIThemeString(f": {message}", "default")])
+			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+					ANSIThemeStr(f": {message}", "default")])
 		else:
-			ansithemeprint([ANSIThemeString("  PASS", "success")])
+			ansithemeprint([ANSIThemeStr("  PASS", "success")])
 			success += 1
 		tests[test]["result"] = result
 		if not result:
 			fail += 1
 			failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
 	if fail:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
 	else:
-		ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
 	if fail:
-		ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
 		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeString("  • ", "separator"),
-					ANSIThemeString(testcase, "default")], stderr = True)
+			ansithemeprint([ANSIThemeStr("  • ", "separator"),
+					ANSIThemeStr(testcase, "default")], stderr = True)
 		sys.exit(fail)
 
 	return 0

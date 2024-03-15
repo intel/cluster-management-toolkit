@@ -69,7 +69,7 @@ class UnknownError(Exception):
     """
     Exception raised when an error occurs that we have no further information about
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeString], respectively.
+    but they are typically LogLevel and List[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 
@@ -282,7 +282,7 @@ class ProgrammingError(Exception):
     """
     Exception raised when a condition occured that is most likely caused by a programming error
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeString], respectively.
+    but they are typically LogLevel and List[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 
@@ -390,7 +390,7 @@ class FilePathAuditError(Exception):
     """
     Exception raised when a security check fails on a FilePath
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeString], respectively.
+    but they are typically LogLevel and List[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 

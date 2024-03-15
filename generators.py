@@ -15,9 +15,9 @@ from datetime import datetime
 from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Union
 import yaml
 
-from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeStr
 from curses_helper import color_status_group, themearray_len, themearray_to_string
-from curses_helper import ThemeAttr, ThemeRef, ThemeString, get_theme_ref
+from curses_helper import ThemeAttr, ThemeRef, ThemeStr, get_theme_ref
 import cmtlib
 from cmtlib import datetime_to_timestamp, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath
@@ -25,7 +25,7 @@ from cmttypes import StatusGroup, LogLevel, ProgrammingError
 import datagetters
 
 
-def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeString]]:
+def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeStr]]:
     """
     Given a string, substitute any special strings with their formatted version
 
@@ -33,22 +33,22 @@ def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, Them
             string (str): The string to format
             selected (bool): Is the string selected?
         Returns:
-            union[ThemeRef, ThemeString]: The ThemeString
+            union[ThemeRef, ThemeStr]: The ThemeStr
     """
-    formatted_string: Optional[Union[ThemeRef, ThemeString]] = None
+    formatted_string: Optional[Union[ThemeRef, ThemeStr]] = None
 
     if string in ("<none>", "<unknown>"):
         fmt = ThemeAttr("types", "none")
-        formatted_string = ThemeString(string, fmt, selected)
+        formatted_string = ThemeStr(string, fmt, selected)
     elif string in ("<undefined>", "<unspecified>"):
         fmt = ThemeAttr("types", "undefined")
-        formatted_string = ThemeString(string, fmt, selected)
+        formatted_string = ThemeStr(string, fmt, selected)
     elif string in ("<empty>", "<unset>"):
         fmt = ThemeAttr("types", "unset")
-        formatted_string = ThemeString(string, fmt, selected)
+        formatted_string = ThemeStr(string, fmt, selected)
     elif string == "<not ready>":
         fmt = color_status_group(StatusGroup.NOT_OK)
-        formatted_string = ThemeString(string, fmt, selected)
+        formatted_string = ThemeStr(string, fmt, selected)
 
     return formatted_string
 
@@ -60,8 +60,8 @@ def format_list(items: Any, fieldlen: int, pad: int, ralign: bool, selected: boo
                 ellipsise: int = -1, ellipsis: Optional[ThemeRef] = None,
                 field_prefixes: Optional[List[ThemeRef]] = None,
                 field_suffixes: Optional[List[ThemeRef]] = None,
-                mapping: Optional[Dict] = None) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                mapping: Optional[Dict] = None) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     totallen = 0
 
     if item_separator is None:
@@ -174,10 +174,10 @@ def map_value(value: Any,
               references: Any = None,
               selected: bool = False,
               default_field_color: ThemeAttr = ThemeAttr("types", "generic"),
-              mapping: Optional[Dict] = None) -> Tuple[Union[ThemeRef, ThemeString], str]:
+              mapping: Optional[Dict] = None) -> Tuple[Union[ThemeRef, ThemeStr], str]:
     # If we lack a mapping, use the default color for this field
     if mapping is None or len(mapping) == 0:
-        return ThemeString(value, default_field_color, selected), value
+        return ThemeStr(value, default_field_color, selected), value
 
     substitutions = deep_get(mapping, DictPath("substitutions"), {})
     ranges = deep_get(mapping, DictPath("ranges"), [])
@@ -194,7 +194,7 @@ def map_value(value: Any,
             value = substitutions[value]
 
         # If the substitution is a dict it is either a ThemeRef to a separator or a string,
-        # or a ThemeString
+        # or a ThemeStr
         if isinstance(value, dict):
             context: str = deep_get(value, DictPath("context"), "main")
             attr_ref: str = deep_get(value, DictPath("type"))
@@ -202,7 +202,7 @@ def map_value(value: Any,
             if string is None:
                 themeref = ThemeRef(context, attr_ref, selected)
                 return themeref, str(themeref)
-            themestring = ThemeString(string, ThemeAttr(context, attr_ref))
+            themestring = ThemeStr(string, ThemeAttr(context, attr_ref))
             return themestring, str(themestring)
         if isinstance(value, ThemeRef):
             return value, str(value)
@@ -257,20 +257,20 @@ def map_value(value: Any,
         fmt = ThemeAttr(context, attr_ref)
     else:
         fmt = ThemeAttr("types", "generic")
-    return ThemeString(string, fmt, selected), string
+    return ThemeStr(string, fmt, selected), string
 
 
-def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int,
+def align_and_pad(array: List[Union[ThemeRef, ThemeStr]], pad: int,
                   fieldlen: int, stringlen: int, ralign: bool,
-                  selected: bool) -> List[Union[ThemeRef, ThemeString]]:
-    tmp_array: List[Union[ThemeRef, ThemeString]] = []
+                  selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
+    tmp_array: List[Union[ThemeRef, ThemeStr]] = []
     if ralign:
-        tmp_array.append(ThemeString("".ljust(fieldlen - stringlen),
+        tmp_array.append(ThemeStr("".ljust(fieldlen - stringlen),
                                      ThemeAttr("types", "generic"), selected))
         tmp_array += array
     else:
         tmp_array += array
-        tmp_array.append(ThemeString("".ljust(fieldlen - stringlen),
+        tmp_array.append(ThemeStr("".ljust(fieldlen - stringlen),
                                      ThemeAttr("types", "generic"), selected))
     if pad > 0:
         tmp_array.append(ThemeRef("separators", "pad", selected))
@@ -280,9 +280,9 @@ def align_and_pad(array: List[Union[ThemeRef, ThemeString]], pad: int,
 def format_numerical_with_units(string: str, ftype: str,
                                 selected: bool, non_units: Optional[Set] = None,
                                 separator_lookup: Optional[Dict] = None) \
-        -> List[Union[ThemeRef, ThemeString]]:
+        -> List[Union[ThemeRef, ThemeStr]]:
     substring = ""
-    array: List[Union[ThemeRef, ThemeString]] = []
+    array: List[Union[ThemeRef, ThemeStr]] = []
     numeric = None
     # This is necessary to be able to use pop
     liststring = list(string)
@@ -307,9 +307,9 @@ def format_numerical_with_units(string: str, ftype: str,
             # Do we need to flush?
             if char not in non_units:
                 if selected is None:
-                    array.append(ThemeString(substring, ThemeAttr("types", ftype)))
+                    array.append(ThemeStr(substring, ThemeAttr("types", ftype)))
                 else:
-                    array.append(ThemeString(substring, ThemeAttr("types", ftype), selected))
+                    array.append(ThemeStr(substring, ThemeAttr("types", ftype), selected))
                 substring = ""
                 numeric = False
 
@@ -321,9 +321,9 @@ def format_numerical_with_units(string: str, ftype: str,
                            deep_get_with_fallback(separator_lookup,
                                                   [DictPath(substring), DictPath("default")]))
                 if selected is None:
-                    array.append(ThemeString(substring, fmt))
+                    array.append(ThemeStr(substring, fmt))
                 else:
-                    array.append(ThemeString(substring, fmt, selected))
+                    array.append(ThemeStr(substring, fmt, selected))
                 substring = ""
                 numeric = True
             substring += char
@@ -331,29 +331,29 @@ def format_numerical_with_units(string: str, ftype: str,
         if not liststring:
             if numeric:
                 if selected is None:
-                    array.append(ThemeString(substring, ThemeAttr("types", ftype)))
+                    array.append(ThemeStr(substring, ThemeAttr("types", ftype)))
                 else:
-                    array.append(ThemeString(substring, ThemeAttr("types", ftype), selected))
+                    array.append(ThemeStr(substring, ThemeAttr("types", ftype), selected))
             else:
                 fmt = cast(ThemeAttr, deep_get_with_fallback(separator_lookup,
                                                              [DictPath(substring),
                                                               DictPath("default")]))
                 if selected is None:
-                    array.append(ThemeString(substring, fmt))
+                    array.append(ThemeStr(substring, fmt))
                 else:
-                    array.append(ThemeString(substring, fmt, selected))
+                    array.append(ThemeStr(substring, fmt, selected))
 
     if not array:
         array = [
-            ThemeString("", ThemeAttr("types", "generic"), selected)
+            ThemeStr("", ThemeAttr("types", "generic"), selected)
         ]
 
     return array
 
 
 def generator_age_raw(value: Union[int, str],
-                      selected: bool) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                      selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     if value == -1:
         string = ""
@@ -367,7 +367,7 @@ def generator_age_raw(value: Union[int, str],
     elif string == "<clock skew detected>":
         fmt = ThemeAttr("main", "status_not_ok")
         array = [
-            ThemeString(string, fmt, selected)
+            ThemeStr(string, fmt, selected)
         ]
     else:
         array = format_numerical_with_units(string, "age", selected)
@@ -378,8 +378,8 @@ def generator_age_raw(value: Union[int, str],
 # pylint: disable=unused-argument
 def generator_age(obj: Dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
-                  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                  **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     value = getattr(obj, field)
 
@@ -390,7 +390,7 @@ def generator_age(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
-                      **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
+                      **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
     item_separator = deep_get(formatting, DictPath("item_separator"))
 
     items = getattr(obj, field, [])
@@ -415,7 +415,7 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
         string = str(separator)
         separator_lookup[string] = separator
 
-    array: List[Union[ThemeRef, ThemeString]] = []
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     subnet = False
 
@@ -426,9 +426,9 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
             if ch in separator_lookup:
                 if len(tmp) > 0:
                     if subnet:
-                        _vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
+                        _vlist.append(ThemeStr(tmp, ThemeAttr("types", "ipmask"), selected))
                     else:
-                        _vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+                        _vlist.append(ThemeStr(tmp, ThemeAttr("types", "address"), selected))
                 _vlist.append(separator_lookup[ch])
                 tmp = ""
 
@@ -439,9 +439,9 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
 
         if len(tmp) > 0:
             if subnet:
-                _vlist.append(ThemeString(tmp, ThemeAttr("types", "ipmask"), selected))
+                _vlist.append(ThemeStr(tmp, ThemeAttr("types", "ipmask"), selected))
             else:
-                _vlist.append(ThemeString(tmp, ThemeAttr("types", "address"), selected))
+                _vlist.append(ThemeStr(tmp, ThemeAttr("types", "address"), selected))
         if len(array) > 0:
             array.append(item_separator)
         array += _vlist
@@ -451,8 +451,8 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_basic(obj: Dict, field: str, fieldlen: int, pad: int,
                     ralign: bool, selected: bool,
-                    **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                    **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
     string = str(value)
     field_colors = deep_get(formatting, DictPath("field_colors"), [ThemeAttr("types", "generic")])
@@ -473,7 +473,7 @@ def generator_basic(obj: Dict, field: str, fieldlen: int, pad: int,
         fmt = ThemeAttr(context, attr_ref)
 
     array = [
-        ThemeString(string, fmt, selected)
+        ThemeStr(string, fmt, selected)
     ]
 
     return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
@@ -482,8 +482,8 @@ def generator_basic(obj: Dict, field: str, fieldlen: int, pad: int,
 # pylint: disable=unused-argument
 def generator_hex(obj: Dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
-                  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                  **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
     string = str(value)
 
@@ -495,7 +495,7 @@ def generator_hex(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_list(obj: Dict, field: str, fieldlen: int, pad: int,
                    ralign: bool, selected: bool,
-                   **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
+                   **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
     items = getattr(obj, field)
 
     item_separator = deep_get(formatting, DictPath("item_separator"))
@@ -534,7 +534,7 @@ def generator_list(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_list_with_status(obj: Dict, field: str, fieldlen: int, pad: int,
                                ralign: bool, selected: bool,
-                               **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
+                               **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
     items = getattr(obj, field)
     if isinstance(items, tuple):
         items = [items]
@@ -606,8 +606,8 @@ def generator_list_with_status(obj: Dict, field: str, fieldlen: int, pad: int,
 # pylint: disable=unused-argument
 def generator_mem(obj: Dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
-                  **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                  **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     free, total = getattr(obj, field)
 
     if free is None and total is None:
@@ -626,13 +626,13 @@ def generator_mem(obj: Dict, field: str, fieldlen: int, pad: int,
     unit = "GiB"
 
     array = [
-        ThemeString(used, fmt, selected),
+        ThemeStr(used, fmt, selected),
         ThemeRef("separators", "percentage", selected),
-        ThemeString(" ", fmt, selected),
+        ThemeStr(" ", fmt, selected),
         ThemeRef("separators", "fraction", selected),
-        ThemeString(" ", fmt, selected),
-        ThemeString(total, ThemeAttr("types", "numerical"), selected),
-        ThemeString(unit, ThemeAttr("types", "unit"), selected),
+        ThemeStr(" ", fmt, selected),
+        ThemeStr(total, ThemeAttr("types", "numerical"), selected),
+        ThemeStr(unit, ThemeAttr("types", "unit"), selected),
     ]
     stringlen = themearray_len(array)
 
@@ -642,8 +642,8 @@ def generator_mem(obj: Dict, field: str, fieldlen: int, pad: int,
 # pylint: disable=unused-argument
 def generator_mem_single(obj: Dict, field: str, fieldlen: int, pad: int,
                          ralign: bool, selected: bool,
-                         **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                         **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
     string = str(value)
 
@@ -655,8 +655,8 @@ def generator_mem_single(obj: Dict, field: str, fieldlen: int, pad: int,
 # pylint: disable=unused-argument
 def generator_numerical(obj: Dict, field: str, fieldlen: int, pad: int,
                         ralign: bool, selected: bool,
-                        **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                        **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     value = getattr(obj, field)
 
@@ -668,7 +668,7 @@ def generator_numerical(obj: Dict, field: str, fieldlen: int, pad: int,
     fmt = ThemeAttr("types", "numerical")
 
     array = [
-        ThemeString(string, fmt, selected)
+        ThemeStr(string, fmt, selected)
     ]
 
     return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
@@ -676,14 +676,14 @@ def generator_numerical(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_numerical_with_units(obj: Dict, field: str, fieldlen: int, pad: int,
                                    ralign: bool, selected: bool,
-                                   **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                                   **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     value = getattr(obj, field)
 
     if value in ("<none>", "<unset>", "<unknown>"):
         fmt = ThemeAttr("types", "none")
-        array = [ThemeString(value, fmt, selected)]
+        array = [ThemeStr(value, fmt, selected)]
         return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
 
     if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
@@ -698,15 +698,15 @@ def generator_numerical_with_units(obj: Dict, field: str, fieldlen: int, pad: in
 
 def generator_status(obj: Dict, field: str, fieldlen: int, pad: int,
                      ralign: bool, selected: bool,
-                     **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                     **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     status = getattr(obj, field)
     status_group = getattr(obj, "status_group")
     fmt = color_status_group(status_group)
 
     array = [
-        ThemeString(status, fmt, selected)
+        ThemeStr(status, fmt, selected)
     ]
     stringlen = len(status)
 
@@ -715,8 +715,8 @@ def generator_status(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
                         ralign: bool, selected: bool,
-                        **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                        **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
 
     value = getattr(obj, field)
 
@@ -729,11 +729,11 @@ def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
         string = datetime_to_timestamp(value)
         if value is None:
             array = [
-                ThemeString(string, ThemeAttr("types", "generic"), selected)
+                ThemeStr(string, ThemeAttr("types", "generic"), selected)
             ]
         elif value == datetime.fromtimestamp(0).astimezone():
             array = [
-                ThemeString(string, ThemeAttr("types", "generic"), selected)
+                ThemeStr(string, ThemeAttr("types", "generic"), selected)
             ]
         else:
             array = format_numerical_with_units(string, "timestamp", selected)
@@ -743,8 +743,8 @@ def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
                                  ralign: bool, selected: bool,
-                                 **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                                 **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     values = getattr(obj, field)
 
     if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
@@ -754,17 +754,17 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
     if len(values) == 2:
         if values[0] is None:
             array = [
-                ThemeString("<none>", ThemeAttr("types", "none"), selected)
+                ThemeStr("<none>", ThemeAttr("types", "none"), selected)
             ]
         else:
             timestamp_string = datetime_to_timestamp(values[0])
             array = format_numerical_with_units(timestamp_string, "timestamp", selected)
             array += [
-                ThemeString(" (", ThemeAttr("types", "generic"), selected)
+                ThemeStr(" (", ThemeAttr("types", "generic"), selected)
             ]
             array += generator_age_raw(values[1], selected)
             array += [
-                ThemeString(")", ThemeAttr("types", "generic"), selected)
+                ThemeStr(")", ThemeAttr("types", "generic"), selected)
             ]
     else:
         array = []
@@ -774,11 +774,11 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
             # it is a generic string
             if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
-                array += [ThemeString(values[i], fmt, selected)]
+                array += [ThemeStr(values[i], fmt, selected)]
             elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
                 if values[i] is None:
                     array += [
-                        ThemeString("<unset>", ThemeAttr("types", "none"), selected)
+                        ThemeStr("<unset>", ThemeAttr("types", "none"), selected)
                     ]
                     break
 
@@ -789,7 +789,7 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
                 array += generator_age_raw(values[i], selected)
             else:
                 array += [
-                    ThemeString(values[i], formatting["field_colors"][i], selected)
+                    ThemeStr(values[i], formatting["field_colors"][i], selected)
                 ]
 
     return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
@@ -797,8 +797,8 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
 
 def generator_value_mapper(obj: Dict, field: "str", fieldlen: int, pad: int,
                            ralign: bool, selected: bool,
-                           **formatting: Dict) -> List[Union[ThemeRef, ThemeString]]:
-    array: List[Union[ThemeRef, ThemeString]] = []
+                           **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+    array: List[Union[ThemeRef, ThemeStr]] = []
     value = getattr(obj, field)
 
     default_field_color = cast(ThemeAttr,
@@ -837,18 +837,18 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
 
     if len(values) == 2:
         if values[0] is None:
-            array: List[Union[ThemeRef, ThemeString]] = [
-                ThemeString("<none>", ThemeAttr("types", "none"))
+            array: List[Union[ThemeRef, ThemeStr]] = [
+                ThemeStr("<none>", ThemeAttr("types", "none"))
             ]
         else:
             timestamp_string = datetime_to_timestamp(values[0])
             array = format_numerical_with_units(timestamp_string, "timestamp", False)
             array += [
-                ThemeString(" (", ThemeAttr("types", "generic"))
+                ThemeStr(" (", ThemeAttr("types", "generic"))
             ]
             array += generator_age_raw(values[1], False)
             array += [
-                ThemeString(")", ThemeAttr("types", "generic"))
+                ThemeStr(")", ThemeAttr("types", "generic"))
             ]
     else:
         array = []
@@ -859,12 +859,12 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
             if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
                 array += [
-                    ThemeString(values[i], fmt)
+                    ThemeStr(values[i], fmt)
                 ]
             elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
                 if values[i] is None:
                     array += [
-                        ThemeString("<none>", ThemeAttr("types", "none"))
+                        ThemeStr("<none>", ThemeAttr("types", "none"))
                     ]
                 else:
                     # timestamp_string = datetime_to_timestamp(values[0])
@@ -873,7 +873,7 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
                 array += generator_age_raw(values[i], False)
             else:
                 array += [
-                    ThemeString(values[i], formatting["field_colors"][i])
+                    ThemeStr(values[i], formatting["field_colors"][i])
                 ]
 
     return themearray_to_string(array)
@@ -882,14 +882,14 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
 def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
-                   field_separators: List[Union[ThemeRef, ThemeString]],
+                   field_separators: List[Union[ThemeRef, ThemeStr]],
                    ellipsise: bool, ellipsis: ThemeRef,
                    field_prefixes: List[Union[Tuple[str, str],
-                                              ThemeString,
-                                              List[Union[Tuple[str, str], ThemeString]]]],
+                                              ThemeStr,
+                                              List[Union[Tuple[str, str], ThemeStr]]]],
                    field_suffixes: List[Union[Tuple[str, str],
-                                              ThemeString,
-                                              List[Union[Tuple[str, str], ThemeString]]]]) -> str:
+                                              ThemeStr,
+                                              List[Union[Tuple[str, str], ThemeStr]]]]) -> str:
     items = getattr(obj, field)
 
     strings: List[str] = []
@@ -926,20 +926,20 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
 
             if field_prefixes is not None and i < len(field_prefixes):
                 if isinstance(field_prefixes[i], tuple):
-                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]],
+                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
                                                         [field_prefixes[i]]))
                 else:
-                    for item_ in cast(List[Union[ThemeRef, ThemeString]], field_prefixes[i]):
-                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]],
+                    for item_ in cast(List[Union[ThemeRef, ThemeStr]], field_prefixes[i]):
+                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
                                                             [item_]))
             string += tmp
             if field_suffixes is not None and i < len(field_suffixes):
                 if isinstance(field_suffixes[i], tuple):
-                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]],
+                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
                                                         [field_suffixes[i]]))
                 else:
-                    for item_ in cast(List[Union[ThemeRef, ThemeString]], field_suffixes[i]):
-                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeString]],
+                    for item_ in cast(List[Union[ThemeRef, ThemeStr]], field_suffixes[i]):
+                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
                                                             [item_]))
             skip_separator = False
 
@@ -954,10 +954,10 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
 # For the list processor to work we need to know the length of all the separators
 # pylint: disable-next=too-many-arguments
 def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef,
-                               field_separators: List[Union[ThemeRef, ThemeString]],
+                               field_separators: List[Union[ThemeRef, ThemeStr]],
                                ellipsise: bool, ellipsis: ThemeRef,
-                               field_prefixes: List[ThemeString],
-                               field_suffixes: List[ThemeString]) -> str:
+                               field_prefixes: List[ThemeStr],
+                               field_suffixes: List[ThemeStr]) -> str:
     items = getattr(obj, field)
 
     strings = []
@@ -1040,10 +1040,10 @@ default_processor: Dict[Callable, Callable] = {
 # as the type of the default, so default == None is a programming error
 def get_formatting(field: Dict[str, Any],
                    formatting: str,
-                   default: Dict[str, Any]) -> Union[List[Union[ThemeAttr, ThemeString, ThemeRef]],
+                   default: Dict[str, Any]) -> Union[List[Union[ThemeAttr, ThemeStr, ThemeRef]],
                                                      int,
                                                      ThemeRef]:
-    result: List[Union[ThemeAttr, ThemeString, ThemeRef]] = []
+    result: List[Union[ThemeAttr, ThemeStr, ThemeRef]] = []
     items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
 
     if items is None:
@@ -1051,7 +1051,7 @@ def get_formatting(field: Dict[str, Any],
 
     if not isinstance(items, (dict, list)):
         raise TypeError("Formatting must be either "
-                        "list[union[dict, ThemeAttr, ThemeRef, ThemeString]] or list[list[dict]]; "
+                        "list[union[dict, ThemeAttr, ThemeRef, ThemeStr]] or list[list[dict]]; "
                         f"is type: {type(items)}")
 
     if default is None:
@@ -1074,9 +1074,9 @@ def get_formatting(field: Dict[str, Any],
         return ThemeRef(context, key)
 
     for item in items:
-        # field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeString]]
-        # or Union[ThemeRef, ThemeString]; in the latter case turn it into a list
-        if isinstance(item, (ThemeAttr, ThemeRef, ThemeString)):
+        # field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeStr]]
+        # or Union[ThemeRef, ThemeStr]; in the latter case turn it into a list
+        if isinstance(item, (ThemeAttr, ThemeRef, ThemeStr)):
             result.append(item)
         elif isinstance(item, dict):
             context = deep_get(item, DictPath("context"), default_context)
@@ -1170,7 +1170,7 @@ def get_formatter(field: Dict) -> Dict:
                  ("formatter", "argument")]
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -1359,7 +1359,7 @@ def fieldgenerator(view: str, selected_namespace: str = "",
                 [(f"field_names: {field_names}", "default")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,

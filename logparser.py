@@ -82,9 +82,9 @@ from cmtlib import none_timestamp, strip_ansicodes
 # from cmtlog import debuglog
 import formatters
 
-from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeString
+from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeStr
 
-from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeStr
 
 
 # pylint: disable-next=too-few-public-methods
@@ -181,7 +181,7 @@ def name_to_loglevel(severity: str) -> LogLevel:
          (" does not exist!", "error")]
     ]
 
-    unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+    unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
     raise ProgrammingError(unformatted_msg,
                            severity=LogLevel.ERR,
@@ -609,9 +609,9 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 
 # pylint: disable-next=too-many-arguments
 def iptables(message: str,
-             remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], **kwargs: Any) \
-        -> Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel], str,
-                 List[Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel]]]]:
+             remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]], **kwargs: Any) \
+        -> Tuple[List[Union[ThemeRef, ThemeStr]], Optional[LogLevel], str,
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], Optional[LogLevel]]]]:
     """
     Format output from iptables-save
 
@@ -636,8 +636,8 @@ def iptables(message: str,
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
 
-    new_message: List[Union[ThemeRef, ThemeString]] = []
-    new_remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], Optional[LogLevel]]] = []
+    new_message: List[Union[ThemeRef, ThemeStr]] = []
+    new_remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], Optional[LogLevel]]] = []
 
     old_messages: List[str] = []
     if fold_msg and "\\n" in message:
@@ -649,36 +649,36 @@ def iptables(message: str,
             old_messages.append(themearray_to_string(themearray))
 
     for i, items in enumerate(old_messages):
-        tmp_message: List[Union[ThemeRef, ThemeString]] = []
+        tmp_message: List[Union[ThemeRef, ThemeStr]] = []
         for j, item in enumerate(items.split(" ")):
             if not j:
                 if item.startswith(("/usr/sbin/iptables", "/sbin/iptables")):
-                    tmp_message.append(ThemeString(item,
+                    tmp_message.append(ThemeStr(item,
                                        ThemeAttr("types", "iptables_programname")))
                 elif item.startswith("*"):
-                    tmp_message.append(ThemeString(item,
+                    tmp_message.append(ThemeStr(item,
                                        ThemeAttr("types", "iptables_table")))
                 elif item.startswith(":"):
-                    tmp_message.append(ThemeString(item,
+                    tmp_message.append(ThemeStr(item,
                                        ThemeAttr("types", "iptables_chain")))
                 elif item.startswith("COMMIT"):
-                    tmp_message.append(ThemeString(item,
+                    tmp_message.append(ThemeStr(item,
                                        ThemeAttr("types", "iptables_command")))
                 elif item.startswith("#"):
-                    tmp_message.append(ThemeString(items[j:],
+                    tmp_message.append(ThemeStr(items[j:],
                                        ThemeAttr("types", "iptables_comment")))
                     break
             elif item.startswith("-"):
-                tmp_message.append(ThemeString(f" {item}",
+                tmp_message.append(ThemeStr(f" {item}",
                                    ThemeAttr("types", "iptables_option")))
             elif item.startswith("#"):
-                tmp_message.append(ThemeString(" ",
+                tmp_message.append(ThemeStr(" ",
                                    ThemeAttr("types", "iptables_comment")))
-                tmp_message.append(ThemeString(" ".join(item[j:]),
+                tmp_message.append(ThemeStr(" ".join(item[j:]),
                                    ThemeAttr("types", "iptables_comment")))
                 break
             else:
-                tmp_message.append(ThemeString(f" {item}",
+                tmp_message.append(ThemeStr(f" {item}",
                                    ThemeAttr("types", "iptables_argument")))
 
         if not i:
@@ -696,7 +696,7 @@ def iptables(message: str,
 
 
 def http(message: str,
-         **kwargs: Any) -> Tuple[Sequence[Union[ThemeRef, ThemeString]], LogLevel, str]:
+         **kwargs: Any) -> Tuple[Sequence[Union[ThemeRef, ThemeStr]], LogLevel, str]:
     """
     Format various http log style messages
 
@@ -779,18 +779,18 @@ def http(message: str,
             else:
                 severity = LogLevel.ERR
             separator6 = tmp[14]
-            new_message: Sequence[Union[ThemeRef, ThemeString]] = [
-                ThemeString(address1, ThemeAttr("logview", "hostname")),
-                ThemeString(separator1, ThemeAttr("logview", "severity_info")),
-                ThemeString(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
-                ThemeString(separator4, ThemeAttr("logview", "severity_info")),
-                ThemeString(verb, ThemeAttr("logview", "protocol")),
-                ThemeString(address3, ThemeAttr("logview", "url")),
-                ThemeString(protocol, ThemeAttr("logview", "protocol")),
-                ThemeString(separator5, ThemeAttr("logview", "severity_info")),
-                ThemeString(statuscode,
+            new_message: Sequence[Union[ThemeRef, ThemeStr]] = [
+                ThemeStr(address1, ThemeAttr("logview", "hostname")),
+                ThemeStr(separator1, ThemeAttr("logview", "severity_info")),
+                ThemeStr(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
+                ThemeStr(separator4, ThemeAttr("logview", "severity_info")),
+                ThemeStr(verb, ThemeAttr("logview", "protocol")),
+                ThemeStr(address3, ThemeAttr("logview", "url")),
+                ThemeStr(protocol, ThemeAttr("logview", "protocol")),
+                ThemeStr(separator5, ThemeAttr("logview", "severity_info")),
+                ThemeStr(statuscode,
                             ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
-                ThemeString(separator6, ThemeAttr("logview", "severity_info")),
+                ThemeStr(separator6, ThemeAttr("logview", "severity_info")),
             ]
 
             return new_message, severity, facility
@@ -859,24 +859,24 @@ def http(message: str,
 
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
             new_message = [
-                ThemeString(address1, ThemeAttr("logview", "hostname")),
-                ThemeString(separator1, ThemeAttr("logview", "severity_info")),
-                ThemeString(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
-                ThemeString(separator4, ThemeAttr("logview", "severity_info")),
-                ThemeString(verb, ThemeAttr("logview", "protocol")),
-                ThemeString(address3, ThemeAttr("logview", "url")),
-                ThemeString(protocol, ThemeAttr("logview", "protocol")),
-                ThemeString(separator5, ThemeAttr("logview", "severity_info")),
-                ThemeString(statuscode, ThemeAttr("logview", severity_name)),
-                ThemeString(separator6, ThemeAttr("logview", "severity_info")),
-                ThemeString(address4, ThemeAttr("logview", "url")),
-                ThemeString(separator7, ThemeAttr("logview", "severity_info")),
+                ThemeStr(address1, ThemeAttr("logview", "hostname")),
+                ThemeStr(separator1, ThemeAttr("logview", "severity_info")),
+                ThemeStr(f"{separator2}{ts}{separator3}", ThemeAttr("logview", "timestamp")),
+                ThemeStr(separator4, ThemeAttr("logview", "severity_info")),
+                ThemeStr(verb, ThemeAttr("logview", "protocol")),
+                ThemeStr(address3, ThemeAttr("logview", "url")),
+                ThemeStr(protocol, ThemeAttr("logview", "protocol")),
+                ThemeStr(separator5, ThemeAttr("logview", "severity_info")),
+                ThemeStr(statuscode, ThemeAttr("logview", severity_name)),
+                ThemeStr(separator6, ThemeAttr("logview", "severity_info")),
+                ThemeStr(address4, ThemeAttr("logview", "url")),
+                ThemeStr(separator7, ThemeAttr("logview", "severity_info")),
             ]
             if address5 is not None:
-                new_message.append(ThemeString(address5, ThemeAttr("logview", "url")))
-                new_message.append(ThemeString(separator8, ThemeAttr("logview", "severity_info")))
+                new_message.append(ThemeStr(address5, ThemeAttr("logview", "url")))
+                new_message.append(ThemeStr(separator8, ThemeAttr("logview", "severity_info")))
             if remainder is not None:
-                new_message.append(ThemeString(remainder, ThemeAttr("types", "generic")))
+                new_message.append(ThemeStr(remainder, ThemeAttr("types", "generic")))
 
             return new_message, severity, facility
 
@@ -911,19 +911,19 @@ def http(message: str,
         url = tmp[7]
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         new_message = [
-            ThemeString("| ", ThemeAttr("logview", "severity_info")),
-            ThemeString(statuscode, ThemeAttr("logview", severity_name)),
-            ThemeString(" | ", ThemeAttr("logview", "severity_info")),
-            ThemeString(duration, ThemeAttr("logview", "severity_info")),
-            ThemeString(unit, ThemeAttr("types", "unit")),
-            ThemeString(" | ", ThemeAttr("logview", "severity_info")),
-            ThemeString(hostname, ThemeAttr("logview", "hostname")),
+            ThemeStr("| ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(statuscode, ThemeAttr("logview", severity_name)),
+            ThemeStr(" | ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(duration, ThemeAttr("logview", "severity_info")),
+            ThemeStr(unit, ThemeAttr("types", "unit")),
+            ThemeStr(" | ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(hostname, ThemeAttr("logview", "hostname")),
             ThemeRef("separators", "port"),
-            ThemeString(port, ThemeAttr("types", "port")),
-            ThemeString(" | ", ThemeAttr("logview", "severity_info")),
-            ThemeString(verb, ThemeAttr("logview", "protocol")),
-            ThemeString(" ", ThemeAttr("logview", "severity_info")),
-            ThemeString(url, ThemeAttr("logview", "url")),
+            ThemeStr(port, ThemeAttr("types", "port")),
+            ThemeStr(" | ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(verb, ThemeAttr("logview", "protocol")),
+            ThemeStr(" ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(url, ThemeAttr("logview", "url")),
         ]
         return new_message, severity, facility
 
@@ -984,39 +984,39 @@ def http(message: str,
         str3 = tmp[16]
 
         new_message = [
-            ThemeString(f"[{ts}] ", ThemeAttr("logview", "timestamp")),
-            ThemeString("\"", ThemeAttr("logview", "severity_info")),
-            ThemeString(f"{verb} ", ThemeAttr("logview", "protocol")),
-            ThemeString(address1, ThemeAttr("logview", "url")),
-            ThemeString(f" {protocol}", ThemeAttr("logview", "protocol")),
-            ThemeString("\" ", ThemeAttr("logview", "severity_info")),
-            ThemeString(statuscode, ThemeAttr("logview", severity_name)),
-            ThemeString(f" {number0}", ThemeAttr("logview", "severity_info")),
-            ThemeString(f" {number1}", ThemeAttr("logview", "severity_info")),
-            ThemeString(f" {number2}", ThemeAttr("logview", "severity_info")),
-            ThemeString(f" {number3}", ThemeAttr("logview", "severity_info")),
-            ThemeString(f" {number4} \"", ThemeAttr("logview", "severity_info")),
-            ThemeString(f"{client}", ThemeAttr("logview", "url")),
-            ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
-            ThemeString(str0, ThemeAttr("logview", "url")),
-            ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
-            ThemeString(str1, ThemeAttr("logview", "url")),
-            ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
-            ThemeString(str2, ThemeAttr("logview", "url")),
-            ThemeString("\" \"", ThemeAttr("logview", "severity_info")),
-            ThemeString(str3, ThemeAttr("logview", "url")),
-            ThemeString("\"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f"[{ts}] ", ThemeAttr("logview", "timestamp")),
+            ThemeStr("\"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f"{verb} ", ThemeAttr("logview", "protocol")),
+            ThemeStr(address1, ThemeAttr("logview", "url")),
+            ThemeStr(f" {protocol}", ThemeAttr("logview", "protocol")),
+            ThemeStr("\" ", ThemeAttr("logview", "severity_info")),
+            ThemeStr(statuscode, ThemeAttr("logview", severity_name)),
+            ThemeStr(f" {number0}", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f" {number1}", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f" {number2}", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f" {number3}", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f" {number4} \"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(f"{client}", ThemeAttr("logview", "url")),
+            ThemeStr("\" \"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(str0, ThemeAttr("logview", "url")),
+            ThemeStr("\" \"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(str1, ThemeAttr("logview", "url")),
+            ThemeStr("\" \"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(str2, ThemeAttr("logview", "url")),
+            ThemeStr("\" \"", ThemeAttr("logview", "severity_info")),
+            ThemeStr(str3, ThemeAttr("logview", "url")),
+            ThemeStr("\"", ThemeAttr("logview", "severity_info")),
         ]
         return new_message, severity, facility
 
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-    return [ThemeString(f"{ipaddress}", ThemeAttr("logview", "hostname")),
-            ThemeString(f"{message}", ThemeAttr("logview", severity_name))], severity, facility
+    return [ThemeStr(f"{ipaddress}", ThemeAttr("logview", "hostname")),
+            ThemeStr(f"{message}", ThemeAttr("logview", severity_name))], severity, facility
 
 
 def split_glog(message: str, **kwargs: Any) \
     -> Tuple[str, Optional[LogLevel], str,
-             List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]], bool]:
+             List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]], bool]:
     """
     Extract messages in glog format
 
@@ -1033,7 +1033,7 @@ def split_glog(message: str, **kwargs: Any) \
 
     matched = False
     loggingerror = None
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     # Workaround a bug in use of glog; to make the logged message useful
     # we separate it from the warning about glog use; this way we can get the proper severity
@@ -1067,7 +1067,7 @@ def split_glog(message: str, **kwargs: Any) \
     if loggingerror is not None:
         severity = LogLevel.ERR
         remnants.insert(0,
-                        ([ThemeString(message,
+                        ([ThemeStr(message,
                                       ThemeAttr("logview",
                                                 f"severity_{loglevel_to_name(severity).lower()}"))],
                          severity))
@@ -1078,7 +1078,7 @@ def split_glog(message: str, **kwargs: Any) \
 
 def tab_separated(message: str, **kwargs: Any) \
     -> Tuple[str, Optional[LogLevel], str,
-             List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+             List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Extract messages of the format datetime\tSEVERITY\t[facility\t]message[\tjson]
 
@@ -1097,7 +1097,7 @@ def tab_separated(message: str, **kwargs: Any) \
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: Dict = deep_get(kwargs, DictPath("options"))
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     messages = deep_get(options, DictPath("messages"), ["msg", "message"])
     errors = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -1165,8 +1165,8 @@ def __split_severity_facility_style(message: str,
 
 
 def split_json_style(message: str, **kwargs: Any) \
-    -> Tuple[Union[str, Sequence[Union[ThemeRef, ThemeString]]], LogLevel, str,
-             List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+    -> Tuple[Union[str, Sequence[Union[ThemeRef, ThemeStr]]], LogLevel, str,
+             List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Split JSON style messages
 
@@ -1338,7 +1338,7 @@ def split_json_style(message: str, **kwargs: Any) \
 
             override_formatting: Union[ThemeAttr, Dict] = {}
             formatted_message = None
-            remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+            remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
             if logentry:
                 tagseverity = None
@@ -1416,8 +1416,8 @@ def split_json_style(message: str, **kwargs: Any) \
     return message, severity, facility, []
 
 
-def merge_message(message: Union[str, List[Union[ThemeRef, ThemeString]]], **kwargs: Any) \
-        -> Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+def merge_message(message: Union[str, List[Union[ThemeRef, ThemeStr]]], **kwargs: Any) \
+        -> Tuple[str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Given message + remnants, merge the message into the remnants and return an empty message
 
@@ -1431,7 +1431,7 @@ def merge_message(message: Union[str, List[Union[ThemeRef, ThemeString]]], **kwa
                 message (str): The newly emptied message
                 remnants (list[(themearray, LogLevel)]): Remnants with message preprended
     """
-    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = \
+    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]] = \
         deep_get(kwargs, DictPath("remnants"))
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
 
@@ -1445,9 +1445,9 @@ def merge_message(message: Union[str, List[Union[ThemeRef, ThemeString]]], **kwa
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         if remnants is not None:
             remnants.insert(0,
-                            ([ThemeString(message, ThemeAttr("logview", severity_name))], severity))
+                            ([ThemeStr(message, ThemeAttr("logview", severity_name))], severity))
         else:
-            remnants = [([ThemeString(message, ThemeAttr("logview", severity_name))], severity)]
+            remnants = [([ThemeStr(message, ThemeAttr("logview", severity_name))], severity)]
     message = ""
 
     return message, remnants
@@ -1455,7 +1455,7 @@ def merge_message(message: Union[str, List[Union[ThemeRef, ThemeString]]], **kwa
 
 # pylint: disable-next=too-many-arguments
 def split_json_style_raw(message: str, **kwargs: Any) \
-        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Split JSON style messages
 
@@ -1521,15 +1521,15 @@ def split_json_style_raw(message: str, **kwargs: Any) \
 
 
 def json_event(message: str,
-               **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeString]]],
+               **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]],
                                        LogLevel, str,
-                                       List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+                                       List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     tmp = message.split(" ", 2)
 
     if not message.startswith("EVENT ") or len(tmp) < 3:
@@ -1543,11 +1543,11 @@ def json_event(message: str,
         _message, _severity, _facility, remnants = \
             split_json_style_raw(message=msg, severity=severity, facility=facility,
                                  fold_msg=fold_msg, options=options, merge_msg=True)
-        new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", "severity_info"))]
+        new_message = [ThemeStr(f"{tmp[0]} {event}", ThemeAttr("logview", "severity_info"))]
         if event in ("UpdatePod", "UpdateNamespace"):
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-            new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", severity_name)),
-                           ThemeString(" [No changes]", ThemeAttr("logview", "unchanged"))]
+            new_message = [ThemeStr(f"{tmp[0]} {event}", ThemeAttr("logview", severity_name)),
+                           ThemeStr(" [No changes]", ThemeAttr("logview", "unchanged"))]
     elif event in ("UpdatePod", "UpdateNamespace"):
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         tmp2 = re.match(r"^({.*})\s*({.*})", tmp[2])
@@ -1556,21 +1556,21 @@ def json_event(message: str,
                 old = json.loads(tmp2[1])
             except DecodeException:
                 new_message = \
-                    [ThemeString(f"{tmp[1]} {event}", ThemeAttr("logview", severity_name)),
-                     ThemeString(" [error: could not parse json]",
+                    [ThemeStr(f"{tmp[1]} {event}", ThemeAttr("logview", severity_name)),
+                     ThemeStr(" [error: could not parse json]",
                                  ThemeAttr("logview", "severity_error"))]
-                remnants = [([ThemeString(tmp[2], ThemeAttr("logview", severity_name))], severity)]
+                remnants = [([ThemeStr(tmp[2], ThemeAttr("logview", severity_name))], severity)]
                 return new_message, severity, facility, remnants
 
             old_str = json_dumps(old)
             try:
                 new = json.loads(tmp2[2])
             except DecodeException:
-                new_message = [ThemeString(f"{tmp[0]} {event}",
+                new_message = [ThemeStr(f"{tmp[0]} {event}",
                                            ThemeAttr("logview", severity_name)),
-                               ThemeString(" [error: could not parse json]",
+                               ThemeStr(" [error: could not parse json]",
                                            ThemeAttr("logview", "severity_error"))]
-                remnants = [([ThemeString(tmp[2], ThemeAttr("logview", severity_name))], severity)]
+                remnants = [([ThemeStr(tmp[2], ThemeAttr("logview", severity_name))], severity)]
                 return new_message, severity, facility, remnants
             new_str = json_dumps(new)
 
@@ -1581,20 +1581,20 @@ def json_event(message: str,
                 if y < 4:
                     continue
                 if el.startswith("+"):
-                    remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffplus"))],
+                    remnants.append(([ThemeStr(el, ThemeAttr("logview", "severity_diffplus"))],
                                      LogLevel.DIFFPLUS))
                 elif el.startswith("-"):
-                    remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffminus"))],
+                    remnants.append(([ThemeStr(el, ThemeAttr("logview", "severity_diffminus"))],
                                      LogLevel.DIFFMINUS))
                 else:
-                    remnants.append(([ThemeString(el, ThemeAttr("logview", "severity_diffsame"))],
+                    remnants.append(([ThemeStr(el, ThemeAttr("logview", "severity_diffsame"))],
                                      LogLevel.DIFFSAME))
-            new_message = [ThemeString(f"{tmp[0]} {event}", ThemeAttr("logview", severity_name)),
-                           ThemeString(" [State modified]", ThemeAttr("logview", "modified"))]
+            new_message = [ThemeStr(f"{tmp[0]} {event}", ThemeAttr("logview", severity_name)),
+                           ThemeStr(" [State modified]", ThemeAttr("logview", "modified"))]
     else:
         # debuglog.add([
-        #         [ANSIThemeString("Unknown EVENT type: ", "default"),
-        #          ANSIThemeString(f"{event}", "argument")],
+        #         [ANSIThemeStr("Unknown EVENT type: ", "default"),
+        #          ANSIThemeStr(f"{event}", "argument")],
         #          ], severity = LogLevel.ERR, facility = "logparser.py:json_event()")
         return message, severity, facility, remnants
 
@@ -1670,7 +1670,7 @@ def custom_override_severity(message: Union[str, List],
                  ("“")]
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR, formatted_msg=formatted_msg)
@@ -1681,7 +1681,7 @@ def custom_override_severity(message: Union[str, List],
             override_message = []
             severity_name = f"severity_{loglevel_to_name(override_loglevel).lower()}"
             for substring in message:
-                override_message.append(ThemeString(substring.string,
+                override_message.append(ThemeStr(substring.string,
                                                     ThemeAttr("logview", severity_name)))
         break
 
@@ -1689,7 +1689,7 @@ def custom_override_severity(message: Union[str, List],
 
 
 def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
-        -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Given a log message, expand and format objectmeta event messages
 
@@ -1704,7 +1704,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
                 (str): The processed message
                 ([(ThemeArray, LogLevel)]): The formatted remnants
     """
-    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]],
+    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                   LogLevel]]] = deep_get(kwargs, DictPath("remnants"))
 
     raw_message = message
@@ -1748,23 +1748,23 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
             if message is None:
                 if ":" in tmp:
                     key, value = tmp.split(":", 1)
-                    message = [ThemeString("".ljust(indent * depth) + key,
+                    message = [ThemeStr("".ljust(indent * depth) + key,
                                            ThemeAttr("types", "yaml_key")),
                                ThemeRef("separators", "yaml_key_separator"),
-                               ThemeString(f"{value}", ThemeAttr("types", "yaml_value"))]
+                               ThemeStr(f"{value}", ThemeAttr("types", "yaml_value"))]
                 else:
-                    message = [ThemeString("".ljust(indent * depth) + tmp,
+                    message = [ThemeStr("".ljust(indent * depth) + tmp,
                                            ThemeAttr("types", "yaml_value"))]
             else:
                 if ":" in tmp:
                     key, value = tmp.split(":", 1)
-                    remnants.append(([ThemeString("".ljust(indent * depth) + key,
+                    remnants.append(([ThemeStr("".ljust(indent * depth) + key,
                                                   ThemeAttr("types", "yaml_key")),
                                       ThemeRef("separators", "yaml_key_separator"),
-                                      ThemeString(f"{value}",
+                                      ThemeStr(f"{value}",
                                                   ThemeAttr("types", "yaml_value"))], severity))
                 else:
-                    remnants.append(([ThemeString("".ljust(indent * depth) + tmp,
+                    remnants.append(([ThemeStr("".ljust(indent * depth) + tmp,
                                                   ThemeAttr("types", "yaml_value"))], severity))
             tmp = ""
             if raw_msg == "{":
@@ -1778,7 +1778,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
 
 
 def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
-        -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Given a log message, expand and format event messages
 
@@ -1794,7 +1794,7 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
                 (str): The processed message
                 ([(ThemeArray, LogLevel)]): The formatted remnants
     """
-    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeString]],
+    remnants: Optional[List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                   LogLevel]]] = deep_get(kwargs, DictPath("remnants"))
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
 
@@ -1848,47 +1848,47 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
             _severity = LogLevel.WARNING
         if _severity < severity:
             severity = _severity
-    remnants.append(([ThemeString(" ".ljust(indent) + raw_message[eventstart:refstart],
+    remnants.append(([ThemeStr(" ".ljust(indent) + raw_message[eventstart:refstart],
                                   ThemeAttr("types", "yaml_reference"))], severity))
     for _key_value in raw_message[refstart:refend].split(", "):
         key, value = _key_value.split(":", 1)
-        remnants.append(([ThemeString(" ".ljust(indent * 2) + key, ThemeAttr("types", "yaml_key")),
+        remnants.append(([ThemeStr(" ".ljust(indent * 2) + key, ThemeAttr("types", "yaml_key")),
                           ThemeRef("separators", "yaml_key_separator"),
-                          ThemeString(f" {value}", ThemeAttr("types", "yaml_value"))], severity))
-    remnants.append(([ThemeString(" ".ljust(indent * 1) + raw_message[refend:eventend],
+                          ThemeStr(f" {value}", ThemeAttr("types", "yaml_value"))], severity))
+    remnants.append(([ThemeStr(" ".ljust(indent * 1) + raw_message[refend:eventend],
                                   ThemeAttr("types", "yaml_reference"))], severity))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-    remnants.append(([ThemeString(raw_message[eventend:eventend + 3],
+    remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
                                   ThemeAttr("logview", severity_name)),
-                      ThemeString(raw_message[eventend + 3:len(raw_message)],
+                      ThemeStr(raw_message[eventend + 3:len(raw_message)],
                                   ThemeAttr("logview", severity_name))], severity))
 
     return severity, message, remnants
 
 
 def format_key_value(key: str, value: str,
-                     severity: LogLevel, **kwargs: Any) -> List[Union[ThemeRef, ThemeString]]:
+                     severity: LogLevel, **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]]:
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
 
     if key in error_keys:
-        tmp = [ThemeString(f"{key}", ThemeAttr("types", "key_error")),
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error")),
                ThemeRef("separators", "keyvalue_log"),
-               ThemeString(f"{value}", ThemeAttr("logview", severity_name))]
+               ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     elif force_severity:
-        tmp = [ThemeString(f"{key}", ThemeAttr("types", "key")),
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key")),
                ThemeRef("separators", "keyvalue_log"),
-               ThemeString(f"{value}", ThemeAttr("logview", severity_name))]
+               ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     else:
-        tmp = [ThemeString(f"{key}", ThemeAttr("types", "key")),
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key")),
                ThemeRef("separators", "keyvalue_log"),
-               ThemeString(f"{value}", ThemeAttr("types", "value"))]
+               ThemeStr(f"{value}", ThemeAttr("types", "value"))]
     return tmp
 
 
 def sysctl(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
-                                                 List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                                 List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                             LogLevel]]]:
     """
     Format output from sysctl
@@ -1903,19 +1903,19 @@ def sysctl(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
-    new_message: List[Union[ThemeRef, ThemeString]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
+    new_message: List[Union[ThemeRef, ThemeStr]] = []
 
     kv = message.split(" = ")
     if len(kv) == 2:
         key, value = kv
         keyparts = key.split(".")
         for i, part in enumerate(keyparts):
-            new_message.append(ThemeString(part, ThemeAttr("types", "key")))
+            new_message.append(ThemeStr(part, ThemeAttr("types", "key")))
             if i < len(keyparts) - 1:
                 new_message.append(ThemeRef("separators", "sysctl_key_components"))
         new_message.append(ThemeRef("separators", "sysctl_keyvalue"))
-        new_message.append(ThemeString(value, ThemeAttr("types", "value")))
+        new_message.append(ThemeStr(value, ThemeAttr("types", "value")))
     return facility, severity, new_message, remnants
 
 
@@ -1923,14 +1923,14 @@ def sysctl(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
 # Timestamps: t=|ts=|time= (all of these are ignored)
 # Facility: subsys|caller|logger|source
 def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
-                                                    List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                                    List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: Dict = deep_get(kwargs, DictPath("options"))
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     messages = deep_get(options, DictPath("messages"), ["msg"])
     errors = deep_get(options, DictPath("errors"), ["err", "error"])
@@ -2036,7 +2036,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
             tmp = re.match(r"^(\d+ errors? occurred:)(.*)", err)
             if tmp is not None:
                 severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-                remnants.append(([ThemeString(tmp[1], ThemeAttr("logview", severity_name))],
+                remnants.append(([ThemeStr(tmp[1], ThemeAttr("logview", severity_name))],
                                  severity))
                 s = tmp[2].replace("\\t", "").split("\\n")
                 for line in s:
@@ -2046,11 +2046,11 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                                 and substitute_bullets_ \
                                 and LogparserConfiguration.msg_realbullets:
                             remnants.append(([ThemeRef("separators", "logbullet"),
-                                              ThemeString(f"{line[2:]}",
+                                              ThemeStr(f"{line[2:]}",
                                                           ThemeAttr("logview", severity_name))],
                                              severity))
                         else:
-                            remnants.append(([ThemeString(f"{line}",
+                            remnants.append(([ThemeStr(f"{line}",
                                                           ThemeAttr("logview", severity_name))],
                                              severity))
         else:
@@ -2169,12 +2169,12 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
         if len(lines) > 1:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
             for line in lines[1:]:
-                _remnants.append(([ThemeString(f"{line}", ThemeAttr("logview", severity_name))],
+                _remnants.append(([ThemeStr(f"{line}", ThemeAttr("logview", severity_name))],
                                   severity))
             if isinstance(remnants, tuple):
                 severity_name = f"severity_{loglevel_to_name(remnants[1]).lower()}"
                 for remnant in remnants[0]:
-                    _remnants.append(([ThemeString(remnant, ThemeAttr("logview", severity_name))],
+                    _remnants.append(([ThemeStr(remnant, ThemeAttr("logview", severity_name))],
                                       remnants[1]))
                 remnants = _remnants
             elif isinstance(remnants, list):
@@ -2191,7 +2191,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
 def key_value_with_leading_message(message: str,
                                    **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                            List[Tuple[List[Union[ThemeRef,
-                                                                                 ThemeString]],
+                                                                                 ThemeStr]],
                                                                       LogLevel]]]:
 
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
@@ -2202,7 +2202,7 @@ def key_value_with_leading_message(message: str,
     # This warning seems incorrect
     # pylint: disable-next=global-variable-not-assigned
     global LogparserConfiguration
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     is_event = False
 
     if fold_msg:
@@ -2252,21 +2252,21 @@ def key_value_with_leading_message(message: str,
 # <key>:<whitespace>...<value>
 # pylint: disable-next=unused-argument
 def modinfo(message: str, **kwargs: Any) \
-        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     facility = ""
     severity = LogLevel.INFO
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"^([a-z][\S]*?):(\s+)(.+)", message)
     if tmp is not None:
         key = tmp[1]
         whitespace = tmp[2]
         value = tmp[3]
-        new_message: List[Union[ThemeRef, ThemeString]] = [
-            ThemeString(key, ThemeAttr("types", "key")),
+        new_message: List[Union[ThemeRef, ThemeStr]] = [
+            ThemeStr(key, ThemeAttr("types", "key")),
             ThemeRef("separators", "keyvalue"),
-            ThemeString(whitespace, ThemeAttr("types", "generic")),
-            ThemeString(value, ThemeAttr("types", "value")),
+            ThemeStr(whitespace, ThemeAttr("types", "generic")),
+            ThemeStr(value, ThemeAttr("types", "value")),
         ]
         return facility, severity, new_message, remnants
     return facility, severity, message, remnants
@@ -2274,7 +2274,7 @@ def modinfo(message: str, **kwargs: Any) \
 
 # pylint: disable-next=unused-argument
 def bracketed_timestamp_severity(message: str, **kwargs: Any) \
-        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     Split a message of the type [timestamp] [severity] message
 
@@ -2289,7 +2289,7 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
     """
     facility = ""
     severity = LogLevel.INFO
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     # Some messages have double timestamps...
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
@@ -2302,13 +2302,13 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
 
 
 def directory(message: str,
-              **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], LogLevel,
-                                      Union[str, List[Union[ThemeRef, ThemeString]]],
-                                      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+              **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], LogLevel,
+                                      Union[str, List[Union[ThemeRef, ThemeStr]]],
+                                      List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"^(total)\s+(\d+)$", message)
     if tmp is not None:
@@ -2360,62 +2360,62 @@ def directory(message: str,
     name = tmp[20]
     suffix = tmp[21]
 
-    _message: List[Union[ThemeRef, ThemeString]] = [
-        ThemeString(f"{etype}", ThemeAttr("types", "dir_type")),
-        ThemeString(f"{permissions}", ThemeAttr("types", "dir_permissions")),
-        ThemeString(f"{acl}", ThemeAttr("types", "dir_permissions")),
-        ThemeString(f"{space1}", ThemeAttr("types", "generic")),
-        ThemeString(f"{linkcount}", ThemeAttr("types", "dir_linkcount")),
-        ThemeString(f"{space2}", ThemeAttr("types", "generic")),
-        ThemeString(f"{owner}", ThemeAttr("types", "dir_owner")),
-        ThemeString(f"{space3}", ThemeAttr("types", "generic")),
-        ThemeString(f"{group}", ThemeAttr("types", "dir_group")),
-        ThemeString(f"{space4}", ThemeAttr("types", "generic")),
-        ThemeString(f"{size}", ThemeAttr("types", "dir_size")),
-        ThemeString(f"{space5}", ThemeAttr("types", "generic")),
-        ThemeString(f"{month}", ThemeAttr("types", "dir_date")),
-        ThemeString(f"{space6}", ThemeAttr("types", "generic")),
-        ThemeString(f"{day}", ThemeAttr("types", "dir_date")),
-        ThemeString(f"{space7}", ThemeAttr("types", "generic")),
-        ThemeString(f"{yearortime}", ThemeAttr("types", "dir_date")),
-        ThemeString(f"{space8}", ThemeAttr("types", "generic")),
+    _message: List[Union[ThemeRef, ThemeStr]] = [
+        ThemeStr(f"{etype}", ThemeAttr("types", "dir_type")),
+        ThemeStr(f"{permissions}", ThemeAttr("types", "dir_permissions")),
+        ThemeStr(f"{acl}", ThemeAttr("types", "dir_permissions")),
+        ThemeStr(f"{space1}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{linkcount}", ThemeAttr("types", "dir_linkcount")),
+        ThemeStr(f"{space2}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{owner}", ThemeAttr("types", "dir_owner")),
+        ThemeStr(f"{space3}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{group}", ThemeAttr("types", "dir_group")),
+        ThemeStr(f"{space4}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{size}", ThemeAttr("types", "dir_size")),
+        ThemeStr(f"{space5}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{month}", ThemeAttr("types", "dir_date")),
+        ThemeStr(f"{space6}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{day}", ThemeAttr("types", "dir_date")),
+        ThemeStr(f"{space7}", ThemeAttr("types", "generic")),
+        ThemeStr(f"{yearortime}", ThemeAttr("types", "dir_date")),
+        ThemeStr(f"{space8}", ThemeAttr("types", "generic")),
     ]
     # regular file
     if etype == "-":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_file"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_file"))
         ]
     # block device
     elif etype == "b":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_dev"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_dev"))
         ]
     # character device
     elif etype == "c":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_dev"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_dev"))
         ]
     # sticky bit has precedence over the regular directory type
     elif permissions.endswith("t"):
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_sticky"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_sticky"))
         ]
     # directory
     elif etype == "d":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_dir"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_dir"))
         ]
     # symbolic link
     elif etype == "l":
         tmp2 = re.match(r"^(.+?)( -> )(.+)", name)
         if tmp2 is None:
             _message += [
-                ThemeString(f"{name}", ThemeAttr("types", "dir_symlink_name"))
+                ThemeStr(f"{name}", ThemeAttr("types", "dir_symlink_name"))
             ]
         else:
             _message += [
-                ThemeString(f"{tmp2[1]}", ThemeAttr("types", "dir_symlink_name")),
-                ThemeString(f"{tmp2[2]}", ThemeAttr("types", "dir_symlink_link"))
+                ThemeStr(f"{tmp2[1]}", ThemeAttr("types", "dir_symlink_name")),
+                ThemeStr(f"{tmp2[2]}", ThemeAttr("types", "dir_symlink_link"))
             ]
             # There is no suffix for devices or regular files,
             # but we can distinguish the two based on the file size;
@@ -2424,40 +2424,40 @@ def directory(message: str,
             if not suffix:
                 if "," in size:
                     _message += [
-                        ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dev")),
+                        ThemeStr(f"{tmp2[3]}", ThemeAttr("types", "dir_dev")),
                     ]
                 else:
                     _message += [
-                        ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_file")),
+                        ThemeStr(f"{tmp2[3]}", ThemeAttr("types", "dir_file")),
                     ]
             elif suffix == "|":
                 _message += [
-                    ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_pipe")),
+                    ThemeStr(f"{tmp2[3]}", ThemeAttr("types", "dir_pipe")),
                 ]
             elif suffix == "=":
                 _message += [
-                    ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_socket")),
+                    ThemeStr(f"{tmp2[3]}", ThemeAttr("types", "dir_socket")),
                 ]
             elif suffix == "/":
                 _message += [
-                    ThemeString(f"{tmp2[3]}", ThemeAttr("types", "dir_dir")),
+                    ThemeStr(f"{tmp2[3]}", ThemeAttr("types", "dir_dir")),
                 ]
             else:
                 raise ValueError(f"Unhandled suffix {suffix} in line {message}")
     # pipe
     elif etype == "p":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_pipe"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_pipe"))
         ]
     # socket
     elif etype == "s":
         _message += [
-            ThemeString(f"{name}", ThemeAttr("types", "dir_socket"))
+            ThemeStr(f"{name}", ThemeAttr("types", "dir_socket"))
         ]
 
     if suffix:
         _message += [
-            ThemeString(f"{suffix}", ThemeAttr("types", "dir_suffix"))
+            ThemeStr(f"{suffix}", ThemeAttr("types", "dir_suffix"))
         ]
 
     return facility, severity, _message, remnants
@@ -2471,21 +2471,21 @@ def directory(message: str,
 #   remnants: []
 # pylint: disable-next=unused-argument
 def seconds_severity_facility(message: str, **kwargs: Any) \
-        -> Tuple[str, LogLevel, Union[str, List[Union[ThemeRef, ThemeString]]],
-                 List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+        -> Tuple[str, LogLevel, Union[str, List[Union[ThemeRef, ThemeStr]]],
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
 
     facility = ""
     severity = LogLevel.INFO
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
     if tmp is not None:
         severity = cast(LogLevel, str_to_severity(tmp[2], default=severity))
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         facility = cast(str, tmp[3])
-        new_message: List[Union[ThemeRef, ThemeString]] = \
-            [ThemeString(f"{tmp[1]} ", ThemeAttr("logview", "timestamp")),
-             ThemeString(f"{tmp[4]}", ThemeAttr("logview", severity_name))]
+        new_message: List[Union[ThemeRef, ThemeStr]] = \
+            [ThemeStr(f"{tmp[1]} ", ThemeAttr("logview", "timestamp")),
+             ThemeStr(f"{tmp[4]}", ThemeAttr("logview", severity_name))]
         return facility, severity, new_message, remnants
 
     return facility, severity, message, remnants
@@ -2512,7 +2512,7 @@ def substitute_bullets(message: str, prefix: str) -> str:
 def python_traceback_scanner(message: str, **kwargs: Any) \
         -> Tuple[Tuple[str, Optional[Callable], Dict],
                  Tuple[datetime, str, LogLevel,
-                       List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]]:
+                       List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]]:
     timestamp = none_timestamp()
     facility = ""
     severity = LogLevel.ERR
@@ -2520,18 +2520,18 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
     processor: Tuple[str, Optional[Callable], Dict] = ("block", python_traceback_scanner, {})
 
     # Default case
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = [
-        ThemeString(message, ThemeAttr("logview", "severity_info")),
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = [
+        ThemeStr(message, ThemeAttr("logview", "severity_info")),
     ]
 
     if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
         remnants = [
-            ThemeString(tmp[1], ThemeAttr("logview", "severity_info")),
-            ThemeString(tmp[2], ThemeAttr("types", "path")),
-            ThemeString(tmp[3], ThemeAttr("logview", "severity_info")),
-            ThemeString(tmp[4], ThemeAttr("types", "lineno")),
-            ThemeString(tmp[5], ThemeAttr("logview", "severity_info")),
-            ThemeString(tmp[6], ThemeAttr("types", "path")),
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("types", "path")),
+            ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
+            ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[6], ThemeAttr("types", "path")),
         ]
     else:
         if (tmp := re.match(r"(^\S+?Error:|"
@@ -2544,8 +2544,8 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
                             r"socket.gaierror:"
                             r")( .*)", message)) is not None:
             remnants = [
-                ThemeString(tmp[1], ThemeAttr("logview", "severity_error")),
-                ThemeString(tmp[2], ThemeAttr("logview", "severity_info")),
+                ThemeStr(tmp[1], ThemeAttr("logview", "severity_error")),
+                ThemeStr(tmp[2], ThemeAttr("logview", "severity_info")),
             ]
             if not tmp[2].startswith(" <") or tmp[2].endswith(">"):
                 processor = ("end_block", None, {})
@@ -2560,11 +2560,11 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
 # pylint: disable-next=unused-argument
 def python_traceback(message: str, **kwargs: Any) \
         -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
-                 List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if message == "Traceback (most recent call last):":
-        remnants = [ThemeString(message, ThemeAttr("logview", "severity_error"))]
+        remnants = [ThemeStr(message, ThemeAttr("logview", "severity_error"))]
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", python_traceback_scanner, {})
         return processor, remnants
@@ -2576,7 +2576,7 @@ def json_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
                                                     Optional[List[Tuple[List[Union[ThemeRef,
-                                                                                   ThemeString]],
+                                                                                   ThemeStr]],
                                                                         LogLevel]]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
@@ -2630,14 +2630,14 @@ def json_line_scanner(message: str,
 
 def json_line(message: str,
               **kwargs: Any) -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
-                                      List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+                                      List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: Dict = deep_get(kwargs, DictPath("options"))
 
     if options is None:
         options = {}
 
-    remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]] = []
+    remnants: Union[str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -2673,7 +2673,7 @@ def json_line(message: str,
             remnants, _ = formatters.format_yaml_line(message, override_formatting={})
         else:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-            remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+            remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", json_line_scanner, options)
         return processor, remnants
@@ -2684,7 +2684,7 @@ def json_line(message: str,
 def yaml_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
-                                                    List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                                    List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
@@ -2695,7 +2695,7 @@ def yaml_line_scanner(message: str,
     facility = ""
     severity = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
@@ -2732,7 +2732,7 @@ def yaml_line_scanner(message: str,
                 remnants, _ = formatters.format_yaml_line(message, override_formatting={})
             else:
                 severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-                remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+                remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
             processor = ("end_block", None, {})
         else:
             processor = ("end_block_not_processed", None, {})
@@ -2742,7 +2742,7 @@ def yaml_line_scanner(message: str,
 
 def yaml_line(message: str,
               **kwargs: Any) -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
-                                      Union[str, List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                      Union[str, List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                             LogLevel]]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
@@ -2750,7 +2750,7 @@ def yaml_line(message: str,
     if options is None:
         options = {}
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -2785,7 +2785,7 @@ def yaml_line(message: str,
             remnants, _ = formatters.format_yaml_line(message, override_formatting={})
         else:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-            remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+            remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", yaml_line_scanner, options)
         return processor, remnants
@@ -2796,7 +2796,7 @@ def yaml_line(message: str,
 def diff_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
-                                                    List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                                    List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
@@ -2804,7 +2804,7 @@ def diff_line_scanner(message: str,
     facility = ""
     severity = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
@@ -2842,7 +2842,7 @@ def diff_line_scanner(message: str,
                 remnants = formatters.format_diff_line(message, override_formatting={})
             else:
                 severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-                remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+                remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
             processor = ("end_block", None, {})
         else:
             processor = ("end_block_not_processed", None, {})
@@ -2852,7 +2852,7 @@ def diff_line_scanner(message: str,
 
 # pylint: disable-next=unused-argument
 def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
-                                                    List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                                    List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
@@ -2860,7 +2860,7 @@ def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable
     if options is None:
         options = {}
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     matched = False
 
     block_start = deep_get(options, DictPath("block_start"), [{
@@ -2896,7 +2896,7 @@ def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable
                                                    indent=deep_get(options, DictPath("indent"), ""))
         else:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-            remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+            remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", diff_line_scanner, options)
         return processor, remnants
@@ -2908,14 +2908,14 @@ def ansible_line_scanner(message: str,
                          **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                                  Tuple[datetime, str, LogLevel,
                                                        List[Tuple[List[Union[ThemeRef,
-                                                                             ThemeString]],
+                                                                             ThemeStr]],
                                                                   LogLevel]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
     timestamp = none_timestamp()
     facility = ""
     severity = LogLevel.INFO
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
     final_block = deep_get(options, DictPath("final_block"), False)
 
     message = strip_iso_timestamp(message)
@@ -2978,20 +2978,20 @@ def ansible_line_scanner(message: str,
 # pylint: disable-next=unused-argument
 def ansible_line(message: str,
                  **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
-                                         List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+                                         List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
     if options is None:
         options = {}
 
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if message.startswith("PLAY [") and message.endswith("***"):
         if severity is None:
             severity = LogLevel.INFO
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-        remnants = [ThemeString(message, ThemeAttr("logview", severity_name))]
+        remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
         options["eof"] = "end_block"
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", ansible_line_scanner, options)
@@ -3002,7 +3002,7 @@ def ansible_line(message: str,
 
 # pylint: disable-next=unused-argument
 def raw_formatter(message: str,
-                  **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeString]]],
+                  **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]],
                                           Optional[LogLevel], str]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
     facility: str = deep_get(kwargs, DictPath("facility"), "")
@@ -3028,13 +3028,13 @@ def raw_formatter(message: str,
             field_colors = deep_get(formatting, DictPath("field_colors"), [])
             for color_index, group in enumerate(tmp.groups()):
                 if not field_colors:
-                    tmp_msg.append(ThemeString(group, ThemeAttr("types", "generic")))
+                    tmp_msg.append(ThemeStr(group, ThemeAttr("types", "generic")))
                 elif color_index > len(field_colors):
-                    tmp_msg.append(ThemeString(group,
+                    tmp_msg.append(ThemeStr(group,
                                                ThemeAttr(field_colors[-1]["context"],
                                                          field_colors[-1]["type"])))
                 else:
-                    tmp_msg.append(ThemeString(group,
+                    tmp_msg.append(ThemeStr(group,
                                                ThemeAttr(field_colors[color_index]["context"],
                                                          field_colors[color_index]["type"])))
             message = tmp_msg
@@ -3045,7 +3045,7 @@ def raw_formatter(message: str,
 
 
 def custom_splitter(message: str, **kwargs: Any) -> \
-        Tuple[Union[str, List[Union[ThemeRef, ThemeString]]], Optional[LogLevel], str]:
+        Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], Optional[LogLevel], str]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
@@ -3117,16 +3117,16 @@ def custom_splitter(message: str, **kwargs: Any) -> \
 
 
 def custom_parser(message: str, filters: List[Union[str, Tuple]],
-                  **kwargs: Any) -> Tuple[str, LogLevel, Union[List[Union[ThemeRef, ThemeString]],
+                  **kwargs: Any) -> Tuple[str, LogLevel, Union[List[Union[ThemeRef, ThemeStr]],
                                           Tuple[str, Optional[Callable], Dict]],
-                                          List[Tuple[List[Union[ThemeRef, ThemeString]],
+                                          List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                      LogLevel]]]:
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
     facility = ""
     severity = None
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]] = []
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
     if options is None:
         options = {}
@@ -3236,7 +3236,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
                             _message, remnants = \
                                 merge_message(_message, remnants=remnants, severity=_severity)
                             severity_name = f"severity_{loglevel_to_name(_severity).lower()}"
-                            message = [ThemeString(parts[0], ThemeAttr("logview", severity_name))]
+                            message = [ThemeStr(parts[0], ThemeAttr("logview", severity_name))]
                 elif _filter[0] == "json_event":
                     _parser_options = _filter[1]
                     # We do not extract the facility/severity from folded messages,
@@ -3300,9 +3300,9 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
     if severity is None:
         severity = LogLevel.INFO
 
-    # As a step towards always using ThemeString, convert all regular strings
+    # As a step towards always using ThemeStr, convert all regular strings
     if isinstance(message, str):
-        rmessage = [ThemeString(message,
+        rmessage = [ThemeStr(message,
                                 ThemeAttr("logview",
                                           f"severity_{loglevel_to_name(severity).lower()}"))]
     else:
@@ -3523,8 +3523,8 @@ def get_parser_list() -> Set[Parser]:
 # We've already defined the parser, so no need to do it again
 def logparser_initialised(**kwargs: Any) \
         -> Tuple[datetime, str, LogLevel,
-                 Union[List[Union[ThemeRef, ThemeString]], Tuple[str, Optional[Callable], Dict]],
-                 List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]]]:
+                 Union[List[Union[ThemeRef, ThemeStr]], Tuple[str, Optional[Callable], Dict]],
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
     This is used when the parser is already initialised.
 
@@ -3561,14 +3561,14 @@ def logparser_initialised(**kwargs: Any) \
 
     max_untruncated_len = 16384
     if isinstance(rmessage, list) \
-            and themearray_len(cast(List[Union[ThemeRef, ThemeString]],
+            and themearray_len(cast(List[Union[ThemeRef, ThemeStr]],
                                     rmessage)) > max_untruncated_len - 1:
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-        remnants = [([ThemeString(message[0:max_untruncated_len - 1],
+        remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
                                   ThemeAttr("logview", severity_name))], severity)]
         severity = LogLevel.ERR
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-        rmessage = [ThemeString(f"Line too long ({len(message)} bytes); "
+        rmessage = [ThemeStr(f"Line too long ({len(message)} bytes); "
                                 f"truncated to {max_untruncated_len} bytes "
                                 "(Use line wrapping to see the entire message)",
                                 ThemeAttr("logview", severity_name))]
@@ -3579,8 +3579,8 @@ def logparser_initialised(**kwargs: Any) \
 # pylint: disable-next=too-many-arguments
 def logparser(pod_name: str, container_name: str, image_name: str, message: str, **kwargs: Any) \
         -> Tuple[datetime, str, LogLevel,
-                 Union[List[Union[ThemeRef, ThemeString]], Tuple[str, Optional[Callable], Dict]],
-                 List[Tuple[List[Union[ThemeRef, ThemeString]], LogLevel]],
+                 Union[List[Union[ThemeRef, ThemeStr]], Tuple[str, Optional[Callable], Dict]],
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]],
                  Tuple[Optional[str], str],
                  Parser]:
     """
@@ -3639,10 +3639,10 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                 facility, severity, rmessage, remnants = \
                     custom_parser(message, filters=parser.rules,
                                   fold_msg=fold_msg, options=options)
-        # As a step towards always using ThemeString, convert all regular strings
+        # As a step towards always using ThemeStr, convert all regular strings
         if rmessage is None:
             severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-            rmessage = [ThemeString(message, ThemeAttr("logview", severity_name))]
+            rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
         return (timestamp, facility, severity,
                 rmessage, remnants, ("<override>", str(override_parser)), parser)
 
@@ -3701,17 +3701,17 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
 
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     if rmessage is None:
-        rmessage = [ThemeString(message, ThemeAttr("logview", severity_name))]
+        rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
 
     max_untruncated_len = 16384
     if isinstance(rmessage, list) \
-            and themearray_len(cast(List[Union[ThemeRef, ThemeString]],
+            and themearray_len(cast(List[Union[ThemeRef, ThemeStr]],
                                     rmessage)) > max_untruncated_len - 1:
-        remnants = [([ThemeString(message[0:max_untruncated_len - 1],
+        remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
                                   ThemeAttr("logview", severity_name))], severity)]
         severity = LogLevel.ERR
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-        rmessage = [ThemeString(f"Line too long ({len(message)} bytes); "
+        rmessage = [ThemeStr(f"Line too long ({len(message)} bytes); "
                                 f"truncated to {max_untruncated_len} bytes "
                                 "(Use line wrapping to see the entire message)",
                                 ThemeAttr("logview", severity_name))]

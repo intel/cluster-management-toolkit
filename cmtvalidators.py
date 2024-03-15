@@ -23,8 +23,8 @@ except ModuleNotFoundError:
           "or `pip3 install validators`; disabling IP-address validation.\n", file=sys.stderr)
     validators = None  # pylint: disable=invalid-name
 
-from ansithemeprint import ANSIThemeString, ansithemeprint
-from ansithemeprint import ansithemestring_join_list, ansithemearray_to_str
+from ansithemeprint import ANSIThemeStr, ansithemeprint
+from ansithemeprint import ansithemestr_join_list, ansithemearray_to_str
 from cmttypes import deep_get, DictPath
 from cmttypes import HostNameStatus, ProgrammingError, LogLevel, ArgumentValidationError
 
@@ -104,7 +104,7 @@ def validate_name(rtype: str, name: str) -> bool:
              (f"{rtype}", "argument")],
         ]
 
-        unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
@@ -126,17 +126,17 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
     """
     if fqdn is None or len(fqdn) == 0:
         if message_on_error:
-            msg = [ANSIThemeString("Error", "error"),
-                   ANSIThemeString(": A FQDN or hostname cannot be empty.", "default")]
+            msg = [ANSIThemeStr("Error", "error"),
+                   ANSIThemeStr(": A FQDN or hostname cannot be empty.", "default")]
             ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_SUBDOMAIN_EMPTY
     if "\x00" in fqdn:
         stripped_fqdn = fqdn.replace("\x00", "<NUL>")
         if message_on_error:
-            msg = [ANSIThemeString("Critical", "critical"),
-                   ANSIThemeString(": the FQDN / hostname ", "default"),
-                   ANSIThemeString(stripped_fqdn, "hostname")]
-            msg += [ANSIThemeString(" contains NUL-bytes (replaced here).\n"
+            msg = [ANSIThemeStr("Critical", "critical"),
+                   ANSIThemeStr(": the FQDN / hostname ", "default"),
+                   ANSIThemeStr(stripped_fqdn, "hostname")]
+            msg += [ANSIThemeStr(" contains NUL-bytes (replaced here).\n"
                                     "This is either a programming error, a system error, "
                                     "file or memory corruption, or a deliberate attempt "
                                     "to bypass security; aborting.", "default")]
@@ -151,29 +151,29 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
         raise ArgumentValidationError(formatted_msg=emsg)
     if len(fqdn) > 253:
         if message_on_error:
-            msg = [ANSIThemeString("Critical", "critical"),
-                   ANSIThemeString(": the FQDN / hostname ", "default"),
-                   ANSIThemeString(fqdn, "hostname")]
-            msg = [ANSIThemeString(" is invalid; ", "default"),
-                   ANSIThemeString("a FQDN cannot be more than 253 characters long.", "default")]
+            msg = [ANSIThemeStr("Critical", "critical"),
+                   ANSIThemeStr(": the FQDN / hostname ", "default"),
+                   ANSIThemeStr(fqdn, "hostname")]
+            msg = [ANSIThemeStr(" is invalid; ", "default"),
+                   ANSIThemeStr("a FQDN cannot be more than 253 characters long.", "default")]
             ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_SUBDOMAIN_TOO_LONG
     if fqdn != fqdn.lower():
         if message_on_error:
-            msg = [ANSIThemeString("Error", "error"),
-                   ANSIThemeString(": The FQDN / hostname ", "default"),
-                   ANSIThemeString(fqdn, "hostname"),
-                   ANSIThemeString(" is invalid; ", "default"),
-                   ANSIThemeString("a FQDN / hostname must be lowercase.", "default")]
+            msg = [ANSIThemeStr("Error", "error"),
+                   ANSIThemeStr(": The FQDN / hostname ", "default"),
+                   ANSIThemeStr(fqdn, "hostname"),
+                   ANSIThemeStr(" is invalid; ", "default"),
+                   ANSIThemeStr("a FQDN / hostname must be lowercase.", "default")]
             ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE
     if fqdn.startswith(".") or fqdn.endswith(".") or ".." in fqdn:
         if message_on_error:
-            msg = [ANSIThemeString("Error", "error"),
-                   ANSIThemeString(": The FQDN / hostname ", "default"),
-                   ANSIThemeString(fqdn, "hostname"),
-                   ANSIThemeString(" is invalid; ", "default"),
-                   ANSIThemeString("a FQDN / hostname cannot begin or end with “.“, "
+            msg = [ANSIThemeStr("Error", "error"),
+                   ANSIThemeStr(": The FQDN / hostname ", "default"),
+                   ANSIThemeStr(fqdn, "hostname"),
+                   ANSIThemeStr(" is invalid; ", "default"),
+                   ANSIThemeStr("a FQDN / hostname cannot begin or end with “.“, "
                                    "and must not have consecutive “.“.", "default")]
             ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
@@ -184,11 +184,11 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
     for dnslabel in dnslabels:
         if dnslabel.startswith("xn--"):
             if message_on_error:
-                msg = [ANSIThemeString("Error", "error"),
-                       ANSIThemeString(": The DNS label ", "default"),
-                       ANSIThemeString(dnslabel, "hostname"),
-                       ANSIThemeString(" is invalid; ", "default"),
-                       ANSIThemeString("a DNS label cannot start "
+                msg = [ANSIThemeStr("Error", "error"),
+                       ANSIThemeStr(": The DNS label ", "default"),
+                       ANSIThemeStr(dnslabel, "hostname"),
+                       ANSIThemeStr(" is invalid; ", "default"),
+                       ANSIThemeStr("a DNS label cannot start "
                                        "with the ACE prefix “xn--“.", "default")]
                 ansithemeprint(msg, stderr=True)
             return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
@@ -200,21 +200,21 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
         except UnicodeError as e:
             if "label too long" in str(e):
                 if message_on_error:
-                    msg = [ANSIThemeString("Error", "error"),
-                           ANSIThemeString(": the DNS label ", "default"),
-                           ANSIThemeString(dnslabel, "hostname"),
-                           ANSIThemeString(" is invalid; ", "default")]
-                    msg += [ANSIThemeString("a DNS label cannot "
+                    msg = [ANSIThemeStr("Error", "error"),
+                           ANSIThemeStr(": the DNS label ", "default"),
+                           ANSIThemeStr(dnslabel, "hostname"),
+                           ANSIThemeStr(" is invalid; ", "default")]
+                    msg += [ANSIThemeStr("a DNS label cannot "
                                             "be more than 63 characters long.", "default")]
                     ansithemeprint(msg, stderr=True)
                 return HostNameStatus.DNS_LABEL_TOO_LONG
             if "label empty or too long" in str(e):
                 if message_on_error:
-                    msg = [ANSIThemeString("Error", "error"),
-                           ANSIThemeString(": the DNS label ", "default"),
-                           ANSIThemeString(dnslabel, "hostname"),
-                           ANSIThemeString(" is invalid; ", "default")]
-                    msg += [ANSIThemeString("a decoded Punycode (IDNA) DNS label cannot "
+                    msg = [ANSIThemeStr("Error", "error"),
+                           ANSIThemeStr(": the DNS label ", "default"),
+                           ANSIThemeStr(dnslabel, "hostname"),
+                           ANSIThemeStr(" is invalid; ", "default")]
+                    msg += [ANSIThemeStr("a decoded Punycode (IDNA) DNS label cannot "
                                             "be more than 63 characters long.", "default")]
                     ansithemeprint(msg, stderr=True)
                 return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
@@ -224,17 +224,17 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
 
         if tmp is None:
             if message_on_error:
-                msg = [ANSIThemeString("Error", "error"),
-                       ANSIThemeString(": the DNS label ", "default"),
-                       ANSIThemeString(dnslabel, "hostname")]
+                msg = [ANSIThemeStr("Error", "error"),
+                       ANSIThemeStr(": the DNS label ", "default"),
+                       ANSIThemeStr(dnslabel, "hostname")]
                 if idna_dnslabel != dnslabel:
-                    msg += [ANSIThemeString(" (Punycode: ", "default"),
-                            ANSIThemeString(idna_dnslabel, "hostname"),
-                            ANSIThemeString(")", "default")]
-                msg += [ANSIThemeString(" is invalid; a DNS label must "
+                    msg += [ANSIThemeStr(" (Punycode: ", "default"),
+                            ANSIThemeStr(idna_dnslabel, "hostname"),
+                            ANSIThemeStr(")", "default")]
+                msg += [ANSIThemeStr(" is invalid; a DNS label must "
                                         "be in the format ", "default"),
-                        ANSIThemeString("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
-                        ANSIThemeString(" after Punycode decoding.", "default")]
+                        ANSIThemeStr("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
+                        ANSIThemeStr(" after Punycode decoding.", "default")]
                 ansithemeprint(msg, stderr=True)
             return HostNameStatus.DNS_LABEL_INVALID_CHARACTERS
     if len(dnslabels) == 1:
@@ -245,11 +245,11 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
         # The dnslabel is OK if either of these apply:
         # * It only has one field (it doesn't have a tld)
         # * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
-        msg = [ANSIThemeString("Error", "error"),
-               ANSIThemeString(": The DNS label ", "default"),
-               ANSIThemeString(fqdn, "hostname"),
-               ANSIThemeString(" is invalid; ", "default"),
-               ANSIThemeString("the TLD must start with [a-z] and "
+        msg = [ANSIThemeStr("Error", "error"),
+               ANSIThemeStr(": The DNS label ", "default"),
+               ANSIThemeStr(fqdn, "hostname"),
+               ANSIThemeStr(" is invalid; ", "default"),
+               ANSIThemeStr("the TLD must start with [a-z] and "
                                "be at least 2 characters long.", "default")]
         return HostNameStatus.DNS_TLD_INVALID
 
@@ -292,10 +292,10 @@ def validator_bool(value: Any, error_on_failure: bool = True) -> Tuple[bool, boo
 
     if not result:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{value}", "option"),
-                            ANSIThemeString("“ is not a boolean.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{value}", "option"),
+                            ANSIThemeStr("“ is not a boolean.", "default")], stderr=True)
 
     return result, retval
 
@@ -321,10 +321,10 @@ def validator_int(minval: int, maxval: int, value: Any, **kwargs: Any) -> bool:
         value = int(value)
     except ValueError:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{value}", "option"),
-                            ANSIThemeString("“ is not an integer.", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{value}", "option"),
+                            ANSIThemeStr("“ is not an integer.", "default")], stderr=True)
         return False
 
     if minval is None:
@@ -344,14 +344,14 @@ def validator_int(minval: int, maxval: int, value: Any, **kwargs: Any) -> bool:
 
     if not minval <= int(value) <= maxval:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{value}", "option"),
-                            ANSIThemeString("“ is not in the range [", "default"),
-                            ANSIThemeString(minval_str, "emphasis"),
-                            ANSIThemeString(", ", "default"),
-                            ANSIThemeString(maxval_str, "emphasis"),
-                            ANSIThemeString("].", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{value}", "option"),
+                            ANSIThemeStr("“ is not in the range [", "default"),
+                            ANSIThemeStr(minval_str, "emphasis"),
+                            ANSIThemeStr(", ", "default"),
+                            ANSIThemeStr(maxval_str, "emphasis"),
+                            ANSIThemeStr("].", "default")], stderr=True)
         return False
     return True
 
@@ -387,10 +387,10 @@ def validator_cidr(value: str, **kwargs: Any) -> bool:
             pass
 
     if not valid and error_on_failure:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{value}", "option"),
-                        ANSIThemeString("“ is not a valid POD Network CIDR.", "default")],
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{value}", "option"),
+                        ANSIThemeStr("“ is not a valid POD Network CIDR.", "default")],
                        stderr=True)
     return valid
 
@@ -412,10 +412,10 @@ def validator_path(value: str, **kwargs: Any) -> bool:
     if not Path(value).is_file():
         valid = False
     if not valid and error_on_failure:
-        ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                        ANSIThemeString(": “", "default"),
-                        ANSIThemeString(f"{value}", "option"),
-                        ANSIThemeString("“ is not a valid path.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                        ANSIThemeStr(": “", "default"),
+                        ANSIThemeStr(f"{value}", "option"),
+                        ANSIThemeStr("“ is not a valid path.", "default")], stderr=True)
     return valid
 
 
@@ -460,37 +460,37 @@ def validator_taint(string: str, validator: str, **kwargs: Any) -> bool:
 
     if not valid_key:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{key}", "option"),
-                            ANSIThemeString("“ is not a valid taint-key.", "default")],
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{key}", "option"),
+                            ANSIThemeStr("“ is not a valid taint-key.", "default")],
                            stderr=True)
         valid = False
     if not valid_value:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{value}", "option"),
-                            ANSIThemeString("“ is not a valid taint-value.", "default")],
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{value}", "option"),
+                            ANSIThemeStr("“ is not a valid taint-value.", "default")],
                            stderr=True)
         valid = False
     if not valid_effect:
         if error_on_failure:
-            ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                            ANSIThemeString(": “", "default"),
-                            ANSIThemeString(f"{effect}", "option"),
-                            ANSIThemeString("“ is not a valid taint-effect.", "default")],
+            ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr(f"{effect}", "option"),
+                            ANSIThemeStr("“ is not a valid taint-effect.", "default")],
                            stderr=True)
-            ansithemeprint([ANSIThemeString("Valid options are: ", "description")],
+            ansithemeprint([ANSIThemeStr("Valid options are: ", "description")],
                            stderr=True)
-            ansithemeprint(ansithemestring_join_list(valid_effects, formatting="argument"),
+            ansithemeprint(ansithemestr_join_list(valid_effects, formatting="argument"),
                            stderr=True)
         valid = False
     return valid
 
 
 # pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
-def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict) -> bool:
+def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -> bool:
     """
     Validate an argument or argument list
 
@@ -545,29 +545,29 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                     if Path(subarg).is_file():
                         break
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid hostname or path.",
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "option"),
+                                    ANSIThemeStr("“ is not a valid hostname or path.",
                                                     "default")], stderr=True)
                 result = False
                 break
             if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid IP-address.",
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "option"),
+                                    ANSIThemeStr("“ is not a valid IP-address.",
                                                     "default")], stderr=True)
                 result = False
                 break
             if validator == "hostname_or_ip" and not valid_dns_label \
                     and not valid_ipv4_address and not valid_ipv6_address:
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is neither a valid hostname "
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "option"),
+                                    ANSIThemeStr("“ is neither a valid hostname "
                                                     "nor a valid IP-address.",
                                                     "default")], stderr=True)
                 result = False
@@ -588,26 +588,26 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
             result = subarg in allowlist
             if result is False:
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "argument"),
-                                    ANSIThemeString("“ is not a valid argument for ", "default")]
-                                   + arg_string + [ANSIThemeString(".", "default")],
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "argument"),
+                                    ANSIThemeStr("“ is not a valid argument for ", "default")]
+                                   + arg_string + [ANSIThemeStr(".", "default")],
                                    stderr=True)
-                    ansithemeprint([ANSIThemeString("Valid options are: ",
+                    ansithemeprint([ANSIThemeStr("Valid options are: ",
                                                     "description")], stderr=True)
-                    ansithemeprint(ansithemestring_join_list(allowlist, formatting="argument"),
+                    ansithemeprint(ansithemestr_join_list(allowlist, formatting="argument"),
                                    stderr=True)
                 break
         elif validator == "regex":
             tmp = re.match(validator_regex, subarg)
             if tmp is None:
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "argument"),
-                                    ANSIThemeString("“ is not a valid argument for ", "default")]
-                                   + arg_string + [ANSIThemeString(".", "default")], stderr=True)
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "argument"),
+                                    ANSIThemeStr("“ is not a valid argument for ", "default")]
+                                   + arg_string + [ANSIThemeStr(".", "default")], stderr=True)
                 result = False
                 break
         elif validator == "url":
@@ -618,10 +618,10 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
             # Workaround; it seems validators.url accepts usernames that start with "-"
             if subarg.startswith("-") or validators is not None and not validators.url(tmp_arg):
                 if error_on_failure:
-                    ansithemeprint([ANSIThemeString(f"{programname}", "programname"),
-                                    ANSIThemeString(": “", "default"),
-                                    ANSIThemeString(f"{subarg}", "option"),
-                                    ANSIThemeString("“ is not a valid URL.", "default")],
+                    ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
+                                    ANSIThemeStr(": “", "default"),
+                                    ANSIThemeStr(f"{subarg}", "option"),
+                                    ANSIThemeStr("“ is not a valid URL.", "default")],
                                    stderr=True)
                 result = False
                 break
@@ -629,9 +629,9 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
             # We cannot use format_error_msg() here since we'd lose the formatting for arg_string
             unformatted_msg = f"{programname}: no validator defined for argument " + \
                               ansithemearray_to_str(arg_string) + "."
-            formatted_msg = [[ANSIThemeString(f"{programname}", "emphasis"),
-                              ANSIThemeString(": no validator defined for argument ", "default")]
-                             + arg_string + [ANSIThemeString(".", "default")]]
+            formatted_msg = [[ANSIThemeStr(f"{programname}", "emphasis"),
+                              ANSIThemeStr(": no validator defined for argument ", "default")]
+                             + arg_string + [ANSIThemeStr(".", "default")]]
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,
@@ -645,7 +645,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeString], options: Dict
                  (f"{validator}", "argument")],
             ]
 
-            unformatted_msg, formatted_msg = ANSIThemeString.format_error_msg(msg)
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
 
             raise ProgrammingError(unformatted_msg,
                                    severity=LogLevel.ERR,

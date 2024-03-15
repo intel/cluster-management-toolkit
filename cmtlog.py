@@ -26,7 +26,7 @@ from cmtpaths import CMT_LOGS_DIR, AUDIT_LOG_BASENAME, DEBUG_LOG_BASENAME
 from cmttypes import FilePath, LogLevel, ProgrammingError
 from cmtio_yaml import secure_write_yaml
 
-from ansithemeprint import ANSIThemeString
+from ansithemeprint import ANSIThemeStr
 
 auditlog = None  # pylint: disable=invalid-name
 debuglog = None  # pylint: disable=invalid-name
@@ -84,7 +84,7 @@ class CMTLog:
         return True
 
     # pylint: disable-next=too-many-arguments
-    def __format_entry(self, message: Union[List[List[ANSIThemeString]], List[str]],
+    def __format_entry(self, message: Union[List[List[ANSIThemeStr]], List[str]],
                        severity: LogLevel = LogLevel.INFO,
                        timestamp: Optional[datetime] = None,
                        facility: str = "", file: str = "",
@@ -113,7 +113,7 @@ class CMTLog:
             for line in message:
                 logline = []
                 for linesegment in line:
-                    linesegment = cast(ANSIThemeString, linesegment)
+                    linesegment = cast(ANSIThemeStr, linesegment)
                     logline.append({
                         "string": str(linesegment),
                         "themeref": linesegment.themeref,
@@ -152,7 +152,7 @@ class CMTLog:
 
     # pylint: disable-next=too-many-arguments
     def __init__(self, path: Union[CMTLogType, FilePath],
-                 message: Union[List[List[ANSIThemeString]], List[str]] = None,
+                 message: Union[List[List[ANSIThemeStr]], List[str]] = None,
                  severity: LogLevel = LogLevel.INFO,
                  timestamp: Optional[datetime] = None, facility: str = ""):
         # Figure out what the caller was
@@ -203,14 +203,14 @@ class CMTLog:
             self.flush()
         self.close()
 
-    def add(self, message: Union[List[List[ANSIThemeString]], List[str]],
+    def add(self, message: Union[List[List[ANSIThemeStr]], List[str]],
             severity: LogLevel = LogLevel.INFO,
             timestamp: Optional[datetime] = None, facility: str = "") -> None:
         """
         Add a new log message to a log
 
             Parameters:
-                message ([str] or [[AnsiThemeString]]): Either a list of unformatted strings
+                message ([str] or [[AnsiThemeStr]]): Either a list of unformatted strings
                                                         or a list of formatted strings
         """
         # Figure out what the caller was

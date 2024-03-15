@@ -23,7 +23,7 @@ import yaml
 
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_args
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
-from ansithemeprint import ANSIThemeString, ansithemeprint, init_ansithemeprint
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
@@ -222,7 +222,7 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
     indata = {
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -367,7 +367,7 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
         "subexception": ValueError,
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -439,7 +439,7 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
         "path": FilePath("/etc/passwd"),
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeString("Error", "error"), ANSIThemeString(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -793,32 +793,32 @@ def main() -> int:
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
     for i, test in enumerate(tests):
-        ansithemeprint([ANSIThemeString(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-                        ANSIThemeString(f" {', '.join(test)}:", "default")])
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
         message, result = tests[test]["callable"](verbose=verbose)
         if message:
-            ansithemeprint([ANSIThemeString("  FAIL", "error"),
-                            ANSIThemeString(f": {message}", "default")])
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
         else:
-            ansithemeprint([ANSIThemeString("  PASS", "success")])
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
             success += 1
         tests[test]["result"] = result
         if not result:
             fail += 1
             failed_testcases.append(f"{i}: {', '.join(test)}")
 
-    ansithemeprint([ANSIThemeString("\nSummary:", "header")])
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
     if fail:
-        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "error")])
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
     else:
-        ansithemeprint([ANSIThemeString(f"  FAIL: {fail}", "unknown")])
-    ansithemeprint([ANSIThemeString(f"  PASS: {success}", "success")])
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
     if fail:
-        ansithemeprint([ANSIThemeString("\nFailed testcases:", "header")])
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
-            ansithemeprint([ANSIThemeString("  • ", "separator"),
-                            ANSIThemeString(testcase, "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
         sys.exit(fail)
 
     return 0

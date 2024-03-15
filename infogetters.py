@@ -252,9 +252,9 @@ def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]
             else:
                 pass
                 # debuglog.add([
-                #         [ANSIThemeString("We need to handle multiple hostnames "
-                #                          "in a better way", "default")],
-                #        ], severity = LogLevel.ERR)
+                #         [ANSIThemeStr("We need to handle multiple hostnames "
+                #                       "in a better way", "default")],
+                #        ], severity=LogLevel.ERR)
         else:
             continue
 
