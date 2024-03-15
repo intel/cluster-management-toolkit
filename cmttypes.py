@@ -13,12 +13,27 @@ from datetime import datetime
 from enum import auto, Enum, IntEnum
 from functools import reduce
 import os
+from pathlib import Path, PurePath
 import sys
 import traceback
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-FilePath = NewType("FilePath", str)
 DictPath = NewType("DictPath", str)
+
+
+class FilePath(str):
+    """
+    A wrapper used for paths, to ensure correct types
+    """
+
+    def __init__(self, path: Union["FilePath", str, Path, PurePath]) -> None:
+        self.path = str(path)
+
+    def joinpath(self, *paths: Any) -> "FilePath":
+        if isinstance(paths, (str, FilePath, PurePath)):
+            return FilePath(str(PurePath(self.path).joinpath(paths)))
+        if isinstance(paths, (list, tuple)):
+            return FilePath(str(PurePath(self.path).joinpath(*paths)))
 
 
 def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:

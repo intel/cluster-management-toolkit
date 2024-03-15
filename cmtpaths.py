@@ -9,83 +9,82 @@ This file contains paths used by CMT
 """
 
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import List
 
 from cmttypes import FilePath
 
-HOMEDIR = FilePath(str(Path.home()))
+HOMEDIR = FilePath(Path.home())
 
 BIN_DIRNAME = "bin"
-BINDIR = FilePath(str(PurePath(HOMEDIR).joinpath(BIN_DIRNAME)))
+BINDIR = HOMEDIR.joinpath(BIN_DIRNAME)
 
 CMT_DIRNAME = ".cmt"
-CMTDIR = FilePath(str(PurePath(HOMEDIR).joinpath(CMT_DIRNAME)))
+CMTDIR = HOMEDIR.joinpath(CMT_DIRNAME)
 
 LOGS_DIRNAME = "logs"
-CMT_LOGS_DIR = FilePath(str(PurePath(CMTDIR).joinpath(LOGS_DIRNAME)))
+CMT_LOGS_DIR = CMTDIR.joinpath(LOGS_DIRNAME)
 VERSION_CACHE_DIRNAME = "version-cache"
-VERSION_CACHE_DIR = FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME)))
-VERSION_CACHE_LAST_UPDATED_PATH = \
-    FilePath(str(PurePath(CMTDIR).joinpath(VERSION_CACHE_DIRNAME, "last-updated")))
+VERSION_CACHE_DIR = CMTDIR.joinpath(VERSION_CACHE_DIRNAME)
+VERSION_CACHE_LAST_UPDATED_PATH = CMTDIR.joinpath(VERSION_CACHE_DIRNAME, "last-updated")
 SOFTWARE_SOURCES_DIRNAME = "sources"
-SOFTWARE_SOURCES_DIR = FilePath(str(PurePath(CMTDIR).joinpath(SOFTWARE_SOURCES_DIRNAME)))
+SOFTWARE_SOURCES_DIR = CMTDIR.joinpath(SOFTWARE_SOURCES_DIRNAME)
 AUDIT_LOG_BASENAME = "audit_log_"
 DEBUG_LOG_BASENAME = "debug_log_"
 
 CMT_CONFIG_FILENAME = "cmt.yaml"
-CMT_CONFIG_FILE = FilePath(str(PurePath(CMTDIR).joinpath(CMT_CONFIG_FILENAME)))
+CMT_CONFIG_FILE = CMTDIR.joinpath(CMT_CONFIG_FILENAME)
 
 CMT_CONFIG_FILE_DIRNAME = f"{CMT_CONFIG_FILENAME}.d"
-CMT_CONFIG_FILE_DIR = FilePath(os.path.join(CMTDIR, CMT_CONFIG_FILE_DIRNAME))
+CMT_CONFIG_FILE_DIR = CMTDIR.joinpath(CMT_CONFIG_FILE_DIRNAME)
 
-CMT_INSTALLATION_INFO_FILE = FilePath(os.path.join(CMTDIR, "installation_info.yaml"))
+CMT_INSTALLATION_INFO_FILE = CMTDIR.joinpath("installation_info.yaml")
 
 DEPLOYMENT_DIRNAME = "deployments"
-DEPLOYMENT_DIR = FilePath(os.path.join(CMTDIR, DEPLOYMENT_DIRNAME))
+DEPLOYMENT_DIR = CMTDIR.joinpath(DEPLOYMENT_DIRNAME)
 
 THEME_DIRNAME = "themes"
-THEME_DIR = FilePath(os.path.join(CMTDIR, THEME_DIRNAME))
-DEFAULT_THEME_FILE = FilePath(os.path.join(THEME_DIR, "default.yaml"))
+THEME_DIR = CMTDIR.joinpath(THEME_DIRNAME)
+DEFAULT_THEME_FILE = THEME_DIR.joinpath("default.yaml")
 
 ANSIBLE_DIRNAME = "ansible"
-ANSIBLE_DIR = FilePath(os.path.join(CMTDIR, ANSIBLE_DIRNAME))
+ANSIBLE_DIR = CMTDIR.joinpath(ANSIBLE_DIRNAME)
 
 ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
-ANSIBLE_PLAYBOOK_DIR = FilePath(os.path.join(CMTDIR, ANSIBLE_PLAYBOOK_DIRNAME))
+ANSIBLE_PLAYBOOK_DIR = CMTDIR.joinpath(ANSIBLE_PLAYBOOK_DIRNAME)
 
 ANSIBLE_LOG_DIRNAME = "logs"
-ANSIBLE_LOG_DIR = FilePath(os.path.join(ANSIBLE_DIR, ANSIBLE_LOG_DIRNAME))
-ANSIBLE_INVENTORY = FilePath(os.path.join(ANSIBLE_DIR, "inventory.yaml"))
+ANSIBLE_LOG_DIR = ANSIBLE_DIR.joinpath(ANSIBLE_LOG_DIRNAME)
+ANSIBLE_INVENTORY = ANSIBLE_DIR.joinpath("inventory.yaml")
 
 CMT_HOOKS_DIRNAME = "hooks"
-CMT_HOOKS_DIR = FilePath(os.path.join(CMTDIR, CMT_HOOKS_DIRNAME))
-CMT_PRE_PREPARE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-prepare.d"))
-CMT_POST_PREPARE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-prepare.d"))
-CMT_PRE_SETUP_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-setup.d"))
-CMT_POST_SETUP_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-setup.d"))
-CMT_PRE_UPGRADE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-upgrade.d"))
-CMT_POST_UPGRADE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-upgrade.d"))
-CMT_PRE_TEARDOWN_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-teardown.d"))
-CMT_POST_TEARDOWN_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-teardown.d"))
-CMT_PRE_PURGE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "pre-purge.d"))
-CMT_POST_PURGE_DIR = FilePath(os.path.join(CMT_HOOKS_DIR, "post-purge.d"))
+CMT_HOOKS_DIR = CMTDIR.joinpath(CMT_HOOKS_DIRNAME)
+CMT_PRE_PREPARE_DIR = CMT_HOOKS_DIR.joinpath("pre-prepare.d")
+CMT_POST_PREPARE_DIR = CMT_HOOKS_DIR.joinpath("post-prepare.d")
+CMT_PRE_SETUP_DIR = CMT_HOOKS_DIR.joinpath("pre-setup.d")
+CMT_POST_SETUP_DIR = CMT_HOOKS_DIR.joinpath("post-setup.d")
+CMT_PRE_UPGRADE_DIR = CMT_HOOKS_DIR.joinpath("pre-upgrade.d")
+CMT_POST_UPGRADE_DIR = CMT_HOOKS_DIR.joinpath("post-upgrade.d")
+CMT_PRE_TEARDOWN_DIR = CMT_HOOKS_DIR.joinpath("pre-teardown.d")
+CMT_POST_TEARDOWN_DIR = CMT_HOOKS_DIR.joinpath("post-teardown.d")
+CMT_PRE_PURGE_DIR = CMT_HOOKS_DIR.joinpath("pre-purge.d")
+CMT_POST_PURGE_DIR = CMT_HOOKS_DIR.joinpath("post-purge.d")
 
 PARSER_DIRNAME = "parsers"
-PARSER_DIR = FilePath(os.path.join(CMTDIR, PARSER_DIRNAME))
+PARSER_DIR = CMTDIR.joinpath(PARSER_DIRNAME)
 
 VIEW_DIRNAME = "views"
-VIEW_DIR = FilePath(os.path.join(CMTDIR, VIEW_DIRNAME))
+VIEW_DIR = CMTDIR.joinpath(VIEW_DIRNAME)
 
-KUBE_CONFIG_DIR = FilePath(os.path.join(HOMEDIR, ".kube"))
-KUBE_CONFIG_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "config"))
-KUBE_CREDENTIALS_FILE = FilePath(os.path.join(KUBE_CONFIG_DIR, "credentials"))
+KUBE_CONFIG_DIR = HOMEDIR.joinpath(".kube")
+KUBE_CONFIG_FILE = KUBE_CONFIG_DIR.joinpath("config")
+KUBE_CREDENTIALS_FILE = KUBE_CONFIG_DIR.joinpath("credentials")
 
-SSH_DIR = FilePath(os.path.join(HOMEDIR, ".ssh"))
+SSH_DIR = HOMEDIR.joinpath(".ssh")
 SSH_BIN_PATH = FilePath("/usr/bin/ssh")
 
-NETRC_PATH = FilePath(os.path.join(HOMEDIR, ".netrc"))
-DOT_ANSIBLE_PATH = FilePath(os.path.join(HOMEDIR, ".ansible"))
+NETRC_PATH = HOMEDIR.joinpath(".netrc")
+DOT_ANSIBLE_PATH = HOMEDIR.joinpath(".ansible")
 
 # Accepted cryptos
 SSH_ARGS_STRICT_CRYPTOS = \
@@ -197,7 +196,5 @@ SSH_KEYGEN_BIN_PATH = FilePath("/usr/bin/ssh-keygen")
 SSH_KEYGEN_ARGS = ["-t", "ecdsa", "-b", "521", "-N", ""]
 
 BASH_COMPLETION_DIRNAME = "bash-completion"
-BASH_COMPLETION_BASE_DIR = FilePath(os.path.join(HOMEDIR,
-                                                 f".local/share/{BASH_COMPLETION_DIRNAME}"))
-BASH_COMPLETION_DIR = FilePath(os.path.join(HOMEDIR,
-                                            f".local/share/{BASH_COMPLETION_DIRNAME}/completions"))
+BASH_COMPLETION_BASE_DIR = HOMEDIR.joinpath(f".local/share/{BASH_COMPLETION_DIRNAME}")
+BASH_COMPLETION_DIR = HOMEDIR.joinpath(f".local/share/{BASH_COMPLETION_DIRNAME}/completions")
