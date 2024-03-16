@@ -107,7 +107,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
     ]
 
     playbook_path = FilePath(tmpobj["playbook_path"])
-    playbook_dir = FilePath(str(PurePath(playbook_path).parent))
+    playbook_dir = FilePath(PurePath(playbook_path).parent)
 
     violations = check_path(playbook_dir, checks=checks)
     if violations != [SecurityStatus.OK]:

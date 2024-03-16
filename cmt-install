@@ -932,7 +932,8 @@ COMMANDLINE = {
     # Default command
     "__global_options": {
         "command": ["__global_options"],
-        "description": [ANSIThemeStr("", "")],
+        "description": [
+            ANSIThemeStr("", "")],
         "options": {
             "--no-dependencies": {
                 "description": [ANSIThemeStr("Do not install dependencies", "description")],
@@ -950,8 +951,10 @@ COMMANDLINE = {
                 ],
             },
             "--pip-proxy": {
-                "values": [ANSIThemeStr("PROXY", "argument")],
-                "description": [ANSIThemeStr("Proxy to use for PIP", "description")],
+                "values": [
+                    ANSIThemeStr("PROXY", "argument")],
+                "description": [
+                    ANSIThemeStr("Proxy to use for PIP", "description")],
                 "extended_description": [
                     [ANSIThemeStr("HTTPS proxy to use if fallback packages", "description")],
                     [ANSIThemeStr("are installed from PIP. Format:", "description")],
@@ -963,21 +966,25 @@ COMMANDLINE = {
                 },
             },
             "--verbose": {
-                "description": [ANSIThemeStr("Be more verbose", "description")],
+                "description": [
+                    ANSIThemeStr("Be more verbose", "description")],
             },
             "-Y": {
-                "description": [ANSIThemeStr("Do not ask for confirmation", "description")],
+                "description": [
+                    ANSIThemeStr("Do not ask for confirmation", "description")],
             },
         },
     },
     "__default": {
         "command": ["__default"],
-        "description": [ANSIThemeStr("", "")],
+        "description": [
+            ANSIThemeStr("", "")],
         "callback": install,
     },
     "spacer1": {
         "command": [""],
-        "description": [ANSIThemeStr("", "")],
+        "description": [
+            ANSIThemeStr("", "")],
     },
 }
 
@@ -1000,13 +1007,11 @@ def main() -> int:
     if path_permissions & 0o002:
         sys.exit(f"CRITICAL: The destination directory {HOMEDIR} is world-writable; aborting.")
 
-    command, options, args = parse_commandline(about.INSTALL_PROGRAM_NAME,
-                                               about.INSTALL_PROGRAM_VERSION,
-                                               PROGRAMDESCRIPTION, PROGRAMAUTHORS,
-                                               sys.argv, COMMANDLINE,
-                                               default_command="__default",
-                                               theme=FilePath(os.path.join(os.getcwd(),
-                                                              "themes", "default.yaml")))
+    command, options, args = \
+        parse_commandline(about.INSTALL_PROGRAM_NAME, about.INSTALL_PROGRAM_VERSION,
+                          PROGRAMDESCRIPTION, PROGRAMAUTHORS, sys.argv, COMMANDLINE,
+                          default_command="__default",
+                          theme=FilePath(os.path.join(os.getcwd(), "themes", "default.yaml")))
 
     return command(options, args)
 

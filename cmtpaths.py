@@ -8,7 +8,6 @@
 This file contains paths used by CMT
 """
 
-import os
 from pathlib import Path
 from typing import List
 

@@ -14,7 +14,7 @@ import errno
 from getpass import getuser
 import hashlib
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
 import re
 import shutil
 import socket
@@ -22,7 +22,7 @@ import sys
 import tarfile
 import tempfile
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import paramiko
 
@@ -104,7 +104,7 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
         except paramiko.SSHException:
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Failed to get server key from remote host ",
-                                            "default"),
+                                         "default"),
                             ANSIThemeStr(host, "hostname"),
                             ANSIThemeStr("; aborting.", "default")], stderr=True)
             sys.exit(errno.EIO)
@@ -224,7 +224,7 @@ def verify_checksum(checksum: bytes,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def download_files(directory: str,
-                   fetch_urls: List[Tuple[str, str, Optional[str], Optional[str]]],
+                   fetch_urls: Sequence[Tuple[str, str, Optional[str], Optional[str]]],
                    permissions: int = 0o644) -> bool:
     """
     Download files; if the file is a tar file it can extract a file.
@@ -253,8 +253,8 @@ def download_files(directory: str,
                         ANSIThemeStr(": The target path ", "default"),
                         ANSIThemeStr(f"{directory}", "path"),
                         ANSIThemeStr(" does not resolve to itself; "
-                                        "this is either a configuration error "
-                                        "or a security issue; aborting.", "default")],
+                                     "this is either a configuration error "
+                                     "or a security issue; aborting.", "default")],
                        stderr=True)
         sys.exit(errno.EINVAL)
 
@@ -317,7 +317,7 @@ def download_files(directory: str,
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Unknown or missing protocol; "
-                                                "Checksum URL ", "default"),
+                                             "Checksum URL ", "default"),
                                 ANSIThemeStr(f"{checksum_url}", "url")], stderr=True)
                 retval = False
                 break
@@ -357,7 +357,7 @@ def download_files(directory: str,
                                 ANSIThemeStr(": File downloaded from ", "default"),
                                 ANSIThemeStr(f"{url}", "url"),
                                 ANSIThemeStr(" did not match its expected checksum; "
-                                                "aborting.", "default")], stderr=True)
+                                             "aborting.", "default")], stderr=True)
                 retval = False
                 break
 
@@ -378,7 +378,7 @@ def download_files(directory: str,
                                             ANSIThemeStr(": ", "default"),
                                             ANSIThemeStr(f"{filename}", "path"),
                                             ANSIThemeStr(" is not a part of archive; "
-                                                            "aborting.", "default")], stderr=True)
+                                                         "aborting.", "default")], stderr=True)
                             sys.exit(errno.ENOENT)
 
                         with tempfile.NamedTemporaryFile(delete=False) as f2:
@@ -451,8 +451,7 @@ def get_kubernetes_version(**kwargs: Any) -> Tuple[str, str]:
     changelog_version = ""
 
     if tmp_release_notes_path:
-        release_notes_path = \
-            FilePath(str(PurePath(VERSION_CACHE_DIR).joinpath(tmp_release_notes_path)))
+        release_notes_path = VERSION_CACHE_DIR.joinpath(tmp_release_notes_path)
         d = secure_read_yaml(release_notes_path)
         try:
             # First the backup path
@@ -491,8 +490,7 @@ def update_version_cache(**kwargs: Any) -> None:
     force = deep_get(kwargs, DictPath("force"), False)
     # Substitute {HOME}/ for {HOMEDIR}
     if software_sources_dir.startswith(("{HOME}/", "{HOME}\\")):
-        software_sources_dir = \
-            FilePath(str(PurePath(HOMEDIR).joinpath(software_sources_dir[len('{HOME}/'):])))
+        software_sources_dir = HOMEDIR.joinpath(software_sources_dir[len('{HOME}/'):])
 
     if not Path(software_sources_dir).is_dir():
         sys.exit(f"{software_sources_dir} does not exist; "
@@ -500,7 +498,8 @@ def update_version_cache(**kwargs: Any) -> None:
 
     sources: Dict = {}
     for path in natsorted(Path(software_sources_dir).iterdir()):
-        if not str(path).endswith((".yml", ".yaml")):
+        path = str(path)
+        if not path.endswith((".yml", ".yaml")):
             continue
         source = secure_read_yaml(FilePath(str(path)), directory_is_symlink=True)
         for key, data in source.items():
@@ -562,8 +561,8 @@ def update_version_cache(**kwargs: Any) -> None:
             _version, changelog_version = pre_fetch_function(**pre_fetch_args)
         fetch_urls = []
         for candidate_version_url in candidate_version_urls:
-            url = deep_get(candidate_version_url, DictPath("url"))
-            dest = deep_get(candidate_version_url, DictPath("dest"))
+            url: str = deep_get(candidate_version_url, DictPath("url"))
+            dest: str = deep_get(candidate_version_url, DictPath("dest"))
             fetch_urls.append((url, dest, None, None))
         if fetch_urls and update_version:
             if not download_files(VERSION_CACHE_DIR, fetch_urls):

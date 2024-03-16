@@ -137,9 +137,9 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                    ANSIThemeStr(": the FQDN / hostname ", "default"),
                    ANSIThemeStr(stripped_fqdn, "hostname")]
             msg += [ANSIThemeStr(" contains NUL-bytes (replaced here).\n"
-                                    "This is either a programming error, a system error, "
-                                    "file or memory corruption, or a deliberate attempt "
-                                    "to bypass security; aborting.", "default")]
+                                 "This is either a programming error, a system error, "
+                                 "file or memory corruption, or a deliberate attempt "
+                                 "to bypass security; aborting.", "default")]
             ansithemeprint(msg, stderr=True)
         emsg = [[("validate_fqdn()", "emphasis"),
                  (": The FQDN / hostname ", "default"),
@@ -174,7 +174,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                    ANSIThemeStr(fqdn, "hostname"),
                    ANSIThemeStr(" is invalid; ", "default"),
                    ANSIThemeStr("a FQDN / hostname cannot begin or end with “.“, "
-                                   "and must not have consecutive “.“.", "default")]
+                                "and must not have consecutive “.“.", "default")]
             ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT
 
@@ -189,7 +189,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                        ANSIThemeStr(dnslabel, "hostname"),
                        ANSIThemeStr(" is invalid; ", "default"),
                        ANSIThemeStr("a DNS label cannot start "
-                                       "with the ACE prefix “xn--“.", "default")]
+                                    "with the ACE prefix “xn--“.", "default")]
                 ansithemeprint(msg, stderr=True)
             return HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA
 
@@ -205,7 +205,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                            ANSIThemeStr(dnslabel, "hostname"),
                            ANSIThemeStr(" is invalid; ", "default")]
                     msg += [ANSIThemeStr("a DNS label cannot "
-                                            "be more than 63 characters long.", "default")]
+                                         "be more than 63 characters long.", "default")]
                     ansithemeprint(msg, stderr=True)
                 return HostNameStatus.DNS_LABEL_TOO_LONG
             if "label empty or too long" in str(e):
@@ -215,7 +215,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                            ANSIThemeStr(dnslabel, "hostname"),
                            ANSIThemeStr(" is invalid; ", "default")]
                     msg += [ANSIThemeStr("a decoded Punycode (IDNA) DNS label cannot "
-                                            "be more than 63 characters long.", "default")]
+                                         "be more than 63 characters long.", "default")]
                     ansithemeprint(msg, stderr=True)
                 return HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG
             raise
@@ -232,7 +232,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                             ANSIThemeStr(idna_dnslabel, "hostname"),
                             ANSIThemeStr(")", "default")]
                 msg += [ANSIThemeStr(" is invalid; a DNS label must "
-                                        "be in the format ", "default"),
+                                     "be in the format ", "default"),
                         ANSIThemeStr("[a-z0-9]([-a-z0-9]*[a-z0-9])?", "hostname"),
                         ANSIThemeStr(" after Punycode decoding.", "default")]
                 ansithemeprint(msg, stderr=True)
@@ -250,7 +250,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
                ANSIThemeStr(fqdn, "hostname"),
                ANSIThemeStr(" is invalid; ", "default"),
                ANSIThemeStr("the TLD must start with [a-z] and "
-                               "be at least 2 characters long.", "default")]
+                            "be at least 2 characters long.", "default")]
         return HostNameStatus.DNS_TLD_INVALID
 
     return HostNameStatus.OK
@@ -549,7 +549,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -
                                     ANSIThemeStr(": “", "default"),
                                     ANSIThemeStr(f"{subarg}", "option"),
                                     ANSIThemeStr("“ is not a valid hostname or path.",
-                                                    "default")], stderr=True)
+                                                 "default")], stderr=True)
                 result = False
                 break
             if validator == "ip" and not valid_ipv4_address and not valid_ipv6_address:
@@ -558,7 +558,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -
                                     ANSIThemeStr(": “", "default"),
                                     ANSIThemeStr(f"{subarg}", "option"),
                                     ANSIThemeStr("“ is not a valid IP-address.",
-                                                    "default")], stderr=True)
+                                                 "default")], stderr=True)
                 result = False
                 break
             if validator == "hostname_or_ip" and not valid_dns_label \
@@ -568,8 +568,8 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -
                                     ANSIThemeStr(": “", "default"),
                                     ANSIThemeStr(f"{subarg}", "option"),
                                     ANSIThemeStr("“ is neither a valid hostname "
-                                                    "nor a valid IP-address.",
-                                                    "default")], stderr=True)
+                                                 "nor a valid IP-address.",
+                                                 "default")], stderr=True)
                 result = False
                 break
         elif validator in ("taint", "untaint"):
@@ -595,7 +595,7 @@ def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -
                                    + arg_string + [ANSIThemeStr(".", "default")],
                                    stderr=True)
                     ansithemeprint([ANSIThemeStr("Valid options are: ",
-                                                    "description")], stderr=True)
+                                                 "description")], stderr=True)
                     ansithemeprint(ansithemestr_join_list(allowlist, formatting="argument"),
                                    stderr=True)
                 break

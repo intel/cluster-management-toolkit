@@ -600,7 +600,7 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
         SecurityChecks.IS_DIR,
     ]
 
-    theme_dir = FilePath(str(PurePath(themefile).parent))
+    theme_dir = FilePath(PurePath(themefile).parent)
 
     violations = cmtio.check_path(theme_dir, checks=checks)
     if violations != [SecurityStatus.OK]:

@@ -1067,8 +1067,8 @@ def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
                 if k8s_distro is not None:
                     ansithemeprint([ANSIThemeStr("Critical", "critical"),
                                     ANSIThemeStr(": The control planes are reporting "
-                                                    "conflicting Kubernetes distros; "
-                                                    "aborting.", "default")], stderr=True)
+                                                 "conflicting Kubernetes distros; "
+                                                 "aborting.", "default")], stderr=True)
                     sys.exit(errno.EINVAL)
                 else:
                     k8s_distro = tmp_k8s_distro
@@ -1109,7 +1109,7 @@ def identify_distro(**kwargs: Any) -> str:
                         ANSIThemeStr(" Cannot find an “", "default"),
                         ANSIThemeStr("os-release", "path"),
                         ANSIThemeStr("“ file to determine OS distribution; aborting.",
-                                        "default")], stderr=True)
+                                     "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     distro = None
@@ -1142,7 +1142,7 @@ def identify_distro(**kwargs: Any) -> str:
                             ANSIThemeStr(" Cannot read ID / ID_LIKE from “", "default"),
                             ANSIThemeStr("os-release", "path"),
                             ANSIThemeStr("“ file to determine OS distribution",
-                                            "default")], stderr=True)
+                                         "default")], stderr=True)
         if exit_on_failure:  # pragma: no cover
             sys.exit(errno.ENOENT)
         return ""

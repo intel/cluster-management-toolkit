@@ -148,7 +148,7 @@ class CMTLog:
             else:
                 filename = newest
 
-        return FilePath(str(PurePath(dirpath).joinpath(filename)))
+        return FilePath(dirpath).joinpath(filename)
 
     # pylint: disable-next=too-many-arguments
     def __init__(self, path: Union[CMTLogType, FilePath],

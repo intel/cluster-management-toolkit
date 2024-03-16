@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: MIT
 
 import copy
-from datetime import datetime, timezone
+from datetime import datetime
 import os
 from pathlib import PurePath
 import sys
@@ -26,7 +26,8 @@ import yaml
 import cmtlib
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmttypes import deep_get, deep_set, DictPath, FilePath, ArgumentValidationError, FilePathAuditError
+from cmttypes import deep_get, deep_set, DictPath
+from cmttypes import FilePath, ArgumentValidationError, FilePathAuditError
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import ansible_helper
 
@@ -34,2026 +35,2198 @@ TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybo
 
 # unit-tests for ansible_helper.py
 
+
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-	result = ""
-	dump = yaml.dump(data)
-	for line in dump.splitlines():
-		result += f"{' '.ljust(base_indent)}{line}\n"
-	return result
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
 
 def test_get_playbook_path(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.get_playbook_path
+    fun = ansible_helper.get_playbook_path
 
-	# Add non-existing local paths to cmtconfig
-	deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"),
-		 ["/NONEXISTINGPATH", "{HOME}/NONEXISTINGPATH2", "/etc/hosts", ANSIBLE_PLAYBOOK_DIR], create_path = True)
+    # Add non-existing local paths to cmtconfig
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"),
+             ["/NONEXISTINGPATH", "{HOME}/NONEXISTINGPATH2", "/etc/hosts", ANSIBLE_PLAYBOOK_DIR],
+             create_path=True)
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": These testcases only works correctly if the playbooks "
+                                     "have not been overridden:\n", "default")])
 
-		# Indata format:
-		# (playbook, expected_result, expected_exception)
-		testdata = (
-			("get_versions.yaml", os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml"), None),
-			("NONEXISTINGPLAYBOOK.yaml", os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yaml"), None),
-			("", None, ValueError),
-			(None, None, TypeError),
-			(1, None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (playbook, expected_result, expected_exception)
+        testdata = (
+            ("get_versions.yaml", ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"), None),
+            ("NONEXISTINGPLAYBOOK.yaml",
+             ANSIBLE_PLAYBOOK_DIR.joinpath("NONEXISTINGPLAYBOOK.yaml"), None),
+            ("", None, ValueError),
+            (None, None, TypeError),
+            (1, None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.populate_playbooks_from_paths
+    fun = ansible_helper.populate_playbooks_from_paths
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden:\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": These testcases only works correctly if the playbooks "
+                                     "have not been overridden:\n", "default")])
 
-		# Indata format:
-		# (playbook, expected_result, expected_exception)
-		testdata = (
-			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")],
-			 [([ANSIThemeStr(string="  • ", themeref="separator"),
-			    ANSIThemeStr(string="Get package versions", themeref="play")],
-			   os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml"))], None),
-			([os.path.join(ANSIBLE_PLAYBOOK_DIR, "NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
-			([os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml")],
-			 [([ANSIThemeStr(string="  • ", themeref="separator"),
-			   ANSIThemeStr(string="Hostname test playbook; local, lacks summary", themeref="play")],
-			   os.path.join(TEST_PLAYBOOKS_DIR, "hostname.yml"))], None),
-			([os.path.join(TEST_PLAYBOOKS_DIR, ".hostname.yml")], [], None),
-			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml")],
-			 [([ANSIThemeStr(string="  • ", themeref="separator"),
-			    ANSIThemeStr(string="Running “", themeref="play"),
-			    ANSIThemeStr(string="uptime", themeref="programname"),
-			    ANSIThemeStr(string="“", themeref="play")],
-			   os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"))], None),
-			([os.path.join(TEST_PLAYBOOKS_DIR, "~uptime.yaml")], [], None),
-			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.json")], None, ValueError),
-			([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml", "NonExistingFile.yaml")], None, FilePathAuditError),
-			([""], None, ValueError),
-			(None, None, TypeError),
-			(1, None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (playbook, expected_result, expected_exception)
+        testdata = (
+            ([ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")],
+             [([ANSIThemeStr(string="  • ", themeref="separator"),
+                ANSIThemeStr(string="Get package versions", themeref="play")],
+               ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"))], None),
+            ([ANSIBLE_PLAYBOOK_DIR.joinpath("NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
+            ([TEST_PLAYBOOKS_DIR.joinpath("hostname.yml")],
+             [([ANSIThemeStr(string="  • ", themeref="separator"),
+               ANSIThemeStr(string="Hostname test playbook; local, lacks summary",
+                            themeref="play")],
+               TEST_PLAYBOOKS_DIR.joinpath("hostname.yml"))], None),
+            ([TEST_PLAYBOOKS_DIR.joinpath(".hostname.yml")], [], None),
+            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml")],
+             [([ANSIThemeStr(string="  • ", themeref="separator"),
+                ANSIThemeStr(string="Running “", themeref="play"),
+                ANSIThemeStr(string="uptime", themeref="programname"),
+                ANSIThemeStr(string="“", themeref="play")],
+               TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"))], None),
+            ([TEST_PLAYBOOKS_DIR.joinpath("~uptime.yaml")], [], None),
+            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.json")], None, ValueError),
+            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml", "NonExistingFile.yaml")],
+             None, FilePathAuditError),
+            ([""], None, ValueError),
+            (None, None, TypeError),
+            (1, None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_print_action_summary
+    fun = ansible_helper.ansible_print_action_summary
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": These testcases only works correctly if the playbooks have not been overridden.", "default")])
-		ansithemeprint([ANSIThemeStr("      ", "note"), ANSIThemeStr("  Manual sanity checking is necessary for these test results.\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": These testcases only works correctly if the playbooks "
+                                     "have not been overridden.", "default")])
+        ansithemeprint([ANSIThemeStr("      ", "note"),
+                        ANSIThemeStr("  Manual sanity checking is necessary for these test "
+                                     "results.\n", "default")])
 
-		# Indata format:
-		# (playbook, expected_result, expected_exception)
-		testdata = (
-			(ansible_helper.populate_playbooks_from_paths([os.path.join(ANSIBLE_PLAYBOOK_DIR, "get_versions.yaml")]), None),
-			(ansible_helper.populate_playbooks_from_paths([os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml")]), None),
-			([], ValueError),
-			([1], TypeError),
-			(None, TypeError),
-			(1, TypeError),
-		)
-		for indata, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (playbook, expected_result, expected_exception)
+        testdata = (
+            (ansible_helper.populate_playbooks_from_paths([
+                ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")]), None),
+            (ansible_helper.populate_playbooks_from_paths([
+                TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml")]), None),
+            ([], ValueError),
+            ([1], TypeError),
+            (None, TypeError),
+            (1, TypeError),
+        )
+        for indata, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_inventory_dict
+    fun = ansible_helper.ansible_get_inventory_dict
 
-	# Mock a non-existing inventory
-	if result:
-		# Indata format:
-		# (mock_path, mock_value, mock_return_value, inventory, expected_result)
-		testdata = (
-			("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None, {"all": {"hosts": {}, "vars": {}}}),
-			("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
-			("ansible_helper.secure_read_yaml", None,
-			 {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}},
-			 {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
-			("ansible_helper.secure_read_yaml", None,
-			 {"all": {"hosts": None, "vars": None}},
-			 {"all": {"hosts": {}, "vars": {}}}),
-		)
-		try:
-			for indata in testdata:
-				mock_path, mock_value, mock_return_value, expected_result = indata
-				if mock_value:
-					with mock.patch(mock_path, mock_value):
-						tmp = fun()
-				else:
-					# We might not have an inventory available, so pretend that we do
-					with mock.patch("ansible_helper.Path.is_file", return_value=True), mock.patch(mock_path, return_value=mock_return_value):
-						tmp = fun()
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-		except Exception as e:
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
-	return message, result
+    # Mock a non-existing inventory
+    if result:
+        # Indata format:
+        # (mock_path, mock_value, mock_return_value, inventory, expected_result)
+        testdata = (
+            ("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None,
+             {"all": {"hosts": {}, "vars": {}}}),
+            ("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
+            ("ansible_helper.secure_read_yaml", None,
+             {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}},
+             {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
+            ("ansible_helper.secure_read_yaml", None,
+             {"all": {"hosts": None, "vars": None}},
+             {"all": {"hosts": {}, "vars": {}}}),
+        )
+        try:
+            for indata in testdata:
+                mock_path, mock_value, mock_return_value, expected_result = indata
+                if mock_value:
+                    with mock.patch(mock_path, mock_value):
+                        tmp = fun()
+                else:
+                    # We might not have an inventory available, so pretend that we do
+                    with mock.patch("ansible_helper.Path.is_file", return_value=True), \
+                         mock.patch(mock_path, return_value=mock_return_value):
+                        tmp = fun()
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+        except Exception as e:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"      exception: {type(e)}\n"
+            result = False
+    return message, result
+
 
 def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_inventory_pretty
+    fun = ansible_helper.ansible_get_inventory_pretty
 
-	if result:
-		with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
-			if (tmp := fun(groups=["all"], highlight=False, include_groupvar=False, include_hostvars=False, include_hosts=False)):
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
-					  f"      exception: {type(e)}\n" \
-					  f"  expected type: [str|[ANSIThemeStr]]"
-				result = False
-	if result:
-		inventory = {
-			"all": {
-				"hosts": {
-					"localhost": {}
-				},
-				"vars": {
-					"no_proxy": "localhost",
-				},
-			},
-			"no_hosts": {
-				"vars": {
-					"foo": 42,
-				},
-			},
-			"no_vars": {
-				"hosts": {
-					"bar": {},
-				},
-			},
-		}
-		# Indata format:
-		# (groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception)
-		testdata = (
-			(["all"], False, False, False, False, None),
-			(["all"], False, False, False, True, None),
-			(["all"], True, True, True, True, None),
-			(["all"], True, True, True, None, None),
-			([], True, True, True, True, None),
-			([], True, True, False, True, None),
-			([], True, True, False, True, None),
-			(["NotAnExistingGroup"], False, False, False, True, None),
-			(["NotAnExistingGroup"], True, True, True, True, None),
-			("a", True, True, False, True, TypeError),
-			(1, True, True, False, True, TypeError),
-			(None, False, False, False, False, None),
-		)
-		for indata in testdata:
-			groups, highlight, include_groupvars, include_hostvars, include_hosts, expected_exception = indata
-			try:
-				with mock.patch("ansible_helper.Path.is_file", return_value=True), \
-				     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
-					tmp = fun(groups=groups, highlight=highlight, include_groupvar=include_groupvars, include_hostvars=include_hostvars, include_hosts=include_hosts)
-				if not (isinstance(tmp, list) and tmp and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list) and isinstance(tmp[0][0], ANSIThemeStr))):
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
-							  f"      exception: {type(e)}\n" \
-							   "  expected type: [str|[ANSIThemeStr]]"
-						result = False
-						break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        expected_result = False
+        with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
+            if (tmp := fun(groups=["all"], highlight=False, include_groupvar=False,
+                           include_hostvars=False, include_hosts=False)):
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                result = False
+    if result:
+        inventory = {
+            "all": {
+                "hosts": {
+                    "localhost": {}
+                },
+                "vars": {
+                    "no_proxy": "localhost",
+                },
+            },
+            "no_hosts": {
+                "vars": {
+                    "foo": 42,
+                },
+            },
+            "no_vars": {
+                "hosts": {
+                    "bar": {},
+                },
+            },
+        }
+        # Indata format:
+        # (groups, highlight, include_groupvars,
+        #  include_hostvars, include_hosts, expected_exception)
+        testdata = (
+            (["all"], False, False, False, False, None),
+            (["all"], False, False, False, True, None),
+            (["all"], True, True, True, True, None),
+            (["all"], True, True, True, None, None),
+            ([], True, True, True, True, None),
+            ([], True, True, False, True, None),
+            ([], True, True, False, True, None),
+            (["NotAnExistingGroup"], False, False, False, True, None),
+            (["NotAnExistingGroup"], True, True, True, True, None),
+            ("a", True, True, False, True, TypeError),
+            (1, True, True, False, True, TypeError),
+            (None, False, False, False, False, None),
+        )
+        for indata in testdata:
+            groups, highlight, include_groupvars, \
+                include_hostvars, include_hosts, expected_exception = indata
+            try:
+                with mock.patch("ansible_helper.Path.is_file", return_value=True), \
+                     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
+                    tmp = fun(groups=groups, highlight=highlight,
+                              include_groupvar=include_groupvars,
+                              include_hostvars=include_hostvars, include_hosts=include_hosts)
+                if not (isinstance(tmp, list) and tmp
+                        and (isinstance(tmp[0], str) or tmp[0] and isinstance(tmp[0], list)
+                        and isinstance(tmp[0][0], ANSIThemeStr))):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {yaml_dump(indata, base_indent=17)}\n" \
+                              "  expected type: [str|[ANSIThemeStr]]"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {yaml_dump(indata, base_indent=17)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_get_hosts_by_group(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_hosts_by_group
+    fun = ansible_helper.ansible_get_hosts_by_group
 
-	if result:
-		# Indata format:
-		# (inventory, group)
-		testdata = (
-			(ANSIBLE_INVENTORY, "all", None),
-			(ANSIBLE_INVENTORY, "NonExistingGroup", None),
-			("NonExistingPath", "all", None),
-			(ANSIBLE_INVENTORY, 1, TypeError),
-			(ANSIBLE_INVENTORY, None, TypeError),
-			(None, "all", TypeError),
-			(1, "all", TypeError),
-		)
-		for indata in testdata:
-			inventory_path, group, expected_exception = indata
-			try:
-				tmp = fun(inventory_path, group)
-				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" inventory path: {inventory_path}\n" \
-							  f"          group: {group}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"  expected type: [str]"
-						result = False
-						break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" inventory path: {inventory_path}\n" \
-							  f"          group: {group}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f" inventory path: {inventory_path}\n" \
-						  f"          group: {group}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (inventory, group)
+        testdata = (
+            (ANSIBLE_INVENTORY, "all", None),
+            (ANSIBLE_INVENTORY, "NonExistingGroup", None),
+            ("NonExistingPath", "all", None),
+            (ANSIBLE_INVENTORY, 1, TypeError),
+            (ANSIBLE_INVENTORY, None, TypeError),
+            (None, "all", TypeError),
+            (1, "all", TypeError),
+        )
+        for indata in testdata:
+            inventory_path, group, expected_exception = indata
+            try:
+                tmp = fun(inventory_path, group)
+                if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" inventory path: {inventory_path}\n" \
+                              f"          group: {group}\n" \
+                              f"  expected type: [str]"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f" inventory path: {inventory_path}\n" \
+                                  f"          group: {group}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" inventory path: {inventory_path}\n" \
+                              f"          group: {group}\n" \
+                              f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_get_groups(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_groups
+    fun = ansible_helper.ansible_get_groups
 
-	if result:
-		# Indata format:
-		# (inventory, group)
-		testdata = (
-			(ANSIBLE_INVENTORY, None),
-			("NonExistingPath", None),
-			(None, TypeError),
-			(1, TypeError),
-		)
-		for indata in testdata:
-			inventory_path, expected_exception = indata
-			try:
-				tmp = fun(inventory_path)
-				if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" inventory path: {inventory_path}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"  expected type: [str]"
-						result = False
-						break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" inventory path: {inventory_path}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f" inventory path: {inventory_path}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (inventory, group)
+        testdata = (
+            (ANSIBLE_INVENTORY, None),
+            ("NonExistingPath", None),
+            (None, TypeError),
+            (1, TypeError),
+        )
+        for indata in testdata:
+            inventory_path, expected_exception = indata
+            try:
+                tmp = fun(inventory_path)
+                if not (isinstance(tmp, list) and (len(tmp) == 0 or isinstance(tmp[0], str))):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" inventory path: {inventory_path}\n" \
+                              f"  expected type: [str]"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f" inventory path: {inventory_path}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" inventory path: {inventory_path}\n" \
+                              f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_get_groups_by_host(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_groups_by_host
+    fun = ansible_helper.ansible_get_groups_by_host
 
-	if result:
-		d = {
-			"all": {
-				"hosts": {
-					"foo": {},
-				},
-			},
-			"group1": {
-				"hosts": {
-					"foo": {},
-				},
-			}
-		}
-		# Indata format:
-		# (inventory, group)
-		testdata = (
-			(d, "foo", ["all", "group1"], None),
-			(d, "NonExistingHost", [], None),
-			(d, 1, None, ArgumentValidationError),
-			(d, None, None, ArgumentValidationError),
-			(None, "localhost", None, ArgumentValidationError),
-			(1, "localhost", None, ArgumentValidationError),
-		)
-		for indata in testdata:
-			inventory_dict, host, expected_result, expected_exception = indata
-			try:
-				tmp = fun(inventory_dict, host)
-				if tmp != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   " inventory dict:\n" \
-							  f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
-							  f"          group: {host}\n" \
-							  f"         output: {tmp}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   " inventory dict:\n" \
-							  f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
-							  f"          group: {host}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						   " inventory dict:\n" \
-						  f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
-						  f"          group: {host}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        d = {
+            "all": {
+                "hosts": {
+                    "foo": {},
+                },
+            },
+            "group1": {
+                "hosts": {
+                    "foo": {},
+                },
+            }
+        }
+        # Indata format:
+        # (inventory, group)
+        testdata = (
+            (d, "foo", ["all", "group1"], None),
+            (d, "NonExistingHost", [], None),
+            (d, 1, None, ArgumentValidationError),
+            (d, None, None, ArgumentValidationError),
+            (None, "localhost", None, ArgumentValidationError),
+            (1, "localhost", None, ArgumentValidationError),
+        )
+        for indata in testdata:
+            inventory_dict, host, expected_result, expected_exception = indata
+            try:
+                tmp = fun(inventory_dict, host)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              " inventory dict:\n" \
+                              f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
+                              f"          group: {host}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  " inventory dict:\n" \
+                                  f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
+                                  f"          group: {host}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              " inventory dict:\n" \
+                              f"{yaml_dump(inventory_dict, base_indent=17)}\n" \
+                              f"          group: {host}\n" \
+                              f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.__ansible_create_inventory
+    fun = ansible_helper.__ansible_create_inventory
 
-	if result:
-		real_ansible_user = deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))
-		real_ansible_password = deep_get(ansible_helper.ansible_configuration, DictPath("ansible_password"))
-		real_ansible_disable_strict_host_key_checking = deep_get(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"))
+    if result:
+        real_ansible_user = deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))
+        real_ansible_password = \
+            deep_get(ansible_helper.ansible_configuration, DictPath("ansible_password"))
+        real_ansible_disable_strict_host_key_checking = \
+            deep_get(ansible_helper.ansible_configuration,
+                     DictPath("disable_strict_host_key_checking"))
 
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# __ansible_create_inventory() will open the file
-			tf.close()
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # __ansible_create_inventory() will open the file
+            tf.close()
 
-			d = {
-				"all": {
-					"hosts": {},
-					"vars": {
-						"ansible_python_interpreter": "/usr/bin/python3",
-					},
-				}
-			}
-			d2 = {
-				"all": {
-					"hosts": {},
-					"vars": {
-						"ansible_python_interpreter": "/usr/bin/python3",
-						"ansible_ssh_pass": "bar",
-						"ansible_user": "foo",
-					},
-				},
-				"ansible_ssh_common_args": "-o StrictHostKeyChecking=no",
-			}
+            d = {
+                "all": {
+                    "hosts": {},
+                    "vars": {
+                        "ansible_python_interpreter": "/usr/bin/python3",
+                    },
+                }
+            }
+            d2 = {
+                "all": {
+                    "hosts": {},
+                    "vars": {
+                        "ansible_python_interpreter": "/usr/bin/python3",
+                        "ansible_ssh_pass": "bar",
+                        "ansible_user": "foo",
+                    },
+                },
+                "ansible_ssh_common_args": "-o StrictHostKeyChecking=no",
+            }
 
-			if (ansible_user := deep_get(ansible_helper.ansible_configuration, DictPath("ansible_user"))) is not None:
-				deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path=True)
-			if (ansible_password := deep_get(ansible_helper.ansible_configuration, DictPath("ansible_password"))) is not None:
-				deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_user, create_path=True)
-			if (disable_strict_host_key_checking := deep_get(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), False)):
-				deep_set(d, DictPath("ansible_ssh_common_args"), "-o StrictHostKeyChecking=no", create_path=True)
-			# Indata format:
-			# (path, overwrite, override_ansible_configuration, expected_result, expected_content, expected_exception)
-			testdata = (
-				(f"{td}/TemporaryFile", False, False, True, d, None),
-				# The file should exist now; so write should fail
-				(tf.name, False, False, False, None, None),
-				# The file should exist now; write should succeed
-				(tf.name, True, False, True, d, None),
-				(None, True, False, None, None, TypeError),
-				(1, True, False, None, None, TypeError),
-				(tf.name, "a", False, None, None, TypeError),
-				# The file should exist now; write should succeed; override ansible_configuration
-				(tf.name, True, True, True, d2, None),
-			)
-			for indata in testdata:
-				path, overwrite, override_ansible_configuration, expected_result, expected_content, expected_exception = indata
-				try:
-					if override_ansible_configuration:
-						deep_set(ansible_helper.ansible_configuration, DictPath("ansible_user"), "foo")
-						deep_set(ansible_helper.ansible_configuration, DictPath("ansible_password"), "bar")
-						deep_set(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), True)
-					if (tmp := fun(path, overwrite=overwrite, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path}\n" \
-							  f"      overwrite: {overwrite}\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					if not (output_d is not None and output_d.items() == expected_content.items()):
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   " inventory dict:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f"       expected:\n" \
-							  f"{yaml_dump(expected_content, base_indent=17)}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path}\n" \
-								  f"      overwrite: {overwrite}\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path}\n" \
-							  f"      overwrite: {overwrite}\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-			deep_set(ansible_helper.ansible_configuration, DictPath("ansible_user"), real_ansible_user)
-			deep_set(ansible_helper.ansible_configuration, DictPath("ansible_password"), real_ansible_password)
-			deep_set(ansible_helper.ansible_configuration, DictPath("disable_strict_host_key_checking"), real_ansible_disable_strict_host_key_checking)
-			os.unlink(tf.name)
-	return message, result
+            if (ansible_user := deep_get(ansible_helper.ansible_configuration,
+                                         DictPath("ansible_user"))) is not None:
+                deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path=True)
+            if (ansible_password := deep_get(ansible_helper.ansible_configuration,
+                                             DictPath("ansible_password"))) is not None:
+                deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_user, create_path=True)
+            if (disable_strict_host_key_checking
+                    := deep_get(ansible_helper.ansible_configuration,
+                                DictPath("disable_strict_host_key_checking"), False)):
+                deep_set(d, DictPath("ansible_ssh_common_args"),
+                         "-o StrictHostKeyChecking=no", create_path=True)
+            # Indata format:
+            # (path, overwrite, override_ansible_configuration,
+            #  expected_result, expected_content, expected_exception)
+            testdata = (
+                (f"{td}/TemporaryFile", False, False, True, d, None),
+                # The file should exist now; so write should fail
+                (tf.name, False, False, False, None, None),
+                # The file should exist now; write should succeed
+                (tf.name, True, False, True, d, None),
+                (None, True, False, None, None, TypeError),
+                (1, True, False, None, None, TypeError),
+                (tf.name, "a", False, None, None, TypeError),
+                # The file should exist now; write should succeed; override ansible_configuration
+                (tf.name, True, True, True, d2, None),
+            )
+            for indata in testdata:
+                path, overwrite, override_ansible_configuration, \
+                    expected_result, expected_content, expected_exception = indata
+                try:
+                    if override_ansible_configuration:
+                        deep_set(ansible_helper.ansible_configuration,
+                                 DictPath("ansible_user"), "foo")
+                        deep_set(ansible_helper.ansible_configuration,
+                                 DictPath("ansible_password"), "bar")
+                        deep_set(ansible_helper.ansible_configuration,
+                                 DictPath("disable_strict_host_key_checking"), True)
+                    if (tmp := fun(path, overwrite=overwrite, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path}\n" \
+                                  f"      overwrite: {overwrite}\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    if not (output_d is not None and output_d.items() == expected_content.items()):
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  " inventory dict:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f"       expected:\n" \
+                                  f"{yaml_dump(expected_content, base_indent=17)}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path}\n" \
+                                      f"      overwrite: {overwrite}\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path}\n" \
+                                  f"      overwrite: {overwrite}\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+            deep_set(ansible_helper.ansible_configuration,
+                     DictPath("ansible_user"), real_ansible_user)
+            deep_set(ansible_helper.ansible_configuration,
+                     DictPath("ansible_password"), real_ansible_password)
+            deep_set(ansible_helper.ansible_configuration,
+                     DictPath("disable_strict_host_key_checking"),
+                     real_ansible_disable_strict_host_key_checking)
+            os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_create_groups
+    fun = ansible_helper.ansible_create_groups
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# __ansible_create_inventory() will open the file
-			tf.close()
-			tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
-			d = secure_read_yaml(tf.name, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # __ansible_create_inventory() will open the file
+            tf.close()
+            tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
+            d = secure_read_yaml(tf.name, temporary=True)
 
-			# Indata format:
-			# (path, groups, expected_content, expected_result, expected_exception)
-			testdata = (
-				(f"{td}/TemporaryFile", ["group1", "group2", "group3"], ["group1", "group2", "group3"], True, None),
-				# Pre-existing groups are ignored
-				(tf.name, ["group1", "group2", "group2", "group3"], ["group1", "group2", "group3"], True, None),
-				(tf.name, ["group1", "group2", "group2", "group3"], ["group1", "group2", "group3"], True, None),
-				# Empty lists are ignored
-				(tf.name, [], None, True, None),
-				# None is ignored
-				(tf.name, None, None, True, None),
-				(tf.name, [1], None, None, TypeError),
-				(tf.name, [None], None, None, TypeError),
-			)
-			for indata in testdata:
-				path, groups, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, groups, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or groups is None or len(groups) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					for group in expected_content:
-						if group not in output_d:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								   "      inventory:\n" \
-								  f"{yaml_dump(output_d, base_indent=17)}\n" \
-								  f" should include: {expected_content}"
-							result = False
-							break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-			os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, groups, expected_content, expected_result, expected_exception)
+            testdata = (
+                (f"{td}/TemporaryFile",
+                 ["group1", "group2", "group3"],
+                 ["group1", "group2", "group3"], True, None),
+                # Pre-existing groups are ignored
+                (tf.name,
+                 ["group1", "group2", "group2", "group3"],
+                 ["group1", "group2", "group3"], True, None),
+                (tf.name,
+                 ["group1", "group2", "group2", "group3"],
+                 ["group1", "group2", "group3"], True, None),
+                # Empty lists are ignored
+                (tf.name, [], None, True, None),
+                # None is ignored
+                (tf.name, None, None, True, None),
+                (tf.name, [1], None, None, TypeError),
+                (tf.name, [None], None, None, TypeError),
+            )
+            for indata in testdata:
+                path, groups, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, groups, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or groups is None or len(groups) == 0:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    for group in expected_content:
+                        if group not in output_d:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      "      inventory:\n" \
+                                      f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                      f" should include: {expected_content}"
+                            result = False
+                            break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+            os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_set_vars(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_set_vars
+    fun = ansible_helper.ansible_set_vars
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# __ansible_create_inventory() will open the file
-			tf.close()
-			tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
-			ansible_helper.ansible_create_groups(tf.name, ["foo", "bar"], temporary=True)
-			d = secure_read_yaml(tf.name, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # __ansible_create_inventory() will open the file
+            tf.close()
+            tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
+            ansible_helper.ansible_create_groups(tf.name, ["foo", "bar"], temporary=True)
+            d = secure_read_yaml(tf.name, temporary=True)
 
-			# Indata format:
-			# (path, group, values, expected_content, expected_result, expected_exception)
-			testdata = (
-				(f"{td}/TemporaryFile", "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
-				(tf.name, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
-				(tf.name, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, None),
-				("", "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, None, ArgumentValidationError),
-				(None, "foo", { "bar": 1, "baz": "text"}, {"foo": { "bar": 1, "baz": "text"}}, True, ArgumentValidationError),
-			)
-			for indata in testdata:
-				path, group, values, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, group, values, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or group is None or len(group) == 0 or values is None or len(values) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					for group in expected_content:
-						if group not in output_d:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								   "      inventory:\n" \
-								  f"{yaml_dump(output_d, base_indent=17)}\n" \
-								  f" should include: {expected_content}"
-							result = False
-							break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, group, values, expected_content, expected_result, expected_exception)
+            testdata = (
+                (f"{td}/TemporaryFile", "foo",
+                 {"bar": 1, "baz": "text"},
+                 {"foo": {"bar": 1, "baz": "text"}}, True, None),
+                (tf.name, "foo",
+                 {"bar": 1, "baz": "text"},
+                 {"foo": {"bar": 1, "baz": "text"}}, True, None),
+                (tf.name, "foo",
+                 {"bar": 1, "baz": "text"},
+                 {"foo": {"bar": 1, "baz": "text"}}, True, None),
+                ("", "foo",
+                 {"bar": 1, "baz": "text"},
+                 {"foo": {"bar": 1, "baz": "text"}}, None, ArgumentValidationError),
+                (None, "foo",
+                 {"bar": 1, "baz": "text"},
+                 {"foo": {"bar": 1, "baz": "text"}}, True, ArgumentValidationError),
+            )
+            for indata in testdata:
+                path, group, values, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, group, values, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or group is None \
+                            or len(group) == 0 or values is None or len(values) == 0:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    for group in expected_content:
+                        if group not in output_d:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      "      inventory:\n" \
+                                      f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                      f" should include: {expected_content}"
+                            result = False
+                            break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_set_groupvars(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_set_groupvars
+    fun = ansible_helper.ansible_set_groupvars
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# __ansible_create_inventory() will open the file
-			tf.close()
-			d = {
-				"foo": {
-					"hosts": {
-					},
-					"vars": {
-					},
-				},
-				"bar": None,
-			}
-			secure_write_yaml(tf.name, d, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # __ansible_create_inventory() will open the file
+            tf.close()
+            d = {
+                "foo": {
+                    "hosts": {
+                    },
+                    "vars": {
+                    },
+                },
+                "bar": None,
+            }
+            secure_write_yaml(tf.name, d, temporary=True)
 
-			# Indata format:
-			# (path, groups, values, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
-				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
-				(tf.name, ["bar"], [("meaning", 42)],
-				 {"foo": {"hosts": {}, "vars": {}}, "bar": {"vars": {"meaning": 42}}}, True, None),
-				(tf.name, ["nonexisting"], [("bar", 1), ("baz", "text")],
-				 {}, True, None),
-				(f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}, "bar": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, None, FilePathAuditError),
-				("", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
-				(None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
-			)
-			for indata in testdata:
-				secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
-				path, groups, values, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or groups is None or len(groups) == 0 or values is None or len(values) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include: {expected_content}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, groups, values, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
+                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}}, True, None),
+                (tf.name, ["bar"], [("meaning", 42)],
+                 {"foo": {"hosts": {}, "vars": {}}, "bar": {"vars": {"meaning": 42}}}, True, None),
+                (tf.name, ["nonexisting"], [("bar", 1), ("baz", "text")],
+                 {}, True, None),
+                (f"{td}/TemporaryFile", ["foo", "bar"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}},
+                  "bar": {"hosts": {}, "vars": {"bar": 1, "baz": "text"}}},
+                 None, FilePathAuditError),
+                ("", ["foo"], [("bar", 1), ("baz", "text")], None, None, ArgumentValidationError),
+                (None, ["foo"], [("bar", 1), ("baz", "text")], None, True, ArgumentValidationError),
+            )
+            for indata in testdata:
+                secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
+                path, groups, values, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or groups is None \
+                            or not groups or values is None or not values:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include: {expected_content}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_set_hostvars(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_set_hostvars
+    fun = ansible_helper.ansible_set_hostvars
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
-				"all": {
-					"hosts": {
-						"foo": {},
-						"bar": None,
-					},
-				},
-			}
-			secure_write_yaml(tf.name, d, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create an artificial inventory that meets all the requirements we have for these tests
+            d = {
+                "all": {
+                    "hosts": {
+                        "foo": {},
+                        "bar": None,
+                    },
+                },
+            }
+            secure_write_yaml(tf.name, d, temporary=True)
 
-			# Indata format:
-			# (path, hosts, values, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"bar": 1, "baz": "text"}}, True, None),
-				(tf.name, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"bar": 1, "baz": "text"}}, True, None),
-				(None, ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"bar": 1, "baz": "text"}}, True, ArgumentValidationError),
-				("DoesNotExist", ["foo"], [("bar", 1), ("baz", "text")],
-				 {"foo": {"bar": 1, "baz": "text"}}, True, FilePathAuditError),
-				(tf.name, ["nonexistinghost"], [("bar", 1), ("baz", "text")],
-				 {}, True, None),
-				(tf.name, ["bar"], [("value", 42)],
-				 {"bar": {"value": 42}}, True, None),
-			)
-			for indata in testdata:
-				path, hosts, values, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, hosts, values, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or hosts is None or len(hosts) == 0 or values is None or len(values) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					output_d2 = copy.deepcopy(deep_get(output_d, DictPath("all#hosts"), {}))
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					found = True
-					for key, value in expected_content.items():
-						if not (key in output_d2 and output_d2[key] == value):
-							found = False
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory (subset):\n" \
-							  f"{yaml_dump(output_d2, base_indent=17)}\n" \
-							  f" should include: {expected_content}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, hosts, values, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"bar": 1, "baz": "text"}}, True, None),
+                (tf.name, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"bar": 1, "baz": "text"}}, True, None),
+                (None, ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"bar": 1, "baz": "text"}}, True, ArgumentValidationError),
+                ("DoesNotExist", ["foo"], [("bar", 1), ("baz", "text")],
+                 {"foo": {"bar": 1, "baz": "text"}}, True, FilePathAuditError),
+                (tf.name, ["nonexistinghost"], [("bar", 1), ("baz", "text")],
+                 {}, True, None),
+                (tf.name, ["bar"], [("value", 42)],
+                 {"bar": {"value": 42}}, True, None),
+            )
+            for indata in testdata:
+                path, hosts, values, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, hosts, values, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or hosts is None \
+                            or not hosts or values is None or not values:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    output_d2 = copy.deepcopy(deep_get(output_d, DictPath("all#hosts"), {}))
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    found = True
+                    for key, value in expected_content.items():
+                        if not (key in output_d2 and output_d2[key] == value):
+                            found = False
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory (subset):\n" \
+                                  f"{yaml_dump(output_d2, base_indent=17)}\n" \
+                                  f" should include: {expected_content}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_unset_groupvars(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_unset_groupvars
+    fun = ansible_helper.ansible_unset_groupvars
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
-				"all": {
-					"hosts": {
-						"foo": {
-							"value1": "a string",
-							"value2": 42,
-						},
-						"bar": None,
-					},
-					"vars": {
-						"value3": "another string",
-						"value4": 2077,
-					},
-				},
-				"foo": {
-					"hosts": {
-						"foo": {},
-					},
-					"vars": {
-						"value5": "yet another string",
-						"value6": 11945,
-					},
-				},
-				"foobar": {
-					"vars": {
-						"onlyvar": True,
-					},
-				},
-				"bar": {
-					"vars": None,
-				},
-				"baz": None,
-			}
-			secure_write_yaml(tf.name, d, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create an artificial inventory that meets all the requirements we have for these tests
+            d = {
+                "all": {
+                    "hosts": {
+                        "foo": {
+                            "value1": "a string",
+                            "value2": 42,
+                        },
+                        "bar": None,
+                    },
+                    "vars": {
+                        "value3": "another string",
+                        "value4": 2077,
+                    },
+                },
+                "foo": {
+                    "hosts": {
+                        "foo": {},
+                    },
+                    "vars": {
+                        "value5": "yet another string",
+                        "value6": 11945,
+                    },
+                },
+                "foobar": {
+                    "vars": {
+                        "onlyvar": True,
+                    },
+                },
+                "bar": {
+                    "vars": None,
+                },
+                "baz": None,
+            }
+            secure_write_yaml(tf.name, d, temporary=True)
 
+            # Indata format:
+            # (path, groups, values, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["foo"], ["value5"],
+                 {"foo": {"hosts": {"foo": {}}, "vars": {"value6": 11945}}}, True, None),
+                (tf.name, ["nonexisting"], ["value5"],
+                 {}, True, None),
+                (tf.name, ["foobar"], ["onlyvar"],
+                 {}, True, None),
+                (tf.name, ["bar"], ["value5"],
+                 {}, True, None),
+                (tf.name, ["baz"], ["value5"],
+                 {}, True, None),
+                (None, ["foo"], ["value5"],
+                 None, None, ArgumentValidationError),
+            )
+            for indata in testdata:
+                path, groups, values, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or groups is None \
+                            or not groups or values is None or not values:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include: {expected_content}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
 
-			# Indata format:
-			# (path, groups, values, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["foo"], ["value5"],
-				 {"foo": {"hosts": {"foo": {}}, "vars": {"value6": 11945}}}, True, None),
-				(tf.name, ["nonexisting"], ["value5"],
-				 {}, True, None),
-				(tf.name, ["foobar"], ["onlyvar"],
-				 {}, True, None),
-				(tf.name, ["bar"], ["value5"],
-				 {}, True, None),
-				(tf.name, ["baz"], ["value5"],
-				 {}, True, None),
-				(None, ["foo"], ["value5"],
-				 None, None, ArgumentValidationError),
-			)
-			for indata in testdata:
-				path, groups, values, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or groups is None or len(groups) == 0 or values is None or len(values) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include: {expected_content}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
 
 def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_unset_hostvars
+    fun = ansible_helper.ansible_unset_hostvars
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
-				"all": {
-					"hosts": {
-						"foo": {
-							"value1": "a string",
-							"value2": 42,
-						},
-						"foobar": {
-							"onlyvar": True,
-						},
-						"bar": None,
-					},
-					"vars": {
-						"value3": "another string",
-						"value4": 2077,
-					},
-				},
-				"foo": {
-					"hosts": {
-						"foo": {},
-					},
-					"vars": {
-						"value5": "yet another string",
-						"value6": 11945,
-					},
-				},
-			}
-			secure_write_yaml(tf.name, d, temporary=True)
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create an artificial inventory that meets all the requirements we have for these tests
+            d = {
+                "all": {
+                    "hosts": {
+                        "foo": {
+                            "value1": "a string",
+                            "value2": 42,
+                        },
+                        "foobar": {
+                            "onlyvar": True,
+                        },
+                        "bar": None,
+                    },
+                    "vars": {
+                        "value3": "another string",
+                        "value4": 2077,
+                    },
+                },
+                "foo": {
+                    "hosts": {
+                        "foo": {},
+                    },
+                    "vars": {
+                        "value5": "yet another string",
+                        "value6": 11945,
+                    },
+                },
+            }
+            secure_write_yaml(tf.name, d, temporary=True)
+
+            # Indata format:
+            # (path, hosts, values, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["foo"], ["value1"],
+                 {"all": {"hosts": {"foo": {"value2": 42},
+                                    "bar": None,
+                                    "foobar": {"onlyvar": True}},
+                          "vars": {"value3": "another string", "value4": 2077}}}, True, None),
+                (tf.name, ["foo"], ["value1"],
+                 {"all": {"hosts": {"foo": {"value2": 42},
+                                    "bar": None,
+                                    "foobar": {"onlyvar": True}},
+                          "vars": {"value3": "another string", "value4": 2077}}}, True, None),
+                (tf.name, ["nonexisting"], ["onlyvar"],
+                 {}, True, None),
+                (tf.name, ["foobar"], ["onlyvar"],
+                 {}, True, None),
+                (None, ["foobar"], ["onlyvar"],
+                 {}, False, ArgumentValidationError),
+            )
+            for indata in testdata:
+                path, groups, values, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or groups is None \
+                            or len(groups) == 0 or values is None or len(values) == 0:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include: {expected_content}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
 
 
-			# Indata format:
-			# (path, hosts, values, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["foo"], ["value1"],
-				 {"all": {"hosts": {"foo": {"value2": 42}, "bar": None, "foobar": {"onlyvar": True}}, "vars": {"value3": "another string", "value4": 2077}}}, True, None),
-				(tf.name, ["foo"], ["value1"],
-				 {"all": {"hosts": {"foo": {"value2": 42}, "bar": None, "foobar": {"onlyvar": True}}, "vars": {"value3": "another string", "value4": 2077}}}, True, None),
-				(tf.name, ["nonexisting"], ["onlyvar"],
-				 {}, True, None),
-				(tf.name, ["foobar"], ["onlyvar"],
-				 {}, True, None),
-				(None, ["foobar"], ["onlyvar"],
-				 {}, False, ArgumentValidationError),
-			)
-			for indata in testdata:
-				path, groups, values, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(path, groups, values, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or groups is None or len(groups) == 0 or values is None or len(values) == 0:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include: {expected_content}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+def test_ansible_add_hosts(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
 
-def test_ansible_add_hosts(verbose: bool=False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    fun = ansible_helper.ansible_add_hosts
 
-	fun = ansible_helper.ansible_add_hosts
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create inventories that meets all the requirements we have for these tests
+            d1 = {
+                "all": {
+                    "hosts": {
+                        "existing": {},
+                    },
+                },
+                "group1": {
+                },
+            }
+            d2 = {
+                "all": {
+                    "hosts": None,
+                },
+            }
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create inventories that meets all the requirements we have for these tests
-			d1 = {
-				"all": {
-					"hosts": {
-						"existing": {},
-					},
-				},
-				"group1": {
-				},
-			}
-			d2 = {
-				"all": {
-					"hosts": None,
-				},
-			}
+            # Indata format:
+            # (path, template, hosts, group, skip_all,
+            #  expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, d1, ["host1"], "group1", False,
+                 {"all": {"hosts": {"existing": {}, "host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}}, True, None),
+                (tf.name, d2, ["host1"], "group1", False,
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}}, True, None),
+                (tf.name, d1, ["host1", "host1"], "group2", False,
+                 {"all": {"hosts": {"existing": {}, "host1": {}}},
+                  "group1": {},
+                  "group2": {"hosts": {"host1": {}}}}, True, None),
+                (tf.name, d1, ["host1", "host1"], "", False,
+                 {"all": {"hosts": {"existing": {}, "host1": {}}},
+                  "group1": {}}, True, None),
+                (tf.name, d1, ["existing"], "", False,
+                 {"all": {"hosts": {"existing": {}}},
+                  "group1": {}}, True, None),
+                (tf.name, d1, ["existing"], "group1", True,
+                 {"all": {"hosts": {"existing": {}}},
+                  "group1": {"hosts": {"existing": {}}}}, True, None),
+                (f"{td}/newinventory.yaml", None, ["host1"], "group1", False,
+                 {"all": {"hosts": {"host1": {}},
+                  "vars": {"ansible_python_interpreter": "/usr/bin/python3"}},
+                  "group1": {"hosts": {"host1": {}}}}, True, None),
+                (f"{td}/newinventory2.yaml", None, ["host1"], "group1", True,
+                 {"group1": {"hosts": {"host1": {}}}}, True, None),
+                (None, d1, ["host1"], "group1", False,
+                 {"all": {"hosts": {"existing": {}, "host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}}, True, ArgumentValidationError),
+            )
+            for indata in testdata:
+                path, template, hosts, group, skip_all, expected_content, \
+                    expected_result, expected_exception = indata
+                if template:
+                    secure_write_yaml(tf.name, copy.deepcopy(template), temporary=True)
+                try:
+                    if (tmp := fun(inventory=path, hosts=hosts, group=group,
+                                   skip_all=skip_all, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or hosts is None or not hosts:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include: {expected_content}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
 
-			# Indata format:
-			# (path, template, hosts, group, skip_all, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, d1, ["host1"], "group1", False,
-				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, d2, ["host1"], "group1", False,
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, d1, ["host1", "host1"], "group2", False,
-				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {}, "group2": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, d1, ["host1", "host1"], "", False,
-				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {}}, True, None),
-				(tf.name, d1, ["existing"], "", False,
-				 {"all": {"hosts": {"existing": {}}}, "group1": {}}, True, None),
-				(tf.name, d1, ["existing"], "group1", True,
-				 {"all": {"hosts": {"existing": {}}}, "group1": {"hosts": {"existing": {}}}}, True, None),
-				(f"{td}/newinventory.yaml", None, ["host1"], "group1", False,
-				 {"all": {"hosts": {"host1": {}}, "vars": {"ansible_python_interpreter": "/usr/bin/python3"}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(f"{td}/newinventory2.yaml", None, ["host1"], "group1", True,
-				 {"group1": {"hosts": {"host1": {}}}}, True, None),
-				(None, d1, ["host1"], "group1", False,
-				 {"all": {"hosts": {"existing": {}, "host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, ArgumentValidationError),
-			)
-			for indata in testdata:
-				path, template, hosts, group, skip_all, expected_content, expected_result, expected_exception = indata
-				if template:
-					secure_write_yaml(tf.name, copy.deepcopy(template), temporary=True)
-				try:
-					if (tmp := fun(inventory=path, hosts=hosts, group=group, skip_all=skip_all, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or hosts is None or not hosts:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include: {expected_content}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
 
 def test_ansible_remove_hosts(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_remove_hosts
+    fun = ansible_helper.ansible_remove_hosts
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
-				"all": {
-					"hosts": {
-						"host1": {},
-					},
-				},
-				"group1": {
-					"hosts": {
-						"host1": {},
-					},
-				},
-				"group2": {},
-			}
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create an artificial inventory that meets all the requirements we have for these tests
+            d = {
+                "all": {
+                    "hosts": {
+                        "host1": {},
+                    },
+                },
+                "group1": {
+                    "hosts": {
+                        "host1": {},
+                    },
+                },
+                "group2": {},
+            }
 
-			# Indata format:
-			# (path, hosts, group, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["host1"], "group1",
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {}}}, True, None),
-				(tf.name, ["host2"], "group1",
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(tf.name, ["host1"], "group2",
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
-				(None, ["host1"], "group1",
-				 {"all": {"hosts": {}}, "group1": {}}, True, ArgumentValidationError),
-			)
-			for indata in testdata:
-				secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
-				path, hosts, group, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(inventory=path, hosts=hosts, group=group, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or hosts is None or not hosts:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include:\n" \
-							  f"{yaml_dump(expected_content, base_indent=17)}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, hosts, group, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["host1"], "group1",
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {}}}, True, None),
+                (tf.name, ["host2"], "group1",
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}}, True, None),
+                (tf.name, ["host1"], "group2",
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+                (None, ["host1"], "group1",
+                 {"all": {"hosts": {}}, "group1": {}}, True, ArgumentValidationError),
+            )
+            for indata in testdata:
+                secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
+                path, hosts, group, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(inventory=path, hosts=hosts,
+                                   group=group, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or hosts is None or not hosts:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include:\n" \
+                                  f"{yaml_dump(expected_content, base_indent=17)}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_remove_groups(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_remove_groups
+    fun = ansible_helper.ansible_remove_groups
 
-	if result:
-		with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
-			# secure_write_yaml() will open the file
-			tf.close()
-			# Create an artificial inventory that meets all the requirements we have for these tests
-			d = {
-				"all": {
-					"hosts": {
-						"host1": {},
-					},
-				},
-				"group1": {
-					"hosts": {
-						"host1": {},
-					},
-				},
-				"group2": {
-				},
-			}
+    if result:
+        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+            # secure_write_yaml() will open the file
+            tf.close()
+            # Create an artificial inventory that meets all the requirements we have for these tests
+            d = {
+                "all": {
+                    "hosts": {
+                        "host1": {},
+                    },
+                },
+                "group1": {
+                    "hosts": {
+                        "host1": {},
+                    },
+                },
+                "group2": {
+                },
+            }
 
-			# Indata format:
-			# (path, groups, force, expected_content, expected_result, expected_exception)
-			testdata = (
-				(tf.name, ["group1"], False,
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
-				(tf.name, ["group2"], False,
-				 {"all": {"hosts": {"host1": {}}}, "group1": {"hosts": {"host1": {}}}}, True, None),
-				(td, ["group1"], True,
-				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, False, None),
-				(tf.name, ["group1"], True,
-				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
-				(tf.name, ["group3"], True,
-				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
-				(None, ["group1"], True,
-				 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, ArgumentValidationError),
-			)
-			for indata in testdata:
-				secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
-				path, groups, force, expected_content, expected_result, expected_exception = indata
-				try:
-					if (tmp := fun(inventory=path, groups=groups, force=force, temporary=True)) != expected_result:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"         output: {tmp}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-					# We expect not to write anything, we didn't, so we continue
-					if not expected_result or groups is None or not groups:
-						continue
-					output_d = secure_read_yaml(path, temporary=True)
-					found = True
-					for key, value in expected_content.items():
-						if key not in output_d:
-							found = False
-							break
-						if output_d[key] != value:
-							found = False
-					if expected_content in output_d.items():
-						found = True
-					if not found:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "      inventory:\n" \
-							  f"{yaml_dump(output_d, base_indent=17)}\n" \
-							  f" should include:\n" \
-							  f"{yaml_dump(expected_content, base_indent=17)}"
-						result = False
-						break
-				except Exception as e:
-					if expected_exception is not None:
-						if isinstance(e, expected_exception):
-							pass
-						else:
-							message = f"{fun.__name__}() did not yield expected result:\n" \
-								  f"           path: {path} (tempfile)\n" \
-								  f"         output: {tmp}\n" \
-								  f"       expected: {expected_exception}\n" \
-								  f"      exception: {e}"
-							result = False
-							break
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path} (tempfile)\n" \
-							  f"      exception: {type(e)}\n"
-						result = False
-						break
-	os.unlink(tf.name)
-	return message, result
+            # Indata format:
+            # (path, groups, force, expected_content, expected_result, expected_exception)
+            testdata = (
+                (tf.name, ["group1"], False,
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+                (tf.name, ["group2"], False,
+                 {"all": {"hosts": {"host1": {}}},
+                  "group1": {"hosts": {"host1": {}}}}, True, None),
+                (td, ["group1"], True,
+                 {"all": {"hosts": {"host1": {}}}, "group2": {}}, False, None),
+                (tf.name, ["group1"], True,
+                 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+                (tf.name, ["group3"], True,
+                 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, None),
+                (None, ["group1"], True,
+                 {"all": {"hosts": {"host1": {}}}, "group2": {}}, True, ArgumentValidationError),
+            )
+            for indata in testdata:
+                secure_write_yaml(tf.name, copy.deepcopy(d), temporary=True)
+                path, groups, force, expected_content, expected_result, expected_exception = indata
+                try:
+                    if (tmp := fun(inventory=path, groups=groups,
+                                   force=force, temporary=True)) != expected_result:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                    # We expect not to write anything, we didn't, so we continue
+                    if not expected_result or groups is None or not groups:
+                        continue
+                    output_d = secure_read_yaml(path, temporary=True)
+                    found = True
+                    for key, value in expected_content.items():
+                        if key not in output_d:
+                            found = False
+                            break
+                        if output_d[key] != value:
+                            found = False
+                    if expected_content in output_d.items():
+                        found = True
+                    if not found:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "      inventory:\n" \
+                                  f"{yaml_dump(output_d, base_indent=17)}\n" \
+                                  f" should include:\n" \
+                                  f"{yaml_dump(expected_content, base_indent=17)}"
+                        result = False
+                        break
+                except Exception as e:
+                    if expected_exception is not None:
+                        if isinstance(e, expected_exception):
+                            pass
+                        else:
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"           path: {path} (tempfile)\n" \
+                                      f"         output: {tmp}\n" \
+                                      f"       expected: {expected_exception}\n" \
+                                      f"      exception: {e}"
+                            result = False
+                            break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path} (tempfile)\n" \
+                                  f"      exception: {type(e)}\n"
+                        result = False
+                        break
+    os.unlink(tf.name)
+    return message, result
+
 
 def test_ansible_get_logs(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_get_logs
+    fun = ansible_helper.ansible_get_logs
 
-	# We're not quite sure whether there are any logs or what they contain,
-	# so we just make sure that the return types are acceptable
-	if result:
-		tmp = fun()
-		if not isinstance(tmp, list):
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"           type: {type(tmp)}\n" \
-				  f"       expected: {repr(list)}\n"
-			result = False
-		elif len(tmp) > 0:
-			if len(tmp[0]) != 4:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"       len([0]): {len(tmp[0])}\n" \
-					  f"       expected: 4\n"
-				result = False
-			else:
-				filename, name, path, timestamp = tmp[0]
-				if not (isinstance(filename, str) and isinstance(name, str) and isinstance(path, str) and isinstance(timestamp, datetime)):
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          types: [({type(filename)}, {type(name)}, {type(path)}, {type(timestamp)})]" \
-						  f"       expected: [({repr(str)}, {repr(str)}, {repr(FilePath)}, {repr(datetime)}]"
-					result = False
+    # We're not quite sure whether there are any logs or what they contain,
+    # so we just make sure that the return types are acceptable
+    if result:
+        tmp = fun()
+        if not isinstance(tmp, list):
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"           type: {type(tmp)}\n" \
+                      f"       expected: {repr(list)}\n"
+            result = False
+        elif len(tmp) > 0:
+            if len(tmp[0]) != 4:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"       len([0]): {len(tmp[0])}\n" \
+                          f"       expected: 4\n"
+                result = False
+            else:
+                filename, name, path, timestamp = tmp[0]
+                if not (isinstance(filename, str) and isinstance(name, str)
+                        and isinstance(path, str) and isinstance(timestamp, datetime)):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          types: [({type(filename)}, {type(name)}, " \
+                              f"{type(path)}, {type(timestamp)})]\n" \
+                              f"       expected: [({repr(str)}, {repr(str)}, " \
+                              f"{repr(FilePath)}, {repr(datetime)}]"
+                    result = False
 
-	return message, result
+    return message, result
 
-def test_ansible_extract_failure(verbose: bool=False) -> Tuple[str, bool]:
-	message = ""
-	result = True
 
-	fun = ansible_helper.ansible_extract_failure
+def test_ansible_extract_failure(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
 
-	if result:
-		# Indata format:
-		# (retval, stderr_lines, skipped, unreachable, expected_result, expected_exception)
-		testdata = (
-			(0, [], False, False, "SUCCESS", None),
-			(0, [], True, False, "SKIPPED", None),
-			(-1, [], False, True, "UNREACHABLE (unknown reason)", None),
-			(-1, ["Failed to connect to the host via ssh: ssh: connect to host host1 port 22: No route to host"], False, True, "NO ROUTE TO HOST", None),
-			(-1, ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host2: Name or service not known"], False, True, "COULD NOT RESOLVE", None),
-			(-1, ["Failed to connect to the host via ssh: foobar@host3: Permission denied (publickey,password)."], False, True, "PERMISSION DENIED", None),
-			(-1, ["Failed to connect to the host via ssh: Some other reason."], False, True, "UNREACHABLE (unknown error)", None),
-			# Not sure what the exact timeout message is; this one is artificial.
-			(-1, ["Failed to connect to the host via ssh: Connection timed out."], False, True, "CONNECTION TIMED OUT", None),
-			(-1, ["The module failed to execute correctly, you probably need to set the interpreter.", "See stdout/stderr for the exact error"], False, False, "MISSING INTERPRETER?", None),
-			(-1, ["Some random error we don't know about."], False, False, "FAILED (unknown error)", None),
-			(-1, [], False, False, "FAILED (unknown reason)", None),
-		)
-		for indata in testdata:
-			retval, stderr_lines, skipped, unreachable, expected_result, expected_exception = indata
-			try:
-				if (tmp := fun(retval, stderr_lines, skipped=skipped, unreachable=unreachable)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"         retval: {retval}\n" \
-						  f"        skipped: {skipped}\n" \
-						  f"    unreachable: {unreachable}\n" \
-						   "   stderr_lines:\n" \
-						  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"         retval: {path} (tempfile)\n" \
-							  f"        skipped: {path} (tempfile)\n" \
-							  f"    unreachable: {path} (tempfile)\n" \
-							   "   stderr_lines:\n" \
-							  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
-							  f"      exception: {e}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"         retval: {path} (tempfile)\n" \
-						  f"        skipped: {path} (tempfile)\n" \
-						  f"    unreachable: {path} (tempfile)\n" \
-						   "   stderr_lines:\n" \
-						  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
-						  f"      exception: {e}"
-					result = False
-					break
-	return message, result
+    fun = ansible_helper.ansible_extract_failure
+
+    if result:
+        # Indata format:
+        # (retval, stderr_lines, skipped, unreachable, expected_result, expected_exception)
+        testdata = (
+            (0, [], False, False, "SUCCESS", None),
+            (0, [], True, False, "SKIPPED", None),
+            (-1, [], False, True, "UNREACHABLE (unknown reason)", None),
+            (-1, ["Failed to connect to the host via ssh: ssh: connect to host host1 port 22: "
+                  "No route to host"], False, True, "NO ROUTE TO HOST", None),
+            (-1, ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host2: "
+                  "Name or service not known"], False, True, "COULD NOT RESOLVE", None),
+            (-1, ["Failed to connect to the host via ssh: foobar@host3: Permission denied "
+                  "(publickey,password)."], False, True, "PERMISSION DENIED", None),
+            (-1, ["Failed to connect to the host via ssh: "
+                  "Some other reason."], False, True, "UNREACHABLE (unknown error)", None),
+            # Not sure what the exact timeout message is; this one is artificial.
+            (-1, ["Failed to connect to the host via ssh: Connection timed "
+                  "out."], False, True, "CONNECTION TIMED OUT", None),
+            (-1, ["The module failed to execute correctly, you probably need to set the "
+                  "interpreter.", "See stdout/stderr for the exact error"],
+             False, False, "MISSING INTERPRETER?", None),
+            (-1, ["Some random error we don't know about."], False, False,
+             "FAILED (unknown error)", None),
+            (-1, [], False, False, "FAILED (unknown reason)", None),
+        )
+        for indata in testdata:
+            retval, stderr_lines, skipped, unreachable, expected_result, expected_exception = indata
+            try:
+                if (tmp := fun(retval, stderr_lines,
+                               skipped=skipped, unreachable=unreachable)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         retval: {retval}\n" \
+                              f"        skipped: {skipped}\n" \
+                              f"    unreachable: {unreachable}\n" \
+                              "   stderr_lines:\n" \
+                              f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"      exception: {e}" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"      exception: {e}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_results_extract(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_results_extract
+    fun = ansible_helper.ansible_results_extract
 
-	if result:
-		# Indata format:
-		# (event, expected_result, expected_exception)
-		testdata = (
-			({
-				'uuid': '417356ca-db51-4db9-88cc-974ec9604fdd',
-				'counter': 5,
-				'stdout': '',
-				'start_line': 5,
-				'end_line': 5,
-				'runner_ident': 'e84af1c7-39d1-4a8d-8000-1d65d6878e10',
-				'event': 'playbook_on_no_hosts_matched',
-				'pid': 615344,
-				'created': '2024-03-04T18:42:45.221111',
-			 }, (-1, {
-				"task": "",
-				"start_date": "",
-				"end_date": "",
-				"retval": -1,
-				"no_hosts_matched": True,
-				"unreachable": False,
-				"status": "NO HOSTS MATCHED",
-				"skipped": False,
-				"stdout_lines": [],
-				"stderr_lines": [],
-				"msg_lines": [],
-				"ansible_facts": {},
-			 }), None),
-			({
-				"event": "runner_on_ok",
-				"event_data": {
-					"host": "localhost",
-				},
-			 }, (0, {}), None),
-			({
-				"event": "runner_on_skipped",
-				"event_data": {
-					"host": "localhost",
-					"task": "hide_on_ok: A hidden task",
-				},
-			 }, (0, {}), None),
-			({
-				"event": "runner_on_skipped",
-				"event_data": {
-					"host": "localhost",
-					"task": "hide_on_ok: A hidden task",
-					"res": {
-						"unreachable": True,
-					},
-				},
-			 }, (0, {
-				"ansible_facts": {},
-				"end_date": None,
-				"start_date": None,
-				"msg_lines": [],
-				"stdout_lines": ["<no output>"],
-				"stderr_lines": [],
-				"task": "A hidden task",
-				"unreachable": True,
-				"no_hosts_matched": False,
-				"status": "UNREACHABLE (unknown reason)",
-				"retval": -1,
-				"skipped": True,
-			 }), None),
-			({
-				"event": "runner_on_ok",
-				"event_data": {
-					"host": "localhost",
-					"task": "Gathering Facts",
-				},
-				"stderr_lines": ["A message"],
-			 }, (0, {}), None),
-			({
-				"event": "runner_on_ok",
-				"event_data": {
-					"host": "localhost",
-					"task": "A task",
-					"res": {
-						"msg": "A message",
-					},
-					"retval": 0,
-				},
-			 }, (0, {
-				"ansible_facts": {},
-				"end_date": None,
-				"start_date": None,
-				"status": "SUCCESS",
-				"msg_lines": ["A message"],
-				"skipped": False,
-				"stdout_lines": [],
-				"stderr_lines": [],
-				"task": "A task",
-				"unreachable": False,
-				"no_hosts_matched": False,
-				"retval": 0,
-			 }), None),
-			({
-				"event": "runner_on_failed",
-				"event_data": {
-					"host": "localhost",
-					"task": "A task",
-					"res": {
-						"msg": "Another message",
-					},
-					"retval": -1,
-				},
-			 }, (0, {
-				"ansible_facts": {},
-				"end_date": None,
-				"msg_lines": [],
-				"start_date": None,
-				"status": "FAILED (unknown error)",
-				"skipped": False,
-				"stdout_lines": [],
-				"stderr_lines": ["Another message"],
-				"task": "A task",
-				"unreachable": False,
-				"no_hosts_matched": False,
-				"retval": -1,
-			 }), None),
-		)
-		for event, expected_result, expected_exception in testdata:
-			try:
-				retval, tmp = fun(event)
-				if tmp != expected_result[1]:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						   "          event:\n" \
-						  f"{yaml_dump(event, base_indent=17)}\n" \
-						   "         result:\n" \
-						  f"{yaml_dump(tmp, base_indent=17)}\n" \
-						  f"       expected:\n" \
-						  f"{yaml_dump(expected_result[1], base_indent=17)}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							   "          event:\n" \
-							  f"{yaml_dump(event, base_indent=17)}\n" \
-							  f"      exception: {e}" \
-							  f"       expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						   "          event:\n" \
-						  f"{yaml_dump(event, base_indent=17)}\n" \
-						  f"      exception: {e}" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (event, expected_result, expected_exception)
+        testdata = (
+            (
+                {
+                    'uuid': '417356ca-db51-4db9-88cc-974ec9604fdd',
+                    'counter': 5,
+                    'stdout': '',
+                    'start_line': 5,
+                    'end_line': 5,
+                    'runner_ident': 'e84af1c7-39d1-4a8d-8000-1d65d6878e10',
+                    'event': 'playbook_on_no_hosts_matched',
+                    'pid': 615344,
+                    'created': '2024-03-04T18:42:45.221111'
+                },
+                (
+                    -1,
+                    {
+                        "task": "",
+                        "start_date": "",
+                        "end_date": "",
+                        "retval": -1,
+                        "no_hosts_matched": True,
+                        "unreachable": False,
+                        "status": "NO HOSTS MATCHED",
+                        "skipped": False,
+                        "stdout_lines": [],
+                        "stderr_lines": [],
+                        "msg_lines": [],
+                        "ansible_facts": {},
+                    }), None),
+            (
+                {
+                    "event": "runner_on_ok",
+                    "event_data": {
+                        "host": "localhost",
+                    },
+                },
+                (
+                    0,
+                    {}), None),
+            (
+                {
+                    "event": "runner_on_skipped",
+                    "event_data": {
+                        "host": "localhost",
+                        "task": "hide_on_ok: A hidden task",
+                    },
+                },
+                (
+                    0,
+                    {}), None),
+            (
+                {
+                    "event": "runner_on_skipped",
+                    "event_data": {
+                        "host": "localhost",
+                        "task": "hide_on_ok: A hidden task",
+                        "res": {
+                            "unreachable": True,
+                        },
+                    },
+                },
+                (
+                    0,
+                    {
+                        "ansible_facts": {},
+                        "end_date": None,
+                        "start_date": None,
+                        "msg_lines": [],
+                        "stdout_lines": ["<no output>"],
+                        "stderr_lines": [],
+                        "task": "A hidden task",
+                        "unreachable": True,
+                        "no_hosts_matched": False,
+                        "status": "UNREACHABLE (unknown reason)",
+                        "retval": -1,
+                        "skipped": True,
+                    }), None),
+            (
+                {
+                    "event": "runner_on_ok",
+                    "event_data": {
+                        "host": "localhost",
+                        "task": "Gathering Facts",
+                    },
+                    "stderr_lines": ["A message"],
+                },
+                (
+                    0,
+                    {}), None),
+            (
+                {
+                    "event": "runner_on_ok",
+                    "event_data": {
+                        "host": "localhost",
+                        "task": "A task",
+                        "res": {
+                            "msg": "A message",
+                        },
+                        "retval": 0,
+                    },
+                },
+                (
+                    0,
+                    {
+                        "ansible_facts": {},
+                        "end_date": None,
+                        "start_date": None,
+                        "status": "SUCCESS",
+                        "msg_lines": ["A message"],
+                        "skipped": False,
+                        "stdout_lines": [],
+                        "stderr_lines": [],
+                        "task": "A task",
+                        "unreachable": False,
+                        "no_hosts_matched": False,
+                        "retval": 0,
+                    }), None),
+            (
+                {
+                    "event": "runner_on_failed",
+                    "event_data": {
+                        "host": "localhost",
+                        "task": "A task",
+                        "res": {
+                            "msg": "Another message",
+                        },
+                        "retval": -1,
+                    },
+                },
+                (
+                    0,
+                    {
+                        "ansible_facts": {},
+                        "end_date": None,
+                        "msg_lines": [],
+                        "start_date": None,
+                        "status": "FAILED (unknown error)",
+                        "skipped": False,
+                        "stdout_lines": [],
+                        "stderr_lines": ["Another message"],
+                        "task": "A task",
+                        "unreachable": False,
+                        "no_hosts_matched": False,
+                        "retval": -1,
+                    }), None),
+        )
+        for event, expected_result, expected_exception in testdata:
+            try:
+                retval, tmp = fun(event)
+                if tmp != expected_result[1]:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "          event:\n" \
+                              f"{yaml_dump(event, base_indent=17)}\n" \
+                              "         result:\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
+                              f"       expected:\n" \
+                              f"{yaml_dump(expected_result[1], base_indent=17)}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "          event:\n" \
+                                  f"{yaml_dump(event, base_indent=17)}\n" \
+                                  f"      exception: {e}" \
+                                  f"       expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "          event:\n" \
+                              f"{yaml_dump(event, base_indent=17)}\n" \
+                              f"      exception: {e}" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_print_task_results(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_print_task_results
+    fun = ansible_helper.ansible_print_task_results
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 
-		# Indata format:
-		# (retval, task, msg_lines, stdout_lines, stderr_lines, skipped, unreachable, verbose, expected_exception)
-		testdata = (
-			( 0, "Checking uptime", [], [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"], [], False, False, False, None),
-			( 0, "Checking uptime", [], [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"], [], False, False, True, None),
-			(-1, "Checking uptime", [], [], ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: Name or service not known"], False, True, False, None),
-			(-1, "Checking uptime", [], [], ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: Name or service not known"], False, True, True, None),
-			(0, "Package versions", ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A', 'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A', 'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00', 'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A', 'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''], [], [], False, False, False, None),
-			(0, "Package versions", ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A', 'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A', 'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00', 'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A', 'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''], [], [], False, False, True, None),
-			(-1, "Checking uptime", [], [], [], False, False, False, None),
-			(-1, "Checking uptime", [], [], [], False, False, True, None),
-			(-1, "Checking uptime", [], [], [], True, False, False, None),
-			(-1, "Checking uptime", [], [], [], True, False, True, None),
-			(-1, "Checking uptime", [], [], ["Failed somehow"], False, False, False, None),
-			(-1, "Checking uptime", [], [], ["Failed somehow"], False, False, True, None),
-		)
-		for indata in testdata:
-			retval, task, msg_lines, stdout_lines, stderr_lines, skipped, unreachable, verbose, expected_exception = indata
-			try:
-				fun(task=task, msg_lines=msg_lines, stdout_lines=stdout_lines, stderr_lines=stderr_lines, retval=retval, unreachable=unreachable, skipped=skipped, verbose=verbose)
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           task: {task}\n" \
-							  f"         retval: {retval}\n" \
-							  f"        skipped: {skipped}\n" \
-							  f"    unreachable: {unreachable}\n" \
-							  f"        verbose: {verbose}\n" \
-							   "      msg_lines:\n" \
-							  f"{yaml_dump(msg_lines, base_indent=17)}\n" \
-							   "   stdout_lines:\n" \
-							  f"{yaml_dump(stdout_lines, base_indent=17)}\n" \
-							   "   stderr_lines:\n" \
-							  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
-							  f"      exception: {e}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           task: {task}\n" \
-						  f"         retval: {retval}\n" \
-						  f"        skipped: {skipped}\n" \
-						  f"    unreachable: {unreachable}\n" \
-						  f"        verbose: {verbose}\n" \
-						   "      msg_lines:\n" \
-						  f"{yaml_dump(msg_lines, base_indent=17)}\n" \
-						   "   stdout_lines:\n" \
-						  f"{yaml_dump(stdout_lines, base_indent=17)}\n" \
-						   "   stderr_lines:\n" \
-						  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
-						  f"      exception: {e}"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (retval, task, msg_lines, stdout_lines, stderr_lines,
+        #  skipped, unreachable, verbose, expected_exception)
+        testdata = (
+            (0, "Checking uptime", [],
+             [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"],
+             [], False, False, False, None),
+            (0, "Checking uptime", [],
+             [" 13:42:00 up 3 days,  2:35,  2 users,  load average: 0,35, 0,68, 1,13"],
+             [], False, False, True, None),
+            (-1, "Checking uptime", [], [],
+             ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: "
+              "Name or service not known"], False, True, False, None),
+            (-1, "Checking uptime", [], [],
+             ["Failed to connect to the host via ssh: ssh: Could not resolve hostname host1: "
+              "Name or service not known"], False, True, True, None),
+            (0, "Package versions",
+             ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A',
+              'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A',
+              'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00',
+              'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A',
+              'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''], [], [],
+             False, False, False, None),
+            (0, "Package versions",
+             ['ansible: 7.7.0+dfsg-3', 'ansible-core: 2.14.13-1', 'containerd: N/A',
+              'containerd.io: N/A', 'cri-o: N/A', 'cri-tools: N/A', 'docker-ce: N/A',
+              'docker-engine: N/A', 'docker.io: N/A', 'kubeadm: N/A', 'kubectl: 1.28.2-00',
+              'kubelet: N/A', 'kubernetes-cni: N/A', 'kubernetes-client: N/A',
+              'kubernetes-master: N/A', 'kubernetes-node: N/A', 'runc: N/A', ''],
+             [], [], False, False, True, None),
+            (-1, "Checking uptime", [], [], [], False, False, False, None),
+            (-1, "Checking uptime", [], [], [], False, False, True, None),
+            (-1, "Checking uptime", [], [], [], True, False, False, None),
+            (-1, "Checking uptime", [], [], [], True, False, True, None),
+            (-1, "Checking uptime", [], [], ["Failed somehow"], False, False, False, None),
+            (-1, "Checking uptime", [], [], ["Failed somehow"], False, False, True, None),
+        )
+        for indata in testdata:
+            retval, task, msg_lines, stdout_lines, stderr_lines, skipped, \
+                unreachable, verbose, expected_exception = indata
+            try:
+                fun(task=task, msg_lines=msg_lines, stdout_lines=stdout_lines,
+                    stderr_lines=stderr_lines, retval=retval, unreachable=unreachable,
+                    skipped=skipped, verbose=verbose)
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           task: {task}\n" \
+                                  f"         retval: {retval}\n" \
+                                  f"        skipped: {skipped}\n" \
+                                  f"    unreachable: {unreachable}\n" \
+                                  f"        verbose: {verbose}\n" \
+                                  "      msg_lines:\n" \
+                                  f"{yaml_dump(msg_lines, base_indent=17)}\n" \
+                                  "   stdout_lines:\n" \
+                                  f"{yaml_dump(stdout_lines, base_indent=17)}\n" \
+                                  "   stderr_lines:\n" \
+                                  f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
+                                  f"      exception: {e}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           task: {task}\n" \
+                              f"         retval: {retval}\n" \
+                              f"        skipped: {skipped}\n" \
+                              f"    unreachable: {unreachable}\n" \
+                              f"        verbose: {verbose}\n" \
+                              "      msg_lines:\n" \
+                              f"{yaml_dump(msg_lines, base_indent=17)}\n" \
+                              "   stdout_lines:\n" \
+                              f"{yaml_dump(stdout_lines, base_indent=17)}\n" \
+                              "   stderr_lines:\n" \
+                              f"{yaml_dump(stderr_lines, base_indent=17)}\n" \
+                              f"      exception: {e}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_run_playbook
+    fun = ansible_helper.ansible_run_playbook
 
-	if result:
-		d = {
-			"all": {"hosts": {"localhost": {}}},
-			"selection": {"hosts": {"localhost": {}}},
-		}
+    if result:
+        d = {
+            "all": {"hosts": {"localhost": {}}},
+            "selection": {"hosts": {"localhost": {}}},
+        }
 
-		# Indata format:
-		# (path, inventory, verbose, expected_retval, expected_result, expected_exception)
-		testdata = (
-			(os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"), d, False, 0, {"Checking uptime": {
-				"task": "Checking uptime",
-				"start_date": None,
-				"end_date": None,
-				"retval": 0,
-				"no_hosts_matched": False,
-				"unreachable": False,
-				"status": "SUCCESS",
-				"skipped": False,
-				"stdout_lines": None,
-				"stderr_lines": [],
-				"msg_lines": [],
-				"ansible_facts": None}}, None),
-			(os.path.join(TEST_PLAYBOOKS_DIR, "uptime.yaml"), d, True, 0, {"Checking uptime": {
-				"task": "Checking uptime",
-				"start_date": None,
-				"end_date": None,
-				"retval": 0,
-				"no_hosts_matched": False,
-				"unreachable": False,
-				"status": "SUCCESS",
-				"skipped": False,
-				"stdout_lines": None,
-				"stderr_lines": [],
-				"msg_lines": [],
-				"ansible_facts": None}}, None),
-		)
-		for indata in testdata:
-			path, inventory, verbose, expected_retval, expected_result, expected_exception = indata
-			try:
-				retval, result = fun(path, inventory=inventory, verbose=verbose)
-				if retval != expected_retval:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           path: {path}\n" \
-						  f"      inventory:\n" \
-						  f"{yaml_dump(inventory, base_indent=17)}\n" \
-						  f"         retval: {retval}\n" \
-						  f"       expected: {expected_retval}\n"
-					result = False
-					break
-				# Checking result is trickier:
-				match = True
-				invalid = {}
-				for task, data in result.items():
-					if task in expected_result:
-						expected_data = expected_result[task]
-						for key, value in expected_data.items():
-							if key not in data:
-								if task not in invalid:
-									invalid[task] = {}
-								if key not in invalid[task]:
-									invalid[task][key] = {}
-								invalid[task][key]["missing"] = True
-								match = False
-							if value is not None:
-								if data[key] != value:
-									invalid[task][key]["mismatch"] = {"expected": copy.deepcopy(data[key]), "result": copy.deepcopy(value)}
-									match = False
-				if not match:
-					print(f"{invalid}")
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           path: {path}\n" \
-							  f"      inventory:\n" \
-							  f"{yaml_dump(inventory, base_indent=17)}\n" \
-							  f"      exception: {e}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           path: {path}\n" \
-						  f"      inventory:\n" \
-						  f"{yaml_dump(inventory, base_indent=17)}\n" \
-						  f"      exception: {e}"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (path, inventory, verbose, expected_retval, expected_result, expected_exception)
+        testdata = (
+            (TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"), d, False, 0, {"Checking uptime": {
+                "task": "Checking uptime",
+                "start_date": None,
+                "end_date": None,
+                "retval": 0,
+                "no_hosts_matched": False,
+                "unreachable": False,
+                "status": "SUCCESS",
+                "skipped": False,
+                "stdout_lines": None,
+                "stderr_lines": [],
+                "msg_lines": [],
+                "ansible_facts": None}}, None),
+            (TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"), d, True, 0, {"Checking uptime": {
+                "task": "Checking uptime",
+                "start_date": None,
+                "end_date": None,
+                "retval": 0,
+                "no_hosts_matched": False,
+                "unreachable": False,
+                "status": "SUCCESS",
+                "skipped": False,
+                "stdout_lines": None,
+                "stderr_lines": [],
+                "msg_lines": [],
+                "ansible_facts": None}}, None),
+        )
+        for indata in testdata:
+            path, inventory, verbose, expected_retval, expected_result, expected_exception = indata
+            try:
+                retval, result = fun(path, inventory=inventory, verbose=verbose)
+                if retval != expected_retval:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           path: {path}\n" \
+                              f"      inventory:\n" \
+                              f"{yaml_dump(inventory, base_indent=17)}\n" \
+                              f"         retval: {retval}\n" \
+                              f"       expected: {expected_retval}\n"
+                    result = False
+                    break
+                # Checking result is trickier:
+                match = True
+                invalid = {}
+                for task, data in result.items():
+                    if task in expected_result:
+                        expected_data = expected_result[task]
+                        for key, value in expected_data.items():
+                            if key not in data:
+                                if task not in invalid:
+                                    invalid[task] = {}
+                                if key not in invalid[task]:
+                                    invalid[task][key] = {}
+                                invalid[task][key]["missing"] = True
+                                match = False
+                            if value is not None:
+                                if data[key] != value:
+                                    invalid[task][key]["mismatch"] = \
+                                        {"expected": copy.deepcopy(data[key]),
+                                         "result": copy.deepcopy(value)}
+                                    match = False
+                if not match:
+                    print(f"{invalid}")
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           path: {path}\n" \
+                                  f"      inventory:\n" \
+                                  f"{yaml_dump(inventory, base_indent=17)}\n" \
+                                  f"      exception: {e}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           path: {path}\n" \
+                              f"      inventory:\n" \
+                              f"{yaml_dump(inventory, base_indent=17)}\n" \
+                              f"      exception: {e}"
+                    result = False
+                    break
+    return message, result
+
 
 def test_ansible_ping(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = ansible_helper.ansible_ping
+    fun = ansible_helper.ansible_ping
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": This check can potentially be very slow.\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": This check can potentially be very slow.\n", "default")])
 
-		# Indata format:
-		# (inventory, expected_result, expected_exception)
-		testdata = (
-			(["localhost"], [("localhost", "SUCCESS")], None),
-			(["nonexistinghost"], [('nonexistinghost', 'COULD NOT RESOLVE')], None),
-			([], [], None),
-			# We cannot do a None testcase, because that pings ALL hosts in the default inventory,
-			# and would thus be difficult/impossible to verify the result of;
-			# instead we test with an invalid type.
-			(1, None, ArgumentValidationError),
-		)
-		for indata in testdata:
-			selection, expected_result, expected_exception = indata
-			try:
-				tmp = fun(selection)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"      selection: {selection}\n" \
-						  f"         result: {tmp}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"      selection: {selection}\n" \
-							  f"      exception: {e}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"      selection: {selection}\n" \
-						  f"      exception: {e}"
-					result = False
-					break
-	return message, result
+        # Indata format:
+        # (inventory, expected_result, expected_exception)
+        testdata = (
+            (["localhost"], [("localhost", "SUCCESS")], None),
+            (["nonexistinghost"], [('nonexistinghost', 'COULD NOT RESOLVE')], None),
+            ([], [], None),
+            # We cannot do a None testcase, because that pings ALL hosts in the default inventory,
+            # and would thus be difficult/impossible to verify the result of;
+            # instead we test with an invalid type.
+            (1, None, ArgumentValidationError),
+        )
+        for indata in testdata:
+            selection, expected_result, expected_exception = indata
+            try:
+                tmp = fun(selection)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"      selection: {selection}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"      selection: {selection}\n" \
+                                  f"      exception: {e}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"      selection: {selection}\n" \
+                              f"      exception: {e}"
+                    result = False
+                    break
+    return message, result
+
 
 tests: Dict = {
-	("get_playbook_path()",): {
-		"callable": test_get_playbook_path,
-		"result": None,
-	},
-	("populate_playbooks_from_paths()",): {
-		"callable": test_populate_playbooks_from_paths,
-		"result": None,
-	},
-	("ansible_print_action_summary()",): {
-		"callable": test_ansible_print_action_summary,
-		"result": None,
-	},
-	("ansible_get_inventory_dict()",): {
-		"callable": test_ansible_get_inventory_dict,
-		"result": None,
-	},
-	("ansible_get_inventory_pretty()",): {
-		"callable": test_ansible_get_inventory_pretty,
-		"result": None,
-	},
-	("ansible_get_hosts_by_group()",): {
-		"callable": test_ansible_get_hosts_by_group,
-		"result": None,
-	},
-	("ansible_get_groups()",): {
-		"callable": test_ansible_get_groups,
-		"result": None,
-	},
-	("ansible_get_groups_by_host()",): {
-		"callable": test_ansible_get_groups_by_host,
-		"result": None,
-	},
-	("__ansible_create_inventory()",): {
-		"callable": test___ansible_create_inventory,
-		"result": None,
-	},
-	("ansible_create_groups()",): {
-		"callable": test_ansible_create_groups,
-		"result": None,
-	},
-	("ansible_set_vars()",): {
-		"callable": test_ansible_set_vars,
-		"result": None,
-	},
-	("ansible_set_groupvars()",): {
-		"callable": test_ansible_set_groupvars,
-		"result": None,
-	},
-	("ansible_set_hostvars()",): {
-		"callable": test_ansible_set_hostvars,
-		"result": None,
-	},
-	("ansible_unset_groupvars()",): {
-		"callable": test_ansible_unset_groupvars,
-		"result": None,
-	},
-	("ansible_unset_hostvars()",): {
-		"callable": test_ansible_unset_hostvars,
-		"result": None,
-	},
-	("ansible_add_hosts()",): {
-		"callable": test_ansible_add_hosts,
-		"result": None,
-	},
-	("ansible_remove_hosts()",): {
-		"callable": test_ansible_remove_hosts,
-		"result": None,
-	},
-	("ansible_remove_groups()",): {
-		"callable": test_ansible_remove_groups,
-		"result": None,
-	},
-	("ansible_get_logs()",): {
-		"callable": test_ansible_get_logs,
-		"result": None,
-	},
-	("ansible_extract_failure()",): {
-		"callable": test_ansible_extract_failure,
-		"result": None,
-	},
-	("ansible_results_extract()",): {
-		"callable": test_ansible_results_extract,
-		"result": None,
-	},
-	("ansible_print_task_results()",): {
-		"callable": test_ansible_print_task_results,
-		"result": None,
-	},
-	("ansible_run_playbook()",): {
-		"callable": test_ansible_run_playbook,
-		"result": None,
-	},
-	("ansible_ping()",): {
-		"callable": test_ansible_ping,
-		"result": None,
-	},
+    ("get_playbook_path()",): {
+        "callable": test_get_playbook_path,
+        "result": None,
+    },
+    ("populate_playbooks_from_paths()",): {
+        "callable": test_populate_playbooks_from_paths,
+        "result": None,
+    },
+    ("ansible_print_action_summary()",): {
+        "callable": test_ansible_print_action_summary,
+        "result": None,
+    },
+    ("ansible_get_inventory_dict()",): {
+        "callable": test_ansible_get_inventory_dict,
+        "result": None,
+    },
+    ("ansible_get_inventory_pretty()",): {
+        "callable": test_ansible_get_inventory_pretty,
+        "result": None,
+    },
+    ("ansible_get_hosts_by_group()",): {
+        "callable": test_ansible_get_hosts_by_group,
+        "result": None,
+    },
+    ("ansible_get_groups()",): {
+        "callable": test_ansible_get_groups,
+        "result": None,
+    },
+    ("ansible_get_groups_by_host()",): {
+        "callable": test_ansible_get_groups_by_host,
+        "result": None,
+    },
+    ("__ansible_create_inventory()",): {
+        "callable": test___ansible_create_inventory,
+        "result": None,
+    },
+    ("ansible_create_groups()",): {
+        "callable": test_ansible_create_groups,
+        "result": None,
+    },
+    ("ansible_set_vars()",): {
+        "callable": test_ansible_set_vars,
+        "result": None,
+    },
+    ("ansible_set_groupvars()",): {
+        "callable": test_ansible_set_groupvars,
+        "result": None,
+    },
+    ("ansible_set_hostvars()",): {
+        "callable": test_ansible_set_hostvars,
+        "result": None,
+    },
+    ("ansible_unset_groupvars()",): {
+        "callable": test_ansible_unset_groupvars,
+        "result": None,
+    },
+    ("ansible_unset_hostvars()",): {
+        "callable": test_ansible_unset_hostvars,
+        "result": None,
+    },
+    ("ansible_add_hosts()",): {
+        "callable": test_ansible_add_hosts,
+        "result": None,
+    },
+    ("ansible_remove_hosts()",): {
+        "callable": test_ansible_remove_hosts,
+        "result": None,
+    },
+    ("ansible_remove_groups()",): {
+        "callable": test_ansible_remove_groups,
+        "result": None,
+    },
+    ("ansible_get_logs()",): {
+        "callable": test_ansible_get_logs,
+        "result": None,
+    },
+    ("ansible_extract_failure()",): {
+        "callable": test_ansible_extract_failure,
+        "result": None,
+    },
+    ("ansible_results_extract()",): {
+        "callable": test_ansible_results_extract,
+        "result": None,
+    },
+    ("ansible_print_task_results()",): {
+        "callable": test_ansible_print_task_results,
+        "result": None,
+    },
+    ("ansible_run_playbook()",): {
+        "callable": test_ansible_run_playbook,
+        "result": None,
+    },
+    ("ansible_ping()",): {
+        "callable": test_ansible_ping,
+        "result": None,
+    },
 }
 
+
 def main() -> int:
-	global tests
+    global tests
 
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile=None)
-	cmtlib.read_cmtconfig()
-	deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR)
+    init_ansithemeprint(themefile=None)
+    cmtlib.read_cmtconfig()
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR)
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
-	start_at_task = 0
-	end_at_task = testcount
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
 
-	i = 1
+    i = 1
 
-	while i < len(sys.argv):
-		opt = sys.argv[i]
-		optarg = None
-		if i + 1 < len(sys.argv):
-			optarg = sys.argv[i + 1]
-		if opt == "--start-at":
-			if not (isinstance(optarg, str) and optarg.isnumeric()):
-				raise ValueError(f"--start-at TASK requires an integer in the range [0,{testcount}]")
-			start_at_task = int(optarg)
-			i += 1
-		elif opt == "--end-at":
-			if not (isinstance(optarg, str) and optarg.isnumeric()):
-				raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
-			end_at_task = int(optarg)
-			i += 1
-		else:
-			sys.exit(f"Unknown argument: {opt}")
-		i += 1
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
 
-	for i, test in enumerate(tests):
-		if i < start_at_task:
-			continue
-		if i > end_at_task:
-			break
-		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeStr(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose=verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-					ANSIThemeStr(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeStr("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
-	if fail:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
-	if fail:
-		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeStr("  • ", "separator"),
-					ANSIThemeStr(testcase, "default")], stderr=True)
-		sys.exit(fail)
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
 
-	return 0
+    return 0
+
 
 if __name__ == "__main__":
-	main()
+    main()

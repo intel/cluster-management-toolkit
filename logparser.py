@@ -789,7 +789,7 @@ def http(message: str,
                 ThemeStr(protocol, ThemeAttr("logview", "protocol")),
                 ThemeStr(separator5, ThemeAttr("logview", "severity_info")),
                 ThemeStr(statuscode,
-                            ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
+                         ThemeAttr("logview", f"severity_{loglevel_to_name(severity).lower()}")),
                 ThemeStr(separator6, ThemeAttr("logview", "severity_info")),
             ]
 
@@ -1068,8 +1068,8 @@ def split_glog(message: str, **kwargs: Any) \
         severity = LogLevel.ERR
         remnants.insert(0,
                         ([ThemeStr(message,
-                                      ThemeAttr("logview",
-                                                f"severity_{loglevel_to_name(severity).lower()}"))],
+                                   ThemeAttr("logview",
+                                             f"severity_{loglevel_to_name(severity).lower()}"))],
                          severity))
         message = loggingerror
 
@@ -1558,7 +1558,7 @@ def json_event(message: str,
                 new_message = \
                     [ThemeStr(f"{tmp[1]} {event}", ThemeAttr("logview", severity_name)),
                      ThemeStr(" [error: could not parse json]",
-                                 ThemeAttr("logview", "severity_error"))]
+                              ThemeAttr("logview", "severity_error"))]
                 remnants = [([ThemeStr(tmp[2], ThemeAttr("logview", severity_name))], severity)]
                 return new_message, severity, facility, remnants
 
@@ -1567,9 +1567,9 @@ def json_event(message: str,
                 new = json.loads(tmp2[2])
             except DecodeException:
                 new_message = [ThemeStr(f"{tmp[0]} {event}",
-                                           ThemeAttr("logview", severity_name)),
+                                        ThemeAttr("logview", severity_name)),
                                ThemeStr(" [error: could not parse json]",
-                                           ThemeAttr("logview", "severity_error"))]
+                                        ThemeAttr("logview", "severity_error"))]
                 remnants = [([ThemeStr(tmp[2], ThemeAttr("logview", severity_name))], severity)]
                 return new_message, severity, facility, remnants
             new_str = json_dumps(new)
@@ -1682,7 +1682,7 @@ def custom_override_severity(message: Union[str, List],
             severity_name = f"severity_{loglevel_to_name(override_loglevel).lower()}"
             for substring in message:
                 override_message.append(ThemeStr(substring.string,
-                                                    ThemeAttr("logview", severity_name)))
+                                                 ThemeAttr("logview", severity_name)))
         break
 
     return override_message, severity
@@ -1749,23 +1749,23 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
                 if ":" in tmp:
                     key, value = tmp.split(":", 1)
                     message = [ThemeStr("".ljust(indent * depth) + key,
-                                           ThemeAttr("types", "yaml_key")),
+                                        ThemeAttr("types", "yaml_key")),
                                ThemeRef("separators", "yaml_key_separator"),
                                ThemeStr(f"{value}", ThemeAttr("types", "yaml_value"))]
                 else:
                     message = [ThemeStr("".ljust(indent * depth) + tmp,
-                                           ThemeAttr("types", "yaml_value"))]
+                                        ThemeAttr("types", "yaml_value"))]
             else:
                 if ":" in tmp:
                     key, value = tmp.split(":", 1)
                     remnants.append(([ThemeStr("".ljust(indent * depth) + key,
-                                                  ThemeAttr("types", "yaml_key")),
+                                               ThemeAttr("types", "yaml_key")),
                                       ThemeRef("separators", "yaml_key_separator"),
                                       ThemeStr(f"{value}",
-                                                  ThemeAttr("types", "yaml_value"))], severity))
+                                               ThemeAttr("types", "yaml_value"))], severity))
                 else:
                     remnants.append(([ThemeStr("".ljust(indent * depth) + tmp,
-                                                  ThemeAttr("types", "yaml_value"))], severity))
+                                               ThemeAttr("types", "yaml_value"))], severity))
             tmp = ""
             if raw_msg == "{":
                 depth += 1
@@ -1849,19 +1849,19 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
         if _severity < severity:
             severity = _severity
     remnants.append(([ThemeStr(" ".ljust(indent) + raw_message[eventstart:refstart],
-                                  ThemeAttr("types", "yaml_reference"))], severity))
+                               ThemeAttr("types", "yaml_reference"))], severity))
     for _key_value in raw_message[refstart:refend].split(", "):
         key, value = _key_value.split(":", 1)
         remnants.append(([ThemeStr(" ".ljust(indent * 2) + key, ThemeAttr("types", "yaml_key")),
                           ThemeRef("separators", "yaml_key_separator"),
                           ThemeStr(f" {value}", ThemeAttr("types", "yaml_value"))], severity))
     remnants.append(([ThemeStr(" ".ljust(indent * 1) + raw_message[refend:eventend],
-                                  ThemeAttr("types", "yaml_reference"))], severity))
+                               ThemeAttr("types", "yaml_reference"))], severity))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     remnants.append(([ThemeStr(raw_message[eventend:eventend + 3],
-                                  ThemeAttr("logview", severity_name)),
+                               ThemeAttr("logview", severity_name)),
                       ThemeStr(raw_message[eventend + 3:len(raw_message)],
-                                  ThemeAttr("logview", severity_name))], severity))
+                               ThemeAttr("logview", severity_name))], severity))
 
     return severity, message, remnants
 
@@ -2047,11 +2047,11 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                                 and LogparserConfiguration.msg_realbullets:
                             remnants.append(([ThemeRef("separators", "logbullet"),
                                               ThemeStr(f"{line[2:]}",
-                                                          ThemeAttr("logview", severity_name))],
+                                                       ThemeAttr("logview", severity_name))],
                                              severity))
                         else:
                             remnants.append(([ThemeStr(f"{line}",
-                                                          ThemeAttr("logview", severity_name))],
+                                                       ThemeAttr("logview", severity_name))],
                                              severity))
         else:
             tmp = []
@@ -3031,12 +3031,12 @@ def raw_formatter(message: str,
                     tmp_msg.append(ThemeStr(group, ThemeAttr("types", "generic")))
                 elif color_index > len(field_colors):
                     tmp_msg.append(ThemeStr(group,
-                                               ThemeAttr(field_colors[-1]["context"],
-                                                         field_colors[-1]["type"])))
+                                            ThemeAttr(field_colors[-1]["context"],
+                                                      field_colors[-1]["type"])))
                 else:
                     tmp_msg.append(ThemeStr(group,
-                                               ThemeAttr(field_colors[color_index]["context"],
-                                                         field_colors[color_index]["type"])))
+                                            ThemeAttr(field_colors[color_index]["context"],
+                                                      field_colors[color_index]["type"])))
             message = tmp_msg
             break
         raise TypeError(f"Unsupported matchtype {matchtype}")
@@ -3303,8 +3303,8 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
     # As a step towards always using ThemeStr, convert all regular strings
     if isinstance(message, str):
         rmessage = [ThemeStr(message,
-                                ThemeAttr("logview",
-                                          f"severity_{loglevel_to_name(severity).lower()}"))]
+                             ThemeAttr("logview",
+                                       f"severity_{loglevel_to_name(severity).lower()}"))]
     else:
         rmessage = message
 
@@ -3343,7 +3343,7 @@ def init_parser_list() -> None:
         parser_dir = FilePath(parser_dir)
 
         if Path(parser_dir).joinpath("BUNDLE.yaml").is_file():
-            path = FilePath(str(PurePath(parser_dir).joinpath("BUNDLE.yaml")))
+            path = FilePath(parser_dir).joinpath("BUNDLE.yaml")
             parser_files.append(path)
             continue
 
@@ -3355,7 +3355,7 @@ def init_parser_list() -> None:
             if not filename.endswith((".yaml", ".yml")):
                 continue
 
-            parser_files.append(FilePath(str(path)))
+            parser_files.append(FilePath(path))
 
     # pylint: disable-next=too-many-nested-blocks
     for parser_file in parser_files:
@@ -3565,13 +3565,13 @@ def logparser_initialised(**kwargs: Any) \
                                     rmessage)) > max_untruncated_len - 1:
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
-                                  ThemeAttr("logview", severity_name))], severity)]
+                               ThemeAttr("logview", severity_name))], severity)]
         severity = LogLevel.ERR
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         rmessage = [ThemeStr(f"Line too long ({len(message)} bytes); "
-                                f"truncated to {max_untruncated_len} bytes "
-                                "(Use line wrapping to see the entire message)",
-                                ThemeAttr("logview", severity_name))]
+                             f"truncated to {max_untruncated_len} bytes "
+                             "(Use line wrapping to see the entire message)",
+                             ThemeAttr("logview", severity_name))]
 
     return timestamp, facility, severity, rmessage, remnants
 
@@ -3708,12 +3708,12 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
             and themearray_len(cast(List[Union[ThemeRef, ThemeStr]],
                                     rmessage)) > max_untruncated_len - 1:
         remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
-                                  ThemeAttr("logview", severity_name))], severity)]
+                               ThemeAttr("logview", severity_name))], severity)]
         severity = LogLevel.ERR
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         rmessage = [ThemeStr(f"Line too long ({len(message)} bytes); "
-                                f"truncated to {max_untruncated_len} bytes "
-                                "(Use line wrapping to see the entire message)",
-                                ThemeAttr("logview", severity_name))]
+                             f"truncated to {max_untruncated_len} bytes "
+                             "(Use line wrapping to see the entire message)",
+                             ThemeAttr("logview", severity_name))]
 
     return timestamp, facility, severity, rmessage, remnants, (lparser, uparser), parser

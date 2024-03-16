@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
@@ -33,1017 +33,1024 @@ TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-	result = ""
-	dump = yaml.dump(data)
-	for line in dump.splitlines():
-		result += f"{' '.ljust(base_indent)}{line}\n"
-	return result
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
 
 
 def test_themestring(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.ThemeStr
+    fun = curses_helper.ThemeStr
 
-	if result:
-		try:
-			themeattr = ThemeAttr("types", "generic")
-			if repr(themeattr) != "ThemeAttr('types', 'generic')":
-				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: (\"types\", \"generic\")\n" \
-					  f"         output: {repr(themeattr)}\n" \
-					  f"       expected: ThemeAttr('types', 'generic')"
-				result = False
-		except Exception as e:
-			message = f"ThemeAttr() did not yield expected result:\n" \
-				  f"          input: (\"types\", \"generic\")\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr('types', 'generic')"
-			result = False
+    if result:
+        try:
+            themeattr = ThemeAttr("types", "generic")
+            if repr(themeattr) != "ThemeAttr('types', 'generic')":
+                message = f"ThemeAttr() did not yield expected result:\n" \
+                          f"          input: (\"types\", \"generic\")\n" \
+                          f"         output: {repr(themeattr)}\n" \
+                          f"       expected: ThemeAttr('types', 'generic')"
+                result = False
+        except Exception as e:
+            message = f"ThemeAttr() did not yield expected result:\n" \
+                      f"          input: (\"types\", \"generic\")\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: ThemeAttr('types', 'generic')"
+            result = False
 
-	if result:
-		try:
-			# ThemeAttr shouldn't check if the context/key pair exists
-			themeattr = ThemeAttr("types", "DOESNOTEXIST")
-			if repr(themeattr) != "ThemeAttr('types', 'DOESNOTEXIST')":
-				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: ('types', 'DOESNOTEXIST')\n" \
-					  f"         output: {repr(themeattr)}\n" \
-					  f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
-				result = False
-		except Exception as e:
-			message = f"ThemeAttr() did not yield expected result:\n" \
-				  f"          input: (\"types\", \"generic\")\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
-			result = False
+    if result:
+        try:
+            # ThemeAttr shouldn't check if the context/key pair exists
+            themeattr = ThemeAttr("types", "DOESNOTEXIST")
+            if repr(themeattr) != "ThemeAttr('types', 'DOESNOTEXIST')":
+                message = f"ThemeAttr() did not yield expected result:\n" \
+                          f"          input: ('types', 'DOESNOTEXIST')\n" \
+                          f"         output: {repr(themeattr)}\n" \
+                          f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
+                result = False
+        except Exception as e:
+            message = f"ThemeAttr() did not yield expected result:\n" \
+                      f"          input: (\"types\", \"generic\")\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: ThemeAttr('types', 'DOESNOTEXIST')"
+            result = False
 
-	if result:
-		# Indata format:
-		testdata = (
-			("A test string", ThemeAttr("types", "generic"),
-			 "ThemeStr('A test string', ThemeAttr('types', 'generic'), False)", None),
-			(None, ThemeAttr("types", "generic"),
-			 None, ProgrammingError),
-		)
-		for indata, themeattr, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata, themeattr)
-				if repr(tmp) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        # Indata format:
+        testdata = (
+            ("A test string", ThemeAttr("types", "generic"),
+             "ThemeStr('A test string', ThemeAttr('types', 'generic'), False)", None),
+            (None, ThemeAttr("types", "generic"),
+             None, ProgrammingError),
+        )
+        for indata, themeattr, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata, themeattr)
+                if repr(tmp) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		indata = ThemeStr("123", ThemeAttr("types", "generic"))
-		tmp = len(indata)
-		if tmp != 3:
-			message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: 3"
-			result = False
+    if result:
+        indata = ThemeStr("123", ThemeAttr("types", "generic"))
+        tmp = len(indata)
+        if tmp != 3:
+            message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: 3"
+            result = False
 
-	if result:
-		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
-		str2 = ThemeStr("124", ThemeAttr("types", "generic"))
-		tmp = str1 == str2
-		if tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(str1)} == {repr(str2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: False"
-			result = False
+    if result:
+        str1 = ThemeStr("123", ThemeAttr("types", "generic"))
+        str2 = ThemeStr("124", ThemeAttr("types", "generic"))
+        tmp = str1 == str2
+        if tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(str1)} == {repr(str2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: False"
+            result = False
 
-	if result:
-		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
-		str2 = ThemeStr("123", ThemeAttr("types", "generic"))
-		tmp = str1 == str2
-		if not tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(str1)} == {repr(str2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: True"
-			result = False
+    if result:
+        str1 = ThemeStr("123", ThemeAttr("types", "generic"))
+        str2 = ThemeStr("123", ThemeAttr("types", "generic"))
+        tmp = str1 == str2
+        if not tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(str1)} == {repr(str2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: True"
+            result = False
 
-	if result:
-		indata = ThemeStr("123", ThemeAttr("types", "generic"))
-		tmp = str(indata)
-		if tmp != "123":
-			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: 123"
-			result = False
+    if result:
+        indata = ThemeStr("123", ThemeAttr("types", "generic"))
+        tmp = str(indata)
+        if tmp != "123":
+            message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: 123"
+            result = False
 
-	if result:
-		str1 = ThemeStr("123", ThemeAttr("types", "generic"))
-		str2 = "a"
-		tmp = str1 == str2
-		if tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(str1)} == {repr(str2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: False"
-			result = False
+    if result:
+        str1 = ThemeStr("123", ThemeAttr("types", "generic"))
+        str2 = "a"
+        tmp = str1 == str2
+        if tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(str1)} == {repr(str2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: False"
+            result = False
 
-	if result:
-		indata = ThemeStr("123", ThemeAttr("types", "generic"))
-		try:
-			tmp = indata.get_themeattr()
-			if tmp != ThemeAttr("types", "generic"):
-				message = f"ThemeAttr() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: ThemeAttr('types', 'generic')"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.get_themeattr() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr('types', 'generic')"
-			result = False
+    if result:
+        indata = ThemeStr("123", ThemeAttr("types", "generic"))
+        try:
+            tmp = indata.get_themeattr()
+            if tmp != ThemeAttr("types", "generic"):
+                message = f"ThemeAttr() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {repr(tmp)}\n" \
+                          f"       expected: ThemeAttr('types', 'generic')"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.get_themeattr() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: ThemeAttr('types', 'generic')"
+            result = False
 
-	if result:
-		indata = ThemeStr("http://www.intel.com", ThemeAttr("types", "generic"))
-		try:
-			indata.set_themeattr(ThemeAttr("types", "url"))
-			tmp = indata.get_themeattr()
-			if tmp != ThemeAttr("types", "url"):
-				message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: ThemeAttr('types', 'url')"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: ThemeAttr('types', 'url')"
-			result = False
+    if result:
+        indata = ThemeStr("http://www.intel.com", ThemeAttr("types", "generic"))
+        try:
+            indata.set_themeattr(ThemeAttr("types", "url"))
+            tmp = indata.get_themeattr()
+            if tmp != ThemeAttr("types", "url"):
+                message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {repr(tmp)}\n" \
+                          f"       expected: ThemeAttr('types', 'url')"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.set_themeattr() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: ThemeAttr('types', 'url')"
+            result = False
 
-	if result:
-		indata = ThemeStr("1", ThemeAttr("types", "generic"), True)
-		try:
-			tmp = indata.get_selected()
-			if not tmp:
-				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {tmp}\n" \
-					  f"       expected: True"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: True"
-			result = False
+    if result:
+        indata = ThemeStr("1", ThemeAttr("types", "generic"), True)
+        try:
+            tmp = indata.get_selected()
+            if not tmp:
+                message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: True"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: True"
+            result = False
 
-	return message, result
+    return message, result
 
 
 def test_themeref(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.ThemeRef
+    fun = curses_helper.ThemeRef
 
-	if result:
-		# Indata format:
-		testdata = (
-			(("strings", "none"),
-			 "ThemeRef('strings', 'none', False)", None),
-			((None, "none"),
-			 None, ProgrammingError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata[0], indata[1])
-				if repr(tmp) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        # Indata format:
+        testdata = (
+            (("strings", "none"),
+             "ThemeRef('strings', 'none', False)", None),
+            ((None, "none"),
+             None, ProgrammingError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata[0], indata[1])
+                if repr(tmp) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", False)
-		tmp = str(indata)
-		if tmp != "■":
-			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: ■"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", False)
+        tmp = str(indata)
+        if tmp != "■":
+            message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: ■"
+            result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", True)
-		tmp = str(indata)
-		if tmp != "█":
-			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: █"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", True)
+        tmp = str(indata)
+        if tmp != "█":
+            message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: █"
+            result = False
 
-	if result:
-		indata = ThemeRef("nonexisting", "themeref", True)
-		try:
-			tmp = str(indata)
-			message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield expected result:\n" \
-				  f"       expected: ProgrammingError"
-			result = False
-		except Exception as e:
-			if isinstance(e, ProgrammingError):
-				pass
-			else:
-				message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield expected result:\n" \
-					  f"       expected: ProgrammingError"
-				result = False
+    if result:
+        indata = ThemeRef("nonexisting", "themeref", True)
+        try:
+            tmp = str(indata)
+            message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield " \
+                      "expected result:\n" \
+                      f"       expected: ProgrammingError"
+            result = False
+        except Exception as e:
+            if isinstance(e, ProgrammingError):
+                pass
+            else:
+                message = f"{fun.__name__}(\"nonexisting\", \"themeref\") did not yield " \
+                          "expected result:\n" \
+                          f"       expected: ProgrammingError"
+                result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", True)
-		tmp = len(indata)
-		if tmp != 1:
-			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: 1"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", True)
+        tmp = len(indata)
+        if tmp != 1:
+            message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: 1"
+            result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", False)
-		try:
-			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]":
-				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", False)
+        try:
+            tmp = indata.to_themearray()
+            if repr(tmp) != "[ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]":
+                message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {repr(tmp)}\n" \
+                          f"       expected: " \
+                          "[ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: " \
+                      "[ThemeStr('■', ThemeAttr('main', 'status_critical'), False)]"
+            result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", True)
-		try:
-			tmp = indata.to_themearray()
-			if repr(tmp) != "[ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]":
-				message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {repr(tmp)}\n" \
-					  f"       expected: [ThemeStr('■', ThemeAttr('main', 'status_critical'), True)]"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: [ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]"
+    if result:
+        indata = ThemeRef("strings", "status_critical", True)
+        try:
+            tmp = indata.to_themearray()
+            if repr(tmp) != "[ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]":
+                message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {repr(tmp)}\n" \
+                          f"       expected: " \
+                          "[ThemeStr('■', ThemeAttr('main', 'status_critical'), True)]"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: " \
+                      "[ThemeStr('█', ThemeAttr('main', 'status_critical'), True)]"
 
-			result = False
+            result = False
 
-	if result:
-		indata = ThemeRef("", "", True)
-		try:
-			tmp = indata.to_themearray()
-			message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {repr(tmp)}\n" \
-				  f"       expected: {ProgrammingError}"
-			result = False
-		except Exception as e:
-			if not isinstance(e, ProgrammingError):
-				message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"      exception: {type(e)}\n" \
-					  f"       expected: {ProgrammingError}"
-				result = False
+    if result:
+        indata = ThemeRef("", "", True)
+        try:
+            tmp = indata.to_themearray()
+            message = f"{fun.__name__}.to_themearray() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {repr(tmp)}\n" \
+                      f"       expected: {ProgrammingError}"
+            result = False
+        except Exception as e:
+            if not isinstance(e, ProgrammingError):
+                message = f"{fun.__name__}.top_themearray() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {ProgrammingError}"
+                result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", False)
-		try:
-			tmp = indata.get_selected()
-			if tmp:
-				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {tmp}\n" \
-					  f"       expected: True"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: True"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", False)
+        try:
+            tmp = indata.get_selected()
+            if tmp:
+                message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: True"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: True"
+            result = False
 
-	if result:
-		indata = ThemeRef("strings", "status_critical", True)
-		try:
-			tmp = indata.get_selected()
-			if not tmp:
-				message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-					  f"          input: {repr(indata)}\n" \
-					  f"         output: {tmp}\n" \
-					  f"       expected: False"
-				result = False
-		except Exception as e:
-			message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"      exception: {type(e)}\n" \
-				  f"       expected: True"
-			result = False
+    if result:
+        indata = ThemeRef("strings", "status_critical", True)
+        try:
+            tmp = indata.get_selected()
+            if not tmp:
+                message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                          f"          input: {repr(indata)}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: False"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}.get_selected() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: True"
+            result = False
 
-	if result:
-		indata1 = ThemeRef("strings", "status_critical", False)
-		indata2 = ThemeRef("strings", "status_critical", True)
-		tmp = indata1 == indata2
-		if tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: False"
-			result = False
+    if result:
+        indata1 = ThemeRef("strings", "status_critical", False)
+        indata2 = ThemeRef("strings", "status_critical", True)
+        tmp = indata1 == indata2
+        if tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: False"
+            result = False
 
-	if result:
-		indata1 = ThemeRef("strings", "status_critical", False)
-		indata2 = ThemeRef("strings", "status_critical", False)
-		tmp = indata1 == indata2
-		if not tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: True"
-			result = False
+    if result:
+        indata1 = ThemeRef("strings", "status_critical", False)
+        indata2 = ThemeRef("strings", "status_critical", False)
+        tmp = indata1 == indata2
+        if not tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: True"
+            result = False
 
-	if result:
-		indata1 = ThemeRef("strings", "status_critical", False)
-		indata2 = 42
-		tmp = indata1 == indata2
-		if tmp:
-			message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-				  f"          input: {repr(indata1)} == {repr(indata2)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: False"
-			result = False
+    if result:
+        indata1 = ThemeRef("strings", "status_critical", False)
+        indata2 = 42
+        tmp = indata1 == indata2
+        if tmp:
+            message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                      f"          input: {repr(indata1)} == {repr(indata2)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: False"
+            result = False
 
-	return message, result
+    return message, result
 
 
 def test_themearray(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.ThemeArray
+    fun = curses_helper.ThemeArray
 
-	if result:
-		# Indata format:
-		testdata = (
-			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
-			  ThemeStr("World", ThemeAttr("types", "emphasis")),
-			 ], False,
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
-				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
-			([ThemeStr("Hello ", ThemeAttr("types", "generic"), False),
-			  ThemeStr("World", ThemeAttr("types", "emphasis"), False),
-			 ], True,
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), True), "
-				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), True)])", None),
-			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
-			  ThemeStr("World", ThemeAttr("types", "emphasis")),
-			 ], None,
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
-				    "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
-			([ThemeStr("Hello ", ThemeAttr("types", "generic")),
-			  ThemeStr("World", ThemeAttr("types", "emphasis")),
-			  ThemeRef("separators", "matchbullet"),
-			 ], False,
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
-				     "ThemeStr('World', ThemeAttr('types', 'emphasis'), False), "
-				     "ThemeRef('separators', 'matchbullet', False)])", None),
-			(None, False, None, ProgrammingError),
-			("a", False, None, ProgrammingError),
-			(["a"], False, None, ProgrammingError),
-		)
-		for indata, selected, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata, selected)
-				if repr(tmp) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        # Indata format:
+        testdata = (
+            ([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+              ThemeStr("World", ThemeAttr("types", "emphasis"))], False,
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+             "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
+            ([ThemeStr("Hello ", ThemeAttr("types", "generic"), False),
+              ThemeStr("World", ThemeAttr("types", "emphasis"), False)], True,
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), True), "
+             "ThemeStr('World', ThemeAttr('types', 'emphasis'), True)])", None),
+            ([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+              ThemeStr("World", ThemeAttr("types", "emphasis"))], None,
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+             "ThemeStr('World', ThemeAttr('types', 'emphasis'), False)])", None),
+            ([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+              ThemeStr("World", ThemeAttr("types", "emphasis")),
+              ThemeRef("separators", "matchbullet")], False,
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'generic'), False), "
+             "ThemeStr('World', ThemeAttr('types', 'emphasis'), False), "
+             "ThemeRef('separators', 'matchbullet', False)])", None),
+            (None, False, None, ProgrammingError),
+            ("a", False, None, ProgrammingError),
+            (["a"], False, None, ProgrammingError),
+        )
+        for indata, selected, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata, selected)
+                if repr(tmp) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		base = ThemeArray([ThemeStr("Hello World", ThemeAttr("types", "emphasis"))], False)
-		testdata = (
-			(ThemeRef("separators", "matchbullet", True),
-			 "ThemeArray([ThemeStr('Hello World', ThemeAttr('types', 'emphasis'), False), ThemeRef('separators', 'matchbullet', True)])", None),
-			(None,
-			 None, ProgrammingError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = copy.deepcopy(base)
-				tmp.append(indata)
-				if expected_exception is None:
-					if repr(tmp) != expected_result:
-						message = f"{fun.__name__}.append() did not yield expected result:\n" \
-							  f"          input: {repr(base)}\n" \
-							  f"         append: {repr(indata)}\n" \
-							  f"         output: {repr(tmp)}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.append() did not yield expected result:\n" \
-						  f"          input: {repr(base)}\n" \
-						  f"         append: {repr(indata)}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_exception}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {repr(base)}\n" \
-							  f"         append: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {base}\n" \
-						  f"         append: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        base = ThemeArray([ThemeStr("Hello World", ThemeAttr("types", "emphasis"))], False)
+        testdata = (
+            (ThemeRef("separators", "matchbullet", True),
+             "ThemeArray([ThemeStr('Hello World', ThemeAttr('types', 'emphasis'), False), "
+             "ThemeRef('separators', 'matchbullet', True)])", None),
+            (None,
+             None, ProgrammingError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = copy.deepcopy(base)
+                tmp.append(indata)
+                if expected_exception is None:
+                    if repr(tmp) != expected_result:
+                        message = f"{fun.__name__}.append() did not yield expected result:\n" \
+                                  f"          input: {repr(base)}\n" \
+                                  f"         append: {repr(indata)}\n" \
+                                  f"         output: {repr(tmp)}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.append() did not yield expected result:\n" \
+                              f"          input: {repr(base)}\n" \
+                              f"         append: {repr(indata)}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_exception}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {repr(base)}\n" \
+                                  f"         append: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {base}\n" \
+                              f"         append: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		base = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "emphasis"))], False)
-		testdata = (
-			(ThemeArray([ThemeStr("World", ThemeAttr("types", "generic"))], False),
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
-			([ThemeStr("World", ThemeAttr("types", "generic"), False)],
-			 "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
-			(None,
-			 None, ProgrammingError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = copy.deepcopy(base)
-				tmp += indata
-				if expected_exception is None:
-					if repr(tmp) != expected_result:
-						message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
-							  f"          input: {repr(base)}\n" \
-							  f"         append: {repr(indata)}\n" \
-							  f"         output: {repr(tmp)}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
-						  f"          input: {repr(base)}\n" \
-						  f"         append: {repr(indata)}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_exception}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
-							  f"          input: {repr(base)}\n" \
-							  f"         append: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
-						  f"          input: {base}\n" \
-						  f"         append: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        base = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "emphasis"))], False)
+        testdata = (
+            (ThemeArray([ThemeStr("World", ThemeAttr("types", "generic"))], False),
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), "
+             "ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
+            ([ThemeStr("World", ThemeAttr("types", "generic"), False)],
+             "ThemeArray([ThemeStr('Hello ', ThemeAttr('types', 'emphasis'), False), "
+             "ThemeStr('World', ThemeAttr('types', 'generic'), False)])", None),
+            (None,
+             None, ProgrammingError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = copy.deepcopy(base)
+                tmp += indata
+                if expected_exception is None:
+                    if repr(tmp) != expected_result:
+                        message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
+                                  f"          input: {repr(base)}\n" \
+                                  f"         append: {repr(indata)}\n" \
+                                  f"         output: {repr(tmp)}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
+                              f"          input: {repr(base)}\n" \
+                              f"         append: {repr(indata)}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_exception}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
+                                  f"          input: {repr(base)}\n" \
+                                  f"         append: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__add__() did not yield expected result:\n" \
+                              f"          input: {base}\n" \
+                              f"         append: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		indata = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "generic")),
-				     ThemeStr("World", ThemeAttr("types", "emphasis"))])
-		tmp = str(indata)
-		if tmp != "Hello World":
-			message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
-				  f"          input: {repr(indata)}\n" \
-				  f"         output: {tmp}\n" \
-				  f"       expected: Hello World"
-			result = False
+    if result:
+        indata = ThemeArray([ThemeStr("Hello ", ThemeAttr("types", "generic")),
+                             ThemeStr("World", ThemeAttr("types", "emphasis"))])
+        tmp = str(indata)
+        if tmp != "Hello World":
+            message = f"{fun.__name__}.__str__() did not yield expected result:\n" \
+                      f"          input: {repr(indata)}\n" \
+                      f"         output: {tmp}\n" \
+                      f"       expected: Hello World"
+            result = False
 
-	if result:
-		testdata = (
-			(ThemeArray([ThemeStr("12345", ThemeAttr("types", "generic"))], False),
-			 5, None),
-			(ThemeArray([ThemeStr("", ThemeAttr("types", "generic"), False)]),
-			 0, None),
-			# "–"; this needs to be modified if the separator changes, so don't!
-			(ThemeArray([ThemeRef("separators", "range", False)]),
-			 1, None),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = len(indata)
-				if expected_exception is None:
-					if tmp != expected_result:
-						message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
-							  f"          input: {repr(indata)}\n" \
-							  f"         output: {repr(tmp)}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
-						  f"          input: {repr(indata)}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_exception}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
-							  f"          input: {repr(indata)}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        testdata = (
+            (ThemeArray([ThemeStr("12345", ThemeAttr("types", "generic"))], False),
+             5, None),
+            (ThemeArray([ThemeStr("", ThemeAttr("types", "generic"), False)]),
+             0, None),
+            # "–"; this needs to be modified if the separator changes, so don't!
+            (ThemeArray([ThemeRef("separators", "range", False)]),
+             1, None),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = len(indata)
+                if expected_exception is None:
+                    if tmp != expected_result:
+                        message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
+                                  f"          input: {repr(indata)}\n" \
+                                  f"         output: {repr(tmp)}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
+                              f"          input: {repr(indata)}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_exception}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
+                                  f"          input: {repr(indata)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__len__() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	if result:
-		testdata = (
-			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
-			 ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
-			 True, None),
-			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
-			 ThemeArray([ThemeStr("B", ThemeAttr("types", "generic"))], False),
-			 False, None),
-			(ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
-			 "3",
-			 False, None),
-		)
-		for indata1, indata2, expected_result, expected_exception in testdata:
-			try:
-				tmp = indata1 == indata2
-				if expected_exception is None:
-					if tmp != expected_result:
-						message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-							  f"         input1: {repr(indata1)}\n" \
-							  f"         input2: {repr(indata2)}\n" \
-							  f"         output: {repr(tmp)}\n" \
-							  f"       expected: {expected_result}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-						  f"         input1: {repr(indata1)}\n" \
-						  f"         input2: {repr(indata2)}\n" \
-						  f"         output: {repr(tmp)}\n" \
-						  f"       expected: {expected_exception}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-							  f"         input1: {repr(indata1)}\n" \
-							  f"         input2: {repr(indata2)}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
-						  f"         input1: {repr(indata1)}\n" \
-						  f"         input2: {repr(indata2)}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
+    if result:
+        testdata = (
+            (ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+             ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+             True, None),
+            (ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+             ThemeArray([ThemeStr("B", ThemeAttr("types", "generic"))], False),
+             False, None),
+            (ThemeArray([ThemeStr("A", ThemeAttr("types", "generic"))], False),
+             "3",
+             False, None),
+        )
+        for indata1, indata2, expected_result, expected_exception in testdata:
+            try:
+                tmp = indata1 == indata2
+                if expected_exception is None:
+                    if tmp != expected_result:
+                        message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                                  f"         input1: {repr(indata1)}\n" \
+                                  f"         input2: {repr(indata2)}\n" \
+                                  f"         output: {repr(tmp)}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                              f"         input1: {repr(indata1)}\n" \
+                              f"         input2: {repr(indata2)}\n" \
+                              f"         output: {repr(tmp)}\n" \
+                              f"       expected: {expected_exception}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                                  f"         input1: {repr(indata1)}\n" \
+                                  f"         input2: {repr(indata2)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.__eq__() did not yield expected result:\n" \
+                              f"         input1: {repr(indata1)}\n" \
+                              f"         input2: {repr(indata2)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 
 def test_format_helptext(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.format_helptext
+    fun = curses_helper.format_helptext
 
-	if result:
-		# Indata format:
-		# (helptext, expected_result, expected_exception)
-		testdata = (
-			([("[F1] / [Shift] + H", "Show this helptext"), ("[Ctrl] + X", "Exit program")],
-			 [{"lineattrs": WidgetLineAttrs.NORMAL,
-			   "columns": [[ThemeStr("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
-				       [ThemeStr("Show this helptext", ThemeAttr("windowwidget", "default"))]],
-			   "retval": None},
-			  {"lineattrs": WidgetLineAttrs.NORMAL,
-			   "columns": [[ThemeStr("[Ctrl] + X", ThemeAttr("windowwidget", "highlight"))],
-				       [ThemeStr("Exit program", ThemeAttr("windowwidget", "default"))]],
-			   "retval": None}], None),
-		)
-		for indata in testdata:
-			helptext, expected_result, expected_exception = indata
-			try:
-				tmp = fun(helptext)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {helptext}\n" \
-						  f"         result: {tmp}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {helptext}\n" \
-							  f"      exception: {e}\n" \
-							  f"       expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {helptext}\n" \
-						  f"      exception: {e}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (helptext, expected_result, expected_exception)
+        testdata = (
+            ([("[F1] / [Shift] + H", "Show this helptext"), ("[Ctrl] + X", "Exit program")],
+             [{"lineattrs": WidgetLineAttrs.NORMAL,
+               "columns": [[ThemeStr("[F1] / [Shift] + H", ThemeAttr("windowwidget", "highlight"))],
+                           [ThemeStr("Show this helptext", ThemeAttr("windowwidget", "default"))]],
+               "retval": None},
+              {"lineattrs": WidgetLineAttrs.NORMAL,
+               "columns": [[ThemeStr("[Ctrl] + X", ThemeAttr("windowwidget", "highlight"))],
+                           [ThemeStr("Exit program", ThemeAttr("windowwidget", "default"))]],
+               "retval": None}], None),
+        )
+        for indata in testdata:
+            helptext, expected_result, expected_exception = indata
+            try:
+                tmp = fun(helptext)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {helptext}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {helptext}\n" \
+                                  f"      exception: {e}\n" \
+                                  f"       expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {helptext}\n" \
+                              f"      exception: {e}\n" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+    return message, result
 
 
 def test_set_mousemask(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	curses.initscr()
-	fun = curses_helper.set_mousemask
+    curses.initscr()
+    fun = curses_helper.set_mousemask
 
-	if result:
-		# Indata format:
-		# (mask, expected_exception)
-		testdata = (
-			(-1, None),
-			(0, None),
-		)
-		for indata, expected_exception in testdata:
-			try:
-				fun(indata)
-			except Exception as e:
-				if isinstance(e, expected_exception):
-					pass
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {e}\n" \
-						  f"       expected: {expected_exception}\n"
-					result = False
-					break
-	curses.endwin()
-	return message, result
+    if result:
+        # Indata format:
+        # (mask, expected_exception)
+        testdata = (
+            (-1, None),
+            (0, None),
+        )
+        for indata, expected_exception in testdata:
+            try:
+                fun(indata)
+            except Exception as e:
+                if isinstance(e, expected_exception):
+                    pass
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {e}\n" \
+                              f"       expected: {expected_exception}\n"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
 
 
 def test_get_mousemask(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.get_mousemask
+    fun = curses_helper.get_mousemask
 
-	if result:
-		# Indata format:
-		# (mask, expected_result, expected_exception)
-		testdata = (
-			(-1, -1, None),
-			(0, 0, None),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				curses_helper.set_mousemask(indata)
-				if (tmp := fun()) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         result: {tmp}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {indata}\n" \
-							  f"      exception: {e}\n" \
-							  f"       expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"      exception: {e}\n" \
-						  f"       expected: {expected_result}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (mask, expected_result, expected_exception)
+        testdata = (
+            (-1, -1, None),
+            (0, 0, None),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                curses_helper.set_mousemask(indata)
+                if (tmp := fun()) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {e}\n" \
+                                  f"       expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {e}\n" \
+                              f"       expected: {expected_result}\n"
+                    result = False
+                    break
+    return message, result
 
 
 def test_read_theme(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.read_theme
+    fun = curses_helper.read_theme
 
-	if result:
-		# Indata format:
-		# (configthemefile, defaultthemefile, expected_exception)
-		testdata = (
-			(os.path.join(THEME_DIR, "cvd.yaml"), DEFAULT_THEME_FILE, None),
-			(os.path.join(THEME_DIR, "cvd"), DEFAULT_THEME_FILE, None),
-			(os.path.join(THEME_DIR, "NonExistingTheme"), DEFAULT_THEME_FILE, None),
-			(os.path.join(THEME_DIR, "NonExistingTheme"), None, ProgrammingError),
-			(None, DEFAULT_THEME_FILE, None),
-			(None, os.path.join(THEME_DIR, "NonExistingTheme"), ProgrammingError),
-			(None, None, ProgrammingError),
-		)
-		for configthemefile, defaultthemefile, expected_exception in testdata:
-			try:
-				curses_helper.themefile = None
-				fun(configthemefile, defaultthemefile)
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" configthemefile: {configthemefile}\n" \
-							  f"defaultthemefile: {defaultthemefile}\n" \
-							  f"       exception: {e}\n" \
-							  f"        expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f" configthemefile: {configthemefile}\n" \
-						  f"defaultthemefile: {defaultthemefile}\n" \
-						  f"       exception: {e}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (configthemefile, defaultthemefile, expected_exception)
+        testdata = (
+            (os.path.join(THEME_DIR, "cvd.yaml"), DEFAULT_THEME_FILE, None),
+            (os.path.join(THEME_DIR, "cvd"), DEFAULT_THEME_FILE, None),
+            (os.path.join(THEME_DIR, "NonExistingTheme"), DEFAULT_THEME_FILE, None),
+            (os.path.join(THEME_DIR, "NonExistingTheme"), None, ProgrammingError),
+            (None, DEFAULT_THEME_FILE, None),
+            (None, os.path.join(THEME_DIR, "NonExistingTheme"), ProgrammingError),
+            (None, None, ProgrammingError),
+        )
+        for configthemefile, defaultthemefile, expected_exception in testdata:
+            try:
+                curses_helper.themefile = None
+                fun(configthemefile, defaultthemefile)
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f" configthemefile: {configthemefile}\n" \
+                                  f"defaultthemefile: {defaultthemefile}\n" \
+                                  f"       exception: {e}\n" \
+                                  f"        expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" configthemefile: {configthemefile}\n" \
+                              f"defaultthemefile: {defaultthemefile}\n" \
+                              f"       exception: {e}\n"
+                    result = False
+                    break
+    return message, result
 
 
 def test_get_theme_ref(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.get_theme_ref
+    fun = curses_helper.get_theme_ref
 
-	curses_helper.read_theme(DEFAULT_THEME_FILE, DEFAULT_THEME_FILE)
+    curses_helper.read_theme(DEFAULT_THEME_FILE, DEFAULT_THEME_FILE)
 
-	if result:
-		tmp = fun()
-		if tmp != curses_helper.theme:
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"        expected: {curses_helper.theme}\n" \
-				  f"             got: {tmp}\n"
-			result = False
-	return message, result
+    if result:
+        tmp = fun()
+        if tmp != curses_helper.theme:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"        expected: {curses_helper.theme}\n" \
+                      f"             got: {tmp}\n"
+            result = False
+    return message, result
 
 
 def test_init_curses(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = curses_helper.init_curses
+    fun = curses_helper.init_curses
 
-	if result:
-		# Indata format:
-		# (configthemefile, defaultthemefile, expected_exception)
-		testdata = (
-			(os.path.join(TEST_DIR, "fg_equals_bg.yaml"), ValueError),
-			(os.path.join(TEST_DIR, "colorremap.yaml"), None),
-			(os.path.join(TEST_DIR, "attr_not_known.yaml"), None),
-			(os.path.join(TEST_DIR, "attr_not_str.yaml"), None),
-			(os.path.join(TEST_DIR, "col_not_known.yaml"), ValueError),
-			(os.path.join(TEST_DIR, "col_not_str.yaml"), ValueError),
-			# This is just to restore things to a sensible state
-			(DEFAULT_THEME_FILE, None),
-		)
-		for configthemefile, expected_exception in testdata:
-			try:
-				curses.initscr()
-				curses.start_color()
-				curses_helper.read_theme(configthemefile, DEFAULT_THEME_FILE)
-				curses_helper.themefile = None
-				fun()
-				curses.endwin()
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f" configthemefile: {configthemefile}\n" \
-							  f"       exception: {e}\n" \
-							  f"        expected: {expected_exception}\n"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f" configthemefile: {configthemefile}\n" \
-						  f"       exception: {e}\n"
-					result = False
-					break
-	try:
-		curses.endwin()
-	except curses.error:
-		pass
-	return message, result
+    if result:
+        # Indata format:
+        # (configthemefile, defaultthemefile, expected_exception)
+        testdata = (
+            (os.path.join(TEST_DIR, "fg_equals_bg.yaml"), ValueError),
+            (os.path.join(TEST_DIR, "colorremap.yaml"), None),
+            (os.path.join(TEST_DIR, "attr_not_known.yaml"), None),
+            (os.path.join(TEST_DIR, "attr_not_str.yaml"), None),
+            (os.path.join(TEST_DIR, "col_not_known.yaml"), ValueError),
+            (os.path.join(TEST_DIR, "col_not_str.yaml"), ValueError),
+            # This is just to restore things to a sensible state
+            (DEFAULT_THEME_FILE, None),
+        )
+        for configthemefile, expected_exception in testdata:
+            try:
+                curses.initscr()
+                curses.start_color()
+                curses_helper.read_theme(configthemefile, DEFAULT_THEME_FILE)
+                curses_helper.themefile = None
+                fun()
+                curses.endwin()
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f" configthemefile: {configthemefile}\n" \
+                                  f"       exception: {e}\n" \
+                                  f"        expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f" configthemefile: {configthemefile}\n" \
+                              f"       exception: {e}\n"
+                    result = False
+                    break
+    try:
+        curses.endwin()
+    except curses.error:
+        pass
+    return message, result
 
 
 tests: Dict = {
-	("ThemeStr()",): {
-		"callable": test_themestring,
-		"result": None,
-	},
-	("ThemeRef()",): {
-		"callable": test_themeref,
-		"result": None,
-	},
-	("ThemeArray()",): {
-		"callable": test_themearray,
-		"result": None,
-	},
-	("format_helptext()",): {
-		"callable": test_format_helptext,
-		"result": None,
-	},
-	("set_mousemask()",): {
-		"callable": test_set_mousemask,
-		"result": None,
-	},
-	("get_mousemask()",): {
-		"callable": test_get_mousemask,
-		"result": None,
-	},
-	("read_theme()",): {
-		"callable": test_read_theme,
-		"result": None,
-	},
-	("get_theme_ref()",): {
-		"callable": test_get_theme_ref,
-		"result": None,
-	},
-	("init_curses()",): {
-		"callable": test_init_curses,
-		"result": None,
-	},
+    ("ThemeStr()",): {
+        "callable": test_themestring,
+        "result": None,
+    },
+    ("ThemeRef()",): {
+        "callable": test_themeref,
+        "result": None,
+    },
+    ("ThemeArray()",): {
+        "callable": test_themearray,
+        "result": None,
+    },
+    ("format_helptext()",): {
+        "callable": test_format_helptext,
+        "result": None,
+    },
+    ("set_mousemask()",): {
+        "callable": test_set_mousemask,
+        "result": None,
+    },
+    ("get_mousemask()",): {
+        "callable": test_get_mousemask,
+        "result": None,
+    },
+    ("read_theme()",): {
+        "callable": test_read_theme,
+        "result": None,
+    },
+    ("get_theme_ref()",): {
+        "callable": test_get_theme_ref,
+        "result": None,
+    },
+    ("init_curses()",): {
+        "callable": test_init_curses,
+        "result": None,
+    },
 }
 
 
 def main() -> int:
-	global tests
+    global tests
 
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile=None)
-	cmtlib.read_cmtconfig()
+    init_ansithemeprint(themefile=None)
+    cmtlib.read_cmtconfig()
 
-	defaultthemefile = DEFAULT_THEME_FILE
-	tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
-	themefile, _theme_path_found = expand_path(path=tmpthemefile, search_paths=[os.getcwd(), THEME_DIR], suffixes=[".yaml"], fallback=defaultthemefile)
-	curses_helper.read_theme(themefile, defaultthemefile)
+    defaultthemefile = DEFAULT_THEME_FILE
+    tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
+    themefile, _theme_path_found = \
+        expand_path(path=tmpthemefile, search_paths=[os.getcwd(), THEME_DIR],
+                    suffixes=[".yaml"], fallback=defaultthemefile)
+    curses_helper.read_theme(themefile, defaultthemefile)
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
-	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeStr(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose=verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-					ANSIThemeStr(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeStr("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if len(message) > 0:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
-	if fail:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
-	if fail:
-		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeStr("  • ", "separator"),
-					ANSIThemeStr(testcase, "default")], stderr=True)
-		sys.exit(fail)
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
 
-	return 0
+    return 0
 
 
 if __name__ == "__main__":
-	main()
+    main()

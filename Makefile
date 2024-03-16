@@ -19,23 +19,10 @@ test_lib_symlinks = \
 	objgetters.py \
 	reexecutor.py
 
-# For testcases we're moving towards PEP8, so our flake8 flags are stricter
-FLAKE8_IGNORE_TEST := W191,E501,E101,E128,E126,E124,E127
-# This is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
+# F841 is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
 # pylint does, so we rely on that one to handle it instead.
-FLAKE8_IGNORE_TEST := $(FLAKE8_IGNORE_TEST),F841
-# These warnings are for invalid escape sequences and imports not at the top;
-# they are triggered by the shell script-based workaround
-FLAKE8_IGNORE_TEST := $(FLAKE8_IGNORE_TEST),W605,E402
-
-# Most of these are warnings/errors emitted due to coding style differences
-FLAKE8_IGNORE := W191,E501,E101,E128,E126,E124,E127,E251,E302,E265,E712,E201,E202,E122,E241,E713,W504,E115,E222,E303,E221,E116,E129
-# This is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
-# pylint does, so we rely on that one to handle it instead.
-FLAKE8_IGNORE := $(FLAKE8_IGNORE),F841
-# These warnings are for invalid escape sequences and imports not at the top;
-# they are triggered by the shell script-based workaround
-FLAKE8_IGNORE := $(FLAKE8_IGNORE),W605,E402
+# W503 is for line break before binary operator; flake8 warns *both* for breaks before and after. We need to ignore one of those warnings.
+FLAKE8_IGNORE := F841,W503
 
 code-checks-weak: flake8
 code-checks: flake8 mypy
@@ -186,9 +173,9 @@ flake8:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning flake8 to check Python code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 $(python_executables) *.py ;\
+	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 --statistics $(python_executables) *.py && printf -- "OK\n\n" ;\
 	printf -- "\n\nRunning flake8 to check Python test case code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE_TEST) --max-line-length 100 $(python_test_executables)
+	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 --statistics $(python_test_executables) && printf -- "OK\n\n"
 
 regexploit:
 	@cmd=regexploit-py ;\

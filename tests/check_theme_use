@@ -1,23 +1,17 @@
 #! /bin/sh
-# vim: filetype=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
-
-"""
-Extract all uses of ThemeAttr, ThemeRef, and ANSIThemeStr
-and ensure that the references exist in the theme files.
-
-Also cross-reference the themes to make sure that all theme files
-contain the same entries.
-
-For usage, see:
-	./tests/check_theme_use help
-"""
 
 import ast
 import errno
@@ -27,6 +21,17 @@ import yaml
 
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 
+"""
+Extract all uses of ThemeAttr, ThemeRef, and ANSIThemeStr
+and ensure that the references exist in the theme files.
+
+Also cross-reference the themes to make sure that all theme files
+contain the same entries.
+
+For usage, see:
+    ./tests/check_theme_use help
+"""
+
 theme: Dict = {}
 themepath = ""
 path = ""
@@ -34,206 +39,213 @@ verbose = False
 
 
 class FindVisits(ast.NodeVisitor):
-	"""
-	Find visits to ANSIThemeStr, ThemeAttr, and ThemeRef and output inconsistencies
-	"""
+    """
+    Find visits to ANSIThemeStr, ThemeAttr, and ThemeRef and output inconsistencies
+    """
 
-	# pylint: disable-next=unused-argument
-	def __init__(self, *args) -> None:
-		self.result: Dict = {
-			"ANSIThemeStr": [],
-			"ThemeAttr": [],
-			"ThemeRef": [],
-		}
+    # pylint: disable-next=unused-argument
+    def __init__(self, *args) -> None:
+        self.result: Dict = {
+            "ANSIThemeStr": [],
+            "ThemeAttr": [],
+            "ThemeRef": [],
+        }
 
-	def visit_Call(self, node: ast.Call) -> None:
-		"""
-		Node visitor for ast.visit()
+    def visit_Call(self, node: ast.Call) -> None:
+        """
+        Node visitor for ast.visit()
 
-			Parameters:
-				node (ast.Node): The ast node to disect
-		"""
+            Parameters:
+                node (ast.Node): The ast node to disect
+        """
 
-		call_func = ""
+        call_func = ""
 
-		if hasattr(node.func, "id"):
-			call_func = node.func.id
+        if hasattr(node.func, "id"):
+            call_func = node.func.id
 
-		if call_func == "ANSIThemeStr":
-			if not hasattr(node.args[1], "value") or not isinstance(node.args[1], ast.Constant):
-				ansithemeprint([ANSIThemeStr("Note", "note"),
-						ANSIThemeStr(": ", "default"),
-						ANSIThemeStr(f"{path}", "path"),
-						ANSIThemeStr(":", "default"),
-						ANSIThemeStr(f"{node.lineno}", "emphasis"),
-						ANSIThemeStr(f": Use of {call_func} cannot be verified by the checker", "default")])
-				self.result[call_func].append({
-					"ref": "N/A",
-					"file": path,
-					"lineno": node.lineno,
-					"theme": themepath,
-					"result": "NOTE: Could not verify",
-				})
-			else:
-				termattr = node.args[1].value
+        if call_func == "ANSIThemeStr":
+            if not hasattr(node.args[1], "value") or not isinstance(node.args[1], ast.Constant):
+                ansithemeprint([ANSIThemeStr("Note", "note"),
+                                ANSIThemeStr(": ", "default"),
+                                ANSIThemeStr(f"{path}", "path"),
+                                ANSIThemeStr(":", "default"),
+                                ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                ANSIThemeStr(f": Use of {call_func} "
+                                             "cannot be verified by the checker", "default")])
+                self.result[call_func].append({
+                    "ref": "N/A",
+                    "file": path,
+                    "lineno": node.lineno,
+                    "theme": themepath,
+                    "result": "NOTE: Could not verify",
+                })
+            else:
+                termattr = node.args[1].value
 
-				# As a special case, if string is a constant and is empty, it's ok that the formatting is empty too
-				if isinstance(node.args[0], ast.Constant) and node.args[0].value == "" and node.args[1].value == "":
-					if verbose:
-						self.result[call_func].append({
-							"ref": termattr,
-							"file": path,
-							"lineno": node.lineno,
-							"theme": themepath,
-							"result": "OK",
-						})
-				elif theme.get("term") is None or theme["term"].get(termattr) is None:
-					ansithemeprint([ANSIThemeStr("Error", "error"),
-							ANSIThemeStr(": ", "default"),
-							ANSIThemeStr(f"{path}", "path"),
-							ANSIThemeStr(":", "default"),
-							ANSIThemeStr(f"{node.lineno}", "emphasis"),
-							ANSIThemeStr(f": {call_func} attribute ", "default"),
-							ANSIThemeStr(f"(\"theme\", \"{termattr}\")", "emphasis"),
-							ANSIThemeStr(f" is not defined in {themepath}", "default")])
-					self.result[call_func].append({
-						"ref": termattr,
-						"file": path,
-						"lineno": node.lineno,
-						"theme": themepath,
-						"result": "ERROR: Reference does not exist in theme",
-					})
-				elif verbose:
-					self.result[call_func].append({
-						"ref": termattr,
-						"file": path,
-						"lineno": node.lineno,
-						"theme": themepath,
-						"result": "OK",
-					})
-		elif call_func in ("ThemeAttr", "ThemeRef"):
-			if not hasattr(node.args[0], "value") or not hasattr(node.args[1], "value") or\
-			   not isinstance(node.args[0], ast.Constant) or not isinstance(node.args[1], ast.Constant):
-				ansithemeprint([ANSIThemeStr("Note", "note"),
-						ANSIThemeStr(": ", "default"),
-						ANSIThemeStr(f"{path}", "path"),
-						ANSIThemeStr(":", "default"),
-						ANSIThemeStr(f"{node.lineno}", "emphasis"),
-						ANSIThemeStr(f": Use of {call_func} cannot be verified by the checker", "default")])
-				self.result[call_func].append({
-					"ref": "N/A",
-					"file": path,
-					"lineno": node.lineno,
-					"theme": themepath,
-					"result": "NOTE: Could not verify",
-				})
-			else:
-				key = node.args[0].value
-				value = node.args[1].value
-				if key not in theme or theme[key].get(value) is None:
-					ansithemeprint([ANSIThemeStr("Error", "error"),
-							ANSIThemeStr(": ", "default"),
-							ANSIThemeStr(f"{path}", "path"),
-							ANSIThemeStr(":", "default"),
-							ANSIThemeStr(f"{node.lineno}", "emphasis"),
-							ANSIThemeStr(f": {call_func} attribute ", "default"),
-							ANSIThemeStr(f"(\"{key}\", \"{value}\")", "emphasis"),
-							ANSIThemeStr(f" is not defined in {themepath}", "default")])
-					self.result[call_func].append({
-						"ref": f"(\"{key}\", \"{value}\")",
-						"file": path,
-						"lineno": node.lineno,
-						"theme": themepath,
-						"result": "ERROR: Reference does not exist in theme",
-					})
-				elif verbose:
-					self.result[call_func].append({
-						"ref": f"(\"{key}\", \"{value}\")",
-						"file": path,
-						"lineno": node.lineno,
-						"theme": themepath,
-						"result": "OK",
-					})
-		self.generic_visit(node)
+                # As a special case, if string is a constant and is empty,
+                # it's ok that the formatting is empty too
+                if isinstance(node.args[0], ast.Constant) \
+                        and node.args[0].value == "" and node.args[1].value == "":
+                    if verbose:
+                        self.result[call_func].append({
+                            "ref": termattr,
+                            "file": path,
+                            "lineno": node.lineno,
+                            "theme": themepath,
+                            "result": "OK",
+                        })
+                elif theme.get("term") is None or theme["term"].get(termattr) is None:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": {call_func} attribute ", "default"),
+                                    ANSIThemeStr(f"(\"theme\", \"{termattr}\")", "emphasis"),
+                                    ANSIThemeStr(f" is not defined in {themepath}", "default")])
+                    self.result[call_func].append({
+                        "ref": termattr,
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "ERROR: Reference does not exist in theme",
+                    })
+                elif verbose:
+                    self.result[call_func].append({
+                        "ref": termattr,
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "OK",
+                    })
+        elif call_func in ("ThemeAttr", "ThemeRef"):
+            if not hasattr(node.args[0], "value") \
+                    or not hasattr(node.args[1], "value") \
+                    or not isinstance(node.args[0], ast.Constant) \
+                    or not isinstance(node.args[1], ast.Constant):
+                ansithemeprint([ANSIThemeStr("Note", "note"),
+                               ANSIThemeStr(": ", "default"),
+                               ANSIThemeStr(f"{path}", "path"),
+                               ANSIThemeStr(":", "default"),
+                               ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                               ANSIThemeStr(f": Use of {call_func} cannot be verified "
+                                            "by the checker", "default")])
+                self.result[call_func].append({
+                    "ref": "N/A",
+                    "file": path,
+                    "lineno": node.lineno,
+                    "theme": themepath,
+                    "result": "NOTE: Could not verify",
+                })
+            else:
+                key = node.args[0].value
+                value = node.args[1].value
+                if key not in theme or theme[key].get(value) is None:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": ", "default"),
+                                    ANSIThemeStr(f"{path}", "path"),
+                                    ANSIThemeStr(":", "default"),
+                                    ANSIThemeStr(f"{node.lineno}", "emphasis"),
+                                    ANSIThemeStr(f": {call_func} attribute ", "default"),
+                                    ANSIThemeStr(f"(\"{key}\", \"{value}\")", "emphasis"),
+                                    ANSIThemeStr(f" is not defined in {themepath}", "default")])
+                    self.result[call_func].append({
+                        "ref": f"(\"{key}\", \"{value}\")",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "ERROR: Reference does not exist in theme",
+                    })
+                elif verbose:
+                    self.result[call_func].append({
+                        "ref": f"(\"{key}\", \"{value}\")",
+                        "file": path,
+                        "lineno": node.lineno,
+                        "theme": themepath,
+                        "result": "OK",
+                    })
+        self.generic_visit(node)
 
 
 def usage() -> int:
-	"""
-	Display usage information
+    """
+    Display usage information
 
-		Returns:
-			0
-	"""
+        Returns:
+            0
+    """
 
-	ansithemeprint([ANSIThemeStr("check_theme_use", "programname"),
-			ANSIThemeStr(": ", "default"),
-			ANSIThemeStr("THEMEPATH PYPATH", "argument"),
-			ANSIThemeStr("...\n", "separator")])
-	ansithemeprint([ANSIThemeStr("Check that the attributes referred to by ANSIThemeStr, ThemeRef, and ThemeAttr exists in a theme\n", "description")])
-	ansithemeprint([ANSIThemeStr("Commands:", "description")])
-	ansithemeprint([ANSIThemeStr("help", "command"),
-			ANSIThemeStr("|", "separator"),
-			ANSIThemeStr("--help", "command"),
-			ANSIThemeStr("   Display this help and exit", "description")])
-	return 0
+    ansithemeprint([ANSIThemeStr("check_theme_use", "programname"),
+                    ANSIThemeStr(": ", "default"),
+                    ANSIThemeStr("THEMEPATH PYPATH", "argument"),
+                    ANSIThemeStr("...\n", "separator")])
+    ansithemeprint([ANSIThemeStr("Check that the attributes referred to by ANSIThemeStr, "
+                                 "ThemeRef, and ThemeAttr exists in a theme\n", "description")])
+    ansithemeprint([ANSIThemeStr("Commands:", "description")])
+    ansithemeprint([ANSIThemeStr("help", "command"),
+                    ANSIThemeStr("|", "separator"),
+                    ANSIThemeStr("--help", "command"),
+                    ANSIThemeStr("   Display this help and exit", "description")])
+    return 0
 
 
 def main() -> int:
-	"""
-	Main function for the program
-	"""
+    """
+    Main function for the program
+    """
 
-	# pylint: disable=global-statement
-	global themepath
-	global theme
-	global path
+    # pylint: disable=global-statement
+    global themepath
+    global theme
+    global path
 
-	init_ansithemeprint(themefile=None)
+    init_ansithemeprint(themefile=None)
 
-	if len(sys.argv) == 2 and sys.argv[1] in ("--help", "help"):
-		return usage()
+    if len(sys.argv) == 2 and sys.argv[1] in ("--help", "help"):
+        return usage()
 
-	if len(sys.argv) < 3:
-		ansithemeprint([ANSIThemeStr("check_theme_use", "programname"),
-				ANSIThemeStr(": Program requires at least two arguments; ", "default"),
-				ANSIThemeStr("THEMEPATH PYPATH", "argument"),
-				ANSIThemeStr("...", "separator")], stderr=True)
-		sys.exit(errno.EINVAL)
+    if len(sys.argv) < 3:
+        ansithemeprint([ANSIThemeStr("check_theme_use", "programname"),
+                        ANSIThemeStr(": Program requires at least two arguments; ", "default"),
+                        ANSIThemeStr("THEMEPATH PYPATH", "argument"),
+                        ANSIThemeStr("...", "separator")], stderr=True)
+        sys.exit(errno.EINVAL)
 
-	themepath = sys.argv[1]
-	paths = sys.argv[2:]
+    themepath = sys.argv[1]
+    paths = sys.argv[2:]
 
-	try:
-		with open(themepath, encoding="utf-8") as f:
-			tmp = f.read()
-			theme = yaml.safe_load(tmp)
-	except FileNotFoundError:
-		ansithemeprint([ANSIThemeStr("Error", "error"),
-				ANSIThemeStr(": could not find theme file ", "default"),
-				ANSIThemeStr(f"{themepath}", "path"),
-				ANSIThemeStr("; aborting.", "default")], stderr=True)
-		sys.exit(errno.ENOENT)
+    try:
+        with open(themepath, encoding="utf-8") as f:
+            tmp = f.read()
+            theme = yaml.safe_load(tmp)
+    except FileNotFoundError:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": could not find theme file ", "default"),
+                        ANSIThemeStr(f"{themepath}", "path"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
 
-	p = None
+    p = None
 
-	for path in paths:
-		try:
-			with open(path, encoding="utf-8") as f:
-				p = ast.parse(f.read())
-		except FileNotFoundError:
-			ansithemeprint([ANSIThemeStr("Error", "error"),
-					ANSIThemeStr(": could not find source file ", "default"),
-					ANSIThemeStr(f"{path}", "path"),
-					ANSIThemeStr("; aborting.", "default")], stderr=True)
-			sys.exit(errno.ENOENT)
+    for path in paths:
+        try:
+            with open(path, encoding="utf-8") as f:
+                p = ast.parse(f.read())
+        except FileNotFoundError:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": could not find source file ", "default"),
+                            ANSIThemeStr(f"{path}", "path"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
+            sys.exit(errno.ENOENT)
 
-		if p is None:
-			sys.exit(f"Failed to read {path}; aborting.")
+        if p is None:
+            sys.exit(f"Failed to read {path}; aborting.")
 
-		fv = FindVisits()
-		fv.visit(p)
-	return 0
+        fv = FindVisits()
+        fv.visit(p)
+    return 0
 
 
 if __name__ == "__main__":
-	main()
+    main()

@@ -30,10 +30,23 @@ class FilePath(str):
         self.path = str(path)
 
     def joinpath(self, *paths: Any) -> "FilePath":
+        """
+        Perform a path join on a FilePath
+        with either a PurePath, a str, a FilePath,
+        a list of strings, or a tuple of strings
+
+            Parameters:
+                paths (str|FilePath|PurePath|List|Tuple): The path(s) to append
+            Returns:
+                (FilePath): The new FilePath
+            Raises:
+                TypeError: paths was an unsupported type
+        """
         if isinstance(paths, (str, FilePath, PurePath)):
             return FilePath(str(PurePath(self.path).joinpath(paths)))
         if isinstance(paths, (list, tuple)):
             return FilePath(str(PurePath(self.path).joinpath(*paths)))
+        raise TypeError(f"Unsupported type: {type(paths)}")
 
 
 def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:

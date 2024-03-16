@@ -243,26 +243,33 @@ def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable,
 
 # pylint: disable-next=unused-argument
 def test_letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"), fun=logparsers.letter_to_severity)
+    return generic_str_to_severity(valid_indata=("F", "E", "W", "N", "C", "I", "D"),
+                                   fun=logparsers.letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
 def test_str_3letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"), fun=logparsers.str_3letter_to_severity)
+    return generic_str_to_severity(valid_indata=("ERR", "WRN", "INF"),
+                                   fun=logparsers.str_3letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
 def test_str_4letter_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN", "NOTI", "SUCC", "INFO", "DEBU"), fun=logparsers.str_4letter_to_severity)
+    return generic_str_to_severity(valid_indata=("CRIT", "FATA", "ERRO", "WARN",
+                                                 "NOTI", "SUCC", "INFO", "DEBU"),
+                                   fun=logparsers.str_4letter_to_severity)
 
 
 # pylint: disable-next=unused-argument
 def test_str_to_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn", "notice", "noti", "info", "debug", "debu"), fun=logparsers.str_to_severity)
+    return generic_str_to_severity(valid_indata=("fatal", "error", "eror", "warning", "warn",
+                                                 "notice", "noti", "info", "debug", "debu"),
+                                   fun=logparsers.str_to_severity)
 
 
 # pylint: disable-next=unused-argument
-def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
+def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable,
+                            verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
@@ -272,7 +279,8 @@ def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbos
             message = f"{fun.__name__}() returned None with valid indata {indata}"
             result = False
         elif not isinstance(tmp, str):
-            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected str"
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for " \
+                      f"valid indata {indata}, expected str"
             result = False
         else:
             if verbose:
@@ -282,10 +290,12 @@ def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbos
         indata = -42
         tmp = fun(indata)
         if tmp is None:
-            message = f"{fun.__name__}() returned None for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+            message = f"{fun.__name__}() returned None for invalid indata {indata}, " \
+                      f"expected !ERROR IN LOGPARSER!"
             result = False
         elif tmp != "!ERROR IN LOGPARSER!":
-            message = f"{fun.__name__}() returned {tmp} for invalid indata {indata}, expected !ERROR IN LOGPARSER!"
+            message = f"{fun.__name__}() returned {tmp} for invalid indata {indata}, " \
+                      f"expected !ERROR IN LOGPARSER!"
             result = False
 
     return message, result
@@ -293,21 +303,28 @@ def generic_lvl_to_severity(valid_indata: Tuple[LogLevel], fun: Callable, verbos
 
 # pylint: disable-next=unused-argument
 def test_lvl_to_letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_letter_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
+                                                 LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
+                                   fun=logparsers.lvl_to_letter_severity)
 
 
 # pylint: disable-next=unused-argument
 def test_lvl_to_4letter_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_4letter_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
+                                                 LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
+                                   fun=logparsers.lvl_to_4letter_severity)
 
 
 # pylint: disable-next=unused-argument
 def test_lvl_to_word_severity(verbose: bool = False) -> Tuple[str, bool]:
-    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING, LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG), fun=logparsers.lvl_to_word_severity)
+    return generic_lvl_to_severity(valid_indata=(LogLevel.CRIT, LogLevel.ERR, LogLevel.WARNING,
+                                                 LogLevel.NOTICE, LogLevel.INFO, LogLevel.DEBUG),
+                                   fun=logparsers.lvl_to_word_severity)
 
 
 # pylint: disable-next=unused-argument
-def generic_split_severity(valid_indata: Tuple[str], fun: Callable, verbose: bool = False) -> Tuple[str, bool]:
+def generic_split_severity(valid_indata: Tuple[str], fun: Callable,
+                           verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
     default = LogLevel.INFO
@@ -320,13 +337,16 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, verbose: boo
             message = f"{fun.__name__}() returned None with valid indata {indata}"
             result = False
         elif not isinstance(tmp, tuple):
-            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata {indata}, expected (str, LogLevel)"
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for valid indata " \
+                      f"{indata}, expected (str, LogLevel)"
             result = False
         elif len(tmp) != 2:
-            message = f"{fun.__name__}() return-value has length {len(tmp)} for valid indata {indata}, expected 2"
+            message = f"{fun.__name__}() return-value has length {len(tmp)} for valid indata " \
+                      f"{indata}, expected 2"
             result = False
         elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for valid indata {indata}, expected (str, LogLevel)"
+            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) " \
+                      f"for valid indata {indata}, expected (str, LogLevel)"
             result = False
         else:
             if verbose:
@@ -336,19 +356,24 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable, verbose: boo
         indata = "NOT A VALID PREFIX"
         tmp = fun(indata, default=default)
         if tmp is None:
-            message = f"{fun.__name__}() returned None for invalid indata {indata}, expected ({indata}, {default})"
+            message = f"{fun.__name__}() returned None for invalid indata {indata}, " \
+                      f"expected ({indata}, {default})"
             result = False
         elif not isinstance(tmp, tuple):
-            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata {indata}, expected tuple"
+            message = f"{fun.__name__}() returned wrong type ({type(tmp)}) for invalid indata " \
+                      f"{indata}, expected tuple"
             result = False
         elif len(tmp) != 2:
-            message = f"{fun.__name__}() return-value has length {len(tmp)} for invalid indata {indata}, expected 2"
+            message = f"{fun.__name__}() return-value has length {len(tmp)} for invalid indata " \
+                      f"{indata}, expected 2"
             result = False
         elif not isinstance(tmp[0], str) or not isinstance(tmp[1], LogLevel):
-            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) for invalid indata {indata}, expected (str, LogLevel)"
+            message = f"{fun.__name__}() returned wrong type ({type(tmp[0])}, {type(tmp[1])}) " \
+                      f"for invalid indata {indata}, expected (str, LogLevel)"
             result = False
         elif tmp[0] != indata or tmp[1] != default:
-            message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata {indata}, expected ({indata}, {default})"
+            message = f"{fun.__name__}() returned wrong result ({tmp}) for invalid indata " \
+                      f"{indata}, expected ({indata}, {default})"
             result = False
 
     return message, result
@@ -393,10 +418,10 @@ def test_substitute_bullets(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata, prefix)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -405,18 +430,18 @@ def test_substitute_bullets(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {indata}\n" \
-                              f"         prefix: {prefix}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {indata}\n" \
+                                  f"         prefix: {prefix}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -640,9 +665,9 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(string)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -651,16 +676,16 @@ def test_strip_iso_timestamp_with_tz(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -679,7 +704,8 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
             # Indata format:
             # (string, fold_msg, remnants, expected_result, expected_remnants, expected_exception)
             ("/sbin/iptables", [], False,
-             [ThemeStr('/sbin/iptables', ThemeAttr('types', 'iptables_programname'), False)], [], None),
+             [ThemeStr('/sbin/iptables',
+                       ThemeAttr('types', 'iptables_programname'), False)], [], None),
             ("# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024", [], False,
              [ThemeStr('# Generated by iptables-save v1.8.7 on Wed Feb 28 15:20:53 2024',
               ThemeAttr('types', 'iptables_comment'), False)], [], None),
@@ -692,7 +718,8 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
             (":INPUT ACCEPT [402864269:151316188286]", [], False,
              [ThemeStr(':INPUT', ThemeAttr('types', 'iptables_chain'), False),
               ThemeStr(' ACCEPT', ThemeAttr('types', 'iptables_argument'), False),
-              ThemeStr(' [402864269:151316188286]', ThemeAttr('types', 'iptables_argument'), False)], [], None),
+              ThemeStr(' [402864269:151316188286]',
+                       ThemeAttr('types', 'iptables_argument'), False)], [], None),
             ("COMMIT", [], False,
              [ThemeStr('COMMIT', ThemeAttr('types', 'iptables_command'), False)], [], None),
             ("-A DOCKER -i docker0 -j RETURN", [], False,
@@ -729,9 +756,9 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
                 tmp, _loglevel, _facility, _remnants = fun(string, [], fold_msg=fold_msg)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -740,16 +767,16 @@ def test_iptables(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -803,14 +830,19 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" ', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('300', ThemeAttr('logview', 'severity_warning'), False),
               ThemeStr(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-            ('10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] "GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283 HTTP/1.1" 404 528 "-" "Grafana/8.3.10" 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4',
+            ('10.32.0.1 - - [20/Mar/2023:11:38:13 +0000] '
+             '"GET /api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz'
+             '&start=1679311983&end=1679312283 HTTP/1.1" 404 528 "-" "Grafana/8.3.10" '
+             '368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 '
+             '200 5997e385f9f1e248446d28a810c4',
              LogLevel.INFO, "", True, {"reformat_timestamps": True},
              [ThemeStr('10.32.0.1', ThemeAttr('logview', 'hostname'), False),
               ThemeStr(' - - ', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('[2023-02-20 11:38:13 +0000]', ThemeAttr('logview', 'timestamp'), False),
               ThemeStr(' "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('GET ', ThemeAttr('logview', 'protocol'), False),
-              ThemeStr('/api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz&start=1679311983&end=1679312283', ThemeAttr('logview', 'url'), False),
+              ThemeStr('/api/v1/series?match%5B%5D=collectd_gpu_sysman_frequency_mhz'
+                       '&start=1679311983&end=1679312283', ThemeAttr('logview', 'url'), False),
               ThemeStr(' HTTP/1.1', ThemeAttr('logview', 'protocol'), False),
               ThemeStr('" ', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('404', ThemeAttr('logview', 'severity_error'), False),
@@ -819,7 +851,9 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('Grafana/8.3.10', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
-              ThemeStr(' 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 0.004 200 5997e385f9f1e248446d28a810c4', ThemeAttr('types', 'generic'), False)], None),
+              ThemeStr(' 368 0.002 [monitoring-prometheus-k8s-9090] [] 10.40.0.30:9090 528 '
+                       '0.004 200 5997e385f9f1e248446d28a810c4',
+                       ThemeAttr('types', 'generic'), False)], None),
             ('::ffff:10.217.0.1 - - [06/May/2022 18:50:45] "GET / HTTP/1.1" 200 -',
              LogLevel.INFO, "", True, {"reformat_timestamps": True},
              [ThemeStr('::ffff:10.217.0.1', ThemeAttr('logview', 'hostname'), False),
@@ -832,7 +866,8 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" ', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('200', ThemeAttr('logview', 'severity_notice'), False),
               ThemeStr(' -', ThemeAttr('logview', 'severity_info'), False)], None),
-            ('10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" 301 178 "-" "kube-probe/1.23"',
+            ('10.244.0.1 - - [29/Jan/2022:10:34:20 +0000] "GET /v0/healthz HTTP/1.1" '
+             '301 178 "-" "kube-probe/1.23"',
              LogLevel.INFO, "", True, {"reformat_timestamps": True},
              [ThemeStr('10.244.0.1', ThemeAttr('logview', 'hostname'), False),
               ThemeStr(' - - ', ThemeAttr('logview', 'severity_info'), False),
@@ -849,7 +884,8 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('kube-probe/1.23', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('', ThemeAttr('types', 'generic'), False)], None),
-            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 200 - 0 5 0 - "-" '
+             '"kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
              LogLevel.INFO, "", True, {},
              [ThemeStr('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
@@ -873,7 +909,8 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('-', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False)], None),
-            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 300 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 300 - 0 5 0 - "-" '
+             '"kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
              LogLevel.INFO, "", True, {},
              [ThemeStr('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
@@ -897,7 +934,8 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('-', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False)], None),
-            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 404 - 0 5 0 - "-" "kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
+            ('[2022-12-17T21:59:10.447Z] "GET /ready HTTP/1.1" 404 - 0 5 0 - "-" '
+             '"kube-probe/1.25" "0823108e-89da-41f6-9663-ff0e7003f098" "internalkourier" "-""',
              LogLevel.INFO, "", True, {},
              [ThemeStr('[2022-12-17T21:59:10.447Z] ', ThemeAttr('logview', 'timestamp'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
@@ -921,7 +959,9 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('-', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False)], None),
-            ('10.245.0.1 - - [01/Mar/2024:14:04:03 +0000] "GET /api/v1/status/buildinfo HTTP/1.1" 200 186 "-" "Grafana/8.5.27" 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80',
+            ('10.245.0.1 - - [01/Mar/2024:14:04:03 +0000] "GET /api/v1/status/buildinfo '
+             'HTTP/1.1" 200 186 "-" "Grafana/8.5.27" 128 0.002 [monitoring-prometheus-k8s-9090] '
+             '[] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80',
              LogLevel.INFO, "", True, {},
              [ThemeStr('10.245.0.1', ThemeAttr('logview', 'hostname'), False),
               ThemeStr(' - - ', ThemeAttr('logview', 'severity_info'), False),
@@ -937,8 +977,13 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('Grafana/8.5.27', ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
-              ThemeStr(' 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 0.002 200 6931ce1fdbb3b5708d29add993693d80', ThemeAttr('types', 'generic'), False)], None),
-            ('10.245.96.15 - - [28/Feb/2024:16:25:59 +0000] "GET /sd-shared-gpu-7b5548d864-pz77r.png HTTP/1.1" 304 0 "http://sd-preview.val.cluster:27080/" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+              ThemeStr(' 128 0.002 [monitoring-prometheus-k8s-9090] [] 10.245.96.3:9090 186 '
+                       '0.002 200 6931ce1fdbb3b5708d29add993693d80',
+                       ThemeAttr('types', 'generic'), False)], None),
+            ('10.245.96.15 - - [28/Feb/2024:16:25:59 +0000] "GET '
+             '/sd-shared-gpu-7b5548d864-pz77r.png HTTP/1.1" 304 0 '
+             '"http://sd-preview.val.cluster:27080/" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) '
+             'Gecko/20100101 Firefox/123.0" "10.245.0.1"',
              LogLevel.INFO, "", True, {},
              [ThemeStr('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
               ThemeStr(' - - ', ThemeAttr('logview', 'severity_info'), False),
@@ -952,10 +997,13 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr(' 0 "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('http://sd-preview.val.cluster:27080/', ThemeAttr('logview', 'url'), False),
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
-              ThemeStr('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+              ThemeStr('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0',
+                       ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
-            ('10.245.96.15 - - [28/Feb/2024:16:29:57 +0000] "GET / HTTP/1.1" 200 1026 "-" "Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" "10.245.0.1"',
+            ('10.245.96.15 - - [28/Feb/2024:16:29:57 +0000] "GET / HTTP/1.1" 200 1026 "-" '
+             '"Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0" '
+             '"10.245.0.1"',
              LogLevel.INFO, "", True, {},
              [ThemeStr('10.245.96.15', ThemeAttr('logview', 'hostname'), False),
               ThemeStr(' - - ', ThemeAttr('logview', 'severity_info'), False),
@@ -969,19 +1017,22 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
               ThemeStr(' 1026 "', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr('-', ThemeAttr('logview', 'url'), False),
               ThemeStr('" "', ThemeAttr('logview', 'severity_info'), False),
-              ThemeStr('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0', ThemeAttr('logview', 'url'), False),
+              ThemeStr('Mozilla/5.0 (X11; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0',
+                       ThemeAttr('logview', 'url'), False),
               ThemeStr('"', ThemeAttr('logview', 'severity_info'), False),
               ThemeStr(' "10.245.0.1"', ThemeAttr('types', 'generic'), False)], None),
         )
 
-        for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+        for string, severity, facility, fold_msg, \
+                options, expected_result, expected_exception in testdata:
             try:
-                tmp, severity, facility = fun(string, severity=severity, facility=facility, fold_msg=fold_msg, options=options)
+                tmp, severity, facility = fun(string, severity=severity, facility=facility,
+                                              fold_msg=fold_msg, options=options)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -990,16 +1041,16 @@ def test_http(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -1035,9 +1086,12 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
             ('Not a match',
              None, "",
              ("Not a match", LogLevel.INFO, "", [], False), None),
-            ('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
+            ('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       '
+             '1 server_chttp2.cc:40] foo',
              LogLevel.INFO, "",
-             ("ERROR: logging before flag.Parse", LogLevel.ERR, "server_chttp2.cc:40", [([ThemeStr('foo', ThemeAttr('logview', 'severity_error'), False)], LogLevel.ERR)], True), None),
+             ("ERROR: logging before flag.Parse", LogLevel.ERR, "server_chttp2.cc:40",
+              [([ThemeStr('foo', ThemeAttr('logview', 'severity_error'), False)],
+                LogLevel.ERR)], True), None),
         )
 
         for string, severity, facility, expected_result, expected_exception in testdata:
@@ -1045,9 +1099,9 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
                 tmp = fun(string, severity=severity, facility=facility)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -1056,16 +1110,16 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -1080,40 +1134,38 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
     fun = logparsers.tab_separated
 
     if result:
-        # 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
+        # 2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}  # noqa: E501
         # 2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager
-        # 1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}
+        # 1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}  # noqa: E501
         # Assumption: datetime\tSEVERITY\t{facility if lowercase, else message}[\tjson]
         # or
         #             secondssinceepoch\tSEVERITY\t{facility if lowercase, else message}[\tjson]
         testdata = (
             # Indata format:
             # (string, severity, facility, fold_msg, options, expected_result, expected_exception)
-            ('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+            ('2022-12-13T22:23:45.808Z\tINFO\tcontroller-runtime.metrics\t'
+             'Metrics server is starting to listen\t{"addr": ":8080"}',
              LogLevel.INFO, "",
              False, {},
              ('Metrics server is starting to listen',
               LogLevel.INFO, "controller-runtime.metrics",
-              [
-                ([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-                ([ThemeStr('  "addr"', ThemeAttr('types', 'yaml_key'), False),
-                  ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
-                  ThemeStr('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-                ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
-              ]),
+              [([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+               ([ThemeStr('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+                 ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
+                 ThemeStr('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+               ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)]),
              None),
-            ('1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting to listen\t{"addr": ":8080"}',
+            ('1.677757754464991e+09\tINFO\tcontroller-runtime.metrics\tMetrics server is starting '
+             'to listen\t{"addr": ":8080"}',
              LogLevel.INFO, "",
              False, {},
              ('Metrics server is starting to listen',
               LogLevel.INFO, "controller-runtime.metrics",
-              [
-                ([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-                ([ThemeStr('  "addr"', ThemeAttr('types', 'yaml_key'), False),
-                  ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
-                  ThemeStr('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-                ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-              ]),
+              [([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+               ([ThemeStr('  "addr"', ThemeAttr('types', 'yaml_key'), False),
+                 ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
+                 ThemeStr('":8080"', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+               ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)]),
              None),
             ('2022-12-13T22:23:45.808Z\tINFO\tsetup\tstarting manager',
              LogLevel.INFO, "",
@@ -1128,13 +1180,12 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
              False, {"versions": ["version"]},
              ('foo',
               LogLevel.INFO, "setup",
-              [
-                ([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
-                ([ThemeStr('  "version"', ThemeAttr('types', 'yaml_key'), False),
-                  ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
-                  ThemeStr('"v1.0"', ThemeAttr('logview', 'severity_notice'), False)], LogLevel.INFO),
-                ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)
-              ]),
+              [([ThemeStr('{', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO),
+               ([ThemeStr('  "version"', ThemeAttr('types', 'yaml_key'), False),
+                 ThemeStr(': ', ThemeAttr('types', 'yaml_separator'), False),
+                 ThemeStr('"v1.0"',
+                          ThemeAttr('logview', 'severity_notice'), False)], LogLevel.INFO),
+               ([ThemeStr('}', ThemeAttr('types', 'yaml_value'), False)], LogLevel.INFO)]),
              None),
             ('2022-12-13T22:23:45.808Z\tINFO\tsetup\tfoo\t{"version: "v1.0"}',
              LogLevel.INFO, "",
@@ -1170,14 +1221,18 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
              None),
         )
 
-        for string, severity, facility, fold_msg, options, expected_result, expected_exception in testdata:
+        for string, severity, facility, fold_msg, options, \
+                expected_result, expected_exception in testdata:
             try:
-                tmp = fun(string, severity=severity, facility=facility, fold_msg=fold_msg, options=options)
-                if tmp[0] != expected_result[0] or tmp[1] != expected_result[1] or tmp[2] != expected_result[2] or tmp[3] != expected_result[3]:
+                tmp = fun(string, severity=severity, facility=facility,
+                          fold_msg=fold_msg, options=options)
+                if tmp[0] != expected_result[0] \
+                        or tmp[1] != expected_result[1] \
+                        or tmp[2] != expected_result[2] or tmp[3] != expected_result[3]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:  # pylint: disable=broad-except
@@ -1186,16 +1241,16 @@ def test_tab_separated(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
 
@@ -1208,7 +1263,7 @@ def test___split_severity_facility_style(verbose: bool = False) -> Tuple[str, bo
     result = True
 
     # fun = logparsers.__split_severity_facility_style
-    # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}
+    # \tINFO\tcontrollers.Reaper\tstarting reconciliation\t{"reaper": "default/k8ssandra-cluster-a-reaper-k8ssandra"}  # noqa: E501
 
     message = "[TEST NOT IMPLEMENTED]"
 
@@ -1272,11 +1327,13 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         testdata = (
-            ('filename:       /lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', [
-                ThemeStr('filename', ThemeAttr('types', 'key'), False),
-                ThemeRef('separators', 'keyvalue', False),
-                ThemeStr('       ', ThemeAttr('types', 'generic'), False),
-                ThemeStr('/lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', ThemeAttr('types', 'value'), False)], None),
+            ('filename:       '
+             '/lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/intel/igc/igc.ko.xz', [
+                 ThemeStr('filename', ThemeAttr('types', 'key'), False),
+                 ThemeRef('separators', 'keyvalue', False),
+                 ThemeStr('       ', ThemeAttr('types', 'generic'), False),
+                 ThemeStr('/lib/modules/6.7.9-amd64/kernel/drivers/net/ethernet/'
+                          'intel/igc/igc.ko.xz', ThemeAttr('types', 'value'), False)], None),
             ('license:        GPL v2', [
                 ThemeStr('license', ThemeAttr('types', 'key'), False),
                 ThemeRef('separators', 'keyvalue', False),
@@ -1286,14 +1343,16 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
                 ThemeStr('author', ThemeAttr('types', 'key'), False),
                 ThemeRef('separators', 'keyvalue', False),
                 ThemeStr('         ', ThemeAttr('types', 'generic'), False),
-                ThemeStr('Intel Corporation, <linux.nics@intel.com>', ThemeAttr('types', 'value'), False)], None),
+                ThemeStr('Intel Corporation, <linux.nics@intel.com>',
+                         ThemeAttr('types', 'value'), False)], None),
             ('		EB:2E:B6:75:F9:B7:A2:4B:CA:DE:76:C3:76:6D:2D:CD:57:71:26:B6:',
              '\t\tEB:2E:B6:75:F9:B7:A2:4B:CA:DE:76:C3:76:6D:2D:CD:57:71:26:B6:', None),
             ('parm:           debug:Debug level (0=none,...,16=all) (int)', [
                 ThemeStr('parm', ThemeAttr('types', 'key'), False),
                 ThemeRef('separators', 'keyvalue', False),
                 ThemeStr('           ', ThemeAttr('types', 'generic'), False),
-                ThemeStr('debug:Debug level (0=none,...,16=all) (int)', ThemeAttr('types', 'value'), False)], None),
+                ThemeStr('debug:Debug level (0=none,...,16=all) (int)',
+                         ThemeAttr('types', 'value'), False)], None),
         )
 
         for indata, expected_result, expected_exception in testdata:
@@ -1301,11 +1360,11 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
                 _facility, _severity, themearray, _remnants = fun(indata)
                 if themearray != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output:\n" \
-                          f"{yaml_dump(themearray, base_indent = 17)}\n" \
-                          f"       expected:\n" \
-                          f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"          input: {indata}\n" \
+                              f"         output:\n" \
+                              f"{yaml_dump(themearray, base_indent = 17)}\n" \
+                              f"       expected:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
                     result = False
             except Exception as e:  # pylint: disable=broad-except
                 if expected_exception is not None:
@@ -1313,18 +1372,18 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input:\n" \
-                              f"{indata}" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input:\n" \
+                                  f"{indata}" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input:\n" \
+                              f"          input:\n" \
                               f"{indata}" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected:\n" \
-                          f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
                     result = False
 
     return message, result
@@ -1342,7 +1401,7 @@ def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
             fun()
         except Exception as e:  # pylint: disable=broad-except
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
 
     fun = logparsers.get_parser_list
@@ -1352,14 +1411,14 @@ def test_parser_list(verbose: bool = False) -> Tuple[str, bool]:
             tmp = fun()
             if not isinstance(tmp, set) or not tmp or len(tmp) <= 2:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
-                      f"           type: {type(tmp)}\n" \
-                      f"  expected type: {set}\n" \
-                      f"            len: {len(tmp)}\n" \
-                      f"       expected: > 2\n"
+                          f"           type: {type(tmp)}\n" \
+                          f"  expected type: {set}\n" \
+                          f"            len: {len(tmp)}\n" \
+                          f"       expected: > 2\n"
                 result = False
         except Exception as e:  # pylint: disable=broad-except
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
 
     return message, result

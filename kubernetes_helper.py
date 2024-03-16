@@ -802,7 +802,7 @@ def list_contexts(config_path: Optional[FilePath] = None) \
         config_path = KUBE_CONFIG_FILE
 
     try:
-        kubeconfig = secure_read_yaml(FilePath(str(config_path)))
+        kubeconfig = secure_read_yaml(FilePath(config_path))
     except FilePathAuditError as e:
         if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
             return []
@@ -852,7 +852,7 @@ def set_context(config_path: Optional[FilePath] = None,
         # Read kubeconfig
         config_path = KUBE_CONFIG_FILE
 
-    config_path = FilePath(str(config_path))
+    config_path = FilePath(config_path)
 
     # We are semi-OK with the file not existing
     checks = [
@@ -1010,7 +1010,7 @@ class KubernetesHelper:
         # has a matching entry in credentials we (attempt to) authenticate here
 
         try:
-            credentials = secure_read_yaml(FilePath(str(KUBE_CREDENTIALS_FILE)))
+            credentials = secure_read_yaml(KUBE_CREDENTIALS_FILE)
         except FilePathAuditError as e:
             if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) \
                     or "SecurityStatus.DOES_NOT_EXIST" in str(e):
@@ -2398,7 +2398,7 @@ class KubernetesHelper:
 
     # pylint: disable-next=too-many-locals
     def __rest_helper_delete(self, kind: Tuple[str, str], *,
-                             name: str, **kwargs) -> Tuple[str, int]:
+                             name: str, **kwargs: Any) -> Tuple[str, int]:
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
         query_params: Optional[List[Optional[Tuple[str, Any]]]] = \
             deep_get(kwargs, DictPath("query_params"))

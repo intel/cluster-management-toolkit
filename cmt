@@ -25,7 +25,7 @@ from getpass import getuser
 import hashlib
 from operator import itemgetter
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
 import re
 import sys
 from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
@@ -1026,8 +1026,8 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
     show_configuration(non_existing)
 
     prepare_playbooks = [
-        FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_passwordless_ansible.yaml"))),
-        FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("prepare_node.yaml")))
+        ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
+        ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_node.yaml"),
     ]
     playbooks = populate_playbooks_from_paths(prepare_playbooks)
     ansible_print_action_summary(playbooks)
@@ -1319,12 +1319,13 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         join_token = kh.get_join_token()
         if len(join_token) == 0:
             if confirm:
-                input_retval = ansithemeinput([ANSIThemeStr("Warning", "warning"),
-                                               ANSIThemeStr(": No join token found; create one now?"
-                                                            " (No will abort the installation) "
-                                                            "[y/", "default"),
-                                               ANSIThemeStr("N", "emphasis"),
-                                               ANSIThemeStr("]: ", "default")])
+                input_retval = \
+                    ansithemeinput([ANSIThemeStr("Warning", "warning"),
+                                    ANSIThemeStr(": No join token found; create one now?"
+                                                 " (No will abort the installation) "
+                                                 "[y/", "default"),
+                                    ANSIThemeStr("N", "emphasis"),
+                                    ANSIThemeStr("]: ", "default")])
                 if input_retval.lower() not in ("y", "yes"):
                     ansithemeprint([ANSIThemeStr("\nAborting", "error"),
                                     ANSIThemeStr(": No join token available.", "default")],
@@ -1336,8 +1337,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
                                              "creating one now.", "default")])
 
             create_join_token_playbooks = [
-                FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_create_"
-                                                                     "join_token.yaml")))
+                ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_create_join_token.yaml"),
             ]
             playbooks = populate_playbooks_from_paths(create_join_token_playbooks)
             retval = run_playbooks(playbooks=playbooks, hosts=controlplanes, verbose=verbose)
@@ -1411,8 +1411,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     # if it's an RKE2 cluster we try to deduce the channel from the control plane
     # Kubernetes version
     if k8s_distro == "kubeadm":
-        get_version_playbook_path = \
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("get_versions.yaml")))
+        get_version_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")
         _retval, ansible_results = \
             ansible_run_playbook_on_selection(get_version_playbook_path,
                                               selection=[control_plane_ip], quiet=False)
@@ -1504,14 +1503,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "docker-shim":
-        add_playbooks = \
-            [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_docker.io.yaml")))]
+        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_docker.io.yaml")]
     elif cri == "containerd":
-        add_playbooks = \
-            [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_containerd.yaml")))]
+        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        add_playbooks = \
-            [FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("setup_cri-o.yaml")))]
+        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
     cluster_name = get_cluster_name()
@@ -1525,8 +1521,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         add_playbooks += [
             # cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
             # so we have to do all of that explicitly
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_setup_node.yaml")))
+            ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
         ]
 
         if int(version_minor) < 23:
@@ -1550,7 +1546,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         add_playbooks += [
             # cmt does not use run_before/run_after/add_to_groups/remove_from_groups,
             # so we have to do all of that explicitly
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_setup_node.yaml")))
+            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_setup_node.yaml"),
         ]
         extra_values = {
             "control_plane_ip": control_plane_ip,
@@ -1691,7 +1687,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                     ANSIThemeStr("Deleting nodes from the cluster", "action")])
     delete_playbooks = [
-        FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("delete_node.yaml"))),
+        ANSIBLE_PLAYBOOK_DIR.joinpath("delete_node.yaml"),
     ]
     playbooks = populate_playbooks_from_paths(delete_playbooks)
 
@@ -1715,13 +1711,13 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
     if k8s_distro == "kubeadm":
         teardown_playbooks = [
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_teardown_node.yaml"))),
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_teardown_node.yaml"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
         ]
     elif k8s_distro == "rke2":
         teardown_playbooks = [
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_teardown_node.yaml"))),
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("teardown_cni.yaml"))),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_teardown_node.yaml"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
         ]
 
     playbooks = populate_playbooks_from_paths(teardown_playbooks)
@@ -1863,11 +1859,11 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
     if k8s_distro == "kubeadm":
         purge_playbooks = [
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_purge.yaml"))),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_purge.yaml"),
         ]
     elif k8s_distro == "rke2":
         purge_playbooks = [
-            FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("rke2_purge.yaml"))),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_purge.yaml"),
         ]
     playbooks = populate_playbooks_from_paths(purge_playbooks)
 
@@ -1960,8 +1956,8 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                     ANSIThemeStr("Run upgrade playbooks on nodes", "action")])
     upgrade_playbooks = [
-        FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("add_kubernetes_repo.yaml"))),
-        FilePath(str(PurePath(ANSIBLE_PLAYBOOK_DIR).joinpath("kubeadm_upgrade_node.yaml"))),
+        ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+        ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_upgrade_node.yaml"),
     ]
     playbooks = populate_playbooks_from_paths(upgrade_playbooks)
 

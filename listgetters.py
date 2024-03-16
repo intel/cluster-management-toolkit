@@ -25,7 +25,7 @@ except ModuleNotFoundError:  # pragma: no cover
     DecodeException = json.decoder.JSONDecodeError  # type: ignore
 from operator import itemgetter
 import os
-from pathlib import Path, PurePath
+from pathlib import Path
 import re
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
@@ -116,6 +116,7 @@ def split_matchlist(matchlist: List[str],
 # pylint: disable-next=too-many-locals
 def filter_list_entry(obj: Dict[str, Any], caller_obj: Dict[str, Any], filters: Dict) -> bool:
     skip = False
+    # pylint: disable-next=too-many-nested-blocks
     for f in filters:
         if not deep_get(filters[f], DictPath("enabled"), True):
             continue
@@ -364,7 +365,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
 
         # Substitute {HOME}/ for {HOMEDIR}
         if filepath.startswith(("{HOME}/", "{HOME}\\")):
-            filepath = FilePath(str(PurePath(HOMEDIR).joinpath(filepath[len('{HOME}/'):])))
+            filepath = HOMEDIR.joinpath(filepath[len('{HOME}/'):])
 
         try:
             if filetype == "yaml":
@@ -438,7 +439,7 @@ def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
                 continue
             if suffixes and not filename.endswith(tuple(suffixes)):
                 continue
-            filepath = FilePath(str(PurePath(dirpath).joinpath(filename)))
+            filepath = FilePath(dirpath).joinpath(filename)
             filepath_entry = Path(filepath)
             fstat = filepath_entry.stat()
             mtime = datetime.fromtimestamp(fstat.st_mtime)
@@ -452,7 +453,7 @@ def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
                 "filesize": filesize,
                 "ref": {
                     "filename": filename,
-                    "filepath": FilePath(str(filepath)),
+                    "filepath": FilePath(filepath),
                     "filesize": filesize,
                     "mtime": mtime,
                     "ctime": ctime,

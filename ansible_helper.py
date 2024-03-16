@@ -119,7 +119,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
     for playbookpath in paths:
         pathname = PurePath(playbookpath).name
-        playbook_dir = FilePath(str(PurePath(playbookpath).parent))
+        playbook_dir = FilePath(PurePath(playbookpath).parent)
 
         # Do not process backups, etc.
         if pathname.startswith(("~", ".")):
@@ -223,8 +223,8 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeStr], FileP
         if not summary:
             ansithemeprint([ANSIThemeStr("      Error", "error"),
                             ANSIThemeStr(": playbook lacks a summary; "
-                                            "please file a bug report unless it's a "
-                                            "locally modified playbook!", "default")],
+                                         "please file a bug report unless it's a "
+                                         "locally modified playbook!", "default")],
                            stderr=True)
         for section_description, section_data in summary.items():
             ansithemeprint([ANSIThemeStr(f"      {section_description}:", "emphasis")])
@@ -335,10 +335,9 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr]
     cast(List[Union[List[ANSIThemeStr], str]], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
-        i = 0
         list_regex = re.compile(r"^(\s*)((- )+)(.*)")
         key_value_regex = re.compile(r"^(.*?)(:)(.*)")
-        for i, data in enumerate(tmp_dump.splitlines()):
+        for data in tmp_dump.splitlines():
             # Is it a list?
             tmp2 = list_regex.match(cast(str, data))
             if tmp2 is not None:
@@ -362,7 +361,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr]
                 continue
 
             # Nope, then we will use default format
-            dump.append([ANSIThemeStr(cast(str, tmp_dump[i]), "default")])
+            dump.append([ANSIThemeStr(data, "default")])
     else:
         dump = list(tmp_dump.splitlines())
 
@@ -1033,7 +1032,7 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
             continue
         date = datetime.strptime(tmp[1], "%Y-%m-%d_%H:%M:%S.%f")
         name = tmp[2]
-        logs.append((filename, name, FilePath(str(path)), date))
+        logs.append((filename, name, FilePath(path), date))
     return logs
 
 
@@ -1227,12 +1226,12 @@ def ansible_delete_log(log: str) -> None:
     logpath = Path(f"{ANSIBLE_LOG_DIR}/{log}")
     if logpath.exists():
         for file in logpath.iterdir():
-            secure_rm(FilePath(str(file)))
-        secure_rmdir(FilePath(str(logpath)))
+            secure_rm(FilePath(file))
+        secure_rmdir(FilePath(logpath))
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -> None:
+def ansible_write_log(start_date: datetime, playbook: FilePath, events: List[Dict]) -> None:
     """
     Save an Ansible log entry to a file
 
@@ -1246,7 +1245,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
     if not save_logs:
         return
 
-    playbook_name = playbook
+    playbook_name = str(playbook)
     if "/" in playbook_name:
         tmp2 = str(PurePath(playbook_name).name)
         tmp = re.match(r"^(.*)\.ya?ml$", tmp2)
@@ -1258,7 +1257,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 
     # Start by creating a file with metadata about the whole run
     d = {
-        "playbook_path": playbook,
+        "playbook_path": str(playbook),
         "created_at": start_date,
     }
 
@@ -1320,7 +1319,7 @@ def ansible_write_log(start_date: datetime, playbook: str, events: List[Dict]) -
 
         d = {
             "playbook": playbook_name,
-            "playbook_file": playbook,
+            "playbook_file": str(playbook),
             "task": task,
             "host": host,
             "start_date": start_date_timestamp,

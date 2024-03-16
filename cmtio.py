@@ -559,7 +559,7 @@ def secure_read(path: FilePath,
 
     if checks is None:
         if directory_is_symlink:
-            parent_dir = FilePath(str(PurePath(path).parent))
+            parent_dir = FilePath(PurePath(path).parent)
 
             # The directory itself may be a symlink. This is expected behaviour when installing
             # from a git repo, but we only allow it if the rest of the path components are secure.
@@ -872,7 +872,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
     ]
 
     dst_path_parent = PurePath(dst).parent
-    violations = check_path(FilePath(str(PurePath(dst).parent)), checks=checks)
+    violations = check_path(FilePath(PurePath(dst).parent), checks=checks)
 
     if violations != [SecurityStatus.OK]:
         if verbose:
@@ -1011,7 +1011,7 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
         SecurityChecks.EXISTS,
     ]
 
-    violations = check_path(FilePath(str(src_path)), checks=checks)
+    violations = check_path(FilePath(src_path), checks=checks)
 
     if violations != [SecurityStatus.OK]:
         violations_joined = join_securitystatus_set(",", set(violations))

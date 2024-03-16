@@ -763,7 +763,7 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
         SecurityChecks.IS_DIR,
     ]
 
-    theme_dir = FilePath(str(PurePath(themefile).parent))
+    theme_dir = FilePath(PurePath(themefile).parent)
 
     violations = check_path(theme_dir, checks=checks)
     if violations != [SecurityStatus.OK]:
@@ -982,24 +982,24 @@ def scrollbar_vertical(win: curses.window, x: int, miny: int, maxy: int,
     # We only need a scrollbar if we can actually scroll
     if maxoffset > 0:
         addthemearray(win, [ThemeStr(arrowup,
-                                        ThemeAttr("main", "scrollbar_arrows"))], y=miny, x=x)
+                                     ThemeAttr("main", "scrollbar_arrows"))], y=miny, x=x)
         upperarrow = (miny, x)
         y = miny + 1
         while y < maxy:
             addthemearray(win, [ThemeStr(scrollbar, ThemeAttr("main", "scrollbar"))], y=y, x=x)
             y += 1
         addthemearray(win, [ThemeStr(arrowdown,
-                                        ThemeAttr("main", "scrollbar_arrows"))], y=maxy, x=x)
+                                     ThemeAttr("main", "scrollbar_arrows"))], y=maxy, x=x)
         lowerarrow = (maxy, x)
         curpos = miny + 1 + int((maxy - miny) * (yoffset / (maxoffset)))
         curpos = min(curpos, maxy - 3)
         vdragger = (curpos, x, 3)
         addthemearray(win, [ThemeStr(verticaldragger_upper,
-                                        ThemeAttr("main", "dragger"))], y=curpos + 0, x=x)
+                                     ThemeAttr("main", "dragger"))], y=curpos + 0, x=x)
         addthemearray(win, [ThemeStr(verticaldragger_midpoint,
-                                        ThemeAttr("main", "dragger_midpoint"))], y=curpos + 1, x=x)
+                                     ThemeAttr("main", "dragger_midpoint"))], y=curpos + 1, x=x)
         addthemearray(win, [ThemeStr(verticaldragger_lower,
-                                        ThemeAttr("main", "dragger"))], y=curpos + 2, x=x)
+                                     ThemeAttr("main", "dragger"))], y=curpos + 2, x=x)
     # But we might need to cover up the lack of one if the window has been resized
     else:
         for y in range(miny, maxy + 1):
@@ -1069,11 +1069,11 @@ def scrollbar_horizontal(win: curses.window, y: int, minx: int, maxx: int,
 
         draggerarray: List[Union[ThemeRef, ThemeStr]] = [
             ThemeStr(f"{horizontaldragger_left}{horizontaldragger_left}",
-                        ThemeAttr("main", "dragger")),
+                     ThemeAttr("main", "dragger")),
             ThemeStr(f"{horizontaldragger_midpoint}",
-                        ThemeAttr("main", "dragger_midpoint")),
+                     ThemeAttr("main", "dragger_midpoint")),
             ThemeStr(f"{horizontaldragger_right}{horizontaldragger_right}",
-                        ThemeAttr("main", "dragger")),
+                     ThemeAttr("main", "dragger")),
         ]
 
         addthemearray(win, draggerarray, y=y, x=curpos)
@@ -1180,7 +1180,7 @@ def percentagebar(minx: int, maxx: int, total: int,
 
     # Pad to full width
     themearray.append(ThemeStr("".ljust(bar_width - subset_total),
-                                  ThemeAttr("types", "generic")))
+                               ThemeAttr("types", "generic")))
     return themearray
 
 
@@ -1360,7 +1360,7 @@ def progressbar(win: curses.window, y: int, minx: int, maxx: int,
             curses.endwin()
             ansithemeprint([ANSIThemeStr("Critical", "critical"),
                             ANSIThemeStr(": Live resizing progressbar() is currently broken; "
-                                            "this is a known issue.", "default")], stderr=True)
+                                         "this is a known issue.", "default")], stderr=True)
             sys.exit(errno.ENOTSUP)
 
     win.noutrefresh()
@@ -1667,7 +1667,7 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
             attr = element.get_themeattr()
             selected = element.get_selected()
             truncated_themearray.append(ThemeStr(string[0:max_element_len],
-                                                    attr, selected=selected))
+                                                 attr, selected=selected))
             break
         truncated_themearray.append(element)
 
@@ -1903,7 +1903,7 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeStr]],
     if maxwidth == -1:
         return [themearray]
 
-    themearray_flattened = themearray_flatten(themearray, selected=selected)
+    themearray_flat = themearray_flatten(themearray, selected=selected)
 
     linebreak = ThemeRef("separators", "line_break").to_themearray()
 
@@ -1919,27 +1919,25 @@ def themearray_wrap_line(themearray: List[Union[ThemeRef, ThemeStr]],
 
     while True:
         # Does the fragment fit?
-        tfilen = len(themearray_flattened[i])
+        tfilen = len(themearray_flat[i])
         if tmplen + tfilen < maxwidth:
-            tmp_themearray.append(themearray_flattened[i])
+            tmp_themearray.append(themearray_flat[i])
             tmplen += tfilen
             i += 1
         # Nope
         else:
-            string = str(themearray_flattened[i])
-            themeattr = themearray_flattened[i].get_themeattr()
+            string = str(themearray_flat[i])
+            themeattr = themearray_flat[i].get_themeattr()
 
-            tmp_themearray.append(ThemeStr(string[:maxwidth - linebreaklen - tmplen],
-                                              themeattr))
+            tmp_themearray.append(ThemeStr(string[:maxwidth - linebreaklen - tmplen], themeattr))
             if wrap_marker:
                 tmp_themearray += linebreak
-            themearray_flattened[i] = ThemeStr(string[maxwidth - linebreaklen - tmplen:],
-                                                  themeattr)
+            themearray_flat[i] = ThemeStr(string[maxwidth - linebreaklen - tmplen:], themeattr)
             themearrays.append(tmp_themearray)
             tmp_themearray = []
             tmplen = 0
             continue
-        if i == len(themearray_flattened):
+        if i == len(themearray_flat):
             themearrays.append(tmp_themearray)
             break
 
@@ -2100,7 +2098,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             if i == columns - 1:
                 extrapad = 0
             headerarray.append(ThemeStr((headers[i].ljust(lengths[i] + extrapad)),
-                                           ThemeAttr("windowwidget", "header")))
+                                        ThemeAttr("windowwidget", "header")))
 
     # Move to preselection
     if isinstance(preselection, str):
@@ -2140,7 +2138,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                     linearray.append(ThemeStr(f"{tagprefix}", ThemeAttr("windowwidget", "tag")))
                 else:
                     linearray.append(ThemeStr("".ljust(tagprefixlen),
-                                                 ThemeAttr("windowwidget", "tag")))
+                                              ThemeAttr("windowwidget", "tag")))
 
             for _x, column in enumerate(item["columns"]):
                 themearray: List[Union[ThemeRef, ThemeStr]] = []
@@ -2178,11 +2176,11 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                         rpadstr = "".rjust(rpad, "─")
 
                         themearray.append(ThemeStr(lpadstr,
-                                                      ThemeAttr("windowwidget", "highlight"),
+                                                   ThemeAttr("windowwidget", "highlight"),
                                           selected_))
                         themearray.append(ThemeStr(tmpstring, attribute, selected_))
                         themearray.append(ThemeStr(rpadstr,
-                                                      ThemeAttr("windowwidget", "highlight"),
+                                                   ThemeAttr("windowwidget", "highlight"),
                                           selected_))
                     else:
                         themearray.append(ThemeStr(tmpstring, attribute, selected_))
@@ -2239,7 +2237,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             curses.endwin()
             ansithemeprint([ANSIThemeStr("Critical", "critical"),
                             ANSIThemeStr(": Live resizing windowwidget() is currently broken; "
-                                            "this is a known issue.", "default")], stderr=True)
+                                         "this is a known issue.", "default")], stderr=True)
             sys.exit(errno.ENOTSUP)
         if c == 27:  # ESCAPE
             selection = ""
@@ -2439,7 +2437,7 @@ def get_labels(labels: Optional[Dict]) -> Optional[List[Dict]]:
             "lineattrs": WidgetLineAttrs.NORMAL,
             "columns": [[ThemeStr(key, ThemeAttr("windowwidget", "highlight"))],
                         [ThemeStr(value.replace("\n", "\\n"),
-                                     ThemeAttr("windowwidget", "default"))]],
+                                  ThemeAttr("windowwidget", "default"))]],
             "retval": None,
         })
     return rlabels
@@ -2761,7 +2759,7 @@ class UIProps:
     # timestamps enabled, no automatic updates, default sortcolumn = "status"
     # pylint: disable-next=too-many-arguments
     def init_window(self, **kwargs: Any) -> None:
-        field_list: Optional[Dict] = deep_get(kwargs, DictPath("field_list"))
+        field_list: Dict = deep_get(kwargs, DictPath("field_list"), {})
         view: Union[Optional[Tuple[str, str]], str] = deep_get(kwargs, DictPath("view"))
         windowheader: str = deep_get(kwargs, DictPath("windowheader"), "")
         update_delay: int = deep_get(kwargs, DictPath("update_delay"), -1)
@@ -2968,7 +2966,7 @@ class UIProps:
             curposarray: List[Union[ThemeRef, ThemeStr]] = [
                 ThemeStr("Line: ", ThemeAttr("statusbar", "infoheader")),
                 ThemeStr(f"{ycurpos + 1}".rjust(len(str(maxypos + 1))),
-                            ThemeAttr("statusbar", "highlight")),
+                         ThemeAttr("statusbar", "highlight")),
                 ThemeRef("separators", "statusbar_fraction"),
                 ThemeStr(f"{maxypos + 1}", ThemeAttr("statusbar", "highlight"))
             ]

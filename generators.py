@@ -53,16 +53,41 @@ def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, Them
     return formatted_string
 
 
-def format_list(items: Any, fieldlen: int, pad: int, ralign: bool, selected: bool,
-                item_separator: Optional[ThemeRef] = None,
-                field_separators: Optional[List[ThemeRef]] = None,
-                field_colors: Optional[List[ThemeAttr]] = None,
-                ellipsise: int = -1, ellipsis: Optional[ThemeRef] = None,
-                field_prefixes: Optional[List[ThemeRef]] = None,
-                field_suffixes: Optional[List[ThemeRef]] = None,
-                mapping: Optional[Dict] = None) -> List[Union[ThemeRef, ThemeStr]]:
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def format_list(items: Any, fieldlen: int, pad: int,
+                **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]]:
+    """
+    Format a list
+
+        Parameters:
+            items (Any): The list items
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding to insert after the field
+            **kwargs (dict[str, Any]): Keyword arguments
+                ralign (bool): Align the data to the right?
+                selected (bool): Mark the field as selected?
+                item_separator (ThemeRef): The separator between each item
+                field_separators ([ThemeRef]): The separators between each field
+                ellipsise (int): Ellipsise after this many elements (-1 == disabled)
+                ellipsis (ThemeRef): The marker to use when ellipsising the list
+                field_prefixes ([ThemeRef): Prefixes for each element
+                field_suffixes ([ThemeRef): Suffixes for each element
+                mapping (dict): Mappings passed to map_value()
+        Returns:
+            (ThemeArray): The formatted themearray
+    """
+    ralign: bool = deep_get(kwargs, DictPath("ralign"), False)
+    selected: bool = deep_get(kwargs, DictPath("selected"), False)
+    item_separator: Optional[ThemeRef] = deep_get(kwargs, DictPath("item_separator"))
+    field_separators: Optional[List[ThemeRef]] = deep_get(kwargs, DictPath("field_separators"))
+    field_colors: Optional[List[ThemeAttr]] = deep_get(kwargs, DictPath("field_colors"))
+    ellipsise: int = deep_get(kwargs, DictPath("ellipsise"), -1)
+    ellipsis: Optional[ThemeRef] = deep_get(kwargs, DictPath("ellipsis"))
+    field_prefixes: Optional[List[ThemeRef]] = deep_get(kwargs, DictPath("field_prefixes"))
+    field_suffixes: Optional[List[ThemeRef]] = deep_get(kwargs, DictPath("field_suffixes"))
+    mapping: Optional[Dict] = deep_get(kwargs, DictPath("mapping"))
+
     array: List[Union[ThemeRef, ThemeStr]] = []
-    totallen = 0
 
     if item_separator is None:
         item_separator = ThemeRef("separators", "list", selected)
@@ -94,17 +119,15 @@ def format_list(items: Any, fieldlen: int, pad: int, ralign: bool, selected: boo
     skip_separator = True
 
     for item in items:
-        if len(array) > 0:
+        if array:
             item_sep = item_separator
             item_sep.selected = selected
-            totallen += len(item_sep)
             array.append(item_sep)
             elcount += 1
 
         if elcount == ellipsise:
             ell = ellipsis
             ell.selected = selected
-            totallen += len(ell)
             array.append(ellipsis)
             break
 
@@ -113,19 +136,18 @@ def format_list(items: Any, fieldlen: int, pad: int, ralign: bool, selected: boo
         if not isinstance(item, tuple):
             item = (item, None)
 
-        for i in range(0, len(item)):
-            if item[i] is None:
+        for i, data in enumerate(item):
+            if data is None:
                 continue
 
-            string = str(item[i])
+            string = str(data)
 
             if not string:
                 continue
 
-            if i > 0 and not skip_separator:
+            if i and not skip_separator:
                 field_sep = field_separators[min(i - 1, len(field_separators) - 1)]
                 field_sep.selected = selected
-                totallen += len(field_sep)
                 array.append(field_sep)
 
             if (tmp := format_special(string, selected)) is not None:
@@ -139,44 +161,54 @@ def format_list(items: Any, fieldlen: int, pad: int, ralign: bool, selected: boo
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
                 if isinstance(field_prefixes[i], tuple):
-                    totallen += len(field_prefixes[i])
                     array.append(field_prefixes[i])
                 else:
                     for prefix in field_prefixes:
                         pref = prefix
                         pref.selected = selected
-                        totallen += len(pref)
                         array.append(pref)
             array.append(formatted_string)
-            totallen += len(string)
             # And now the suffix
             if field_suffixes is not None and i < len(field_suffixes):
                 if isinstance(field_suffixes[i], tuple):
-                    totallen += len(field_suffixes[i])
                     array.append(field_suffixes[i])
                 else:
                     for suffix in field_suffixes:
                         suff = suffix
                         suff.selected = selected
-                        totallen += len(suff)
                         array.append(suff)
                 # RequestPrincipals[*@example.com]
             skip_separator = False
 
-    return align_and_pad(array, pad, fieldlen, totallen, ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 # references is unused for now, but will eventually be used to compare against
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-locals,too-many-statements,too-many-branches
 def map_value(value: Any,
               references: Any = None,
               selected: bool = False,
               default_field_color: ThemeAttr = ThemeAttr("types", "generic"),
               mapping: Optional[Dict] = None) -> Tuple[Union[ThemeRef, ThemeStr], str]:
+    """
+    Perform value based mappings; either by doing numerical ranges,
+    or by doing string comparisons (optionally case insensitive)
+
+        Parameters:
+            value (Any): The value to map
+            references (Any): The references to map against (unsupported for now)
+            selected (bool): Is the string selected?
+            default_field_color (ThemeAttr): The default colour to use if  no mapping occurs
+            mapping (dict): The mapping rules
+        Returns:
+            (ThemeArray, str):
+                (ThemeArray): The formatted themearray
+                (str): The string-representation of the value
+    """
     # If we lack a mapping, use the default color for this field
-    if mapping is None or len(mapping) == 0:
+    if mapping is None or not mapping:
         return ThemeStr(value, default_field_color, selected), value
 
     substitutions = deep_get(mapping, DictPath("substitutions"), {})
@@ -208,30 +240,30 @@ def map_value(value: Any,
             return value, str(value)
 
     # OK, so we want to output output_value, but compare using reference_value
-    if isinstance(value, tuple) and len(ranges) > 0:
+    if isinstance(value, tuple) and ranges:
         output_value, reference_value = value
     else:
         output_value = value
         reference_value = value
 
-    if isinstance(reference_value, (int, float)) and len(ranges) > 0:
+    if isinstance(reference_value, (int, float)) and ranges:
         default_index = -1
-        for i in range(0, len(ranges)):
-            if deep_get(ranges[i], DictPath("default"), False):
+        for i, data in enumerate(ranges):
+            if deep_get(data, DictPath("default"), False):
                 if default_index != -1:
                     raise ValueError("Range cannot contain more than one default")
                 default_index = i
                 continue
-            _min = deep_get(ranges[i], DictPath("min"))
-            _max = deep_get(ranges[i], DictPath("max"))
+            _min = deep_get(data, DictPath("min"))
+            _max = deep_get(data, DictPath("max"))
             if (_min is None or reference_value >= _min) \
                     and (_max is None or reference_value < _max):
-                field_colors = deep_get(ranges[i], DictPath("field_colors"))
+                field_colors = deep_get(data, DictPath("field_colors"))
                 break
         if field_colors is None and default_index != -1:
             field_colors = deep_get(ranges[default_index], DictPath("field_colors"))
         string = str(output_value)
-    elif isinstance(reference_value, (str, bool)) or len(ranges) == 0:
+    elif isinstance(reference_value, (str, bool)) or not ranges:
         string = str(output_value)
         _string = string
         if not match_case:
@@ -261,18 +293,31 @@ def map_value(value: Any,
 
 
 def align_and_pad(array: List[Union[ThemeRef, ThemeStr]], pad: int,
-                  fieldlen: int, stringlen: int, ralign: bool,
-                  selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
+                  fieldlen: int, ralign: bool, selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
+    """
+    Given a field, align to the left or right, and pad it to the field length
+
+        Parameters:
+            array (ThemeArray): The themearray to align and pad
+            pad (int): The amount of padding to insert after the field
+            fieldlen (int): The length of the field
+            ralign (bool): Align the data to the right?
+            selected (bool): Mark the field as selected?
+        Returns:
+            (ThemeArray): The formatted list
+    """
     tmp_array: List[Union[ThemeRef, ThemeStr]] = []
+    stringlen = themearray_len(array)
+
     if ralign:
         tmp_array.append(ThemeStr("".ljust(fieldlen - stringlen),
-                                     ThemeAttr("types", "generic"), selected))
+                                  ThemeAttr("types", "generic"), selected))
         tmp_array += array
     else:
         tmp_array += array
         tmp_array.append(ThemeStr("".ljust(fieldlen - stringlen),
-                                     ThemeAttr("types", "generic"), selected))
-    if pad > 0:
+                                  ThemeAttr("types", "generic"), selected))
+    if pad:
         tmp_array.append(ThemeRef("separators", "pad", selected))
     return tmp_array
 
@@ -375,7 +420,7 @@ def generator_age_raw(value: Union[int, str],
     return array
 
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-arguments
 def generator_age(obj: Dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
@@ -385,9 +430,10 @@ def generator_age(obj: Dict, field: str, fieldlen: int, pad: int,
 
     array = generator_age_raw(value, selected)
 
-    return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable=unused-argument,too-many-arguments,too-many-locals,too-many-branches
 def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
                       **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
@@ -398,7 +444,7 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
         items = []
 
     if isinstance(items, str) and items in ("<unset>", "<none>"):
-        return format_list([items], fieldlen, pad, ralign, selected)
+        return format_list([items], fieldlen, pad, ralign=ralign, selected=selected)
 
     if isinstance(items, (str, tuple)):
         items = [items]
@@ -406,7 +452,7 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
     separator_lookup = {}
 
     separators = deep_get(formatting, DictPath("field_separators"))
-    if len(separators) == 0:
+    if not separators:
         separators = [ThemeRef("separators", "ipv4address", selected),
                       ThemeRef("separators", "ipv6address", selected),
                       ThemeRef("separators", "ipmask", selected)]
@@ -424,7 +470,7 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
         tmp = ""
         for ch in item:
             if ch in separator_lookup:
-                if len(tmp) > 0:
+                if tmp:
                     if subnet:
                         _vlist.append(ThemeStr(tmp, ThemeAttr("types", "ipmask"), selected))
                     else:
@@ -437,16 +483,16 @@ def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
             else:
                 tmp += ch
 
-        if len(tmp) > 0:
+        if tmp:
             if subnet:
                 _vlist.append(ThemeStr(tmp, ThemeAttr("types", "ipmask"), selected))
             else:
                 _vlist.append(ThemeStr(tmp, ThemeAttr("types", "address"), selected))
-        if len(array) > 0:
+        if array:
             array.append(item_separator)
         array += _vlist
 
-    return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_basic(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -476,7 +522,7 @@ def generator_basic(obj: Dict, field: str, fieldlen: int, pad: int,
         ThemeStr(string, fmt, selected)
     ]
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 # pylint: disable=unused-argument
@@ -490,7 +536,7 @@ def generator_hex(obj: Dict, field: str, fieldlen: int, pad: int,
     array = format_numerical_with_units(string, "field",
                                         selected, non_units=set("0123456789abcdefABCDEF"))
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_list(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -521,7 +567,9 @@ def generator_list(obj: Dict, field: str, fieldlen: int, pad: int,
 
     mapping = deep_get(formatting, DictPath("mapping"), {})
 
-    return format_list(items, fieldlen, pad, ralign, selected,
+    return format_list(items, fieldlen, pad,
+                       ralign=ralign,
+                       selected=selected,
                        item_separator=item_separator,
                        field_separators=field_separators,
                        field_colors=field_colors,
@@ -593,7 +641,9 @@ def generator_list_with_status(obj: Dict, field: str, fieldlen: int, pad: int,
         else:
             newitems.append(("", "", "", "", "", "", "", "", item))
 
-    return format_list(newitems, fieldlen, pad, ralign, selected,
+    return format_list(newitems, fieldlen, pad,
+                       ralign=ralign,
+                       selected=selected,
                        item_separator=item_separator,
                        field_separators=field_separators,
                        field_colors=field_colors,
@@ -634,9 +684,8 @@ def generator_mem(obj: Dict, field: str, fieldlen: int, pad: int,
         ThemeStr(total, ThemeAttr("types", "numerical"), selected),
         ThemeStr(unit, ThemeAttr("types", "unit"), selected),
     ]
-    stringlen = themearray_len(array)
 
-    return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 # pylint: disable=unused-argument
@@ -649,7 +698,7 @@ def generator_mem_single(obj: Dict, field: str, fieldlen: int, pad: int,
 
     array = format_numerical_with_units(string, "numerical", selected)
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 # pylint: disable=unused-argument
@@ -671,7 +720,7 @@ def generator_numerical(obj: Dict, field: str, fieldlen: int, pad: int,
         ThemeStr(string, fmt, selected)
     ]
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_numerical_with_units(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -684,7 +733,7 @@ def generator_numerical_with_units(obj: Dict, field: str, fieldlen: int, pad: in
     if value in ("<none>", "<unset>", "<unknown>"):
         fmt = ThemeAttr("types", "none")
         array = [ThemeStr(value, fmt, selected)]
-        return align_and_pad(array, pad, fieldlen, len(value), ralign, selected)
+        return align_and_pad(array, pad, fieldlen, ralign, selected)
 
     if value == -1 and not deep_get(formatting, DictPath("allow_signed")):
         string = ""
@@ -693,7 +742,7 @@ def generator_numerical_with_units(obj: Dict, field: str, fieldlen: int, pad: in
 
     array = format_numerical_with_units(string, "numerical", selected)
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_status(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -708,9 +757,8 @@ def generator_status(obj: Dict, field: str, fieldlen: int, pad: int,
     array = [
         ThemeStr(status, fmt, selected)
     ]
-    stringlen = len(status)
 
-    return align_and_pad(array, pad, fieldlen, stringlen, ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -725,7 +773,7 @@ def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
             array = [tmp]
             string = value
 
-    if len(array) == 0:
+    if not array:
         string = datetime_to_timestamp(value)
         if value is None:
             array = [
@@ -738,7 +786,7 @@ def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
         else:
             array = format_numerical_with_units(string, "timestamp", selected)
 
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
@@ -747,7 +795,7 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
     array: List[Union[ThemeRef, ThemeStr]] = []
     values = getattr(obj, field)
 
-    if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
+    if len(deep_get(formatting, DictPath("field_colors"), [])) < 2 < len(values):
         raise ValueError("Received more than 2 fields for timestamp_with_age "
                          "but no formatting to specify what the values signify")
 
@@ -769,30 +817,30 @@ def generator_timestamp_with_age(obj: Dict, field: str, fieldlen: int, pad: int,
     else:
         array = []
 
-        for i in range(0, len(values)):
+        for i, data in enumerate(values):
             # If there's no formatting for this field we assume that
             # it is a generic string
             if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
-                array += [ThemeStr(values[i], fmt, selected)]
+                array += [ThemeStr(data, fmt, selected)]
             elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
-                if values[i] is None:
+                if data is None:
                     array += [
                         ThemeStr("<unset>", ThemeAttr("types", "none"), selected)
                     ]
                     break
 
-                timestamp = timestamp_to_datetime(values[i])
+                timestamp = timestamp_to_datetime(data)
                 timestamp_string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
                 array += format_numerical_with_units(timestamp_string, "timestamp", selected)
             elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
-                array += generator_age_raw(values[i], selected)
+                array += generator_age_raw(data, selected)
             else:
                 array += [
-                    ThemeStr(values[i], formatting["field_colors"][i], selected)
+                    ThemeStr(data, formatting["field_colors"][i], selected)
                 ]
 
-    return align_and_pad(array, pad, fieldlen, themearray_len(array), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def generator_value_mapper(obj: Dict, field: "str", fieldlen: int, pad: int,
@@ -805,14 +853,14 @@ def generator_value_mapper(obj: Dict, field: "str", fieldlen: int, pad: int,
                                deep_get(formatting, DictPath("field_colors"),
                                         [("types", "generic")])[0])
 
-    formatted_string, string = map_value(value,
-                                         selected=selected,
-                                         default_field_color=default_field_color,
-                                         mapping=deep_get(formatting, DictPath("mapping"), {}))
+    formatted_string, _string = map_value(value,
+                                          selected=selected,
+                                          default_field_color=default_field_color,
+                                          mapping=deep_get(formatting, DictPath("mapping"), {}))
     array = [
         formatted_string
     ]
-    return align_and_pad(array, pad, fieldlen, len(string), ralign, selected)
+    return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
 def processor_timestamp(obj: Dict, field: str) -> str:
@@ -831,7 +879,7 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
     values = getattr(obj, field)
 
-    if len(values) > 2 and len(deep_get(formatting, DictPath("field_colors"), [])) < 2:
+    if len(deep_get(formatting, DictPath("field_colors"), [])) < 2 < len(values):
         raise ValueError("Received more than 2 fields for timestamp_with_age "
                          "but no formatting to specify what the values signify")
 
@@ -853,27 +901,27 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
     else:
         array = []
 
-        for i in range(0, len(values)):
+        for i, data in enumerate(values):
             # If there is no formatting for this field we assume that
             # it is a generic string
             if len(deep_get(formatting, DictPath("field_colors"), [])) <= i:
                 fmt = ThemeAttr("types", "generic")
                 array += [
-                    ThemeStr(values[i], fmt)
+                    ThemeStr(data, fmt)
                 ]
             elif formatting["field_colors"][i] == ThemeAttr("types", "timestamp"):
-                if values[i] is None:
+                if data is None:
                     array += [
                         ThemeStr("<none>", ThemeAttr("types", "none"))
                     ]
                 else:
                     # timestamp_string = datetime_to_timestamp(values[0])
-                    array += format_numerical_with_units(values[i], "timestamp", False)
+                    array += format_numerical_with_units(data, "timestamp", False)
             elif formatting["field_colors"][i] == ThemeAttr("types", "age"):
-                array += generator_age_raw(values[i], False)
+                array += generator_age_raw(data, False)
             else:
                 array += [
-                    ThemeStr(values[i], formatting["field_colors"][i])
+                    ThemeStr(data, formatting["field_colors"][i])
                 ]
 
     return themearray_to_string(array)
@@ -911,16 +959,16 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
         # Join all elements of the field into one string
         string = ""
 
-        for i in range(0, len(item)):
-            if item[i] is None:
+        for i, data in enumerate(item):
+            if data is None:
                 continue
 
-            tmp = str(item[i])
+            tmp = str(data)
 
-            if len(tmp) == 0:
+            if not tmp:
                 continue
 
-            if i > 0 and not skip_separator:
+            if i and not skip_separator:
                 string += themearray_to_string([field_separators[min(i - 1,
                                                                      len(field_separators) - 1)]])
 
@@ -980,11 +1028,11 @@ def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef,
         # Join all elements of the field into one string
         string = ""
 
-        for i in range(0, len(item)):
-            if item[i] is None:
+        for i, data in enumerate(item):
+            if data is None:
                 continue
 
-            tmp = str(item[i])
+            tmp = str(data)
 
             if not tmp:
                 continue
@@ -1310,7 +1358,7 @@ def fieldgenerator(view: str, selected_namespace: str = "",
     field_index = deep_get(kwargs, DictPath("field_index"))
     field_indexes = deep_get(kwargs, DictPath("field_indexes"))
 
-    if field_indexes is None or len(field_indexes) == 0:
+    if field_indexes is None or not field_indexes:
         return None, None, None, False
 
     field_names = copy.deepcopy(deep_get(field_indexes, DictPath(f"{field_index}#fields"), []))

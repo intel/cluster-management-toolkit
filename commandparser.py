@@ -42,7 +42,7 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
     ansithemeprint([ANSIThemeStr(f"{programname} ", "programname"),
                     ANSIThemeStr(f"{programversion}", "version")])
     ansithemeprint([ANSIThemeStr(f"{about.PROGRAM_SUITE_FULL_NAME} "
-                                    f"({about.PROGRAM_SUITE_NAME}) ", "programname"),
+                                 f"({about.PROGRAM_SUITE_NAME}) ", "programname"),
                     ANSIThemeStr(f"{about.PROGRAM_SUITE_VERSION}", "version")])
     print()
     print(about.COPYRIGHT)
@@ -90,7 +90,7 @@ def __sub_usage(command: str) -> int:
     if headerstring is None:
         ansithemeprint([ANSIThemeStr("Error", "warning"),
                         ANSIThemeStr(": Could not find help entry for command "
-                                        f"{command}; aborting.", "default")], stderr=True)
+                                     f"{command}; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
     values = deep_get(commandinfo, DictPath("values"), [])
@@ -590,9 +590,9 @@ def parse_commandline(__programname: str, __programversion: str,
                             ANSIThemeStr(argv[i].replace("\x00", "<NUL>"), "command"),
                             ANSIThemeStr("“ contains NUL-bytes (replaced here);\n", "default"),
                             ANSIThemeStr("this is either a programming error, a system error, "
-                                            "file or memory corruption, ", "default"),
+                                         "file or memory corruption, ", "default"),
                             ANSIThemeStr("or a deliberate attempt to bypass "
-                                            "security; aborting.", "default")], stderr=True)
+                                         "security; aborting.", "default")], stderr=True)
             sys.exit(errno.EINVAL)
 
         # Have we got a command to execute?
@@ -708,7 +708,7 @@ def parse_commandline(__programname: str, __programversion: str,
                         # validate_argument() will terminate by default if validation fails
                         _result = cmtvalidators.validate_argument(arg,
                                                                   [ANSIThemeStr(f"{option}",
-                                                                                   "option")],
+                                                                                "option")],
                                                                   validator_options)
                     options.append((option, arg))
         else:

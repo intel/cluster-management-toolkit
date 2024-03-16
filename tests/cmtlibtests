@@ -1,5 +1,5 @@
 #! /bin/sh
-# vim: filetype=python
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
 # pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
@@ -32,1669 +32,1669 @@ kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-	result = ""
-	dump = yaml.dump(data)
-	for line in dump.splitlines():
-		result += f"{' '.ljust(base_indent)}{line}\n"
-	return result
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
 
 def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.substitute_string
+    fun = cmtlib.substitute_string
 
-	if result:
-		# Indata format:
-		# (string, substitutions, expected_result, expected_exception)
-		testdata = (
-			("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", }, "Kubernetes v1.29.2", None),
-			# The extra substitution should be ignored since it doesn't have a match
-			("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, "Kubernetes v1.29.2", None),
-			(None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
-			("Kubernetes <<<version>>>", { "<<<version>>>": None, }, "Kubernetes <<<version>>>", None),
-		)
-		for string, substitutions, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(string, substitutions)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"  substitutions:\n" \
-						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"  substitutions:\n" \
-							  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"  substitutions:\n" \
-						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, substitutions, expected_result, expected_exception)
+        testdata = (
+            ("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", }, "Kubernetes v1.29.2", None),
+            # The extra substitution should be ignored since it doesn't have a match
+            ("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, "Kubernetes v1.29.2", None),
+            (None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
+            ("Kubernetes <<<version>>>", { "<<<version>>>": None, }, "Kubernetes <<<version>>>", None),
+        )
+        for string, substitutions, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(string, substitutions)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"  substitutions:\n" \
+                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"  substitutions:\n" \
+                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.substitute_list
+    fun = cmtlib.substitute_list
 
-	if result:
-		# Indata format:
-		# (strings, substitutions, expected_result, expected_exception)
-		testdata = (
-			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
-			# The extra substitution should be ignored since it doesn't have a match
-			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
-			(None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
-			([None], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, [None], None),
-			(["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": None, }, ["kubectl <<<version>>>", "kubeadm <<<version>>>"], None),
-		)
-		for strings, substitutions, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(strings, substitutions)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {strings}\n  substitutions:\n" \
-						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {strings}\n" \
-							  f"  substitutions:\n" \
-							  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {strings}\n" \
-						  f"  substitutions:\n" \
-						  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (strings, substitutions, expected_result, expected_exception)
+        testdata = (
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+            # The extra substitution should be ignored since it doesn't have a match
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+            (None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
+            ([None], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, [None], None),
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": None, }, ["kubectl <<<version>>>", "kubeadm <<<version>>>"], None),
+        )
+        for strings, substitutions, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(strings, substitutions)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {strings}\n  substitutions:\n" \
+                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {strings}\n" \
+                              f"  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {strings}\n" \
+                          f"  substitutions:\n" \
+                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.lstrip_count
+    fun = cmtlib.lstrip_count
 
-	if result:
-		# Indata format:
-		# (string, prefix, expected_result, expected_exception)
-		testdata = (
-			("   42", " ", ("42", 3), None),
-			("42", " ", ("42", 0), None),
-			("42   ", " ", ("42   ", 0), None),
-			("   42", "!", ("   42", 0), None),
-			("!!!42", "!", ("42", 3), None),
-		)
-		for string, prefix, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(string, prefix)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         prefix: {prefix}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"         prefix: {prefix}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         prefix: {prefix}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, prefix, expected_result, expected_exception)
+        testdata = (
+            ("   42", " ", ("42", 3), None),
+            ("42", " ", ("42", 0), None),
+            ("42   ", " ", ("42   ", 0), None),
+            ("   42", "!", ("   42", 0), None),
+            ("!!!42", "!", ("42", 3), None),
+        )
+        for string, prefix, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(string, prefix)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.rstrip_count
+    fun = cmtlib.rstrip_count
 
-	if result:
-		# Indata format:
-		# (string, prefix, expected_result, expected_exception)
-		testdata = (
-			("42   ", " ", ("42", 3), None),
-			("42", " ", ("42", 0), None),
-			("   42", " ", ("   42", 0), None),
-			("42   ", "!", ("42   ", 0), None),
-			("42!!!", "!", ("42", 3), None),
-		)
-		for string, prefix, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(string, prefix)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         prefix: {prefix}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {string}\n" \
-							  f"         prefix: {prefix}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {string}\n" \
-						  f"         prefix: {prefix}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, prefix, expected_result, expected_exception)
+        testdata = (
+            ("42   ", " ", ("42", 3), None),
+            ("42", " ", ("42", 0), None),
+            ("   42", " ", ("   42", 0), None),
+            ("42   ", "!", ("42   ", 0), None),
+            ("42!!!", "!", ("42", 3), None),
+        )
+        for string, prefix, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(string, prefix)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {string}\n" \
+                          f"         prefix: {prefix}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.chunk_list
+    fun = cmtlib.chunk_list
 
-	if result:
-		# Indata format:
-		# (items, chunksize, expected_result, expected_exception)
-		testdata = (
-			# chunksize * n = len(items)
-			([1, 2, 3, 4, 5, 6, 7, 8], 2, [[1, 2], [3, 4], [5, 6], [7, 8]], None),
-			# chunksize * n = len(items)
-			([1, 2, 3, 4, 5, 6, 7, 8], 4, [[1, 2, 3, 4], [5, 6, 7, 8]], None),
-			# chunksize * n != len(items)
-			([1, 2, 3, 4, 5, 6, 7, 8], 3, [[1, 2, 3], [4, 5, 6], [7, 8]], None),
-			# chunksize == len(items)
-			([1, 2, 3, 4, 5, 6, 7, 8], 8, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
-			# chunksize > len(items)
-			([1, 2, 3, 4, 5, 6, 7, 8], 9, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
-			# Invalid chunksize
-			([1, 2, 3, 4, 5, 6, 7, 8], "a", None, TypeError),
-			# Invalid chunksize
-			([1, 2, 3, 4, 5, 6, 7, 8], -2, None, ValueError),
-			# Invalid chunksize
-			([1, 2, 3, 4, 5, 6, 7, 8], 0, None, ValueError),
-			# Invalid list
-			(None, 3, None, TypeError),
-			# Invalid list
-			(1, 3, None, TypeError),
-		)
-		for items, chunksize, expected_result, expected_exception in testdata:
-			try:
-				chunks = []
-				for chunk in fun(items, chunksize):
-					chunks.append(chunk)
-				if chunks != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {items}\n" \
-						  f"      chunksize: {chunksize}\n" \
-						  f"         output: {chunks}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"          input: {items}\n" \
-							  f"      chunksize: {chunksize}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {items}\n" \
-						  f"      chunksize: {chunksize}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (items, chunksize, expected_result, expected_exception)
+        testdata = (
+            # chunksize * n = len(items)
+            ([1, 2, 3, 4, 5, 6, 7, 8], 2, [[1, 2], [3, 4], [5, 6], [7, 8]], None),
+            # chunksize * n = len(items)
+            ([1, 2, 3, 4, 5, 6, 7, 8], 4, [[1, 2, 3, 4], [5, 6, 7, 8]], None),
+            # chunksize * n != len(items)
+            ([1, 2, 3, 4, 5, 6, 7, 8], 3, [[1, 2, 3], [4, 5, 6], [7, 8]], None),
+            # chunksize == len(items)
+            ([1, 2, 3, 4, 5, 6, 7, 8], 8, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
+            # chunksize > len(items)
+            ([1, 2, 3, 4, 5, 6, 7, 8], 9, [[1, 2, 3, 4, 5, 6, 7, 8]], None),
+            # Invalid chunksize
+            ([1, 2, 3, 4, 5, 6, 7, 8], "a", None, TypeError),
+            # Invalid chunksize
+            ([1, 2, 3, 4, 5, 6, 7, 8], -2, None, ValueError),
+            # Invalid chunksize
+            ([1, 2, 3, 4, 5, 6, 7, 8], 0, None, ValueError),
+            # Invalid list
+            (None, 3, None, TypeError),
+            # Invalid list
+            (1, 3, None, TypeError),
+        )
+        for items, chunksize, expected_result, expected_exception in testdata:
+            try:
+                chunks = []
+                for chunk in fun(items, chunksize):
+                    chunks.append(chunk)
+                if chunks != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {items}\n" \
+                          f"      chunksize: {chunksize}\n" \
+                          f"         output: {chunks}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {items}\n" \
+                              f"      chunksize: {chunksize}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {items}\n" \
+                          f"      chunksize: {chunksize}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.clamp
+    fun = cmtlib.clamp
 
-	if result:
-		# Indata format:
-		# (value, minval, maxval, expected_result, expected_exception)
-		testdata = (
-			(3, 0, 42, 3, None),
-			(42, 0, 3, 3, None),
-			(-1, 0, 3, 0, None),
-			(3.0, 0.1, 42.0, 3.0, None),
-			(3.0, -0.1, 42.0, 3.0, None),
-			(0.2, -0.1, 42.0, 0.2, None),
-			(-0.2, -0.1, 42.0, -0.1, None),
-			(42.1, -0.1, 42.0, 42.0, None),
-			("a", -0.1, 42.0, None, TypeError),
-			(42, "a", 42.0, None, TypeError),
-			(42, 1, 0, None, ValueError),
-			("a", 1, 0, None, TypeError),
-		)
-		for value, minval, maxval, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(value, minval, maxval)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {value}\n" \
-						  f"         minval: {minval}\n" \
-						  f"         maxval: {maxval}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {value}\n" \
-							  f"         minval: {minval}\n" \
-							  f"         maxval: {maxval}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {value}\n" \
-						  f"         minval: {minval}\n" \
-						  f"         maxval: {maxval}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (value, minval, maxval, expected_result, expected_exception)
+        testdata = (
+            (3, 0, 42, 3, None),
+            (42, 0, 3, 3, None),
+            (-1, 0, 3, 0, None),
+            (3.0, 0.1, 42.0, 3.0, None),
+            (3.0, -0.1, 42.0, 3.0, None),
+            (0.2, -0.1, 42.0, 0.2, None),
+            (-0.2, -0.1, 42.0, -0.1, None),
+            (42.1, -0.1, 42.0, 42.0, None),
+            ("a", -0.1, 42.0, None, TypeError),
+            (42, "a", 42.0, None, TypeError),
+            (42, 1, 0, None, ValueError),
+            ("a", 1, 0, None, TypeError),
+        )
+        for value, minval, maxval, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(value, minval, maxval)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {value}\n" \
+                          f"         minval: {minval}\n" \
+                          f"         maxval: {maxval}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {value}\n" \
+                              f"         minval: {minval}\n" \
+                              f"         maxval: {maxval}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {value}\n" \
+                          f"         minval: {minval}\n" \
+                          f"         maxval: {maxval}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.none_timestamp
+    fun = cmtlib.none_timestamp
 
-	tmp = fun()
-	if not isinstance(tmp, datetime):
-		message = f"{fun.__name__}() did not yield expected result:\n" \
-			  f"         output: {tmp} (type: {type(tmp)})\n" \
-			  f"       expected: {datetime}"
-		result = False
+    tmp = fun()
+    if not isinstance(tmp, datetime):
+        message = f"{fun.__name__}() did not yield expected result:\n" \
+              f"         output: {tmp} (type: {type(tmp)})\n" \
+              f"       expected: {datetime}"
+        result = False
 
-	return message, result
+    return message, result
 
 def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.normalise_cpu_usage_to_millicores
+    fun = cmtlib.normalise_cpu_usage_to_millicores
 
-	if result:
-		# Indata format:
-		# (cpu_usage, expected_result, expected_exception)
-		testdata = (
-			("512", 512000, None),
-			("10m", 10.0, None),
-			("200u", 0.2, None),
-			("541359378n", 541.359378, None),
-			("10NotAUnit", None, ValueError),
-			(None, None, TypeError),
-			("a", None, ValueError),
-			([], None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (cpu_usage, expected_result, expected_exception)
+        testdata = (
+            ("512", 512000, None),
+            ("10m", 10.0, None),
+            ("200u", 0.2, None),
+            ("541359378n", 541.359378, None),
+            ("10NotAUnit", None, ValueError),
+            (None, None, TypeError),
+            ("a", None, ValueError),
+            ([], None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.normalise_mem_to_bytes
+    fun = cmtlib.normalise_mem_to_bytes
 
-	if result:
-		# Indata format:
-		# (mem_usage, expected_result, expected_exception)
-		testdata = (
-			(42, 42, None),
-			("42", 42, None),
-			("2Ki", 2048, None),
-			("3Mi", 3_145_728, None),
-			("4Gi", 4_294_967_296, None),
-			("5Ti", 5_497_558_138_880, None),
-			("6Pi", 6_755_399_441_055_744, None),
-			("7Ei", 8_070_450_532_247_928_832, None),
-			("8Zi", 9_444_732_965_739_290_427_392, None),
-			("9Yi", 10_880_332_376_531_662_572_355_584, None),
-			("10NotAUnit", None, ValueError),
-			(None, None, TypeError),
-			("a", None, ValueError),
-			([], None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (mem_usage, expected_result, expected_exception)
+        testdata = (
+            (42, 42, None),
+            ("42", 42, None),
+            ("2Ki", 2048, None),
+            ("3Mi", 3_145_728, None),
+            ("4Gi", 4_294_967_296, None),
+            ("5Ti", 5_497_558_138_880, None),
+            ("6Pi", 6_755_399_441_055_744, None),
+            ("7Ei", 8_070_450_532_247_928_832, None),
+            ("8Zi", 9_444_732_965_739_290_427_392, None),
+            ("9Yi", 10_880_332_376_531_662_572_355_584, None),
+            ("10NotAUnit", None, ValueError),
+            (None, None, TypeError),
+            ("a", None, ValueError),
+            ([], None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.normalise_mem_bytes_to_str
+    fun = cmtlib.normalise_mem_bytes_to_str
 
-	if result:
-		# Indata format:
-		# (mem_usage_bytes, expected_result, expected_exception)
-		testdata = (
-			(42 * 1024 ** 0, f"{42:0.1f}B", None),
-			(2 * 1024 ** 1, f"{2:0.1f}KiB", None),
-			(3 * 1024 ** 2, f"{3:0.1f}MiB", None),
-			(4 * 1024 ** 3, f"{4:0.1f}GiB", None),
-			(5 * 1024 ** 4, f"{5:0.1f}TiB", None),
-			(6 * 1024 ** 5, f"{6:0.1f}PiB", None),
-			(7 * 1024 ** 6, f"{7:0.1f}EiB", None),
-			(8 * 1024 ** 7, f"{8:0.1f}ZiB", None),
-			(9 * 1024 ** 8, f"{9:0.1f}YiB", None),
-			(10 * 1024 ** 9, f"{10 * 1024:0.1f}YiB", None),
-			("a", None, TypeError),
-			(None, None, TypeError),
-			(-5 * 1024 ** 4, None, ValueError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (mem_usage_bytes, expected_result, expected_exception)
+        testdata = (
+            (42 * 1024 ** 0, f"{42:0.1f}B", None),
+            (2 * 1024 ** 1, f"{2:0.1f}KiB", None),
+            (3 * 1024 ** 2, f"{3:0.1f}MiB", None),
+            (4 * 1024 ** 3, f"{4:0.1f}GiB", None),
+            (5 * 1024 ** 4, f"{5:0.1f}TiB", None),
+            (6 * 1024 ** 5, f"{6:0.1f}PiB", None),
+            (7 * 1024 ** 6, f"{7:0.1f}EiB", None),
+            (8 * 1024 ** 7, f"{8:0.1f}ZiB", None),
+            (9 * 1024 ** 8, f"{9:0.1f}YiB", None),
+            (10 * 1024 ** 9, f"{10 * 1024:0.1f}YiB", None),
+            ("a", None, TypeError),
+            (None, None, TypeError),
+            (-5 * 1024 ** 4, None, ValueError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.disksize_to_human
+    fun = cmtlib.disksize_to_human
 
-	if result:
-		# Indata format:
-		# (size, expected_result, expected_exception)
-		testdata = (
-			(42, "42 bytes", None),
-			(1024 ** 1 - 1, "1023 bytes", None),
-			(1024 ** 1, "1KiB", None),
-			(1024 ** 2 - 1, "1023KiB", None),
-			(1024 ** 2, "1MiB", None),
-			(1024 ** 3 - 1, "1023MiB", None),
-			(1024 ** 3, "1GiB", None),
-			(1024 ** 4 - 1, "1023GiB", None),
-			(1024 ** 4, "1TiB", None),
-			(1024 ** 5 - 1, "1023TiB", None),
-			(1024 ** 5, "1PiB", None),
-			(1024 ** 6 - 1024, "1023PiB", None),
-			(1024 ** 6, "1EiB", None),
-			(None, None, TypeError),
-			("a", None, TypeError),
-			("2", None, TypeError),
-			(-(1024 ** 4), None, ValueError),
-		)
-		for size, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(size)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {size}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {size}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {size}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (size, expected_result, expected_exception)
+        testdata = (
+            (42, "42 bytes", None),
+            (1024 ** 1 - 1, "1023 bytes", None),
+            (1024 ** 1, "1KiB", None),
+            (1024 ** 2 - 1, "1023KiB", None),
+            (1024 ** 2, "1MiB", None),
+            (1024 ** 3 - 1, "1023MiB", None),
+            (1024 ** 3, "1GiB", None),
+            (1024 ** 4 - 1, "1023GiB", None),
+            (1024 ** 4, "1TiB", None),
+            (1024 ** 5 - 1, "1023TiB", None),
+            (1024 ** 5, "1PiB", None),
+            (1024 ** 6 - 1024, "1023PiB", None),
+            (1024 ** 6, "1EiB", None),
+            (None, None, TypeError),
+            ("a", None, TypeError),
+            ("2", None, TypeError),
+            (-(1024 ** 4), None, ValueError),
+        )
+        for size, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(size)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {size}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {size}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {size}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.split_msg
+    fun = cmtlib.split_msg
 
-	if result:
-		# Indata format:
-		# (string, expected_result, expected_exception)
-		testdata = (
-			("foo\nbar", ["foo", "bar"], None),
-			("foobar", ["foobar"], None),
-			("foo\x00bar", ["foo<NUL>bar"], None),
-			("foo\r\nbar", ["foo", "bar"], None),
-			("foo    \nbar", ["foo", "bar"], None),
-			("foo\xa0bar", ["foo bar"], None),
-			("foo\x1abar", ["foo\uFFFDbar"], None),
-			("", [], None),
-			("\n", [""], None),
-			("\n\n", ["", ""], None),
-			(1, None, TypeError),
-		)
-		for size, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(size)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {size}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {size}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {size}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, expected_result, expected_exception)
+        testdata = (
+            ("foo\nbar", ["foo", "bar"], None),
+            ("foobar", ["foobar"], None),
+            ("foo\x00bar", ["foo<NUL>bar"], None),
+            ("foo\r\nbar", ["foo", "bar"], None),
+            ("foo    \nbar", ["foo", "bar"], None),
+            ("foo\xa0bar", ["foo bar"], None),
+            ("foo\x1abar", ["foo\uFFFDbar"], None),
+            ("", [], None),
+            ("\n", [""], None),
+            ("\n\n", ["", ""], None),
+            (1, None, TypeError),
+        )
+        for size, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(size)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {size}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {size}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {size}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.strip_ansicodes
+    fun = cmtlib.strip_ansicodes
 
-	if result:
-		# Indata format:
-		# (string, expected_result, expected_exception)
-		testdata = (
-			("foobar", "foobar", None),
-			("\n\033[0;4;37mSummary:\033[0m", "Summary:", None),
-			(None, None, TypeError),
-			(1, None, TypeError),
-		)
-		for size, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(size)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {size}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {size}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {size}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, expected_result, expected_exception)
+        testdata = (
+            ("foobar", "foobar", None),
+            ("\n\033[0;4;37mSummary:\033[0m", "Summary:", None),
+            (None, None, TypeError),
+            (1, None, TypeError),
+        )
+        for size, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(size)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {size}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {size}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {size}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.versiontuple
+    fun = cmtlib.versiontuple
 
-	if result:
-		# Indata format:
-		# (string, expected_result, expected_exception)
-		testdata = (
-			("1.29.2", ("00000001", "00000029", "00000002"), None),
-			("a.bc.d", ("0000000a", "000000bc", "0000000d"), None),
-			("", ("00000000",), None),
-			(None, None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (string, expected_result, expected_exception)
+        testdata = (
+            ("1.29.2", ("00000001", "00000029", "00000002"), None),
+            ("a.bc.d", ("0000000a", "000000bc", "0000000d"), None),
+            ("", ("00000000",), None),
+            (None, None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.read_cmtconfig
+    fun = cmtlib.read_cmtconfig
 
-	if result:
-		try:
-			with mock.patch("cmtlib.CMT_CONFIG_FILE", "/doesnotexist"):
-				tmp = fun()
-			if not isinstance(tmp, dict) or tmp:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"    output type: {type(tmp)}\n" \
-					  f"     output len: {len(tmp)}\n" \
-					  f"   expected len: 0\n" \
-					  f"  expected type: dict"
-				result = False
-		except Exception as e:
-			raise
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
-	if result:
-		try:
-			with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
-				tmp = fun()
-			if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": True}}:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"    output type: {type(tmp)}\n" \
-					  f"     output len: {len(tmp)}\n" \
-					  f"   expected len: 1\n" \
-					  f"  expected type: dict"
-				result = False
-		except Exception as e:
-			raise
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
-	if result:
-		try:
-			with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
-				tmp = fun()
-			if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": False}}:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"    output type: {type(tmp)}\n" \
-					  f"     output len: {len(tmp)}\n" \
-					  f"   expected len: 1\n" \
-					  f"  expected type: dict"
-				result = False
-		except Exception as e:
-			raise
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
-	return message, result
+    if result:
+        try:
+            with mock.patch("cmtlib.CMT_CONFIG_FILE", "/doesnotexist"):
+                tmp = fun()
+            if not isinstance(tmp, dict) or tmp:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"    output type: {type(tmp)}\n" \
+                      f"     output len: {len(tmp)}\n" \
+                      f"   expected len: 0\n" \
+                      f"  expected type: dict"
+                result = False
+        except Exception as e:
+            raise
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
+    if result:
+        try:
+            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+                tmp = fun()
+            if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": True}}:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"    output type: {type(tmp)}\n" \
+                      f"     output len: {len(tmp)}\n" \
+                      f"   expected len: 1\n" \
+                      f"  expected type: dict"
+                result = False
+        except Exception as e:
+            raise
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
+    if result:
+        try:
+            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+                tmp = fun()
+            if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": False}}:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"    output type: {type(tmp)}\n" \
+                      f"     output len: {len(tmp)}\n" \
+                      f"   expected len: 1\n" \
+                      f"  expected type: dict"
+                result = False
+        except Exception as e:
+            raise
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
+    return message, result
 
 def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.age_to_seconds
+    fun = cmtlib.age_to_seconds
 
-	if result:
-		# Indata format:
-		# (age, expected_result, expected_exception)
-		testdata = (
-			("6d5h43m21s", int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
-			("5h43m", int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
-			("", -1, None),
-			("notanumber", None, ValueError),
-			(None, None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"          input: {indata}\n" \
-						  f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (age, expected_result, expected_exception)
+        testdata = (
+            ("6d5h43m21s", int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
+            ("5h43m", int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
+            ("", -1, None),
+            ("notanumber", None, ValueError),
+            (None, None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"          input: {indata}\n" \
+                          f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.seconds_to_age
+    fun = cmtlib.seconds_to_age
 
-	if result:
-		# Indata format:
-		# (age, negative_is_skew, expected_result, expected_exception)
-		testdata = (
-			(int(f"{8*24*60*60+7*60*60+43*60+21}"), False, "8d", None),
-			(int(f"{6*24*60*60+5*60*60+43*60+21}"), False, "6d5h", None),
-			(int(f"{0*24*60*60+13*60*60+43*60+0}"), False, "13h", None),
-			(int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
-			(int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
-			(int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
-			(int(f"0"), False, "<unset>", None),
-			(int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
-			(None, False, None, TypeError),
-		)
-		for indata, negative_is_skew, expected_result, expected_exception in testdata:
-			try:
-				if (tmp := fun(indata, negative_is_skew)) != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           input: {indata}\n" \
-						  f"negative_is_skew: {negative_is_skew}\n" \
-						  f"          output: {tmp}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-							  f"           input: {indata}\n" \
-							  f"negative_is_skew: {negative_is_skew}\n" \
-							  f"           input: {indata}\n" \
-							  f"       exception: {type(e)}\n" \
-							  f"        expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-						  f"           input: {indata}\n" \
-						  f"negative_is_skew: {negative_is_skew}\n" \
-						  f"       exception: {type(e)}\n" \
-						  f"        expected: {expected_result}"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (age, negative_is_skew, expected_result, expected_exception)
+        testdata = (
+            (int(f"{8*24*60*60+7*60*60+43*60+21}"), False, "8d", None),
+            (int(f"{6*24*60*60+5*60*60+43*60+21}"), False, "6d5h", None),
+            (int(f"{0*24*60*60+13*60*60+43*60+0}"), False, "13h", None),
+            (int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
+            (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
+            (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
+            (int(f"0"), False, "<unset>", None),
+            (int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
+            (None, False, None, TypeError),
+        )
+        for indata, negative_is_skew, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata, negative_is_skew)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: {indata}\n" \
+                          f"negative_is_skew: {negative_is_skew}\n" \
+                          f"          output: {tmp}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           input: {indata}\n" \
+                              f"negative_is_skew: {negative_is_skew}\n" \
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           input: {indata}\n" \
+                          f"negative_is_skew: {negative_is_skew}\n" \
+                          f"       exception: {type(e)}\n" \
+                          f"        expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.get_since
+    fun = cmtlib.get_since
 
-	if result:
-		# Indata format:
-		# (timestamp, expected_exception)
-		testdata = (
-			(int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
-			(int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
-			(int(f"{0*24*60*60+0*60*60+43*60+1}"), None),
-			(datetime.now(timezone.utc), None),
-			(cmtlib.none_timestamp(), None),
-			(None, None),
-			("a", TypeError),
-		)
-		for indata, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not isinstance(tmp, int):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: int"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (timestamp, expected_exception)
+        testdata = (
+            (int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
+            (int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
+            (int(f"{0*24*60*60+0*60*60+43*60+1}"), None),
+            (datetime.now(timezone.utc), None),
+            (cmtlib.none_timestamp(), None),
+            (None, None),
+            ("a", TypeError),
+        )
+        for indata, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not isinstance(tmp, int):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                          f"    output type: {type(tmp)}\n" \
+                          f"       expected: int"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.datetime_to_timestamp
+    fun = cmtlib.datetime_to_timestamp
 
-	if result:
-		# Indata format:
-		# (timestamp, expected_result, expected_exception)
-		testdata = (
-			(datetime(2024, 1, 1, 0, 42, 42, 0), "2024-01-01 0:42:42", None),
-			(datetime(1970, 1, 1, 2, 0).astimezone(), "                         ", None),
-			(cmtlib.none_timestamp(), "", None),
-			(None, "", None),
-			("a", None, ProgrammingError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not isinstance(tmp, str):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: “{tmp}“\n" \
-						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: str"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (timestamp, expected_result, expected_exception)
+        testdata = (
+            (datetime(2024, 1, 1, 0, 42, 42, 0), "2024-01-01 0:42:42", None),
+            (datetime(1970, 1, 1, 2, 0).astimezone(), "                         ", None),
+            (cmtlib.none_timestamp(), "", None),
+            (None, "", None),
+            ("a", None, ProgrammingError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not isinstance(tmp, str):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: “{tmp}“\n" \
+                          f"    output type: {type(tmp)}\n" \
+                          f"       expected: str"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.reformat_timestamp
+    fun = cmtlib.reformat_timestamp
 
-	if result:
-		# Indata format:
-		# (timestamp, expected_result, expected_exception)
-		testdata = (
-			("2024-01-01 00:42:42.011345+0100", None, None),
-			("2020-02-13T12:06:18-0100", None, None),
-			("2024-01-01 00:42:42.011345+0100", None, None),
-			("2020-02-13T12:06:18-0100", None, None),
-			(None, None, ValueError),
-			("a", None, ValueError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not isinstance(tmp, str):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: “{tmp}“\n" \
-						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: str"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (timestamp, expected_result, expected_exception)
+        testdata = (
+            ("2024-01-01 00:42:42.011345+0100", None, None),
+            ("2020-02-13T12:06:18-0100", None, None),
+            ("2024-01-01 00:42:42.011345+0100", None, None),
+            ("2020-02-13T12:06:18-0100", None, None),
+            (None, None, ValueError),
+            ("a", None, ValueError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not isinstance(tmp, str):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: “{tmp}“\n" \
+                          f"    output type: {type(tmp)}\n" \
+                          f"       expected: str"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.timestamp_to_datetime
+    fun = cmtlib.timestamp_to_datetime
 
-	if result:
-		# Indata format:
-		# (timestamp, expected_result, expected_exception)
-		testdata = (
-			("2024-01-01 00:42:42Z", None, None),
-			("2024-01-01 00:42:42.011345+0100", None, None),
-			("2020-02-13T12:06:18-0100", None, None),
-			("2024-01-01 00:42:42.011345+0100", None, None),
-			("2020-02-13T12:06:18-0100", None, None),
-			("2024-01-01 00:42:42.011345 +0100 UTC", None, None),
-			(-1, None, None),
-			(None, None, None),
-			("a", None, ValueError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not isinstance(tmp, datetime):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"    output type: {type(tmp)}\n" \
-						  f"       expected: {datetime}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (timestamp, expected_result, expected_exception)
+        testdata = (
+            ("2024-01-01 00:42:42Z", None, None),
+            ("2024-01-01 00:42:42.011345+0100", None, None),
+            ("2020-02-13T12:06:18-0100", None, None),
+            ("2024-01-01 00:42:42.011345+0100", None, None),
+            ("2020-02-13T12:06:18-0100", None, None),
+            ("2024-01-01 00:42:42.011345 +0100 UTC", None, None),
+            (-1, None, None),
+            (None, None, None),
+            ("a", None, ValueError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not isinstance(tmp, datetime):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"    output type: {type(tmp)}\n" \
+                          f"       expected: {datetime}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.make_set_expression_list
+    fun = cmtlib.make_set_expression_list
 
-	if result:
-		# Indata format:
-		# (expression_list, expected_result, expected_exception)
-		testdata = (
-			# Valid
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Exists", "")], None),
-			# Too many values
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
-			# Valid
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Does Not Exist", "")], None),
-			# Too many values
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
-			# Valid
-			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
-			# Too few values
-			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
-			# Valid
-			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "Not In ", "[foo,bar,baz]")], None),
-			# Too few values
-			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
-			# Valid
-			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], [("node-role.kubernetes.io/control-plane", "> ", "1")], None),
-			# Too many values
-			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
-			# Valid
-			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], [("node-role.kubernetes.io/control-plane", "< ", "42")], None),
-			# Too many values
-			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
-			# Multiple valid set expressions
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
-			  {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
-			 ], [("node-role.kubernetes.io/control-plane", "Does Not Exist", ""),
-			     ("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
-			# Invalid type for operator
-			([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
-			# Invalid type for operator
-			([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
-			# Invalid type for values
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
-			# Invalid type for key
-			([{"operator": "Exists", "key": 1, "values": [""]}], None, TypeError),
-			(None, [], None),
-			# Incorrect type
-			("a", None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (expression_list, expected_result, expected_exception)
+        testdata = (
+            # Valid
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Exists", "")], None),
+            # Too many values
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            # Valid
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Does Not Exist", "")], None),
+            # Too many values
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            # Valid
+            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+            # Too few values
+            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            # Valid
+            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "Not In ", "[foo,bar,baz]")], None),
+            # Too few values
+            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            # Valid
+            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], [("node-role.kubernetes.io/control-plane", "> ", "1")], None),
+            # Too many values
+            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+            # Valid
+            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], [("node-role.kubernetes.io/control-plane", "< ", "42")], None),
+            # Too many values
+            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            # Multiple valid set expressions
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
+              {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
+             ], [("node-role.kubernetes.io/control-plane", "Does Not Exist", ""),
+                 ("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+            # Invalid type for operator
+            ([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+            # Invalid type for operator
+            ([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            # Invalid type for values
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+            # Invalid type for key
+            ([{"operator": "Exists", "key": 1, "values": [""]}], None, TypeError),
+            (None, [], None),
+            # Incorrect type
+            ("a", None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.make_set_expression
+    fun = cmtlib.make_set_expression
 
-	if result:
-		# Indata format:
-		# (expression_list, expected_result, expected_exception)
-		testdata = (
-			# Valid
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Exists", None),
-			# Too many values
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
-			# Valid
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Does Not Exist", None),
-			# Too many values
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
-			# Valid
-			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
-			# Too few values
-			([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
-			# Valid
-			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane Not In [foo,bar,baz]", None),
-			# Too few values
-			([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
-			# Valid
-			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], "node-role.kubernetes.io/control-plane > 1", None),
-			# Too many values
-			([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
-			# Valid
-			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], "node-role.kubernetes.io/control-plane < 42", None),
-			# Too many values
-			([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
-			# Multiple valid set expressions
-			([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
-			  {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
-			 ], "node-role.kubernetes.io/control-plane Does Not Exist, node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
-			# Invalid type for operator
-			([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
-			# Invalid type for operator
-			([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
-			# Invalid type for values
-			([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
-			# Empty expression
-			([{}], None, ValueError),
-			([], "", None),
-			(None, "", None),
-			# Incorrect type
-			("a", None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (expression_list, expected_result, expected_exception)
+        testdata = (
+            # Valid
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Exists", None),
+            # Too many values
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            # Valid
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Does Not Exist", None),
+            # Too many values
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            # Valid
+            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+            # Too few values
+            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            # Valid
+            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane Not In [foo,bar,baz]", None),
+            # Too few values
+            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            # Valid
+            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], "node-role.kubernetes.io/control-plane > 1", None),
+            # Too many values
+            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+            # Valid
+            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], "node-role.kubernetes.io/control-plane < 42", None),
+            # Too many values
+            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            # Multiple valid set expressions
+            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
+              {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
+             ], "node-role.kubernetes.io/control-plane Does Not Exist, node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+            # Invalid type for operator
+            ([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+            # Invalid type for operator
+            ([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            # Invalid type for values
+            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+            # Empty expression
+            ([{}], None, ValueError),
+            ([], "", None),
+            (None, "", None),
+            # Incorrect type
+            ("a", None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.get_package_versions
+    fun = cmtlib.get_package_versions
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Warning", "warning"), ANSIThemeStr(": This unit-test is slow:\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Warning", "warning"), ANSIThemeStr(": This unit-test is slow:\n", "default")])
 
-		# Indata format:
-		# (hostname, expected_result, expected_exception)
-		testdata = (
-			("localhost", None),
-			("NonExistingHostname", ValueError),
-			(1, TypeError),
-			(None, TypeError),
-		)
-		for indata, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not (isinstance(tmp, list) and len(tmp) > 0 and isinstance(tmp[0], tuple) and len(tmp[0]) == 2 and isinstance(tmp[0][0], str) and isinstance(tmp[0][1], str)):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"       expected: [(str, str), ...]"
-					result = False
-					break
-				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
-				maxlen = 0
-				for name, _version in tmp:
-					maxlen = max(len(name), maxlen)
+        # Indata format:
+        # (hostname, expected_result, expected_exception)
+        testdata = (
+            ("localhost", None),
+            ("NonExistingHostname", ValueError),
+            (1, TypeError),
+            (None, TypeError),
+        )
+        for indata, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not (isinstance(tmp, list) and len(tmp) > 0 and isinstance(tmp[0], tuple) and len(tmp[0]) == 2 and isinstance(tmp[0][0], str) and isinstance(tmp[0][1], str)):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"       expected: [(str, str), ...]"
+                    result = False
+                    break
+                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                maxlen = 0
+                for name, _version in tmp:
+                    maxlen = max(len(name), maxlen)
 
-				for name, version in tmp:
-					ansithemeprint([ANSIThemeStr(f"    {name}", "default"),
-							ANSIThemeStr("".ljust(maxlen - len(name) + 2), "default"),
-							ANSIThemeStr(f"{version}", "version")])
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	if result:
-		try:
-			with mock.patch("ansible_helper.ansible_run_playbook_on_selection", return_value = (-1, [])):
-				tmp = fun("localhost")
-				message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
-					  f"         output: {tmp}\n" \
-					   "       expected: ValueError"
-				result = False
-		except Exception as e:
-			if isinstance(e, ValueError):
-				pass
-			else:
-				message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
-					   "       expected: ValueError"
-				result = False
-	return message, result
+                for name, version in tmp:
+                    ansithemeprint([ANSIThemeStr(f"    {name}", "default"),
+                            ANSIThemeStr("".ljust(maxlen - len(name) + 2), "default"),
+                            ANSIThemeStr(f"{version}", "version")])
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    if result:
+        try:
+            with mock.patch("ansible_helper.ansible_run_playbook_on_selection", return_value = (-1, [])):
+                tmp = fun("localhost")
+                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
+                      f"         output: {tmp}\n" \
+                       "       expected: ValueError"
+                result = False
+        except Exception as e:
+            if isinstance(e, ValueError):
+                pass
+            else:
+                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
+                       "       expected: ValueError"
+                result = False
+    return message, result
 
 def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.__extract_version
+    fun = cmtlib.__extract_version
 
-	if result:
-		# Indata format:
-		# (hostname, expected_result, expected_exception)
-		testdata = (
-			("   kubectl |  1.28.2-00 | https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
-			("   kubectl ", None, ValueError),
-			(1, None, TypeError),
-			(None, None, TypeError),
-		)
-		for indata, expected_result, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
-	return message, result
+    if result:
+        # Indata format:
+        # (hostname, expected_result, expected_exception)
+        testdata = (
+            ("   kubectl |  1.28.2-00 | https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
+            ("   kubectl ", None, ValueError),
+            (1, None, TypeError),
+            (None, None, TypeError),
+        )
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
+    return message, result
 
 def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.identify_distro
+    fun = cmtlib.identify_distro
 
-	if result:
-		testdata = (
-			("ID=debian", False, "debian", None),
-			("ID=ubuntu\nID_LIKE=debian", False, "debian", None),
-			("ID=\"suse opensuse\"", False, "suse", None),
-			("ID=\"fedora\"", False, "fedora", None),
-			("ID=", False, "", None),
-			("ID=", True, "", None),
-			("", False, "", None),
-		)
+    if result:
+        testdata = (
+            ("ID=debian", False, "debian", None),
+            ("ID=ubuntu\nID_LIKE=debian", False, "debian", None),
+            ("ID=\"suse opensuse\"", False, "suse", None),
+            ("ID=\"fedora\"", False, "fedora", None),
+            ("ID=", False, "", None),
+            ("ID=", True, "", None),
+            ("", False, "", None),
+        )
 
-		for os_release_data, error_on_failure, expected_result, expected_exception in testdata:
-			try:
-				with mock.patch("builtins.open", mock.mock_open(read_data = os_release_data)):
-					tmp = fun(error_on_failure = error_on_failure, exit_on_failure = False)
+        for os_release_data, error_on_failure, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("builtins.open", mock.mock_open(read_data = os_release_data)):
+                    tmp = fun(error_on_failure = error_on_failure, exit_on_failure = False)
 
-				if tmp != expected_result:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"         output: {tmp}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {os_release_data}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {os_release_data}\n" \
-						  f"      exception: {type(e)}\n" \
-						  f"       expected: {expected_result}"
-					result = False
-					break
-	return message, result
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"         output: {tmp}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {os_release_data}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {os_release_data}\n" \
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	distro = cmtlib.identify_distro()
+    distro = cmtlib.identify_distro()
 
-	if distro in ("debian",):
-		fun = cmtlib.check_versions_apt
-	elif distro in ("suse",):
-		fun = cmtlib.check_versions_zypper
-	elif distro in ("fedora", "rhel",):
-		fun = cmtlib.check_versions_yum
+    if distro in ("debian",):
+        fun = cmtlib.check_versions_apt
+    elif distro in ("suse",):
+        fun = cmtlib.check_versions_zypper
+    elif distro in ("fedora", "rhel",):
+        fun = cmtlib.check_versions_yum
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple distros:\n", "default")])
 
-		# Indata format:
-		# (package, checker, checker_str, expected_exception)
-		# Output is distro-dependent
-		testdata = (
-			# abiword was randomly picked as existing, but non-installed package; there's no guarantee that it is,
-			# and there are no guaranteed packages that can be used instead.
-			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_apt, None),
-			(1, cmtlib.check_versions_apt, TypeError),
-			(None, cmtlib.check_versions_apt, TypeError),
-			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_zypper, None),
-			(1, cmtlib.check_versions_zypper, TypeError),
-			(None, cmtlib.check_versions_zypper, TypeError),
-			(["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_yum, None),
-			(1, cmtlib.check_versions_yum, TypeError),
-			(None, cmtlib.check_versions_yum, TypeError),
-		)
-		for indata, fun, expected_exception in testdata:
-			try:
-				tmp = fun(indata)
-				if not isinstance(tmp, list):
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"          input: {indata}\n" \
-					          f"         output: {tmp}\n" \
-						  f"    output type: {type(tmp)}" \
-						  f"       expected: {list}"
-					result = False
-					break
-				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
-				maxlens = [0, 0, 0]
-				for package, installed_version, candidate_version, _natsorted_versions in tmp:
-					maxlens[0] = max(len(package), maxlens[0])
-					maxlens[1] = max(len(installed_version), maxlens[1])
-					maxlens[2] = max(len(candidate_version), maxlens[2])
+        # Indata format:
+        # (package, checker, checker_str, expected_exception)
+        # Output is distro-dependent
+        testdata = (
+            # abiword was randomly picked as existing, but non-installed package; there's no guarantee that it is,
+            # and there are no guaranteed packages that can be used instead.
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_apt, None),
+            (1, cmtlib.check_versions_apt, TypeError),
+            (None, cmtlib.check_versions_apt, TypeError),
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_zypper, None),
+            (1, cmtlib.check_versions_zypper, TypeError),
+            (None, cmtlib.check_versions_zypper, TypeError),
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_yum, None),
+            (1, cmtlib.check_versions_yum, TypeError),
+            (None, cmtlib.check_versions_yum, TypeError),
+        )
+        for indata, fun, expected_exception in testdata:
+            try:
+                tmp = fun(indata)
+                if not isinstance(tmp, list):
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                          f"    output type: {type(tmp)}" \
+                          f"       expected: {list}"
+                    result = False
+                    break
+                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                maxlens = [0, 0, 0]
+                for package, installed_version, candidate_version, _natsorted_versions in tmp:
+                    maxlens[0] = max(len(package), maxlens[0])
+                    maxlens[1] = max(len(installed_version), maxlens[1])
+                    maxlens[2] = max(len(candidate_version), maxlens[2])
 
-				for package, installed_version, candidate_version, natsorted_versions in tmp:
-					joined_versions = ansithemestr_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeStr(", ", "separator"))
-					ansithemeprint([ANSIThemeStr(f"    {package}", "default"),
-							ANSIThemeStr("".ljust(maxlens[0] - len(package) + 2), "default"),
-							ANSIThemeStr(f"    {installed_version}", "default"),
-							ANSIThemeStr("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
-							ANSIThemeStr(f"    {candidate_version}", "default"),
-							ANSIThemeStr("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
-							+ joined_versions)
-			except FileNotFoundError as e:
-				if "secure_which() could not find an acceptable match for apt" in str(e) or \
-				   "secure_which() could not find an acceptable match for zypper" in str(e) or \
-				   "secure_which() could not find an acceptable match for yum" in str(e):
-					pass
-			except Exception as e:
-				if expected_exception is not None:
-					if isinstance(e, expected_exception):
-						pass
-					else:
-						message = f"{fun.__name__}() did not yield expected result:\n" \
-						          f"          input: {indata}\n" \
-							  f"      exception: {type(e)}\n" \
-							  f"       expected: {expected_exception}"
-						result = False
-						break
-				else:
-					message = f"{fun.__name__}() did not yield expected result:\n" \
-					          f"          input: {indata}\n" \
-						  f"      exception: {type(e)}\n"
-					result = False
-					break
+                for package, installed_version, candidate_version, natsorted_versions in tmp:
+                    joined_versions = ansithemestr_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeStr(", ", "separator"))
+                    ansithemeprint([ANSIThemeStr(f"    {package}", "default"),
+                            ANSIThemeStr("".ljust(maxlens[0] - len(package) + 2), "default"),
+                            ANSIThemeStr(f"    {installed_version}", "default"),
+                            ANSIThemeStr("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
+                            ANSIThemeStr(f"    {candidate_version}", "default"),
+                            ANSIThemeStr("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
+                            + joined_versions)
+            except FileNotFoundError as e:
+                if "secure_which() could not find an acceptable match for apt" in str(e) or \
+                   "secure_which() could not find an acceptable match for zypper" in str(e) or \
+                   "secure_which() could not find an acceptable match for yum" in str(e):
+                    pass
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                          f"      exception: {type(e)}\n"
+                    result = False
+                    break
 
-	return message, result
+    return message, result
 
 def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
-	message = ""
-	result = True
+    message = ""
+    result = True
 
-	fun = cmtlib.identify_k8s_distro
-	k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
+    fun = cmtlib.identify_k8s_distro
+    k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
 
-	if result:
-		ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
-		try:
-			tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False)
-			if tmp not in k8s_distros:
-				message = f"{fun.__name__}() did not yield expected type:\n" \
-				          f"         output: {tmp}\n" \
-				          f"         status: {status}\n" \
-					  f"       expected: one of {', '.join(k8s_distros)}"
-				result = False
-			else:
-				ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
-				ansithemeprint([ANSIThemeStr("    Identified k8s distro: ", "default"),
-						ANSIThemeStr(f"{tmp}", "programname")])
-		except Exception as e:
-			message = f"{fun.__name__}() did not yield expected result:\n" \
-				  f"      exception: {type(e)}\n"
-			result = False
-	if result:
-		with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace", return_value = ([], 404)):
-			try:
-				tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False, error_on_failure = False)
-				if status != 404 or tmp != "<unknown>":
-					message = f"{fun.__name__}() did not yield expected type:\n" \
-					          f"         output: {tmp}\n" \
-					          f"         status: {status}\n" \
-						  f"       expected: <unknown>" \
-						  f"expected status: 404"
-					result = False
-			except Exception as e:
-				message = f"{fun.__name__}() did not yield expected result:\n" \
-					  f"      exception: {type(e)}\n" \
-					  f"       expected: <unknown>" \
-					  f"expected status: 404"
-				result = False
-	return message, result
+    if result:
+        ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
+        try:
+            tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False)
+            if tmp not in k8s_distros:
+                message = f"{fun.__name__}() did not yield expected type:\n" \
+                          f"         output: {tmp}\n" \
+                          f"         status: {status}\n" \
+                      f"       expected: one of {', '.join(k8s_distros)}"
+                result = False
+            else:
+                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                ansithemeprint([ANSIThemeStr("    Identified k8s distro: ", "default"),
+                        ANSIThemeStr(f"{tmp}", "programname")])
+        except Exception as e:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"      exception: {type(e)}\n"
+            result = False
+    if result:
+        with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace", return_value = ([], 404)):
+            try:
+                tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False, error_on_failure = False)
+                if status != 404 or tmp != "<unknown>":
+                    message = f"{fun.__name__}() did not yield expected type:\n" \
+                              f"         output: {tmp}\n" \
+                              f"         status: {status}\n" \
+                          f"       expected: <unknown>" \
+                          f"expected status: 404"
+                    result = False
+            except Exception as e:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"      exception: {type(e)}\n" \
+                      f"       expected: <unknown>" \
+                      f"expected status: 404"
+                result = False
+    return message, result
 
 tests: Dict = {
-	("substitute_string()",): {
-		"callable": test_substitute_string,
-		"result": None,
-	},
-	("substitute_list()",): {
-		"callable": test_substitute_list,
-		"result": None,
-	},
-	("lstrip_count()",): {
-		"callable": test_lstrip_count,
-		"result": None,
-	},
-	("rstrip_count()",): {
-		"callable": test_rstrip_count,
-		"result": None,
-	},
-	("chunk_list()",): {
-		"callable": test_chunk_list,
-		"result": None,
-	},
-	("clamp()",): {
-		"callable": test_clamp,
-		"result": None,
-	},
-	("none_timestamp()",): {
-		"callable": test_none_timestamp,
-		"result": None,
-	},
-	("normalise_cpu_usage_to_millicores()",): {
-		"callable": test_normalise_cpu_usage_to_millicores,
-		"result": None,
-	},
-	("normalise_mem_to_bytes()",): {
-		"callable": test_normalise_mem_to_bytes,
-		"result": None,
-	},
-	("normalise_mem_bytes_to_str()",): {
-		"callable": test_normalise_mem_bytes_to_str,
-		"result": None,
-	},
-	("disksize_to_human()",): {
-		"callable": test_disksize_to_human,
-		"result": None,
-	},
-	("split_msg()",): {
-		"callable": test_split_msg,
-		"result": None,
-	},
-	("strip_ansicodes()",): {
-		"callable": test_strip_ansicodes,
-		"result": None,
-	},
-	("read_cmtconfig()",): {
-		"callable": test_read_cmtconfig,
-		"result": None,
-	},
-	("versiontuple()",): {
-		"callable": test_versiontuple,
-		"result": None,
-	},
-	("age_to_seconds()",): {
-		"callable": test_age_to_seconds,
-		"result": None,
-	},
-	("seconds_to_age()",): {
-		"callable": test_seconds_to_age,
-		"result": None,
-	},
-	("get_since()",): {
-		"callable": test_get_since,
-		"result": None,
-	},
-	("datetime_to_timestamp()",): {
-		"callable": test_datetime_to_timestamp,
-		"result": None,
-	},
-	("reformat_timestamp()",): {
-		"callable": test_reformat_timestamp,
-		"result": None,
-	},
-	("timestamp_to_datetime()",): {
-		"callable": test_timestamp_to_datetime,
-		"result": None,
-	},
-	("make_set_expression_list()",): {
-		"callable": test_make_set_expression_list,
-		"result": None,
-	},
-	("make_set_expression()",): {
-		"callable": test_make_set_expression,
-		"result": None,
-	},
-	("__extract_version()",): {
-		"callable": test___extract_version,
-		"result": None,
-	},
-	("identify_distro()",): {
-		"callable": test_identify_distro,
-		"result": None,
-	},
-	# This will only work if identify_distro() works,
-	# so it makes sense to put it after that test.
-	# Also this test will quite naturally only give full coverage
-	# for one of the three functions, and just coverage for
-	# the negative code paths for the other two.
-	("check_versions_apt()", "check_versions_yum", "check_versions_zypper",): {
-		"callable": test_check_versions,
-		"result": None,
-	},
+    ("substitute_string()",): {
+        "callable": test_substitute_string,
+        "result": None,
+    },
+    ("substitute_list()",): {
+        "callable": test_substitute_list,
+        "result": None,
+    },
+    ("lstrip_count()",): {
+        "callable": test_lstrip_count,
+        "result": None,
+    },
+    ("rstrip_count()",): {
+        "callable": test_rstrip_count,
+        "result": None,
+    },
+    ("chunk_list()",): {
+        "callable": test_chunk_list,
+        "result": None,
+    },
+    ("clamp()",): {
+        "callable": test_clamp,
+        "result": None,
+    },
+    ("none_timestamp()",): {
+        "callable": test_none_timestamp,
+        "result": None,
+    },
+    ("normalise_cpu_usage_to_millicores()",): {
+        "callable": test_normalise_cpu_usage_to_millicores,
+        "result": None,
+    },
+    ("normalise_mem_to_bytes()",): {
+        "callable": test_normalise_mem_to_bytes,
+        "result": None,
+    },
+    ("normalise_mem_bytes_to_str()",): {
+        "callable": test_normalise_mem_bytes_to_str,
+        "result": None,
+    },
+    ("disksize_to_human()",): {
+        "callable": test_disksize_to_human,
+        "result": None,
+    },
+    ("split_msg()",): {
+        "callable": test_split_msg,
+        "result": None,
+    },
+    ("strip_ansicodes()",): {
+        "callable": test_strip_ansicodes,
+        "result": None,
+    },
+    ("read_cmtconfig()",): {
+        "callable": test_read_cmtconfig,
+        "result": None,
+    },
+    ("versiontuple()",): {
+        "callable": test_versiontuple,
+        "result": None,
+    },
+    ("age_to_seconds()",): {
+        "callable": test_age_to_seconds,
+        "result": None,
+    },
+    ("seconds_to_age()",): {
+        "callable": test_seconds_to_age,
+        "result": None,
+    },
+    ("get_since()",): {
+        "callable": test_get_since,
+        "result": None,
+    },
+    ("datetime_to_timestamp()",): {
+        "callable": test_datetime_to_timestamp,
+        "result": None,
+    },
+    ("reformat_timestamp()",): {
+        "callable": test_reformat_timestamp,
+        "result": None,
+    },
+    ("timestamp_to_datetime()",): {
+        "callable": test_timestamp_to_datetime,
+        "result": None,
+    },
+    ("make_set_expression_list()",): {
+        "callable": test_make_set_expression_list,
+        "result": None,
+    },
+    ("make_set_expression()",): {
+        "callable": test_make_set_expression,
+        "result": None,
+    },
+    ("__extract_version()",): {
+        "callable": test___extract_version,
+        "result": None,
+    },
+    ("identify_distro()",): {
+        "callable": test_identify_distro,
+        "result": None,
+    },
+    # This will only work if identify_distro() works,
+    # so it makes sense to put it after that test.
+    # Also this test will quite naturally only give full coverage
+    # for one of the three functions, and just coverage for
+    # the negative code paths for the other two.
+    ("check_versions_apt()", "check_versions_yum", "check_versions_zypper",): {
+        "callable": test_check_versions,
+        "result": None,
+    },
 }
 
 tests_with_ansible: Dict = {
-	("get_package_versions()",): {
-		"callable": test_get_package_versions,
-		"result": None,
-	},
+    ("get_package_versions()",): {
+        "callable": test_get_package_versions,
+        "result": None,
+    },
 }
 
 tests_with_cluster = {
-	("identify_k8s_distro()",): {
-		"callable": test_identify_k8s_distro,
-		"result": None,
-	},
+    ("identify_k8s_distro()",): {
+        "callable": test_identify_k8s_distro,
+        "result": None,
+    },
 }
 
 def main() -> int:
-	global kh
-	global tests
+    global kh
+    global tests
 
-	fail = 0
-	success = 0
-	verbose = False
-	failed_testcases = []
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
 
-	init_ansithemeprint(themefile = None)
+    init_ansithemeprint(themefile = None)
 
-	if "--include-ansible" in sys.argv:
-		tests = { **tests, **tests_with_ansible }
-	if "--include-cluster" in sys.argv:
-		tests = { **tests, **tests_with_cluster }
-		kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
+    if "--include-ansible" in sys.argv:
+        tests = { **tests, **tests_with_ansible }
+    if "--include-cluster" in sys.argv:
+        tests = { **tests, **tests_with_cluster }
+        kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
 
-	# How many non-prepare testcases do we have?
-	testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
 
-	for i, test in enumerate(tests):
-		ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-				ANSIThemeStr(f" {', '.join(test)}:", "default")])
-		message, result = tests[test]["callable"](verbose = verbose)
-		if len(message) > 0:
-			ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-					ANSIThemeStr(f": {message}", "default")])
-		else:
-			ansithemeprint([ANSIThemeStr("  PASS", "success")])
-			success += 1
-		tests[test]["result"] = result
-		if not result:
-			fail += 1
-			failed_testcases.append(f"{i}: {', '.join(test)}")
+    for i, test in enumerate(tests):
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose = verbose)
+        if len(message) > 0:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                    ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
 
-	ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
-	if fail:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
-	else:
-		ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
-	ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
 
-	if fail:
-		ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
-		for testcase in failed_testcases:
-			ansithemeprint([ANSIThemeStr("  • ", "separator"),
-					ANSIThemeStr(testcase, "default")], stderr = True)
-		sys.exit(fail)
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                    ANSIThemeStr(testcase, "default")], stderr = True)
+        sys.exit(fail)
 
-	return 0
+    return 0
 
 if __name__ == "__main__":
-	main()
+    main()
