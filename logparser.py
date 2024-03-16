@@ -372,7 +372,7 @@ def split_bracketed_severity(message: str, **kwargs: Any) -> Tuple[str, LogLevel
                 (str): The input string with the severity prefix removed
                 (LogLevel): The extracted LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
     severities = {
         "[fatal]": LogLevel.CRIT,
         # This is for ingress-nginx; while alert is higher than crit in syslog terms,
@@ -414,7 +414,7 @@ def split_colon_severity(message: str, **kwargs: Any) -> Tuple[str, LogLevel]:
                 (str): The input string with the severity prefix removed
                 (LogLevel): The extracted LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
     severities = {
         "CRITICAL:": LogLevel.CRIT,
         "ERROR:": LogLevel.ERR,
@@ -1009,6 +1009,8 @@ def http(message: str,
         ]
         return new_message, severity, facility
 
+    if severity is None:
+        severity = LogLevel.INFO
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     return [ThemeStr(f"{ipaddress}", ThemeAttr("logview", "hostname")),
             ThemeStr(f"{message}", ThemeAttr("logview", severity_name))], severity, facility
@@ -1932,9 +1934,23 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
 
 def format_key_value(key: str, value: str,
                      severity: LogLevel, **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]]:
+    """
+    Given a key, value, and severity, return a formatted ThemeArray
+
+        Parameters:
+            key (str): The key to format
+            value (str): The value to format
+            severity (LogLevel): The LogLevel to use when forcing severity
+            **kwargs (dict[str, Any]): Keyword arguments
+                force_severity (bool): Override default formatting; use severity instead
+                error_keys ((str, ...)): A tuple of keys that should be formatted as errors
+        Returns:
+            (ThemeArray): The formatted message
+    """
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+    tmp: List[Union[ThemeRef, ThemeStr]]
 
     if key in error_keys:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error")),
@@ -1989,6 +2005,25 @@ def sysctl(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
 def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                     List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
+    """
+    Format a key=value message
+
+        Parameters:
+            message (str): The string to format
+            **kwargs (dict[str, Any]): Keyword arguments
+                severity (LogLevel): The log severity
+                facility (str): The log facility
+                fold_msg (bool): Should the message be expanded or folded?
+                options (dict): Additional, rule specific, options
+        Returns:
+            (str|ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
+                (str|ThemeArray): The untouched or formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
@@ -2249,15 +2284,30 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     return facility, severity, message, remnants
 
 
-# For messages along the lines of:
-# "Foo" "key"="value" "key"="value"
-# Foo key=value key=value
 def key_value_with_leading_message(message: str,
                                    **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                            List[Tuple[List[Union[ThemeRef,
                                                                                  ThemeStr]],
                                                                       LogLevel]]]:
+    """
+    Format a "message key=value" message
 
+        Parameters:
+            message (str): The string to format
+            **kwargs (dict[str, Any]): Keyword arguments
+                severity (LogLevel): The log severity
+                facility (str): The log facility
+                fold_msg (bool): Should the message be expanded or folded?
+                options (dict): Additional, rule specific, options
+        Returns:
+            (str|ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
+                (str|ThemeArray): The untouched or formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
@@ -2312,11 +2362,25 @@ def key_value_with_leading_message(message: str,
     return facility, severity, message, remnants
 
 
-# Messages on the format:
-# <key>:<whitespace>...<value>
 # pylint: disable-next=unused-argument
 def modinfo(message: str, **kwargs: Any) \
-        -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+        -> Tuple[str, LogLevel, str, Union[str, List[Union[ThemeRef, ThemeStr]]],
+                 List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Format the output from the Linux modinfo command
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+        Returns:
+            ((str, LogLevel, str, [(ThemeArray, LogLevel)]))):
+                (str): The log facility
+                (ThemeArray): The formatted string
+                (LogLevel): The LogLevel of the message
+                (str|ThemeArray): The unchanged message if nothing matched,
+                                  or the formatted themearray
+                ([(ThemeArray, LogLevel)]): Unused
+    """
     facility = ""
     severity = LogLevel.INFO
     remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
@@ -2366,9 +2430,23 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
 
 
 def directory(message: str,
-              **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], LogLevel,
+              **kwargs: Any) -> Tuple[str, Optional[LogLevel],
                                       Union[str, List[Union[ThemeRef, ThemeStr]]],
                                       List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Format the output from "ls -alF --color" command
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+        Returns:
+            ((str, LogLevel, str|ThemeArray, [(ThemeArray, LogLevel)]))):
+                (str): The log facility
+                (LogLevel): The LogLevel of the message
+                (str|ThemeArray): The unchanged message if nothing matched,
+                                  or the formatted themearray
+                ([(ThemeArray, LogLevel)]): Unused
+    """
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
@@ -2585,17 +2663,17 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
 
     # Default case
     remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = [
-        ThemeStr(message, ThemeAttr("logview", "severity_info")),
+        ([ThemeStr(message, ThemeAttr("logview", "severity_info"))], severity),
     ]
 
     if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
         remnants = [
-            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
-            ThemeStr(tmp[2], ThemeAttr("types", "path")),
-            ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
-            ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
-            ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
-            ThemeStr(tmp[6], ThemeAttr("types", "path")),
+            ([ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+              ThemeStr(tmp[2], ThemeAttr("types", "path")),
+              ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
+              ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
+              ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
+              ThemeStr(tmp[6], ThemeAttr("types", "path"))], severity)
         ]
     else:
         if (tmp := re.match(r"(^\S+?Error:|"
@@ -2974,7 +3052,7 @@ def ansible_line_scanner(message: str,
                                                        List[Tuple[List[Union[ThemeRef,
                                                                              ThemeStr]],
                                                                   LogLevel]]]]:
-    options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
+    options: Dict = deep_get(kwargs, DictPath("options"), {})
 
     timestamp = none_timestamp()
     facility = ""

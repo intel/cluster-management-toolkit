@@ -66,7 +66,7 @@ class ThemeAttr(NamedTuple):
 
 class ThemeStr:
     """
-    A themed string
+    A themed string for use with curses
 
         Parameters:
             string: A string
