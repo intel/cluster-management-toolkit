@@ -31,12 +31,14 @@ kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
 TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
+
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
 
 def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -48,21 +50,25 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (string, substitutions, expected_result, expected_exception)
         testdata = (
-            ("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", }, "Kubernetes v1.29.2", None),
+            ("Kubernetes <<<version>>>",
+             {"<<<version>>>": "v1.29.2"}, "Kubernetes v1.29.2", None),
             # The extra substitution should be ignored since it doesn't have a match
-            ("Kubernetes <<<version>>>", { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, "Kubernetes v1.29.2", None),
-            (None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
-            ("Kubernetes <<<version>>>", { "<<<version>>>": None, }, "Kubernetes <<<version>>>", None),
+            ("Kubernetes <<<version>>>",
+             {"<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64"}, "Kubernetes v1.29.2", None),
+            (None,
+             {"<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64"}, None, None),
+            ("Kubernetes <<<version>>>",
+             {"<<<version>>>": None}, "Kubernetes <<<version>>>", None),
         )
         for string, substitutions, expected_result, expected_exception in testdata:
             try:
                 if (tmp := fun(string, substitutions)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"  substitutions:\n" \
-                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -71,23 +77,24 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"  substitutions:\n" \
+                                  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"  substitutions:\n" \
-                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -99,21 +106,27 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (strings, substitutions, expected_result, expected_exception)
         testdata = (
-            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"],
+             {"<<<version>>>": "v1.29.2"}, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
             # The extra substitution should be ignored since it doesn't have a match
-            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64", }, ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
-            (None, { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, None, None),
-            ([None], { "<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64" }, [None], None),
-            (["kubectl <<<version>>>", "kubeadm <<<version>>>"], { "<<<version>>>": None, }, ["kubectl <<<version>>>", "kubeadm <<<version>>>"], None),
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"],
+             {"<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64"},
+             ["kubectl v1.29.2", "kubeadm v1.29.2"], None),
+            (None,
+             {"<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64"}, None, None),
+            ([None],
+             {"<<<version>>>": "v1.29.2", "<<<arch>>>": "amd64"}, [None], None),
+            (["kubectl <<<version>>>", "kubeadm <<<version>>>"],
+             {"<<<version>>>": None}, ["kubectl <<<version>>>", "kubeadm <<<version>>>"], None),
         )
         for strings, substitutions, expected_result, expected_exception in testdata:
             try:
                 if (tmp := fun(strings, substitutions)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {strings}\n  substitutions:\n" \
-                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {strings}\n  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -122,23 +135,24 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {strings}\n" \
-                              f"  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {strings}\n" \
+                                  f"  substitutions:\n" \
+                                  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {strings}\n" \
-                          f"  substitutions:\n" \
-                          f"{yaml_dump(substitutions, base_indent = 17)}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {strings}\n" \
+                              f"  substitutions:\n" \
+                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -160,10 +174,10 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(string, prefix)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -172,21 +186,22 @@ def test_lstrip_count(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"         prefix: {prefix}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"         prefix: {prefix}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -208,10 +223,10 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(string, prefix)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -220,21 +235,22 @@ def test_rstrip_count(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {string}\n" \
-                              f"         prefix: {prefix}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {string}\n" \
+                                  f"         prefix: {prefix}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {string}\n" \
-                          f"         prefix: {prefix}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {string}\n" \
+                              f"         prefix: {prefix}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -274,10 +290,10 @@ def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
                     chunks.append(chunk)
                 if chunks != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {items}\n" \
-                          f"      chunksize: {chunksize}\n" \
-                          f"         output: {chunks}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {items}\n" \
+                              f"      chunksize: {chunksize}\n" \
+                              f"         output: {chunks}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -286,21 +302,22 @@ def test_chunk_list(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {items}\n" \
-                              f"      chunksize: {chunksize}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"          input: {items}\n" \
+                                  f"      chunksize: {chunksize}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {items}\n" \
-                          f"      chunksize: {chunksize}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {items}\n" \
+                              f"      chunksize: {chunksize}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -329,11 +346,11 @@ def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(value, minval, maxval)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {value}\n" \
-                          f"         minval: {minval}\n" \
-                          f"         maxval: {maxval}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {value}\n" \
+                              f"         minval: {minval}\n" \
+                              f"         maxval: {maxval}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -343,22 +360,23 @@ def test_clamp(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {value}\n" \
-                              f"         minval: {minval}\n" \
-                              f"         maxval: {maxval}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"         minval: {minval}\n" \
+                                  f"         maxval: {maxval}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {value}\n" \
-                          f"         minval: {minval}\n" \
-                          f"         maxval: {maxval}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"         minval: {minval}\n" \
+                              f"         maxval: {maxval}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -369,11 +387,12 @@ def test_none_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     tmp = fun()
     if not isinstance(tmp, datetime):
         message = f"{fun.__name__}() did not yield expected result:\n" \
-              f"         output: {tmp} (type: {type(tmp)})\n" \
-              f"       expected: {datetime}"
+                  f"         output: {tmp} (type: {type(tmp)})\n" \
+                  f"       expected: {datetime}"
         result = False
 
     return message, result
+
 
 def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -398,9 +417,9 @@ def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, 
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -410,18 +429,19 @@ def test_normalise_cpu_usage_to_millicores(verbose: bool = False) -> Tuple[str, 
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -452,9 +472,9 @@ def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -464,18 +484,19 @@ def test_normalise_mem_to_bytes(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -505,9 +526,9 @@ def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -517,18 +538,19 @@ def test_normalise_mem_bytes_to_str(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -562,9 +584,9 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(size)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {size}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {size}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -574,18 +596,19 @@ def test_disksize_to_human(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {size}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {size}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -613,9 +636,9 @@ def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(size)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {size}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {size}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -625,18 +648,19 @@ def test_split_msg(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {size}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {size}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -657,9 +681,9 @@ def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(size)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {size}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {size}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -669,18 +693,19 @@ def test_strip_ansicodes(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {size}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {size}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -701,9 +726,9 @@ def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -713,18 +738,19 @@ def test_versiontuple(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -738,49 +764,52 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
-                      f"    output type: {type(tmp)}\n" \
-                      f"     output len: {len(tmp)}\n" \
-                      f"   expected len: 0\n" \
-                      f"  expected type: dict"
+                          f"    output type: {type(tmp)}\n" \
+                          f"     output len: {len(tmp)}\n" \
+                          f"   expected len: 0\n" \
+                          f"  expected type: dict"
                 result = False
         except Exception as e:
             raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
     if result:
         try:
-            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), \
+                    mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": True}}:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
-                      f"    output type: {type(tmp)}\n" \
-                      f"     output len: {len(tmp)}\n" \
-                      f"   expected len: 1\n" \
-                      f"  expected type: dict"
+                          f"    output type: {type(tmp)}\n" \
+                          f"     output len: {len(tmp)}\n" \
+                          f"   expected len: 1\n" \
+                          f"  expected type: dict"
                 result = False
         except Exception as e:
             raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
     if result:
         try:
-            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), \
+                 mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": False}}:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
-                      f"    output type: {type(tmp)}\n" \
-                      f"     output len: {len(tmp)}\n" \
-                      f"   expected len: 1\n" \
-                      f"  expected type: dict"
+                          f"    output type: {type(tmp)}\n" \
+                          f"     output len: {len(tmp)}\n" \
+                          f"   expected len: 1\n" \
+                          f"  expected type: dict"
                 result = False
         except Exception as e:
             raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
     return message, result
+
 
 def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -802,9 +831,9 @@ def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          input: {indata}\n" \
-                          f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -814,18 +843,19 @@ def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -843,7 +873,7 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
             (int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
             (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
             (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
-            (int(f"0"), False, "<unset>", None),
+            (int("0"), False, "<unset>", None),
             (int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
             (None, False, None, TypeError),
         )
@@ -851,10 +881,10 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata, negative_is_skew)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"negative_is_skew: {negative_is_skew}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"negative_is_skew: {negative_is_skew}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -863,22 +893,23 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           input: {indata}\n" \
-                              f"negative_is_skew: {negative_is_skew}\n" \
-                              f"           input: {indata}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  f"           input: {indata}\n" \
+                                  f"negative_is_skew: {negative_is_skew}\n" \
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"negative_is_skew: {negative_is_skew}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"negative_is_skew: {negative_is_skew}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -904,8 +935,8 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
                 if not isinstance(tmp, int):
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
-                          f"    output type: {type(tmp)}\n" \
-                          f"       expected: int"
+                              f"    output type: {type(tmp)}\n" \
+                              f"       expected: int"
                     result = False
                     break
             except Exception as e:
@@ -915,17 +946,18 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -950,8 +982,8 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: “{tmp}“\n" \
-                          f"    output type: {type(tmp)}\n" \
-                          f"       expected: str"
+                              f"    output type: {type(tmp)}\n" \
+                              f"       expected: str"
                     result = False
                     break
             except Exception as e:
@@ -961,17 +993,18 @@ def test_datetime_to_timestamp(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -997,8 +1030,8 @@ def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: “{tmp}“\n" \
-                          f"    output type: {type(tmp)}\n" \
-                          f"       expected: str"
+                              f"    output type: {type(tmp)}\n" \
+                              f"       expected: str"
                     result = False
                     break
             except Exception as e:
@@ -1008,17 +1041,18 @@ def test_reformat_timestamp(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1047,8 +1081,8 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"    output type: {type(tmp)}\n" \
-                          f"       expected: {datetime}"
+                              f"    output type: {type(tmp)}\n" \
+                              f"       expected: {datetime}"
                     result = False
                     break
             except Exception as e:
@@ -1058,17 +1092,18 @@ def test_timestamp_to_datetime(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1081,42 +1116,94 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
         # (expression_list, expected_result, expected_exception)
         testdata = (
             # Valid
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Exists", "")], None),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]}],
+             [("node-role.kubernetes.io/control-plane", "Exists", "")], None),
             # Too many values
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], [("node-role.kubernetes.io/control-plane", "Does Not Exist", "")], None),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]}],
+             [("node-role.kubernetes.io/control-plane", "Does Not Exist", "")], None),
             # Too many values
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+            ([{"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]}],
+             [("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
             # Too few values
-            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            ([{"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": []}],
+             None, ValueError),
             # Valid
-            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], [("node-role.kubernetes.io/control-plane", "Not In ", "[foo,bar,baz]")], None),
+            ([{"operator": "NotIn",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]}],
+             [("node-role.kubernetes.io/control-plane", "Not In ", "[foo,bar,baz]")], None),
             # Too few values
-            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            ([{"operator": "NotIn",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": []}],
+             None, ValueError),
             # Valid
-            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], [("node-role.kubernetes.io/control-plane", "> ", "1")], None),
+            ([{"operator": "Gt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             [("node-role.kubernetes.io/control-plane", "> ", "1")], None),
             # Too many values
-            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+            ([{"operator": "Gt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1", "2"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], [("node-role.kubernetes.io/control-plane", "< ", "42")], None),
+            ([{"operator": "Lt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42"]}],
+             [("node-role.kubernetes.io/control-plane", "< ", "42")], None),
             # Too many values
-            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            ([{"operator": "Lt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, ValueError),
             # Multiple valid set expressions
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
-              {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
-             ], [("node-role.kubernetes.io/control-plane", "Does Not Exist", ""),
-                 ("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]},
+              {"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]},],
+             [("node-role.kubernetes.io/control-plane", "Does Not Exist", ""),
+              ("node-role.kubernetes.io/control-plane", "In ", "[foo,bar,baz]")], None),
             # Invalid type for operator
-            ([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+            ([{"operator": 1,
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, TypeError),
             # Invalid type for operator
-            ([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            ([{"operator": "NonExistingOperator",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, ValueError),
             # Invalid type for values
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ""}],
+             None, TypeError),
             # Invalid type for key
-            ([{"operator": "Exists", "key": 1, "values": [""]}], None, TypeError),
+            ([{"operator": "Exists",
+               "key": 1,
+               "values": [""]}],
+             None, TypeError),
             (None, [], None),
             # Incorrect type
             ("a", None, TypeError),
@@ -1128,7 +1215,7 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -1138,17 +1225,18 @@ def test_make_set_expression_list(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1161,39 +1249,89 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
         # (expression_list, expected_result, expected_exception)
         testdata = (
             # Valid
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Exists", None),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]}],
+             "node-role.kubernetes.io/control-plane Exists", None),
             # Too many values
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]}], "node-role.kubernetes.io/control-plane Does Not Exist", None),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]}],
+             "node-role.kubernetes.io/control-plane Does Not Exist", None),
             # Too many values
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], None, ValueError),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+            ([{"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]}],
+             "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
             # Too few values
-            ([{"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            ([{"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": []}],
+             None, ValueError),
             # Valid
-            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]}], "node-role.kubernetes.io/control-plane Not In [foo,bar,baz]", None),
+            ([{"operator": "NotIn",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]}],
+             "node-role.kubernetes.io/control-plane Not In [foo,bar,baz]", None),
             # Too few values
-            ([{"operator": "NotIn", "key": "node-role.kubernetes.io/control-plane", "values": []}], None, ValueError),
+            ([{"operator": "NotIn",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": []}],
+             None, ValueError),
             # Valid
-            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1"]}], "node-role.kubernetes.io/control-plane > 1", None),
+            ([{"operator": "Gt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1"]}],
+             "node-role.kubernetes.io/control-plane > 1", None),
             # Too many values
-            ([{"operator": "Gt", "key": "node-role.kubernetes.io/control-plane", "values": ["1", "2"]}], None, ValueError),
+            ([{"operator": "Gt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["1", "2"]}],
+             None, ValueError),
             # Valid
-            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42"]}], "node-role.kubernetes.io/control-plane < 42", None),
+            ([{"operator": "Lt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42"]}],
+             "node-role.kubernetes.io/control-plane < 42", None),
             # Too many values
-            ([{"operator": "Lt", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            ([{"operator": "Lt",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, ValueError),
             # Multiple valid set expressions
-            ([{"operator": "DoesNotExist", "key": "node-role.kubernetes.io/control-plane", "values": [""]},
-              {"operator": "In", "key": "node-role.kubernetes.io/control-plane", "values": ["foo", "bar", "baz"]},
-             ], "node-role.kubernetes.io/control-plane Does Not Exist, node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
+            ([{"operator": "DoesNotExist",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": [""]},
+              {"operator": "In",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["foo", "bar", "baz"]}],
+             "node-role.kubernetes.io/control-plane Does Not Exist, "
+             "node-role.kubernetes.io/control-plane In [foo,bar,baz]", None),
             # Invalid type for operator
-            ([{"operator": 1, "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, TypeError),
+            ([{"operator": 1,
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, TypeError),
             # Invalid type for operator
-            ([{"operator": "NonExistingOperator", "key": "node-role.kubernetes.io/control-plane", "values": ["42", "42"]}], None, ValueError),
+            ([{"operator": "NonExistingOperator",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ["42", "42"]}],
+             None, ValueError),
             # Invalid type for values
-            ([{"operator": "Exists", "key": "node-role.kubernetes.io/control-plane", "values": ""}], None, TypeError),
+            ([{"operator": "Exists",
+               "key": "node-role.kubernetes.io/control-plane",
+               "values": ""}],
+             None, TypeError),
             # Empty expression
             ([{}], None, ValueError),
             ([], "", None),
@@ -1208,7 +1346,7 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -1218,17 +1356,18 @@ def test_make_set_expression(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1237,7 +1376,8 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
     fun = cmtlib.get_package_versions
 
     if result:
-        ansithemeprint([ANSIThemeStr("  Warning", "warning"), ANSIThemeStr(": This unit-test is slow:\n", "default")])
+        ansithemeprint([ANSIThemeStr("  Warning", "warning"),
+                        ANSIThemeStr(": This unit-test is slow:\n", "default")])
 
         # Indata format:
         # (hostname, expected_result, expected_exception)
@@ -1250,22 +1390,25 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
         for indata, expected_exception in testdata:
             try:
                 tmp = fun(indata)
-                if not (isinstance(tmp, list) and len(tmp) > 0 and isinstance(tmp[0], tuple) and len(tmp[0]) == 2 and isinstance(tmp[0][0], str) and isinstance(tmp[0][1], str)):
+                if not (isinstance(tmp, list) and tmp and isinstance(tmp[0], tuple)
+                        and len(tmp[0]) == 2 and isinstance(tmp[0][0], str)
+                        and isinstance(tmp[0][1], str)):
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"       expected: [(str, str), ...]"
+                              f"       expected: [(str, str), ...]"
                     result = False
                     break
-                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                ansithemeprint([ANSIThemeStr("  Note", "note"),
+                                ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
                 maxlen = 0
                 for name, _version in tmp:
                     maxlen = max(len(name), maxlen)
 
                 for name, version in tmp:
                     ansithemeprint([ANSIThemeStr(f"    {name}", "default"),
-                            ANSIThemeStr("".ljust(maxlen - len(name) + 2), "default"),
-                            ANSIThemeStr(f"{version}", "version")])
+                                    ANSIThemeStr("".ljust(maxlen - len(name) + 2), "default"),
+                                    ANSIThemeStr(f"{version}", "version")])
             except Exception as e:
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
@@ -1273,32 +1416,36 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     if result:
         try:
-            with mock.patch("ansible_helper.ansible_run_playbook_on_selection", return_value = (-1, [])):
+            with mock.patch("ansible_helper.ansible_run_playbook_on_selection",
+                            return_value=(-1, [])):
                 tmp = fun("localhost")
-                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
-                      f"         output: {tmp}\n" \
-                       "       expected: ValueError"
+                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() " \
+                          "failure did not yield expected result:\n" \
+                          f"         output: {tmp}\n" \
+                          "       expected: ValueError"
                 result = False
         except Exception as e:
             if isinstance(e, ValueError):
                 pass
             else:
-                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() failure did not yield expected result:\n" \
-                       "       expected: ValueError"
+                message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() " \
+                          f"failure did not yield expected result:\n" \
+                          "       expected: ValueError"
                 result = False
     return message, result
+
 
 def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1310,7 +1457,8 @@ def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (hostname, expected_result, expected_exception)
         testdata = (
-            ("   kubectl |  1.28.2-00 | https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
+            ("   kubectl |  1.28.2-00 | "
+             "https://apt.kubernetes.io kubernetes-xenial/main amd64 Packages", "1.28.2-00", None),
             ("   kubectl ", None, ValueError),
             (1, None, TypeError),
             (None, None, TypeError),
@@ -1322,7 +1470,7 @@ def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"       expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -1332,17 +1480,18 @@ def test___extract_version(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
     return message, result
+
 
 def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1363,13 +1512,13 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
 
         for os_release_data, error_on_failure, expected_result, expected_exception in testdata:
             try:
-                with mock.patch("builtins.open", mock.mock_open(read_data = os_release_data)):
-                    tmp = fun(error_on_failure = error_on_failure, exit_on_failure = False)
+                with mock.patch("builtins.open", mock.mock_open(read_data=os_release_data)):
+                    tmp = fun(error_on_failure=error_on_failure, exit_on_failure=False)
 
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"         output: {tmp}\n" \
-                          f"       expected: {expected_result}"
+                              f"       expected: {expected_result}"
                     result = False
             except Exception as e:
                 if expected_exception is not None:
@@ -1378,18 +1527,19 @@ def test_identify_distro(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {os_release_data}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {os_release_data}\n" \
-                          f"      exception: {type(e)}\n" \
-                          f"       expected: {expected_result}"
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
                     result = False
                     break
     return message, result
+
 
 def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1405,21 +1555,27 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
         fun = cmtlib.check_versions_yum
 
     if result:
-        ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple distros:\n", "default")])
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": Cannot get full coverage without "
+                                     "testing on multiple distros:\n", "default")])
 
         # Indata format:
         # (package, checker, checker_str, expected_exception)
         # Output is distro-dependent
         testdata = (
-            # abiword was randomly picked as existing, but non-installed package; there's no guarantee that it is,
-            # and there are no guaranteed packages that can be used instead.
-            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_apt, None),
+            # abiword was randomly picked as existing, but non-installed package;
+            # there's no guarantee that it is, and there are no guaranteed packages
+            # that can be used instead.
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"],
+             cmtlib.check_versions_apt, None),
             (1, cmtlib.check_versions_apt, TypeError),
             (None, cmtlib.check_versions_apt, TypeError),
-            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_zypper, None),
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"],
+             cmtlib.check_versions_zypper, None),
             (1, cmtlib.check_versions_zypper, TypeError),
             (None, cmtlib.check_versions_zypper, TypeError),
-            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"], cmtlib.check_versions_yum, None),
+            (["vim", "kubectl", "ThisIsANonExistingPackage", "abiword"],
+             cmtlib.check_versions_yum, None),
             (1, cmtlib.check_versions_yum, TypeError),
             (None, cmtlib.check_versions_yum, TypeError),
         )
@@ -1430,11 +1586,12 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
-                          f"    output type: {type(tmp)}" \
-                          f"       expected: {list}"
+                              f"    output type: {type(tmp)}" \
+                              f"       expected: {list}"
                     result = False
                     break
-                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                ansithemeprint([ANSIThemeStr("  Note", "note"),
+                                ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
                 maxlens = [0, 0, 0]
                 for package, installed_version, candidate_version, _natsorted_versions in tmp:
                     maxlens[0] = max(len(package), maxlens[0])
@@ -1442,14 +1599,20 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
                     maxlens[2] = max(len(candidate_version), maxlens[2])
 
                 for package, installed_version, candidate_version, natsorted_versions in tmp:
-                    joined_versions = ansithemestr_join_list(natsorted_versions[0:3], formatting = "hostname", separator = ANSIThemeStr(", ", "separator"))
+                    joined_versions = \
+                        ansithemestr_join_list(natsorted_versions[0:3],
+                                               formatting="hostname",
+                                               separator=ANSIThemeStr(", ", "separator"))
                     ansithemeprint([ANSIThemeStr(f"    {package}", "default"),
-                            ANSIThemeStr("".ljust(maxlens[0] - len(package) + 2), "default"),
-                            ANSIThemeStr(f"    {installed_version}", "default"),
-                            ANSIThemeStr("".ljust(maxlens[1] - len(installed_version) + 2), "default"),
-                            ANSIThemeStr(f"    {candidate_version}", "default"),
-                            ANSIThemeStr("".ljust(maxlens[2] - len(candidate_version) + 2), "default")]
-                            + joined_versions)
+                                    ANSIThemeStr("".ljust(maxlens[0] - len(package) + 2),
+                                                 "default"),
+                                    ANSIThemeStr(f"    {installed_version}", "default"),
+                                    ANSIThemeStr("".ljust(maxlens[1] - len(installed_version) + 2),
+                                                 "default"),
+                                    ANSIThemeStr(f"    {candidate_version}", "default"),
+                                    ANSIThemeStr("".ljust(maxlens[2] - len(candidate_version) + 2),
+                                                 "default")]
+                                   + joined_versions)
             except FileNotFoundError as e:
                 if "secure_which() could not find an acceptable match for apt" in str(e) or \
                    "secure_which() could not find an acceptable match for zypper" in str(e) or \
@@ -1462,62 +1625,70 @@ def test_check_versions(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_exception}"
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                          f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n"
                     result = False
                     break
 
     return message, result
+
 
 def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
     fun = cmtlib.identify_k8s_distro
-    k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm", "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
+    k8s_distros = ("crc", "k0s", "k3d", "k3s", "kind", "kubeadm",
+                   "minikube", "microk8s", "openshift", "rke2", "talos", "vcluster")
 
     if result:
-        ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Cannot get full coverage without testing on multiple Kubernetes distros:\n", "default")])
+        ansithemeprint([ANSIThemeStr("  Note", "note"),
+                        ANSIThemeStr(": Cannot get full coverage without testing "
+                                     "on multiple Kubernetes distros:\n", "default")])
         try:
-            tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False)
+            tmp, status = fun(kubernetes_helper=kh, exit_on_failure=False)
             if tmp not in k8s_distros:
                 message = f"{fun.__name__}() did not yield expected type:\n" \
                           f"         output: {tmp}\n" \
                           f"         status: {status}\n" \
-                      f"       expected: one of {', '.join(k8s_distros)}"
+                          f"       expected: one of {', '.join(k8s_distros)}"
                 result = False
             else:
-                ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+                ansithemeprint([ANSIThemeStr("  Note", "note"),
+                                ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
                 ansithemeprint([ANSIThemeStr("    Identified k8s distro: ", "default"),
-                        ANSIThemeStr(f"{tmp}", "programname")])
+                                ANSIThemeStr(f"{tmp}", "programname")])
         except Exception as e:
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"      exception: {type(e)}\n"
+                      f"      exception: {type(e)}\n"
             result = False
     if result:
-        with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace", return_value = ([], 404)):
+        with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace",
+                        return_value=([], 404)):
             try:
-                tmp, status = fun(kubernetes_helper = kh, exit_on_failure = False, error_on_failure = False)
+                tmp, status = fun(kubernetes_helper=kh,
+                                  exit_on_failure=False, error_on_failure=False)
                 if status != 404 or tmp != "<unknown>":
                     message = f"{fun.__name__}() did not yield expected type:\n" \
                               f"         output: {tmp}\n" \
                               f"         status: {status}\n" \
-                          f"       expected: <unknown>" \
-                          f"expected status: 404"
+                              f"       expected: <unknown>" \
+                              f"expected status: 404"
                     result = False
             except Exception as e:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
-                      f"      exception: {type(e)}\n" \
-                      f"       expected: <unknown>" \
-                      f"expected status: 404"
+                          f"      exception: {type(e)}\n" \
+                          f"       expected: <unknown>" \
+                          f"expected status: 404"
                 result = False
     return message, result
+
 
 tests: Dict = {
     ("substitute_string()",): {
@@ -1645,6 +1816,7 @@ tests_with_cluster = {
     },
 }
 
+
 def main() -> int:
     global kh
     global tests
@@ -1654,12 +1826,12 @@ def main() -> int:
     verbose = False
     failed_testcases = []
 
-    init_ansithemeprint(themefile = None)
+    init_ansithemeprint(themefile=None)
 
     if "--include-ansible" in sys.argv:
-        tests = { **tests, **tests_with_ansible }
+        tests = {**tests, **tests_with_ansible}
     if "--include-cluster" in sys.argv:
-        tests = { **tests, **tests_with_cluster }
+        tests = {**tests, **tests_with_cluster}
         kh = kubernetes_helper.KubernetesHelper("khtests", "v0.1")
 
     # How many non-prepare testcases do we have?
@@ -1667,11 +1839,11 @@ def main() -> int:
 
     for i, test in enumerate(tests):
         ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-                ANSIThemeStr(f" {', '.join(test)}:", "default")])
-        message, result = tests[test]["callable"](verbose = verbose)
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
         if len(message) > 0:
             ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-                    ANSIThemeStr(f": {message}", "default")])
+                            ANSIThemeStr(f": {message}", "default")])
         else:
             ansithemeprint([ANSIThemeStr("  PASS", "success")])
             success += 1
@@ -1691,10 +1863,11 @@ def main() -> int:
         ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
             ansithemeprint([ANSIThemeStr("  • ", "separator"),
-                    ANSIThemeStr(testcase, "default")], stderr = True)
+                            ANSIThemeStr(testcase, "default")], stderr=True)
         sys.exit(fail)
 
     return 0
+
 
 if __name__ == "__main__":
     main()

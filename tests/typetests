@@ -21,9 +21,13 @@ import sys
 from typing import Dict, Tuple
 import yaml
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath, FilePath, LogLevel, loglevel_to_name, validate_args
+from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath
+from cmttypes import FilePath, LogLevel, loglevel_to_name, validate_args
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+
+
+none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
 
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
@@ -54,23 +58,43 @@ def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         if (tmp := fun(None, path1, default="fallback")) != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         if (tmp := fun(indata, None, default="fallback")) != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: None\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         if (tmp := fun(indata, DictPath(""), default="fallback")) != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: \"\"\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         if (tmp := fun(indata, path1)) != expected_result1:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result1}"
             result = False
     if result:
         if (tmp := fun(indata, path2)) != expected_result2:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path2}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result2}"
             result = False
 
     return message, result
@@ -104,42 +128,74 @@ def test_deep_get_with_fallback(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         tmp = fun(None, path1, default="fallback")
         if tmp != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         tmp = fun(indata, None, default="fallback")
         if tmp != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: None\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: None\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         tmp = fun(indata, DictPath(""), default="fallback")
         if tmp != "fallback":
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: \"\"\n      output: {tmp}\n    expected: \"fallback\""
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: \"\"\n" \
+                      f"      output: {tmp}\n" \
+                      "    expected: \"fallback\""
             result = False
     if result:
         tmp = fun(indata, path1)
         if tmp != expected_result1:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result1}"
             result = False
     if result:
         tmp = fun(indata, path2)
         if tmp != expected_result2:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path2}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result2}"
             result = False
     if result:
         tmp = fun(indata, path3)
         if tmp != expected_result3:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path3}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result3}"
             result = False
     if result:
         tmp = fun(indata, path4, default="fallback")
         if tmp != expected_result4:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path4}\n      output: {tmp}\n    expected: {expected_result4}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path4}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result4}"
             result = False
     if result:
         tmp = fun(indata, path5, fallback_on_empty=True)
         if tmp != expected_result5:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path5}\n      output: {tmp}\n    expected: {expected_result5}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path5}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result5}"
             result = False
 
     return message, result
@@ -171,7 +227,10 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         try:
             fun(None, path1, value=expected_result1)
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n    expected: ValueError"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      "    expected: ValueError"
             result = False
         except ValueError:
             pass
@@ -179,19 +238,31 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
         indata_copy = copy.deepcopy(indata)
         fun(indata_copy, path1, value=expected_result1)
         if (tmp := deep_get(indata_copy, path1)) != expected_result1:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path1}\n      output: {tmp}\n    expected: {expected_result1}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path1}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result1}"
             result = False
     if result:
         indata_copy = copy.deepcopy(indata)
         fun(indata_copy, path2, value=expected_result2)
         if (tmp := deep_get(indata_copy, path2)) != expected_result2:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path2}\n      output: {tmp}\n    expected: {expected_result2}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path2}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result2}"
             result = False
     if result:
         indata_copy = copy.deepcopy(indata)
         try:
             fun(indata_copy, path3, value=expected_result2)
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: ValueError"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path3}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: ValueError"
             result = False
         except ValueError:
             pass
@@ -199,13 +270,21 @@ def test_deep_set(verbose: bool = False) -> Tuple[str, bool]:
         indata_copy = copy.deepcopy(indata)
         fun(indata_copy, path3, value=expected_result3, create_path=True)
         if (tmp := deep_get(indata_copy, path3)) != expected_result3:
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result3}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path3}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result3}"
             result = False
     if result:
         indata_copy = copy.deepcopy(indata)
         try:
             fun(indata_copy, path4, value=expected_result3, create_path=True)
-            message = f"{fun.__name__} returned incorrect output:\n        dict: {indata}\n        path: {path3}\n      output: {tmp}\n    expected: {expected_result4}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"        dict: {indata}\n" \
+                      f"        path: {path3}\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result4}"
             result = False
         except ValueError:
             pass
@@ -217,12 +296,11 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
-
     indata = {
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"),
+                           ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -248,12 +326,14 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
                 if value != expected_value:
                     if not diff:
                         message = f"{fun.__name__} returned incorrect output:\n"
-                    message = f"    {value}    {expected_value}"
+                    message += f"    {value}    {expected_value}"
                     diff = True
                     result = False
             try:
                 if (tmp := str(e)) != "message1":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"message1\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              f"    expected: \"message1\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -272,7 +352,9 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
         except fun as e:
             try:
                 if (tmp := str(e)) != "No further details were provided":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              f"    expected: \"No further details were provided\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -287,8 +369,6 @@ def test_unknownerror(verbose: bool = False) -> Tuple[str, bool]:
 def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
-
-    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
     indata = {
         "message": "Error: an error message.",
@@ -321,15 +401,18 @@ def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
                 if value != expected_value:
                     if not diff:
                         message = f"{fun.__name__} returned incorrect output:\n"
-                    message = f"    {value}    {expected_value}"
+                    message += f"    {value}    {expected_value}"
                     diff = True
                     result = False
             try:
                 if (tmp := str(e)) != "(<class 'ValueError'>): Error: an error message.":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): Error: An error message.\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              f"    expected: \"(<class 'ValueError'>): Error: An error message.\""
                     result = False
             except Exception as e2:
-                message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"(<class 'ValueError'>): Error: an error message.\""
+                message = f"{fun.__name__}.__str__() raised {e2} instead of returning" \
+                          " \"(<class 'ValueError'>): Error: an error message.\""
                 result = False
     if result:
         try:
@@ -345,7 +428,9 @@ def test_argumentvalidationerror(verbose: bool = False) -> Tuple[str, bool]:
         except fun as e:
             try:
                 if (tmp := str(e)) != "No further details were provided":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              f"    expected: \"No further details were provided\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -361,13 +446,12 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
-
     indata = {
         "subexception": ValueError,
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"),
+                           ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -393,12 +477,14 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
                 if value != expected_value:
                     if not diff:
                         message = f"{fun.__name__} returned incorrect output:\n"
-                    message = f"    {value}    {expected_value}"
+                    message += f"    {value}    {expected_value}"
                     diff = True
                     result = False
             try:
                 if (tmp := str(e)) != "(<class 'ValueError'>): message1":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"(<class 'ValueError'>): message1\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              "    expected: \"(<class 'ValueError'>): message1\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -417,7 +503,9 @@ def test_programmingerror(verbose: bool = False) -> Tuple[str, bool]:
         except fun as e:
             try:
                 if (tmp := str(e)) != "No further details were provided":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: \"No further details were provided\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: {tmp}\n" \
+                              f"    expected: \"No further details were provided\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -433,13 +521,12 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
-
     indata = {
         "path": FilePath("/etc/passwd"),
         "severity": LogLevel.ERR,
         "facility": "facility",
-        "formatted_msg": [[ANSIThemeStr("Error", "error"), ANSIThemeStr(": an error message.", "default")]],
+        "formatted_msg": [[ANSIThemeStr("Error", "error"),
+                           ANSIThemeStr(": an error message.", "default")]],
         "timestamp": none_timestamp,
         "file": "thisfile",
         "function": "thatfunction",
@@ -465,12 +552,15 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
                 if value != expected_value:
                     if not diff:
                         message = f"{fun.__name__} returned incorrect output:\n"
-                    message = f"    {value}    {expected_value}"
+                    message += f"    {value}    {expected_value}"
                     diff = True
                     result = False
             try:
                 if (tmp := str(e)) != "Security policy violation for path /etc/passwd.  message1":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path /etc/passwd.  message1\""
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: \"{tmp}\"\n" \
+                              f"    expected: \"Security policy violation " \
+                              "for path /etc/passwd.  message1\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -488,8 +578,12 @@ def test_filepathauditerror(verbose: bool = False) -> Tuple[str, bool]:
             raise fun("")
         except fun as e:
             try:
-                if (tmp := str(e)) != "Security policy violation for path <omitted>.  No further details were provided":
-                    message = f"{fun.__name__} returned incorrect output:\n      output: \"{tmp}\"\n    expected: \"Security policy violation for path <omitted>.  No further details were provided\""
+                if (tmp := str(e)) != "Security policy violation for path <omitted>.  " \
+                                      "No further details were provided":
+                    message = f"{fun.__name__} returned incorrect output:\n" \
+                              f"      output: \"{tmp}\"\n" \
+                              "    expected: \"Security policy violation for path <omitted>." \
+                              "  No further details were provided\""
                     result = False
             except Exception as e2:
                 message = f"{fun.__name__}.__str__() raised {e2} instead of returning \"message1\""
@@ -515,13 +609,8 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
             ({}, {}, None),
             # Now try arguments that are invalid for validate_args() itself
             ({
-                "__allof": ("foo"),  # Should be a dict; the missing comma turns it into just a string
-                "foo": {
-                    "types": (int, ),
-                },
-            }, {"foo": 1}, ArgumentValidationError),
-            ({
-                "__anyof": ("foo"),  # Should be a dict; the missing comma turns it into just a string
+                # Should be a tuple; the missing comma turns it into just a string
+                "__allof": ("foo"),
                 "foo": {
                     "types": (int, ),
                 },
@@ -529,28 +618,32 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
             ({
                 "__anyof": ("foo",),
                 "foo": {
-                    "types": (int),  # Should be a dict; the missing comma turns it into just a string
+                    # Should be a tuple; the missing comma turns it into just a string
+                    "types": (int),
                 },
             }, {"foo": 1}, ArgumentValidationError),
             ({
                 "__anyof": ("foo",),
                 "foo": {
                     "types": (int, ),
-                    "range": ("foo", 4),  # Should be int|float
+                    # Should be int|float
+                    "range": ("foo", 4),
                 },
             }, {"foo": 1}, ArgumentValidationError),
             ({
                 "__anyof": ("foo",),
                 "foo": {
                     "types": (int, ),
-                    "range": (1, 2, 4),  # Should have 2 elements
+                    # Should have 2 elements
+                    "range": (1, 2, 4),
                 },
             }, {"foo": 1}, ArgumentValidationError),
             ({
                 "__anyof": ("foo",),
                 "foo": {
                     "types": (int, ),
-                    "range": (1, ),  # Should have 2 elements
+                    # Should have 2 elements
+                    "range": (1, ),
                 },
             }, {"foo": 1}, ArgumentValidationError),
             ({
@@ -558,7 +651,8 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
                 "foo": {
                     "types": (int, ),
                     "range": (0, 4),
-                    "none": 1,  # Should be bool
+                    # Should be bool
+                    "none": 1,
                 },
             }, {"foo": 1}, ArgumentValidationError),
             # Now let's validate arguments instead of the validator...
@@ -616,11 +710,16 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
               "foo": {"types": (int,)}}, {"foo": 1}, ArgumentValidationError),
             ({"__allof": ("foo", "bar",),
               "foo": {"types": (int,)}, "bar": {"types": (int,)}}, {"foo": 1, "bar": 2}, None),
-            ({"__allof": ("foo", "bar",),
-              "foo": {"types": (str,)}, "bar": {"types": (str,)}}, {
-                "foo": 1,    # Wrong type
-                "bar": 2,    # Wrong type
-             }, ArgumentValidationError),
+            (
+                {
+                    "__allof": ("foo", "bar",),
+                    "foo": {"types": (str,)},
+                    "bar": {"types": (str,)}
+                },
+                {
+                    "foo": 1,    # Wrong type
+                    "bar": 2,    # Wrong type
+                }, ArgumentValidationError),
         )
         for indata in testdata:
             kwargs_spec, kwargs, expected_exception = indata
@@ -628,11 +727,11 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
                 fun(kwargs_spec=kwargs_spec, kwargs=kwargs)
                 if expected_exception is not None:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"   kwargs_spec:\n" \
-                          f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
-                          f"         kwargs:\n" \
-                          f"{yaml_dump(kwargs, base_indent = 17)}\n" \
-                          f"       expected: {expected_exception}\n"
+                              f"   kwargs_spec:\n" \
+                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                              f"         kwargs:\n" \
+                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                              f"       expected: {expected_exception}\n"
                     result = False
                     break
             except Exception as e:
@@ -641,20 +740,20 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"    kwargs_spec:\n" \
-                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
-                              f"         kwargs:\n" \
-                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
-                              f"       expected: {expected_exception}\n"
+                                  f"    kwargs_spec:\n" \
+                                  f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                                  f"         kwargs:\n" \
+                                  f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                                  f"       expected: {expected_exception}\n"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"   kwargs_spec:\n" \
-                          f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
-                          f"         kwargs:\n" \
-                          f"{yaml_dump(kwargs, base_indent = 17)}\n" \
-                          f"      exception: {repr(e).split('(')[0]}\n"
+                              f"   kwargs_spec:\n" \
+                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                              f"         kwargs:\n" \
+                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                              f"      exception: {repr(e).split('(')[0]}\n"
                     result = False
                     break
     return message, result
@@ -667,14 +766,27 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
     fun = deep_get_list
 
     if result:
-        obj = {'spec': {'ports': [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
-                      {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}]}}
+        obj = {
+            'spec': {
+                'ports': [
+                    {
+                        'name': 'port1',
+                        'protocol': 'TCP',
+                        'port': 9402,
+                        'targetPort': 9402
+                    },
+                    {
+                        'name': 'port2',
+                        'protocol': 'UDP',
+                        'port': 9402,
+                        'targetPort': 9402}]}}
 
         # Indata format:
         # (paths, default, fallback_on_empty, expected_result, expected_exception)
         testdata = (
-            (["spec#ports"], [], False, [{'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
-                             {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
+            (["spec#ports"], [], False, [
+                {'name': 'port1', 'protocol': 'TCP', 'port': 9402, 'targetPort': 9402},
+                {'name': 'port2', 'protocol': 'UDP', 'port': 9402, 'targetPort': 9402}], None),
             (["spec#ports#name"], [], False, ["port1", "port2"], None),
             (["spec#ports#protocol", "spec#ports#name"], [], False, ["TCP", "UDP"], None),
             (["nonExistingPath", "spec#ports#name"], [], True, ["port1", "port2"], None),
@@ -688,18 +800,19 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
         for indata in testdata:
             paths, default, fallback_on_empty, expected_result, expected_exception = indata
             try:
-                tmp = fun(dictionary=obj, paths=paths, default=default, fallback_on_empty=fallback_on_empty)
+                tmp = fun(dictionary=obj, paths=paths,
+                          default=default, fallback_on_empty=fallback_on_empty)
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"            paths: {paths}\n" \
-                          f"          default: {default}\n" \
-                          f"fallback_on_empty: {fallback_on_empty}\n" \
-                          f"           result: {tmp}\n" \
-                          f"         expected: {expected_result}\n"
+                              f"            paths: {paths}\n" \
+                              f"          default: {default}\n" \
+                              f"fallback_on_empty: {fallback_on_empty}\n" \
+                              f"           result: {tmp}\n" \
+                              f"         expected: {expected_result}\n"
 
                 if expected_exception is not None:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"         expected: {expected_exception}\n"
+                              f"         expected: {expected_exception}\n"
                     result = False
                     break
             except Exception as e:
@@ -708,13 +821,13 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"         expected: {expected_exception}\n"
+                                  f"         expected: {expected_exception}\n"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"         expected: {expected_result}\n" \
-                          f"        exception: {repr(e).split('(')[0]}\n"
+                              f"         expected: {expected_result}\n" \
+                              f"        exception: {repr(e).split('(')[0]}\n"
                     result = False
                     break
     return message, result
@@ -731,7 +844,9 @@ def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         if (tmp := fun(indata)) != expected_result:
-            message = f"{fun.__name__} returned incorrect output:\n      output: {tmp}\n    expected: {expected_result}"
+            message = f"{fun.__name__} returned incorrect output:\n" \
+                      f"      output: {tmp}\n" \
+                      f"    expected: {expected_result}"
             result = False
 
     return message, result

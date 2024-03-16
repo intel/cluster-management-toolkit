@@ -1,10 +1,52 @@
 yaml_dirs = parsers themes views playbooks docs/examples
-python_executables = cmt cmtadm cmt-install cmtinv cmu
-python_test_executables = tests/validate_yaml tests/check_theme_use tests/iotests tests/async_fetch tests/logtests tests/atptests tests/cursestests
+python_executables = \
+	cmt \
+	cmtadm \
+	cmt-install \
+	cmtinv \
+	cmu
+python_test_executables = \
+	tests/async_fetch \
+	tests/ansibletests \
+	tests/atptests \
+	tests/check_theme_use \
+	tests/cmtlibtests \
+	tests/coverage_stats \
+	tests/cursestests \
+	tests/dump_cluster \
+	tests/dump_logs \
+	tests/fmttests \
+	tests/iotests \
+	tests/khtests \
+	tests/logtests \
+	tests/typetests \
+	tests/validate_yaml \
+	tests/validatortests
+python_unit_tests_ansible = \
+	tests/ansibletests
+python_unit_tests_cluster = \
+	tests/async_fetch
+python_unit_tests = \
+	tests/atptests \
+	tests/cmtlibtests \
+	tests/cursestests \
+	tests/fmttests \
+	tests/iotests \
+	tests/khtests \
+	tests/logtests \
+	tests/typetests \
+	tests/validatortests
 test_lib_symlinks = \
-	about.py ansible_helper.py ansithemeprint.py \
+	about.py \
+	ansible_helper.py \
+	ansithemeprint.py \
 	checks.py \
-	cmtio.py cmtio_yaml.py cmtlib.py cmtpaths.py cmttypes.py cmtvalidators.py \
+	cmtio.py \
+	cmtio_yaml.py \
+	cmtlib.py \
+	cmtpaths.py \
+	cmttypes.py \
+	cmtvalidators.py \
 	commandparser.py \
 	curses_helper.py \
 	datagetters.py \
@@ -49,7 +91,7 @@ coverage: setup_tests
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in tests/atptests tests/cmtlibtests tests/cursestests tests/fmttests tests/iotests tests/logtests tests/typetests tests/validatortests; do \
+	for test in $(python_unit_tests); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
 		$$cmd run --branch --append $$test || exit 1 ;\
 	done ;\

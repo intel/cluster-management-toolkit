@@ -1,8 +1,13 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string,line-too-long
-''''eval version=$( ls /usr/bin/python3.* | grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && version=${version##/usr/bin/python3.} && [ ${version} ] && [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || exec /usr/bin/env python3 "$0" "$@"' #'''
-__doc__ = "The above hack is to handle distros that don't have /usr/bin/python3 point to the latest version of python3 they provide"
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
 # Requires: python3 (>= 3.8)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -25,6 +30,7 @@ real_import = None
 
 import_override = {}
 
+
 def override_import(name: str, *args: List[Any], **kwargs: Any):
     retval, exception = import_override.get(name, (None, None))
     if exception:
@@ -33,12 +39,14 @@ def override_import(name: str, *args: List[Any], **kwargs: Any):
         return retval
     return real_import(name, *args, **kwargs)
 
+
 def yaml_dump(data: Dict, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
 
 def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
     global import_override
@@ -50,23 +58,24 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         import_override = {"validators": (None, ModuleNotFoundError)}
         try:
-            with mock.patch("builtins.__import__", side_effect = override_import):
+            with mock.patch("builtins.__import__", side_effect=override_import):
                 importlib.reload(cmtvalidators)
         except Exception as e:
-            message = f"overriding import validators failed"
+            message = "overriding import validators failed"
             result = False
 
     if result:
         import_override = {"validators": (None, None)}
         try:
-            with mock.patch("builtins.__import__", side_effect = override_import):
+            with mock.patch("builtins.__import__", side_effect=override_import):
                 importlib.reload(cmtvalidators)
         except Exception as e:
-            message = f"overriding import validators failed"
+            message = "overriding import validators failed"
             result = False
 
     import_override = {}
     return message, result
+
 
 def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -81,11 +90,17 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
         for indata in valid_indata:
             status, retval = fun(indata, error_on_failure=True)
             if status != expected_status:
-                message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+                message = f"{fun.__name__}() did not yield expected status:\n" \
+                          f"       input: {indata}\n" \
+                          f"      output: {status}\n" \
+                          f"    expected: {expected_status}"
                 result = False
                 break
             if retval != expected_result:
-                message = f"{fun.__name__}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"       input: {indata}\n" \
+                          f"      output: {retval}\n" \
+                          f"    expected: {expected_result}"
                 result = False
                 break
     if result:
@@ -95,11 +110,17 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
         for indata in valid_indata:
             status, retval = fun(indata, error_on_failure=True)
             if status != expected_status:
-                message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+                message = f"{fun.__name__}() did not yield expected status:\n" \
+                          f"       input: {indata}\n" \
+                          f"      output: {status}\n" \
+                          f"    expected: {expected_status}"
                 result = False
                 break
             if retval != expected_result:
-                message = f"{fun.__name__}() did not yield expected result:\n       input: {indata}\n      output: {retval}\n    expected: {expected_result}"
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"       input: {indata}\n" \
+                          f"      output: {retval}\n" \
+                          f"    expected: {expected_result}"
                 result = False
                 break
     if result:
@@ -108,10 +129,14 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
         for indata in invalid_indata:
             status, retval = fun(indata, error_on_failure=True)
             if status != expected_status:
-                message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n      output: {status}\n    expected: {expected_status}"
+                message = f"{fun.__name__}() did not yield expected status:\n" \
+                          f"       input: {indata}\n" \
+                          f"      output: {status}\n" \
+                          f"    expected: {expected_status}"
                 result = False
                 break
     return message, result
+
 
 def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -136,9 +161,14 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
         )
         for indata, range_min, range_max, expected_status, expected_exception in testdata:
             try:
-                status = fun(range_min, range_max, indata, error_on_failure=True, exit_on_failure=False)
+                status = fun(range_min, range_max, indata,
+                             error_on_failure=True, exit_on_failure=False)
                 if status != expected_status:
-                    message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n      output: {status}\n    expected: {expected_status}"
+                    message = f"{fun.__name__}() did not yield expected status:\n" \
+                              f"       input: {indata}\n" \
+                              f"       range: [{range_min}, {range_max}]\n" \
+                              f"      output: {status}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
             except Exception as e:
@@ -146,14 +176,23 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
                     if isinstance(e, expected_exception):
                         pass
                     else:
-                        message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_exception}"
+                        message = f"{fun.__name__}() did not yield expected status:\n" \
+                                  f"       input: {indata}\n" \
+                                  f"       range: [{range_min}, {range_max}]\n" \
+                                  f"   exception: {type(e)}\n" \
+                                  f"    expected: {expected_exception}"
                         result = False
                         break
                 else:
-                    message = f"{fun.__name__}() did not yield expected status:\n       input: {indata}\n       range: [{range_min}, {range_max}]\n   exception: {type(e)}\n    expected: {expected_status}"
+                    message = f"{fun.__name__}() did not yield expected status:\n" \
+                              f"       input: {indata}\n" \
+                              f"       range: [{range_min}, {range_max}]\n" \
+                              f"   exception: {type(e)}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
     return message, result
+
 
 def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -163,16 +202,18 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         # Indata format:
-        # ({arg, arg_string, options: {validator, list_separator, valid_range, allowlist, validator_regex}}, expected_status, expected_exception)
+        # ({arg, arg_string,
+        #   options: {validator, list_separator, valid_range, allowlist, validator_regex}},
+        #  expected_status, expected_exception)
         testdata = (
             (
                 {
                     "arg": "ok",
                     "arg_string": [ANSIThemeStr("ok", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("maybe", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("nope", "option")],
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("maybe", "option"),
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("nope", "option")],
                     "options": {
                         "validator": "allowlist",
                         "list_separator": None,
@@ -188,10 +229,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "not_ok",
                     "arg_string": [ANSIThemeStr("ok", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("maybe", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("nope", "option")],
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("maybe", "option"),
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("nope", "option")],
                     "options": {
                         "validator": "allowlist",
                         "list_separator": None,
@@ -207,8 +248,8 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "true",
                     "arg_string": [ANSIThemeStr("true", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("false", "option")],
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("false", "option")],
                     "options": {
                         "validator": "bool",
                         "list_separator": None,
@@ -224,8 +265,8 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "foo",
                     "arg_string": [ANSIThemeStr("true", "option"),
-                               ANSIThemeStr("|", "separator"),
-                               ANSIThemeStr("false", "option")],
+                                   ANSIThemeStr("|", "separator"),
+                                   ANSIThemeStr("false", "option")],
                     "options": {
                         "validator": "bool",
                         "list_separator": None,
@@ -241,8 +282,8 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "1,2,3,4",
                     "arg_string": [ANSIThemeStr("INTEGER", "option"),
-                               ANSIThemeStr(",", "separator"),
-                               ANSIThemeStr("...", "option")],
+                                   ANSIThemeStr(",", "separator"),
+                                   ANSIThemeStr("...", "option")],
                     "options": {
                         "validator": "int",
                         "list_separator": ",",
@@ -258,8 +299,8 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "1,2,4,3",
                     "arg_string": [ANSIThemeStr("INTEGER", "option"),
-                               ANSIThemeStr(",", "separator"),
-                               ANSIThemeStr("...", "option")],
+                                   ANSIThemeStr(",", "separator"),
+                                   ANSIThemeStr("...", "option")],
                     "options": {
                         "validator": "int",
                         "list_separator": ",",
@@ -695,10 +736,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node=True:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -714,10 +755,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": ".NotAValidKey:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -733,10 +774,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node=#:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -752,10 +793,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -771,10 +812,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node=True",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -790,10 +831,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -809,10 +850,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node=True:NotAValidEffect",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("EFFECT", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("EFFECT", "argument")],
                     "options": {
                         "validator": "taint",
                         "list_separator": None,
@@ -828,10 +869,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node=True:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("[EFFECT]", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("[EFFECT]", "argument")],
                     "options": {
                         "validator": "untaint",
                         "list_separator": None,
@@ -847,10 +888,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node:NoSchedule",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("[EFFECT]", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("[EFFECT]", "argument")],
                     "options": {
                         "validator": "untaint",
                         "list_separator": None,
@@ -866,10 +907,10 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "arg": "node:",
                     "arg_string": [ANSIThemeStr("KEY", "argument"),
-                               ANSIThemeStr("[=", "separator"),
-                               ANSIThemeStr("VALUE", "argument"),
-                               ANSIThemeStr("]:", "separator"),
-                               ANSIThemeStr("[EFFECT]", "argument")],
+                                   ANSIThemeStr("[=", "separator"),
+                                   ANSIThemeStr("VALUE", "argument"),
+                                   ANSIThemeStr("]:", "separator"),
+                                   ANSIThemeStr("[EFFECT]", "argument")],
                     "options": {
                         "validator": "untaint",
                         "list_separator": None,
@@ -919,8 +960,14 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
             options["message_on_failure"] = True
             options["exit_on_failure"] = False
             try:
-                if (status := fun(arg=arg, arg_string=arg_string, options=options)) != expected_status:
-                    message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n      output: {status}\n    expected: {expected_status}"
+                if (status := fun(arg=arg, arg_string=arg_string,
+                                  options=options)) != expected_status:
+                    message = f"{fun.__name__}() did not yield expected status:\n" \
+                              f"       input: {arg}\n" \
+                              f"     options:\n" \
+                              f"{yaml_dump(options, base_indent = 14)}\n" \
+                              f"      output: {status}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
             except Exception as e:
@@ -928,14 +975,25 @@ def test_validate_argument(verbose: bool = False) -> Tuple[str, bool]:
                     if isinstance(e, expected_exception):
                         pass
                     else:
-                        message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_exception}"
+                        message = f"{fun.__name__}() did not yield expected status:\n" \
+                                  f"       input: {arg}\n" \
+                                  f"     options:\n" \
+                                  f"{yaml_dump(options, base_indent = 14)}\n" \
+                                  f"   exception: {type(e)}\n" \
+                                  f"    expected: {expected_exception}"
                         result = False
                         break
                 else:
-                    message = f"{fun.__name__}() did not yield expected status:\n       input: {arg}\n     options:\n{yaml_dump(options, base_indent = 14)}\n   exception: {type(e)}\n    expected: {expected_status}"
+                    message = f"{fun.__name__}() did not yield expected status:\n" \
+                              f"       input: {arg}\n" \
+                              f"     options:\n" \
+                              f"{yaml_dump(options, base_indent = 14)}\n" \
+                              f"   exception: {type(e)}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
     return message, result
+
 
 def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -951,9 +1009,15 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
             ("dns-label", f"{'1'.ljust(63, 'a')}", True, None),
             ("dns-label", f"{'2'.ljust(64, 'a')}", False, None),
             ("dns-label", f"{'3'.ljust(62, 'a')}.", False, None),
-            ("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(62, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", True, None),
-            ("dns-subdomain", f"{'1'.ljust(62, 'a')}.{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
-            ("dns-subdomain", f"{'1'.ljust(62, 'a')}..{'2'.ljust(63, 'a')}.{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
+            ("dns-subdomain",
+             f"{'1'.ljust(62, 'a')}.{'2'.ljust(62, 'a')}."
+             f"{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", True, None),
+            ("dns-subdomain",
+             f"{'1'.ljust(62, 'a')}.{'2'.ljust(63, 'a')}."
+             f"{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
+            ("dns-subdomain",
+             f"{'1'.ljust(62, 'a')}..{'2'.ljust(63, 'a')}."
+             f"{'3'.ljust(63, 'a')}.{'4'.ljust(63, 'a')}", False, None),
             ("path-segment", "passwd", True, None),
             ("path-segment", "/etc/passwd", False, None),
             ("path-segment", ".", False, None),
@@ -972,10 +1036,10 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (status := fun(rtype=rtype, name=indata)) != expected_status:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
-                          f"       input: {indata}\n" \
-                          f"       rtype: {rtype}\n" \
-                          f"      output: {status}\n" \
-                          f"    expected: {expected_status}"
+                              f"       input: {indata}\n" \
+                              f"       rtype: {rtype}\n" \
+                              f"      output: {status}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
             except Exception as e:
@@ -984,21 +1048,22 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected status:\n" \
-                              f"       input: {indata}\n" \
-                              f"       rtype: {rtype}\n" \
-                              f"   exception: {type(e)}\n" \
-                              f"    expected: {expected_exception}"
+                                  f"       input: {indata}\n" \
+                                  f"       rtype: {rtype}\n" \
+                                  f"   exception: {type(e)}\n" \
+                                  f"    expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
-                          f"       input: {indata}\n" \
-                          f"       rtype: {rtype}\n" \
-                          f"   exception: {type(e)}\n" \
-                          f"    expected: {expected_status}"
+                              f"       input: {indata}\n" \
+                              f"       rtype: {rtype}\n" \
+                              f"   exception: {type(e)}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
     return message, result
+
 
 def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
@@ -1017,29 +1082,46 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
             (f"{''.ljust(63, 'a')}.com", True, HostNameStatus.OK, None),
             (f"{''.ljust(64, 'a')}.com", False, HostNameStatus.DNS_LABEL_TOO_LONG, None),
             (f"{''.ljust(64, 'a')}.com", True, HostNameStatus.DNS_LABEL_TOO_LONG, None),
-            (f"-com", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
-            (f"-com", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
-            (f"com-", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
-            (f"com-", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
-            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.OK, None),
-            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
-            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
-            (f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
-            (f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
-            (f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
-            (f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
-            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com.", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
-            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com.", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
-            (f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
-            (f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            ("-com", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+            ("-com", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+            ("com-", False, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+            ("com-", True, HostNameStatus.DNS_LABEL_INVALID_CHARACTERS, None),
+            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False, HostNameStatus.OK, None),
+            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", False,
+             HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
+            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(63, 'a')}.{''.ljust(58, 'a')}.com", True,
+             HostNameStatus.DNS_SUBDOMAIN_TOO_LONG, None),
+            (f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", False,
+             HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
+            (f"{''.ljust(63, 'A')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(63, 'a')}.{''.ljust(57, 'a')}.com", True,
+             HostNameStatus.DNS_SUBDOMAIN_WRONG_CASE, None),
+            (f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            (f".{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com.", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            (f"{''.ljust(63, 'a')}.{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com.", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            (f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com", False, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
+            (f"{''.ljust(63, 'a')}..{''.ljust(63, 'a')}."
+             f"{''.ljust(57, 'a')}.com", True, HostNameStatus.DNS_SUBDOMAIN_INVALID_FORMAT, None),
             ("foo", False, HostNameStatus.OK, None),
             ("foo.123", False, HostNameStatus.DNS_TLD_INVALID, None),
             ("foo.123", True, HostNameStatus.DNS_TLD_INVALID, None),
             ("foo.1", True, HostNameStatus.DNS_TLD_INVALID, None),
             ("foo.s", True, HostNameStatus.DNS_TLD_INVALID, None),
             (f"fooåäöpad1{''.ljust(43, 'a')}", False, HostNameStatus.OK, None),
-            (f"fooåäöpad1{''.ljust(44, 'a')}", False, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
-            (f"fooåäöpad1{''.ljust(44, 'a')}", True, HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
+            (f"fooåäöpad1{''.ljust(44, 'a')}", False,
+             HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
+            (f"fooåäöpad1{''.ljust(44, 'a')}", True,
+             HostNameStatus.DNS_LABEL_PUNYCODE_TOO_LONG, None),
             ("xn--", False, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
             ("xn--", True, HostNameStatus.DNS_LABEL_STARTS_WITH_IDNA, None),
             ("\x81", False, None, UnicodeError),
@@ -1050,11 +1132,12 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
         )
         for indata, message_on_error, expected_status, expected_exception in testdata:
             try:
-                if (status := fun(fqdn=indata, message_on_error=message_on_error)) != expected_status:
+                if (status := fun(fqdn=indata,
+                                  message_on_error=message_on_error)) != expected_status:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
-                          f"       input: {indata}\n" \
-                          f"      output: {status}\n" \
-                          f"    expected: {expected_status}"
+                              f"       input: {indata}\n" \
+                              f"      output: {status}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
             except Exception as e:
@@ -1063,19 +1146,20 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected status:\n" \
-                              f"       input: {indata}\n" \
-                              f"   exception: {type(e)}\n" \
-                              f"    expected: {expected_exception}"
+                                  f"       input: {indata}\n" \
+                                  f"   exception: {type(e)}\n" \
+                                  f"    expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
-                          f"       input: {indata}\n" \
-                          f"   exception: {type(e)}\n" \
-                          f"    expected: {expected_status}"
+                              f"       input: {indata}\n" \
+                              f"   exception: {type(e)}\n" \
+                              f"    expected: {expected_status}"
                     result = False
                     break
     return message, result
+
 
 tests: Dict = {
     ("import_validators",): {
@@ -1104,6 +1188,7 @@ tests: Dict = {
     },
 }
 
+
 def main() -> int:
     global real_import
     real_import = builtins.__import__
@@ -1113,7 +1198,7 @@ def main() -> int:
     verbose = False
     failed_testcases = []
 
-    init_ansithemeprint(themefile = None)
+    init_ansithemeprint(themefile=None)
     cmtvalidators.set_programname("validatortests")
 
     # How many non-prepare testcases do we have?
@@ -1121,11 +1206,11 @@ def main() -> int:
 
     for i, test in enumerate(tests):
         ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-                ANSIThemeStr(f" {', '.join(test)}:", "default")])
-        message, result = tests[test]["callable"](verbose = verbose)
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
         if len(message) > 0:
             ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-                    ANSIThemeStr(f": {message}", "default")])
+                            ANSIThemeStr(f": {message}", "default")])
         else:
             ansithemeprint([ANSIThemeStr("  PASS", "success")])
             success += 1
@@ -1145,10 +1230,11 @@ def main() -> int:
         ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
             ansithemeprint([ANSIThemeStr("  • ", "separator"),
-                    ANSIThemeStr(testcase, "default")], stderr = True)
+                            ANSIThemeStr(testcase, "default")], stderr=True)
         sys.exit(fail)
 
     return 0
+
 
 if __name__ == "__main__":
     main()

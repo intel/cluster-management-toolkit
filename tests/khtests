@@ -57,9 +57,9 @@ def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -68,16 +68,16 @@ def test_kind_tuple_to_name(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           input: {indata}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -115,9 +115,9 @@ def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -126,16 +126,16 @@ def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           input: {indata}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  f"           input: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -163,18 +163,21 @@ def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
         for indata, listview, infoview, local, expected_result, expected_exception in testdata:
             try:
                 fun(indata, listview, infoview, local)
-                listview = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath("list"), None)
-                infoview = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath("info"), None)
-                local = deep_get(kubernetes_helper.kubernetes_resources[indata], DictPath("local"), None)
+                listview = deep_get(kubernetes_helper.kubernetes_resources[indata],
+                                    DictPath("list"), None)
+                infoview = deep_get(kubernetes_helper.kubernetes_resources[indata],
+                                    DictPath("info"), None)
+                local = deep_get(kubernetes_helper.kubernetes_resources[indata],
+                                 DictPath("local"), None)
 
                 if (listview, infoview, local) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"        listview: {listview}\n" \
-                          f"        infoview: {infoview}\n" \
-                          f"           local: {local}\n" \
-                          f"          output: {(listview, infoview, local)}\n" \
-                          f"        expected: {expected_result}"
+                              f"           input: {indata}\n" \
+                              f"        listview: {listview}\n" \
+                              f"        infoview: {infoview}\n" \
+                              f"           local: {local}\n" \
+                              f"          output: {(listview, infoview, local)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -183,22 +186,22 @@ def test_update_api_status(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           input: {indata}\n" \
+                                  f"        listview: {listview}\n" \
+                                  f"        infoview: {infoview}\n" \
+                                  f"           local: {local}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: {indata}\n" \
                               f"        listview: {listview}\n" \
                               f"        infoview: {infoview}\n" \
                               f"           local: {local}\n" \
                               f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"           input: {indata}\n" \
-                          f"        listview: {listview}\n" \
-                          f"        infoview: {infoview}\n" \
-                          f"           local: {local}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -234,27 +237,36 @@ def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
             '  minor: "28"\n' \
             '  platform: linux/amd64'
 
-        with mock.patch("kubernetes_helper.execute_command_with_response", return_value=mock_response):
+        with mock.patch("kubernetes_helper.execute_command_with_response",
+                        return_value=mock_response):
             tmp = fun()
-        if not (isinstance(tmp, tuple) and len(tmp) == 6 and \
-                    isinstance(tmp[0], int) and isinstance(tmp[1], int) and \
-                    isinstance(tmp[2], str) and \
-                    isinstance(tmp[3], int) and isinstance(tmp[4], int) and \
-                    isinstance(tmp[5], str)):
+        if not (isinstance(tmp, tuple) and len(tmp) == 6
+                and isinstance(tmp[0], int) and isinstance(tmp[1], int)
+                and isinstance(tmp[2], str)
+                and isinstance(tmp[3], int) and isinstance(tmp[4], int)
+                and isinstance(tmp[5], str)):
             message = f"{fun.__name__}() did not yield expected result:\n" \
-                  f"          output: {tmp} (type: {type(tmp)}, len: {len(tmp)})\n" \
-                  f"        expected: (type: {tuple}, len: 6)"
+                      f"          output: {tmp} (type: {type(tmp)}, len: {len(tmp)})\n" \
+                      f"        expected: (type: {tuple}, len: 6)"
             result = False
         else:
-            ansithemeprint([ANSIThemeStr("  Note", "note"), ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
+            ansithemeprint([ANSIThemeStr("  Note", "note"),
+                            ANSIThemeStr(": Manual sanity check necessary:\n", "default")])
 
-            kubectl_major_version, kubectl_minor_version, kubectl_git_version, server_major_version, server_minor_version, server_git_version = tmp
-            ansithemeprint([ANSIThemeStr("    kubectl major version: ", "emphasis"), ANSIThemeStr(f"{kubectl_major_version}", "version")])
-            ansithemeprint([ANSIThemeStr("    kubectl minor version: ", "emphasis"), ANSIThemeStr(f"{kubectl_minor_version}", "version")])
-            ansithemeprint([ANSIThemeStr("      kubectl git version: ", "emphasis"), ANSIThemeStr(f"{kubectl_git_version}", "version")])
-            ansithemeprint([ANSIThemeStr("     server major version: ", "emphasis"), ANSIThemeStr(f"{server_major_version}", "version")])
-            ansithemeprint([ANSIThemeStr("     server minor version: ", "emphasis"), ANSIThemeStr(f"{server_minor_version}", "version")])
-            ansithemeprint([ANSIThemeStr("       server git version: ", "emphasis"), ANSIThemeStr(f"{server_git_version}", "version")])
+            kubectl_major_version, kubectl_minor_version, kubectl_git_version, \
+                server_major_version, server_minor_version, server_git_version = tmp
+            ansithemeprint([ANSIThemeStr("    kubectl major version: ", "emphasis"),
+                            ANSIThemeStr(f"{kubectl_major_version}", "version")])
+            ansithemeprint([ANSIThemeStr("    kubectl minor version: ", "emphasis"),
+                            ANSIThemeStr(f"{kubectl_minor_version}", "version")])
+            ansithemeprint([ANSIThemeStr("      kubectl git version: ", "emphasis"),
+                            ANSIThemeStr(f"{kubectl_git_version}", "version")])
+            ansithemeprint([ANSIThemeStr("     server major version: ", "emphasis"),
+                            ANSIThemeStr(f"{server_major_version}", "version")])
+            ansithemeprint([ANSIThemeStr("     server minor version: ", "emphasis"),
+                            ANSIThemeStr(f"{server_minor_version}", "version")])
+            ansithemeprint([ANSIThemeStr("       server git version: ", "emphasis"),
+                            ANSIThemeStr(f"{server_git_version}", "version")])
     return message, result
 
 
@@ -584,11 +596,12 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() returned len: {len(tmp)}, expected 4"
                     return message, False
 
-                if not (isinstance(tmp[0], str) and
-                    isinstance(tmp[1], StatusGroup) and
-                    isinstance(tmp[2], list) and
-                    isinstance(tmp[2], list)):
-                    message = f"{fun.__name__}() returned the wrong type, expected ({str}, {StatusGroup}, [{str}, {str}], [{dict}])"
+                if not (isinstance(tmp[0], str)
+                        and isinstance(tmp[1], StatusGroup)
+                        and isinstance(tmp[2], list)
+                        and isinstance(tmp[2], list)):
+                    message = f"{fun.__name__}() returned the wrong type, " \
+                              f"expected ({str}, {StatusGroup}, [{str}, {str}], [{dict}])"
                     return message, False
 
                 status = tmp[0]
@@ -598,10 +611,10 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
 
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                           "           input:\n" \
-                          f"{yaml_dump(node_data, base_indent = 17)}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              "           input:\n" \
+                              f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -610,18 +623,18 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                               "           input:\n" \
-                              f"{yaml_dump(node_data, base_indent = 17)}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  "           input:\n" \
+                                  f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                           "           input:\n" \
-                          f"{yaml_dump(node_data, base_indent = 17)}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              "           input:\n" \
+                              f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -644,10 +657,10 @@ def test_make_selector(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                           "           input:\n" \
-                          f"{yaml_dump(indata, base_indent = 17)}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              "           input:\n" \
+                              f"{yaml_dump(indata, base_indent = 17)}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -656,18 +669,18 @@ def test_make_selector(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                               "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  "           input:\n" \
+                                  f"{yaml_dump(indata, base_indent = 17)}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                           "           input:\n" \
-                          f"{yaml_dump(indata, base_indent = 17)}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              "           input:\n" \
+                              f"{yaml_dump(indata, base_indent = 17)}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -693,10 +706,10 @@ def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
             try:
                 if (tmp := fun(indata, default)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          indata: {indata}\n" \
-                          f"         default: {default}\n" \
-                          f"          output: {tmp}\n" \
-                          f"        expected: {expected_result}"
+                              f"          indata: {indata}\n" \
+                              f"         default: {default}\n" \
+                              f"          output: {tmp}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
             except Exception as e:
@@ -705,18 +718,18 @@ def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          indata: {indata}\n" \
-                              f"         default: {default}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  f"          indata: {indata}\n" \
+                                  f"         default: {default}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          indata: {indata}\n" \
-                          f"         default: {default}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"          indata: {indata}\n" \
+                              f"         default: {default}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -735,10 +748,35 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
         # Indata format:
         # (indata, kind, name, namespace, **kwargs, expected_result, expected_exception)
         testdata = (
-            ({
-                "apiVersion": "v1",
-                "kind": "List",
-                "items": [{
+            (
+                {
+                    "apiVersion": "v1",
+                    "kind": "List",
+                    "items": [{
+                        "apiVersion": "v1",
+                        "kind": "Namespace",
+                        "metadata": {
+                            "creationTimestamp": "2023-10-24T10:05:01Z",
+                            "labels": {
+                                "kubernetes.io/metadata.name": "default",
+                            },
+                            "name": "default",
+                            "resourceVersion": "41",
+                            "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+                        },
+                        "spec": {
+                            "finalizers": ["kubernetes"],
+                        },
+                        "status": {
+                            "phase": "Active"
+                        },
+                    }],
+                    "metadata": {
+                        "resourceVersion": "",
+                    },
+                },
+                ("Namespace", ""), "default", "", {},
+                {
                     "apiVersion": "v1",
                     "kind": "Namespace",
                     "metadata": {
@@ -750,40 +788,42 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
                         "resourceVersion": "41",
                         "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
                     },
-                     "spec": {
+                    "spec": {
                         "finalizers": ["kubernetes"],
                     },
                     "status": {
                         "phase": "Active"
                     },
-                }],
-                "metadata": {
-                    "resourceVersion": "",
                 },
-             }, ("Namespace", ""), "default", "", {},
-             {
-                "apiVersion": "v1",
-                "kind": "Namespace",
-                "metadata": {
-                    "creationTimestamp": "2023-10-24T10:05:01Z",
-                    "labels": {
-                        "kubernetes.io/metadata.name": "default",
+                None),
+            (
+                {
+                    "apiVersion": "v1",
+                    "kind": "List",
+                    "items": [{
+                        "apiVersion": "v1",
+                        "kind": "Namespace",
+                        "metadata": {
+                            "creationTimestamp": "2023-10-24T10:05:01Z",
+                            "labels": {
+                                "kubernetes.io/metadata.name": "default",
+                            },
+                            "name": "default",
+                            "resourceVersion": "41",
+                            "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
+                        },
+                        "spec": {
+                            "finalizers": ["kubernetes"],
+                        },
+                        "status": {
+                            "phase": "Active"
+                        },
+                    }],
+                    "metadata": {
+                        "resourceVersion": "",
                     },
-                    "name": "default",
-                    "resourceVersion": "41",
-                    "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
-                },
-                "spec": {
-                    "finalizers": ["kubernetes"],
-                },
-                "status": {
-                    "phase": "Active"
-                },
-             }, None),
-            ({
-                "apiVersion": "v1",
-                "kind": "List",
-                "items": [{
+                }, ("Namespace", ""), "default", "", {"resource_cache": kh_cache},
+                {
                     "apiVersion": "v1",
                     "kind": "Namespace",
                     "metadata": {
@@ -795,40 +835,38 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
                         "resourceVersion": "41",
                         "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
                     },
-                     "spec": {
+                    "spec": {
                         "finalizers": ["kubernetes"],
                     },
                     "status": {
                         "phase": "Active"
                     },
-                }],
-                "metadata": {
-                    "resourceVersion": "",
                 },
-             }, ("Namespace", ""), "default", "", {"resource_cache": kh_cache},
-             {
-                "apiVersion": "v1",
-                "kind": "Namespace",
-                "metadata": {
-                    "creationTimestamp": "2023-10-24T10:05:01Z",
-                    "labels": {
-                        "kubernetes.io/metadata.name": "default",
+                None),
+            (
+                {
+                    "apiVersion": "v1",
+                    "kind": "List",
+                    "items": [{
+                        "apiVersion": "coordination.k8s.io/v1",
+                        "kind": "Lease",
+                        "metadata": {
+                            "creationTimestamp": "2023-10-24T10:05:03Z",
+                            "name": "controlplane",
+                            "namespace": "kube-node-lease",
+                            "resourceVersion": "1",
+                        },
+                        "spec": {
+                            "holderIdentity": "controlplane",
+                            "leaseDurationSeconds": 40,
+                            "renewTime": "2024-03-04T15:57:15.221500Z",
+                        },
+                    }],
+                    "metadata": {
+                        "resourceVersion": "",
                     },
-                    "name": "default",
-                    "resourceVersion": "41",
-                    "uid": "e02e49e5-410d-40e2-91bf-1ff3acbb6158",
-                },
-                "spec": {
-                    "finalizers": ["kubernetes"],
-                },
-                "status": {
-                    "phase": "Active"
-                },
-             }, None),
-            ({
-                "apiVersion": "v1",
-                "kind": "List",
-                "items": [{
+                }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
+                {
                     "apiVersion": "coordination.k8s.io/v1",
                     "kind": "Lease",
                     "metadata": {
@@ -842,30 +880,35 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
                         "leaseDurationSeconds": 40,
                         "renewTime": "2024-03-04T15:57:15.221500Z",
                     },
-                }],
-                "metadata": {
-                    "resourceVersion": "",
                 },
-             }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
-             {
-                "apiVersion": "coordination.k8s.io/v1",
-                "kind": "Lease",
-                "metadata": {
-                    "creationTimestamp": "2023-10-24T10:05:03Z",
-                    "name": "controlplane",
-                    "namespace": "kube-node-lease",
-                    "resourceVersion": "1",
-                },
-                "spec": {
-                    "holderIdentity": "controlplane",
-                    "leaseDurationSeconds": 40,
-                    "renewTime": "2024-03-04T15:57:15.221500Z",
-                },
-             }, None),
-            ({
-                "apiVersion": "v1",
-                "kind": "List",
-                "items": [{
+                None),
+            (
+                {
+                    "apiVersion": "v1",
+                    "kind": "List",
+                    "items": [{
+                        "apiVersion": "coordination.k8s.io/v1",
+                        "kind": "Lease",
+                        "metadata": {
+                            "creationTimestamp": "2023-10-24T10:05:03Z",
+                            "name": "controlplane",
+                            "namespace": "kube-node-lease",
+                            "resourceVersion": "1",
+                        },
+                        "spec": {
+                            "holderIdentity": "controlplane",
+                            "leaseDurationSeconds": 40,
+                            "renewTime": "2024-03-04T15:57:15.221500Z",
+                        },
+                    }],
+                    "metadata": {
+                        "resourceVersion": "",
+                    },
+                }, ("Lease", "coordination.k8s.io"), "worker", "kube-node-lease", {},
+                None,
+                None),
+            (
+                {
                     "apiVersion": "coordination.k8s.io/v1",
                     "kind": "Lease",
                     "metadata": {
@@ -879,51 +922,32 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
                         "leaseDurationSeconds": 40,
                         "renewTime": "2024-03-04T15:57:15.221500Z",
                     },
-                }],
-                "metadata": {
-                    "resourceVersion": "",
+                }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
+                {
+                    "apiVersion": "coordination.k8s.io/v1",
+                    "kind": "Lease",
+                    "metadata": {
+                        "creationTimestamp": "2023-10-24T10:05:03Z",
+                        "name": "controlplane",
+                        "namespace": "kube-node-lease",
+                        "resourceVersion": "1",
+                    },
+                    "spec": {
+                        "holderIdentity": "controlplane",
+                        "leaseDurationSeconds": 40,
+                        "renewTime": "2024-03-04T15:57:15.221500Z",
+                    },
                 },
-             }, ("Lease", "coordination.k8s.io"), "worker", "kube-node-lease", {},
-             None, None),
-            ({
-                "apiVersion": "coordination.k8s.io/v1",
-                "kind": "Lease",
-                "metadata": {
-                    "creationTimestamp": "2023-10-24T10:05:03Z",
-                    "name": "controlplane",
-                    "namespace": "kube-node-lease",
-                    "resourceVersion": "1",
-                },
-                "spec": {
-                    "holderIdentity": "controlplane",
-                    "leaseDurationSeconds": 40,
-                    "renewTime": "2024-03-04T15:57:15.221500Z",
-                },
-             }, ("Lease", "coordination.k8s.io"), "controlplane", "kube-node-lease", {},
-             {
-                "apiVersion": "coordination.k8s.io/v1",
-                "kind": "Lease",
-                "metadata": {
-                    "creationTimestamp": "2023-10-24T10:05:03Z",
-                    "name": "controlplane",
-                    "namespace": "kube-node-lease",
-                    "resourceVersion": "1",
-                },
-                "spec": {
-                    "holderIdentity": "controlplane",
-                    "leaseDurationSeconds": 40,
-                    "renewTime": "2024-03-04T15:57:15.221500Z",
-                },
-             }, None),
+                None),
         )
         for indata, kind, name, namespace, kwargs, expected_result, expected_exception in testdata:
             try:
                 with mock.patch("kubernetes_helper.secure_read_yaml", return_value=indata):
                     if (tmp := fun(kind, name, namespace, **kwargs)) != expected_result:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          indata: {indata}\n" \
-                              f"          output: {tmp}\n" \
-                              f"        expected: {expected_result}"
+                                  f"          indata: {indata}\n" \
+                                  f"          output: {tmp}\n" \
+                                  f"        expected: {expected_result}"
                         result = False
                         break
             except Exception as e:
@@ -932,16 +956,16 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          indata: {indata}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_exception}"
+                                  f"          indata: {indata}\n" \
+                                  f"       exception: {type(e)}\n" \
+                                  f"        expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                          f"          indata: {indata}\n" \
-                          f"       exception: {type(e)}\n" \
-                          f"        expected: {expected_result}"
+                              f"          indata: {indata}\n" \
+                              f"       exception: {type(e)}\n" \
+                              f"        expected: {expected_result}"
                     result = False
                     break
     return message, result
@@ -1009,11 +1033,11 @@ def main() -> int:
 
     for i, test in enumerate(tests):
         ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
-                ANSIThemeStr(f" {', '.join(test)}:", "default")])
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
         message, result = tests[test]["callable"](verbose=verbose)
         if len(message) > 0:
             ansithemeprint([ANSIThemeStr("  FAIL", "error"),
-                    ANSIThemeStr(f": {message}", "default")])
+                            ANSIThemeStr(f": {message}", "default")])
         else:
             ansithemeprint([ANSIThemeStr("  PASS", "success")])
             success += 1
@@ -1033,7 +1057,7 @@ def main() -> int:
         ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
         for testcase in failed_testcases:
             ansithemeprint([ANSIThemeStr("  • ", "separator"),
-                    ANSIThemeStr(testcase, "default")], stderr=True)
+                            ANSIThemeStr(testcase, "default")], stderr=True)
             sys.exit(fail)
 
     return 0
