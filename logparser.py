@@ -406,7 +406,7 @@ def split_colon_severity(message: str, **kwargs: Any) -> Tuple[str, LogLevel]:
     Remove a colon severity prefix from a string
 
         Parameters:
-            message: A string to strip a severity prefix from
+            message (str): A string to strip a severity prefix from
             **kwargs (dict[str, Any]): Keyword arguments
                 default: The default severity to use if no LogLevel prefix can be found
         Returns:
@@ -1524,6 +1524,25 @@ def json_event(message: str,
                **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]],
                                        LogLevel, str,
                                        List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
+    """
+    Given a string, extract any events in JSON format
+
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments
+                severity (LogLevel): The log severity
+                facility (str): The log facility
+                fold_msg (bool): Should the message be expanded or folded?
+                options (dict): Additional, rule specific, options
+        Returns:
+            (ThemeArray, LogLevel, str, [(ThemeArray, LogLevel)]):
+                (ThemeArray): The formatted message
+                (LogLevel): The LogLevel of the message
+                (str): The facility of the message
+                ([(ThemeArray, LogLevel)]):
+                    (ThemeArray): The formatted strings of the remnant
+                    (LogLevel): The severity of the remnant
+    """
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
@@ -1602,6 +1621,17 @@ def json_event(message: str,
 
 
 def split_angle_bracketed_facility(message: str, facility: str = "") -> Tuple[str, str]:
+    """
+    Split a message in "<facility> message" format into message, facility
+
+        Parameters:
+            message (str): The message part of the msg to format
+            facility (str): The current facility (typically empty)
+        Returns:
+            (str, str):
+                (str): The message part
+                (str): The facility
+    """
     tmp = re.match(r"^<(.+?)>\s?(.*)", message)
     if tmp is not None:
         facility = tmp[1]
@@ -1610,6 +1640,17 @@ def split_angle_bracketed_facility(message: str, facility: str = "") -> Tuple[st
 
 
 def split_colon_facility(message: str, facility: str = "") -> Tuple[str, str]:
+    """
+    Split a message in "facility: message" format into message, facility
+
+        Parameters:
+            message (str): The message part of the msg to format
+            facility (str): The current facility (typically empty)
+        Returns:
+            (str, str):
+                (str): The message part
+                (str): The facility
+    """
     tmp = re.match(r"^(\S+?):\s?(.*)", message)
     if tmp is not None:
         facility = tmp[1]
@@ -1619,6 +1660,19 @@ def split_colon_facility(message: str, facility: str = "") -> Tuple[str, str]:
 
 def split_bracketed_timestamp_severity_facility(message: str,
                                                 **kwargs: Any) -> Tuple[str, LogLevel, str]:
+    """
+    Split a message in "[timestamp severity facility] message" format into message, facility
+
+        Parameters:
+            message (str): The message part of the msg to format
+            **kwargs (dict[str, Any]): Keyword arguments
+                default: The default severity to return if the message coouldn't be split
+        Returns:
+            (str, LogLeve, str):
+                (str): The message part
+                (LogLevel): The extracted LogLevel
+                (str): The facility
+    """
     default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
     severity = default
     facility = ""
@@ -1636,6 +1690,16 @@ def split_bracketed_timestamp_severity_facility(message: str,
 def custom_override_severity(message: Union[str, List],
                              severity: Optional[LogLevel],
                              overrides: Dict) -> Tuple[Union[str, List], LogLevel]:
+    """
+    Override the message severity if the message matches the provided ruleset
+
+        Parameters:
+            message (str|ThemeArray): The string to override severity for
+            severity (LogLevel): The log severity
+            overrides (dict): The override rules
+        Returns:
+            (str|ThemeArray, LogLevel):
+    """
     if not LogparserConfiguration.override_severity:
         return message, severity
 
