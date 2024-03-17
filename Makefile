@@ -5,6 +5,9 @@ python_executables = \
 	cmt-install \
 	cmtinv \
 	cmu
+python_data_coverage = \
+	helptexts.py \
+	pvtypes.py
 python_test_executables = \
 	tests/async_fetch \
 	tests/ansibletests \
@@ -91,10 +94,16 @@ coverage_stats:
 
 coverage: setup_tests
 	@cmd=python3-coverage ;\
-	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
+	printf -- "\n\nRunning python3-coverage to check test coverage on data\n" ;\
+	for test in $(python_data_coverage); do \
+		printf -- "\n\n  Running: $$test\n\n" ;\
+		$$cmd run --branch --append $$test || exit 1 ;\
+	done ;\
+	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
+	for test in $(python_unit_tests); do \
+		printf -- "\n\n  Running: $$test\n\n" ;\
+		$$cmd run --branch --append helptexts.py || exit 1 ;\
+	done ;\
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in $(python_unit_tests); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
