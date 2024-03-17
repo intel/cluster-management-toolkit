@@ -27,8 +27,7 @@ are expected to pass; please do not submit commits that causes them to fail,
 and definitely do not submit commits that modifies or disables tests just to
 get a perfect score.
 
-If the file you're modifying is not listed here you can either implement one
-(using either `tests/iotests` or `tests/logtests` as template) on your own,
+If the file you're modifying is not listed here you can either implement one on your own,
 or ask for help.
 
 | File:                 | Tests:                 | Notes:                               |
@@ -41,9 +40,11 @@ or ask for help.
 | `cmtvalidators.py`    | `tests/validatortests` |                                      |
 | `cmttypes.py`         | `tests/typetests`      |                                      |
 | `curses_helper.py`    | `tests/cursestests`    |                                      |
+| `fieldgetters.py`     | `tests/fgtests`        |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
 | `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |
 | `logparser.py`        | `tests/logtests`       |                                      |
+| `objgetters.py`       | `tests/ogtests`        |                                      |
 | `networkio.py`        | `tests/iotests`        |                                      |
 | `reexecutor.py`       | `tests/fetch_async`    | Cluster setup mandatory              |
 
