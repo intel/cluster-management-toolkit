@@ -1756,7 +1756,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Any):
             msg = raw_msg
         elif parser == "glog":
             msg, severity, facility, remnants, matched = \
-                logparsers.split_glog(raw_msg, raw_severity)
+                logparsers.split_glog(raw_msg, severity=raw_severity)
 
             if not matched:
                 severity = raw_severity
@@ -1764,7 +1764,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Any):
                 msg = raw_msg
         elif "=" in raw_msg and parser == "key_value":
             facility, severity, msg, remnants = \
-                logparsers.key_value(raw_msg, raw_severity, fold_msg=False)
+                logparsers.key_value(raw_msg, severity=raw_severity, fold_msg=False)
         else:
             severity = raw_severity
             msg = raw_msg

@@ -3800,7 +3800,7 @@ class UIProps:
         return self.sortcolumn
 
     def get_sortkeys(self) -> Tuple[str, str]:
-        if self.field_list is None:
+        if self.field_list is None or not self.field_list:
             # We do not really care about what the sortkeys are; we do not have a list to sort
             # but if we return valid strings we can at least pacify the type checker
             return "", ""
