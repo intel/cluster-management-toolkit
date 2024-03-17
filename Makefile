@@ -15,6 +15,7 @@ python_test_executables = \
 	tests/cursestests \
 	tests/dump_cluster \
 	tests/dump_logs \
+	tests/fgtests \
 	tests/fmttests \
 	tests/iotests \
 	tests/khtests \
@@ -30,6 +31,7 @@ python_unit_tests = \
 	tests/atptests \
 	tests/cmtlibtests \
 	tests/cursestests \
+	tests/fgtests \
 	tests/fmttests \
 	tests/iotests \
 	tests/khtests \
@@ -50,6 +52,7 @@ test_lib_symlinks = \
 	commandparser.py \
 	curses_helper.py \
 	datagetters.py \
+	fieldgetters.py \
 	formatters.py \
 	generators.py \
 	helptexts.py \
