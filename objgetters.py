@@ -12,16 +12,6 @@ for cases where the obj provided from the list view is not sufficient
 from pathlib import Path, PurePath
 import sys
 from typing import Callable, Dict, List
-# ujson is much faster than json,
-# but it might not be available
-try:
-    import ujson as json
-    # The exception raised by ujson when parsing fails is different
-    # from what json raises
-    DecodeException = ValueError
-except ModuleNotFoundError:  # pragma: no cover
-    import json  # type: ignore
-    DecodeException = json.decoder.JSONDecodeError  # type: ignore
 
 try:
     from natsort import natsorted
@@ -56,7 +46,7 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
     for result in deep_get(ansible_results, DictPath(hostname), []):
         if deep_get(result, DictPath("task"), "") == "Gathering host facts":
             ar = deep_get(result, DictPath("ansible_facts"))
-
+            break
     return ar
 
 
@@ -79,7 +69,7 @@ def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
     return data
 
 
-def objgetter_ansible_log(obj: str) -> Dict:
+def objgetter_ansible_log(obj: FilePath) -> Dict:
     """
     Get an obj from an ansible log entry
 
@@ -88,10 +78,8 @@ def objgetter_ansible_log(obj: str) -> Dict:
         Returns:
             (dict): An ansible log entry
     """
-    tmpobj = {}
-
-    tmpobj = secure_read_yaml(FilePath(f"{obj}/metadata.yaml"))
-    tmpobj["log_path"] = obj
+    tmpobj: Dict = secure_read_yaml(obj.joinpath("metadata.yaml"))
+    tmpobj["log_path"] = str(obj)
 
     # The playbook directory itself may be a symlink.
     # This is expected behaviour when installing from a git repo,
@@ -139,8 +127,7 @@ def objgetter_ansible_log(obj: str) -> Dict:
 
     logs = []
     for path in natsorted(Path(str(obj)).iterdir()):
-        filename = str(PurePath(str(path)).name)
-        if filename == "metadata.yaml":
+        if (filename := str(PurePath(str(path)).name)) == "metadata.yaml":
             continue
         log = secure_read_yaml(FilePath(str(path)))
         logs.append({

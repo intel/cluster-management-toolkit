@@ -20,6 +20,7 @@ python_test_executables = \
 	tests/iotests \
 	tests/khtests \
 	tests/logtests \
+	tests/ogtests \
 	tests/typetests \
 	tests/validate_yaml \
 	tests/validatortests
@@ -36,6 +37,7 @@ python_unit_tests = \
 	tests/iotests \
 	tests/khtests \
 	tests/logtests \
+	tests/ogtests \
 	tests/typetests \
 	tests/validatortests
 test_lib_symlinks = \
@@ -321,6 +323,8 @@ create_test_symlinks:
 setup_tests: create_test_symlinks
 	@(cd tests ;\
 	  test -d testpaths || mkdir testpaths );\
+	(mkdir -p tests/testlogs/2023-05-06_16:02:39.012047_uptime ;\
+	 cp playbooks/uptime.yaml tests/testlogs );\
 	(cd tests/testpaths ;\
 	 test -f cmt.yaml || printf -- "Debug:\n  developer_mode: true" > cmt.yaml ;\
 	 test -d cmt.yaml.d || mkdir cmt.yaml.d ;\

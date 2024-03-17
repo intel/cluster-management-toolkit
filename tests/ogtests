@@ -1,0 +1,625 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from datetime import datetime
+import sys
+from pathlib import PurePath
+from typing import Dict, Tuple
+from unittest import mock
+import yaml
+
+from cmtio import secure_rm
+from cmtio_yaml import secure_write_yaml
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import objgetters
+
+# unit-tests for objgetters.py
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testlogs")
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = objgetters.objgetter_ansible_facts
+
+    if result:
+        # Indata format:
+        # (input, mockdata, expected_result, expected_exception)
+        testdata = (
+            # Should succeed
+            (
+                {
+                    'name': 'myhost',
+                    'ref': 'myhost',
+                    'ips': ['192.168.32.50'],
+                    'ansible_groups': ['all', 'mycluster', 'controlplane'],
+                    'status': 'SUCCESS',
+                    '__deleted': False
+                },
+                (
+                    0,
+                    {
+                        "myhost": [
+                            {
+                                'task': 'Not Gathering host facts',
+                                'start_date': '2024-03-17T15:36:15.125788',
+                                'end_date': '2024-03-17T15:36:19.181940',
+                                'retval': -1,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'status': 'SUCCESS',
+                                'skipped': False,
+                                'stdout_lines': ['<no output>'],
+                                'stderr_lines': [],
+                                'msg_lines': [],
+                                'ansible_facts': {},
+                            },
+                            {
+                                'task': 'Gathering host facts',
+                                'start_date': '2024-03-17T15:36:15.125788',
+                                'end_date': '2024-03-17T15:36:19.181940',
+                                'retval': 0,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'status': 'SUCCESS',
+                                'skipped': False,
+                                'stdout_lines': ['<no output>'],
+                                'stderr_lines': [],
+                                'msg_lines': [],
+                                'ansible_facts': {
+                                    "fake": "data",
+                                    "more": ["fake", "data"],
+                                    "answer": 42,
+                                },
+                            }
+                        ]
+                    },
+                ),
+                {
+                    "fake": "data",
+                    "more": ["fake", "data"],
+                    "answer": 42,
+                },
+                None
+            ),
+            # Has no Gathering host facts
+            (
+                {
+                    'name': 'myhost',
+                    'ref': 'myhost',
+                    'ips': ['192.168.32.50'],
+                    'ansible_groups': ['all', 'mycluster', 'controlplane'],
+                    'status': 'SUCCESS',
+                    '__deleted': False
+                },
+                (
+                    0,
+                    {
+                        "myhost": [
+                            {
+                                'task': 'Not Gathering host facts',
+                                'start_date': '2024-03-17T15:36:15.125788',
+                                'end_date': '2024-03-17T15:36:19.181940',
+                                'retval': -1,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'status': 'SUCCESS',
+                                'skipped': False,
+                                'stdout_lines': ['<no output>'],
+                                'stderr_lines': [],
+                                'msg_lines': [],
+                                'ansible_facts': {},
+                            },
+                            {
+                                'task': 'Not gathering host facts',
+                                'start_date': '2024-03-17T15:36:15.125788',
+                                'end_date': '2024-03-17T15:36:19.181940',
+                                'retval': 0,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'status': 'SUCCESS',
+                                'skipped': False,
+                                'stdout_lines': ['<no output>'],
+                                'stderr_lines': [],
+                                'msg_lines': [],
+                            }
+                        ]
+                    },
+                ),
+                {},
+                None
+            ),
+            # Retval == -1
+            (
+                {
+                    'name': 'myhost',
+                    'ref': 'myhost',
+                    'ips': ['192.168.32.50'],
+                    'ansible_groups': ['all', 'mycluster', 'controlplane'],
+                    'status': 'SUCCESS',
+                    '__deleted': False
+                },
+                (
+                    -1,
+                    {
+                        "myhost": [
+                            {
+                                'task': 'Gathering host facts',
+                                'start_date': '2024-03-17T15:36:15.125788',
+                                'end_date': '2024-03-17T15:36:19.181940',
+                                'retval': -1,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'status': 'SUCCESS',
+                                'skipped': False,
+                                'stdout_lines': ['<no output>'],
+                                'stderr_lines': [],
+                                'msg_lines': [],
+                                'ansible_facts': {},
+                            }
+                        ]
+                    },
+                ),
+                {},
+                None
+            ),
+        )
+
+        for obj, mockdata, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("objgetters.ansible_run_playbook_on_selection",
+                                return_value=mockdata):
+                    tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              "      mock data:\n" \
+                              f"{yaml_dump(mockdata, base_indent = 17)}\n" \
+                              "         result:\n" \
+                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              "       expected:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+            except Exception as e:
+                raise
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"            obj: {obj}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            obj: {obj}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = objgetters.objgetter_journalctl_log
+
+    if result:
+        # Indata format:
+        # (journalctl_logs, expected_result, expected_exception)
+        testdata = (
+            (
+                [
+                    {
+                        "name": "kernel",
+                        "host": "myhost",
+                        "created_at": datetime(2024, 3, 17, 2, 23, 32, 342062),
+                    },
+                    {
+                        "PRIORITY": "6",
+                        "__REALTIME_TIMESTAMP": "1710325949395873",
+                        "_HOSTNAME": "myhost",
+                        "__MONOTONIC_TIMESTAMP": "5890758",
+                        "_SOURCE_MONOTONIC_TIMESTAMP": "0",
+                        "__SEQNUM": "2048557",
+                        "_MACHINE_ID": "27a06f4aa8e14deba9c69a419b1c86f2",
+                        "_BOOT_ID": "4ef1e08d955141b9aba23b87bb2ed66b",
+                        "SYSLOG_IDENTIFIER": "kernel",
+                        "MESSAGE": "x86/split lock detection: #AC: crashing the kernel "
+                        "on kernel split_locks and warning on user-space split_locks",
+                        "_RUNTIME_SCOPE": "system",
+                        "__SEQNUM_ID": "9e126b5fe53445ee9e46dc307e3d90d6",
+                        "SYSLOG_FACILITY": "0",
+                        "_TRANSPORT": "kernel",
+                        "__CURSOR": "s=9e126b5fe53445ee9e46dc307e3d90d6;i=1f422d;"
+                        "b=4ef1e08d955141b9aba23b87bb2ed66b;m=59e2c6;t=613884aa9f3a1;"
+                        "x=17a985cf4e1247e5"
+                    }
+                ],
+                {
+                    "name": "kernel",
+                    "host": "myhost",
+                    "created_at": datetime(2024, 3, 17, 2, 23, 32, 342062),
+                    "obj": [
+                        {
+                            "name": "kernel",
+                            "host": "myhost",
+                            "created_at": datetime(2024, 3, 17, 2, 23, 32, 342062),
+                        },
+                        {
+                            "PRIORITY": "6",
+                            "__REALTIME_TIMESTAMP": "1710325949395873",
+                            "_HOSTNAME": "myhost",
+                            "__MONOTONIC_TIMESTAMP": "5890758",
+                            "_SOURCE_MONOTONIC_TIMESTAMP": "0",
+                            "__SEQNUM": "2048557",
+                            "_MACHINE_ID": "27a06f4aa8e14deba9c69a419b1c86f2",
+                            "_BOOT_ID": "4ef1e08d955141b9aba23b87bb2ed66b",
+                            "SYSLOG_IDENTIFIER": "kernel",
+                            "MESSAGE": "x86/split lock detection: #AC: crashing the kernel on "
+                            "kernel split_locks and warning on user-space split_locks",
+                            "_RUNTIME_SCOPE": "system",
+                            "__SEQNUM_ID": "9e126b5fe53445ee9e46dc307e3d90d6",
+                            "SYSLOG_FACILITY": "0",
+                            "_TRANSPORT": "kernel",
+                            "__CURSOR": "s=9e126b5fe53445ee9e46dc307e3d90d6;i=1f422d;"
+                            "b=4ef1e08d955141b9aba23b87bb2ed66b;m=59e2c6;"
+                            "t=613884aa9f3a1;x=17a985cf4e1247e5"
+                        }
+                    ],
+                },
+                None
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              "         result:\n" \
+                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              "       expected:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"            obj: {obj}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            obj: {obj}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = objgetters.objgetter_ansible_log
+
+    if result:
+        # Indata format:
+        # (logpath, metadata, logfile, mock_check_path, expected_result, expected_exception)
+        testdata = (
+            # Should succeed
+            (
+                TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime"),
+                {
+                    "playbook_path": str(TEST_DIR.joinpath("uptime.yaml")),
+                    "created_at": datetime(2023, 5, 6, 16, 2, 39, 12047),
+                },
+                {
+                    'playbook': 'uptime',
+                    "playbook_file": str(TEST_DIR.joinpath("uptime.yaml")),
+                    'task': 'Checking uptime',
+                    'host': 'myhost',
+                    'start_date': '2023-05-06T13:02:39.327646',
+                    'end_date': '2023-05-06T13:02:39.797642',
+                    'retval': 0,
+                    'no_hosts_matched': False,
+                    'unreachable': False,
+                    'skipped': False,
+                    'status': 'SUCCESS',
+                    'stdout_lines': [
+                        ' 16:02:39 up 11 days, 16:17,  3 users,  load average: 1.09, 1.07, 1.09'
+                    ],
+                },
+                None,
+                {
+                    "playbook_path": str(TEST_DIR.joinpath("uptime.yaml")),
+                    'created_at': datetime(2023, 5, 6, 16, 2, 39, 12047),
+                    'log_path': str(TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime")),
+                    'name': None,
+                    'playbook_types': ['<any>'],
+                    'category': 'Uncategorized',
+                    'logs': [
+                        {
+                            'index': '01',
+                            'log': {
+                                'playbook': 'uptime',
+                                "playbook_file": str(TEST_DIR.joinpath("uptime.yaml")),
+                                'task': 'Checking uptime',
+                                'host': 'myhost',
+                                'start_date': '2023-05-06T13:02:39.327646',
+                                'end_date': '2023-05-06T13:02:39.797642',
+                                'retval': 0,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'skipped': False,
+                                'status': 'SUCCESS',
+                                'stdout_lines': [
+                                    ' 16:02:39 up 11 days, 16:17,  3 users,  '
+                                    'load average: 1.09, 1.07, 1.09'
+                                ],
+                            },
+                        },
+                    ],
+                },
+                None,
+            ),
+            # Should succeed but fail to find the playbook
+            (
+                TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime"),
+                {
+                    "playbook_path": str(TEST_DIR.joinpath("nonexisting.yaml")),
+                    "created_at": datetime(2023, 5, 6, 16, 2, 39, 12047),
+                },
+                {
+                    'playbook': 'uptime',
+                    "playbook_path": str(TEST_DIR.joinpath("nonexisting.yaml")),
+                    'task': 'Checking uptime',
+                    'host': 'myhost',
+                    'start_date': '2023-05-06T13:02:39.327646',
+                    'end_date': '2023-05-06T13:02:39.797642',
+                    'retval': 0,
+                    'no_hosts_matched': False,
+                    'unreachable': False,
+                    'skipped': False,
+                    'status': 'SUCCESS',
+                    'stdout_lines': [
+                        ' 16:02:39 up 11 days, 16:17,  3 users,  load average: 1.09, 1.07, 1.09'
+                    ],
+                },
+                None,
+                {
+                    "playbook_path": str(TEST_DIR.joinpath("nonexisting.yaml")),
+                    'created_at': datetime(2023, 5, 6, 16, 2, 39, 12047),
+                    'log_path': str(TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime")),
+                    'name': 'File not found',
+                    'playbook_types': ['Unavailable'],
+                    'category': 'Unavailable',
+                    'logs': [
+                        {
+                            'index': '01',
+                            'log': {
+                                'playbook': 'uptime',
+                                "playbook_path": str(TEST_DIR.joinpath("nonexisting.yaml")),
+                                'task': 'Checking uptime',
+                                'host': 'myhost',
+                                'start_date': '2023-05-06T13:02:39.327646',
+                                'end_date': '2023-05-06T13:02:39.797642',
+                                'retval': 0,
+                                'no_hosts_matched': False,
+                                'unreachable': False,
+                                'skipped': False,
+                                'status': 'SUCCESS',
+                                'stdout_lines': [
+                                    ' 16:02:39 up 11 days, 16:17,  3 users,  '
+                                    'load average: 1.09, 1.07, 1.09'
+                                ],
+                            },
+                        },
+                    ],
+                },
+                None,
+            ),
+            # Should fail
+            (
+                TEST_DIR.joinpath("2023-05-06_16:02:39.012047_uptime"),
+                {
+                    "playbook_path": str(TEST_DIR.joinpath("uptime.yaml")),
+                    "created_at": datetime(2023, 5, 6, 16, 2, 39, 12047),
+                },
+                {
+                    'playbook': 'uptime',
+                    "playbook_file": str(TEST_DIR.joinpath("uptime.yaml")),
+                    'task': 'Checking uptime',
+                    'host': 'myhost',
+                    'start_date': '2023-05-06T13:02:39.327646',
+                    'end_date': '2023-05-06T13:02:39.797642',
+                    'retval': 0,
+                    'no_hosts_matched': False,
+                    'unreachable': False,
+                    'skipped': False,
+                    'status': 'SUCCESS',
+                    'stdout_lines': [
+                        ' 16:02:39 up 11 days, 16:17,  3 users,  load average: 1.09, 1.07, 1.09'
+                    ],
+                },
+                [SecurityStatus.PERMISSIONS],
+                None,
+                FilePathAuditError,
+            ),
+        )
+
+        for obj, metadata, logfile, mock_check_path, \
+                expected_result, expected_exception in testdata:
+            secure_rm(obj.joinpath("metadata.yaml"), metadata)
+            secure_rm(obj.joinpath("01-myhost_Checking_uptime.yaml"), metadata)
+            secure_write_yaml(obj.joinpath("metadata.yaml"), metadata)
+            secure_write_yaml(obj.joinpath("01-myhost_Checking_uptime.yaml"), logfile)
+            try:
+                if mock_check_path:
+                    with mock.patch("objgetters.check_path", return_value=mock_check_path):
+                        tmp = fun(obj)
+                else:
+                    tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            obj: {obj}\n" \
+                              f"       metadata:\n" \
+                              f"{yaml_dump(metadata, base_indent = 17)}\n" \
+                              f"        logfile:\n" \
+                              f"{yaml_dump(logfile, base_indent = 17)}\n" \
+                              "         result:\n" \
+                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              "       expected:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"            obj: {obj}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            obj: {obj}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("objgetter_ansible_facts()",): {
+        "callable": test_objgetter_ansible_facts,
+        "result": None,
+    },
+    ("objgetter_journalctl_log()",): {
+        "callable": test_objgetter_journalctl_log,
+        "result": None,
+    },
+    ("objgetter_ansible_log()",): {
+        "callable": test_objgetter_ansible_log,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    global tests
+
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()
