@@ -14,6 +14,8 @@ and pre-upgrade checks to run before upgrading a system to a newer version.
 This module requires init_ansithemeprint() to have been executed first
 """
 
+# pylint: disable=too-many-lines
+
 import errno
 import os
 from pathlib import Path
@@ -45,7 +47,6 @@ import about
 # .ssh/
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether or not strict host key checking has been disabled in cmtconfig
@@ -101,7 +102,6 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, in
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_sudo_configuration(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
@@ -198,7 +198,6 @@ def check_sudo_configuration(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_ansible_dir_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether .ansible is owned and accessible by the user
@@ -294,7 +293,6 @@ def check_ansible_dir_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, i
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
@@ -375,7 +373,6 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_known_hosts_hashing(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether ssh known_hosts hashing is enabled
@@ -436,7 +433,6 @@ def check_known_hosts_hashing(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_insecure_kube_config_options(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether .kube/config has insecure options
@@ -504,7 +500,7 @@ def check_insecure_kube_config_options(**kwargs: Any) -> Tuple[bool, int, int, i
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
+# pylint: disable-next=too-many-statements
 def check_client_server_version_match(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether the versions of the various Kubernetes match properly
@@ -668,7 +664,7 @@ def check_client_server_version_match(**kwargs: Any) -> Tuple[bool, int, int, in
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
+# pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
 def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether the versions of kubelet and kube-proxy are acceptable
@@ -1049,7 +1045,7 @@ def get_pod_set(pods: List[Dict],
     return (any_of_matches, all_of_matches)
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def check_running_pods(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks what pods are running and their status
@@ -1450,22 +1446,23 @@ recommended_file_permissions = [
 ]
 
 
-# pylint: disable-next=too-many-arguments
-def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user: str,
-                        usergroup: str, critical: int, error: int,
-                        warning: int, note: int) -> Tuple[bool, bool, int, int, int, int]:
+# pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
+def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
+                        **kwargs: Any) -> Tuple[bool, bool, int, int, int, int]:
     """
     Check permissions for a path
         Parameters:
-            recommended_permissions (list[dict]): A dict with the path to check, the recommended
-                                                  permissions, severity, justification, etc.
+            recommended_permissions ([dict]): A list of dicts with the path to check,
+                                              the recommended permissions,
+                                              severity, justification, etc.
             pathtype (str): The type of the path
-            user (str): The user to check against
-            usergroup (str): The usergroup to check against
-            critical (int): The current count of critical severity security issues
-            error (int): The current count of error severity security issues
-            warning (int): The current count of warning severity security issues
-            note (int): The current count of note severity security issues
+            **kwargs (dict[str, Any]): Keyword arguments
+                user (str): Username of the executing user
+                usergroup (str): The usergroup to check against
+                critical (int): The current count of critical severity security issues
+                error (int): The current count of error severity security issues
+                warning (int): The current count of warning severity security issues
+                note (int): The current count of note severity security issues
         Returns:
             (issue, critical, error, warning, note):
                 issue (bool): Found a security issue
@@ -1481,8 +1478,18 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str, user
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
+    user: str = deep_get(kwargs, DictPath("user"))
+    usergroup: str = deep_get(kwargs, DictPath("usergroup"))
+    critical: int = deep_get(kwargs, DictPath("critical"), 0)
+    error: int = deep_get(kwargs, DictPath("error"), 0)
+    warning: int = deep_get(kwargs, DictPath("warning"), 0)
+    note: int = deep_get(kwargs, DictPath("note"), 0)
+
     issue = False
     abort = False
+
+    if not user or not usergroup:
+        raise ProgrammingError("__check_permissions() called without user and/or usergroup")
 
     for permissions in recommended_permissions:
         path = deep_get(permissions, DictPath("path"))
@@ -1676,10 +1683,12 @@ def check_file_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
     abort, issue, critical, error, warning, note = \
         __check_permissions(recommended_directory_permissions, "directory",
-                            user, usergroup, critical, error, warning, note)
+                            user = user, usergroup = usergroup,
+                            critical = critical, error = error, warning = warning, note = note)
     abort, issue, critical, error, warning, note = \
-        __check_permissions(recommended_file_permissions, "file", user,
-                            usergroup, critical, error, warning, note)
+        __check_permissions(recommended_file_permissions, "file",
+                            user = user, usergroup = usergroup,
+                            critical = critical, error = error, warning = warning, note = note)
 
     if not issue:
         ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])
@@ -1743,7 +1752,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> Tup
     return retval, ansible_results
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
+# pylint: disable-next=too-many-locals
 def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     """
     This checks whether a host is suitable to be used as a control plane

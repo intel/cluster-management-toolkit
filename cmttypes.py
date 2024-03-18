@@ -9,6 +9,8 @@
 This file contains custom types used to define types used by CMT
 """
 
+# pylint: disable=too-many-lines
+
 from datetime import datetime
 from enum import auto, Enum, IntEnum
 from functools import reduce

@@ -34,10 +34,10 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
     Display version information
 
         Parameters:
-            options (list[(str, str)]): Unused
+            options ([(str, str)]): Unused
             args (dict): Unused
         Returns:
-            0
+            (int): 0
     """
     ansithemeprint([ANSIThemeStr(f"{programname} ", "programname"),
                     ANSIThemeStr(f"{programversion}", "version")])
@@ -52,6 +52,7 @@ def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def __sub_usage(command: str) -> int:
     """
     Display usage information for a single command
@@ -59,7 +60,7 @@ def __sub_usage(command: str) -> int:
         Parameters:
             command (str): The command to show help for
         Returns:
-            0
+            (int): 0
     """
     assert commandline is not None
 
@@ -142,16 +143,16 @@ def __sub_usage(command: str) -> int:
     return 0
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     """
     Display usage information
 
         Parameters:
-            options ([(opt, optarg)]): Options to use when executing this action
+            options ([(str, str)]): Options to use when executing this action
             args (dict): Unused
         Returns:
-            0
+            (int): 0
     """
     assert commandline is not None
 
@@ -417,10 +418,10 @@ def __command_usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     Display usage information for a single command
 
         Parameters:
-            options (list[(str, str)]): Unused
+            options ([(str, str)]): Unused
             args (dict): The command to show help for
         Returns:
-            0
+            (int): 0
     """
     assert commandline is not None
 
@@ -529,6 +530,7 @@ COMMANDLINEDEFAULTS = {
 }
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def parse_commandline(__programname: str, __programversion: str,
                       __programdescription: str, __programauthors: str,
                       argv: List[str],
@@ -583,6 +585,7 @@ def parse_commandline(__programname: str, __programversion: str,
     min_args = 0
     max_args = 0
 
+    # pylint: disable-next=too-many-nested-blocks
     while i < len(argv):
         if "\x00" in argv[i]:
             ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
@@ -706,10 +709,10 @@ def parse_commandline(__programname: str, __programversion: str,
                                      DictPath(f"{__key}#options#{option}#validation"), {})
 
                         # validate_argument() will terminate by default if validation fails
-                        _result = cmtvalidators.validate_argument(arg,
-                                                                  [ANSIThemeStr(f"{option}",
-                                                                                "option")],
-                                                                  validator_options)
+                        _result = \
+                            cmtvalidators.validate_argument(arg,
+                                                            [ANSIThemeStr(f"{option}", "option")],
+                                                            validator_options)
                     options.append((option, arg))
         else:
             args.append(argv[i])

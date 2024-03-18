@@ -14,16 +14,13 @@
 # SPDX-License-Identifier: MIT
 
 import builtins
-from datetime import datetime
 import importlib
 import sys
 from typing import Any, Dict, List, Tuple
 from unittest import mock
 import yaml
 
-from cmtio import secure_rm
-from cmtio_yaml import secure_write_yaml
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from cmttypes import deep_get, DictPath
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import listgetters
 
@@ -213,42 +210,48 @@ def test_check_matchlist(verbose: bool = False) -> Tuple[str, bool]:
             # Shouldn't match
             (
                 "/home",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 False,
                 None
             ),
             # Should be a prefix match
             (
                 "/var/snap/firefox/common/foo",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 True,
                 None
             ),
             # Should be a suffix match
             (
                 "/swapfile",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 True,
                 None
             ),
             # Should be an exact match
             (
                 "/boot/efi",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 True,
                 None
             ),
             # Should be an in-match
             (
                 "foo@docker.bar",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 True,
                 None
             ),
             # Shouldn't be a match
             (
                 "/boot/efi1",
-                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                ["/boot/efi", "/var/lib/origin/*", "/run/*",
+                 "/var/snap/*", "*swapfile", "*@docker*"],
                 False,
                 None
             ),
@@ -311,7 +314,9 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                         "nvme0n1": {
                             'virtual': 1,
                             'links': {
-                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D',
+                                        'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1',
+                                        'nvme-eui.0000000001000000e4d25c2aa5874d01'],
                                 'uuids': [],
                                 'labels': [],
                                 'masters': []
@@ -388,7 +393,8 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                             'sectors': '500118192',
                             'sectorsize': '512',
                             'size': '238.47 GB',
-                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'host': 'Non-Volatile memory controller: '
+                                    'Intel Corporation SSD 600P Series (rev 03)',
                             'holders': []
                         }
                     }
@@ -404,7 +410,9 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                         "nvme0n1": {
                             'virtual': 1,
                             'links': {
-                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D',
+                                        'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1',
+                                        'nvme-eui.0000000001000000e4d25c2aa5874d01'],
                                 'uuids': [],
                                 'labels': [],
                                 'masters': []
@@ -481,7 +489,8 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                             'sectors': '500118192',
                             'sectorsize': '512',
                             'size': '238.47 GB',
-                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'host': 'Non-Volatile memory controller: '
+                                    'Intel Corporation SSD 600P Series (rev 03)',
                             'holders': []
                         }
                     }
@@ -504,7 +513,9 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                         "nvme0n1": {
                             'virtual': 1,
                             'links': {
-                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D',
+                                        'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1',
+                                        'nvme-eui.0000000001000000e4d25c2aa5874d01'],
                                 'uuids': [],
                                 'labels': [],
                                 'masters': []
@@ -522,7 +533,8 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                             'sectors': '500118192',
                             'sectorsize': '512',
                             'size': '238.47 GB',
-                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'host': 'Non-Volatile memory controller: '
+                                    'Intel Corporation SSD 600P Series (rev 03)',
                             'holders': []
                         }
                     }
@@ -551,15 +563,17 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  f"           item: {item}\n" \
-                                  f"      matchlist: {matchlist}\n" \
+                                  "            obj:\n" \
+                                  f"{yaml_dump(obj, base_indent = 17)}\n" \
+                                  f"         device: {device}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"           item: {item}\n" \
-                              f"      matchlist: {matchlist}\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"         device: {device}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -590,7 +604,6 @@ tests: Dict = {
 def main() -> int:
     global real_import  # pylint: disable=global-statement
     real_import = builtins.__import__
-
 
     fail = 0
     success = 0
