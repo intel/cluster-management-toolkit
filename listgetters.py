@@ -15,12 +15,12 @@ import copy
 import csv
 from datetime import datetime
 from itertools import zip_longest
-try:  # pragma: no cover
+try:
     import ujson as json
     # The exception raised by ujson when parsing fails is different
     # from what json raises
     DecodeException = ValueError
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
     import json  # type: ignore
     DecodeException = json.decoder.JSONDecodeError  # type: ignore
 from operator import itemgetter
@@ -1201,16 +1201,16 @@ def get_pod_resource_list(obj: Dict[str, Any],
 
             status = "OK"
 
-            if low > 0:
+            if low:
                 status = "Warning"
                 message_array.append(f"{low} Low")
-            if medium > 0:
+            if medium:
                 status = "Warning"
                 message_array.insert(0, f"{medium} Medium")
-            if high > 0:
+            if high:
                 status = "Warning"
                 message_array.insert(0, f"{high} High")
-            if critical > 0:
+            if critical:
                 status = "Warning"
                 message_array.insert(0, f"{critical} Critical")
 
@@ -1252,16 +1252,16 @@ def get_pod_resource_list(obj: Dict[str, Any],
 
             status = "OK"
 
-            if low > 0:
+            if low:
                 status = "Warning"
                 message_array.append(f"{low} Low")
-            if medium > 0:
+            if medium:
                 status = "Warning"
                 message_array.insert(0, f"{medium} Medium")
-            if high > 0:
+            if high:
                 status = "Warning"
                 message_array.insert(0, f"{high} High")
-            if critical > 0:
+            if critical:
                 status = "Warning"
                 message_array.insert(0, f"{critical} Critical")
 
@@ -1304,19 +1304,19 @@ def get_pod_resource_list(obj: Dict[str, Any],
 
             status = "OK"
 
-            if low > 0:
+            if low:
                 status = "Warning"
                 message_array.append(f"{low} Low")
-            if unknown > 0:
+            if unknown:
                 status = "Warning"
                 message_array.insert(0, f"{unknown} Unknown")
-            if medium > 0:
+            if medium:
                 status = "Warning"
                 message_array.insert(0, f"{medium} Medium")
-            if high > 0:
+            if high:
                 status = "Warning"
                 message_array.insert(0, f"{high} High")
-            if critical > 0:
+            if critical:
                 status = "Warning"
                 message_array.insert(0, f"{critical} Critical")
 
@@ -1358,16 +1358,16 @@ def get_pod_resource_list(obj: Dict[str, Any],
 
             status = "OK"
 
-            if low > 0:
+            if low:
                 status = "Warning"
                 message_array.append(f"{low} Low")
-            if medium > 0:
+            if medium:
                 status = "Warning"
                 message_array.insert(0, f"{medium} Medium")
-            if high > 0:
+            if high:
                 status = "Warning"
                 message_array.insert(0, f"{high} High")
-            if critical > 0:
+            if critical:
                 status = "Warning"
                 message_array.insert(0, f"{critical} Critical")
 
@@ -1700,11 +1700,16 @@ def listgetter_ansible_volumes(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], st
         if check_matchlist(mountpoint,
                            deep_get(cmtlib.cmtconfig,
                                     DictPath("__Inventory#mountpoint_skiplist"),
-                                    ["/boot/efi", "/var/lib/origin/*", "/run/*", "*@docker*"])):
+                                    ["/boot/efi",
+                                     "/var/lib/origin/*",
+                                     "/var/snap/*",
+                                     "/run/*",
+                                     "*@docker*"])):
             continue
         if check_matchlist(device,
                            deep_get(cmtlib.cmtconfig,
-                                    DictPath("__Inventory#device_skiplist"), ["loop*"])):
+                                    DictPath("__Inventory#device_skiplist"),
+                                    ["loop*"])):
             continue
 
         model = get_device_model(obj, device)

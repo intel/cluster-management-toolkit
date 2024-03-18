@@ -1,0 +1,666 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+import builtins
+from datetime import datetime
+import importlib
+import sys
+from typing import Any, Dict, List, Tuple
+from unittest import mock
+import yaml
+
+from cmtio import secure_rm
+from cmtio_yaml import secure_write_yaml
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import listgetters
+
+# unit-tests for listgetters.py
+
+
+real_import = None  # pylint: disable=invalid-name
+
+import_override = {}
+
+
+def override_import(name: str, *args: List[Any], **kwargs: Any):
+    retval, exception = import_override.get(name, (None, None))
+    if exception:
+        raise exception
+    if retval:
+        return retval
+    return real_import(name, *args, **kwargs)
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+# pylint: disable-next=unused-argument
+def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+    global import_override  # pylint: disable=global-statement
+
+    message = ""
+    result = True
+    testobj = {"foo": "bar"}
+
+    if result:
+        import_override = {"ujson": (None, ModuleNotFoundError)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(listgetters)
+                import json
+                print(f"{listgetters.DecodeException == json.decoder.JSONDecodeError=}")
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"overriding import ujson failed; exception {e}"
+            result = False
+
+    if result:
+        import_override = {"ujson": (None, None)}
+        try:
+            with mock.patch("builtins.__import__", side_effect=override_import):
+                importlib.reload(listgetters)
+                print(f"{listgetters.DecodeException == ValueError=}")
+        except Exception as e:  # pylint: disable=broad-except
+            message = f"overriding import ujson failed; exception {e}"
+            result = False
+
+    import_override = {}
+    return message, result
+
+
+def test_check_matchlists(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters.check_matchlists
+
+    if result:
+        # Indata format:
+        # (item, exacts, prefixes, suffixes, ins, expected_result, expected_exception)
+        testdata = (
+            # Shouldn't match
+            (
+                "/home",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                (),
+                ("@docker",),
+                False,
+                None
+            ),
+            # Should be a prefix match
+            (
+                "/var/snap/firefox/common/foo",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                (),
+                ("@docker",),
+                True,
+                None
+            ),
+            # Should be a suffix match
+            (
+                "/swapfile",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                ("swapfile"),
+                ("@docker",),
+                True,
+                None
+            ),
+            # Should be an exact match
+            (
+                "/boot/efi",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                (),
+                ("@docker",),
+                True,
+                None
+            ),
+            # Should be an in-match
+            (
+                "foo@docker.bar",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                (),
+                ("@docker",),
+                True,
+                None
+            ),
+            # Shouldn't be a match
+            (
+                "/boot/efi1",
+                ("/boot/efi",),
+                ("/var/lib/origin/", "/run/", "/var/snap"),
+                (),
+                ("@docker",),
+                False,
+                None
+            ),
+        )
+
+        for item, exacts, prefixes, suffixes, ins, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(item, exacts, prefixes, suffixes, ins)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           item: {item}\n" \
+                              f"         exacts: {exacts}\n" \
+                              f"       prefixes: {prefixes}\n" \
+                              f"       suffixes: {suffixes}\n" \
+                              f"            ins: {ins}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           item: {item}\n" \
+                                  f"         exacts: {exacts}\n" \
+                                  f"       prefixes: {prefixes}\n" \
+                                  f"       suffixes: {suffixes}\n" \
+                                  f"            ins: {ins}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           item: {item}\n" \
+                              f"         exacts: {exacts}\n" \
+                              f"       prefixes: {prefixes}\n" \
+                              f"       suffixes: {suffixes}\n" \
+                              f"            ins: {ins}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+# This also tests split_matchlist()
+def test_check_matchlist(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters.check_matchlist
+
+    if result:
+        # Indata format:
+        # (item, matchlist, expected_result, expected_exception)
+        testdata = (
+            # Shouldn't match
+            (
+                "/home",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                False,
+                None
+            ),
+            # Should be a prefix match
+            (
+                "/var/snap/firefox/common/foo",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                True,
+                None
+            ),
+            # Should be a suffix match
+            (
+                "/swapfile",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                True,
+                None
+            ),
+            # Should be an exact match
+            (
+                "/boot/efi",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                True,
+                None
+            ),
+            # Should be an in-match
+            (
+                "foo@docker.bar",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                True,
+                None
+            ),
+            # Shouldn't be a match
+            (
+                "/boot/efi1",
+                ["/boot/efi", "/var/lib/origin/*", "/run/*", "/var/snap/*",  "*swapfile", "*@docker*"],
+                False,
+                None
+            ),
+            # Shouldn't be a match
+            (
+                "/boot/efi1",
+                [],
+                False,
+                None
+            ),
+        )
+
+        for item, matchlist, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(item, matchlist)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           item: {item}\n" \
+                              f"      matchlist: {matchlist}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           item: {item}\n" \
+                                  f"      matchlist: {matchlist}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           item: {item}\n" \
+                              f"      matchlist: {matchlist}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters.get_device_model
+
+    if result:
+        # Indata format:
+        # (obj, device, expected_result, expected_exception)
+        testdata = (
+            (
+                # Very trimmed down Ansible facts
+                {
+                    "ansible_devices": {
+                        "nvme0n1": {
+                            'virtual': 1,
+                            'links': {
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'uuids': [],
+                                'labels': [],
+                                'masters': []
+                            },
+                            'vendor': None,
+                            'model': 'INTEL SSDPEKKW256G7',
+                            'sas_address': None,
+                            'sas_device_handle': None,
+                            'serial': 'BTPY64560TH8256D',
+                            'removable': '0',
+                            'support_discard': '512',
+                            'partitions': {
+                                'nvme0n1p3': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part3',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part3',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part3'
+                                        ],
+                                        'uuids': [
+                                            '16a09d84-e5a6-4aec-99ab-cb4fee204d05'
+                                        ],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '498116608',
+                                    'sectors': '2000896',
+                                    'sectorsize': 512,
+                                    'size': '977.00 MB',
+                                    'uuid': '16a09d84-e5a6-4aec-99ab-cb4fee204d05',
+                                    'holders': []
+                                },
+                                'nvme0n1p1': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part1',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part1',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part1'
+                                        ],
+                                        'uuids': ['DB8D-E250'],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '2048',
+                                    'sectors': '1048576',
+                                    'sectorsize': 512,
+                                    'size': '512.00 MB',
+                                    'uuid': 'DB8D-E250',
+                                    'holders': []
+                                },
+                                'nvme0n1p2': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part2',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part2',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part2'
+                                        ],
+                                        'uuids': [
+                                            '09905813-8a00-4854-b2e9-be3d1fa6b921'
+                                        ],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '1050624',
+                                    'sectors': '497065984',
+                                    'sectorsize': 512,
+                                    'size': '237.02 GB',
+                                    'uuid': '09905813-8a00-4854-b2e9-be3d1fa6b921',
+                                    'holders': []
+                                }
+                            },
+                            'rotational': '0',
+                            'scheduler_mode': 'none',
+                            'sectors': '500118192',
+                            'sectorsize': '512',
+                            'size': '238.47 GB',
+                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'holders': []
+                        }
+                    }
+                },
+                "nvme0n1p2",
+                "INTEL SSDPEKKW256G7",
+                None,
+            ),
+            (
+                # Very trimmed down Ansible facts
+                {
+                    "ansible_devices": {
+                        "nvme0n1": {
+                            'virtual': 1,
+                            'links': {
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'uuids': [],
+                                'labels': [],
+                                'masters': []
+                            },
+                            'vendor': None,
+                            'model': 'INTEL SSDPEKKW256G7',
+                            'sas_address': None,
+                            'sas_device_handle': None,
+                            'serial': 'BTPY64560TH8256D',
+                            'removable': '0',
+                            'support_discard': '512',
+                            'partitions': {
+                                'nvme0n1p3': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part3',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part3',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part3'
+                                        ],
+                                        'uuids': [
+                                            '16a09d84-e5a6-4aec-99ab-cb4fee204d05'
+                                        ],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '498116608',
+                                    'sectors': '2000896',
+                                    'sectorsize': 512,
+                                    'size': '977.00 MB',
+                                    'uuid': '16a09d84-e5a6-4aec-99ab-cb4fee204d05',
+                                    'holders': []
+                                },
+                                'nvme0n1p1': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part1',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part1',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part1'
+                                        ],
+                                        'uuids': ['DB8D-E250'],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '2048',
+                                    'sectors': '1048576',
+                                    'sectorsize': 512,
+                                    'size': '512.00 MB',
+                                    'uuid': 'DB8D-E250',
+                                    'holders': []
+                                },
+                                'nvme0n1p2': {
+                                    'links': {
+                                        'ids': [
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D-part2',
+                                            'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1-part2',
+                                            'nvme-eui.0000000001000000e4d25c2aa5874d01-part2'
+                                        ],
+                                        'uuids': [
+                                            '09905813-8a00-4854-b2e9-be3d1fa6b921'
+                                        ],
+                                        'labels': [],
+                                        'masters': []
+                                    },
+                                    'start': '1050624',
+                                    'sectors': '497065984',
+                                    'sectorsize': 512,
+                                    'size': '237.02 GB',
+                                    'uuid': '09905813-8a00-4854-b2e9-be3d1fa6b921',
+                                    'holders': []
+                                }
+                            },
+                            'rotational': '0',
+                            'scheduler_mode': 'none',
+                            'sectors': '500118192',
+                            'sectorsize': '512',
+                            'size': '238.47 GB',
+                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'holders': []
+                        }
+                    }
+                },
+                "nonexistingdevice",
+                "",
+                None,
+            ),
+            (
+                # Empty facts
+                {},
+                "nonexistingdevice",
+                "",
+                None,
+            ),
+            (
+                # empty partitions
+                {
+                    "ansible_devices": {
+                        "nvme0n1": {
+                            'virtual': 1,
+                            'links': {
+                                'ids': ['nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D', 'nvme-INTEL_SSDPEKKW256G7_BTPY64560TH8256D_1', 'nvme-eui.0000000001000000e4d25c2aa5874d01'],
+                                'uuids': [],
+                                'labels': [],
+                                'masters': []
+                            },
+                            'vendor': None,
+                            'model': 'INTEL SSDPEKKW256G7',
+                            'sas_address': None,
+                            'sas_device_handle': None,
+                            'serial': 'BTPY64560TH8256D',
+                            'removable': '0',
+                            'support_discard': '512',
+                            'partitions': {},
+                            'rotational': '0',
+                            'scheduler_mode': 'none',
+                            'sectors': '500118192',
+                            'sectorsize': '512',
+                            'size': '238.47 GB',
+                            'host': 'Non-Volatile memory controller: Intel Corporation SSD 600P Series (rev 03)',
+                            'holders': []
+                        }
+                    }
+                },
+                "nonexistingdevice",
+                "",
+                None,
+            ),
+        )
+
+        for obj, device, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, device)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"         device: {device}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           item: {item}\n" \
+                                  f"      matchlist: {matchlist}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           item: {item}\n" \
+                              f"      matchlist: {matchlist}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("json_ujson",): {
+        "callable": test_json_ujson,
+        "result": None,
+    },
+    ("check_matchlists()",): {
+        "callable": test_check_matchlists,
+        "result": None,
+    },
+    ("check_matchlist()", "split_matchlist()"): {
+        "callable": test_check_matchlist,
+        "result": None,
+    },
+    ("get_device_model()",): {
+        "callable": test_get_device_model,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    global real_import  # pylint: disable=global-statement
+    real_import = builtins.__import__
+
+
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()

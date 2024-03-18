@@ -43,6 +43,7 @@ or ask for help.
 | `fieldgetters.py`     | `tests/fgtests`        |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
 | `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |
+| `listgetters.py`      | `tests/lgtests`        |                                      |
 | `logparser.py`        | `tests/logtests`       |                                      |
 | `objgetters.py`       | `tests/ogtests`        |                                      |
 | `networkio.py`        | `tests/iotests`        |                                      |

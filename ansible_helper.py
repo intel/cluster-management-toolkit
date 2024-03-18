@@ -428,7 +428,7 @@ def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
     groups = []
 
     for group in inventory_dict:
-        if host in deep_get(inventory_dict, DictPath(f"{group}#hosts")):
+        if host in deep_get(inventory_dict, DictPath(f"{group}#hosts"), {}):
             groups.append(group)
 
     return groups

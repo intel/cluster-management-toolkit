@@ -22,6 +22,7 @@ python_test_executables = \
 	tests/fmttests \
 	tests/iotests \
 	tests/khtests \
+	tests/lgtests \
 	tests/logtests \
 	tests/ogtests \
 	tests/typetests \
@@ -39,6 +40,7 @@ python_unit_tests = \
 	tests/fmttests \
 	tests/iotests \
 	tests/khtests \
+	tests/lgtests \
 	tests/logtests \
 	tests/ogtests \
 	tests/typetests \
@@ -61,12 +63,16 @@ test_lib_symlinks = \
 	formatters.py \
 	generators.py \
 	helptexts.py \
+	infogetters.py \
 	itemgetters.py \
 	kubernetes_helper.py \
 	kubernetes_resources.py \
+	listgetters.py \
+	listgetters_async.py \
 	logparser.py \
 	networkio.py \
 	objgetters.py \
+	pvtypes.py \
 	reexecutor.py
 
 # F841 is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
