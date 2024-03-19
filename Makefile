@@ -13,6 +13,7 @@ python_test_executables = \
 	tests/ansibletests \
 	tests/atptests \
 	tests/check_theme_use \
+	tests/checkstests \
 	tests/cmtlibtests \
 	tests/coverage_stats \
 	tests/cursestests \
@@ -34,6 +35,7 @@ python_unit_tests_cluster = \
 	tests/async_fetch
 python_unit_tests = \
 	tests/atptests \
+	tests/checkstests \
 	tests/cmtlibtests \
 	tests/cursestests \
 	tests/fgtests \

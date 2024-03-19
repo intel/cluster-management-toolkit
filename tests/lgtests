@@ -179,6 +179,7 @@ def test_check_matchlists(verbose: bool = False) -> Tuple[str, bool]:
                                   f"       prefixes: {prefixes}\n" \
                                   f"       suffixes: {suffixes}\n" \
                                   f"            ins: {ins}\n" \
+                                  f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break
@@ -283,6 +284,7 @@ def test_check_matchlist(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           item: {item}\n" \
                                   f"      matchlist: {matchlist}\n" \
+                                  f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break
@@ -566,6 +568,7 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                                   "            obj:\n" \
                                   f"{yaml_dump(obj, base_indent = 17)}\n" \
                                   f"         device: {device}\n" \
+                                  f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break

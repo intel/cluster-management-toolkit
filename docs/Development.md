@@ -34,6 +34,7 @@ or ask for help.
 | --------------------- | ---------------------- | ------------------------------------ |
 | `ansithemeprint.py`   | `tests/atptests`       | Optional manual tests                |
 | `ansible_helper.py`   | `tests/ansibletests`   | Ansible setup required               |
+| `checks.py`           | `tests/checkstests`    |                                      |
 | `cmtio.py`            | `tests/iotests`        |                                      |
 | `cmtio_yaml.py`       | `tests/iotests`        |                                      |
 | `cmtlib.py`           | `tests/cmtlibtests`    | Ansible & cluster setup optional     |

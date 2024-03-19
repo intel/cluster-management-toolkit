@@ -1683,12 +1683,12 @@ def check_file_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
     abort, issue, critical, error, warning, note = \
         __check_permissions(recommended_directory_permissions, "directory",
-                            user = user, usergroup = usergroup,
-                            critical = critical, error = error, warning = warning, note = note)
+                            user=user, usergroup=usergroup,
+                            critical=critical, error=error, warning=warning, note=note)
     abort, issue, critical, error, warning, note = \
         __check_permissions(recommended_file_permissions, "file",
-                            user = user, usergroup = usergroup,
-                            critical = critical, error = error, warning = warning, note = note)
+                            user=user, usergroup=usergroup,
+                            critical=critical, error=error, warning=warning, note=note)
 
     if not issue:
         ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])

@@ -441,7 +441,7 @@ def datagetter_regex_split_to_tuples(obj: Dict[str, Any],
     return list_fields, {}
 
 
-## pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, StatusGroup]:
     """
     Get status for a Pod
