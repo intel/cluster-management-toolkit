@@ -1,0 +1,459 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from pathlib import PurePath
+import sys
+from typing import Dict, Tuple
+from unittest import mock
+import yaml
+
+from cmtio import secure_read_string, secure_write_string
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import cni_data
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
+
+# unit-tests for cni_data.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test___patch_cni_calico(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cni_data.__patch_cni_calico
+
+    if result:
+        # Indata format:
+        # (file_content, pod_network_cidr, mock_check_path,
+        #  expected_retval, expected_result, expected_exception)
+        testdata = (
+            (
+                "cidr: 192.168.0.0/16\n",
+                "10.244.0.0/16",
+                [SecurityStatus.OK],
+                True,
+                "cidr: 10.244.0.0/16\n",
+                None,
+            ),
+            (
+                "cidr: 192.168.0.0/16\n",
+                "10.244.0.0/16",
+                [SecurityStatus.PERMISSIONS],
+                None,
+                None,
+                FilePathAuditError,
+            ),
+        )
+
+        for file_content, pod_network_cidr, mock_check_path, \
+                expected_retval, expected_result, expected_exception in testdata:
+            secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
+            try:
+                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                    tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
+                              pod_network_cidr=pod_network_cidr)
+                if tmp != expected_retval:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected retval: {expected_retval}"
+                    result = False
+                    break
+                tmp = secure_read_string(TEST_DIR.joinpath("cni_data.yaml"))
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           result: {repr(tmp)}\n" \
+                              f" expected content: {repr(expected_result)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"     file content: {repr(file_content)}\n" \
+                                  f" pod_network_cidr: {pod_network_cidr}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f" expected content: {repr(expected_result)}"
+                    result = False
+                    break
+    return message, result
+
+
+def test___patch_cni_canal(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cni_data.__patch_cni_canal
+
+    if result:
+        # Indata format:
+        # (file_content, pod_network_cidr, mock_check_path,
+        #  expected_retval, expected_result, expected_exception)
+        testdata = (
+            (
+                '      "Network": "10.244.0.0/16",\n'
+                '            # - name: CALICO_IPV4POOL_CIDR\n'
+                '            #   value: "192.168.0.0/16"\n',
+                "10.246.0.0/16",
+                [SecurityStatus.OK],
+                True,
+                '      "Network": "10.246.0.0/16",\n'
+                '            - name: CALICO_IPV4POOL_CIDR\n'
+                '              value: "10.246.0.0/16"\n',
+                None,
+            ),
+            (
+                '      "Network": "10.244.0.0/16",\n'
+                '            # - name: CALICO_IPV4POOL_CIDR\n'
+                '            #   value: "192.168.0.0/16"\n',
+                "10.246.0.0/16",
+                [SecurityStatus.PERMISSIONS],
+                None,
+                None,
+                FilePathAuditError,
+            ),
+        )
+
+        for file_content, pod_network_cidr, mock_check_path, \
+                expected_retval, expected_result, expected_exception in testdata:
+            secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
+            try:
+                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                    tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
+                              pod_network_cidr=pod_network_cidr)
+                if tmp != expected_retval:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"              result: {tmp}\n" \
+                              f"     expected retval: {expected_retval}"
+                    result = False
+                    break
+                tmp = secure_read_string(TEST_DIR.joinpath("cni_data.yaml"))
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"              result: {repr(tmp)}\n" \
+                              f"    expected content: {repr(expected_result)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        file content: {repr(file_content)}\n" \
+                                  f"     mock check_path: {mock_check_path}\n" \
+                                  f"    pod_network_cidr: {pod_network_cidr}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           exception: {type(e)}\n" \
+                              f"    expected content: {repr(expected_result)}"
+                    result = False
+                    break
+    return message, result
+
+
+def test___patch_cni_flannel(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cni_data.__patch_cni_flannel
+
+    if result:
+        # Indata format:
+        # (file_content, pod_network_cidr, mock_check_path,
+        #  expected_retval, expected_result, expected_exception)
+        testdata = (
+            (
+                '      "Network": "10.244.0.0/16",\n',
+                "10.246.0.0/16",
+                [SecurityStatus.OK],
+                True,
+                '      "Network": "10.246.0.0/16",\n',
+                None,
+            ),
+            (
+                '      "Network": "10.244.0.0/16",\n',
+                "10.246.0.0/16",
+                [SecurityStatus.PERMISSIONS],
+                None,
+                None,
+                FilePathAuditError,
+            ),
+        )
+
+        for file_content, pod_network_cidr, mock_check_path, \
+                expected_retval, expected_result, expected_exception in testdata:
+            secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
+            try:
+                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                    tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
+                              pod_network_cidr=pod_network_cidr)
+                if tmp != expected_retval:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected retval: {expected_retval}"
+                    result = False
+                    break
+                tmp = secure_read_string(TEST_DIR.joinpath("cni_data.yaml"))
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           result: {repr(tmp)}\n" \
+                              f" expected content: {repr(expected_result)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"     file content: {repr(file_content)}\n" \
+                                  f" pod_network_cidr: {pod_network_cidr}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"     file content: {repr(file_content)}\n" \
+                              f" pod_network_cidr: {pod_network_cidr}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f" expected content: {repr(expected_result)}"
+                    result = False
+                    break
+    return message, result
+
+
+def test___patch_cni_weave(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cni_data.__patch_cni_weave
+
+    if result:
+        # Indata format:
+        # (file_content, pod_network_cidr, mock_check_path,
+        #  mock_execute_command, expected_retval, expected_result, expected_exception)
+        testdata = (
+            (
+                '                - name: IPALLOC_RANGE\n'
+                '                  value: 10.244.0.0/16\n'
+                '                - name: INIT_CONTAINER\n'
+                '                  value: "true"\n',
+                "10.246.0.0/16",
+                [SecurityStatus.OK],
+                True,
+                '                - name: IPALLOC_RANGE\n'
+                '                  value: 10.246.0.0/16\n'
+                '                - name: INIT_CONTAINER\n'
+                '                  value: "true"\n',
+                None,
+            ),
+            (
+                '                - name: IPALLOC_RANGE\n'
+                '                  value: 10.244.0.0/16\n'
+                '                - name: INIT_CONTAINER\n'
+                '                  value: "true"\n',
+                "10.246.0.0/16",
+                [SecurityStatus.PERMISSIONS],
+                None,
+                None,
+                FilePathAuditError,
+            ),
+        )
+
+        for file_content, pod_network_cidr, mock_check_path, \
+                expected_retval, expected_result, expected_exception in testdata:
+            secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
+            try:
+                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                    tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
+                              pod_network_cidr=pod_network_cidr)
+                if tmp != expected_retval:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"              result: {tmp}\n" \
+                              f"     expected retval: {expected_retval}"
+                    result = False
+                    break
+                tmp = secure_read_string(TEST_DIR.joinpath("cni_data.yaml"))
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"              result: {repr(tmp)}\n" \
+                              f"    expected content: {repr(expected_result)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        file content: {repr(file_content)}\n" \
+                                  f"     mock check_path: {mock_check_path}\n" \
+                                  f"    pod_network_cidr: {pod_network_cidr}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        file content: {repr(file_content)}\n" \
+                              f"     mock check_path: {mock_check_path}\n" \
+                              f"    pod_network_cidr: {pod_network_cidr}\n" \
+                              f"           exception: {type(e)}\n" \
+                              f"    expected content: {repr(expected_result)}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("__patch_cni_calico()",): {
+        "callable": test___patch_cni_calico,
+        "result": None,
+    },
+    ("__patch_cni_canal()",): {
+        "callable": test___patch_cni_canal,
+        "result": None,
+    },
+    ("__patch_cni_flannel()",): {
+        "callable": test___patch_cni_flannel,
+        "result": None,
+    },
+    ("__patch_cni_weave()",): {
+        "callable": test___patch_cni_weave,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()

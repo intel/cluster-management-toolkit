@@ -15,6 +15,7 @@ python_test_executables = \
 	tests/check_theme_use \
 	tests/checkstests \
 	tests/cmtlibtests \
+	tests/cnitests \
 	tests/coverage_stats \
 	tests/cursestests \
 	tests/dump_cluster \
@@ -37,6 +38,7 @@ python_unit_tests = \
 	tests/atptests \
 	tests/checkstests \
 	tests/cmtlibtests \
+	tests/cnitests \
 	tests/cursestests \
 	tests/fgtests \
 	tests/fmttests \
@@ -58,6 +60,7 @@ test_lib_symlinks = \
 	cmtpaths.py \
 	cmttypes.py \
 	cmtvalidators.py \
+	cni_data.py \
 	commandparser.py \
 	curses_helper.py \
 	datagetters.py \

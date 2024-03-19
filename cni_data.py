@@ -34,7 +34,8 @@ def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> bool:
 
     # Ideally we should patch this using a round-trip capable YAML parser,
     # such as ruamel
-    sedstr = fr's#cidr: 192.168.0.0/16$#cidr: {pod_network_cidr}#'
+    sedstr = fr's#cidr: 192.168.0.0/16$' \
+             fr'#cidr: {pod_network_cidr}#'
     args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
     return execute_command(args)
 
@@ -59,17 +60,12 @@ def __patch_cni_canal(cni_path: FilePath, pod_network_cidr: str) -> bool:
     # Ideally we should patch this using a round-trip capable YAML parser,
     # such as ruamel
     # This seems like the obvious thing to patch
-    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$#\1Network": "{pod_network_cidr}"\2#'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    if not (retval := execute_command(args)):
-        return retval
-    # According to the canal documentation this should be patched too;
-    # let's patch both just in case
-    sedstr = r's,# - name: CALICO_IPV4POOL_CIDR$,- name: CALICO_IPV4POOL_CIDR,'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
-    if not (retval := execute_command(args)):
-        return retval
-    sedstr = fr's,  value: "192.168.0.0/16"$,#   value: "{pod_network_cidr}",'
+    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16"\(,.*\)$' \
+             fr'#\1Network": "{pod_network_cidr}"\2#;' \
+             r's,# - name: CALICO_IPV4POOL_CIDR$' \
+             r',- name: CALICO_IPV4POOL_CIDR,;' \
+             fr's,#   value: "192.168.0.0/16"$' \
+             fr',  value: "{pod_network_cidr}",'
     args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
     return execute_command(args)
 
@@ -93,7 +89,8 @@ def __patch_cni_flannel(cni_path: FilePath, pod_network_cidr: str) -> bool:
 
     # Ideally we should patch this using a round-trip capable YAML parser,
     # such as ruamel
-    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$#\1Network": "{pod_network_cidr}",#'
+    sedstr = fr's#^\(.*"\)Network": "10.244.0.0/16",$' \
+             fr'#\1Network": "{pod_network_cidr}",#'
     args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
     return execute_command(args)
 
@@ -117,14 +114,10 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
 
     # Ideally we should patch this using a round-trip capable YAML parser,
     # such as ruamel
-    sedstr_remove_existing = r'/^                - name: IPALLOC_RANGE$/,+1d'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr_remove_existing, cni_path]
-    if not (retval := execute_command(args)):
-        return retval
-
-    sedstr_add_new = fr's#^\(.*\)\(- name: INIT_CONTAINER\)$#\1- name: " \
-                     f"IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
-    args = ["/usr/bin/sed", "-i", "-e", sedstr_add_new, cni_path]
+    sedstr = r'/^                - name: IPALLOC_RANGE$/,+1d;' \
+             fr's#^\(.*\)\(- name: INIT_CONTAINER\)$' \
+             fr'#\1- name: IPALLOC_RANGE\n\1  value: {pod_network_cidr}\n\1\2#'
+    args = ["/usr/bin/sed", "-i", "-e", sedstr, cni_path]
     return execute_command(args)
 
 
