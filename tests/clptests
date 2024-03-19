@@ -13,6 +13,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+import errno
 from pathlib import PurePath
 import sys
 from typing import Dict, List, Tuple
@@ -39,7 +40,83 @@ def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 
 
 def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
-    return ("callback", arg_count)
+    return ("callback", len(args))
+
+
+def returner(retval):
+    return retval
+
+def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = commandparser.__sub_usage
+
+    if result:
+        # Indata format:
+        # (command, commandline, mock_exit, expected_result,
+        #  expected_exception, expected_exception_msg)
+        testdata = (
+            (
+                "foobar",
+                {},
+                "errno.EINVAL",
+                None,
+                Exception,
+                "errno.EINVAL",
+            ),
+            (
+                "hello",
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "callback": test_callback,
+                    },
+                },
+                "errno.ENOENT",
+                None,
+                Exception,
+                "errno.ENOENT",
+            ),
+        )
+
+        for command, commandline, mock_exit, \
+                expected_result, expected_exception, expected_exception_msg in testdata:
+            try:
+                with mock.patch("sys.exit", side_effect=Exception(mock_exit)):
+                    commandparser.commandline = commandline
+                    tmp = fun(command)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+                callback, options, args = tmp
+                tmp = callback(options, args)
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
 
 
 def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
@@ -127,6 +204,183 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                     ['foo'],
                 ),
                 None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help", "hello"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "values": [
+                            ANSIThemeStr("foo", "argument"),
+                            ANSIThemeStr("|", "separator"),
+                            ANSIThemeStr("bar", "argument"),
+                            ANSIThemeStr("|", "separator"),
+                            ANSIThemeStr("baz", "argument"),
+                        ],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "options": {
+                            "--no-args": {
+                                "description": [
+                                    ANSIThemeStr("This option does not take arguments",
+                                                 "description")
+                                ],
+                            },
+                            "--takes-an-integer": {
+                                "description": [
+                                    ANSIThemeStr("This option takes an integer in the range [2-5]",
+                                                 "description")
+                                ],
+                                "values": [
+                                    ANSIThemeStr("INT", "argument")],
+                                "extended_description": [
+                                    [ANSIThemeStr("Potentially", "description")],
+                                    [ANSIThemeStr("several", "description")],
+                                    [ANSIThemeStr("lines", "description")],
+                                ],
+                                "requires_arg": True,
+                                "validation": {
+                                    "validator": "int",
+                                    "valid_range": (2, 5),
+                                },
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo", "argument"),
+                                    ANSIThemeStr("|", "separator"),
+                                    ANSIThemeStr("bar", "argument"),
+                                    ANSIThemeStr("|", "separator"),
+                                    ANSIThemeStr("baz", "argument"),
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "optional_args": [
+                            {
+                                "name": "foodigitsbar",
+                                "string": [
+                                    ANSIThemeStr("foo[numbers]bar", "argument")],
+                                    "validation": {
+                                        "validator": "regex",
+                                        "regex": r"^foo\d+bar$",
+                                    },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                    "extended_description": [
+                        [ANSIThemeStr("Extended description", "description")],
+                    ],
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    ['hello'],
+                ),
+                None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help", "--format", "markdown",],
+                {
+                    "spacer": {
+                        "description": [
+                        ANSIThemeStr("", "description")],
+                    },
+                    "__Global": {
+                        "description": [
+                        ANSIThemeStr("", "description")],
+                    },
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('--format', 'markdown'), ('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
             ),
             (
                 "clptests",
@@ -156,6 +410,38 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                     [('__commandname', 'help')],
                     [],
                 ),
+                None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help", "--format", "markdown", "version"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('--format', 'markdown'), ('__commandname', 'help')],
+                    ['version'],
+                ),
+                None,
                 None,
             ),
             (
@@ -187,15 +473,57 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                     [],
                 ),
                 None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [
+                            ANSIThemeStr("", "")],
+                        "options": {
+                            "--happiness": {
+                                "description": [
+                                    ANSIThemeStr("Be happier", "description")],
+                            },
+                        },
+                    },
+                },
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "\x00help"],
+                {},
+                None,
+                None,
+                Exception,
+                str(errno.EINVAL),
             ),
         )
 
         for programname, programversion, programdescription, programauthors, \
                 argv, commandline, default_command, \
-                expected_result, expected_exception in testdata:
+                expected_result, expected_exception, expected_exception_msg in testdata:
             try:
-                tmp = fun(programname, programversion, programdescription, programauthors,
-                          argv, commandline, default_command, theme=DEFAULT_THEME_FILE)
+                with mock.patch("sys.exit", side_effect=Exception(str(errno.EINVAL))):
+                    tmp = fun(programname, programversion, programdescription, programauthors,
+                              argv, commandline, default_command, theme=DEFAULT_THEME_FILE)
 
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -203,20 +531,25 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                               f"  expected result: {expected_result}"
                     result = False
                     break
+                callback, options, args = tmp
+                tmp = callback(options, args)
             except Exception as e:
-                raise
                 if expected_exception is not None:
-                    if isinstance(e, expected_exception):
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"        exception: {type(e)}\n" \
-                                  f"         expected: {expected_exception}"
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
                               f"  expected result: {expected_result}"
                     result = False
                     break
@@ -224,6 +557,10 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
 
 
 tests: Dict = {
+    ("__sub_usage()",): {
+        "callable": test___sub_usage,
+        "result": None,
+    },
     ("parse_commandline()",): {
         "callable": test_parse_commandline,
         "result": None,

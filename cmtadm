@@ -3513,7 +3513,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     pad = len("Cluster:")
     match = False
     for cluster_name, context in clusters:
-        if len(args) > 0 and cluster_name not in args[0].split(","):
+        if args and cluster_name not in args[0].split(","):
             continue
         pad = max(len(cluster_name), pad)
         match = True
@@ -5266,7 +5266,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
             cni = args[0]
     else:
         new_cni = cni
-        if len(args) > 0:
+        if args:
             new_cni = args[0]
 
         if new_cni != cni:
@@ -7532,7 +7532,7 @@ def main() -> None:
         ansible_user = getuser()
     ansible_configuration["ansible_user"] = ansible_user
     ansible_password = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))
-    if ansible_password is not None and len(ansible_password) > 0:
+    if ansible_password is not None and ansible_password:
         ansible_configuration["ansible_password"] = ansible_password
     ansible_configuration["disable_strict_host_key_checking"] = \
         deep_get(cmtlib.cmtconfig, DictPath("Nodes#disablestricthostkeychecking"), False)

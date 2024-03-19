@@ -5881,7 +5881,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     extraref=extraref, data=obj)
 
     # For generic information
-    if infopadheight > 0:
+    if infopadheight:
         infopad = uip.init_infopad(height=infopadheight, width=-1, ypos=1, xpos=1,
                                    labels=deep_get(obj, DictPath(labels)),
                                    annotations=deep_get(obj, DictPath(annotations)))
@@ -7171,7 +7171,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                         merged_lines += 1
                         continue
                 else:
-                    if repeat_count > 0 and merge_repeats:
+                    if repeat_count and merge_repeats:
                         timestamps, facilities, severities, messages =\
                             log_add_line(timestamps, facilities, severities, messages,
                                          prev_timestamp, prev_facility, prev_severity,
@@ -7228,7 +7228,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             del progressbar
 
             # If the last message in the log is a repeat we need to add the repeat signature
-            if repeat_count > 0 and merge_repeats:
+            if repeat_count and merge_repeats:
                 timestamps, facilities, severities, messages = \
                     log_add_line(timestamps, facilities, severities, messages, prev_timestamp,
                                  prev_facility, prev_severity,
@@ -7381,7 +7381,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     ThemeStr(f"{uip.loglen} ", ThemeAttr("statusbar", "highlight")),
                     ThemeStr("lines (", ThemeAttr("statusbar", "default")),
                 ]
-                if hidden_msgs > 0:
+                if hidden_msgs:
                     statusarray1 += [
                         ThemeStr(f"{hidden_msgs}", ThemeAttr("statusbar", "highlight")),
                         ThemeStr(" messages hidden)", ThemeAttr("statusbar", "dim")),
@@ -7422,7 +7422,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     ThemeStr(f"{uip.loglen} ", ThemeAttr("statusbar", "highlight")),
                     ThemeStr("lines (", ThemeAttr("statusbar", "default")),
                 ]
-                if hidden_msgs > 0:
+                if hidden_msgs:
                     statusarray1 += [
                         ThemeStr(f"{hidden_msgs}", ThemeAttr("statusbar", "highlight")),
                         ThemeStr(" hidden", ThemeAttr("statusbar", "dim")),

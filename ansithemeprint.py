@@ -334,7 +334,7 @@ def ansithemearray_to_str(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
         else:
             string += theme_string
 
-    if len(string) > 0:
+    if string:
         string = string.replace("\x0033", "\033")
 
     return string

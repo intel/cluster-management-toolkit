@@ -88,16 +88,16 @@ def __sub_usage(command: str) -> int:
                         ANSIThemeStr("“ for more information.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
-    if headerstring is None:
-        ansithemeprint([ANSIThemeStr("Error", "warning"),
-                        ANSIThemeStr(": Could not find help entry for command "
-                                     f"{command}; aborting.", "default")], stderr=True)
-        sys.exit(errno.ENOENT)
-
     values = deep_get(commandinfo, DictPath("values"), [])
     options = deep_get(commandinfo, DictPath("options"), [])
     description = deep_get(commandinfo, DictPath("description"), [])
     extended_description = deep_get(commandinfo, DictPath("extended_description"), [])
+
+    if not description and not extended_description:
+        ansithemeprint([ANSIThemeStr("Error", "warning"),
+                        ANSIThemeStr(": Could not find help entry for command "
+                                     f"{command}; aborting.", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
 
     if options:
         headerstring += [ANSIThemeStr(" [", "separator"),
@@ -634,7 +634,7 @@ def parse_commandline(__programname: str, __programversion: str,
                 __sub_usage(commandname)
                 sys.exit()
 
-            if len(args) > 0:
+            if args:
                 # I came here to have an argument, but this is an option!
                 ansithemeprint([ANSIThemeStr(f"{programname}", "programname"),
                                 ANSIThemeStr(": option “", "default"),

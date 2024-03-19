@@ -1505,13 +1505,13 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
         failed_formatting = "skip"
         unreachable_formatting = "skip"
         no_hosts_matched_formatting = "skip"
-        if count_success > 0:
+        if count_success:
             successful_formatting = "success"
-        if count_fail > 0:
+        if count_fail:
             failed_formatting = "error"
-        if count_unreachable > 0:
+        if count_unreachable:
             unreachable_formatting = "error"
-        if count_no_hosts_match > 0:
+        if count_no_hosts_match:
             no_hosts_matched_formatting = "error"
 
         ansithemeprint([ANSIThemeStr("Summary:", "default")])
