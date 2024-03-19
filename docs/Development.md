@@ -41,6 +41,7 @@ or ask for help.
 | `cmtvalidators.py`    | `tests/validatortests` |                                      |
 | `cmttypes.py`         | `tests/typetests`      |                                      |
 | `cni_data.py`         | `tests/cnitests`       |                                      |
+| `commandparser.py`    | `tests/clptests`       |                                      |
 | `curses_helper.py`    | `tests/cursestests`    |                                      |
 | `fieldgetters.py`     | `tests/fgtests`        |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |

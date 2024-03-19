@@ -1,0 +1,306 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from pathlib import PurePath
+import sys
+from typing import Dict, List, Tuple
+from unittest import mock
+import yaml
+
+from cmtio import secure_read_string, secure_write_string
+from cmtpaths import DEFAULT_THEME_FILE
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import commandparser
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
+
+# unit-tests for commandparser.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+    return ("callback", arg_count)
+
+
+def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = commandparser.parse_commandline
+
+    if result:
+        # Indata format:
+        # (programname, programversion, programdescription, programauthors,
+        #  argv, commandline, default_command, expected_result, expected_exception)
+        testdata = (
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "hello", "--no-args", "--takes-an-integer", 4, "foo"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "options": {
+                            "--no-args": {
+                                "description": [
+                                    ANSIThemeStr("This option does not take arguments",
+                                                 "description")
+                                ],
+                            },
+                            "--takes-an-integer": {
+                                "description": [
+                                    ANSIThemeStr("This option takes an integer in the range [2-5]",
+                                                 "description")
+                                ],
+                                "requires_arg": True,
+                                "validation": {
+                                    "validator": "int",
+                                    "valid_range": (2, 5),
+                                },
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "optional_args": [
+                            {
+                                "name": "foodigitsbar",
+                                "string": [
+                                    ANSIThemeStr("foo[numbers]bar", "argument")],
+                                    "validation": {
+                                        "validator": "regex",
+                                        "regex": r"^foo\d+bar$",
+                                    },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                    "extended_description": [
+                        [ANSIThemeStr("Extended description", "description")],
+                    ],
+                },
+                None,
+                (
+                    test_callback,
+                    [('--no-args', None), ('--takes-an-integer', 4), ('__commandname', 'hello')],
+                    ['foo'],
+                ),
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "version"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__version,
+                    [('__commandname', 'version')],
+                    [],
+                ),
+                None,
+            ),
+        )
+
+        for programname, programversion, programdescription, programauthors, \
+                argv, commandline, default_command, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(programname, programversion, programdescription, programauthors,
+                          argv, commandline, default_command, theme=DEFAULT_THEME_FILE)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                raise
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("parse_commandline()",): {
+        "callable": test_parse_commandline,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()
