@@ -40,6 +40,7 @@ or ask for help.
 | `cmtlib.py`           | `tests/cmtlibtests`    | Ansible & cluster setup optional     |
 | `cmtvalidators.py`    | `tests/validatortests` |                                      |
 | `cmttypes.py`         | `tests/typetests`      |                                      |
+| `cni_data.py`         | `tests/cnitests`       |                                      |
 | `curses_helper.py`    | `tests/cursestests`    |                                      |
 | `fieldgetters.py`     | `tests/fgtests`        |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
