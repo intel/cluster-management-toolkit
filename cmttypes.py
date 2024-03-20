@@ -47,7 +47,7 @@ class FilePath(str):
         if isinstance(paths, (str, FilePath, PurePath)):
             return FilePath(str(PurePath(self.path).joinpath(paths)))
         if isinstance(paths, (list, tuple)):
-            return FilePath(str(PurePath(self.path).joinpath(*paths)))
+            return FilePath(PurePath(self.path).joinpath(*paths))
         raise TypeError(f"Unsupported type: {type(paths)}")
 
 

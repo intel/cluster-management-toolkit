@@ -5033,20 +5033,20 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
     if k8s_distro == "kubeadm":
         setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config",
-                                           "cluster_configuration.yaml.j2")),
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config",
-                                           "init_configuration.yaml.j2")),
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config",
-                                           "kubelet_configuration.yaml.j2")),
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config",
-                                           "kube_proxy_configuration.yaml.j2")),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
+                                          "cluster_configuration.yaml.j2"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
+                                          "init_configuration.yaml.j2"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
+                                          "kubelet_configuration.yaml.j2"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
+                                          "kube_proxy_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         setup_control_plane_tasks = __setup_rke2_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.join(("templates", "etc", "rancher", "rke2",
-                                       "config.yaml.j2")),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher", "rke2",
+                                          "config.yaml.j2"),
         ]
 
     if "--list-tasks" in (tmp[0] for tmp in options):
