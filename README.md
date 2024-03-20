@@ -1,6 +1,7 @@
 # Cluster Management Toolkit for Kubernetes
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8263/badge)](https://www.bestpractices.dev/projects/8263)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/intel/cluster-management-toolkit/badge)](https://securityscorecards.dev/viewer/?uri=github.com/intel/cluster-management-toolkit)
 
 ![CMT Logo](docs/images/cmt_logo.png 'CMT Logo')
 
