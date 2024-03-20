@@ -1,0 +1,310 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+import errno
+from pathlib import PurePath
+import sys
+from typing import Dict, List, Tuple
+from unittest import mock
+import yaml
+
+from cmtpaths import DEFAULT_THEME_FILE
+from cmttypes import deep_get, DictPath, StatusGroup
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import datagetters
+
+# unit-tests for datagetters.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = datagetters.get_container_status
+
+    if result:
+        # Indata format:
+        # (src_statuses, container_name, expected_result, expected_exception)
+        testdata = (
+            (
+                [
+                    {
+                        "lastState": {},
+                        "name": "etcd",
+                        "ready": True,
+                        "restartCount": 185,
+                        "started": True,
+                        "state": {
+                            "running": {
+                                "startedAt": "2024-02-16T09:13:55Z"
+                            }
+                        }
+                    }
+                ],
+                "etcd",
+                ("Running", StatusGroup.OK, 185, ""),
+                None,
+            ),
+            (
+                [
+                    {
+                        "lastState": {
+                            "terminated": {
+                                "exitCode": 0,
+                                "finishedAt": "2024-03-20T15:00:13Z",
+                                "reason": "Completed",
+                                "startedAt": "2024-03-20T15:00:06Z"
+                            }
+                        },
+                        "name": "cilium-agent",
+                        "ready": False,
+                        "restartCount": 18,
+                        "started": False,
+                        "state": {
+                            "waiting": {
+                                "message":
+                                    "back-off 5m0s restarting failed "
+                                    "container=cilium-agent pod=cilium-sp4nd_kube-system"
+                                    "(8aa4bed4-df9e-462c-a64b-fd9164bf831d)",
+                                "reason": "CrashLoopBackOff"
+                            }
+                        }
+                    }
+                ],
+                "cilium-agent",
+                ('CrashLoopBackOff', StatusGroup.NOT_OK, 18,
+                 'back-off 5m0s restarting failed container=cilium-agent '
+                 'pod=cilium-sp4nd_kube-system(8aa4bed4-df9e-462c-a64b-fd9164bf831d)'),
+                None,
+            ),
+            (
+                [
+                    {
+                        "lastState": {
+                            "terminated": {
+                                "containerID":
+                                    "containerd://f2002b1b44a275a5f3c34280f7bf554f29c"
+                                    "10ee36e56c6efc8c567a98ab47cce",
+                                "exitCode": 0,
+                                "finishedAt": "2024-03-20T15:06:45Z",
+                                "reason": "Completed",
+                                "startedAt": "2024-03-20T15:05:45Z"
+                            }
+                        },
+                        "name": "hello-world",
+                        "ready": False,
+                        "restartCount": 18,
+                        "started": False,
+                        "state": {
+                            "terminated": {
+                                "containerID":
+                                    "containerd://2c8c6ea6f35aece7222045e89b1"
+                                    "c7d52b84cc39a2f18cc63e07803912315f54b",
+                                "exitCode": 0,
+                                "finishedAt": "2024-03-20T15:12:55Z",
+                                "reason": "Completed",
+                                "startedAt": "2024-03-20T15:11:55Z"
+                            }
+                        }
+                    }
+                ],
+                "hello-world",
+                ('Completed', StatusGroup.DONE, 18, ''),
+                None,
+            ),
+            (
+                [
+                    {
+                        "image": "ghcr.io/weaveworks/launcher/weave-kube:2.8.1",
+                        "imageID": "",
+                        "lastState": {
+                            "terminated": {
+                                "containerID":
+                                    "containerd://ecd99e803e9a91c4f985ed65cd6480"
+                                    "a8985e99c5899a6b6c9a29993d5985c861",
+                                "exitCode": 0,
+                                "finishedAt": "2023-08-15T14:32:30Z",
+                                "reason": "Completed",
+                                "startedAt": "2023-08-15T14:32:28Z"
+                            }
+                        },
+                        "name": "weave-init",
+                        "ready": False,
+                        "restartCount": 1,
+                        "started": False,
+                        "state": {
+                            "waiting": {
+                                "message":
+                                    "services have not yet been read at least once, "
+                                    "cannot construct envvars",
+                                "reason": "CreateContainerConfigError"
+                            }
+                        }
+                    }
+                ],
+                "weave-init",
+                ('CreateContainerConfigError', StatusGroup.NOT_OK, 1,
+                 'services have not yet been read at least once, cannot construct envvars'),
+                None,
+            ),
+            (
+                [
+                    {
+                        "lastState": {},
+                        "name": "etcd",
+                        "ready": True,
+                        "restartCount": 185,
+                        "started": True,
+                        "state": {
+                            "running": {
+                                "startedAt": "2024-02-16T09:13:55Z"
+                            }
+                        }
+                    }
+                ],
+                "NotInTheList",
+                ("UNKNOWN", StatusGroup.UNKNOWN, 0, ""),
+                None,
+            ),
+            (
+                [],
+                "",
+                ("UNKNOWN", StatusGroup.UNKNOWN, -1, ""),
+                None,
+            )
+        )
+
+        for src_statuses, container_name, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(src_statuses, container_name)
+                reason, status_group, restarts, status_msg, _age = tmp
+                if (reason, status_group, restarts, status_msg) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: ({repr(reason)}, {repr(status_group)}, " \
+                              f"{restarts}, {repr(status_msg)})\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                raise
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("get_container_status()",): {
+        "callable": test_get_container_status,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    init_ansithemeprint(themefile=None)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()

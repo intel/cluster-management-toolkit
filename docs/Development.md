@@ -43,6 +43,7 @@ or ask for help.
 | `cni_data.py`         | `tests/cnitests`       |                                      |
 | `commandparser.py`    | `tests/clptests`       |                                      |
 | `curses_helper.py`    | `tests/cursestests`    |                                      |
+| `datagetters.py`      | `tests/dgtests`        |                                      |
 | `fieldgetters.py`     | `tests/fgtests`        |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
 | `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |

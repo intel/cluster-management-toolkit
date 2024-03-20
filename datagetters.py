@@ -44,7 +44,7 @@ def get_container_status(src_statuses: List[Dict],
     message = ""
     age = -1
 
-    if src_statuses is None:
+    if src_statuses is None or not src_statuses:
         return reason, status_group, -1, message, -1
 
     for container_status in src_statuses:
