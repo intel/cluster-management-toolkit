@@ -161,7 +161,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     has_args: bool = False
 
     output: List[List[ANSIThemeStr]] = []
-    output_format = "default"
+    output_format: str = "default"
 
     for opt, optarg in options:
         if opt == "--format":
@@ -172,6 +172,16 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     commandcount = 0
     globaloptioncount = 0
 
+    # Do we have any arguments?
+    for key, value in commandline.items():
+        required_args_ = deep_get(commandline, DictPath(f"{key}#required_args"), [])
+        optional_args_ = deep_get(commandline, DictPath(f"{key}#optional_args"), [])
+        if (required_args_ or optional_args_
+                or deep_get(commandline, DictPath(f"{key}#max_args"), 0)) and key != "Help":
+            has_args = True
+            break
+
+    # Do we have any options?
     for key, value in commandline.items():
         if key in ("__default", "__*", "extended_description") or key.startswith("spacer"):
             continue
@@ -181,26 +191,26 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
         else:
             commandcount += 1
 
-        if deep_get(commandline, DictPath(f"{key}#options")) is not None:
+        key_options = deep_get(commandline, DictPath(f"{key}#options"))
+        if key_options is not None and key not in ("Help", "Help2"):
             has_options = True
 
-        if deep_get(commandline, DictPath(f"{key}#max_args"), 0):
-            has_args = True
-
-    if commandcount > 3 or not globaloptioncount:
+    # Do we have any commands?
+    if commandcount > 3:
         has_commands = True
-    else:
-        has_options = True
+
+    if not has_commands:
+        commandline.pop("Help", None)
 
     if output_format == "default":
         headerstring = [ANSIThemeStr(f"{programname}", "programname")]
-    elif output_format == "markdown":
+    elif output_format == "markdown":  # pragma: no branch
         headerstring = [ANSIThemeStr(f"# ___{programname}___", "default")]
 
     if has_commands:
         if output_format == "default":
             headerstring += [ANSIThemeStr(" COMMAND", "command")]
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             headerstring += [ANSIThemeStr(" __COMMAND__", "default")]
 
     if has_options:
@@ -209,7 +219,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                              ANSIThemeStr("OPTION", "option"),
                              ANSIThemeStr("]", "separator"),
                              ANSIThemeStr("...", "option")]
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             headerstring += [ANSIThemeStr(" _\\[OPTION\\]_...", "default")]
     if has_args:
         if output_format == "default":
@@ -217,7 +227,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                              ANSIThemeStr("ARGUMENT", "argument"),
                              ANSIThemeStr("]", "separator"),
                              ANSIThemeStr("...", "argument")]
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             headerstring += [ANSIThemeStr(" _\\[ARGUMENT\\]_...", "default")]
 
     output.append(headerstring)
@@ -228,12 +238,12 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     if has_commands:
         if output_format == "default":
             output.append([ANSIThemeStr("Commands:", "description")])
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             output.append([ANSIThemeStr("## Commands:", "description")])
-    else:
+    elif globaloptioncount:
         if output_format == "default":
             output.append([ANSIThemeStr("Global Options:", "description")])
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             output.append([ANSIThemeStr("## Global Options:", "description")])
 
     for key, value in commandline.items():
@@ -249,7 +259,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             if output_format == "default":
                 commands.append(([ANSIThemeStr("Global Options:", "description")],
                                  [ANSIThemeStr("", "default")]))
-            elif output_format == "markdown":
+            elif output_format == "markdown":  # pragma: no branch
                 commands.append(([ANSIThemeStr("### _Global Options:_", "description")],
                                  [ANSIThemeStr("", "default")]))
 
@@ -262,14 +272,14 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             if tmp:
                 tmp.append(ANSIThemeStr(f"{separator}", "separator"))
             tmp.append(ANSIThemeStr(f"{cmd}", "command"))
-        if tmp and output_format == "markdown":
+        if tmp and output_format == "markdown":  # pragma: no branch
             tmp.insert(0, ANSIThemeStr("### ", "command"))
 
         values = deep_get(value, DictPath("values"))
         if values is not None:
             if output_format == "default":
                 tmp.append(ANSIThemeStr(" ", "default"))
-            elif output_format == "markdown":
+            elif output_format == "markdown":  # pragma: no branch
                 tmp.append(ANSIThemeStr(" _", "default"))
             for part in values:
                 tmp.append(part)
@@ -282,7 +292,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             description = deep_get(value, DictPath("description"))
             if output_format == "default":
                 commands.append((tmp, description))
-            elif output_format == "markdown":
+            elif output_format == "markdown":  # pragma: no branch
                 description.insert(0, ANSIThemeStr("#### ", "default"))
                 commands.append((tmp, description))
                 commands.append(([ANSIThemeStr("  ", "default")],
@@ -292,7 +302,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
         if output_format == "default":
             for line in extended_description:
                 commands.append(([ANSIThemeStr("", "default")], line))
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             tmp_extended_description = []
             for i, line in enumerate(extended_description):
                 if i:
@@ -309,24 +319,15 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             if tmp:
                 indent = "  "
             tmp2 = [ANSIThemeStr(f"{indent}", "option")]
-            if isinstance(option, tuple):
-                for _opt in option:
-                    # The first string is the initial indentation
-                    if len(tmp2) > 1:
-                        tmp2.append(ANSIThemeStr("  ", "separator"))
-                    if output_format == "default":
-                        tmp2.append(ANSIThemeStr(f"{_opt}", "option"))
-                    elif output_format == "markdown":
-                        tmp2.append(ANSIThemeStr(f"__{_opt}__", "option"))
-            elif key.startswith("__"):
+            if key.startswith("__"):
                 if output_format == "default":
                     tmp2.append(ANSIThemeStr(f"  {option}", "option"))
-                elif output_format == "markdown":
+                elif output_format == "markdown":  # pragma: no branch
                     tmp2.append(ANSIThemeStr(f"  __{option}__", "option"))
             else:
                 if output_format == "default":
                     tmp2.append(ANSIThemeStr(f"{option}", "option"))
-                elif output_format == "markdown":
+                elif output_format == "markdown":  # pragma: no branch
                     tmp2.append(ANSIThemeStr(f"__{option}__", "option"))
             values = deep_get(value, DictPath(f"options#{option}#values"))
             if values is not None:
@@ -371,7 +372,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
             else:
                 string = themearray_ljust(cmd[0], 29) + cmd[1]
                 output.append(string)
-        elif output_format == "markdown":
+        elif output_format == "markdown":  # pragma: no branch
             output.append(cmd[0])
             output.append(cmd[1])
 

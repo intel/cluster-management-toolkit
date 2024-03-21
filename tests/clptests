@@ -43,9 +43,6 @@ def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str,
     return ("callback", len(args))
 
 
-def returner(retval):
-    return retval
-
 def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -129,6 +126,247 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
         # (programname, programversion, programdescription, programauthors,
         #  argv, commandline, default_command, expected_result, expected_exception)
         testdata = (
+            # No args; no options; no commands
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {},
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            # No args; global options; no commands
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [ANSIThemeStr("", "")],
+                        "options": {
+                            "--read-only": {
+                                "description":
+                                    [ANSIThemeStr("disable all commands that modify state", "description")],
+                            },
+                        },
+                    },
+                },
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            # No args; global options; no commands; --format markdown
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help", "--format", "markdown"],
+                {
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [ANSIThemeStr("", "")],
+                        "options": {
+                            "--read-only": {
+                                "description":
+                                    [ANSIThemeStr("disable all commands that modify state", "description")],
+                            },
+                        },
+                    },
+                },
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('--format', 'markdown'), ('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            # No args; global options; command
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "options": {
+                            "--no-args": {
+                                "description": [
+                                    ANSIThemeStr("This option does not take arguments",
+                                                 "description")
+                                ],
+                            },
+                            "--takes-an-integer": {
+                                "description": [
+                                    ANSIThemeStr("This option takes an integer in the range [2-5]",
+                                                 "description")
+                                ],
+                                "requires_arg": True,
+                                "validation": {
+                                    "validator": "int",
+                                    "valid_range": (2, 5),
+                                },
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "optional_args": [
+                            {
+                                "name": "foodigitsbar",
+                                "string": [
+                                    ANSIThemeStr("foo[numbers]bar", "argument")],
+                                    "validation": {
+                                        "validator": "regex",
+                                        "regex": r"^foo\d+bar$",
+                                    },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [ANSIThemeStr("", "")],
+                        "options": {
+                            "--read-only": {
+                                "description":
+                                    [ANSIThemeStr("disable all commands that modify state", "description")],
+                            },
+                        },
+                    },
+                },
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
+            # No args; global options; command; --format markdown
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "help", "--format", "markdown"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "options": {
+                            "--no-args": {
+                                "description": [
+                                    ANSIThemeStr("This option does not take arguments",
+                                                 "description")
+                                ],
+                            },
+                            "--takes-an-integer": {
+                                "description": [
+                                    ANSIThemeStr("This option takes an integer in the range [2-5]",
+                                                 "description")
+                                ],
+                                "requires_arg": True,
+                                "validation": {
+                                    "validator": "int",
+                                    "valid_range": (2, 5),
+                                },
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "optional_args": [
+                            {
+                                "name": "foodigitsbar",
+                                "string": [
+                                    ANSIThemeStr("foo[numbers]bar", "argument")],
+                                    "validation": {
+                                        "validator": "regex",
+                                        "regex": r"^foo\d+bar$",
+                                    },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [ANSIThemeStr("", "")],
+                        "options": {
+                            "--read-only": {
+                                "description":
+                                    [ANSIThemeStr("disable all commands that modify state", "description")],
+                            },
+                        },
+                    },
+                },
+                commandparser.__command_usage,
+                (
+                    commandparser.__command_usage,
+                    [('--format', 'markdown'), ('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+            ),
             (
                 "clptests",
                 "v42",
@@ -238,7 +476,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                                                  "description")
                                 ],
                             },
-                            "--takes-an-integer": {
+                            "--takes-another-integer": {
                                 "description": [
                                     ANSIThemeStr("This option takes an integer in the range [2-5]",
                                                  "description")
@@ -555,6 +793,100 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = commandparser.__find_command
+
+    if result:
+        # Indata format:
+        # (commandline, arg, expected_result, expected_exception)
+        testdata = (
+            # Valid commandline, existing command
+            (
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                "hello",
+                ('hello', test_callback, 'Hello World', 0, 0, [], []),
+                None,
+            ),
+            # Valid commandline, non-existing command
+            (
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                "foo",
+                ('', None, 'Hello World', 0, 0, [], []),
+                None,
+            ),
+            # Empty commandline
+            (
+                {},
+                "foo",
+                ('', None, '', 0, 0, [], []),
+                None,
+            ),
+        )
+
+        for commandline, arg, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(commandline, arg)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) and expected_exception_msg is None:
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: Dict = {
     ("__sub_usage()",): {
         "callable": test___sub_usage,
@@ -562,6 +894,10 @@ tests: Dict = {
     },
     ("parse_commandline()",): {
         "callable": test_parse_commandline,
+        "result": None,
+    },
+    ("__find_command()",): {
+        "callable": test___find_command,
         "result": None,
     },
 }
