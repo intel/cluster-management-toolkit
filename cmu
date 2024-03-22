@@ -3057,11 +3057,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     helptext = generate_helptext(view, "listview", [], [])
     activatedfun = deep_get(views, DictPath(f"{view}#activatedfun"), genericinfoloop)
     on_activation = deep_get(views, DictPath(f"{view}#on_activation"), {})
-    update_delay = deep_get(views, DictPath("{view}#update_delay"), -1)
+    update_delay = deep_get(views, DictPath(f"{view}#update_delay"), -1)
 
-    is_taggable = (deep_get(views, DictPath("{view}#is_taggable"), True)
+    is_taggable = (deep_get(views, DictPath(f"{view}#is_taggable"), True)
                    and deep_get(views, DictPath(f"{view}#actions")) is not None)
-    extra_vars = deep_get(views, DictPath("{view}#extra_vars"), {})
+    extra_vars = deep_get(views, DictPath(f"{view}#extra_vars"), {})
 
     uip.init_window(field_list=field_dict, view=kind, windowheader=windowheader,
                     update_delay=update_delay, sortcolumn=sortcolumn,

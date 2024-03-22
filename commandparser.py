@@ -348,7 +348,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
                 description.append(ANSIThemeStr("  ", "default"))
             commands.append((tmp2, description))
             extended_description = deep_get(value,
-                                            DictPath("options#{option}#extended_description"), [])
+                                            DictPath(f"options#{option}#extended_description"), [])
             for line in extended_description:
                 if indent:
                     commands.append(([ANSIThemeStr("", "default")],
