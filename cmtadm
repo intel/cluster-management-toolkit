@@ -3948,7 +3948,7 @@ def __get_configuration_data(configuration_file: FilePath, configuration_type: s
             (FilePath): The path to a file with the configuration on success
     """
     data = deep_get(configuration, DictPath(f"{configuration_type}#data"))
-    path = deep_get(configuration, DictPath("{configuration_type}#path"))
+    path = deep_get(configuration, DictPath(f"{configuration_type}#path"))
 
     if data is None and path is None:
         return default
