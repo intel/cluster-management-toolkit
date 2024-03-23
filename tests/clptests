@@ -16,7 +16,7 @@
 import errno
 from pathlib import PurePath
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 from unittest import mock
 import yaml
 
@@ -52,7 +52,7 @@ def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (command, commandline, mock_exit, expected_result,
         #  expected_exception, expected_exception_msg)
-        testdata = (
+        testdata: Tuple = (
             (
                 "foobar",
                 {},
@@ -89,8 +89,6 @@ def test___sub_usage(verbose: bool = False) -> Tuple[str, bool]:
                               f"  expected result: {expected_result}"
                     result = False
                     break
-                callback, options, args = tmp
-                tmp = callback(options, args)
             except Exception as e:
                 if expected_exception is not None:
                     if isinstance(e, expected_exception) \
@@ -125,7 +123,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
         # (programname, programversion, programdescription, programauthors,
         #  argv, commandline, default_command,
         #  expected_result, theme, expected_exception, expected_exception_msg)
-        testdata = (
+        testdata: Tuple = (
             # No args; no options; no commands
             (
                 "clptests",
@@ -1069,6 +1067,131 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                 Exception,
                 "22",
             ),
+            # No args; no options; no commands
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "foo"],
+                {
+                    "extended_description": [
+                        [ANSIThemeStr("Extended description", "description")],
+                    ],
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                Exception,
+                "22",
+            ),
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "hello", "--help"],
+                {
+                    "hello": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Hello world",
+                                         "description")],
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                (
+                    commandparser.__command_usage,
+                    [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                Exception,
+                "22",
+            ),
+            # options after arguments
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "hello", "foo", "--happiness"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Salutations to the world", "description")],
+                        "options": {
+                            "--happiness": {
+                                "description": [
+                                    ANSIThemeStr("Be happier", "description")],
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                commandparser.__command_usage,
+                None,
+                None,
+                Exception,
+                "22",
+            ),
+            # invalid option
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "hello", "--anger"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Salutations to the world", "description")],
+                        "options": {
+                            "--happiness": {
+                                "description": [
+                                    ANSIThemeStr("Be happier", "description")],
+                            },
+                        },
+                        "required_args": [
+                            {
+                                "name": "foo_bar_or_baz",
+                                "string": [
+                                    ANSIThemeStr("foo, bar, or baz", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "allowlist",
+                                    "allowlist": ["foo", "bar", "baz"],
+                                },
+                            },
+                        ],
+                        "callback": test_callback,
+                    },
+                },
+                commandparser.__command_usage,
+                None,
+                None,
+                Exception,
+                "22",
+            ),
         )
 
         for programname, programversion, programdescription, programauthors, \
@@ -1119,7 +1242,7 @@ def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (commandline, arg, expected_result, expected_exception)
-        testdata = (
+        testdata: Tuple = (
             # Valid commandline, existing command
             (
                 {
