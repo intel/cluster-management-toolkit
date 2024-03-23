@@ -14,6 +14,7 @@ python_test_executables = \
 	tests/atptests \
 	tests/check_theme_use \
 	tests/checkstests \
+	tests/clptests \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/coverage_stats \
@@ -37,6 +38,7 @@ python_unit_tests_cluster = \
 python_unit_tests = \
 	tests/atptests \
 	tests/checkstests \
+	tests/clptests \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/cursestests \

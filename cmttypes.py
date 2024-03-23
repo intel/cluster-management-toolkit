@@ -44,11 +44,9 @@ class FilePath(str):
             Raises:
                 TypeError: paths was an unsupported type
         """
-        if isinstance(paths, (str, FilePath, PurePath)):
-            return FilePath(str(PurePath(self.path).joinpath(paths)))
-        if isinstance(paths, (list, tuple)):
-            return FilePath(PurePath(self.path).joinpath(*paths))
-        raise TypeError(f"Unsupported type: {type(paths)}")
+        # PurePath will raise TypeError if an element
+        # in the list/tuple isn't a string
+        return FilePath(PurePath(self.path).joinpath(*paths))
 
 
 def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
@@ -933,7 +931,7 @@ def __deep_get_recursive(dictionary: Dict,
     if result is None:
         result = []
 
-    for i, path_fragment in enumerate(path_fragments):
+    for i, path_fragment in enumerate(path_fragments):  # pragma: no branch
         tmp = deep_get(dictionary, DictPath(path_fragment))
         if i + 1 == len(path_fragments):
             if tmp is None:
@@ -942,7 +940,7 @@ def __deep_get_recursive(dictionary: Dict,
 
         if isinstance(tmp, dict):
             return __deep_get_recursive(tmp, path_fragments[i + 1:len(path_fragments)], result)
-        if isinstance(tmp, list):
+        if isinstance(tmp, list):  # pragma: no branch
             result = []
             for tmp2 in tmp:
                 result.append(__deep_get_recursive(tmp2,

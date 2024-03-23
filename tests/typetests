@@ -17,10 +17,13 @@
 
 import copy
 from datetime import datetime, timedelta, date
+from pathlib import Path, PurePath
+import os
 import sys
 from typing import Dict, Tuple
 import yaml
 
+import cmttypes
 from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath
 from cmttypes import FilePath, LogLevel, loglevel_to_name, validate_args
 from cmttypes import UnknownError, ArgumentValidationError, ProgrammingError, FilePathAuditError
@@ -36,6 +39,75 @@ def yaml_dump(data: Dict, base_indent: int = 4) -> str:
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
+
+def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cmttypes.FilePath
+
+    try:
+        basepath = FilePath("/home/testuser")
+    except Exception as e:
+        message = f"{fun.__name__}() did not yield expected result:\n" \
+                  f"        exception: {type(e)}\n" \
+                  f"          message: {str(e)}\n" \
+                  f"  expected result: FilePath('/home/testuser')"
+        result = False
+
+    if result:
+        # Indata format:
+        # (paths, expected_result, expected_exception)
+        testdata = (
+            (".bashrc", os.path.join(f"{os.path.sep}home", "testuser", ".bashrc"), None),
+            (FilePath(".inputrc"), os.path.join(f"{os.path.sep}home", "testuser", ".inputrc"), None),
+            (PurePath(".vimrc"), os.path.join(f"{os.path.sep}home", "testuser", ".vimrc"), None),
+            ([".config", Path("monitors.xml")],
+             os.path.join(f"{os.path.sep}home", "testuser", ".config", "monitors.xml"), None),
+            ((FilePath(".config"), PurePath("user-dirs.dirs")),
+             os.path.join(f"{os.path.sep}home", "testuser", ".config", "user-dirs.dirs"), None),
+            # Not a valid path segment
+            ((42,), None, TypeError),
+        )
+        for paths, expected_result, expected_exception in testdata:
+            try:
+                if isinstance(paths, (list, tuple)):
+                    tmp = basepath.joinpath(*paths)
+                else:
+                    tmp = basepath.joinpath(paths)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}.joinpath() did not yield expected result:\n" \
+                              f"         basepath: {basepath}\n" \
+                              f"            paths: {paths}\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}.joinpath() did not yield expected result:\n" \
+                                  f"         basepath: {basepath}\n" \
+                                  f"            paths: {paths}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}.joinpath() did not yield expected result:\n" \
+                              f"         basepath: {basepath}\n" \
+                              f"            paths: {paths}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 
 def test_deep_get(verbose: bool = False) -> Tuple[str, bool]:
@@ -853,6 +925,10 @@ def test_loglevel_to_name(verbose: bool = False) -> Tuple[str, bool]:
 
 
 tests: Dict = {
+    ("FilePath()", ): {
+        "callable": test_filepath,
+        "result": None,
+    },
     ("deep_get()", ): {
         "callable": test_deep_get,
         "result": None,
