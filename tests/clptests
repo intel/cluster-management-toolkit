@@ -20,9 +20,8 @@ from typing import Dict, List, Tuple
 from unittest import mock
 import yaml
 
-from cmtio import secure_read_string, secure_write_string
 from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
+from cmttypes import deep_get, DictPath, FilePath
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import commandparser
 
@@ -186,8 +185,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                                 "extended_description": [
                                     [ANSIThemeStr("Potentially", "description")],
                                     [ANSIThemeStr("several", "description")],
-                                    [ANSIThemeStr("lines", "description")],
-                                ],
+                                    [ANSIThemeStr("lines", "description")]],
                             },
                         },
                     },
@@ -287,11 +285,12 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                             {
                                 "name": "foodigitsbar",
                                 "string": [
-                                    ANSIThemeStr("foo[numbers]bar", "argument")],
-                                    "validation": {
-                                        "validator": "regex",
-                                        "regex": r"^foo\d+bar$",
-                                    },
+                                    ANSIThemeStr("foo[numbers]bar", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "regex",
+                                    "regex": r"^foo\d+bar$",
+                                },
                             },
                         ],
                         "callback": test_callback,
@@ -373,11 +372,12 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                             {
                                 "name": "foodigitsbar",
                                 "string": [
-                                    ANSIThemeStr("foo[numbers]bar", "argument")],
-                                    "validation": {
-                                        "validator": "regex",
-                                        "regex": r"^foo\d+bar$",
-                                    },
+                                    ANSIThemeStr("foo[numbers]bar", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "regex",
+                                    "regex": r"^foo\d+bar$",
+                                },
                             },
                         ],
                         "callback": test_callback,
@@ -458,11 +458,12 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                             {
                                 "name": "foodigitsbar",
                                 "string": [
-                                    ANSIThemeStr("foo[numbers]bar", "argument")],
-                                    "validation": {
-                                        "validator": "regex",
-                                        "regex": r"^foo\d+bar$",
-                                    },
+                                    ANSIThemeStr("foo[numbers]bar", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "regex",
+                                    "regex": r"^foo\d+bar$",
+                                },
                             },
                         ],
                         "callback": test_callback,
@@ -698,11 +699,12 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                             {
                                 "name": "foodigitsbar",
                                 "string": [
-                                    ANSIThemeStr("foo[numbers]bar", "argument")],
-                                    "validation": {
-                                        "validator": "regex",
-                                        "regex": r"^foo\d+bar$",
-                                    },
+                                    ANSIThemeStr("foo[numbers]bar", "argument")
+                                ],
+                                "validation": {
+                                    "validator": "regex",
+                                    "regex": r"^foo\d+bar$",
+                                },
                             },
                         ],
                         "callback": test_callback,
@@ -774,11 +776,11 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                 {
                     "spacer": {
                         "description": [
-                        ANSIThemeStr("", "description")],
+                            ANSIThemeStr("", "description")],
                     },
                     "__Global": {
                         "description": [
-                        ANSIThemeStr("", "description")],
+                            ANSIThemeStr("", "description")],
                     },
                     "Hello World": {
                         "command": ["hello"],
@@ -1183,7 +1185,7 @@ def test___find_command(verbose: bool = False) -> Tuple[str, bool]:
                     break
             except Exception as e:
                 if expected_exception is not None:
-                    if isinstance(e, expected_exception) and expected_exception_msg is None:
+                    if isinstance(e, expected_exception):
                         pass
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
