@@ -189,6 +189,9 @@ No output.
 
 ### mypy Results for v0.8.0
 
+Commandline: `mypy --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators`.
+Execute with `make mypy-markdown`.
+
 | Source file             | Score                                                   |
 | ----------------------- | ------------------------------------------------------- |
 | cmt                     | Success: no issues found in 1 source file               |
@@ -332,7 +335,7 @@ Ran 483 rules on 816 files: 0 findings.
 
 ### validate_playbooks Results for v0.8.0
 
-Commnandline: `ansible-lint`.
+Commandline: `ansible-lint`.
 Execute with: `make validate_playbooks`.
 
 `Passed: 0 failure(s), 0 warning(s) on 46 files. Last profile that met the validation criteria was 'production'.`
