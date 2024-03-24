@@ -1648,6 +1648,15 @@ def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, Them
 
 def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]],
                         max_len: int) -> Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]:
+    """
+    Given a themearray, truncate it to max_len
+
+        Parameters:
+            themearray (ThemeArray): A themearray
+            max_len (int): The max length to truncate to
+        Returns:
+            (ThemeArray): The truncated themearray
+    """
     output_format = type(themearray)
     truncated_themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]] = []
 
@@ -1964,6 +1973,35 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                  **kwargs: Any) -> Union[Set,
                                          Tuple[int, Union[bool, int, str, None]],
                                          Union[bool, int, str, None]]:
+    """
+    A generic:ish scrollable window widget with support for one or multiple columns,
+    with or without selectable elements.
+
+        Parameters:
+            stdscr (curses.window): The parent window
+            maxy (int): the max y-position of the window widget
+            maxx (int): the max x-position of the window widget
+            y (int): The y-centrepoint of the window widget
+            x (int): The x-centrepoint of the window widget
+            items ([dict]): The data to populate the window widget with
+            **kwargs (dict[str, Any]): Keyword arguments
+                headers ((str, ...)): The headers for the columns
+                title (str): The title of the window
+                preselection (str|set): The pre-selected entry/entries
+                cursor (bool): Show a cursor; True/False?
+                taggable (bool): Should the items be taggable?
+                key_f6 (bool): Should [F6] to toggle categorised list entries be
+                               a keyboard option?
+        Returns:
+            (set|(int, bool|int|str|None), bool|int|str|None):
+                (set): A set of tagged items
+                ---
+                (int, bool|int|str|None):
+                    (int): Confirm value
+                    (bool|int|str|None): Selected entry or None if no selection was made
+                ---
+                (bool|int|str|None): Selected entry or None if no selection was made
+    """
     global ignoreinput  # pylint: disable=global-statement
 
     headers: Tuple[str, ...] = deep_get(kwargs, DictPath("headers"))
@@ -1971,8 +2009,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
     preselection: Union[str, Set[int]] = deep_get(kwargs, DictPath("preselection"), "")
     cursor: bool = deep_get(kwargs, DictPath("cursor"), True)
     taggable: bool = deep_get(kwargs, DictPath("taggable"), False)
-    confirm: bool = deep_get(kwargs, DictPath("confirm"), False)
-    confirm_buttons: List = deep_get(kwargs, DictPath("confirm_buttons"), [])
     key_f6: bool = deep_get(kwargs, DictPath("KEY_F6"), False)
 
     stdscr.refresh()
@@ -1980,9 +2016,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
     padwidth = 2
     listpadheight = len(items)
-
-    if confirm_buttons is None:
-        confirm_buttons = []
 
     if isinstance(items[0], tuple):
         raise ValueError("The text passed to windowwidget() is invalid; "
@@ -2028,20 +2061,11 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
     if headers is not None:
         extra_height += 2
-    if confirm:
-        extra_height += 2
 
     height = min(maxy - 5, listpadheight) + 2 + extra_height
     maxcurypos = min(height - 3 - extra_height, listpadheight - 1)
     maxyoffset = listpadheight - (height - 2 - extra_height)
     width = min(maxx - 5, listpadwidth) + 2
-    button_lengths = 0
-    if confirm:
-        for button in confirm_buttons[1:]:
-            for string, _ in button:
-                button_lengths += len(string)
-        button_lengths += len(confirm_buttons) - 2
-        width = max(button_lengths, width)
 
     xoffset = 0
     maxxoffset = listpadwidth - (width - 2)
@@ -2059,9 +2083,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         listpadypos = ypos + 1
         scrollbarypos = 1
 
-    if confirm:
-        buttonpadypos = ypos + height - 2
-
     win = curses.newwin(height, width, ypos, xpos)
     col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "boxdrawing"))
     win.attrset(col)
@@ -2076,11 +2097,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
     if headers is not None:
         headerpad = curses.newpad(1, listpadwidth + 1)
-        col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
-        headerpad.bkgd(" ", col)
-
-    if confirm:
-        buttonpad = curses.newpad(1, listpadwidth + 1)
         col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
         headerpad.bkgd(" ", col)
 
@@ -2212,17 +2228,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
         listpad.noutrefresh(yoffset, xoffset, listpadypos,
                             xpos + 1, ypos + height - 2, xpos + width - 2)
 
-        if confirm:
-            x = width - button_lengths - 2
-            col, __discard = themeattr_to_curses(ThemeAttr("windowwidget", "header"))
-            buttonpad.bkgd(" ", col)
-            for button in confirm_buttons[1:]:
-                _, x = addthemearray(buttonpad, button, y=0, x=x)
-                x += 1
-            buttonpad.noutrefresh(0, 0, buttonpadypos, xpos + 1, buttonpadypos, xpos + width - 2)
-            window_tee_hline(win, height - 3, 0, width - 1,
-                             ThemeAttr("windowwidget", "boxdrawing"))
-
         win.noutrefresh()
         curses.doupdate()
 
@@ -2241,7 +2246,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             sys.exit(errno.ENOTSUP)
         if c == 27:  # ESCAPE
             selection = ""
-            confirm_press = c
             break
         if c == ord("") or c == ord(""):
             curses.endwin()
@@ -2251,15 +2255,11 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
             selection = -c
             break
         if c in (curses.KEY_ENTER, 10, 13) \
-                and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0 \
-                and not confirm:
+                and items[yoffset + curypos]["lineattrs"] & (WidgetLineAttrs.UNSELECTABLE) == 0:
             if deep_get(items[yoffset + curypos], DictPath("retval")) is None:
                 selection = items[yoffset + curypos]["columns"]
             else:
                 selection = items[yoffset + curypos]["retval"]
-            break
-        if confirm and c in confirm_buttons[0]:
-            confirm_press = c
             break
 
         # While all of these are just navigation
@@ -2268,7 +2268,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                 tagged_items.discard(curypos + yoffset)
             else:
                 tagged_items.add(curypos + yoffset)
-        elif ord("a") <= c <= ord("z") and cursor and not confirm:
+        elif ord("a") <= c <= ord("z") and cursor:
             # Find the next entry starting with the pressed letter;
             # wrap around if the bottom is hit stop if oldycurypos + oldyoffset is hit
             while True:
@@ -2286,7 +2286,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                     curypos = oldcurypos
                     yoffset = oldyoffset
                     break
-        elif ord("A") <= c <= ord("Z") and cursor and not confirm:
+        elif ord("A") <= c <= ord("Z") and cursor:
             # Find the previous entry starting with the pressed letter;
             # wrap around if the top is hit stop if oldycurypos + oldyoffset is hit
             while True:
@@ -2409,9 +2409,6 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 
     if taggable:
         return tagged_items
-
-    if confirm:
-        return (confirm_press, selection)
 
     return selection
 
@@ -2609,6 +2606,10 @@ class UIProps:
             del self.logpad
 
     def reselect_uid(self) -> None:
+        """
+        After the list has been resorted use this to find the correct position again,
+        if possible
+        """
         pos = self.curypos + self.yoffset
         if len(self.sorted_list) > pos:
             try:
@@ -2617,6 +2618,9 @@ class UIProps:
                 self.selected_uid = None
 
     def update_sorted_list(self) -> None:
+        """
+        Resort the list
+        """
         if self.curypos == -1 or self.yoffset == -1:
             self.curypos = 0
             self.yoffset = 0
@@ -2655,6 +2659,14 @@ class UIProps:
                     self.move_cur_with_offset(y - pos)
 
     def update_info(self, info: List[Type]) -> int:
+        """
+        Update the information for the processed list
+
+            Parameters:
+                ([Info]): The new information
+            Returns:
+                (int): The new list of the length
+        """
         self.info = info
         self.listlen = len(self.info)
         self.sort_triggered = True
@@ -2667,6 +2679,15 @@ class UIProps:
                         messages: Optional[List[Union[str, ThemeArray,
                                                       List[Union[ThemeStr,
                                                                  ThemeRef]]]]]) -> None:
+        """
+        Update the information for the parsed container log
+
+            Parameters:
+                timestamps ([datetime]): The timestamps
+                facilities ([str]): The facilities
+                severities ([LogLevel]): The LogLevels
+                messages ([str|ThemeArray]): The log messages
+        """
         self.timestamps = timestamps
         self.facilities = facilities
         self.severities = severities

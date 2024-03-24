@@ -464,6 +464,7 @@ def is_timestamp(message: str) -> bool:
     return False
 
 
+# pylint: disable-next=too-many-statements
 def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetime]:
     """
     Split a message into timestamp and remaining message
@@ -607,7 +608,7 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
     return message
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-locals,too-many-arguments,too-many-branches
 def iptables(message: str,
              remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]], **kwargs: Any) \
         -> Tuple[List[Union[ThemeRef, ThemeStr]], Optional[LogLevel], str,
@@ -695,6 +696,7 @@ def iptables(message: str,
     return new_message, severity, facility, new_remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def http(message: str,
          **kwargs: Any) -> Tuple[Sequence[Union[ThemeRef, ThemeStr]], LogLevel, str]:
     """
@@ -1078,6 +1080,7 @@ def split_glog(message: str, **kwargs: Any) \
     return message, severity, facility, remnants, matched
 
 
+# pylint: disable-next=too-many-locals
 def tab_separated(message: str, **kwargs: Any) \
     -> Tuple[str, Optional[LogLevel], str,
              List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
@@ -1166,6 +1169,7 @@ def __split_severity_facility_style(message: str,
     return message, severity, facility
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def split_json_style(message: str, **kwargs: Any) \
     -> Tuple[Union[str, Sequence[Union[ThemeRef, ThemeStr]]], LogLevel, str,
              List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
@@ -1455,7 +1459,7 @@ def merge_message(message: Union[str, List[Union[ThemeRef, ThemeStr]]], **kwargs
     return message, remnants
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-locals
 def split_json_style_raw(message: str, **kwargs: Any) \
         -> Tuple[str, LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
@@ -1522,6 +1526,7 @@ def split_json_style_raw(message: str, **kwargs: Any) \
     return message, severity, facility, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def json_event(message: str,
                **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]],
                                        LogLevel, str,
@@ -1689,6 +1694,7 @@ def split_bracketed_timestamp_severity_facility(message: str,
     return message, severity, facility
 
 
+# pylint: disable-next=too-many-branches
 def custom_override_severity(message: Union[str, List],
                              severity: Optional[LogLevel],
                              overrides: Dict) -> Tuple[Union[str, List], LogLevel]:
@@ -1754,6 +1760,7 @@ def custom_override_severity(message: Union[str, List],
     return override_message, severity
 
 
+# pylint: disable-next=too-many-branches
 def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
         -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
@@ -1843,6 +1850,7 @@ def expand_event_objectmeta(message: str, severity: LogLevel, **kwargs: Any) \
     return severity, message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
         -> Tuple[LogLevel, str, List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     """
@@ -1999,9 +2007,7 @@ def sysctl(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     return facility, severity, new_message, remnants
 
 
-# Severity: lvl=|level=
-# Timestamps: t=|ts=|time= (all of these are ignored)
-# Facility: subsys|caller|logger|source
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                     List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
@@ -2284,6 +2290,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     return facility, severity, message, remnants
 
 
+# pylint: disable-next=too-many-locals
 def key_value_with_leading_message(message: str,
                                    **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                            List[Tuple[List[Union[ThemeRef,
@@ -2429,6 +2436,7 @@ def bracketed_timestamp_severity(message: str, **kwargs: Any) \
     return facility, severity, message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def directory(message: str,
               **kwargs: Any) -> Tuple[str, Optional[LogLevel],
                                       Union[str, List[Union[ThemeRef, ThemeStr]]],
@@ -2714,6 +2722,7 @@ def python_traceback(message: str, **kwargs: Any) \
     return message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def json_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
@@ -2770,6 +2779,7 @@ def json_line_scanner(message: str,
     return processor, (timestamp, facility, severity, remnants)
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def json_line(message: str,
               **kwargs: Any) -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
                                       List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
@@ -2823,6 +2833,7 @@ def json_line(message: str,
     return message, []
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def yaml_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
@@ -2882,6 +2893,7 @@ def yaml_line_scanner(message: str,
     return processor, (timestamp, facility, severity, remnants)
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def yaml_line(message: str,
               **kwargs: Any) -> Tuple[Union[str, Tuple[str, Optional[Callable], Dict]],
                                       Union[str, List[Tuple[List[Union[ThemeRef, ThemeStr]],
@@ -2935,6 +2947,7 @@ def yaml_line(message: str,
     return message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def diff_line_scanner(message: str,
                       **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                               Tuple[datetime, str, LogLevel,
@@ -2992,7 +3005,7 @@ def diff_line_scanner(message: str,
     return processor, (timestamp, facility, severity, remnants)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=too-many-locals,too-many-branches
 def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                                     List[Tuple[List[Union[ThemeRef, ThemeStr]],
                                                                LogLevel]]]:
@@ -3046,6 +3059,7 @@ def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable
     return message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def ansible_line_scanner(message: str,
                          **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
                                                  Tuple[datetime, str, LogLevel,
@@ -3186,6 +3200,7 @@ def raw_formatter(message: str,
     return message, severity, facility
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
         Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], Optional[LogLevel], str]:
     severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
@@ -3258,6 +3273,7 @@ def custom_splitter(message: str, **kwargs: Any) -> \
     return message, severity, facility
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_parser(message: str, filters: List[Union[str, Tuple]],
                   **kwargs: Any) -> Tuple[str, LogLevel, Union[List[Union[ThemeRef, ThemeStr]],
                                           Tuple[str, Optional[Callable], Dict]],
@@ -3457,6 +3473,7 @@ Parser = namedtuple("Parser", "name show_in_selector match rules")
 parsers = []
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def init_parser_list() -> None:
     """
     Initialise the list of parsers
@@ -3718,7 +3735,7 @@ def logparser_initialised(**kwargs: Any) \
     return timestamp, facility, severity, rmessage, remnants
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def logparser(pod_name: str, container_name: str, image_name: str, message: str, **kwargs: Any) \
         -> Tuple[datetime, str, LogLevel,
                  Union[List[Union[ThemeRef, ThemeStr]], Tuple[str, Optional[Callable], Dict]],

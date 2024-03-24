@@ -13,27 +13,14 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-import errno
-from pathlib import PurePath
 import sys
-from typing import Dict, List, Tuple
-from unittest import mock
-import yaml
+from typing import Dict, Tuple
 
-from cmtpaths import DEFAULT_THEME_FILE
 from cmttypes import deep_get, DictPath, StatusGroup
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import datagetters
 
 # unit-tests for datagetters.py
-
-
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
-    result = ""
-    dump = yaml.dump(data)
-    for line in dump.splitlines():
-        result += f"{' '.ljust(base_indent)}{line}\n"
-    return result
 
 
 def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:

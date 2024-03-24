@@ -82,10 +82,17 @@ test_lib_symlinks = \
 	pvtypes.py \
 	reexecutor.py
 
-# F841 is the warning about unused assignments; flake8 doesn't recognise "_<variable>" to capture unused return values;
+# F841 is the warning about unused assignments.
+# flake8 doesn't recognise "_<variable>" to capture unused return values;
 # pylint does, so we rely on that one to handle it instead.
-# W503 is for line break before binary operator; flake8 warns *both* for breaks before and after. We need to ignore one of those warnings.
+# W503 is for line break before binary operator;
+# flake8 warns *both* for breaks before and after.
+# Hence we we need to ignore one of those warnings.
 FLAKE8_IGNORE := F841,W503
+
+# W0511 is TODO/XXX/FIXME; we know that these are things that we should fix eventually.
+# Hence we do not need warnings about them.
+PYLINT_IGNORE := W0511
 
 code-checks-weak: flake8
 code-checks: flake8 mypy
@@ -224,7 +231,31 @@ pylint:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
-	$$cmd --rcfile .pylint $(python_executables) *.py || /bin/true
+	for file in $(python_executables) *.py; do \
+		case $$file in \
+		'cmtlog.py'|'noxfile.py') \
+			continue;; \
+		esac ;\
+		printf -- "File: $$file\n" ;\
+		$$cmd --disable $(PYLINT_IGNORE) $$file ;\
+	done
+
+pylint-markdown:
+	@cmd=pylint ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning pylint to generate Pylint Markdown output\n\n" ;\
+	for file in $(python_executables) *.py; do \
+		case $$file in \
+		'cmtlog.py'|'noxfile.py') \
+			continue;; \
+		esac ;\
+		result=$$($$cmd --disable $(PYLINT_IGNORE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
+		row="$$file | $$result\n" ;\
+		printf -- "$$row" ;\
+	done
 
 pylint-tests:
 	@cmd=pylint ;\

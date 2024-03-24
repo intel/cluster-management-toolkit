@@ -267,3 +267,17 @@ def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]
         new_name = "<unset>"
 
     return new_name, iips, eips
+
+
+# pylint: disable-next=unused-argument
+def get_themearrays(obj: Dict, **kwargs: Any) -> Dict:
+    """
+    This is effectively a noop, but we need to have an infogetter
+
+        Parameters:
+            obj (dict): The themearrays object
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+        Returns:
+            (dict): The themearrays
+    """
+    return obj

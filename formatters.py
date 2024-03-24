@@ -82,6 +82,7 @@ def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_markdown(lines: Union[str, List[str]],
                     **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -124,6 +125,8 @@ def format_markdown(lines: Union[str, List[str]],
     emptylines: List[Union[ThemeRef, ThemeStr]] = []
     started = False
     codeblock = ""
+
+    # pylint: disable-next=too-many-nested-blocks
     for line in lines:
         if started and end is not None and line.startswith(end):
             break
@@ -328,6 +331,7 @@ def format_diff_line(line: str, **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]
     return tmpline
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_yaml_line(line: str,
                      **kwargs: Any) -> Tuple[List[Union[ThemeRef, ThemeStr]],
                                              List[List[Union[ThemeRef, ThemeStr]]]]:
@@ -399,6 +403,7 @@ def format_yaml_line(line: str,
             if not line:
                 return tmpline, remnants
 
+    # pylint: disable-next=too-many-nested-blocks
     if line.endswith(":"):
         _key_format = deep_get(override_formatting, DictPath(f"{line[:-1]}#key"), key_format)
         tmpline += [
@@ -508,6 +513,7 @@ def format_yaml_line(line: str,
     return tmpline, remnants
 
 
+# pylint: disable-next=too-many-branches
 def format_yaml(lines: Union[str, List[str]],
                 **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -725,6 +731,7 @@ def format_haproxy(lines: Union[str, List[str]],
     return dumps
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_caddyfile(lines: Union[str, List[str]],
                      **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -935,6 +942,7 @@ def format_mosquitto(lines: Union[str, List[str]],
     return dumps
 
 
+# pylint: disable-next=too-many-branches
 def format_nginx(lines: Union[str, List[str]],
                  **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -1007,6 +1015,7 @@ def format_nginx(lines: Union[str, List[str]],
     return dumps
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_xml(lines: Union[str, List[str]],
                **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -1041,6 +1050,8 @@ def format_xml(lines: Union[str, List[str]],
         re.compile(r"^(\s*\S+?)(=|)(\"[^\"]+?\"|)(\s*$|\s*/>|\s*\?>|\s*-->|\s*>|\s+)(.*|)")
 
     i = 0
+
+    # pylint: disable-next=too-many-nested-blocks
     for line in lines:
         tmpline: List[Union[ThemeRef, ThemeStr]] = []
 
@@ -1250,6 +1261,7 @@ def format_python_traceback(lines: Union[str, List[str]],
     return dumps
 
 
+# pylint: disable-next=too-many-branches
 def format_toml(lines: Union[str, List[str]],
                 **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
@@ -1651,6 +1663,7 @@ cmdata_bin_header: List[Tuple[int, List[int], str]] = [
 ]
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def identify_cmdata(cmdata_name: str, cm_name: str,
                     cm_namespace: str, data: Any) -> Tuple[str, Callable]:
     """

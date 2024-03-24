@@ -184,6 +184,7 @@ def init_kubernetes_client() -> None:
         kh_cache = KubernetesResourceCache()
 
 
+# pylint: disable-next=too-many-locals
 def gather_cluster_info() -> None:
     """
     Gather information about the cluster necessary for running playbooks
@@ -264,6 +265,7 @@ def format_timestamp(timestamp: datetime,
     return array
 
 
+# pylint: disable-next=too-many-locals
 def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[Type]) -> int:
     linelen = 0
     pos = 0
@@ -378,7 +380,7 @@ def __get_container_info(obj: Dict, container_type: str,
     return containers
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_container_info(**kwargs: Any) -> List[Type]:
     """
     Infogetter for Containers
@@ -455,7 +457,7 @@ def get_container_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_log_info(**kwargs: Any) -> List[Type]:
     """
     Infogetter for logs
@@ -641,7 +643,7 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
     return new_value
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 def process_value(field_name: str, value: Any, vtype: str, view: str,
                   field_index: str, action: str, formatter: str, replace_quotes: str,
                   _regex: str) -> Union[int, float, str, List[str], datetime, None]:
@@ -752,7 +754,8 @@ def transform_filter(transformations: Dict, value: DictPath) -> Any:
     return value
 
 
-# pylint: disable-next=too-many-return-statements
+# pylint: disable-next=line-too-long
+# pylint: disable-next=too-many-return-statements,too-many-locals,too-many-branches,too-many-statements # noqa: E501
 def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: Any = None) -> bool:
     # When is a list of when-conditions,
     # all of which have to evaluate to true
@@ -867,21 +870,23 @@ def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: A
     return True
 
 
-def transform_list(vlist, transform):
-    sort = deep_get(transform, DictPath("sorted"), False)
-    key_regexes = deep_get(transform, DictPath("key#regex"), [])
-    key_groups = deep_get(transform, DictPath("key#groups"), [])
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def transform_list(vlist: Union[List, Dict], transform: Dict) -> List:
+    sort: bool = deep_get(transform, DictPath("sorted"), False)
+    key_regexes: List[str] = deep_get(transform, DictPath("key#regex"), [])
+    key_groups: List[int] = deep_get(transform, DictPath("key#groups"), [])
     key_join = deep_get(transform, DictPath("key#join"))
-    key_defaults = deep_get(transform, DictPath("key#default"), [])
-    value_regexes = deep_get(transform, DictPath("value#regex"), [])
-    value_groups = deep_get(transform, DictPath("value#groups"), [])
+    key_defaults: List = deep_get(transform, DictPath("key#default"), [])
+    value_regexes: List[str] = deep_get(transform, DictPath("value#regex"), [])
+    value_groups: List[int] = deep_get(transform, DictPath("value#groups"), [])
     value_join = deep_get(transform, DictPath("value#join"))
-    value_defaults = deep_get(transform, DictPath("value#default"), [])
-    output = deep_get(transform, DictPath("output"), ["key", "value"])
+    value_defaults: List = deep_get(transform, DictPath("value#default"), [])
+    output: List[str] = deep_get(transform, DictPath("output"), ["key", "value"])
 
-    result = []
+    result: List = []
 
     # This handles both lists and dicts
+    # pylint: disable-next=too-many-nested-blocks
     for key in vlist:
         if not isinstance(vlist, dict):
             value = None
@@ -910,8 +915,8 @@ def transform_list(vlist, transform):
                                 key_data.append(_tmp2)
                 if key_join is not None and len(key_data) > 1:
                     tmp = ""
-                    for i in range(0, len(key_data)):
-                        tmp += key_data[i]
+                    for i, element in enumerate(key_data):
+                        tmp += element
                         if i < len(key_data) - 1:
                             tmp += key_join[min(i, len(key_join) - 1)]
                     key_data = [tmp]
@@ -934,29 +939,29 @@ def transform_list(vlist, transform):
                             value_data.append(_tmp2)
             if value_join is not None and len(value_data) > 1:
                 tmp = ""
-                for i in range(0, len(value_data)):
-                    tmp += value_data[i]
+                for i, element in enumerate(value_data):
+                    tmp += element
                     if i < len(value_data) - 1:
                         tmp += value_join[min(i, len(value_join) - 1)]
                 value_data = [tmp]
 
-        tmp = []
+        tmp3 = []
         for _output in output:
             if _output == "key":
                 if len(key_data) == 1:
-                    tmp.append(key_data[0])
+                    tmp3.append(key_data[0])
                 else:
-                    tmp.append(tuple(key_data))
+                    tmp3.append(tuple(key_data))
             elif _output == "value":
                 if len(value_data) == 1:
-                    tmp.append(value_data[0])
+                    tmp3.append(value_data[0])
                 else:
-                    tmp.append(tuple(value_data))
-        if len(tmp) == 1:
-            tmp = tmp[0]
+                    tmp3.append(tuple(value_data))
+        if len(tmp3) == 1:
+            tmp3 = tmp3[0]
         else:
-            tmp = tuple(tmp)
-        result.append(tmp)
+            tmp3 = tuple(tmp3)
+        result.append(tmp3)
 
     if sort:
         return natsorted(result)
@@ -964,9 +969,9 @@ def transform_list(vlist, transform):
     return result
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
-            field_index: str, view: str, filters: Dict, deleted: bool = False):
+            field_index: str, view: str, filters: Dict, deleted: bool = False) -> Type:
     d = {}
 
     # fields both specify formatting and where to get the data from;
@@ -1072,23 +1077,23 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                         firstnum = None
                         lastnum = None
                         sortedvals = natsorted(tmp)
-                        for i in range(0, len(sortedvals)):
+                        for i, sortedval in enumerate(sortedvals):
                             # The range is sorted; this means that we add everything as is except
                             # None until we reach the first numerical, create ranges for
                             # the numericals, then add everything as is except None until the end
-                            if sortedvals[i] is None:
+                            if sortedval is None:
                                 continue
                             # pylint: disable-next=unidiomatic-typecheck
-                            if type(sortedvals[i]) == int:  # noqa: E721
+                            if type(sortedval) == int:  # noqa: E721
                                 if firstnum is None:
-                                    firstnum = sortedvals[i]
+                                    firstnum = sortedval
                                 else:
-                                    if lastnum is None or sortedvals[i] == lastnum + 1:
-                                        lastnum = sortedvals[i]
+                                    if lastnum is None or sortedval == lastnum + 1:
+                                        lastnum = sortedval
                                     else:
                                         # Flush and start a new range
                                         rangevals.append((f"{firstnum}", f"{lastnum}", ""))
-                                        firstnum = sortedvals[i]
+                                        firstnum = sortedval
                                         lastnum = None
                             else:
                                 if firstnum is not None:
@@ -1098,7 +1103,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                                         rangevals.append((f"{firstnum}", f"{lastnum}", ""))
                                         lastnum = None
                                     firstnum = None
-                                rangevals.append(("", "", sortedvals[i]))
+                                rangevals.append(("", "", sortedval))
                         if firstnum is not None:
                             if lastnum is None:
                                 rangevals.append((f"{firstnum}", "", ""))
@@ -1237,8 +1242,8 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             lookup_obj = [lookup_obj]
 
                         for _lookup_obj in lookup_obj:
-                            for i in range(0, len(subpaths)):
-                                tmp.append(deep_get(_lookup_obj, DictPath(subpaths[i])))
+                            for i, subpath in enumerate(subpaths):
+                                tmp.append(deep_get(_lookup_obj, DictPath(subpath)))
                         if len(tmp) == 1:
                             value.append(tmp[0])
                         else:
@@ -1362,14 +1367,14 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     end_time = None
                     start_time_index = -1
                     end_time_index = -1
-                    for i in range(0, len(mpaths)):
-                        if isinstance(mpaths[i], list):
+                    for i, mpath in enumerate(mpaths):
+                        if isinstance(mpath, list):
                             if start_time_index == -1:
                                 start_time_index = i
-                                start_time = deep_get_with_fallback(obj, mpaths[i], default=None)
+                                start_time = deep_get_with_fallback(obj, mpath, default=None)
                             elif end_time_index == -1:
                                 end_time_index = i
-                                end_time = deep_get_with_fallback(obj, mpaths[i], default=None)
+                                end_time = deep_get_with_fallback(obj, mpath, default=None)
                             else:
                                 raise ValueError(f"{field_name} received too many timestamp paths; "
                                                  "the view file is most likely malformed")
@@ -1381,13 +1386,13 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
                         duration = timediff.days * 24 * 60 * 60 + timediff.seconds
                     __values = []
-                    for i in range(0, len(mpaths)):
+                    for i, mpath in enumerate(mpaths):
                         if i == start_time_index:
                             __values.append(end_time)
                         elif i == end_time_index:
                             __values.append(duration)
                         else:
-                            __values.append(mpaths[i])
+                            __values.append(mpath)
                     _values.append((tuple(__values), "raw"))
                 elif ptype == "fieldgetter":
                     fieldgetter_data = deep_get_with_fallback(obj, path, {})
@@ -1430,7 +1435,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             continue
 
                         tmp = []
-                        for i in range(0, len(subpaths)):
+                        for i, subpath in enumerate(subpaths):
                             if isinstance(default, list):
                                 if i < len(default):
                                     _default = default[i]
@@ -1443,19 +1448,19 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                                     and type(default) not in (int, float):
                                 _default = 0
 
-                            if isinstance(subpaths[i], dict):
-                                _subpath = deep_get(subpaths[i], DictPath("str"))
+                            if isinstance(subpath, dict):
+                                _subpath = deep_get(subpath, DictPath("str"))
                                 if _subpath is not None:
                                     tmp.append(_subpath)
                                 else:
-                                    _subpath = deep_get(subpaths[i], DictPath("subpath"))
+                                    _subpath = deep_get(subpath, DictPath("subpath"))
                                     if isinstance(_subpath, str):
                                         _subpath = [_subpath]
-                                    _regexes = deep_get(subpaths[i], DictPath("regex"), [])
+                                    _regexes = deep_get(subpath, DictPath("regex"), [])
                                     if isinstance(_regexes, str):
                                         _regexes = [_regexes]
                                     _raw = deep_get_with_fallback(item, _subpath, _default)
-                                    _raw = transform_filter(deep_get(subpaths[i],
+                                    _raw = transform_filter(deep_get(subpath,
                                                             DictPath("transform"), {}), _raw)
                                     for _regex in _regexes:
                                         _tmp = re.match(_regex, _raw)
@@ -1468,7 +1473,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             else:
                                 prefix = deep_get(_path, DictPath("prefix"), [])
                                 suffix = deep_get(_path, DictPath("suffix"), [])
-                                _subpath = subpaths[i]
+                                _subpath = subpath
                                 if isinstance(_subpath, str):
                                     _subpath = [_subpath]
                                 _tmp = deep_get_with_fallback(item, _subpath, _default)
@@ -1533,7 +1538,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     value = []
                     if not when_filter(_path, item=obj):
                         continue
-                    for i in range(0, len(path)):
+                    for i, element in enumerate(path):
                         if isinstance(default, list):
                             if i < len(default):
                                 _default = default[i]
@@ -1546,10 +1551,10 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             _default = 0
 
                         # This is a literal string, not a path
-                        if isinstance(path[i], str):
-                            tmp = path[i]
+                        if isinstance(element, str):
+                            tmp = element
                         else:
-                            tmp = deep_get_with_fallback(obj, path[i], default=_default,
+                            tmp = deep_get_with_fallback(obj, element, default=_default,
                                                          fallback_on_empty=fallback_on_empty)
 
                         if vtype == "api_group":
@@ -1726,6 +1731,7 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
     return info
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_journalctl_log(obj: Dict, **kwargs: Any):
     timestamps = []
     facilities = []
@@ -1795,7 +1801,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Any):
     return (timestamps, facilities, severities, messages)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_traceflow(obj: Dict, **kwargs: Any):
     timestamps = []
     facilities = []
@@ -1871,11 +1877,6 @@ def get_task_log(obj: Dict, **kwargs: Any):
     return field
 
 
-# pylint: disable-next=unused-argument
-def get_themearrays(obj: Dict, **kwargs: Any) -> Dict:
-    return obj
-
-
 def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     # This is essentially just a wrapper around listgetter_files
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
@@ -1922,7 +1923,7 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, Them
     return dump_formatter(deep_get(obj, path))
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: Dict, **kwargs: Any):
     filepath = deep_get(obj, DictPath("filepath"), "")
     timestamps = []
@@ -2176,6 +2177,7 @@ def get_limit_info(**kwargs: Any) -> List[Type]:
     return info
 
 
+# pylint: disable-next=too-many-locals
 def get_auth_rule_info(**kwargs: Any) -> List[Type]:
     """
     Infogetter for Istio Authorization Policy Rules
@@ -2241,6 +2243,7 @@ def get_auth_rule_info(**kwargs: Any) -> List[Type]:
     return info
 
 
+# pylint: disable-next=too-many-locals
 def get_sas_info(**kwargs: Any) -> List[Type]:
     """
     Infogetter for Service Account secrets
@@ -2401,6 +2404,7 @@ def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_n
     return holder_kind
 
 
+# pylint: disable-next=too-few-public-methods
 class SubsetsInfo:
     def __init__(self, addresses, ports, status, status_group):
         self.addresses = addresses
@@ -2412,6 +2416,7 @@ class SubsetsInfo:
         return repr((self.addresses, self.ports, self.status, self.status_group))
 
 
+# pylint: disable-next=too-many-branches
 def get_subsets_info(**kwargs):
     obj = deep_get(kwargs, DictPath("_obj"))
     subsets = []
@@ -2474,6 +2479,7 @@ def get_subsets_info(**kwargs):
     return subsets
 
 
+# pylint: disable-next=too-few-public-methods
 class EPSSubsetsInfo:
     # pylint: disable-next=too-many-arguments
     def __init__(self, addresstype, addresses, ports_eps,
@@ -2540,21 +2546,7 @@ def get_eps_subsets_info(**kwargs):
     return subsets
 
 
-def cpu_usage_to_millicores(cpu_usage: str) -> str:
-    if cpu_usage == "0":
-        return cpu_usage
-    if cpu_usage.endswith("n"):
-        cpu_usage = f"{float(cpu_usage[:-1]) / 1000000:0.1f}"
-        return cpu_usage
-    if cpu_usage.endswith("m"):
-        cpu_usage = f"{float(cpu_usage[:-1]) / 1000:0.1f}"
-        return cpu_usage
-    if cpu_usage.endswith("u"):
-        cpu_usage = f"{float(cpu_usage[:-1]):0.1f}"
-        return cpu_usage
-    raise ValueError(f"Unknown cpu usage metrics: {cpu_usage}")
-
-
+# pylint: disable-next=too-few-public-methods
 class StrategyInfo:
     def __init__(self, strategy, name, operator, target):
         self.strategy = strategy
@@ -2617,6 +2609,7 @@ def get_strategy_info(**kwargs):
     return info
 
 
+# pylint: disable-next=too-few-public-methods
 class RQItemInfo:
     def __init__(self, resource, used, hard):
         self.resource = resource
@@ -2644,6 +2637,7 @@ def get_rq_item_info(**kwargs):
     return info
 
 
+# pylint: disable-next=too-few-public-methods
 class KeyValueInfo:
     # pylint: disable-next=too-many-arguments
     def __init__(self, key, ref, decoded_value, value, vtype, vlen):
@@ -2819,6 +2813,7 @@ def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
         force_refresh_apis = True
 
 
+# pylint: disable-next=too-many-locals
 def generate_list_header(uip: UIProps, headerpad: curses.window,
                          field_dict: Dict, is_taggable: bool = False) -> None:
     headerarray: List[Union[ThemeRef, ThemeStr]] = []
@@ -2894,7 +2889,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window,
     uip.tabstops = tabstops
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,too-many-locals
 def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int,
                       is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
@@ -2955,6 +2950,8 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
         uip.addthemearray(listpad, tmp, y=ypos, x=pos + tagprefixlen, deleted=is_deleted)
 
 
+# pylint: disable-next=line-too-long
+# noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     """
     Generic main loop for listviews
@@ -2967,9 +2964,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
         Raises:
             ProgrammingError (view is invalid)
     """
-    global async_data  # pylint: disable=global-statement
     global executor  # pylint: disable=global-statement
-
     global selected_namespace  # pylint: disable=global-statement
     global initial_name  # pylint: disable=global-statement
     global initial_namespace  # pylint: disable=global-statement
@@ -3103,6 +3098,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     uip.force_update()
     uip.listlen = 0
 
+    # pylint: disable-next=too-many-nested-blocks
     while True:
         if listgetter_async is not None:
             # Temporary workaround
@@ -3405,13 +3401,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             return retval
 
         if c == curses.KEY_F2:
-            retval = selectwindow(uip)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == curses.KEY_F3:
-            retval = selectwindow(uip, refresh_apis=True)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == ord("B"):
@@ -3443,6 +3437,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.refresh_all()
             uip.force_update()
             uip.update_window(update=False)
+        # pylint: disable-next=too-many-nested-blocks
         elif c == curses.KEY_F7:
             action_title = "Perform cluster-wide actions"
             action_src_list = listviewactions
@@ -3460,9 +3455,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             selection = None
             if tmpselection is not None and tmpselection != "":
                 selection = ""
-                for i in range(0, len(tmpselection)):
-                    if tmpselection[i]:
-                        selection += str(tmpselection[i][0])
+                for i, element in enumerate(tmpselection):
+                    if element:
+                        selection += str(element[0])
             uip.refresh_all()
             curses.doupdate()
 
@@ -3477,8 +3472,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     if isinstance(description, str):
                         tmpdescription = description
                     else:
-                        for i in range(0, len(description)):
-                            tmpdescription += description[i][0]
+                        for i, element in enumerate(description):
+                            tmpdescription += element[0]
                     tmpmetadata = deep_get(actionlist, DictPath(f"{action}#metadata"), [])
                     for metadata in tmpmetadata:
                         tmpdescription += metadata[0]
@@ -3801,9 +3796,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                                        cursor=True, taggable=True)
             if tagged_labels:
                 selectors = {}
-                for i in range(0, len(labels)):
+                for i, label in enumerate(labels):
                     if i in tagged_labels:
-                        selectors[labels[i][0]] = labels[i][1]
+                        selectors[label[0]] = label[1]
                 label_selector = make_selector(selectors)
                 uip.force_update()
             tagged_items.clear()
@@ -3828,13 +3823,13 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             host_groups = ansible_get_groups_by_host(inventory, selected.name)
             grouplist = []
             preselection = set()
-            for i in range(0, len(groups)):
+            for i, group in enumerate(groups):
                 grouplist.append({
                     "lineattrs": WidgetLineAttrs.NORMAL,
-                    "columns": [[ThemeStr(f"{groups[i]}",
+                    "columns": [[ThemeStr(f"{group}",
                                           ThemeAttr("windowwidget", "default"))]],
                 })
-                if groups[i] in host_groups:
+                if group in host_groups:
                     preselection.add(i)
             group_headers = ["Ansible Groups:"]
             selection = \
@@ -3896,11 +3891,12 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                        taggeditemlist, title="Tagged items", cursor=False)
             uip.refresh_all()
             curses.doupdate()
+        # pylint: disable-next=too-many-nested-blocks
         elif c == ord(";") and is_taggable and uip.listlen:
             cluster_available = True
             items = []
             autoitem = False
-            control_plane = False
+            control_plane_selected = False
 
             if not tagged_items:
                 selected = uip.get_selected()
@@ -3913,11 +3909,17 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 if not item.name or item.name == "<none>":
                     break
 
-                if hasattr(item, "kubernetes_roles"):
-                    if "control-plane" in item.kubernetes_roles:
-                        control_plane = True
-                    if "<unknown>" in item.kubernetes_roles:
-                        cluster_available = False
+                if hasattr(item, "roles"):
+                    if isinstance(item.roles, (list, tuple)):
+                        if ("control-plane", "") in item.roles:
+                            control_plane_selected = True
+                        if ("<unknown>", "") in item.roles:
+                            cluster_available = False
+                    else:
+                        if "control-plane" in item.roles:
+                            control_plane_selected = True
+                        if "<unknown>" in item.roles:
+                            cluster_available = False
                 if hasattr(item, "namespace"):
                     items.append((item.namespace, item.name))
                 else:
@@ -3947,7 +3949,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             actions, actionlist = \
                 populate_actionlist(context=action_context,
                                     action_list=action_src_list,
-                                    control_plane_selected=control_plane,
+                                    control_plane_selected=control_plane_selected,
                                     single_item=(len(items) == 1),
                                     cluster_available=cluster_available)
 
@@ -3956,9 +3958,10 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 playbook_context = \
                     deep_get(views, DictPath(f"{view}#actions#playbooklist#context"), None)
                 actions, actionlist = \
-                    populate_playbooklist(context=playbook_context, actions=[],
+                    populate_playbooklist(context=playbook_context,
+                                          actions=[],
                                           action_list=actionlist,
-                                          control_plane_selected=control_plane,
+                                          control_plane_selected=control_plane_selected,
                                           single_item=(len(items) == 1),
                                           cluster_available=cluster_available)
 
@@ -3974,9 +3977,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             selection = None
             if tmpselection is not None and tmpselection != "":
                 selection = ""
-                for i in range(0, len(tmpselection)):
-                    if tmpselection[i]:
-                        selection += str(tmpselection[i][0])
+                for i, element in enumerate(tmpselection):
+                    if element:
+                        selection += str(element[0])
             uip.refresh_all()
             curses.doupdate()
 
@@ -3990,8 +3993,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     if isinstance(description, str):
                         tmpdescription = description
                     else:
-                        for i in range(0, len(description)):
-                            tmpdescription += description[i][0]
+                        for i, segment in enumerate(description):
+                            tmpdescription += segment[0]
                     tmpmetadata = deep_get(actionlist, DictPath(f"{action}#metadata"), [])
                     for metadata in tmpmetadata:
                         tmpdescription += metadata[0]
@@ -4249,7 +4252,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 uip.force_update()
 
 
-def __switch_resource_map(**kwargs):
+def __switch_resource_map(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     uip.refresh_all()
     return Retval.MATCH, {
@@ -4257,7 +4260,8 @@ def __switch_resource_map(**kwargs):
     }
 
 
-def __resource_map_cursor(**kwargs):
+# pylint: disable-next=too-many-branches,too-many-statements
+def __resource_map_cursor(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     selected = deep_get(kwargs, DictPath("selected"))
@@ -4331,7 +4335,7 @@ def __resource_map_cursor(**kwargs):
     }
 
 
-def __open_reference(**kwargs):
+def __open_reference(**kwargs) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     pod_name = deep_get(kwargs, DictPath("pod_name"))
@@ -4364,7 +4368,7 @@ def __open_reference(**kwargs):
     return Retval.MATCH, {}
 
 
-def __fetch_package_versions(**kwargs):
+def __fetch_package_versions(**kwargs) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
@@ -4550,6 +4554,7 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[S
     return result, status
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def clusteroverviewloop(stdscr: curses.window, view):
     global executor  # pylint: disable=global-statement
 
@@ -4653,6 +4658,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
                      fetch_args={"sort_key": "lastTimestamp", "sort_reverse": True, "limit": 5},
                      kubernetes_helper=kh, kh_cache=kh_cache)
 
+    # pylint: disable-next=too-many-nested-blocks
     while True:
         if (result := executor.get("sysinfo")) != ([], []):
             ansible_results, ansible_status = result
@@ -5136,6 +5142,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
             return retval
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def check_cni_updates(cni: str, current_version: str) -> str:
     """
     Check whether there are newer versions of the CNI available
@@ -5301,7 +5308,8 @@ cniloop_shortcuts = {
 }
 
 
-def cniloop(stdscr: curses.window, view):
+# pylint: disable-next=too-many-locals,too-many-statements
+def cniloop(stdscr: curses.window, view: str) -> Retval:
     global executor  # pylint: disable=global-statement
 
     # Just in case there are leftover futures from other views
@@ -5548,8 +5556,9 @@ def export_data(stdscr: curses.window, **kwargs):
         raise TypeError(f"Trying to export unknown vtype: {vtype}")
 
 
-def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
-    helptext = []
+# pylint: disable-next=too-many-branches,too-many-statements
+def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> List[Dict]:
+    helptext: List[Tuple[str, str]] = []
 
     if viewtype == "infoview":
         helptext += helptexts.infoviewheader_part1
@@ -5628,6 +5637,8 @@ def generate_helptext(view, viewtype, additional_helptexts, shortcuts):
     return format_helptext(helptext)
 
 
+# pylint: disable-next=line-too-long
+# noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) -> Retval:
     global initial_container  # pylint: disable=global-statement
     global executor  # pylint: disable=global-statement
@@ -5926,6 +5937,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
 
     first_fetch = True
 
+    # pylint: disable-next=too-many-nested-blocks
     while True:
         # Populate useful variables that can be used in the statusbar
         if formatter:
@@ -6442,13 +6454,11 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             return retval
 
         if c == curses.KEY_F2:
-            retval = selectwindow(uip)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == curses.KEY_F3:
-            retval = selectwindow(uip, refresh_apis=True)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == ord("B"):
@@ -6528,10 +6538,10 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     # If the first element is an integer we assume that we've been provided
                     # a pre-formatted list. Otherwise we apply formatting if available.
                     # If not available we try to provide some sensible defaults.
-                    # pylint: disable-next=unidiomatic-typecheck
                     if w_items is not None and w_items \
                             and (isinstance(w_items[0], dict)
                                  or (isinstance(w_items[0], (list, tuple))
+                                     # pylint: disable-next=unidiomatic-typecheck
                                      and type(w_items[0][0]) != int)):  # noqa: E721
                         tmp_items = []
                         w_formatting = deep_get(value, DictPath("formatting"),
@@ -6545,13 +6555,13 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                                 w_item = deep_get(w_item, DictPath("fields"))
                             # w_item[i] is a column
                             tmp = []
-                            for i in range(0, len(w_item)):
+                            for i, column in enumerate(w_item):
                                 tmp_formatting = w_formatting[min(i, len(w_formatting) - 1)]
                                 if isinstance(tmp_formatting, List):
                                     formatting = ThemeAttr(tmp_formatting[0], tmp_formatting[1])
                                 else:
                                     formatting = tmp_formatting
-                                tmp.append([ThemeStr(w_item[i], formatting)])
+                                tmp.append([ThemeStr(column, formatting)])
 
                             tmp_items.append({
                                 "lineattrs": lineattrs,
@@ -6845,6 +6855,8 @@ def log_add_line(timestamps, facilities, severities, messages,
     return timestamps, facilities, severities, messages
 
 
+# pylint: disable-next=line-too-long
+# noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any) -> Retval:
     global executor  # pylint: disable=global-statement
     global override_tail_lines  # pylint: disable=global-statement
@@ -6927,6 +6939,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
     facility_regex = re.compile(r"^.*/(.*)")
 
+    # pylint: disable-next=too-many-nested-blocks
     while True:
         if uip.is_update_triggered():
             # When following the log we update the log continuously, but tail lines is limited to
@@ -7161,7 +7174,9 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     hidden_msgs += 1
                     continue
 
-                if prev_message == message and prev_facility == facility \
+                # pylint: disable-next=too-many-boolean-expressions
+                if prev_message == message \
+                        and prev_facility == facility \
                         and prev_severity == severity \
                         and (themearray_len(prev_message) or prev_remnants is not None) \
                         and prev_remnants == remnants:
@@ -7172,7 +7187,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                         continue
                 else:
                     if repeat_count and merge_repeats:
-                        timestamps, facilities, severities, messages =\
+                        timestamps, facilities, severities, messages = \
                             log_add_line(timestamps, facilities, severities, messages,
                                          prev_timestamp, prev_facility, prev_severity,
                                          [ThemeStr("[previous message repeated ",
@@ -7512,12 +7527,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 else:
                     datetype = "timestamp"
 
-                """
-                if not compact_timestamps:
-                    hourxpos = len("YYYY-MM-DD ")
-                else:
-                    hourxpos = 0
-                """
+#               if not compact_timestamps:
+#                   hourxpos = len("YYYY-MM-DD ")
+#               else:
+#                   hourxpos = 0
 
                 if y + yadd > uip.logpadheight:
                     continue
@@ -7657,13 +7670,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             return retval
 
         if c == curses.KEY_F2:
-            retval = selectwindow(uip)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == curses.KEY_F3:
-            retval = selectwindow(uip, refresh_apis=True)
-            if retval == Retval.RETURNFULL:
+            if (retval := selectwindow(uip, refresh_apis=True)) == Retval.RETURNFULL:
                 return retval
             uip.refresh_all()
         elif c == ord("B"):
@@ -8001,7 +8012,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
     return Retval.RETURNFULL
 
 
-def do_command(stdscr: curses.window, **kwargs) -> None:
+# pylint: disable-next=too-many-locals,too-many-branches
+def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     """
     Execute a command on localhost
     XXX: This should be renamed
@@ -8010,7 +8022,6 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
             stdscr (opaque): A curses stdscr reference
             **kwargs (dict): Additional parameters
     """
-
     security_policy = SecurityPolicy.ALLOWLIST_RELAXED
     fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
                           "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
@@ -8078,13 +8089,13 @@ def do_command(stdscr: curses.window, **kwargs) -> None:
     stdscr.refresh()
 
 
-# pylint: disable-next=too-many-arguments
-def executecommand(stdscr: curses.window, obj, container, msg, command, waitforkeypress):
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
+def executecommand(stdscr: curses.window,
+                   obj: Dict, container, msg, command, waitforkeypress: bool) -> None:
     """
     Executes a command in a container
     XXX: This should be renamed
     """
-
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8165,6 +8176,7 @@ def executecommand(stdscr: curses.window, obj, container, msg, command, waitfork
     stdscr.refresh()
 
 
+# pylint: disable-next=too-many-branches
 def listviewdispatch(stdscr: curses.window, **kwargs):
     obj = deep_get(kwargs, DictPath("obj"))
     selection = deep_get(kwargs, DictPath("selection"))
@@ -8273,9 +8285,11 @@ def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
     return resourceinfodispatch(stdscr, obj, (kind, api_family), info=info, **kwargs)
 
 
-# Do not pass both direct and _path versions at the same time
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optional[Retval]:
+    # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("obj"))
+    # pylint: disable-next=too-many-nested-blocks
     if obj is None:
         if "selected_obj" in kwargs:
             obj = deep_get(kwargs, DictPath("selected_obj"))
@@ -8640,7 +8654,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-locals
 def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
     success = True
     force = deep_get(values, DictPath("__force"), False)
@@ -8790,8 +8804,9 @@ def __edit_resource(kind, namespace, name):
     return result.returncode, args
 
 
-# pylint: disable=unused-argument
-def perform_action_on_configuration(uip: UIProps, items, action, values, kind, **kwargs):
+# pylint: disable=unused-argument,too-many-locals,too-many-branches
+def perform_action_on_configuration(uip: UIProps, items, action,
+                                    values, kind, **kwargs: Any) -> None:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8872,8 +8887,8 @@ def __summarise_resources(path):
     return resources
 
 
-# pylint: disable=unused-argument
-def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs) -> Retval:
+# pylint: disable=unused-argument,too-many-locals,too-many-branches
+def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
         if not resource_url.startswith(("http://", "https://")):
             return Retval.MATCH
@@ -9134,13 +9149,13 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
 
 
 # pylint: disable=unused-argument
-def delete_logs(uip: UIProps, items, action, values, kind, **kwargs):
+def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     for item in items:
         ansible_delete_log(item)
 
 
-# pylint: disable=unused-argument
-def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) -> None:
+# pylint: disable=unused-argument,too-many-locals,too-many-branches
+def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     tmpargs = deep_get(values, DictPath("action_args#command"), [])
     iterate = deep_get(values, DictPath("action_args#iterate"), False)
     if not tmpargs:
@@ -9199,8 +9214,8 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs) 
     uip.stdscr.refresh()
 
 
-# pylint: disable=unused-argument
-def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
+# pylint: disable=unused-argument,too-many-locals,too-many-branches
+def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     values.pop("_tagged_items", None)
     msg = \
         [ANSIThemeStr("Executing playbook “", "action"),
@@ -9260,13 +9275,13 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs) -> None:
 
 
 # pylint: disable=unused-argument
-def cordon_node(uip: UIProps, items, action, values, kind, **kwargs):
+def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     for node in items:
         kh.cordon_node(node)
 
 
 # pylint: disable=unused-argument
-def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs):
+def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     for node in items:
         kh.uncordon_node(node)
 
@@ -9274,7 +9289,8 @@ def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs):
 nodeplaybooks = {}  # type: ignore
 
 
-def ssh_to_host(stdscr: curses.window, **kwargs):
+# pylint: disable-next=too-many-locals
+def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
     """
     SSH to a host
 
@@ -9392,13 +9408,24 @@ def list_configuration_files(basedir):
     return plist
 
 
-def populate_actionlist(**kwargs: Any) -> Tuple[Dict, Dict]:
+# pylint: disable-next=too-many-locals
+def populate_actionlist(**kwargs: Any) -> Tuple[List[Dict], List[Dict]]:
+    """
+    Populate the list of actions based on context and policy
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                context (str): The context to populate actions for
+                action_list ([dict]): The list of actions
+                control_plane_selected (bool): Is the control plane part of the selection?
+                single_item (bool): Has only a single item been selected?
+    """
     context: Optional[Dict] = deep_get(kwargs, DictPath("context"))
-    action_list: Optional[Dict] = deep_get(kwargs, DictPath("action_list"))
+    action_list: Optional[List[Dict]] = deep_get(kwargs, DictPath("action_list"))
     control_plane_selected: bool = deep_get(kwargs, DictPath("control_plane_selected"), False)
     single_item: bool = deep_get(kwargs, DictPath("single_item"), False)
 
-    actions = []
+    actions: List[Dict] = []
     order = []
     for item in action_list:
         context_types = deep_get(action_list, DictPath(f"{item}#context_types"))
@@ -9455,6 +9482,7 @@ def populate_actionlist(**kwargs: Any) -> Tuple[Dict, Dict]:
     return actions, action_list
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Optional[Dict]:
     if not os.path.isdir(path):
         return None
@@ -9578,9 +9606,27 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
     return action_list
 
 
-# pylint: disable-next=too-many-arguments
-def populate_playbooklist(context, actions, action_list, control_plane_selected,
-                          single_item=False, cluster_available=True):
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def populate_playbooklist(**kwargs: Any) -> Tuple[List[Dict], Dict]:
+    """
+    Populate the list of playbooks based on context and policy
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                context (str): The context to populate playbooks for
+                actions ([dict]): The actions to pass through
+                action_list (dict): A dict of actions to append the playbook actions to
+                control_plane_selected (bool): Is the control plane part of the selection?
+                single_item (bool): Has only a single item been selected?
+                cluster_available (bool): Is the cluster available?
+    """
+    context: Optional[Dict] = deep_get(kwargs, DictPath("context"))
+    actions: List[Dict] = deep_get(kwargs, DictPath("actions"))
+    action_list: Optional[Dict] = deep_get(kwargs, DictPath("action_list"))
+    control_plane_selected: bool = deep_get(kwargs, DictPath("control_plane_selected"), False)
+    single_item: bool = deep_get(kwargs, DictPath("single_item"), False)
+    cluster_available: bool = deep_get(kwargs, DictPath("cluster_available"), True)
+
     local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
     for playbook_path in local_playbooks:
         # Substitute {HOME}/ for {HOMEDIR}
@@ -9666,6 +9712,7 @@ def populate_playbooklist(context, actions, action_list, control_plane_selected,
     return actions, action_list
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_selection_list(uip: UIProps, refresh_apis: bool = False):
     global force_refresh_apis  # pylint: disable=global-statement
 
@@ -10089,7 +10136,7 @@ infogetter_allowlist = {
     "get_journalctl_log": get_journalctl_log,
     "get_task_log": get_task_log,
     "get_cmt_log": get_cmt_log,
-    "get_themearrays": get_themearrays,
+    "get_themearrays": infogetters.get_themearrays,
     "get_traceflow": get_traceflow,
 }
 
@@ -10214,6 +10261,7 @@ def map_key(view_file: str, shortcut: str, activatedfun,
     return shortcut_key, help_key
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def populate_views(force_refresh: bool = False) -> None:
     global views  # pylint: disable=global-statement
 
@@ -10268,6 +10316,7 @@ def populate_views(force_refresh: bool = False) -> None:
             if (kind, api_family) in available_api_families or kind.startswith("__"):
                 view_files.append(os.path.join(view_dir, filename))
 
+    # pylint: disable-next=too-many-nested-blocks
     for view_file in view_files:
         has_listview = False
         has_infoview = False
@@ -10895,7 +10944,7 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
                        separator=ANSIThemeStr(separator, "separator")), color=color)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,disable-next=too-many-branches,too-many-statements
 def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     List available views and their supported fields and default sort column
@@ -11020,8 +11069,7 @@ def customise_listviews() -> None:
     """
     Apply user-provided customisation to the list views
     """
-    for view in views:
-        viewref = views[view]
+    for view, viewref in views.items():
         if "skip" in viewref:
             continue
         if "kind" not in viewref or viewref["kind"] is None:
@@ -11036,7 +11084,9 @@ def customise_listviews() -> None:
 
         custom_fields: Dict = {}
 
-        if "namespace" in cast(List[str], viewref["fields"]) and "namespace" not in fields:
+        viewref_fields = deep_get(viewref, DictPath("fields"), [])
+
+        if "namespace" in viewref_fields and "namespace" not in fields:
             custom_fields["namespace"] = None
         if "name" not in fields:
             custom_fields["name"] = None
@@ -11070,10 +11120,12 @@ def customise_listviews() -> None:
     # As a special case, the configuration option "Inventory#ping_hosts"
     # modifies the denylist, but *only* if the field denylist is unset
     ping_hosts = deep_get(cmtlib.cmtconfig, DictPath("__Inventory#ping_hosts"), "Lazy")
-    if ping_hosts == "Never" and "field_denylist" not in viewref:
-        viewref["field_denylist"] = ["status"]
+    if "Inventory" in views and ping_hosts == "Never" \
+            and "field_denylist" not in views["Inventory"]:
+        views["Inventory"]["field_denylist"] = ["status"]
 
 
+# pylint: disable-next=too-many-branches,too-many-statements
 def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Open the specified view
@@ -11464,6 +11516,7 @@ COMMANDLINE = {
 }
 
 
+# pylint: disable-next=too-many-branches,too-many-statements
 def main() -> None:
     """
     Main function for the program

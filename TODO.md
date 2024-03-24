@@ -5,7 +5,7 @@
   canvas. This solves all the rescaling issues, as well as limitations with what characters
   can go where, etc.
 * The timestamp needs to be its own window.
-  The border sohuld be part of the bottom-most canvas and only needs redrawing if we
+  The border should be part of the bottom-most canvas and only needs redrawing if we
   resize the window or toggle borders.
 * Scrollbars need their own windows.
 

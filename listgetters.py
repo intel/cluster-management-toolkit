@@ -113,7 +113,7 @@ def split_matchlist(matchlist: List[str],
 
 
 # Returns True if the item should be skipped
-# pylint: disable-next=too-many-locals
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def filter_list_entry(obj: Dict[str, Any], caller_obj: Dict[str, Any], filters: Dict) -> bool:
     skip = False
     # pylint: disable-next=too-many-nested-blocks
@@ -348,7 +348,7 @@ def __recurse_data(path: Dict, obj: Any) -> Any:
     return __recurse_data(nextpath, data)
 
 
-# pylint: disable-next=too-many-branches,too-many-locals
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
                                              Union[None, int, str, List[StatusGroup]]]:
     paths = deep_get(kwargs, DictPath("paths"), [])
@@ -391,6 +391,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
         mtime = p.stat().st_mtime
 
         item: Dict[str, Any] = {key: []}
+        # pylint: disable-next=too-many-nested-blocks
         if filetype == "text":
             if regex:
                 match = False
@@ -466,7 +467,7 @@ def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
 # Used by listpad
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]],
                                                        Union[int, str, List[StatusGroup]]]:
     vlist = []
@@ -687,7 +688,7 @@ def get_pv_status(pv: Dict[str, Any]) -> Tuple[str, StatusGroup]:
     return reason, status_group
 
 
-# pylint: disable-next=unused-argument,too-many-branches,too-many-statements
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_pod_resource_list(obj: Dict[str, Any],
                           **kwargs: Any) -> Tuple[List[Dict[str, Any]],
                                                   Union[int, str, List[StatusGroup]]]:
@@ -786,6 +787,7 @@ def get_pod_resource_list(obj: Dict[str, Any],
     controller_name = ""
     controller_kind = ""
 
+    # pylint: disable-next=too-many-nested-blocks
     for owr in deep_get(obj, DictPath("metadata#ownerReferences"), []):
         owr_kind = deep_get(owr, DictPath("kind"), "")
         owr_api_version = deep_get(owr, DictPath("apiVersion"), "")
@@ -1113,6 +1115,7 @@ def get_pod_resource_list(obj: Dict[str, Any],
                 "age": -1,
             })
 
+    # pylint: disable-next=too-many-nested-blocks
     for kind, ex in executors.items():
         vlist_, status_ = ex.result()
         # We ignore failures
@@ -1547,6 +1550,7 @@ def get_pod_resource_list(obj: Dict[str, Any],
     return vlist, 200
 
 
+# pylint: disable-next=too-many-locals
 def get_info_by_last_applied_configuration(obj: Dict,
                                            **kwargs: Any) -> Tuple[List[Dict], Union[str, int]]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
@@ -1993,6 +1997,7 @@ def listgetter_feature_gates(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List
     return vlist, 200
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], int]:
     """
     Listgetter for paths
@@ -2014,6 +2019,7 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
     paths = deep_get(kwargs, DictPath("paths"))
     join_key = deep_get(kwargs, DictPath("join_key"))
 
+    # pylint: disable-next=too-many-nested-blocks
     if paths is not None:
         for path in paths:
             ppath = deep_get(path, DictPath("path"))
@@ -2055,6 +2061,7 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
 
     # If a subpath and path_fields are set path_fields from path will be merged into subpath
     # and the subpath lists are flattened into the path list.
+    # pylint: disable-next=too-many-nested-blocks
     if subpath is not None and path_fields is not None:
         for item in deep_get(obj, DictPath(path), []):
             for subobj in deep_get(item, DictPath(subpath), []):

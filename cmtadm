@@ -321,6 +321,7 @@ purge_control_plane_targets: Dict = {
 }
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
     """
     Return the Kubernetes version used by the control plane
@@ -400,6 +401,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
     return version
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def rebuild_installation_info(state: Optional[str] = None) -> None:
     """
     If the installation info file does not exist, but a cluster already exists
@@ -576,6 +578,7 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
     return info
 
 
+# pylint: disable-next=too-many-branches
 def update_installation_info(**kwargs: Any) -> Dict:
     """
     Update installation info for a cluster
@@ -734,6 +737,7 @@ def check_version_from_executable(command: FilePath, args: List[str],
     return version
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def __upgrade_cni(cni: str, upgradetype: str, context: str,
                   pod_network_cidr: str, **kwargs: Any) -> None:
     """
@@ -917,7 +921,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
             ansithemeprint([ANSIThemeStr("No newer version available.", "default")])
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches
 def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Install and configure the specified CNI
@@ -991,7 +995,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
         update_installation_info(cluster_name=cluster_name, cni=cni)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Teardown the CNI
@@ -1156,7 +1160,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
         sys.exit(errno.EINVAL)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches,too-many-statements
 def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Upgrade the specified CNI to the latest version
@@ -1636,6 +1640,7 @@ def get_latest_kubernetes_upstream_version() -> str:
     return kubernetes_upstream_version
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]],
                    verbose: bool = False) -> Tuple[List[Tuple[str, str, str, List[str]]],
                                                    List[Tuple[str, str, str, List[str]]]]:
@@ -2064,6 +2069,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
                                  extra_values=extra_values, verbose=verbose)
 
 
+# pylint: disable-next=too-many-locals
 def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
                                               verbose: bool = False) -> None:
     """
@@ -2313,7 +2319,7 @@ def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = Fals
                                               extra_values={}, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
     """
     An installer task that merges a Kube config into ~/.kube/config
@@ -2428,7 +2434,7 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
     check_and_print_status(True)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bool = False) -> None:
     """
     An installer task that replaces localhost for the real IP-address of the API-server
@@ -2772,7 +2778,7 @@ def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = F
                                               extra_values={}, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches
 def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
     """
     An installer task that removes a cluster configuration from ~/.kube/config
@@ -3149,6 +3155,7 @@ def run_tasks(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
             update_installation_info(state=final_state, phase="<done>")
 
 
+# pylint: disable-next=too-many-branches
 def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> str:
     """
     Based on a provided version, try to find a matching package;
@@ -3255,6 +3262,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
     return requested_version
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Install and configure pre-requisites for a control plane
@@ -3484,6 +3492,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
                         ANSIThemeStr(" options.\n", "default")])
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Import an existing cluster to the CMT Ansible inventory
@@ -3769,6 +3778,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     print()
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def show_configuration(action: str,
                        tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]]) -> None:
     """
@@ -3972,6 +3982,7 @@ def __get_configuration_data(configuration_file: FilePath, configuration_type: s
     return FilePath(path)
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Add nodes to the cluster
@@ -4146,6 +4157,7 @@ def set_context(cluster_name: str, context_name: str) -> None:
         sys.exit(errno.ENOENT)
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Create a cluster based on a ClusterDeployment template
@@ -4520,6 +4532,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     # Finally we attempt to deploy workloads
     workloads = deep_get(cd, DictPath("workloads"), [])
 
+    # pylint: disable-next=too-many-nested-blocks
     if state in ("deploy_workloads", "deploying") and workloads:
         ansithemeprint([ANSIThemeStr("\n[Deploying workloads]", "phase")])
 
@@ -5013,6 +5026,7 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
     return crio_major_version, crio_minor_version
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Setup a control plane
@@ -5498,7 +5512,7 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
     return controlplanes
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches,too-many-statements
 def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Teardown an existing control plane
@@ -5601,7 +5615,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
     ansithemeprint([ANSIThemeStr("\nCluster teardown successful", "success")])
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches,too-many-statements
 def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Purge an existing control plane
@@ -5704,6 +5718,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
                                  "purging the cluster\n", "default")])
 
 
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Upgrade a control plane
@@ -6052,7 +6067,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     ansithemeprint([ANSIThemeStr("\nControl plane upgrade successful", "success")])
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches
 def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Taint a control plane
@@ -6119,7 +6134,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
         sys.exit(errno.ENOENT)
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-branches
 def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Untaint a control plane
@@ -6288,7 +6303,7 @@ security_audit_checks = [
 ]
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Run security audit checks
