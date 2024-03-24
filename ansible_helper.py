@@ -17,7 +17,7 @@ import os
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -594,7 +594,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: An
 
 def ansible_set_groupvars(inventory: FilePath,
                           groups: List[str],
-                          groupvars: List[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
+                          groupvars: Sequence[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified groups
 
@@ -651,7 +651,7 @@ def ansible_set_groupvars(inventory: FilePath,
 # Set one or several vars for hosts in the group all
 def ansible_set_hostvars(inventory: FilePath,
                          hosts: List[str],
-                         hostvars: List[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
+                         hostvars: Sequence[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified hosts
 

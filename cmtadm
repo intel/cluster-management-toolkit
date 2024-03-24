@@ -887,7 +887,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                     else:
                         # This should check whether kubectl is >= 1.22;
                         # otherwise we need to use create
-                        check_and_print_status(execute_command_with_response(args))
+                        execute_command_with_response(args)
         else:
             ansithemeprint([ANSIThemeStr("No newer version available.", "default")])
     elif install_command is not None and (version is None or len(version) == 0):
@@ -1604,7 +1604,8 @@ def get_latest_kubernetes_upstream_version() -> str:
     Fetch the upstream version for Kubernetes
 
         Returns:
-            (str): The latest upstream Kubernetes version
+            (str): The latest upstream Kubernetes version;
+                   or an empty string if the version could not be determined
     """
     # We are OK with the file not existing
     security_checks = [
@@ -1616,7 +1617,7 @@ def get_latest_kubernetes_upstream_version() -> str:
         SecurityChecks.IS_FILE,
     ]
 
-    kubernetes_upstream_version = None
+    kubernetes_upstream_version: str = ""
 
     try:
         version_cache = secure_read_yaml(VERSION_CACHE_DIR.joinpath("kubernetes_current.yaml"),
@@ -1674,7 +1675,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
         pkg_versions = check_versions_yum(pkg_packages)
 
     kubernetes_installed_version = "<unknown>"
-    if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
         kubernetes_upstream_version = "<unknown>"
 
     # Get the API-server version (if available)
@@ -2034,7 +2035,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),
@@ -2093,7 +2094,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),
@@ -3171,7 +3172,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
     """
     os_distro = identify_distro()
 
-    requested_version = None
+    requested_version: str = ""
 
     if k8s_distro == "kubeadm":
         # If version is an exact match for a package version, use it.
@@ -3213,7 +3214,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
             if not requested_version:
                 requested_version = versions[0][1]
 
-        if requested_version is None:
+        if not requested_version:
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Could not find a matching kubeadm package "
                                          "for version ", "default"),
@@ -3263,7 +3264,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> None:
+def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> None:
     """
     Install and configure pre-requisites for a control plane
 
@@ -3303,7 +3304,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
     hide_next_step = False
-    nodes = []
+    nodes: List[str] = []
 
     if state is not None and state not in ("<none>", "preparing", "prepared", "torn_down"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -3417,7 +3418,7 @@ def prepare_installation(options: List[Tuple[str, str]], args: List[str]) -> Non
 
         # The first minor Kubernetes version available from the new repository is 1.24.0;
         # thus we don't support any version older than that.
-        if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+        if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                          "default"),
@@ -3762,14 +3763,14 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     ]
 
     if os_distro == "suse":
-        if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is not None:
+        if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
             _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 
             for package in ("client", "kubeadm", "kubelet"):
                 for i in range(17, int(upstream_minor) + 1):
                     pkg_packages.append(f"kubernetes1.{i}-{package}")
 
-    pkg_packages = natsorted(pkg_packages)
+    pkg_packages = cast(List[str], natsorted(pkg_packages))
 
     version_checks: List = []
 
@@ -3799,7 +3800,7 @@ def show_configuration(action: str,
     controlplanes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"), [])
     nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
 
-    failures = {}
+    failures: Dict = {}
 
     control_plane_info = []
     for controlplane in controlplanes:
@@ -3811,6 +3812,10 @@ def show_configuration(action: str,
                           "[Errno -3] Temporary failure in name resolution",
                           "[Errno -5] No address associated with hostname"):
                 tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
+                if tmp is None:
+                    # If we cannot extract the error we re-raise it since we don't know
+                    # how to handle it
+                    raise
                 if not deep_get(failures, DictPath(tmp[2]), []):
                     failures[tmp[2]] = []
                 failures[tmp[2]].append(controlplane)
@@ -3826,6 +3831,10 @@ def show_configuration(action: str,
                           "[Errno -3] Temporary failure in name resolution",
                           "[Errno -5] No address associated with hostname"):
                 tmp = re.match(r"^\[Errno (-\d+)\] (.+)", str(e))
+                if tmp is None:
+                    # If we cannot extract the error we re-raise it since we don't know
+                    # how to handle it
+                    raise
                 if not deep_get(failures, DictPath(tmp[2]), []):
                     failures[tmp[2]] = []
                 failures[tmp[2]].append(node)
@@ -3836,10 +3845,10 @@ def show_configuration(action: str,
     if failures:
         ansithemeprint([ANSIThemeStr("Errors", "error"),
                         ANSIThemeStr(":", "default")], stderr=True)
-    for _error, hosts in failures.items():
+    for error, hosts in failures.items():
         hosts = ansithemestr_join_list(hosts, formatting="hostname",
                                        separator=ANSIThemeStr(", ", "separator"))
-        ansithemeprint([ANSIThemeStr(f"  {tmp[2]} (hosts: ", "default")]
+        ansithemeprint([ANSIThemeStr(f"  {error} (hosts: ", "default")]
                        + hosts
                        + [ANSIThemeStr(")", "default")], stderr=True)
     if failures:
@@ -3983,7 +3992,7 @@ def __get_configuration_data(configuration_file: FilePath, configuration_type: s
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
+def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     """
     Add nodes to the cluster
 
@@ -4007,7 +4016,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     if k8s_distro == "kubeadm":
         configuration_paths = [
-            os.path.join(ANSIBLE_PLAYBOOK_DIR, "templates", "config", "join_configuration.yaml.j2"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config", "join_configuration.yaml.j2")),
         ]
     elif k8s_distro == "rke2":
         configuration_paths = [
@@ -4865,8 +4874,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         if verbose:
                             check_and_print_status(execute_command(args + [uri], env=env))
                         else:
-                            check_and_print_status(execute_command_with_response(args + [uri],
-                                                                                 env=env))
+                            execute_command_with_response(args + [uri], env=env)
                     if wtype in ("namespace", "secret+tls"):
                         dry_run_result = \
                             execute_command_with_response(args + ["--dry-run=server"], env=env)
@@ -4874,7 +4882,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             if verbose:
                                 check_and_print_status(execute_command(args, env=env))
                             else:
-                                check_and_print_status(execute_command_with_response(args, env=env))
+                                execute_command_with_response(args, env=env)
                     if data is not None:
                         # pylint: disable-next=consider-using-with
                         tf = tempfile.NamedTemporaryFile(delete=True)
@@ -4883,8 +4891,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         if verbose:
                             check_and_print_status(execute_command(args + [path], env=env))
                         else:
-                            check_and_print_status(execute_command_with_response(args + [path],
-                                                                                 env=env))
+                            execute_command_with_response(args + [path], env=env)
                 elif "helm" in data:
                     if helm_path is None:
                         ansithemeprint([ANSIThemeStr("Warning", "warning"),
@@ -4930,7 +4937,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                     if verbose:
                         check_and_print_status(execute_command(args))
                     else:
-                        check_and_print_status(execute_command_with_response(args))
+                        execute_command_with_response(args)
 
                     # Check whether the component is already installed
                     args = [helm_path, "list", "--namespace", namespace,
@@ -4957,7 +4964,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                     if verbose:
                         check_and_print_status(execute_command(args, env=env))
                     else:
-                        check_and_print_status(execute_command_with_response(args, env=env))
+                        execute_command_with_response(args, env=env)
 
             installation_info = \
                 update_installation_info(cluster_name=cluster_name, state="deploying", phase=i)
@@ -4991,9 +4998,9 @@ def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
             configurations += "---\n"
         configurations += configuration
 
-    secure_write_string(tf.name, configurations, temporary=True)
+    secure_write_string(FilePath(tf.name), configurations, temporary=True)
 
-    return tf.name
+    return FilePath(tf.name)
 
 
 def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
@@ -5027,7 +5034,7 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> None:
+def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> None:
     """
     Setup a control plane
 
@@ -5095,7 +5102,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
 
     cri = None
     enable_dra = False
-    extra_values = {}
+    extra_values: Dict = {}
 
     for opt, optarg in options:
         if opt == "--start-at-task":
@@ -5206,7 +5213,7 @@ def setup_control_planes(options: List[Tuple[str, str]], args: List[str]) -> Non
         setup_extras["kubernetes_major_minor_version"] = requested_major_minor
     elif k8s_distro == "rke2":
         if requested_version == "latest":
-            if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+            if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": “", "default"),
                                 ANSIThemeStr("latest", "version"),
@@ -5461,7 +5468,7 @@ def __get_node_info() -> List[Dict]:
             "taints": node_taints,
         })
 
-    return node_statuses, kh
+    return node_statuses
 
 
 def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
@@ -5833,7 +5840,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),

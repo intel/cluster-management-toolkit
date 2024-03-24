@@ -316,6 +316,25 @@ mypy-strict:
 
 # Note: we know that the code does not have complete type-hinting,
 # hence we return 0 after each test to avoid it from stopping.
+mypy-markdown:
+	@cmd=mypy ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
+		exit 0; \
+	fi; \
+	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
+	for file in $(python_executables) $(python_test_executables) *.py; do \
+		case $$file in \
+		'cmtlog.py'|'noxfile.py') \
+			continue;; \
+		esac ;\
+		result=$$($$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
+		row="$$file | $$result\n" ;\
+		printf -- "$$row" ;\
+	done
+
+# Note: we know that the code does not have complete type-hinting,
+# hence we return 0 after each test to avoid it from stopping.
 mypy:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
