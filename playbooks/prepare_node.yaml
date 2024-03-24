@@ -26,12 +26,12 @@
       ansible.builtin.shell: |
         # Disable swap entries in /etc/fstab
         sed -i -e 's,^/swapfile.*,#&,;s,^/swap.img.*,#&,;s,^UUID=[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]*-[a-f0-9]* *none *swap.*,#&,' /etc/fstab
-        # Disable swap units
-        swapunits="$(systemctl --type swap -o json-pretty)"
+        # Disable swap units; due to systemctl -o json-pretty not working in RHEL8 we have to do this instead:
+        swapunits="$(systemctl --type swap | grep 'active.*Swap' | cut -d' ' -f3)"
         if [ $(systemctl --type swap | grep -c "0 loaded units listed") -eq 0 ]; then
-          for swap in $(echo "${swapunits}" | grep "unit" | sed -e 's/.*"unit" : "//;s/",$//'); do
-            systemctl mask "$(printf -- "${swap}")"
-          done
+          for swap in ${swapunits}; do
+            echo systemctl mask "$(printf -- "${swap}")";
+          done;
         fi
         # Disable swap during this boot
         swapoff -a
