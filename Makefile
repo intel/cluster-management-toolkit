@@ -253,7 +253,7 @@ pylint-markdown:
 			continue;; \
 		esac ;\
 		result=$$($$cmd --disable $(PYLINT_IGNORE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
-		row="$$file | $$result\n" ;\
+		row="| $$file | $$result |\n" ;\
 		printf -- "$$row" ;\
 	done
 
@@ -329,7 +329,7 @@ mypy-markdown:
 			continue;; \
 		esac ;\
 		result=$$($$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
-		row="$$file | $$result\n" ;\
+		row="| $$file | $$result |\n" ;\
 		printf -- "$$row" ;\
 	done
 

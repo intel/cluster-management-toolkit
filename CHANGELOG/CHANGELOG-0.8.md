@@ -18,8 +18,8 @@
         * [Pylint](#pylint-results-for-v080)
         * [Regexploit](#regexploit-results-for-v080)
         * [Semgrep](#semgrep-results-for-v080)
-        * [validate_playbooks](#validate-playbooks-results-for-v080)
-        * [validate_yaml](#validate-yaml-results-for-v080)
+        * [validate_playbooks](#validate_playbooks-results-for-v080)
+        * [validate_yaml](#validate-yaml_results-for-v080)
         * [YAMLlint](#yamllint-results-for-v080)
 
 # v0.8.0
