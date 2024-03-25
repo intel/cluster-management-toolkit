@@ -2009,6 +2009,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/kubeapps.com/v1alpha1/"],
         "api": "apprepositories",
     },
+    # kubefledged.io
+    ("ImageCache", "kubefledged.io"): {
+        "api_paths": ["apis/kubefledged.io/v1alpha2/"],
+        "api": "imagecaches",
+    },
     # kubeflow.org
     ("Experiment", "kubeflow.org"): {
         "api_paths": ["apis/kubeflow.org/v1beta1/"],
