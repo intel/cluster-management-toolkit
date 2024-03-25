@@ -45,6 +45,7 @@ or ask for help.
 | `curses_helper.py`    | `tests/cursestests`    |                                      |
 | `datagetters.py`      | `tests/dgtests`        |                                      |
 | `fieldgetters.py`     | `tests/fgtests`        |                                      |
+| `generators.py`       | `tests/gentests`       |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
 | `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |
 | `listgetters.py`      | `tests/lgtests`        |                                      |

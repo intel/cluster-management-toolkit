@@ -214,9 +214,9 @@ class ThemeRef:
         if data is None:
             msg = [
                 [("The ThemeRef(", "error"),
-                 (f"{self.context}", "argument"),
+                 (f"'{self.context}'", "argument"),
                  (", ", "error"),
-                 (f"{self.key}", "argument"),
+                 (f"'{self.key}'", "argument"),
                  (") does not exist.", "error")],
             ]
 
@@ -264,9 +264,9 @@ class ThemeRef:
         if array is None:
             msg = [
                 [("The ThemeRef(", "error"),
-                 (f"{self.context}", "argument"),
+                 (f"'{self.context}'", "argument"),
                  (", ", "error"),
-                 (f"{self.key}", "argument"),
+                 (f"'{self.key}'", "argument"),
                  (") does not exist.", "error")],
             ]
 

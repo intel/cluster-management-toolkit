@@ -23,6 +23,7 @@ python_test_executables = \
 	tests/dump_logs \
 	tests/fgtests \
 	tests/fmttests \
+	tests/gentests \
 	tests/iotests \
 	tests/khtests \
 	tests/lgtests \
@@ -44,6 +45,7 @@ python_unit_tests = \
 	tests/cursestests \
 	tests/fgtests \
 	tests/fmttests \
+	tests/gentests \
 	tests/iotests \
 	tests/khtests \
 	tests/lgtests \

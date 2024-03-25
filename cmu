@@ -296,10 +296,12 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 
             if processor is not None:
                 if processor in (generators.processor_list, generators.processor_list_with_status):
-                    tmp = processor(obj, field_name, item_separator=item_separator,
+                    tmp = processor(obj, field_name,
+                                    item_separator=item_separator,
                                     field_separators=field_separators,
                                     ellipsise=ellipsise, ellipsis=ellipsis,
-                                    field_prefixes=field_prefixes, field_suffixes=field_suffixes)
+                                    field_prefixes=field_prefixes,
+                                    field_suffixes=field_suffixes)
                 # pylint: disable-next=comparison-with-callable
                 elif processor == generators.processor_timestamp_with_age:
                     tmp = processor(obj, field_name, formatting)

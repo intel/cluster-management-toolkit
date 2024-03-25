@@ -1,0 +1,574 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from pathlib import PurePath
+import sys
+from typing import Dict, List, Tuple
+import yaml
+
+from cmtpaths import DEFAULT_THEME_FILE
+from cmttypes import deep_get, DictPath, FilePath, StatusGroup
+import curses_helper
+from curses_helper import ThemeRef
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import generators
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
+
+# unit-tests for generators.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+    return ("callback", len(args))
+
+
+def test_processor_list(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_list
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: Tuple = (
+            # api_support not None
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ['Known'],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "Known",
+                None,
+            ),
+            # api_support has an empty element
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': [''],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "",
+                None,
+            ),
+            # api_support has a tuple element
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': [('Known', "foo")],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                f"Known{ThemeRef('separators', 'field')}foo",
+                None,
+            ),
+            # api_support is a tuple
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ('Known', "foo"),
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                f"Known{ThemeRef('separators', 'field')}foo",
+                None,
+            ),
+            # api_support has multiple elements
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ['Known', 'List', 'Info'],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "Known, List, Info",
+                None,
+            ),
+            # api_support has multiple elements, ellipsise at 2
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ['Known', 'List', 'Info'],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                2,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                f"Known, List, {ThemeRef('separators', 'ellipsis')}",
+                None,
+            ),
+            # api_support has multiple elements, prefix, double-suffix (ThemeRef)
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ['Known', 'List'],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [ThemeRef("separators", "facility_prefix")],
+                [[ThemeRef("separators", "facility_suffix"),
+                  ThemeRef("separators", "facility_suffix")]],
+                f"{ThemeRef('separators', 'facility_prefix')}Known"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}, "
+                f"{ThemeRef('separators', 'facility_prefix')}List"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}",
+                None,
+            ),
+            # api_support has multiple elements, prefix, double-suffix ((str, str))
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': ['Known', 'List'],
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ("separators", "ellipsis"),
+                [("separators", "facility_prefix")],
+                [[("separators", "facility_suffix"),
+                  ("separators", "facility_suffix")]],
+                f"{ThemeRef('separators', 'facility_prefix')}Known"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}, "
+                f"{ThemeRef('separators', 'facility_prefix')}List"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}",
+                None,
+            ),
+            # api_support is None
+            (
+                type("InfoClass", (), {
+                    'name': 'imagecaches.kubefledged.io',
+                    'kind': 'ImageCache',
+                    'api_group_crd': 'kubefledged.io',
+                    'stored_versions': ['v1alpha2'],
+                    'scope': 'Namespaced',
+                    'api_support': None,
+                }),
+                "api_support",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "",
+                None,
+            ),
+        )
+
+        for obj, field, item_separators, field_separators, ellipsise, ellipsis, \
+                field_prefixes, field_suffixes, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field,
+                          item_separator=item_separators,
+                          field_separators=field_separators,
+                          ellipsise=ellipsise, ellipsis=ellipsis,
+                          field_prefixes=field_prefixes, field_suffixes=field_suffixes)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_processor_list_with_status(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.processor_list_with_status
+
+    if result:
+        # Indata format:
+        # (obj, field, expected_result, expected_exception)
+        testdata: Tuple = (
+            # endpoints not None
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('10.0.0.97', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "10.0.0.97",
+                None,
+            ),
+            # endpoints has an empty element
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "",
+                None,
+            ),
+            # endpoints is a tuple
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "",
+                None,
+            ),
+            # endpoints has multiple elements
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('10.0.0.97', StatusGroup.OK),
+                        ('10.0.0.98', StatusGroup.OK),
+                        ('10.0.0.99', StatusGroup.OK),
+                        ('10.0.0.100', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "10.0.0.97" \
+                f"{ThemeRef('separators', 'list')}" \
+                "10.0.0.98" \
+                f"{ThemeRef('separators', 'list')}" \
+                "10.0.0.99" \
+                f"{ThemeRef('separators', 'list')}" \
+                "10.0.0.100",
+                None,
+            ),
+            # endpoints has multiple elements, ellipsise at 2
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('10.0.0.97', StatusGroup.OK),
+                        ('10.0.0.98', StatusGroup.OK),
+                        ('10.0.0.99', StatusGroup.OK),
+                        ('10.0.0.100', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                2,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "10.0.0.97" \
+                f"{ThemeRef('separators', 'list')}" \
+                "10.0.0.98" \
+                f"{ThemeRef('separators', 'list')}" \
+                f"{ThemeRef('separators', 'ellipsis')}",
+                None,
+            ),
+            # endpoints has multiple elements, prefix, double-suffix ((str, str))
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': [
+                        ('10.0.0.97', StatusGroup.OK),
+                        ('10.0.0.98', StatusGroup.OK)],
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [("separators", "facility_prefix")],
+                [[("separators", "facility_suffix"),
+                  ("separators", "facility_suffix")]],
+                f"{ThemeRef('separators', 'facility_prefix')}10.0.0.97"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}, "
+                f"{ThemeRef('separators', 'facility_prefix')}10.0.0.98"
+                f"{ThemeRef('separators', 'facility_suffix')}"
+                f"{ThemeRef('separators', 'facility_suffix')}",
+                None,
+            ),
+            # endpoints is None
+            (
+                type("InfoClass", (), {
+                    'namespace': 'cert-manager',
+                    'name': 'cert-manager',
+                    'ports': [(None, None, None)],
+                    'endpoints': None,
+                }),
+                "endpoints",
+                ThemeRef("separators", "list"),
+                [ThemeRef("separators", "field")],
+                -1,
+                ThemeRef("separators", "ellipsis"),
+                [],
+                [],
+                "",
+                None,
+            ),
+        )
+
+        for obj, field, item_separators, field_separators, ellipsise, ellipsis, \
+                field_prefixes, field_suffixes, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, field,
+                          item_separator=item_separators,
+                          field_separators=field_separators,
+                          ellipsise=ellipsise, ellipsis=ellipsis,
+                          field_prefixes=field_prefixes, field_suffixes=field_suffixes)
+
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("processor_list()",): {
+        "callable": test_processor_list,
+        "result": None,
+    },
+    ("processor_list_with_status()",): {
+        "callable": test_processor_list_with_status,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    themefile = DEFAULT_THEME_FILE
+    init_ansithemeprint(themefile=themefile)
+    curses_helper.read_theme(themefile, themefile)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()

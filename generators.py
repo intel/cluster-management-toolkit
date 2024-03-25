@@ -12,7 +12,7 @@ This generates and post-processes elements for various more complex types
 
 import copy
 from datetime import datetime
-from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
 import yaml
 
 from ansithemeprint import ANSIThemeStr
@@ -70,8 +70,8 @@ def format_list(items: Any, fieldlen: int, pad: int,
                 field_separators ([ThemeRef]): The separators between each field
                 ellipsise (int): Ellipsise after this many elements (-1 == disabled)
                 ellipsis (ThemeRef): The marker to use when ellipsising the list
-                field_prefixes ([ThemeRef): Prefixes for each element
-                field_suffixes ([ThemeRef): Suffixes for each element
+                field_prefixes ([ThemeRef]): Prefixes for each element
+                field_suffixes ([ThemeRef]): Suffixes for each element
                 mapping (dict): Mappings passed to map_value()
         Returns:
             (ThemeArray): The formatted themearray
@@ -927,17 +927,61 @@ def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str
     return themearray_to_string(array)
 
 
+def __fix_to_str(fix: Union[List[Union[ThemeRef, Tuple[str, str]]],
+                            ThemeRef,
+                            Tuple[str, str]]) -> str:
+    """
+    Convert a prefix or suffix into a str
+    """
+    fixstr = ""
+
+    if isinstance(fix, list):
+        for subfix in fix:
+            if isinstance(subfix, ThemeRef):
+                fixstr += str(subfix)
+            elif isinstance(subfix, tuple) and len(subfix) == 2:
+                fixstr += str(ThemeRef(subfix[0], subfix[1]))
+            else:
+                raise TypeError(f"__fix_to_str(): Unable to process fix '{fix}'")
+    elif isinstance(fix, ThemeRef):
+        fixstr += str(fix)
+    elif isinstance(fix, tuple) and len(fix) == 2:
+        fixstr += str(ThemeRef(fix[0], fix[1]))
+    else:
+        raise TypeError(f"__fix_to_str(): Unable to process fix '{fix}'")
+    return fixstr
+
+
 # For the list processor to work we need to know the length of all the separators
-# pylint: disable-next=too-many-arguments
-def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
-                   field_separators: List[Union[ThemeRef, ThemeStr]],
-                   ellipsise: bool, ellipsis: ThemeRef,
-                   field_prefixes: List[Union[Tuple[str, str],
-                                              ThemeStr,
-                                              List[Union[Tuple[str, str], ThemeStr]]]],
-                   field_suffixes: List[Union[Tuple[str, str],
-                                              ThemeStr,
-                                              List[Union[Tuple[str, str], ThemeStr]]]]) -> str:
+def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
+    """
+    Return the field with separators, prefixes, suffixes, ellipsis, etc.,
+    but with formatting stripped; to be used when calculating string length.
+    This processor is used for lists.
+
+        Parameters:
+            obj (InfoClass): The object to extract the field from
+            field (str): The field to process
+            **kwargs (dict[str, Any]): Keyword arguments
+                item_separator (ThemeRef): The separator between each element in the list
+                field_separators ([ThemeRef|ThemeStr]): The separators between each part
+                                                        of the field
+                ellipsise (bool): After how many elements should the list be ellipsised;
+                                  -1 = never
+                ellipsis (ThemeRef): The ellipsis to use when ellipsising
+                field_prefixes ([ThemeRef]): Prefixes before each part of the list
+                field_suffixes ([ThemeRef]): Suffixes after each part of the list
+        Returns:
+            (str): The processed, unformatted string
+    """
+    item_separator: ThemeRef = deep_get(kwargs, DictPath("item_separator"))
+    field_separators: List[Union[ThemeRef, ThemeStr]] = \
+        deep_get(kwargs, DictPath("field_separators"))
+    ellipsise: int = deep_get(kwargs, DictPath("ellipsise"))
+    ellipsis: ThemeRef = deep_get(kwargs, DictPath("ellipsis"))
+    field_prefixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_prefixes"))
+    field_suffixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_suffixes"))
+
     items = getattr(obj, field)
 
     strings: List[str] = []
@@ -945,6 +989,8 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
     elcount = 0
     skip_separator = True
 
+    if items is None:
+        items = []
     if isinstance(items, tuple):
         items = [items]
 
@@ -963,9 +1009,7 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
             if data is None:
                 continue
 
-            tmp = str(data)
-
-            if not tmp:
+            if not (tmp := str(data)):
                 continue
 
             if i and not skip_separator:
@@ -973,22 +1017,10 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
                                                                      len(field_separators) - 1)]])
 
             if field_prefixes is not None and i < len(field_prefixes):
-                if isinstance(field_prefixes[i], tuple):
-                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
-                                                        [field_prefixes[i]]))
-                else:
-                    for item_ in cast(List[Union[ThemeRef, ThemeStr]], field_prefixes[i]):
-                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
-                                                            [item_]))
+                string += __fix_to_str(field_prefixes[i])
             string += tmp
             if field_suffixes is not None and i < len(field_suffixes):
-                if isinstance(field_suffixes[i], tuple):
-                    string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
-                                                        [field_suffixes[i]]))
-                else:
-                    for item_ in cast(List[Union[ThemeRef, ThemeStr]], field_suffixes[i]):
-                        string += themearray_to_string(cast(List[Union[ThemeRef, ThemeStr]],
-                                                            [item_]))
+                string += __fix_to_str(field_suffixes[i])
             skip_separator = False
 
         strings.append(string)
@@ -1000,15 +1032,40 @@ def processor_list(obj: Dict, field: str, item_separator: ThemeRef,
 
 
 # For the list processor to work we need to know the length of all the separators
-# pylint: disable-next=too-many-arguments
-def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef,
-                               field_separators: List[Union[ThemeRef, ThemeStr]],
-                               ellipsise: bool, ellipsis: ThemeRef,
-                               field_prefixes: List[ThemeStr],
-                               field_suffixes: List[ThemeStr]) -> str:
-    items = getattr(obj, field)
+def processor_list_with_status(obj: Type, field: str, **kwargs: Any) -> str:
+    """
+    Return the field with separators, prefixes, suffixes, ellipsis, etc.,
+    but with formatting stripped; to be used when calculating string length.
+    This processor is used for lists with status.
 
-    strings = []
+        Parameters:
+            obj (InfoClass): The object to extract the field from
+            field (str): The field to process
+            **kwargs (dict[str, Any]): Keyword arguments
+                item_separator (ThemeRef): The separator between each element in the list
+                field_separators ([ThemeRef|ThemeStr]): The separators between each part
+                                                        of the field
+                ellipsise (bool): After how many elements should the list be ellipsised;
+                                  -1 = never
+                ellipsis (ThemeRef): The ellipsis to use when ellipsising
+                field_prefixes ([ThemeStr]): Prefixes before each part of the list
+                field_suffixes ([ThemeStr]): Suffixes after each part of the list
+        Returns:
+            (str): The processed, unformatted string
+    """
+    item_separator: ThemeRef = deep_get(kwargs, DictPath("item_separator"))
+    field_separators: List[Union[ThemeRef, ThemeStr]] = \
+        deep_get(kwargs, DictPath("field_separators"))
+    ellipsise: int = deep_get(kwargs, DictPath("ellipsise"))
+    ellipsis: ThemeRef = deep_get(kwargs, DictPath("ellipsis"))
+    field_prefixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_prefixes"))
+    field_suffixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_suffixes"))
+
+    items = getattr(obj, field)
+    if items is None:
+        items = []
+
+    strings: List[str] = []
 
     elcount = 0
     skip_separator = True
@@ -1022,8 +1079,7 @@ def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef,
             strings.append(themearray_to_string([ellipsis]))
             break
 
-        if not isinstance(item, tuple):
-            item = (item, None)
+        item = (item, None)
 
         # Join all elements of the field into one string
         string = ""
@@ -1032,20 +1088,18 @@ def processor_list_with_status(obj: Dict, field: str, item_separator: ThemeRef,
             if data is None:
                 continue
 
-            tmp = str(data)
-
-            if not tmp:
+            if not (tmp := str(data)):
                 continue
 
-            if i > 0 and not skip_separator:
+            if i and not skip_separator:
                 string += themearray_to_string([field_separators[min(i - 1,
                                                                      len(field_separators) - 1)]])
 
             if field_prefixes is not None and i < len(field_prefixes):
-                string += themearray_to_string([field_prefixes[i]])
+                string += __fix_to_str(field_prefixes[i])
             string += tmp
             if field_suffixes is not None and i < len(field_suffixes):
-                string += themearray_to_string([field_suffixes[i]])
+                string += __fix_to_str(field_suffixes[i])
             skip_separator = False
 
         strings.append(string)
