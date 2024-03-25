@@ -166,13 +166,10 @@ as fixed until the Pull Request has been merged.  If possible mention the resolv
 
 ## Coding Standard
 
-Unlike many other Python project, __CMT__ currently uses tabs for indentation; spaces is only used to align indentation.
-Other than that the coding standard is very similar to the upstream Python coding standard as dictated by Pylint,
-Flake8, etc.
-
-Note: For now __CMT__ prioritises legibility over line length, hence the use of tabs for indentation and the less
-strict enforcement of line length. However, it is likely that we will move to coding style that more
-closely follows common Python standards, to make it easier for people to contribute to the project.
+The coding style for __CMT__ is PEP8 with 100 character lines. `pylint --disable W0511` (do not warn
+about FIXME/XXX/TODO) and and `flake8 --max-line-length 100 --ignore F841,W503` (line breaks should be before
+binary operators, don't warn about unused variables since Flake8 doesn't understand the ignoring
+results with `_ignore`).
 
 ### Type Annotations and Documentation
 
@@ -183,6 +180,8 @@ parameters, returns). Code SHOULD be documented if it's not immediately obvious 
 
 __CMT__ uses Python 3.8 to allow for compatibility with some (not all) older enterprise distros.
 This means that type annotations and the features used MUST NOT require newer versions of Python.
+In some corner cases this means using Any for type hints, and being very generic about the definitions
+for dicts.
 
 ## Documentation
 
