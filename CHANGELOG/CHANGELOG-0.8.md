@@ -9,6 +9,7 @@
         * [Changes to _cmtadm_](#changes-to-cmtadm-in-v081)
         * [Changes to _cmtinv_](#changes-to-cmtinv-in-v081)
         * [Changes to _cmu_](#changes-to-cmu-in-v081)
+        * [Changes to other files](#changes-to-other-files-in-v081)
     * [Fixed Issues](#fixed-issues-in-v081)
     * [Known Regressions](#known-regressions-in-v081)
     * [Dependencies](#dependencies-for-v081)
