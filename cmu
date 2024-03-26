@@ -186,19 +186,21 @@ def init_kubernetes_client() -> None:
 
 
 # pylint: disable-next=too-many-locals
-def gather_cluster_info() -> None:
+def gather_cluster_info(**kwargs: Any) -> None:
     """
     Gather information about the cluster necessary for running playbooks
-    """
-    if not kubernetes_support:
-        return
 
-    ansithemeprint([ANSIThemeStr("[Gathering cluster information]\n", "phase")])
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+    """
+    if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
 
     # Set global variables that need to be available when executing playbooks
-    join_token = kh.get_join_token()
-    ca_cert_hash = kh.get_ca_cert_hash()
-    control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
+    join_token = kh_.get_join_token()
+    ca_cert_hash = kh_.get_ca_cert_hash()
+    control_plane_ip, control_plane_port, control_plane_path = kh_.get_control_plane_address()
     _control_plane_node, control_plane_name = get_control_plane()
 
     # This is tricky: we get this from the distro packages;
@@ -237,8 +239,6 @@ def gather_cluster_info() -> None:
     }
 
     ansible_set_vars(ANSIBLE_INVENTORY, "all", values)
-
-    print("\n\n")
 
 
 def format_timestamp(timestamp: datetime,
@@ -389,10 +389,15 @@ def get_container_info(**kwargs: Any) -> List[Type]:
     Infogetter for Containers
 
         Parameters:
-            **kwargs (dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
         Returns:
             ([InfoClass]): A list with info
     """
+    if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+    kh_cache_ = KubernetesResourceCache()
+
     info: List[Type] = []
     containers: Dict = {}
 
@@ -400,7 +405,7 @@ def get_container_info(**kwargs: Any) -> List[Type]:
     # as defined by the tuple (name, type, version, image_id),
     # so we need to iterate the list of all pods and extract this
     # information.
-    vlist, status = kh.get_list_by_kind_namespace(("Pod", ""), "", resource_cache=kh_cache)
+    vlist, status = kh_.get_list_by_kind_namespace(("Pod", ""), "", resource_cache=kh_cache_)
     if status != 200:
         return info
 
@@ -5829,9 +5834,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             uip.refresh_all()
             uip.force_update()
 
-        for key, value in shortcuts.items():
-            shortcut_keys = deep_get(value, DictPath("shortcut"))
-            if shortcut_keys is None:
+        for _key, sc_value in shortcuts.items():
+            if (shortcut_keys := deep_get(sc_value, DictPath("shortcut"))) is None:
                 continue
 
             if not isinstance(shortcut_keys, list):
@@ -5840,23 +5844,22 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             if c not in shortcut_keys:
                 continue
 
-            widget = deep_get(value, DictPath("widget"))
-            force_update = deep_get(value, DictPath("force_update"), True)
+            widget = deep_get(sc_value, DictPath("widget"))
+            force_update = deep_get(sc_value, DictPath("force_update"), True)
             tmpselection = None
             if widget is not None:
                 if widget == "windowwidget":
-                    w_title = deep_get(value, DictPath("title"), "")
-                    w_headers = deep_get(value, DictPath("headers"))
-                    w_itemgetter = deep_get(value, DictPath("itemgetter"))
-                    if w_itemgetter is None:
+                    w_title = deep_get(sc_value, DictPath("title"), "")
+                    w_headers = deep_get(sc_value, DictPath("headers"))
+                    if (w_itemgetter := deep_get(sc_value, DictPath("itemgetter"))) is None:
                         continue
                     if isinstance(w_itemgetter, str):
                         w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
-                    w_itemgetter_args = deep_get(value, DictPath("itemgetter_args"), {})
+                    w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
                     w_itemgetter_args["kubernetes_helper"] = kh
                     w_itemgetter_args["kh_cache"] = kh_cache
-                    w_selectable = deep_get(value, DictPath("selectable"), False)
-                    # w_kind = deep_get(value, DictPath("kind"), view)
+                    w_selectable = deep_get(sc_value, DictPath("selectable"), False)
+                    # w_kind = deep_get(sc_value, DictPath("kind"), view)
                     if "_slow_task_msg" in w_itemgetter_args:
                         _w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
                                                       message=deep_get(w_itemgetter_args,
@@ -5872,7 +5875,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                                      # pylint: disable-next=unidiomatic-typecheck
                                      and type(w_items[0][0]) != int)):  # noqa: E721
                         tmp_items = []
-                        w_formatting = deep_get(value, DictPath("formatting"),
+                        w_formatting = deep_get(sc_value, DictPath("formatting"),
                                                 [ThemeAttr("windowwidget", "default")])
                         lineattrs = WidgetLineAttrs.NORMAL
                         # w_item is a line
@@ -5899,7 +5902,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                         w_items = tmp_items
 
                     if w_items is not None and w_items:
-                        w_sortcolumn = deep_get(value, DictPath("sortcolumn"))
+                        w_sortcolumn = deep_get(sc_value, DictPath("sortcolumn"))
                         tmpselection = \
                             curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
                                                        uip.maxy // 2, uip.maxx // 2,
@@ -5910,7 +5913,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             continue
                 elif widget == "inputbox":
                     selected = uip.get_selected()
-                    w_title = deep_get(value, DictPath("inputtitle"), "")
+                    w_title = deep_get(sc_value, DictPath("inputtitle"), "")
                     if not (w_result := curses_helper.inputbox(uip.stdscr, title=w_title)):
                         continue
                     # This is necessary because we never go through
@@ -5921,7 +5924,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     uip.refresh_statusbar()
                     curses.doupdate()
                     # Check this condition before confirming
-                    w_confirm = deep_get(value, DictPath("confirm"), False)
+                    w_confirm = deep_get(sc_value, DictPath("confirm"), False)
                     if isinstance(w_confirm, str):
                         if w_confirm == "path_exists":
                             w_confirm = os.path.exists(w_result)
@@ -5930,12 +5933,12 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                                      "must be either boolean or path_exists")
                     if w_confirm:
                         curses.doupdate()
-                        w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
+                        w_confirmtitle = deep_get(sc_value, DictPath("confirmtitle"))
                         if not curses_helper.confirmationbox(uip.stdscr,
                                                              title=w_confirmtitle, default=False):
                             continue
                 elif widget == "command":
-                    w_args = deep_get(value, DictPath("widget_args"), {})
+                    w_args = deep_get(sc_value, DictPath("widget_args"), {})
                     if "_pass_obj" in w_args:
                         w_args["obj"] = obj
                     elif "_pass_selected_obj" in w_args:
@@ -5945,9 +5948,9 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     do_command(uip.stdscr, **w_args)
                 elif widget == "executecommand":
                     selected = uip.get_selected()
-                    w_kinds = deep_get_with_fallback(value, [DictPath("widget_args#kinds"),
-                                                             DictPath("kinds")])
-                    if w_kinds is None:
+                    if (w_kinds := deep_get_with_fallback(sc_value,
+                                                          [DictPath("widget_args#kinds"),
+                                                           DictPath("kinds")])) is None:
                         continue
                     w_ref = None
                     if selected is not None:
@@ -5958,22 +5961,22 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             and w_kinds != [("", "")]:
                         continue
 
-                    w_inputtitle = \
-                        deep_get_with_fallback(value, [DictPath("widget_args#inputtitle"),
-                                                       DictPath("inputtitle")])
+                    w_inputtitle = deep_get_with_fallback(sc_value,
+                                                          [DictPath("widget_args#inputtitle"),
+                                                           DictPath("inputtitle")])
                     if w_inputtitle is not None:
                         if not (w_input := curses_helper.inputbox(uip.stdscr, title=w_inputtitle)):
                             continue
                         w_command = w_input.split()
                     else:
-                        w_command = \
-                            deep_get_with_fallback(value, [DictPath("widget_args#command"),
-                                                           DictPath("command")], [])
+                        w_command = deep_get_with_fallback(sc_value,
+                                                           [DictPath("widget_args#command"),
+                                                            DictPath("command")], [])
                     if not w_command:
                         continue
 
-                    w_waitforkeypress = \
-                        deep_get(value, DictPath("widget_args#wait_for_keypress"), False)
+                    w_waitforkeypress = deep_get(sc_value,
+                                                 DictPath("widget_args#wait_for_keypress"), False)
                     if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
                         containername = deep_get(w_ref, DictPath("name"), "")
                     if w_command == ["<ephemeral>"]:
@@ -5996,9 +5999,9 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                                ANSIThemeStr(containername, "path")]
                     executecommand(uip.stdscr, obj, containername, msg,
                                    command=w_command, waitforkeypress=w_waitforkeypress)
-            if "action" in value:
+            if "action" in sc_value:
                 selected = uip.get_selected()
-                action = deep_get(value, DictPath("action"), "")
+                action = deep_get(sc_value, DictPath("action"), "")
                 if action == "from_ref":
                     ref = tmpselection
                     action = deep_get(ref, DictPath("action"))
@@ -6009,8 +6012,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     action_call = _action_call
                     action_args = deep_get(ref, DictPath("action_args"), {})
                 else:
-                    action_call = deep_get(value, DictPath("action_call"))
-                    action_args = deep_get(value, DictPath("action_args"), {})
+                    action_call = deep_get(sc_value, DictPath("action_call"))
+                    action_args = deep_get(sc_value, DictPath("action_args"), {})
                 if "_pass_obj" in action_args:
                     action_args["obj"] = obj
                 if "_pass_result" in action_args:
@@ -6062,7 +6065,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             else:
                                 command.append(_cmd)
                     # Check this condition before confirming
-                    w_confirm = deep_get(value, DictPath("confirm"), False)
+                    w_confirm = deep_get(sc_value, DictPath("confirm"), False)
                     if isinstance(w_confirm, str):
                         if w_confirm == "path_exists":
                             w_confirm = os.path.exists(w_result)
@@ -6071,7 +6074,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                                      "must be either boolean or path_exists")
                     if w_confirm:
                         curses.doupdate()
-                        w_confirmtitle = deep_get(value, DictPath("confirmtitle"))
+                        w_confirmtitle = deep_get(sc_value, DictPath("confirmtitle"))
                         if not curses_helper.confirmationbox(uip.stdscr,
                                                              title=w_confirmtitle, default=False):
                             continue
@@ -6087,11 +6090,11 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     action_execute_command(uip, items=items, action={},
                                            values=_values, kind=None, title="")
             else:
-                call = deep_get(value, DictPath("call"))
+                call = deep_get(sc_value, DictPath("call"))
                 call_name = None
-                owner_references_path = deep_get(value, DictPath("owner_references_path"))
-                owner_references_kind = deep_get(value, DictPath("owner_references_kind"))
-                holder_identity_path = deep_get(value, DictPath("holder_identity_path"))
+                owner_references_path = deep_get(sc_value, DictPath("owner_references_path"))
+                owner_references_kind = deep_get(sc_value, DictPath("owner_references_kind"))
+                holder_identity_path = deep_get(sc_value, DictPath("holder_identity_path"))
                 if owner_references_path is not None:
                     owner_reference = deep_get(obj, DictPath(owner_references_path), [])
                     if holder_identity_path is not None:
@@ -6108,9 +6111,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     if kind == ("", "") or not call_name:
                         continue
                 else:
-                    call_name_path = deep_get(value, DictPath("name_path"))
-                    kind = deep_get(value, DictPath("kind"))
-                    if kind is None:
+                    call_name_path = deep_get(sc_value, DictPath("name_path"))
+                    if (kind := deep_get(sc_value, DictPath("kind"))) is None:
                         kind_path = deep_get(value, DictPath("kind_path"), "")
                         if isinstance(kind_path, tuple):
                             kind = (deep_get(obj, DictPath(kind_path[0])),
@@ -6120,8 +6122,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     if call_name_path is not None:
                         call_name = deep_get(obj, DictPath(call_name_path))
 
-                call_namespace_path = deep_get(value, DictPath("namespace_path"))
                 call_namespace = ""
+                call_namespace_path = deep_get(sc_value, DictPath("namespace_path"))
                 if call_namespace_path is not None:
                     call_namespace = deep_get(obj, DictPath(call_namespace_path))
 
@@ -8556,8 +8558,9 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
     curses.endwin()
     _retval = clear_screen()
 
-    if action.get("requires_cluster_info"):
-        gather_cluster_info()
+    if action.get("requires_cluster_info") and kubernetes_support:
+        ansithemeprint([ANSIThemeStr("[Gathering cluster information]\n", "phase")])
+        gather_cluster_info(kubernetes_helper=kh, kh_cache=kh_cache)
 
     ansithemeprint(msg)
 
