@@ -10,6 +10,8 @@ Helpers used by various components of CMT
 
 # pylint: disable=too-many-lines
 
+import base64
+import binascii
 from datetime import datetime, timezone, timedelta, date
 import errno
 from pathlib import Path, PurePath
@@ -26,6 +28,53 @@ import cmtio
 import kubernetes_helper
 
 cmtconfig = {}
+
+
+def decode_value(value: Union[str, bytes]) -> Tuple[str, Union[str, bytes]]:
+    """
+    Given a value attempt to decode it from base64
+
+        Parameters:
+            value (str|bytes): The value to decode
+        Returns:
+            (str, str|bytes):
+                (str): The identified type
+                (str|bytes): The decoded value
+    """
+    # Is this base64?
+    try:
+        decoded = base64.b64decode(value)
+        vtype = "base64"
+    except binascii.Error:
+        vtype = "string"
+
+    if vtype == "base64":
+        try:
+            tmp = decoded.decode("utf-8")
+            if "\n" in tmp:
+                vtype = "base64-utf-8"
+            else:
+                vtype = "string"
+                value = tmp
+        except UnicodeDecodeError:
+            vtype = "base64-binary"
+
+            try:
+                if len(decoded) >= 2 and decoded[0:2] == [0x1f, 0x8b]:
+                    vtype = "gzip"
+                    value = decoded
+                elif len(decoded) >= 6 and decoded[0:6] == [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x0]:
+                    vtype = "xz"
+                    value = decoded
+                elif len(decoded) >= 3 and decoded[0:3] == [0x42, 0x5a, 0x68]:
+                    vtype = "bz2"
+                    value = decoded
+                elif len(decoded) >= 3 and decoded[0:3] == [0x51, 0x46, 0x49]:
+                    vtype = "qcow"
+                    value = decoded
+            except binascii.Error:
+                pass
+    return vtype, value
 
 
 def substitute_string(string: str, substitutions: Dict) -> str:

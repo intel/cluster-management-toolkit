@@ -8,10 +8,12 @@
 Get information
 """
 
+import base64
+import sys
 from typing import Any, Dict, List, Tuple, Type
 
 import cmtlib
-from cmttypes import deep_get, DictPath, ProgrammingError
+from cmttypes import deep_get, deep_set, DictPath, ProgrammingError, StatusGroup
 import itemgetters
 import datagetters
 from kubernetes_helper import get_node_roles, get_node_status, get_containers
@@ -57,6 +59,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
+                vlist ([dict[str, Any]]): The list of Pod info
                 in_depth_node_status (bool): Should in-depth node status be shown?
                 extra_vars (dict): Extra variables
                 filters ([dict]): A dict of filters to apply
@@ -267,6 +270,684 @@ def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]
         new_name = "<unset>"
 
     return new_name, iips, eips
+
+
+# pylint: disable-next=too-many-locals
+def get_auth_rule_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Istio Authorization Policy Rules
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info: List[Type] = []
+
+    if obj is None:
+        return []
+
+    for item in deep_get(obj, DictPath("spec#rules"), []):
+        sources = []
+        operations = []
+        conditions = []
+
+        for source in deep_get(item, DictPath("from"), []):
+            principals = ",".join(deep_get(source, DictPath("source#principals"), []))
+            not_principals = ",".join(deep_get(source, DictPath("source#notPrincipals"), []))
+            request_principals = \
+                ",".join(deep_get(source, DictPath("source#requestPrincipals"), []))
+            not_request_principals = \
+                ",".join(deep_get(source, DictPath("source#notRequestPrincipals"), []))
+            namespaces = ",".join(deep_get(source, DictPath("source#namespaces"), []))
+            not_namespaces = ",".join(deep_get(source, DictPath("source#notNamespaces"), []))
+            ip_blocks = ",".join(deep_get(source, DictPath("source#ipBlocks"), []))
+            not_ip_blocks = ",".join(deep_get(source, DictPath("source#notIpBlocks"), []))
+            sources.append((principals, not_principals,
+                            request_principals, not_request_principals,
+                            namespaces, not_namespaces,
+                            ip_blocks, not_ip_blocks))
+
+        for operation in deep_get(item, DictPath("to"), []):
+            hosts = ",".join(deep_get(operation, DictPath("operation#hosts"), []))
+            not_hosts = ",".join(deep_get(operation, DictPath("operation#notHosts"), []))
+            ports = ",".join(deep_get(operation, DictPath("operation#ports"), []))
+            not_ports = ",".join(deep_get(operation, DictPath("operation#notPorts"), []))
+            methods = ",".join(deep_get(operation, DictPath("operation#methods"), []))
+            not_methods = ",".join(deep_get(operation, DictPath("operation#notMethods"), []))
+            paths = ",".join(deep_get(operation, DictPath("operation#paths"), []))
+            not_paths = ",".join(deep_get(operation, DictPath("operation#notPaths"), []))
+            operations.append((hosts, not_hosts,
+                               ports, not_ports,
+                               methods, not_methods,
+                               paths, not_paths))
+
+        for condition in deep_get(item, DictPath("when"), []):
+            key = deep_get(condition, DictPath("key"))
+            values = ",".join(deep_get(condition, DictPath("values"), []))
+            not_values = ",".join(deep_get(condition, DictPath("notValues"), []))
+            conditions.append((key, values, key, not_values))
+
+        if sources or operations or conditions:
+            info.append(type("InfoClass", (), {
+                "sources": sources,
+                "operations": operations,
+                "conditions": conditions,
+            }))
+    return info
+
+
+def get_eps_subsets_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for EndpointSlice subsets
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            info (list[InfoClass]): A list with info
+    """
+    if (obj := deep_get(kwargs, DictPath("_obj"))) is None:
+        return []
+
+    addresstype = deep_get(obj, DictPath("addressType"))
+    subsets = []
+    ports = []
+
+    for port in deep_get(obj, DictPath("ports"), []):
+        port_name = deep_get(port, DictPath("name"), "")
+        ports.append((port_name, deep_get(port, DictPath("port")),
+                      deep_get(port, DictPath("protocol"))))
+
+    for endpoint in deep_get(obj, DictPath("endpoints"), []):
+        ready_addresses = []
+        not_ready_addresses = []
+
+        for address in deep_get(endpoint, DictPath("addresses"), []):
+            if deep_get(endpoint, DictPath("conditions#ready")):
+                ready_addresses.append(address)
+            else:
+                not_ready_addresses.append(address)
+        target_ref = (deep_get(endpoint, DictPath("targetRef#kind"), ""),
+                      deep_get(endpoint, DictPath("targetRef#apiVersion"), ""),
+                      deep_get(endpoint, DictPath("targetRef#namespace"), ""),
+                      deep_get(endpoint, DictPath("targetRef#name"), ""))
+        topology = []
+        # If nodeName is available this is the new API
+        # where topology is replaced by nodeName and zone
+        if "nodeName" in endpoint:
+            topology.append(("nodeName", deep_get(endpoint, DictPath("nodeName"), "<unset>")))
+            if "zone" in endpoint:
+                topology.append(("zone", deep_get(endpoint, DictPath("zone"), "<unset>")))
+        else:
+            for key, value in deep_get(endpoint, DictPath("topology"), {}).items():
+                topology.append((key, value))
+
+        if ready_addresses:
+            subsets.append(type("InfoClass", (), {
+                "addresstype": addresstype,
+                "addresses": ready_addresses,
+                "ports_eps": ports,
+                "status": "Ready",
+                "status_group": StatusGroup.OK,
+                "target_ref": target_ref,
+                "topology": topology,
+            }))
+        if not_ready_addresses:
+            subsets.append(type("InfoClass", (), {
+                "addresstype": addresstype,
+                "addresses": not_ready_addresses,
+                "ports_eps": ports,
+                "status": "Not Ready",
+                "status_group": StatusGroup.NOT_OK,
+                "target_ref": target_ref,
+                "topology": topology,
+            }))
+    return subsets
+
+
+def get_key_value_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for key/value-based information
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                vlist ([dict[str, Any]]): The list of key/value objects
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    info: List[Type] = []
+
+    vlist = deep_get(kwargs, DictPath("_vlist"))
+    if vlist is None:
+        return info
+
+    for key, value in vlist.items():
+        decoded_value = ""
+
+        vtype, value = cmtlib.decode_value(value)
+        vlen = len(value)
+        decoded_value = value
+
+        if not vlen:
+            value = ""
+            vtype = "empty"
+
+        if vtype.startswith("base64-utf-8"):
+            fully_decoded_value = base64.b64decode(decoded_value).decode("utf-8")
+        else:
+            fully_decoded_value = decoded_value
+
+        if len(decoded_value) > 8192 and value:
+            vtype = f"{vtype} [truncated]"
+            decoded_value = value[0:8192 - 1]
+
+        ref = {
+            "key": key,
+            "value": value,
+            "decoded_value": decoded_value,
+            "fully_decoded_value": fully_decoded_value,
+            "vtype": vtype,
+            "vlen": vlen,
+        }
+        info.append(type("InfoClass", (), {
+            "key": key,
+            "ref": ref,
+            "decoded_value": decoded_value,
+            "value": value,
+            "vtype": vtype,
+            "vlen": vlen,
+        }))
+
+    return info
+
+
+def get_limit_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Limits
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info: List[Type] = []
+
+    if obj is None:
+        return []
+
+    for limit in deep_get(obj, DictPath("spec#limits"), []):
+        resources = set()
+
+        for item in deep_get(limit, DictPath("default"), []):
+            resources.add(item)
+        for item in deep_get(limit, DictPath("defaultRequest"), []):
+            resources.add(item)
+        for item in deep_get(limit, DictPath("min"), []):
+            resources.add(item)
+        for item in deep_get(limit, DictPath("max"), []):
+            resources.add(item)
+        for item in deep_get(limit, DictPath("max"), []):
+            resources.add(item)
+        for item in deep_get(limit, DictPath("maxLimitRequestRatio"), []):
+            resources.add(item)
+        ltype = deep_get(limit, DictPath("type"))
+
+        for item in resources:
+            lmin = deep_get(limit, DictPath(f"min#{item}"), "-")
+            lmax = deep_get(limit, DictPath(f"max#{item}"), "-")
+            default_request = deep_get(limit, DictPath(f"defaultRequest#{item}"), "-")
+            default_limit = deep_get(limit, DictPath(f"default#{item}"), "-")
+            max_lr_ratio = deep_get(limit, DictPath(f"maxLimitRequestRatio#{item}"), "-")
+            info.append(type("InfoClass", (), {
+                "name": item,
+                "ref": limit,
+                "ltype": ltype,
+                "lmin": lmin,
+                "lmax": lmax,
+                "default_request": default_request,
+                "default_limit": default_limit,
+                "max_lr_ratio": max_lr_ratio,
+            }))
+    return info
+
+
+def get_promrules_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Prometheus Rules
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            info (list[InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info: List[Type] = []
+
+    if obj is None:
+        return []
+
+    for group in deep_get(obj, DictPath("spec#groups"), []):
+        for rule in deep_get(group, DictPath("rules")):
+            name = deep_get(group, DictPath("name"))
+            alert = deep_get(rule, DictPath("alert"), "")
+            record = deep_get(rule, DictPath("record"), "")
+            if alert and record:
+                sys.exit("We need a better way to handle PrometheusRule; "
+                         "this one has both an alert and a record")
+            elif alert:
+                rtype = "Alert"
+                alertrecord = alert
+            elif record:
+                rtype = "Record"
+                alertrecord = record
+            else:
+                sys.exit("We need a better way to handle PrometheusRule; "
+                         "this one has neither alert nor record")
+            _extra_data = {
+                "name": alertrecord,
+                "group": name,
+                "rtype": rtype,
+            }
+            if "_extra_data" not in rule:
+                rule["_extra_data"] = _extra_data
+            ref = rule
+            age = deep_get(rule, DictPath("for"), "")
+            duration = cmtlib.age_to_seconds(age)
+            info.append(type("InfoClass", (), {
+                "group": name,
+                "ref": ref,
+                "rtype": rtype,
+                "alertrecord": alertrecord,
+                "duration": duration,
+            }))
+    return info
+
+
+def get_rq_item_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Prometheus Rules
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            info (list[InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    hard_path = deep_get(kwargs, DictPath("hard_path"), DictPath("spec#hard"))
+    used_path = deep_get(kwargs, DictPath("used_path"), DictPath("status#used#hard"))
+    info = []
+
+    if obj is None:
+        return []
+
+    for resource in deep_get(obj, hard_path, []):
+        used = deep_get(obj, DictPath(f"{used_path}#{resource}"), [])
+        hard = deep_get(obj, DictPath(f"{hard_path}#{resource}"), [])
+
+        info.append(type("InfoClass", (), {
+            "resource": resource,
+            "used": used,
+            "hard": hard,
+        }))
+    return info
+
+
+# pylint: disable-next=too-many-locals,too-many-statements
+def get_sas_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Service Account secrets
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
+        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+    kh_cache = deep_get(kwargs, DictPath("kh_cache"))
+
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info: List[Type] = []
+
+    if obj is None:
+        return []
+
+    saname = deep_get(obj, DictPath("metadata#name"))
+    sanamespace = deep_get(obj, DictPath("metadata#namespace"))
+
+    for secret in deep_get(obj, DictPath("secrets"), []):
+        snamespace = deep_get(secret, DictPath("namespace"),
+                              deep_get(obj, DictPath("metadata#namespace")))
+        secret_name = deep_get(secret, DictPath("name"))
+
+        # Get a reference to the secret
+        ref = kh.get_ref_by_kind_name_namespace(("Secret", ""),
+                                                secret_name, snamespace, resource_cache=kh_cache)
+
+        info.append(type("InfoClass", (), {
+            "name": secret_name,
+            "ref": ref,
+            "namespace": snamespace,
+            "kind": ("Secret", ""),
+            "type": "Mountable",
+        }))
+
+    for secret in deep_get(obj, DictPath("imagePullSecrets"), []):
+        deep_set(ref, DictPath("kind"), "Secret", create_path=True)
+        deep_set(ref, DictPath("apiVersion"), "", create_path=True)
+        snamespace = deep_get(secret, DictPath("namespace"),
+                              deep_get(obj, DictPath("metadata#namespace")))
+        secret_name = deep_get(secret, DictPath("name"))
+
+        # Get a reference to the secret
+        ref = kh.get_ref_by_kind_name_namespace(("Secret", ""), secret_name,
+                                                snamespace, resource_cache=kh_cache)
+
+        info.append(type("InfoClass", (), {
+            "name": secret_name,
+            "ref": ref,
+            "namespace": snamespace,
+            "kind": ("Secret", ""),
+            "type": "Image Pull",
+        }))
+
+    vlist, _status = kh.get_list_by_kind_namespace(("RoleBinding", "rbac.authorization.k8s.io"),
+                                                   "", resource_cache=kh_cache)
+
+    # Get all Role Bindings that bind to this ServiceAccount
+    for ref in vlist:
+        deep_set(ref, DictPath("kind"), "RoleBinding", create_path=True)
+        deep_set(ref, DictPath("apiVersion"), "rbac.authorization.k8s.io/", create_path=True)
+        for subject in deep_get(ref, DictPath("subjects"), []):
+            subjectkind = deep_get(subject, DictPath("kind"), "")
+            subjectname = deep_get(subject, DictPath("name"), "")
+            subjectnamespace = deep_get(subject, DictPath("namespace"), "")
+            if subjectkind == "ServiceAccount" \
+                    and subjectname == saname and subjectnamespace == sanamespace:
+                info.append(type("InfoClass", (), {
+                    "name": deep_get(ref, DictPath("metadata#name")),
+                    "ref": ref,
+                    "namespace": deep_get(ref, DictPath("metadata#namespace")),
+                    "kind": ("RoleBinding", "rbac.authorization.k8s.io"),
+                    "type": "",
+                }))
+
+                # Excellent, we have a Role Binding, now add the role it binds to
+                rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""),
+                               deep_get(ref, DictPath("roleRef#apiGroup")))
+                rolerefname = deep_get(ref, DictPath("roleRef#name"), "")
+                rolerefnamespace = deep_get(ref, DictPath("metadata#namespace"), "")
+                roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname,
+                                                            rolerefnamespace,
+                                                            resource_cache=kh_cache)
+                if roleref is not None:
+                    deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path=True)
+                    deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/",
+                             create_path=True)
+                info.append(type("InfoClass", (), {
+                    "name": rolerefname,
+                    "ref": roleref,
+                    "namespace": subjectnamespace,
+                    "kind": rolerefkind,
+                    "type": "",
+                }))
+                break
+
+    vlist, _status = \
+        kh.get_list_by_kind_namespace(("ClusterRoleBinding", "rbac.authorization.k8s.io"), "",
+                                      resource_cache=kh_cache)
+
+    # Get all Cluster Role Bindings that bind to this ServiceAccount
+    for ref in vlist:
+        deep_set(ref, DictPath("kind"), "ClusterRoleBinding", create_path=True)
+        deep_set(ref, DictPath("apiVersion"), "rbac.authorization.k8s.io/", create_path=True)
+        for subject in deep_get(ref, DictPath("subjects"), []):
+            subjectkind = deep_get(subject, DictPath("kind"), "")
+            subjectname = deep_get(subject, DictPath("name"), "")
+            subjectnamespace = deep_get(subject, DictPath("namespace"), "")
+            if subjectkind == "ServiceAccount" \
+                    and subjectname == saname and subjectnamespace == sanamespace:
+                info.append(type("InfoClass", (), {
+                    "name": deep_get(ref, DictPath("metadata#name")),
+                    "ref": ref,
+                    "namespace": deep_get(ref, DictPath("metadata#namespace")),
+                    "kind": ("ClusterRoleBinding", "rbac.authorization.k8s.io"),
+                    "type": "",
+                }))
+
+                # Excellent, we have a Cluster Role Binding, now add the role it binds to
+                rolerefkind = (deep_get(ref, DictPath("roleRef#kind"), ""),
+                               deep_get(ref, DictPath("roleRef#apiGroup")))
+                rolerefname = deep_get(ref, DictPath("roleRef#name"), "")
+                roleref = kh.get_ref_by_kind_name_namespace(rolerefkind, rolerefname,
+                                                            subjectnamespace,
+                                                            resource_cache=kh_cache)
+                if roleref is not None:
+                    deep_set(roleref, DictPath("kind"), rolerefkind[0], create_path=True)
+                    deep_set(roleref, DictPath("apiVersion"), f"{rolerefkind[1]}/",
+                             create_path=True)
+                info.append(type("InfoClass", (), {
+                    "name": rolerefname,
+                    "ref": roleref,
+                    "namespace": subjectnamespace,
+                    "kind": rolerefkind,
+                    "type": "",
+                }))
+                break
+
+    return info
+
+
+def get_strategy_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Telemetry Aware Scheduling policies
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info = []
+
+    if obj is None:
+        return []
+
+    deschedule_rules = deep_get(obj, DictPath("spec#strategies#deschedule#rules"), [])
+    dontschedule_rules = deep_get(obj, DictPath("spec#strategies#dontschedule#rules"), [])
+    scheduleonmetric_rules = deep_get(obj, DictPath("spec#strategies#scheduleonmetric#rules"), [])
+
+    if deschedule_rules:
+        strategy = "deschedule"
+        rule = deschedule_rules[0]
+
+        # Even though this is an array there's only one rule
+        name = deep_get(rule, DictPath("metricname"), "")
+        operator = deep_get(rule, DictPath("operator"), "")
+        target = deep_get(rule, DictPath("target"), -1)
+        info.append(type("InfoClass", (), {
+            "strategy": strategy,
+            "name": name,
+            "operator": operator,
+            "target": target
+        }))
+
+    if dontschedule_rules:
+        strategy = "dontschedule"
+        # dontschedule can have multiple rules; if it does we build a hackish tree
+        if len(dontschedule_rules) > 1:
+            info.append(type("InfoClass", (), {
+                "strategy": strategy,
+                "name": "",
+                "operator": "",
+                "target": -1,
+            }))
+            for rule in dontschedule_rules:
+                name = rule.get("metricname", "")
+                operator = rule.get("operator", "")
+                target = rule.get("target", -1)
+                info.append(type("InfoClass", (), {
+                    "strategy": "",
+                    "name": rule.get("metricname", ""),
+                    "operator": rule.get("operator", ""),
+                    "target": rule.get("target", -1),
+                }))
+        else:
+            rule = dontschedule_rules[0]
+            name = rule.get("metricname", "")
+            operator = rule.get("operator", "")
+            target = rule.get("target", -1)
+            info.append(type("InfoClass", (), {
+                "strategy": strategy,
+                "name": name,
+                "operator": operator,
+                "target": target,
+            }))
+
+    if scheduleonmetric_rules:
+        strategy = "scheduleonmetric"
+        rule = deschedule_rules[0]
+
+        # Even though this is an array there's only one rule
+        name = rule.get("metricname", "")
+        operator = rule.get("operator", "")
+        target = rule.get("target", -1)
+        info.append(type("InfoClass", (), {
+            "strategy": strategy,
+            "name": name,
+            "operator": operator,
+            "target": target,
+        }))
+
+    return info
+
+
+# pylint: disable-next=too-many-locals,too-many-branches
+def get_subsets_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Endpoint subsets
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _obj (Dict): The dict to extract data from
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    subsets_ = []
+    subsets = []
+
+    if obj is None:
+        return []
+
+    # Policy for subsets expansion
+    expand_subsets = deep_get(cmtlib.cmtconfig, DictPath("Endpoints#expand_subsets"), "None")
+
+    for subset in deep_get(obj, DictPath("subsets"), []):
+        ready_addresses = []
+        not_ready_addresses = []
+        ports = []
+
+        if deep_get(subset, DictPath("ports")) is None:
+            continue
+
+        if not deep_get(subset, DictPath("addresses"), []) \
+                and not deep_get(subset, DictPath("notReadyAddresses"), []):
+            continue
+
+        for port in deep_get(subset, DictPath("ports"), []):
+            name = deep_get(port, DictPath("name"), "")
+            ports.append((name,
+                          deep_get(port, DictPath("port")),
+                          deep_get(port, DictPath("protocol"))))
+
+        for address in deep_get(subset, DictPath("addresses"), []):
+            ready_addresses.append(deep_get(address, DictPath("ip")))
+
+        for not_ready_address in deep_get(subset, DictPath("notReadyAddresses"), []):
+            not_ready_addresses.append(deep_get(not_ready_address, DictPath("ip")))
+
+        if expand_subsets == "None":
+            if ready_addresses:
+                subsets.append((ready_addresses, ports, "Ready", StatusGroup.OK))
+            if not_ready_addresses:
+                subsets.append((not_ready_addresses, ports, "Not Ready", StatusGroup.NOT_OK))
+        elif expand_subsets == "Port":
+            for port in ports:
+                if ready_addresses:
+                    subsets.append((ready_addresses, [port], "Ready", StatusGroup.OK))
+                if not_ready_addresses:
+                    subsets.append((not_ready_addresses, [port], "Not Ready", StatusGroup.NOT_OK))
+        elif expand_subsets == "Address":
+            for address in ready_addresses:
+                subsets.append(([address], ports, "Ready", StatusGroup.OK))
+            for address in not_ready_addresses:
+                subsets.append(([address], ports, "Not Ready", StatusGroup.NOT_OK))
+        elif expand_subsets == "Both":
+            for port in ports:
+                for address in ready_addresses:
+                    subsets.append(([address], [port], "Ready", StatusGroup.OK))
+                for address in not_ready_addresses:
+                    subsets.append(([address], [port], "Not Ready", StatusGroup.NOT_OK))
+
+    for addresses, ports, status, status_group in subsets:
+        subsets_.append(type("InfoClass", (), {
+            "addresses": addresses,
+            "ports": ports,
+            "status": status,
+            "status_group": status_group,
+        }))
+    return subsets_
+
+
+def get_svcmon_endpoints_info(**kwargs: Any) -> List[Type]:
+    """
+    Infogetter for Service Monitor Endpoints
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            ([InfoClass]): A list with info
+    """
+    obj = deep_get(kwargs, DictPath("_obj"))
+    info: List[Type] = []
+
+    if obj is None:
+        return []
+
+    for item in deep_get(obj, DictPath("spec#endpoints")):
+        bearer_token_file = deep_get(item, DictPath("bearerTokenFile"), "")
+        ref = item
+        port = deep_get(item, DictPath("port"), "")
+        target_port = deep_get(item, DictPath("targetPort"), "")
+        interval = deep_get(item, DictPath("interval"), "")
+        scheme = deep_get(item, DictPath("scheme"), "")
+        path = deep_get(item, DictPath("path"), "")
+        honor_labels = deep_get(item, DictPath("honorLabels"), "")
+        proxy_url = deep_get(item, DictPath("proxyUrl"), "")
+        info.append(type("InfoClass", (), {
+            "bearer_token_file": bearer_token_file,
+            "ref": ref,
+            "port": port,
+            "target_port": target_port,
+            "interval": interval,
+            "scheme": scheme,
+            "path": path,
+            "honor_labels": honor_labels,
+            "proxy_url": proxy_url
+        }))
+
+    return info
 
 
 # pylint: disable-next=unused-argument

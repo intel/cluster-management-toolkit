@@ -864,16 +864,13 @@ def generator_value_mapper(obj: Dict, field: "str", fieldlen: int, pad: int,
 
 
 def processor_timestamp(obj: Dict, field: str) -> str:
-    value = getattr(obj, field)
-
-    if value is None:
+    if (value := getattr(obj, field)) is None:
         return ""
 
     if isinstance(value, str):
         return value
 
-    string = f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
-    return string
+    return f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
 
 
 def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:
@@ -932,6 +929,11 @@ def __fix_to_str(fix: Union[List[Union[ThemeRef, Tuple[str, str]]],
                             Tuple[str, str]]) -> str:
     """
     Convert a prefix or suffix into a str
+
+        Parameters:
+            fix ([ThemeRef|(str, str)]|ThemeRef|(str, str)): The pre- or suffixes
+        Returns:
+            (str): A string combining all pre- or suffixes
     """
     fixstr = ""
 
