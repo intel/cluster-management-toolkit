@@ -1268,7 +1268,7 @@ def get_formatter(field: Dict) -> Dict:
             msg = [
                 [("get_formatter()", "emphasis"),
                  (" called with invalid argument(s):", "error")],
-                [("field = ", "default"),
+                [("field=", "default"),
                  (yaml.dump(field), "argument"),
                  (" has an invalid ", "default"),
                  ("formatter", "argument")]
@@ -1305,7 +1305,7 @@ def get_formatter(field: Dict) -> Dict:
     field_suffixes = get_formatting(field, "field_suffixes", {"field_suffixes": []})
     field_separators = get_formatting(field, "field_separators",
                                       {"field_separators": field_separators_default})
-    ellipsise = deep_get(field, DictPath("formatting#ellipsise"), {"ellipsise": -1})
+    ellipsise = deep_get(field, DictPath("formatting#ellipsise"), -1)
     ellipsis = get_formatting(field, "ellipsis", {"ellipsis": ThemeRef("separators", "ellipsis")})
     item_separator = get_formatting(field, "item_separator",
                                     {"item_separator": ThemeRef("separators", "list")})
