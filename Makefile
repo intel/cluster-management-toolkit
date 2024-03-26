@@ -96,11 +96,10 @@ FLAKE8_IGNORE := F841,W503
 # Hence we do not need warnings about them.
 PYLINT_IGNORE := W0511
 
-code-checks-weak: flake8
-code-checks: flake8 mypy
-code-checks-strict: flake8 mypy-strict pylint
+code-checks-weak: flake8 ruff
+code-checks: flake8 mypy pylint
 
-checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml
+checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml ruff
 
 tests: coverage
 
@@ -226,6 +225,22 @@ bandit:
 	printf -- "\n\nRunning bandit to check for common security issues in Python code\n\n" ;\
 	$$cmd -c .bandit $(python_executables) $(python_test_executables) *.py
 
+ruff:
+	@cmd=ruff ;\
+	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
+		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
+		exit 0 ;\
+	fi ;\
+	printf -- "\n\nRunning $$cmd to check Python code quality\n\n" ;\
+	for file in $(python_executables) *.py; do \
+		case $$file in \
+		'cmtlog.py'|'noxfile.py') \
+			continue;; \
+		esac ;\
+		printf -- "File: $$file\n" ;\
+		$$cmd $$file ;\
+	done
+
 pylint:
 	@cmd=pylint ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
@@ -305,7 +320,7 @@ yamllint:
 
 # Note: we know that the code does not have complete type-hinting,
 # hence we return 0 after each test to avoid it from stopping.
-mypy-strict:
+mypy:
 	@cmd=mypy ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
@@ -333,19 +348,6 @@ mypy-markdown:
 		result=$$($$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
 		row="| $$file | $$result |\n" ;\
 		printf -- "$$row" ;\
-	done
-
-# Note: we know that the code does not have complete type-hinting,
-# hence we return 0 after each test to avoid it from stopping.
-mypy:
-	@cmd=mypy ;\
-	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
-		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
-		exit 0; \
-	fi; \
-	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) *.py; do \
-		$$cmd --ignore-missing-imports $$file || true; \
 	done
 
 nox: create_test_symlinks
