@@ -9,7 +9,7 @@
 
 __Cluster Management Toolkit for Kubernetes__ (CMT) is a set of tools intended
 to simplify installation and maintenance of _Kubernetes_ clusters. It provides
-tools to setup clusters and manage nodes either by specifying the configuration
+tools to setup clusters and manage nodes, either by specifying the configuration
 directly on the command line, or through template files. The _curses_-based
 user interface (_cmu_) presents the various Kubernetes objects (such as
 Pods, Deployments, ConfigMaps, Namespaces, etc.) in a way that tries to obviate
