@@ -30,26 +30,29 @@ def format_controller(controller: Tuple[Tuple[str, str], str], show_kind: str) -
         Returns:
             (str, str): A tuple with a possibly reformatted controller kind + name
     """
-    if show_kind:
-        if show_kind == "short" or not controller[0][1]:
-            fmt_controller = (f"{controller[0][0]}", f"{controller[1]}")
-        elif show_kind == "full":
-            fmt_controller = (f"{controller[0][0]}.{controller[0][1]}", f"{controller[1]}")
-        elif show_kind == "mixed":
-            # Strip the API group for standard controllers,
-            # but show for custom controllers
-            if controller[0] in (("StatefulSet", "apps"), ("ReplicaSet", "apps"),
-                                 ("DaemonSet", "apps"), ("Job", "batch"),
-                                 ("CronJob", "batch"), ("Node", "")):
-                fmt_controller = (f"{controller[0][0]}", f"{controller[1]}")
-            else:
-                fmt_controller = (f"{controller[0][0]}.{controller[0][1]}", f"{controller[1]}")
-        else:
-            raise ValueError(f"unknown value passed to show_kind: {show_kind}")
-    else:
-        fmt_controller = ("", f"{controller[1]}")
+    pod = controller[1]
 
-    return fmt_controller
+    if not show_kind:
+        fmt_controller = ""
+    elif show_kind == "short":
+        fmt_controller = controller[0][0]
+    elif show_kind == "full":
+        fmt_controller = ".".join(controller[0])
+    elif show_kind == "mixed":
+        # Strip the API group for standard controllers,
+        # but show for custom controllers
+        if controller[0] in (("StatefulSet", "apps"), ("ReplicaSet", "apps"),
+                             ("DaemonSet", "apps"), ("Job", "batch"),
+                             ("CronJob", "batch"), ("Node", "")):
+            fmt_controller = controller[0][0]
+        else:
+            fmt_controller = ".".join(controller[0])
+    else:
+        raise ValueError(f"unknown value passed to show_kind: {show_kind}")
+
+    if fmt_controller.endswith("."):
+        fmt_controller = fmt_controller[:-1]
+    return (fmt_controller, pod)
 
 
 # pylint: disable-next=too-many-locals

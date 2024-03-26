@@ -27,7 +27,7 @@ import datagetters
 
 def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, ThemeStr]]:
     """
-    Given a string, substitute any special strings with their formatted version
+    Given a string, substitute any special strings with their formatted version.
 
         Parameters:
             string (str): The string to format
@@ -57,7 +57,7 @@ def format_special(string: str, selected: bool) -> Optional[Union[ThemeRef, Them
 def format_list(items: Any, fieldlen: int, pad: int,
                 **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]]:
     """
-    Format a list
+    Format the elements of a list.
 
         Parameters:
             items (Any): The list items
@@ -194,7 +194,7 @@ def map_value(value: Any,
               mapping: Optional[Dict] = None) -> Tuple[Union[ThemeRef, ThemeStr], str]:
     """
     Perform value based mappings; either by doing numerical ranges,
-    or by doing string comparisons (optionally case insensitive)
+    or by doing string comparisons (optionally case insensitive).
 
         Parameters:
             value (Any): The value to map
@@ -295,7 +295,7 @@ def map_value(value: Any,
 def align_and_pad(array: List[Union[ThemeRef, ThemeStr]], pad: int,
                   fieldlen: int, ralign: bool, selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
     """
-    Given a field, align to the left or right, and pad it to the field length
+    Given a field, align to the left or right, and pad it to the field length.
 
         Parameters:
             array (ThemeArray): The themearray to align and pad
@@ -928,7 +928,7 @@ def __fix_to_str(fix: Union[List[Union[ThemeRef, Tuple[str, str]]],
                             ThemeRef,
                             Tuple[str, str]]) -> str:
     """
-    Convert a prefix or suffix into a str
+    Convert a prefix or suffix into a str.
 
         Parameters:
             fix ([ThemeRef|(str, str)]|ThemeRef|(str, str)): The pre- or suffixes
@@ -1147,6 +1147,16 @@ def get_formatting(field: Dict[str, Any],
                    default: Dict[str, Any]) -> Union[List[Union[ThemeAttr, ThemeStr, ThemeRef]],
                                                      int,
                                                      ThemeRef]:
+    """
+    Given a field dict, the formatting we want to extract, and the default value to return
+    if there's no suitable formatting, extract the formatting.
+
+        Parameters:
+            field (dict): The field dict to extract formatting from
+            formatting (str): The name of the formatting to extract
+            default (dict): The default formatting to return if no field-specific formatting
+                            is available
+    """
     result: List[Union[ThemeAttr, ThemeStr, ThemeRef]] = []
     items: Union[Dict, List[Dict]] = deep_get(field, DictPath(f"formatting#{formatting}"))
 
@@ -1166,6 +1176,7 @@ def get_formatting(field: Dict[str, Any],
         raise ValueError(f"field {field}, formatting {formatting}: format list item is empty; "
                          "this is likely an error in the view file")
 
+    default_context = None
     if formatting in ("item_separator", "field_separators",
                       "ellipsis", "field_prefixes", "field_suffixes"):
         default_context = "separators"
@@ -1185,7 +1196,7 @@ def get_formatting(field: Dict[str, Any],
         elif isinstance(item, dict):
             context = deep_get(item, DictPath("context"), default_context)
             key = deep_get(item, DictPath("type"))
-            if formatting in ("field_separators", "field_prefixes", "field_suffixes"):
+            if formatting in ("field_separators", "field_prefixes", "field_suffixes", "ellipsis"):
                 result.append(ThemeRef(context, key))
             elif formatting == "field_colors":
                 result.append(ThemeAttr(context, key))
@@ -1253,6 +1264,17 @@ formatter_to_generator_and_processor: Dict[str, Dict[str, Any]] = {
 
 # This generates old-style fields from new-style fields
 def get_formatter(field: Dict) -> Dict:
+    """
+    Based on formatter, generator, processor, etc and data type,
+    figure out what the rest of the fields need to be.
+    For instance, given only formatter this function will
+    return also the generator and (if relevant), the processor.
+
+        Parameters:
+            field (dict): The field to complete
+        Returns:
+            (dict): A dict with new formatting information
+    """
     tmp_field = {}
 
     formatter = deep_get(field, DictPath("formatter"))
@@ -1394,7 +1416,7 @@ def fieldgenerator(view: str, selected_namespace: str = "",
                    **kwargs: Any) -> Tuple[Optional[Dict],
                                            Optional[List[str]], Optional[str], bool]:
     """
-    Generate a dict with the fields necessary for a view
+    Generate a dict with the fields necessary for a view.
 
         Parameters:
             view (str): The view to generate the dict for

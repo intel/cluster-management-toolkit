@@ -53,7 +53,6 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
 
     message = ""
     result = True
-    loglevels = []
 
     if result:
         import_override = {"validators": (None, ModuleNotFoundError)}
@@ -61,7 +60,7 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
             with mock.patch("builtins.__import__", side_effect=override_import):
                 importlib.reload(cmtvalidators)
         except Exception as e:
-            message = "overriding import validators failed"
+            message = f"overriding import validators failed; {e}"
             result = False
 
     if result:
@@ -70,7 +69,7 @@ def test_import_validators(verbose: bool = False) -> Tuple[str, bool]:
             with mock.patch("builtins.__import__", side_effect=override_import):
                 importlib.reload(cmtvalidators)
         except Exception as e:
-            message = "overriding import validators failed"
+            message = f"overriding import validators failed; {e}"
             result = False
 
     import_override = {}

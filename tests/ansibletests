@@ -197,7 +197,7 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
         )
         for indata, expected_exception in testdata:
             try:
-                tmp = fun(indata)
+                _tmp = fun(indata)
             except Exception as e:
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
@@ -555,12 +555,11 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
             if (ansible_user := deep_get(ansible_helper.ansible_configuration,
                                          DictPath("ansible_user"))) is not None:
                 deep_set(d, DictPath("all#vars#ansible_user"), ansible_user, create_path=True)
-            if (ansible_password := deep_get(ansible_helper.ansible_configuration,
-                                             DictPath("ansible_password"))) is not None:
+            if deep_get(ansible_helper.ansible_configuration,
+                        DictPath("ansible_password")) is not None:
                 deep_set(d, DictPath("all#vars#ansible_ssh_pass"), ansible_user, create_path=True)
-            if (disable_strict_host_key_checking
-                    := deep_get(ansible_helper.ansible_configuration,
-                                DictPath("disable_strict_host_key_checking"), False)):
+            if deep_get(ansible_helper.ansible_configuration,
+                        DictPath("disable_strict_host_key_checking"), False):
                 deep_set(d, DictPath("ansible_ssh_common_args"),
                          "-o StrictHostKeyChecking=no", create_path=True)
             # Indata format:
@@ -650,7 +649,7 @@ def test_ansible_create_groups(verbose: bool = False) -> Tuple[str, bool]:
             # __ansible_create_inventory() will open the file
             tf.close()
             tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
-            d = secure_read_yaml(tf.name, temporary=True)
+            _d = secure_read_yaml(tf.name, temporary=True)
 
             # Indata format:
             # (path, groups, expected_content, expected_result, expected_exception)
@@ -727,7 +726,7 @@ def test_ansible_set_vars(verbose: bool = False) -> Tuple[str, bool]:
             tf.close()
             tmp = ansible_helper.__ansible_create_inventory(tf.name, overwrite=True, temporary=True)
             ansible_helper.ansible_create_groups(tf.name, ["foo", "bar"], temporary=True)
-            d = secure_read_yaml(tf.name, temporary=True)
+            _d = secure_read_yaml(tf.name, temporary=True)
 
             # Indata format:
             # (path, group, values, expected_content, expected_result, expected_exception)
@@ -893,7 +892,7 @@ def test_ansible_set_hostvars(verbose: bool = False) -> Tuple[str, bool]:
     fun = ansible_helper.ansible_set_hostvars
 
     if result:
-        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
             # secure_write_yaml() will open the file
             tf.close()
             # Create an artificial inventory that meets all the requirements we have for these tests
@@ -986,7 +985,7 @@ def test_ansible_unset_groupvars(verbose: bool = False) -> Tuple[str, bool]:
     fun = ansible_helper.ansible_unset_groupvars
 
     if result:
-        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
             # secure_write_yaml() will open the file
             tf.close()
             # Create an artificial inventory that meets all the requirements we have for these tests
@@ -1101,7 +1100,7 @@ def test_ansible_unset_hostvars(verbose: bool = False) -> Tuple[str, bool]:
     fun = ansible_helper.ansible_unset_hostvars
 
     if result:
-        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
             # secure_write_yaml() will open the file
             tf.close()
             # Create an artificial inventory that meets all the requirements we have for these tests
@@ -1329,7 +1328,7 @@ def test_ansible_remove_hosts(verbose: bool = False) -> Tuple[str, bool]:
     fun = ansible_helper.ansible_remove_hosts
 
     if result:
-        with tempfile.TemporaryDirectory() as td, tempfile.NamedTemporaryFile(delete=False) as tf:
+        with tempfile.NamedTemporaryFile(delete=False) as tf:
             # secure_write_yaml() will open the file
             tf.close()
             # Create an artificial inventory that meets all the requirements we have for these tests

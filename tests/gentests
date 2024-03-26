@@ -19,9 +19,9 @@ from typing import Dict, List, Tuple
 import yaml
 
 from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath, FilePath, StatusGroup
+from cmttypes import deep_get, DictPath, FilePath, ProgrammingError, StatusGroup
 import curses_helper
-from curses_helper import ThemeRef
+from curses_helper import ThemeAttr, ThemeRef, ThemeStr, color_status_group
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import generators
 
@@ -40,6 +40,102 @@ def yaml_dump(data: Dict, base_indent: int = 4) -> str:
 
 def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
     return ("callback", len(args))
+
+
+def test_format_special(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.format_special
+
+    if result:
+        # Indata format:
+        # (string, selected, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                "<none>",
+                False,
+                ThemeStr("<none>", ThemeAttr("types", "none")),
+                None,
+            ),
+            (
+                "<unknown>",
+                True,
+                ThemeStr("<unknown>", ThemeAttr("types", "none"), True),
+                None,
+            ),
+            (
+                "<undefined>",
+                False,
+                ThemeStr("<undefined>", ThemeAttr("types", "undefined")),
+                None,
+            ),
+            (
+                "<unspecified>",
+                False,
+                ThemeStr("<unspecified>", ThemeAttr("types", "undefined")),
+                None,
+            ),
+            (
+                "<empty>",
+                False,
+                ThemeStr("<empty>", ThemeAttr("types", "unset")),
+                None,
+            ),
+            (
+                "<unset>",
+                False,
+                ThemeStr("<unset>", ThemeAttr("types", "unset")),
+                None,
+            ),
+            (
+                "<not ready>",
+                False,
+                ThemeStr("<not ready>", color_status_group(StatusGroup.NOT_OK)),
+                None,
+            ),
+            (
+                "<not ready>",
+                True,
+                ThemeStr("<not ready>", color_status_group(StatusGroup.NOT_OK), True),
+                None,
+            ),
+            (
+                "<NOTHING SPECIAL>",
+                True,
+                None,
+                None,
+            ),
+        )
+
+        for string, selected, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(string, selected)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 
 def test_processor_list(verbose: bool = False) -> Tuple[str, bool]:
@@ -485,13 +581,321 @@ def test_processor_list_with_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_get_formatting(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.get_formatting
+
+    if result:
+        # Indata format:
+        # (field, formatting, default, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                {"formatting": {"foo": {"context": "foo"}}},
+                "foo",
+                {"foo": "bar"},
+                None,
+                ProgrammingError,
+            ),
+            (
+                {},
+                "foo",
+                {"foo": "bar"},
+                "bar",
+                None,
+            ),
+            (
+                {"formatting": {"foo": 42}},
+                "foo",
+                {"foo": "bar"},
+                None,
+                TypeError,
+            ),
+            (
+                {"formatting": {"foo": [ThemeAttr("types", "age")]}},
+                "foo",
+                None,
+                None,
+                ValueError,
+            ),
+            (
+                {"formatting": {"foo": []}},
+                "foo",
+                {"foo": "bar"},
+                None,
+                ValueError,
+            ),
+            (
+                {"formatting": {"foo": [42]}},
+                "foo",
+                {"foo": "bar"},
+                None,
+                TypeError,
+            ),
+            (
+                {"formatting": {"foo": [{"context": "foo"}, 42]}},
+                "foo",
+                {"foo": "bar"},
+                None,
+                TypeError,
+            ),
+            (
+                {"formatting": {"ellipsis": [{"type": "ellipsis"}]}},
+                "ellipsis",
+                {"foo": "bar"},
+                [ThemeRef('separators', 'ellipsis')],
+                None,
+            ),
+            (
+                {"formatting": {"ellipsis": [ThemeRef("separators", "ellipsis")]}},
+                "ellipsis",
+                {"foo": "bar"},
+                [ThemeRef('separators', 'ellipsis')],
+                None,
+            ),
+        )
+
+        for field, formatting, default, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(field, formatting, default)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_formatter(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = generators.get_formatter
+
+    if result:
+        # Indata format:
+        # (field, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                {
+                    "formatting": {
+                        "field_colors": [{"type": "namespace"}],
+                    },
+                },
+                {
+                    "generator": generators.generator_basic,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'namespace')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [ThemeRef('separators', 'field')],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [ThemeRef('separators', 'field')],
+                        'field_colors': [ThemeAttr('types', 'namespace')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
+                    "type": "age",
+                },
+                {
+                    "generator": generators.generator_basic,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'age')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [ThemeRef('separators', 'field')],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [ThemeRef('separators', 'field')],
+                        'field_colors': [ThemeAttr('types', 'age')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
+                    "generator": generators.generator_status,
+                },
+                {
+                    "generator": generators.generator_status,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'field')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [ThemeRef('separators', 'field')],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [ThemeRef('separators', 'field')],
+                        'field_colors': [ThemeAttr('types', 'field')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
+                    "generator": "generator_status",
+                },
+                {
+                    "generator": generators.generator_status,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'field')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [ThemeRef('separators', 'field')],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [ThemeRef('separators', 'field')],
+                        'field_colors': [ThemeAttr('types', 'field')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
+                    "formatter": "address",
+                },
+                {
+                    "generator": generators.generator_address,
+                    "processor": None,
+                    "field_colors": [ThemeAttr('types', 'field')],
+                    "field_prefixes": [],
+                    "field_suffixes": [],
+                    "field_separators": [],
+                    "ellipsise": -1,
+                    "ellipsis": ThemeRef('separators', 'ellipsis'),
+                    'item_separator': ThemeRef('separators', 'list'),
+                    'mapping': {},
+                    'formatting': {
+                        'item_separator': ThemeRef('separators', 'list'),
+                        'field_separators': [],
+                        'field_colors': [ThemeAttr('types', 'field')],
+                        'ellipsise': -1,
+                        'ellipsis': ThemeRef('separators', 'ellipsis'),
+                        'field_prefixes': [],
+                        'field_suffixes': [],
+                        'mapping': {},
+                    }
+                },
+                None,
+            ),
+            (
+                {
+                    "formatter": "notavalidformatter",
+                },
+                None,
+                ProgrammingError,
+            ),
+        )
+
+        for field, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(field)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: Dict = {
+    ("format_special()",): {
+        "callable": test_format_special,
+        "result": None,
+    },
     ("processor_list()",): {
         "callable": test_processor_list,
         "result": None,
     },
     ("processor_list_with_status()",): {
         "callable": test_processor_list_with_status,
+        "result": None,
+    },
+    ("get_formatting()",): {
+        "callable": test_get_formatting,
+        "result": None,
+    },
+    ("get_formatter()",): {
+        "callable": test_get_formatter,
         "result": None,
     },
 }

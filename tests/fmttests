@@ -56,7 +56,6 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
 
     message = ""
     result = True
-    loglevels = []
     testobj = {"foo": "bar"}
     fun = formatters.json_dumps
 
@@ -67,7 +66,7 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
                 importlib.reload(formatters)
                 _tmp = formatters.json_dumps(testobj)
         except Exception as e:
-            message = f"overriding import ujson or {fun.__name__} failed"
+            message = f"overriding import ujson or {fun.__name__} failed; {e}"
             result = False
 
     if result:
@@ -77,7 +76,7 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
                 importlib.reload(formatters)
                 _tmp = formatters.json_dumps(testobj)
         except Exception as e:
-            message = f"overriding import ujson or {fun.__name__} failed"
+            message = f"overriding import ujson or {fun.__name__} failed; {e}"
             result = False
 
     import_override = {}

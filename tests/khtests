@@ -604,11 +604,6 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                               f"expected ({str}, {StatusGroup}, [{str}, {str}], [{dict}])"
                     return message, False
 
-                status = tmp[0]
-                status_group = tmp[1]
-                taints = tmp[2]
-                full_taints = tmp[3]
-
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "           input:\n" \
