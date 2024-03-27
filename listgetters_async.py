@@ -10,7 +10,7 @@ Get list data asynchronously
 
 import re
 import sys
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 try:
     from natsort import natsorted
@@ -18,6 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+import cmtlib
 from cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
 import infogetters
 
@@ -59,9 +60,10 @@ def get_kubernetes_list(*args: Any,
     label_selector = deep_get(kwargs, DictPath("label_selector"), "")
     field_selector = deep_get(kwargs, DictPath("field_selector"), "")
     fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
-    sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
-    sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
-    postprocess = deep_get(fetch_args, DictPath("postprocess"), "")
+    sort_key: str = deep_get(fetch_args, DictPath("sort_key"), "")
+    sort_reverse: bool = deep_get(fetch_args, DictPath("sort_reverse"), False)
+    postprocess: str = deep_get(fetch_args, DictPath("postprocess"), "")
+    postprocessor: Union[str, Callable] = deep_get(kwargs, DictPath("postprocessor"), "")
     limit = deep_get(fetch_args, DictPath("limit"))
     extra_data = []
 
@@ -80,6 +82,10 @@ def get_kubernetes_list(*args: Any,
                                             "in_depth_node_status": False,
                                             "kubernetes_helper": kh})
         extra_data = [s.status_group for s in vlist]
+    elif callable(postprocessor) or postprocessor in listgetter_postprocessors:
+        if not callable(postprocessor):
+            postprocessor = listgetter_postprocessors[postprocessor]
+        vlist, extra_data = postprocessor(vlist=vlist, status=status, **kwargs)
     else:
         extra_data = status
     if limit is not None:
@@ -157,10 +163,109 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
     return vlist, hosts
 
 
+# pylint: disable-next=too-many-branches
+def add_resource(key: str, units: Dict[str, List[str]],
+                 resources: Union[int, float, List[str]],
+                 resource: Optional[Union[str, int, float]]) -> Union[int, float, List[str]]:
+    """
+        Parameters:
+            key (str): The name of the resource
+            units (dict): The list of known resource types
+            resources (int|float|[str]): The current resources
+            resource (str|int|float): The new resource to add
+        Returns:
+            (int|float|[str]): The new sum/list of resources
+    """
+    if resource is None:
+        return resources
+
+    if key in deep_get(units, DictPath("millicores"), []) and isinstance(resources, (int, float)):
+        # Either float or [str]
+        try:
+            resources += cmtlib.normalise_cpu_usage_to_millicores(str(resource))
+        except ValueError:
+            if resources == 0:
+                resources = []
+            if isinstance(resources, list):
+                resources.append(str(resource))
+    elif key in deep_get(units, DictPath("mem"), []) and isinstance(resources, (int, float)):
+        # Either int or [str]
+        try:
+            resources += cmtlib.normalise_mem_to_bytes(str(resource))
+        except ValueError:
+            if resources == 0:
+                resources = []
+            if isinstance(resources, list):
+                resources.append(str(resource))
+    else:
+        val = resource
+        try:
+            val = int(resource)
+        except ValueError:
+            try:
+                val = float(resource)
+            except ValueError:
+                pass
+        if isinstance(val, (int, float)) \
+                and isinstance(val, (int, float)) and isinstance(resources, (int, float)):
+            resources += val
+        elif isinstance(resources, list):
+            resources.append(str(resource))
+    return resources
+
+
+# pylint: disable-next=too-many-locals
+def postprocessor_node_resources(**kwargs: Any) -> Tuple[List[Dict], Union[int, str]]:
+    """
+    Postprocessor for node resources. Extracts the node resources
+    from the list of all nodes and sums them up and groups them by type.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                vlist ([dict]): The list of node data
+                status (int|str): The status of the data fetch
+                units (dict): A dict of units for various resources
+        Returns:
+            (([dict], int|float)):
+                ([dict]): A list of dicts for each resource
+                (int|str): The status of the data fetch
+    """
+    vlist = deep_get(kwargs, DictPath("vlist"), [])
+    status = deep_get(kwargs, DictPath("status"))
+    units = deep_get(kwargs, DictPath("units"), {})
+    resources: Dict = {}
+    vresources: List[Dict] = []
+
+    if status == 200:
+        for node in vlist:
+            capacities = deep_get(node, DictPath("status#capacity"), {})
+            allocatables = deep_get(node, DictPath("status#allocatable"), {})
+            for key, capacity in capacities.items():
+                if key not in resources:
+                    resources[key] = {"capacity": 0, "allocatable": 0}
+                resources[key]["capacity"] = \
+                    add_resource(key, units, resources[key]["capacity"], capacity)
+                resources[key]["allocatable"] = \
+                    add_resource(key, units, resources[key]["allocatable"],
+                                 deep_get(allocatables, DictPath(key)))
+        for resource, data in resources.items():
+            vresources.append({
+                "name": resource,
+                "allocatable": deep_get(data, DictPath("allocatable"), 0),
+                "capacity": deep_get(data, DictPath("capacity"), 0),
+            })
+
+    return vresources, status
+
+
+listgetter_postprocessors: Dict[str, Callable] = {
+    "postprocessor_node_resources": postprocessor_node_resources,
+}
+
 # Asynchronous listgetters acceptable for direct use in view files
 listgetter_async_allowlist: Dict[str, Callable] = {
     # Used by listpad
-    "get_kubernetes_list": get_kubernetes_list,
     "get_context_list": get_context_list,
     "get_inventory_list": get_inventory_list,
+    "get_kubernetes_list": get_kubernetes_list,
 }

@@ -213,6 +213,8 @@ def normalise_cpu_usage_to_millicores(cpu_usage: str) -> float:
 
     if cpu_usage.isnumeric():
         cpu_usage_millicores = int(cpu_usage) * 1000 ** 1
+    elif cpu_usage.endswith("k"):
+        cpu_usage_millicores = int(cpu_usage[0:-1]) * 1000 ** 1
     elif cpu_usage.endswith("m"):
         cpu_usage_millicores = int(cpu_usage[0:-1])
     elif cpu_usage.endswith("u"):

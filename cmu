@@ -2459,8 +2459,12 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 if "kubernetes_helper" not in listgetter_args:
                     listgetter_args["kubernetes_helper"] = kh
                     listgetter_args["kh_cache"] = kh_cache
+                if "kind" not in listgetter_args:
+                    listgetter_args["kind"] = kind
+                if "namespace" not in listgetter_args:
+                    listgetter_args["namespace"] = selected_namespace
                 executor.trigger(".".join(kind), 5, listgetters_async.get_kubernetes_list,
-                                 kind=kind, namespace=selected_namespace, **listgetter_args)
+                                 **listgetter_args)
             if listgetter_async in (listgetters_async.get_inventory_list,
                                     listgetters_async.get_context_list) and "pings" not in executor:
                 facts_ping_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("facts_ping.yaml")

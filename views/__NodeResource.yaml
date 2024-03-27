@@ -1,0 +1,32 @@
+kind: "__NodeResource"
+default_command: "noderesources"
+command:
+- "noderes"
+listview:
+  name: "Resources"
+  group: "Workloads"
+  listgetter_args:
+    kind: "Node"
+    postprocessor: "postprocessor_node_resources"
+    units:
+      millicores: ["gpu.intel.com/millicores"]
+      mem: ["memory", "ephemeral-storage"]
+  field_indexes:
+    Normal:
+      fields: ["name", "allocatable", "capacity"]
+      sortcolumn: "name"
+  fields:
+    allocatable:
+      header: "Allocatable:"
+      path: "allocatable"
+      type: "raw"
+      formatter: "numerical_with_units"
+    capacity:
+      header: "Capacity:"
+      path: "capacity"
+      type: "raw"
+      formatter: "numerical_with_units"
+    name:
+      header: "Name:"
+      path: "name"
+      type: "str"
