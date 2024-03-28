@@ -11,7 +11,7 @@ This generates and post-processes elements for various more complex types
 # pylint: disable=too-many-lines
 
 import copy
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
 import yaml
 
@@ -771,10 +771,11 @@ def generator_timestamp(obj: Dict, field: str, fieldlen: int, pad: int,
     if isinstance(value, str):
         if (tmp := format_special(value, selected)) is not None:
             array = [tmp]
-            string = value
+        string = value
 
     if not array:
-        string = datetime_to_timestamp(value)
+        if not isinstance(value, str):
+            string = datetime_to_timestamp(value)
         if value is None:
             array = [
                 ThemeStr(string, ThemeAttr("types", "generic"), selected)
@@ -869,6 +870,8 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 
     if isinstance(value, str):
         return value
+    if isinstance(value, date):
+        return str(value)
 
     return f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
 

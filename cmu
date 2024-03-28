@@ -1889,12 +1889,15 @@ def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr
     # This is essentially just a wrapper around listgetter_files
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
     extra_values_lookup = deep_get(kwargs, DictPath("extra_values_lookup"), {})
-    formatter = deep_get(kwargs, DictPath("formatter"), "none")
+    if (formatter := deep_get(obj, DictPath("_extra_data#formatter"))) is None:
+        formatter = deep_get(kwargs, DictPath("formatter"), "none")
 
     for key, path in extra_values_lookup.items():
         if "extra_values" not in kwargs:
             kwargs["extra_values"] = {}
         kwargs["extra_values"][key] = deep_get_with_fallback(obj, path, "")
+    if "_pass_obj" in kwargs:
+        kwargs["_obj"] = obj
 
     kwargs.pop("extra_values_lookup", "")
 
@@ -1903,7 +1906,8 @@ def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr
     if status != "OK":
         return []
 
-    formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
+    if (formatter_args := deep_get(obj, DictPath("_extra_data#formatter_args"))) is None:
+        formatter_args = deep_get(kwargs, DictPath("formatter_args"), {})
 
     if not show_raw and formatter == "markdown":
         return formatters.format_markdown(vlist[0], **formatter_args)

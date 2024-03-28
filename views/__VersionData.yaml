@@ -11,6 +11,30 @@ listview:
     # We should call update_version_cache() here
     file_not_found_status: "No version data found"
     paths:
+    - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/latest.yaml"
+      filetype: "yaml"
+      pathtype: "raw"
+      _extra_data:
+        name: "Cluster Management Toolkit"
+        installed_version:
+          fieldgetter: "fieldgetter_cmt_version"
+          fieldgetter_args:
+            fields:
+            - 0
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/<<<changelog>>>"
+          filetype: "text"
+          pathtype: "raw"
+          substitutions:
+            "changelog": "changelog"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          include_start: true
+          include_end: true
+          strip_empty_start: true
+          strip_empty_end: true
     - filepath: "{HOME}/.cmt/version-cache/kubernetes_current.yaml"
       filetype: "yaml"
       path: "schedules"
@@ -31,12 +55,25 @@ listview:
           fieldgetter_args:
             fields:
             - 2
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          start: "## Changelog since "
+          include_start: true
+          end: "# v"
+          include_end: false
+          strip_empty_start: false
+          strip_empty_end: true
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:
       fields: ["name", "installed_version", "latest_version", "release_date", "last_checked", "note"]
-      sortcolumn: "release_date"
-      sortorder_reverse: true
+      sortcolumn: "name"
   labels: false
   fields:
     installed_version:
@@ -65,8 +102,11 @@ listview:
       type: "str"
     release_date:
       header: "Release Date:"
-      path: "targetDate"
+      paths:
+      - path: ["targetDate", "release_date"]
+        pathtype: "str"
       type: "str"
+      formatter: "timestamp"
   shortcuts:
     # Overrides:
     "Edit resource": null
@@ -109,20 +149,8 @@ infoview:
     # since we don't have the latest version at that point
     infogetter: "logpad_files"
     infogetter_args:
+      _pass_obj: true
       extra_values_lookup:
         "version": ["release"]
-      file_not_found_status: "No changelog found"
-      paths:
-      - filepath: "{HOME}/.cmt/version-cache/kubernetes_current_changelog.md"
-        filetype: "text"
-        pathtype: "raw"
-      formatter: "markdown"
-      formatter_args:
-        # First match in the file is what we want
-        start: "## Changelog since "
-        include_start: true
-        end: "# v"
-        include_end: false
-        strip_empty_start: false
-        strip_empty_end: true
+        "_extra_data": ["_extra_data"]
     timestamps: false

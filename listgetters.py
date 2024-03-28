@@ -351,13 +351,25 @@ def __recurse_data(path: Dict, obj: Any) -> Any:
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
                                              Union[None, int, str, List[StatusGroup]]]:
-    paths = deep_get(kwargs, DictPath("paths"), [])
-    file_not_found_status = deep_get(kwargs, DictPath("file_not_found_status"), "File not found")
+    paths = \
+        deep_get_with_fallback(kwargs,
+                               [DictPath("paths"),
+                                DictPath("extra_values#_extra_data#paths")], [],
+                                fallback_on_empty=True)
+    file_not_found_status = \
+        deep_get_with_fallback(kwargs,
+                               [DictPath("file_not_found_status"),
+                                DictPath("extra_values#_extra_data#file_not_found_status")],
+                               "File not found", fallback_on_empty=True)
     vlist: List[Dict[str, Any]] = []
     status = None
 
     for path in paths:
         filepath = deep_get(path, DictPath("filepath"), "")
+        if "_obj" in kwargs:
+            for substkey, substpath in deep_get(path, DictPath("substitutions"), {}).items():
+                substval = deep_get(kwargs, DictPath(f"_obj#{substpath}"), "")
+                filepath = filepath.replace(f"<<<{substkey}>>>", substval)
         filetype = deep_get(path, DictPath("filetype"), "text")
         matchtype = deep_get(path, DictPath("data#matchtype"), "all")
         regex = deep_get(path, DictPath("data#regex"))

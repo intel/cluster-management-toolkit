@@ -577,7 +577,7 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
         Returns:
             (str): The timestamp in string format
     """
-    if not (timestamp is None or isinstance(timestamp, datetime)):
+    if not (timestamp is None or isinstance(timestamp, (date, datetime))):
         msg = [
             [("datetime_to_timestamp()", "emphasis"),
              (" initialised with invalid argument(s):", "error")],
@@ -602,6 +602,8 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
         # Replace epoch with an empty string
         # with the same length as a timestamp
         string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
+    elif isinstance(timestamp, date):
+        string = f"{timestamp:%Y-%m-%d}"
     else:
         string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
     return string

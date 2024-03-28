@@ -25,7 +25,7 @@ import ansithemeprint
 from ansithemeprint import ANSIThemeStr
 
 from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
-from cmttypes import FilePath, FilePathAuditError, ProgrammingError
+from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError
 
 real_import = None
 
@@ -736,6 +736,7 @@ tests: Dict = {
 
 def main() -> int:
     global real_import
+    global tests
     real_import = builtins.__import__
 
     fail = 0
@@ -743,16 +744,62 @@ def main() -> int:
     verbose = False
     failed_testcases = []
 
-    if len(sys.argv) > 1:
-        if "--include-clear" in sys.argv:
-            tests[("clear_screen",)] = {
-                "callable": test_clear_screen,
-                "result": None,
+    start_at_task = 0
+    tmp_start_at_task = "0"
+    end_at_task = -1
+    tmp_end_at_task = "-1"
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--include-clear":
+            clear_screen = {
+                ("clear_screen",): {
+                    "callable": test_clear_screen,
+                    "result": None,
+                }
             }
-        if "--include-input" in sys.argv:
+            tests = {**clear_screen, **tests}
+        elif opt == "--include-input":
             tests[("ansithemeinput", "ansithemeinput_password")]["kwargs"]["mock_input"] = False
+        elif opt == "--start-at":
+            tmp_start_at_task = optarg
+            i += 1
+        elif opt == "--end-at":
+            tmp_end_at_task = optarg
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    end_at_task = testcount
+    if not (isinstance(tmp_start_at_task, str) and tmp_start_at_task.isnumeric()
+            and 0 <= int(tmp_start_at_task) < testcount):
+        raise ValueError("--start-at TASK requires an integer "
+                         f"in the range [0,{testcount}]")
+    else:
+        start_at_task = int(tmp_start_at_task)
+
+    if tmp_end_at_task == "-1":
+        end_at_task = testcount
+    elif not (isinstance(tmp_end_at_task, str) and tmp_end_at_task.isnumeric()
+            and 0 <= int(tmp_end_at_task) < testcount and int(tmp_end_at_task) >= start_at_task):
+        raise ValueError("--end-at TASK requires an integer "
+                         f"in the range [0,{testcount}]")
+    else:
+        end_at_task = int(tmp_end_at_task)
 
     for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
         print(f"\033[1;37m[{i:03}/{len(tests) - 1:03}]\033[0m {', '.join(test)}:")
         kwargs = tests[test].get("kwargs", {})
         kwargs["verbose"] = verbose

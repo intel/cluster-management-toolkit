@@ -44,6 +44,7 @@ python_unit_tests = \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/cursestests \
+	tests/dgtests \
 	tests/fgtests \
 	tests/fmttests \
 	tests/gentests \
@@ -117,6 +118,8 @@ coverage_stats:
 
 coverage: setup_tests
 	@cmd=python3-coverage ;\
+	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
+	$$cmd run --branch --append tests/atptests --include-clear --end-at 0 || exit 1 ;\
 	printf -- "\n\nRunning python3-coverage to check test coverage on data\n" ;\
 	for test in $(python_data_coverage); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
@@ -125,15 +128,8 @@ coverage: setup_tests
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in $(python_unit_tests); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
-		$$cmd run --branch --append helptexts.py || exit 1 ;\
-	done ;\
-	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
-	for test in $(python_unit_tests); do \
-		printf -- "\n\n  Running: $$test\n\n" ;\
 		$$cmd run --branch --append $$test || exit 1 ;\
 	done ;\
-	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
-	$$cmd run --branch --append tests/atptests --include-clear ;\
 	$$cmd report --sort cover --precision 1 ;\
 	$$cmd html --precision 1 ;\
 	$$cmd json

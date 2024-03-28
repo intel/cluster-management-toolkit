@@ -28,6 +28,7 @@ from typing import Dict, List, Set, Tuple, Union
 from cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR, BASH_COMPLETION_DIRNAME
 from cmtpaths import BINDIR, HOMEDIR, CMTDIR, CMT_LOGS_DIR, VERSION_CACHE_DIR
+from cmtpaths import CHANGELOG_DIR, CHANGELOG_DIRNAME
 from cmtpaths import DEPLOYMENT_DIR, ANSIBLE_DIR, ANSIBLE_LOG_DIR
 from cmtpaths import CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
 from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
@@ -87,6 +88,7 @@ MISC_SYMLINKS = [
     (FilePath(os.path.join(os.getcwd(), PARSER_DIRNAME)), PARSER_DIR),
     (FilePath(os.path.join(os.getcwd(), THEME_DIRNAME)), THEME_DIR),
     (FilePath(os.path.join(os.getcwd(), VIEW_DIRNAME)), VIEW_DIR),
+    (FilePath(os.path.join(os.getcwd(), CHANGELOG_DIRNAME)), CHANGELOG_DIR),
     (FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmt")),
      FilePath(os.path.join(BASH_COMPLETION_DIR, "cmt"))),
     (FilePath(os.path.join(os.getcwd(), BASH_COMPLETION_DIRNAME, "cmtadm")),

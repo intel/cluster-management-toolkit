@@ -171,7 +171,7 @@ def format_markdown(lines: Union[str, List[str]],
             line = line[len("### "):]
         else:
             tmpline: List[Union[ThemeRef, ThemeStr]] = []
-            if line.startswith("    "):
+            if line.startswith("    ") and not codeblock:
                 tformat = ThemeAttr("types", "markdown_code")
                 codeblock = "    "
 

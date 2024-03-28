@@ -190,7 +190,7 @@ Run metrics:
 
 ### Flake8 Results for v0.8.1
 
-Commandline: `flake8 --max-line-length 100 --ignore F841,W503 --statistics`
+Commandline: `flake8 --max-line-length 100 --ignore F841,W503 --statistics`.
 Execute with `make flake8`.
 
 Output:
@@ -241,7 +241,7 @@ Execute with `make mypy-markdown`.
 
 ### Pylint Results for v0.8.1
 
-Commandline: `pylint --disable W0511`
+Commandline: `pylint --disable W0511`.
 Table generated with `make pylint-strict-markdown`.
 Currently all complaints are due to missing function, method, or class docstrings.
 
@@ -556,7 +556,7 @@ Run metrics:
 
 ### Flake8 Results for v0.8.0
 
-Commandline: `flake8 --max-line-length 100 --ignore F841,W503 --statistics`
+Commandline: `flake8 --max-line-length 100 --ignore F841,W503 --statistics`.
 Execute with `make flake8`.
 
 Output:
@@ -608,7 +608,7 @@ Execute with `make mypy-markdown`.
 
 ### Pylint Results for v0.8.0
 
-Commandline: `pylint --disable W0511`
+Commandline: `pylint --disable W0511`.
 Table generated with `make pylint-strict-markdown`.
 Currently all complaints are due to missing function, method, or class docstrings.
 
