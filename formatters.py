@@ -175,7 +175,7 @@ def format_markdown(lines: Union[str, List[str]],
                 tformat = ThemeAttr("types", "markdown_code")
                 codeblock = "    "
 
-            if line.lstrip().startswith("- "):
+            if line.lstrip().startswith(("- ", "* ", "+ ")):
                 striplen = len(line) - len(line.lstrip())
                 if striplen:
                     tmpline.append(ThemeStr("".ljust(striplen), ThemeAttr("types", "generic")))

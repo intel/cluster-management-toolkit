@@ -142,8 +142,11 @@ infoview:
         type: "str"
       release_date:
         header: [["Release Date:", ["main", "infoheader"]]]
-        path: "targetDate"
+        paths:
+        - path: ["targetDate", "release_date"]
+          pathtype: "str"
         type: "str"
+        formatter: "timestamp"
   logpad:
     # We cannot get the changelog in the previous infogetter,
     # since we don't have the latest version at that point
