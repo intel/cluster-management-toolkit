@@ -246,7 +246,7 @@ def datagetter_latest_version(obj: Dict[str, Any],
                 (dict): An empty dict
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("datagetter_deprecated_api() called without kubernetes_helper")
+        raise ProgrammingError("datagetter_latest_version() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     path = deep_get(kwargs, DictPath("path"))

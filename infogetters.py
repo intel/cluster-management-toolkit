@@ -79,7 +79,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
         return []
 
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+        raise ProgrammingError("get_pod_info() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     for obj in vlist:
@@ -615,7 +615,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
             ([InfoClass]): A list with info
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+        raise ProgrammingError("get_sas_info() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     obj = deep_get(kwargs, DictPath("_obj"))
