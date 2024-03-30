@@ -195,7 +195,7 @@ def gather_cluster_info(**kwargs: Any) -> None:
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
+        raise ProgrammingError("gather_cluster_info() called without kubernetes_helper")
 
     # Set global variables that need to be available when executing playbooks
     join_token = kh_.get_join_token()
@@ -395,8 +395,8 @@ def get_container_info(**kwargs: Any) -> List[Type]:
             ([InfoClass]): A list with info
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
-    kh_cache_ = KubernetesResourceCache()
+        raise ProgrammingError("get_container_info() called without kubernetes_helper")
+    kh_cache_ = deep_get(kwargs, DictPath("kh_cache"))
 
     info: List[Type] = []
     containers: Dict = {}
@@ -2415,13 +2415,13 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     listgetter_args["label_selector"] = label_selector
 
     infogetter = deep_get(views, DictPath(f"{view}#infogetter"), generic_infogetter)
-    infogetter_extra_vars = deep_get(views, DictPath(f"{view}#extra_vars#infogetter"),
+    infogetter_extra_args = deep_get(views, DictPath(f"{view}#extra_vars#infogetter"),
                                      {"_view": view.strip("*")})
-    infogetter_extra_vars["_field_index"] = field_index.lower()
-    infogetter_extra_vars["_field_names"] = field_names
-    infogetter_extra_vars["_field_dict"] = field_dict
+    infogetter_extra_args["_field_index"] = field_index.lower()
+    infogetter_extra_args["_field_names"] = field_names
+    infogetter_extra_args["_field_dict"] = field_dict
     if "filters" in listview_args:
-        infogetter_extra_vars["_filters"] = deep_get(listview_args, DictPath("filters"))
+        infogetter_extra_args["_filters"] = deep_get(listview_args, DictPath("filters"))
 
     uip.last_action = datetime.now()
     uip.idle_timeout = 5
@@ -2445,7 +2445,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 executor.trigger("hosts", 10, read_file_async, path=ANSIBLE_INVENTORY,
                                  filetype="yaml", **listgetter_args)
                 async_data["hosts"] = copy.deepcopy(hosts)
-                infogetter_extra_vars["_match_key"] = "name"
+                infogetter_extra_args["_match_key"] = "name"
                 new_data = "pending"
                 first_fetch = False
             # pylint: disable-next=comparison-with-callable
@@ -2453,8 +2453,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     and (first_fetch or uip.update_forced):
                 vlist, hosts = listgetters_async.get_context_list(kubernetes_helper=kh)
                 async_data["hosts"] = copy.deepcopy(hosts)
-                infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
-                infogetter_extra_vars["_match_key"] = "server_address"
+                infogetter_extra_args["_vlist"] = copy.deepcopy(vlist)
+                infogetter_extra_args["_match_key"] = "server_address"
                 new_data = "pending"
                 first_fetch = False
             # pylint: disable-next=comparison-with-callable
@@ -2487,7 +2487,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                         vlist, status = \
                             listgetter(deep_get(view, DictPath(f"{view}#kind")), selected_namespace,
                                        label_selector=label_selector, **listgetter_args)
-                    infogetter_extra_vars["_vlist"] = vlist
+                    infogetter_extra_args["_vlist"] = vlist
                 new_data = "pending"
                 uip.update_timestamp(update=new_data)
                 first_fetch = False
@@ -2511,7 +2511,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 hosts = deep_get(data, DictPath("all#hosts"), {}).keys()
                 hosts_set = set(hosts)
                 async_data["hosts"] = list(hosts)
-                if vlist := deep_get(infogetter_extra_vars, DictPath("_vlist"), []):
+                if vlist := deep_get(infogetter_extra_args, DictPath("_vlist"), []):
                     vlist_hosts = [deep_get(item, DictPath("name")) for item in vlist]
                     vlist_hosts_set = set(vlist_hosts)
                 else:
@@ -2534,7 +2534,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                         if deep_get(item, DictPath("name"), "") == host:
                             vlist[i]["status"] = "DELETED"
                             vlist[i]["__deleted"] = True
-                infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+                infogetter_extra_args["_vlist"] = copy.deepcopy(vlist)
                 if not uip.listlen:
                     uip.force_update()
                 new_data = "pending"
@@ -2542,9 +2542,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 first_fetch = False
             elif (result := executor.get("pings")) != ([], []):
                 ansible_results, _ansible_status = result
-                vlist = deep_get(infogetter_extra_vars, DictPath("_vlist"), [])
+                vlist = deep_get(infogetter_extra_args, DictPath("_vlist"), [])
                 for i, item in enumerate(vlist):
-                    host = deep_get(item, DictPath(infogetter_extra_vars["_match_key"]))
+                    host = deep_get(item, DictPath(infogetter_extra_args["_match_key"]))
                     for result in deep_get(ansible_results, f"{host}", []):
                         if deep_get(result, DictPath("task")) == "Ping":
                             if not deep_get(vlist[i], DictPath("__deleted"), False):
@@ -2565,7 +2565,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                                             DictPath("selection"), [])):
                     executor.update("pings", selection=copy.deepcopy(async_data["hosts"]))
                     executor.retrigger("pings")
-                infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+                infogetter_extra_args["_vlist"] = copy.deepcopy(vlist)
                 if not uip.listlen:
                     uip.force_update()
                 new_data = "pending"
@@ -2573,7 +2573,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 first_fetch = False
             elif (result := executor.get(".".join(kind))) != ([], []):
                 vlist, status = result
-                infogetter_extra_vars["_vlist"] = copy.deepcopy(vlist)
+                infogetter_extra_args["_vlist"] = copy.deepcopy(vlist)
 
                 if status == 42503:
                     serverstatus = "Server Unavailable"
@@ -2592,7 +2592,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             # otherwise we'll crash elsewhere
             if not uip.listlen and first_fetch \
                     or new_data == "pending" and (uip.update_forced or not tagged_items):
-                vinfo = infogetter(**infogetter_extra_vars)
+                if "kubernetes_helper" not in infogetter_extra_args:
+                    infogetter_extra_args["kubernetes_helper"] = kh
+                if "kh_cache" not in infogetter_extra_args:
+                    infogetter_extra_args["kh_cache"] = kh_cache
+                vinfo = infogetter(**infogetter_extra_args)
                 uip.update_info(vinfo)
                 uip.force_update()
                 new_data = "true"
@@ -2988,8 +2992,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 executor.update(".".join(kind), namespace=selected_namespace)
             uip.update_window(update=False)
             uip.list_needs_regeneration(True)
-            infogetter_extra_vars["_vlist"] = []
-        elif (c == ord("t") or c == ord(" ")) and is_taggable:
+            infogetter_extra_args["_vlist"] = []
+        elif c in (ord("t"), ord(" ")) and is_taggable:
             selected = uip.get_selected()
 
             if selected is not None:
@@ -3147,7 +3151,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 executor.update(".".join(kind), label_selector=label_selector)
             uip.update_window(update=False)
             uip.list_needs_regeneration(True)
-            infogetter_extra_vars["_vlist"] = []
+            infogetter_extra_args["_vlist"] = []
         elif c == ord("A") and view == "Inventory" and not tagged_items:
             selected = uip.get_selected()
             groups = ansible_get_groups(ANSIBLE_INVENTORY)
@@ -3212,7 +3216,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     executor.update(".".join(kind), label_selector=label_selector)
                 uip.update_window(update=False)
                 uip.list_needs_regeneration(True)
-                infogetter_extra_vars["_vlist"] = []
+                infogetter_extra_args["_vlist"] = []
         elif c == ord("L") and is_taggable:
             # List tagged items
             taggeditemlist = []
