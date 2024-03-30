@@ -1,6 +1,9 @@
 kind: "HelmChartRepository"
 api_family: "helm.openshift.io"
 default_command: "helmchartrepositories"
+command:
+- "helmrepo"
+- "helmrepos"
 listview:
   name: "Helm Chart Repositories"
   group: "OpenShift"
@@ -28,7 +31,7 @@ infoview:
       connection_config_header:
         header: [["Connection Config:", ["main", "infoheader"]]]
       connection_config_url:
-        header: [["  URL:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
         path: "spec#connectionConfig#url"
         type: "str"
       connection_config_tls_client_config:
@@ -88,3 +91,11 @@ infoview:
         kind: "Secret"
         namespace: "openshift-config"
         name_path: "spec#connectionConfig#tlsClientConfig#name"
+    "Open Helm Chart webpage":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Helm Chart webpage in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["spec#connectionConfig#url"]]

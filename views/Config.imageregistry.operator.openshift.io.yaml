@@ -24,8 +24,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["http_secret", "loglevel", "operator_loglevel", "management_state", "rollout_strategy", "replicas", "ready_replicas"]
+        fields: ["http_secret", "default_route", "proxy_header", "proxy_http_proxy", "proxy_https_proxy", "proxy_no_proxy", "loglevel", "operator_loglevel", "management_state", "storage_header", "storage_managed", "storage_management_state", "storage_pvc_claim", "rollout_strategy", "replicas", "ready_replicas"]
     rows:
+      default_route:
+        header: [["Default Route:", ["main", "infoheader"]]]
+        path: "spec#defaultRoute"
+        type: "str"
       http_secret:
         header: [["HTTP Secret:", ["main", "infoheader"]]]
         path: "spec#httpSecret"
@@ -38,6 +42,25 @@ infoview:
         header: [["Management State:", ["main", "infoheader"]]]
         path: "spec#managementState"
         type: "str"
+      proxy_header:
+        header: [["Proxy:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
+      proxy_http_proxy:
+        header: [["  HTTP Proxy:", ["main", "infoheader"]]]
+        path: "spec#proxy#httpProxy"
+        type: "str"
+        default: "<none>"
+      proxy_https_proxy:
+        header: [["  HTTPS Proxy:", ["main", "infoheader"]]]
+        path: "spec#proxy#httpsProxy"
+        type: "str"
+        default: "<none>"
+      proxy_no_proxy:
+        header: [["  No Proxy:", ["main", "infoheader"]]]
+        path: "spec#proxy#noProxy"
+        type: "str"
+        default: "<none>"
       operator_loglevel:
         header: [["Operator Loglevel:", ["main", "infoheader"]]]
         path: "spec#operatorLogLevel"
@@ -59,6 +82,20 @@ infoview:
       rollout_strategy:
         header: [["Rollout Strategy:", ["main", "infoheader"]]]
         path: "spec#rolloutStrategy"
+        type: "str"
+      storage_header:
+        header: [["Storage:", ["main", "infoheader"]]]
+      storage_managed:
+        header: [["  Managed:", ["main", "infoheader"]]]
+        path: "status#storageManaged"
+        type: "str"
+      storage_management_state:
+        header: [["  Management State:", ["main", "infoheader"]]]
+        path: "status#storage#managementState"
+        type: "str"
+      storage_pvc_claim:
+        header: [["  ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["ersistent Volume Claim:", ["main", "infoheader"]]]
+        path: "status#storage#pvc#claim"
         type: "str"
   shortcuts:
     "List generations":
@@ -86,3 +123,15 @@ infoview:
         api_group_path: 1
         namespace_path: 2
         name_path: 3
+    "Persistent Volume Claim":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Persistent Volume Claim"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PersistentVolumeClaim"
+        name_path: "status#storage#pvc#claim"
+        namespace: "openshift-image-registry"
