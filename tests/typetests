@@ -885,10 +885,95 @@ def test_deep_get_list(verbose: bool = False) -> Tuple[str, bool]:
                               f"fallback_on_empty: {fallback_on_empty}\n" \
                               f"           result: {tmp}\n" \
                               f"         expected: {expected_result}\n"
-
+                    result = False
+                    break
+            except Exception as e:
                 if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"         expected: {expected_exception}\n"
+                        result = False
+                        break
+                else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"         expected: {expected_exception}\n"
+                              f"         expected: {expected_result}\n" \
+                              f"        exception: {repr(e).split('(')[0]}\n"
+                    result = False
+                    break
+    return message, result
+
+
+def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = cmttypes.deep_get_str_tuple_paths
+
+    if result:
+        obj = {
+            "kind": "DaemonSet",
+            "apiVersion": "apps/v1",
+            "metadata": {
+                "name": "foo"}}
+
+        # Indata format:
+        # (paths, default, fallback_on_empty, expected_result, expected_exception)
+        testdata = (
+            (
+                {
+                    "kind": "DaemonSet",
+                    "apiVersion": "apps/v1",
+                    "metadata": {
+                        "name": "foo"}},
+                [[DictPath("kind")],
+                 [DictPath("apiVersion")], "/",
+                 [DictPath("metadata#name")]],
+                "", False, "DaemonSet.apps/foo", None),
+            (
+                {
+                    "kind": "Pod",
+                    "apiVersion": "v1",
+                    "metadata": {
+                        "name": "bar"}},
+                [[DictPath("kind")],
+                 [DictPath("apiVersion")], "/",
+                 [DictPath("metadata#name")]],
+             "", False, "Pod/bar", None),
+            (
+                {
+                    "kind": "DaemonSet",
+                    "apiVersion": "apps/v1",
+                    "metadata": {
+                        "name": "foo"}},
+                [42,
+                [DictPath("apiVersion")], "/",
+                [DictPath("metadata#name")]],
+             "", False, None, TypeError),
+            (
+                {
+                    "kind": "",
+                    "apiVersion": "",
+                    "metadata": {
+                        "name": ""}},
+                [[DictPath("kind")],
+                 [DictPath("apiVersion")],
+                 [DictPath("metadata#name")]],
+             "fallback", True, "fallback", None),
+        )
+        for indata in testdata:
+            obj, paths, default, fallback_on_empty, expected_result, expected_exception = indata
+            try:
+                tmp = fun(obj=obj, paths=paths,
+                          default=default, fallback_on_empty=fallback_on_empty)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"            paths: {paths}\n" \
+                              f"          default: {default}\n" \
+                              f"fallback_on_empty: {fallback_on_empty}\n" \
+                              f"           result: {tmp}\n" \
+                              f"         expected: {expected_result}\n"
                     result = False
                     break
             except Exception as e:
@@ -967,6 +1052,10 @@ tests: Dict = {
     },
     ("deep_get_list()", ): {
         "callable": test_deep_get_list,
+        "result": None,
+    },
+    ("deep_get_str_tuple_paths()", ): {
+        "callable": test_deep_get_str_tuple_paths,
         "result": None,
     },
     ("loglevel_to_name()", ): {

@@ -1036,11 +1036,14 @@ def deep_get_str_tuple_paths(obj: Dict,
             string += fragment
         elif isinstance(fragment, list):
             tmp_string = deep_get_with_fallback(obj, fragment, "")
-            if fragment in ("apiFamily", "apiVersion") and prev == ["kind"]:
+            if fragment in (["apiFamily"], ["apiVersion"]) and prev == ["kind"]:
                 if "/" in tmp_string:
                     string += "." + tmp_string.split("/", maxsplit=1)[0]
             else:
                 string += tmp_string
+        else:
+            raise TypeError("deep_get_str_tuple_paths() called with invalid path segment: "
+                            f"{fragment}")
         prev = fragment
     if fallback_on_empty and not string:
         string = default
