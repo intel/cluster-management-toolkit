@@ -61,7 +61,8 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback, deep_set, DictPath
+from cmttypes import deep_get, deep_get_list, deep_get_with_fallback
+from cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
 from cmttypes import FilePath, Retval, SecurityPolicy, StatusGroup
 from cmttypes import ProgrammingError, FilePathAuditError
 from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
@@ -3570,6 +3571,9 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     if "_name_path" in action_args:
                         title_name_path = deep_get(action_args, DictPath("_name_path"), "")
                         title_name = deep_get(selected.ref, DictPath(title_name_path), "")
+                    elif "_name_tuple_paths" in action_args:
+                        title_name_paths = deep_get(action_args, DictPath("_name_tuple_paths"), [])
+                        title_name = deep_get_str_tuple_paths(selected.ref, title_name_paths, "")
                     elif selected is not None:
                         title_name = getattr(selected, "name", "")
                     if title_name != "":
@@ -6050,6 +6054,9 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     if "_name_path" in action_args and ref is not None:
                         title_name_path = deep_get(action_args, DictPath("_name_path"), "")
                         title_name = deep_get(ref, DictPath(title_name_path), "")
+                    elif "_name_tuple_paths" in action_args:
+                        title_name_paths = deep_get(action_args, DictPath("_name_tuple_paths"), [])
+                        title_name = deep_get_str_tuple_paths(ref, title_name_paths, "")
                     elif selected is not None:
                         title_name = getattr(selected, "name", "")
                     if title_name != "":
