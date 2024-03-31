@@ -355,7 +355,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
         deep_get_with_fallback(kwargs,
                                [DictPath("paths"),
                                 DictPath("extra_values#_extra_data#paths")], [],
-                                fallback_on_empty=True)
+                               fallback_on_empty=True)
     file_not_found_status = \
         deep_get_with_fallback(kwargs,
                                [DictPath("file_not_found_status"),
