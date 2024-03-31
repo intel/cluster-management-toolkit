@@ -38,6 +38,7 @@ infoview:
       helptext: "List objects"
       widget: "windowwidget"
       title: "Objects:"
+      selectable: true
       headers: ["Kind:", "API-Version:", "Name:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
@@ -46,8 +47,15 @@ infoview:
         - "kind"
         - "apiVersion"
         - "metadata#name"
+        pass_ref: true
       # Not supported for now
       sortcolumn: "kind"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Template"
+        _named_title: true
+        _name_tuple_paths: [["kind"], ["apiVersion"], "/", ["metadata#name"]]
     "Show parameter list":
       key: "p"
       modifier: "shift"
