@@ -789,7 +789,7 @@ def main() -> int:
     if tmp_end_at_task == "-1":
         end_at_task = testcount
     elif not (isinstance(tmp_end_at_task, str) and tmp_end_at_task.isnumeric()
-            and 0 <= int(tmp_end_at_task) < testcount and int(tmp_end_at_task) >= start_at_task):
+              and 0 <= int(tmp_end_at_task) < testcount and int(tmp_end_at_task) >= start_at_task):
         raise ValueError("--end-at TASK requires an integer "
                          f"in the range [0,{testcount}]")
     else:
