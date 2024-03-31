@@ -937,7 +937,8 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
         )
         for indata, kind, name, namespace, kwargs, expected_result, expected_exception in testdata:
             try:
-                with mock.patch("kubernetes_helper.secure_read_yaml", return_value=indata):
+                with mock.patch("kubernetes_helper.secure_read_yaml", return_value=indata), \
+                        mock.patch("pathlib.Path.is_file", return_value=True):
                     if (tmp := fun(kind, name, namespace, **kwargs)) != expected_result:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          indata: {indata}\n" \
