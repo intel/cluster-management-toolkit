@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-This file contains custom types used to define types used by CMT
+This file contains custom types used to define types used by CMT.
 """
 
 # pylint: disable=too-many-lines
@@ -25,7 +25,7 @@ DictPath = NewType("DictPath", str)
 
 class FilePath(str):
     """
-    A wrapper used for paths, to ensure correct types
+    A wrapper used for paths, to ensure correct types.
     """
 
     def __init__(self, path: Union["FilePath", str, Path, PurePath]) -> None:
@@ -35,7 +35,7 @@ class FilePath(str):
         """
         Perform a path join on a FilePath
         with either a PurePath, a str, a FilePath,
-        a list of strings, or a tuple of strings
+        a list of strings, or a tuple of strings.
 
             Parameters:
                 paths (str|FilePath|PurePath|List|Tuple): The path(s) to append
@@ -51,7 +51,7 @@ class FilePath(str):
 
 def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
     """
-    Given a structured error message return a plaintext representation
+    Given a structured error message return a plaintext representation.
 
         Parameters:
             msg ([[(str, str)]]): A structured message for format
@@ -71,7 +71,7 @@ def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
 # Keep this first so we can use it in the exceptions
 def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
     """
-    Given a dictionary and a path into that dictionary, get the value
+    Given a dictionary and a path into that dictionary, get the value.
 
         Parameters:
             dictionary (dict): The dict to get the value from
@@ -158,7 +158,7 @@ class UnknownError(Exception):
 
     def __str__(self) -> str:
         """
-        Return a string representation of the exception
+        Return a string representation of the exception.
 
             Returns:
                 (str): The string representation of the exception
@@ -172,7 +172,7 @@ class UnknownError(Exception):
 
     def exception_dict(self) -> Dict:
         """
-        Return a dictionary containing structured information about the exception
+        Return a dictionary containing structured information about the exception.
 
             Returns:
                 (dict): A dictionary with structured information
@@ -265,7 +265,7 @@ class ArgumentValidationError(Exception):
 
     def __str__(self) -> str:
         """
-        Return a string representation of the exception
+        Return a string representation of the exception.
 
             Returns:
                 (str): The string representation of the exception
@@ -284,7 +284,7 @@ class ArgumentValidationError(Exception):
 
     def exception_dict(self) -> Dict:
         """
-        Return a dictionary containing structured information about the exception
+        Return a dictionary containing structured information about the exception.
 
             Returns:
                 (dict): A dictionary with structured information
@@ -373,7 +373,7 @@ class ProgrammingError(Exception):
 
     def __str__(self) -> str:
         """
-        Return a string representation of the exception
+        Return a string representation of the exception.
 
             Returns:
                 (str): The string representation of the exception
@@ -392,7 +392,7 @@ class ProgrammingError(Exception):
 
     def exception_dict(self) -> Dict:
         """
-        Return a dictionary containing structured information about the exception
+        Return a dictionary containing structured information about the exception.
 
             Returns:
                 (dict): A dictionary with structured information
@@ -481,7 +481,7 @@ class FilePathAuditError(Exception):
 
     def __str__(self) -> str:
         """
-        Return a string representation of the exception
+        Return a string representation of the exception.
 
             Returns:
                 (str): The string representation of the exception
@@ -501,7 +501,7 @@ class FilePathAuditError(Exception):
 
     def exception_dict(self) -> Dict:
         """
-        Return a dictionary containing structured information about the exception
+        Return a dictionary containing structured information about the exception.
 
             Returns:
                 (dict): A dictionary with structured information
@@ -525,7 +525,7 @@ class FilePathAuditError(Exception):
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
     """
-    Validates that the kwargs against the requirements in kwargs_spec
+    Validates that the kwargs against the requirements in kwargs_spec.
 
         Parameters:
             kwargs_spec ([dict]): The expected properties for kwargs
@@ -736,7 +736,7 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
 
 class HostNameStatus(Enum):
     """
-    Return values from validate_hostname()
+    Return values from validate_hostname().
     """
     OK = auto()
     DNS_SUBDOMAIN_EMPTY = auto()
@@ -753,7 +753,7 @@ class HostNameStatus(Enum):
 
 class SecurityStatus(IntEnum):
     """
-    Return values from check_path()
+    Return values from check_path().
     """
     OK = auto()
     # Critical
@@ -778,7 +778,7 @@ class SecurityStatus(IntEnum):
 
 class SecurityChecks(Enum):
     """
-    Checks that can be performed by check_path()
+    Checks that can be performed by check_path().
     """
     PARENT_RESOLVES_TO_SELF = auto()
     RESOLVES_TO_SELF = auto()
@@ -797,7 +797,7 @@ class SecurityChecks(Enum):
 
 class SecurityPolicy(Enum):
     """
-    Security policies used by CMT
+    Security policies used by CMT.
     """
     # Only allows exact matches
     STRICT = auto()
@@ -810,7 +810,7 @@ class SecurityPolicy(Enum):
 
 class LogLevel(IntEnum):
     """
-    Loglevels used by CMT
+    Loglevels used by CMT.
     """
     EMERG = 0
     ALERT = 1
@@ -844,7 +844,7 @@ loglevel_mappings = {
 
 def loglevel_to_name(loglevel: LogLevel) -> str:
     """
-    Given a numerical loglevel, return its severity string
+    Given a numerical loglevel, return its severity string.
 
         Parameters:
             loglevel (int): The corresponding numerical loglevel
@@ -856,7 +856,7 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
 
 class Retval(Enum):
     """
-    Return values from the UI functions
+    Return values from the UI functions.
     """
     NOMATCH = 0     # No keypress matched/processed; further checks needed (if any)
     MATCH = 1       # keypress matched/processed; no further action
@@ -867,7 +867,7 @@ class Retval(Enum):
 
 class StatusGroup(IntEnum):
     """
-    Status groups used by CMT
+    Status groups used by CMT.
     """
     NEUTRAL = 8
     DONE = 7
@@ -894,7 +894,7 @@ stgroup_mapping = {
 
 def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = False) -> None:
     """
-    Given a dictionary, a path into that dictionary, and a value, set the path to that value
+    Given a dictionary, a path into that dictionary, and a value, set the path to that value.
 
         Parameters:
             dictionary (dict): The dict to set the value in
@@ -955,7 +955,7 @@ def deep_get_list(dictionary: Dict,
                   default: Optional[List[Any]] = None,
                   fallback_on_empty: bool = False) -> Optional[List[Any]]:
     """
-    Given a dictionary and a list of paths into that dictionary, get all values
+    Given a dictionary and a list of paths into that dictionary, get all values.
 
         Parameters:
             dictionary (dict): The dict to get the values from
@@ -987,7 +987,7 @@ def deep_get_with_fallback(obj: Dict,
                            default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
     """
     Given a dictionary and a list of paths into that dictionary,
-    get the value from the first path that has a value
+    get the value from the first path that has a value.
 
         Parameters:
             dictionary (dict): The dict to get the value from
@@ -1009,3 +1009,39 @@ def deep_get_with_fallback(obj: Dict,
     if result is None or type(result) in (list, str, dict) and not result and fallback_on_empty:
         result = default
     return result
+
+
+def deep_get_str_tuple_paths(obj: Dict,
+                             paths: List[Union[str, List[DictPath]]],
+                             default: Optional[Any] = None, fallback_on_empty: bool = False) -> str:
+    """
+    Given a dictionary and a list of strings or paths into that dictionary,
+    get the value from each path and joined them together with the verbatim strings,
+    with special consideration taken for apiFamily/apiVersion (remove the version).
+
+        Parameters:
+            dictionary (dict): The dict to get the value from
+            paths ([DictPath]): A list of dict paths or verbatim strings
+            default (any): The value to return if the dictionary, path or result is None
+            fallback_on_empty (bool): Should "" be treated as None?
+        Returns:
+            (str): The joined string
+    """
+    string = ""
+    prev: Union[List, str] = ""
+
+    for fragment in paths:
+        # This isn't a path, it's a verbatim string
+        if isinstance(fragment, str):
+            string += fragment
+        elif isinstance(fragment, list):
+            tmp_string = deep_get_with_fallback(obj, fragment, "")
+            if fragment in ("apiFamily", "apiVersion") and prev == ["kind"]:
+                if "/" in tmp_string:
+                    string += "." + tmp_string.split("/", maxsplit=1)[0]
+            else:
+                string += tmp_string
+        prev = fragment
+    if fallback_on_empty and not string:
+        string = default
+    return string
