@@ -24,3 +24,96 @@ listview:
       header: "Image Reference:"
       path: "image#dockerImageReference"
       type: "str"
+infoview:
+  name: "Image Stream Tag Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "from", "manifest_media_type", "metadata_version", "lookup_policy", "import_policy", "reference_policy", "version"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "tag#annotations#description"
+        type: "str"
+        default: "<unset>"
+      from:
+        header: [["From:", ["main", "infoheader"]]]
+        paths:
+        - path: [["tag#from#kind"], ["tag#from#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_separators:
+          - type: "url_separator"
+      lookup_policy:
+        header: [["Lookup Policy:", ["main", "infoheader"]]]
+        paths:
+        - path: "lookupPolicy"
+          pathtype: "substitution"
+          when:
+          - key: "local"
+            eq: true
+          substitute: "Local"
+        - path: "lookupPolicy"
+          pathtype: "substitution"
+          when:
+          - key: "local"
+            eq: false
+          substitute: "Remote"
+        default: "Remote"
+        type: "str"
+      import_policy:
+        header: [["Import Policy:", ["main", "infoheader"]]]
+        path: "tag#importPolicy#importMode"
+        type: "str"
+      manifest_media_type:
+        header: [["Manifest Media Type:", ["main", "infoheader"]]]
+        path: "image#dockerImageManifestMediaType"
+        type: "str"
+      metadata_version:
+        header: [["Metadata Version:", ["main", "infoheader"]]]
+        path: "image#dockerImageMetadataVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      reference_policy:
+        header: [["Reference Policy:", ["main", "infoheader"]]]
+        path: "tag#referencePolicy#type"
+        type: "str"
+        default: "<unset>"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#annotations#version"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Docker Image Layers":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Docker Image Layers"
+      widget: "windowwidget"
+      title: "Docker Image Layers:"
+      headers: ["Name:", "Size:", "Media Type:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "image#dockerImageLayers"
+        fields:
+        - "name"
+        - "size"
+        - "mediaType"
+        # pass_ref: true
+    "Docker Image Metadata":
+      key: "d"
+      read_only: true
+      helptext: "Show Docker Image Metadata"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Docker Image Metadata"
+        _pass_obj: true
+        path: "image#dockerImageMetadata"
