@@ -6056,7 +6056,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                         title_name = deep_get(ref, DictPath(title_name_path), "")
                     elif "_name_tuple_paths" in action_args:
                         title_name_paths = deep_get(action_args, DictPath("_name_tuple_paths"), [])
-                        title_name = deep_get_str_tuple_paths(ref, title_name_paths, "")
+                        title_name = deep_get_str_tuple_paths(cast(Dict, ref), title_name_paths, "")
                     elif selected is not None:
                         title_name = getattr(selected, "name", "")
                     if title_name != "":

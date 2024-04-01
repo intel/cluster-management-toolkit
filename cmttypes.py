@@ -1013,7 +1013,7 @@ def deep_get_with_fallback(obj: Dict,
 
 def deep_get_str_tuple_paths(obj: Dict,
                              paths: List[Union[str, List[DictPath]]],
-                             default: Optional[Any] = None, fallback_on_empty: bool = False) -> str:
+                             default: str = "", fallback_on_empty: bool = False) -> str:
     """
     Given a dictionary and a list of strings or paths into that dictionary,
     get the value from each path and joined them together with the verbatim strings,
