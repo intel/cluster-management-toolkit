@@ -940,7 +940,7 @@ def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
                 [[DictPath("kind")],
                  [DictPath("apiVersion")], "/",
                  [DictPath("metadata#name")]],
-             "", False, "Pod/bar", None),
+                "", False, "Pod/bar", None),
             (
                 {
                     "kind": "DaemonSet",
@@ -948,9 +948,9 @@ def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
                     "metadata": {
                         "name": "foo"}},
                 [42,
-                [DictPath("apiVersion")], "/",
-                [DictPath("metadata#name")]],
-             "", False, None, TypeError),
+                 [DictPath("apiVersion")], "/",
+                 [DictPath("metadata#name")]],
+                "", False, None, TypeError),
             (
                 {
                     "kind": "",
@@ -960,7 +960,7 @@ def test_deep_get_str_tuple_paths(verbose: bool = False) -> Tuple[str, bool]:
                 [[DictPath("kind")],
                  [DictPath("apiVersion")],
                  [DictPath("metadata#name")]],
-             "fallback", True, "fallback", None),
+                "fallback", True, "fallback", None),
         )
         for indata in testdata:
             obj, paths, default, fallback_on_empty, expected_result, expected_exception = indata

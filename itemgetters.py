@@ -82,7 +82,7 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
     condition_list = []
 
-    path = deep_get(kwargs, DictPath("path"), "status#conditions")
+    path: Union[str, DictPath] = deep_get(kwargs, DictPath("path"), DictPath("status#conditions"))
 
     for condition in deep_get(obj, DictPath(path), []):
         ctype = deep_get(condition, DictPath("type"), "")
@@ -778,6 +778,49 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
     return endpoints
 
 
+security_context_values: Dict = {
+    "Run as User": [
+        DictPath("spec#securityContext#runAsUser"),
+        DictPath("spec#template#spec#securityContext#runAsUser")],
+    "Run as non-Root": [
+        DictPath("spec#securityContext#runAsNonRoot"),
+        DictPath("spec#template#spec#securityContext#runAsNonRoot")],
+    "Run as Group": [
+        DictPath("spec#securityContext#runAsGroup"),
+        DictPath("spec#template#spec#securityContext#runAsGroup")],
+    "FS Group": [
+        DictPath("spec#securityContext#fsGroup"),
+        DictPath("spec#template#spec#securityContext#fsGroup")],
+    "FS Group-change Policy": [
+        DictPath("spec#securityContext#fsGroupChangePolicy"),
+        DictPath("spec#template#spec#securityContext#fsGroupChangePolicy")],
+    "Allow Privilege Escalation": [
+        DictPath("spec#securityContext#allowPrivilegeEscalation"),
+        DictPath("spec#template#spec#securityContext#allowPrivilegeEscalation")],
+    "Capabilities": [
+        DictPath("spec#securityContext#capabilities"),
+        DictPath("spec#template#spec#securityContext#capabilities")],
+    "Privileged": [
+        DictPath("spec#securityContext#privileged"),
+        DictPath("spec#template#spec#securityContext#privileged")],
+    "Proc Mount": [
+        DictPath("spec#securityContext#procMount"),
+        DictPath("spec#template#spec#securityContext#procMount")],
+    "Read-only Root Filesystem": [
+        DictPath("spec#securityContext#readOnlyRootFilesystem"),
+        DictPath("spec#template#spec#securityContext#readOnlyRootFilesystem")],
+    "SELinux Options": [
+        DictPath("spec#securityContext#seLinuxOptions"),
+        DictPath("spec#template#spec#securityContext#seLinuxOptions")],
+    "Seccomp Profile": [
+        DictPath("spec#securityContext#seccompProfile"),
+        DictPath("spec#template#spec#securityContext#seccompProfile")],
+    "Windows Options": [
+        DictPath("spec#securityContext#windowsOptions"),
+        DictPath("spec#template#spec#securityContext#windowsOptions")],
+}
+
+
 # pylint: disable-next=unused-argument
 def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
@@ -785,70 +828,15 @@ def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
         Parameters:
             obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([(str, str)]): A list of security context information
     """
     security_policies = []
 
-    tmp = [
-        ("Run as User",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#runAsUser"),
-             DictPath("spec#template#spec#securityContext#runAsUser")])),
-        ("Run as non-Root",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#runAsNonRoot"),
-             DictPath("spec#template#spec#securityContext#runAsNonRoot")])),
-        ("Run as Group",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#runAsGroup"),
-             DictPath("spec#template#spec#securityContext#runAsGroup")])),
-        ("FS Group",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#fsGroup"),
-             DictPath("spec#template#spec#securityContext#fsGroup")])),
-        ("FS Group-change Policy",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#fsGroupChangePolicy"),
-             DictPath("spec#template#spec#securityContext#fsGroupChangePolicy")])),
-        ("Allow Privilege Escalation",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#allowPrivilegeEscalation"),
-             DictPath("spec#template#spec#securityContext#allowPrivilegeEscalation")])),
-        ("Capabilities",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#capabilities"),
-             DictPath("spec#template#spec#securityContext#capabilities")])),
-        ("Privileged",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#privileged"),
-             DictPath("spec#template#spec#securityContext#privileged")])),
-        ("Proc Mount",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#procMount"),
-             DictPath("spec#template#spec#securityContext#procMount")])),
-        ("Read-only Root Filesystem",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#readOnlyRootFilesystem"),
-             DictPath("spec#template#spec#securityContext#readOnlyRootFilesystem")])),
-        ("SELinux Options",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#seLinuxOptions"),
-             DictPath("spec#template#spec#securityContext#seLinuxOptions")])),
-        ("Seccomp Profile",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#seccompProfile"),
-             DictPath("spec#template#spec#securityContext#seccompProfile")])),
-        ("Windows Options",
-         deep_get_with_fallback(obj, [
-             DictPath("spec#securityContext#windowsOptions"),
-             DictPath("spec#template#spec#securityContext#windowsOptions")])),
-    ]
-
-    for policy in tmp:
-        if policy[1] is not None:
-            security_policies.append((policy[0], str(policy[1])))
+    for name, path in security_context_values.items():
+        if (policy := deep_get_with_fallback(obj, path)) is not None:
+            security_policies.append((name, str(policy)))
 
     return security_policies
 
@@ -927,7 +915,7 @@ def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
         Parameters:
             obj (dict): The object to get data from
-            **kwargs (dict[str, Any]): Keyword arguments
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             ([(str, str)]): A list of volume properties
     """

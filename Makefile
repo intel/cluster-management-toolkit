@@ -26,6 +26,7 @@ python_test_executables = \
 	tests/gentests \
 	tests/infogtests \
 	tests/iotests \
+	tests/itemgtests \
 	tests/khtests \
 	tests/lgtests \
 	tests/logtests \
@@ -50,6 +51,7 @@ python_unit_tests = \
 	tests/gentests \
 	tests/infogtests \
 	tests/iotests \
+	tests/itemgtests \
 	tests/khtests \
 	tests/lgtests \
 	tests/logtests \

@@ -48,6 +48,7 @@ or ask for help.
 | `generators.py`       | `tests/gentests`       |                                      |
 | `formatter.py`        | `tests/fmttests`       |                                      |
 | `infogetters.py`      | `tests/infogtests`     |                                      |
+| `itemgetters.py`      | `tests/itemgtests`     |                                      |
 | `kubernetes_helper.py`| `tests/khtests`        | Cluster setup optional               |
 | `listgetters.py`      | `tests/lgtests`        |                                      |
 | `logparser.py`        | `tests/logtests`       |                                      |

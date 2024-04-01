@@ -1,0 +1,663 @@
+#! /bin/sh
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# pylint: disable-next=anomalous-backslash-in-string
+''''eval version=$( ls /usr/bin/python3.* | \
+    grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
+    version=${version##/usr/bin/python3.} && [ ${version} ] && \
+    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    exec /usr/bin/env python3 "$0" "$@"' #'''
+# The above hack is to handle distros where /usr/bin/python3
+# doesn't point to the latest version of python3 they provide
+# Requires: python3 (>= 3.8)
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
+
+from pathlib import PurePath
+import sys
+from typing import Dict, List, Tuple
+import yaml
+
+from cmtpaths import DEFAULT_THEME_FILE
+from cmttypes import deep_get, DictPath, FilePath
+from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
+import itemgetters
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
+
+# unit-tests for itemgetters.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
+
+
+def test_callback(options: List[Tuple[str, str]], args: List[str]) -> Tuple[str, int]:
+    return ("callback", len(args))
+
+
+def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_conditions
+
+    if result:
+        # Indata format:
+        # (obj, path, expected_result, expected_exception)
+        testdata: Tuple = (
+            # All fine
+            (
+                {
+                    "status": {
+                        "conditions": [
+                            {
+                                'type': 'PodReadyToStartContainers',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-03-24T02:22:32Z'},
+                            {
+                                'type': 'Initialized',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:19:59Z'},
+                            {
+                                'type': 'Ready',
+                                'status': 'True',
+                                # Randomly set the readiness probe
+                                'lastProbeTime': '2024-03-31T02:12:32Z',
+                                'lastTransitionTime': '2024-03-31T02:12:32Z'},
+                            {
+                                'type': 'ContainersReady',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-03-31T02:12:32Z'},
+                            {
+                                'type': 'PodScheduled',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:19:59Z'},
+                        ],
+                    },
+                },
+                DictPath("status#conditions"),
+                [
+                    {
+                        "fields": [
+                            'PodReadyToStartContainers', 'True',
+                            '<unset>', '2024-03-24 04:22:32', ''],
+                    },
+                    {
+                        "fields": [
+                            'Initialized', 'True',
+                            '<unset>', '2024-02-23 01:19:59', ''],
+                    },
+                    {
+                        "fields": [
+                            'Ready', 'True',
+                            '2024-03-31 05:12:32', '2024-03-31 05:12:32', ''],
+                    },
+                    {
+                        "fields": [
+                            'ContainersReady', 'True',
+                            '<unset>', '2024-03-31 05:12:32', ''],
+                    },
+                    {
+                        "fields": [
+                            'PodScheduled', 'True',
+                            '<unset>', '2024-02-23 01:19:59', ''],
+                    },
+                ],
+                None,
+            ),
+            # Not ready
+            (
+                {
+                    "status": {
+                        "conditions": [
+                            {
+                                'type': 'PodReadyToStartContainers',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                            {
+                                'type': 'Initialized',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                            {
+                                'type': 'Ready',
+                                'status': 'False',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T02:03:00Z'},
+                            {
+                                'type': 'ContainersReady',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                            {
+                                'type': 'PodScheduled',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                        ],
+                    },
+                },
+                DictPath("status#conditions"),
+                [
+                    {
+                        'fields': [
+                            'PodReadyToStartContainers', 'True',
+                            '<unset>', '2024-02-23 01:30:48', '']},
+                    {
+                        'fields': [
+                            'Initialized', 'True',
+                            '<unset>', '2024-02-23 01:20:00', '']},
+                    {
+                        'fields': [
+                            'Ready', 'False',
+                            '<unset>', '2024-02-23 04:03:00', '']},
+                    {
+                        'fields': [
+                            'ContainersReady', 'True',
+                            '<unset>', '2024-02-23 01:30:48', '']},
+                    {
+                        'fields': [
+                            'PodScheduled', 'True',
+                            '<unset>', '2024-02-23 01:20:00', '']},
+                ],
+                None,
+            ),
+            # Not ready, no lastTransitionTime
+            (
+                {
+                    "status": {
+                        "conditions": [
+                            {
+                                'type': 'PodReadyToStartContainers',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                            {
+                                'type': 'Initialized',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                            {
+                                'type': 'Ready',
+                                'status': 'False',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': None},
+                            {
+                                'type': 'ContainersReady',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                            {
+                                'type': 'PodScheduled',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                        ],
+                    },
+                },
+                DictPath("status#conditions"),
+                [
+                    {
+                        'fields': [
+                            'PodReadyToStartContainers', 'True',
+                            '<unset>', '2024-02-23 01:30:48', '']},
+                    {
+                        'fields': [
+                            'Initialized', 'True',
+                            '<unset>', '2024-02-23 01:20:00', '']},
+                    {
+                        'fields': [
+                            'Ready', 'False',
+                            '<unset>', '<unset>', '']},
+                    {
+                        'fields': [
+                            'ContainersReady', 'True',
+                            '<unset>', '2024-02-23 01:30:48', '']},
+                    {
+                        'fields': [
+                            'PodScheduled', 'True',
+                            '<unset>', '2024-02-23 01:20:00', '']},
+                ],
+                None,
+            ),
+            # Terminated
+            (
+                {
+                    "status": {
+                        "conditions": [
+                            {
+                                'type': 'PodReadyToStartContainers',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T00:28:57Z'},
+                            {
+                                'type': 'Initialized',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T00:28:56Z'},
+                            {
+                                'type': 'Ready',
+                                'status': 'False',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T02:03:00Z'},
+                            {
+                                'type': 'ContainersReady',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T00:29:07Z'},
+                            {
+                                'type': 'PodScheduled',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T00:28:55Z'},
+                            {
+                                'type': 'DisruptionTarget',
+                                'status': 'True',
+                                'lastProbeTime': None,
+                                'lastTransitionTime': '2024-02-23T02:08:05Z',
+                                'reason': 'DeletionByTaintManager',
+                                'message': 'Taint manager: deleting due to NoExecute taint'},
+                        ],
+                    },
+                },
+                DictPath("status#conditions"),
+                [
+                    {
+                        'fields': [
+                            'PodReadyToStartContainers', 'True',
+                            '<unset>', '2024-02-23 02:28:57', '']},
+                    {
+                        'fields': [
+                            'Initialized', 'True',
+                            '<unset>', '2024-02-23 02:28:56', '']},
+                    {
+                        'fields': [
+                            'Ready', 'False',
+                            '<unset>', '2024-02-23 04:03:00', '']},
+                    {
+                        'fields': [
+                            'ContainersReady', 'True',
+                            '<unset>', '2024-02-23 02:29:07', '']},
+                    {
+                        'fields': [
+                            'PodScheduled', 'True',
+                            '<unset>', '2024-02-23 02:28:55', '']},
+                    {
+                        'fields': [
+                            'DisruptionTarget', 'True',
+                            '<unset>', '2024-02-23 04:08:05',
+                            'Taint manager: deleting due to NoExecute taint']},
+                ],
+                None,
+            ),
+        )
+
+        for conditions, path, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(conditions, path=path)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_security_context(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_security_context
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                # Valid data
+                {
+                    'kind': 'Pod',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'securityContext': {
+                            'runAsNonRoot': True,
+                            'runAsUser': 65534,
+                            'seLinuxOptions': {
+                                'level': 's0:c16,c10',
+                            },
+                            'seccompProfile': {
+                                'type': 'RuntimeDefault',
+                            },
+                        },
+                    },
+                },
+                [
+                    ('Run as User', '65534'),
+                    ('Run as non-Root', 'True'),
+                    ('SELinux Options', "{'level': 's0:c16,c10'}"),
+                    ('Seccomp Profile', "{'type': 'RuntimeDefault'}"),
+                ],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_volume_properties
+
+    if result:
+        # Indata format:
+        # (obj, pv_type, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                # Valid data
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'csi': {
+                            'driver': 'kubevirt.io.hostpath-provisioner',
+                            'volumeHandle': 'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010',
+                            'volumeAttributes': {
+                                'csi.storage.k8s.io/pv/name':
+                                    'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010',
+                                'csi.storage.k8s.io/pvc/name': 'crc-image-registry-storage',
+                                'csi.storage.k8s.io/pvc/namespace': 'openshift-image-registry',
+                                'storage.kubernetes.io/csiProvisionerIdentity':
+                                    '1708097995634-2345-kubevirt.io.'
+                                    'hostpath-provisioner-crc-vlf7c-master-0',
+                                'storagePool': 'local'},
+                        },
+                    },
+                },
+                "csi",
+                [
+                    ('Volume Handle:', 'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010'),
+                    ('Driver:', 'kubevirt.io.hostpath-provisioner'),
+                    ('Filesystem Type:', ''),
+                    ('Read Only:', ''),
+                ],
+                None,
+            ),
+            (
+                # Valid data
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'csi': {
+                            'driver': 'kubevirt.io.hostpath-provisioner',
+                            'volumeHandle': 'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010',
+                            'volumeAttributes': {
+                                'csi.storage.k8s.io/pv/name':
+                                    'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010',
+                                'csi.storage.k8s.io/pvc/name': 'crc-image-registry-storage',
+                                'csi.storage.k8s.io/pvc/namespace': 'openshift-image-registry',
+                                'storage.kubernetes.io/csiProvisionerIdentity':
+                                    '1708097995634-2345-kubevirt.io.'
+                                    'hostpath-provisioner-crc-vlf7c-master-0',
+                                'storagePool': 'local'},
+                        },
+                    },
+                },
+                "csi",
+                [
+                    ('Volume Handle:', 'pvc-67e5e2ac-944e-4de6-af4e-032dc22fc010'),
+                    ('Driver:', 'kubevirt.io.hostpath-provisioner'),
+                    ('Filesystem Type:', ''),
+                    ('Read Only:', ''),
+                ],
+                None,
+            ),
+            (
+                # Invalid data
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'csi': {
+                            'driver': 'kubevirt.io.hostpath-provisioner',
+                            'volumeHandle': ANSIThemeStr("foo", "bar"),
+                        },
+                    },
+                },
+                "csi",
+                None,
+                TypeError,
+            ),
+            (
+                # List
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'csi': {
+                            'driver': 'kubevirt.io.hostpath-provisioner',
+                            'volumeHandle': ["foo", "bar", "baz"],
+                        },
+                    },
+                },
+                "csi",
+                [
+                    ('Volume Handle:', 'foo,bar,baz'),
+                    ('Driver:', 'kubevirt.io.hostpath-provisioner'),
+                    ('Filesystem Type:', ''),
+                    ('Read Only:', ''),
+                ],
+                None,
+            ),
+            (
+                # Dict
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {
+                        'csi': {
+                            'driver': 'kubevirt.io.hostpath-provisioner',
+                            'volumeHandle': {'foo': 'bar'},
+                        },
+                    },
+                },
+                "csi",
+                [
+                    ('Volume Handle:', 'foo:bar'),
+                    ('Driver:', 'kubevirt.io.hostpath-provisioner'),
+                    ('Filesystem Type:', ''),
+                    ('Read Only:', ''),
+                ],
+                None,
+            ),
+            (
+                # Lacks a volume spec, so get_pv_type() returns None
+                {
+                    'kind': 'PersistentVolume',
+                    'apiVersion': 'v1',
+                    'spec': {},
+                },
+                "csi",
+                [],
+                None,
+            ),
+        )
+
+        for conditions, path, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(conditions, path=path)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+tests: Dict = {
+    ("get_conditions()",): {
+        "callable": test_get_conditions,
+        "result": None,
+    },
+    ("get_security_context()",): {
+        "callable": test_get_security_context,
+        "result": None,
+    },
+    ("get_volume_properties()",): {
+        "callable": test_get_volume_properties,
+        "result": None,
+    },
+}
+
+
+def main() -> int:
+    fail = 0
+    success = 0
+    verbose = False
+    failed_testcases = []
+
+    themefile = DEFAULT_THEME_FILE
+    init_ansithemeprint(themefile=themefile)
+
+    # How many non-prepare testcases do we have?
+    testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))
+    start_at_task = 0
+    end_at_task = testcount
+
+    i = 1
+
+    while i < len(sys.argv):
+        opt = sys.argv[i]
+        optarg = None
+        if i + 1 < len(sys.argv):
+            optarg = sys.argv[i + 1]
+        if opt == "--start-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError("--start-at TASK requires an integer "
+                                 f"in the range [0,{testcount}]")
+            start_at_task = int(optarg)
+            i += 1
+        elif opt == "--end-at":
+            if not (isinstance(optarg, str) and optarg.isnumeric()):
+                raise ValueError(f"--end-at TASK requires an integer in the range [0,{testcount}]")
+            end_at_task = int(optarg)
+            i += 1
+        else:
+            sys.exit(f"Unknown argument: {opt}")
+        i += 1
+
+    for i, test in enumerate(tests):
+        if i < start_at_task:
+            continue
+        if i > end_at_task:
+            break
+        ansithemeprint([ANSIThemeStr(f"[{i:03}/{testcount - 1:03}]", "emphasis"),
+                        ANSIThemeStr(f" {', '.join(test)}:", "default")])
+        message, result = tests[test]["callable"](verbose=verbose)
+        if message:
+            ansithemeprint([ANSIThemeStr("  FAIL", "error"),
+                            ANSIThemeStr(f": {message}", "default")])
+        else:
+            ansithemeprint([ANSIThemeStr("  PASS", "success")])
+            success += 1
+        tests[test]["result"] = result
+        if not result:
+            fail += 1
+            failed_testcases.append(f"{i}: {', '.join(test)}")
+
+    ansithemeprint([ANSIThemeStr("\nSummary:", "header")])
+    if fail:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "error")])
+    else:
+        ansithemeprint([ANSIThemeStr(f"  FAIL: {fail}", "unknown")])
+    ansithemeprint([ANSIThemeStr(f"  PASS: {success}", "success")])
+
+    if fail:
+        ansithemeprint([ANSIThemeStr("\nFailed testcases:", "header")])
+        for testcase in failed_testcases:
+            ansithemeprint([ANSIThemeStr("  • ", "separator"),
+                            ANSIThemeStr(testcase, "default")], stderr=True)
+        sys.exit(fail)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()
