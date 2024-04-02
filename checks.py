@@ -1424,7 +1424,7 @@ recommended_file_permissions = [
     {
         "path": KUBE_CONFIG_FILE,
         "alertmask": 0o077,
-        "usergroup_alertmask": 0o007,
+        "usergroup_alertmask": 0o077,
         "executable": False,
         "severity": "critical",
         "justification": [
@@ -1434,7 +1434,7 @@ recommended_file_permissions = [
     {
         "path": KUBE_CREDENTIALS_FILE,
         "alertmask": 0o077,
-        "usergroup_alertmask": 0o007,
+        "usergroup_alertmask": 0o077,
         "executable": False,
         "severity": "critical",
         "justification": [
