@@ -4016,12 +4016,12 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     if k8s_distro == "kubeadm":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "config", "join_configuration.yaml.j2")),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config", "join_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath(("templates", "etc", "rancher",
-                                           "rke2", "config.agent.yaml.j2")),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher",
+                                           "rke2", "config.agent.yaml.j2"),
         ]
 
     for opt, optarg in options:
@@ -4181,7 +4181,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
     no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
     env = {
-        "KUBECONFIG": HOMEDIR.joinpath((".kube", "config")),
+        "KUBECONFIG": HOMEDIR.joinpath(".kube", "config"),
         "PATH": deep_get(dict(os.environ), DictPath("PATH"), ""),
         "HOME": HOMEDIR,
         "http_proxy": http_proxy,
@@ -5403,6 +5403,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         setup_k8s_distro["suse_packages_held"].remove("kubelet")
         setup_k8s_distro["suse_packages_held"].append(f"kubernetes{requested_major_minor}-kubelet")
 
+    setup_k8s_distro["extra_values"] = setup_extras
     run_tasks(tasks=setup_control_plane_tasks, phase=cast(int, phase),
               phase_skiplist=phase_skiplist, final_state="installed", verbose=verbose)
     update_installation_info(version=requested_version)
