@@ -245,12 +245,14 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
         # The dnslabel is OK if either of these apply:
         # * It only has one field (it doesn't have a tld)
         # * The first character in the TLD is [a-z] and the the TLD is longer than 1 character
-        msg = [ANSIThemeStr("Error", "error"),
-               ANSIThemeStr(": The DNS label ", "default"),
-               ANSIThemeStr(fqdn, "hostname"),
-               ANSIThemeStr(" is invalid; ", "default"),
-               ANSIThemeStr("the TLD must start with [a-z] and "
-                            "be at least 2 characters long.", "default")]
+        if message_on_error:
+            msg = [ANSIThemeStr("Error", "error"),
+                   ANSIThemeStr(": The DNS label ", "default"),
+                   ANSIThemeStr(fqdn, "hostname"),
+                   ANSIThemeStr(" is invalid; ", "default"),
+                   ANSIThemeStr("the TLD must start with [a-z] and "
+                                "be at least 2 characters long.", "default")]
+            ansithemeprint(msg, stderr=True)
         return HostNameStatus.DNS_TLD_INVALID
 
     return HostNameStatus.OK
