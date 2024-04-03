@@ -960,9 +960,9 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
             sys.exit(errno.EINVAL)
 
     # Validate FQDN/hostname list
-    retval = validate_fqdn(selection[0], message_on_error=True)
-    if retval != HostNameStatus.OK:
-        sys.exit(errno.EINVAL)
+    for hostname in selection:
+        if validate_fqdn(hostname, message_on_error=True) != HostNameStatus.OK:
+            sys.exit(errno.EINVAL)
 
     # Correlate the list of hosts with the nodes in the cluster
     nodes, non_existing, controlplanes = get_selection(selection, kind=("Node", ""))
@@ -1032,7 +1032,8 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
     playbooks = populate_playbooks_from_paths(prepare_playbooks)
     ansible_print_action_summary(playbooks)
 
-    ansible_add_hosts(inventory=ANSIBLE_INVENTORY, hosts=not_in_inventory, skip_all=False)
+    if not_in_inventory:
+        ansible_add_hosts(inventory=ANSIBLE_INVENTORY, hosts=not_in_inventory, skip_all=False)
 
     if confirm:
         input_retval = ansithemeinput([ANSIThemeStr("\nStart host preparation? [y/", "default"),
