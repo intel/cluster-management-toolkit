@@ -1740,6 +1740,8 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 
 
 def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
+    if deep_get(data, DictPath("event"), "") == "verbose":
+        print(deep_get(data, DictPath("stdout"), ""))
     if deep_get(data, DictPath("event"), "") == "runner_on_start":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
@@ -1774,12 +1776,60 @@ def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
                         ANSIThemeStr(" on ", "default"),
                         ANSIThemeStr(f"{host}", "hostname")])
         for res in deep_get(data, DictPath("event_data#res#results"), []):
+            if "stdout_lines" in res or "stderr_lines" in res:
+                item = deep_get(res, DictPath("item"), "")
+                ansithemeprint([ANSIThemeStr("    ", "default"),
+                                ANSIThemeStr("Item", "header"),
+                                ANSIThemeStr(":", "default"),
+                                ANSIThemeStr(f"{item}", "default")])
             msg = deep_get(res, DictPath("msg"), "")
             if msg:
                 ansithemeprint([ANSIThemeStr("    ", "default"),
                                 ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(":", "default")])
                 ansithemeprint([ANSIThemeStr(f"      {msg}", "default")])
+            if "stdout_lines" in res or "stderr_lines" in res:
+                stdout_lines = deep_get(res, DictPath("stdout_lines"), [])
+                stderr_lines = deep_get(res, DictPath("stderr_lines"), [])
+                if stdout_lines:
+                    ansithemeprint([ANSIThemeStr("    ", "default"),
+                                    ANSIThemeStr("stdout", "default"),
+                                    ANSIThemeStr(":", "default")])
+                    for line in stdout_lines:
+                        ansithemeprint([ANSIThemeStr("      ", "default"),
+                                        ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
+                if stderr_lines:
+                    ansithemeprint([ANSIThemeStr("    ", "default"),
+                                    ANSIThemeStr("stderr", "error"),
+                                    ANSIThemeStr(":", "default")])
+                    for line in stderr_lines:
+                        ansithemeprint([ANSIThemeStr("      ", "default"),
+                                        ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
+
+        msg_lines = deep_get(data, DictPath("event_data#res#msg"), "").splitlines()
+        if msg_lines:
+            ansithemeprint([ANSIThemeStr("    ", "default"),
+                            ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(":", "default")])
+            for line in msg_lines:
+                ansithemeprint([ANSIThemeStr("      ", "default"),
+                                ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
+        stdout_lines = deep_get(data, DictPath("event_data#res#stdout_lines"), [])
+        stderr_lines = deep_get(data, DictPath("event_data#res#stderr_lines"), [])
+        if stdout_lines:
+            ansithemeprint([ANSIThemeStr("    ", "default"),
+                            ANSIThemeStr("stdout", "default"),
+                            ANSIThemeStr(":", "default")])
+            for line in stdout_lines:
+                ansithemeprint([ANSIThemeStr("      ", "default"),
+                                ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
+        if stderr_lines:
+            ansithemeprint([ANSIThemeStr("    ", "default"),
+                            ANSIThemeStr("stderr", "error"),
+                            ANSIThemeStr(":", "default")])
+            for line in stderr_lines:
+                ansithemeprint([ANSIThemeStr("      ", "default"),
+                                ANSIThemeStr(line.replace("\x00", "<NUL>"), "default")])
     elif deep_get(data, DictPath("event"), "") == "runner_on_unreachable":
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
