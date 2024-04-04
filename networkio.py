@@ -98,9 +98,8 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
             sys.exit(errno.EIO)
 
         try:
-            transport.connect()
-            key = transport.get_remote_server_key()
-            transport.close()
+            with transport.connect():
+                key = transport.get_remote_server_key()
         except paramiko.SSHException:
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Failed to get server key from remote host ",
