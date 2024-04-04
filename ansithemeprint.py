@@ -134,6 +134,59 @@ class ANSIThemeStr:
         return self.string == themestring.string and self.themeref == themestring.themeref
 
     @classmethod
+    def tuplelist_to_ansithemearray(cls, msg: List[Tuple[str, str]]) -> List["ANSIThemeStr"]:
+        """
+        Given a structured message return its ANSIThemeArray representation
+
+            Parameters:
+                msg ([(str, str)]): A structured message for format
+            Returns:
+                (ANSIThemeArray): The ANSIThemeArray representations of the message
+            Raises:
+                ProgrammingError(TypeError): Invalid indata
+        """
+        themearray = []
+
+        if not isinstance(msg, list):
+            raise ProgrammingError("ANSIThemeStr.tuplelist_to_ansithemearray() "
+                                   "called with invalid argument(s):\n"
+                                   f"msg={msg} (type: {type(msg)}, expected: list)",
+                                   subexception=TypeError,
+                                   severity=LogLevel.ERR,
+                                   formatted_msg=[[("ANSIThemeStr.tuplelist_to_ansithemearray()",
+                                                    "emphasis"),
+                                                   (" called with invalid argument(s):", "error")],
+                                                  [("msg = ", "default"),
+                                                   (f"{msg}", "argument"),
+                                                   (" (type: ", "default"),
+                                                   (f"{type(msg)}", "argument"),
+                                                   (", expected: ", "default"),
+                                                   ("list", "argument"),
+                                                   (")", "default")]])
+
+        for item in msg:
+            if not (isinstance(item, tuple) and len(item) == 2
+                    and isinstance(item[0], str) and isinstance(item[1], str)):
+                raise ProgrammingError("ANSIThemeStr.tuplelist_to_ansithemearray() "
+                                       "called with invalid argument(s):\n"
+                                       f"msg={msg} (type: {type(msg)}, expected: list[(str, str)])",
+                                       subexception=TypeError,
+                                       severity=LogLevel.ERR,
+                                       formatted_msg=[
+                                           [("ANSIThemeStr.tuplelist_to_ansithemearray()",
+                                             "emphasis"),
+                                            (" called with invalid argument(s):", "error")],
+                                           [("msg = ", "default"),
+                                            (f"{msg}", "argument"),
+                                            (" (type: ", "default"),
+                                            (f"{type(msg)}", "argument"),
+                                            (", expected: ", "default"),
+                                            ("list", "argument"),
+                                            (")", "default")]])
+            themearray.append(ANSIThemeStr(item[0], item[1]))
+        return themearray
+
+    @classmethod
     def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> \
             Tuple[str, List[List["ANSIThemeStr"]]]:
         """
@@ -144,7 +197,10 @@ class ANSIThemeStr:
             Parameters:
                 msg ([[(str, str)]]): A structured message for format
             Returns:
-                (str, ANSIThemeArray): The string and ANSIThemeArray representations of the message
+                (str, [ANSIThemeArray]): The string and ANSIThemeArray
+                                         representations of the message
+            Raises:
+                ProgrammingError(TypeError): Invalid indata
         """
         joined_strings = []
         themearray_list = []
@@ -153,6 +209,7 @@ class ANSIThemeStr:
             raise ProgrammingError("ANSIThemeStr.format_error_msg() "
                                    "called with invalid argument(s):\n"
                                    f"msg={msg} (type: {type(msg)}, expected: list)",
+                                   subexception=TypeError,
                                    severity=LogLevel.ERR,
                                    formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                     "emphasis"),
@@ -170,6 +227,7 @@ class ANSIThemeStr:
                 raise ProgrammingError("ANSIThemeStr.format_error_msg() "
                                        "called with invalid argument(s):\n"
                                        f"line={line} (type: {type(line)}, expected: list)",
+                                       subexception=TypeError,
                                        severity=LogLevel.ERR,
                                        formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                         "emphasis"),
@@ -192,6 +250,7 @@ class ANSIThemeStr:
                                            "called with invalid argument(s):\n"
                                            f"items={items} (type: {type(items)}, "
                                            "expected: tuple(str, str))",
+                                           subexception=TypeError,
                                            severity=LogLevel.ERR,
                                            formatted_msg=[[("ANSIThemeStr.format_error_msg()",
                                                             "emphasis"),
@@ -308,6 +367,8 @@ def ansithemearray_to_str(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
                 color (bool): True to emit ANSI-formatting, False to output a plain string
         Returns:
             (str): The string
+        Raises:
+            ProgrammingError: Function called without initializing ansithemestr
     """
     color: str = deep_get(kwargs, DictPath("color"), "auto")
 
@@ -442,6 +503,8 @@ def ansithemeinput(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
                     "auto": Use ANSI-formatting except when redirected
         Returns:
             string (str): The inputted string
+        Raises:
+            ProgrammingError: Function called without initializing ansithemestr
     """
     color: str = deep_get(kwargs, DictPath("color"), "auto")
 
@@ -489,6 +552,8 @@ def ansithemeinput_password(themearray: List[ANSIThemeStr], **kwargs: Any) -> st
                     "always": Always use ANSI-formatting
                     "never": Never use ANSI-formatting
                     "auto": Use ANSI-formatting except when redirected
+        Raises:
+            ProgrammingError: Function called without initializing ansithemestr
     """
     color: str = deep_get(kwargs, DictPath("color"), "auto")
 
@@ -535,6 +600,8 @@ def ansithemeprint(themearray: List[ANSIThemeStr], **kwargs: Any) -> None:
                     "always": Always use ANSI-formatting
                     "never": Never use ANSI-formatting
                     "auto": Use ANSI-formatting except when redirected
+        Raises:
+            ProgrammingError: Function called without initializing ansithemestr
     """
     stderr: bool = deep_get(kwargs, DictPath("stderr"), False)
     color: str = deep_get(kwargs, DictPath("color"), "auto")
