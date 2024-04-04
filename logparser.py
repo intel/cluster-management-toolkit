@@ -3670,6 +3670,12 @@ def init_parser_list() -> None:
 
 
 def get_parser_list() -> Set[Parser]:
+    """
+    Return a set with the parsers that should be visible in the override menu.
+
+        Returns:
+            (set(Parser)): A set of parsers
+    """
     parsers_ = set()
     for parser in parsers:
         if not parser.show_in_selector:

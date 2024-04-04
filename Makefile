@@ -7,6 +7,7 @@ python_executables = \
 	cmu
 python_data_coverage = \
 	helptexts.py \
+	recommended_permissions.py \
 	pvtypes.py
 python_test_executables = \
 	tests/async_fetch \
@@ -87,6 +88,7 @@ test_lib_symlinks = \
 	networkio.py \
 	objgetters.py \
 	pvtypes.py \
+	recommended_permissions.py \
 	reexecutor.py
 
 # F841 is the warning about unused assignments.

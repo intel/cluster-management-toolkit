@@ -1739,6 +1739,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
     return True
 
 
+# pylint: disable-next=too-many-branches,too-many-statements
 def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
     if deep_get(data, DictPath("event"), "") == "verbose":
         print(deep_get(data, DictPath("stdout"), ""))

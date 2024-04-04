@@ -7,10 +7,10 @@
 Get data for fields in a list; typically used to populate _extra_data
 """
 
-import about
 import copy
 from typing import Any, Callable, Dict, List
 
+import about
 from cmttypes import deep_get, DictPath, ProgrammingError
 
 

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-List of Kubernetes resources known by CMT
+List of Kubernetes resources known by CMT.
 """
 
 # pylint: disable=too-many-lines

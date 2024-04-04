@@ -70,6 +70,15 @@ def check_matchlist(item: str, matchlist: List[str]) -> bool:
 
 
 def get_device_model(obj: Dict, device: DictPath) -> str:
+    """
+    Return the device model for a partition.
+
+        Parameters:
+            obj (Dict): The object to extract device model information from
+            device (DictPath): The device to extract model information for
+        Returns:
+            (str): The device model
+    """
     for dev in deep_get(obj, DictPath("ansible_devices"), {}):
         partitions = deep_get(obj, DictPath(f"ansible_devices#{dev}#partitions"), {})
         model = deep_get(obj, DictPath(f"ansible_devices#{dev}#model"), "")

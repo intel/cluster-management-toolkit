@@ -26,13 +26,13 @@ from typing import Any, cast, Dict, Generator, List, Tuple, Union
 from ansible_helper import ansible_configuration
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
 
+from recommended_permissions import recommended_directory_permissions
+from recommended_permissions import recommended_file_permissions
+
 from cmtio import execute_command_with_response
 from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
-from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
-from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
-from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
-from cmtpaths import KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
+from cmtpaths import ANSIBLE_PLAYBOOK_DIR
+from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE
 from cmtpaths import SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
 import cmtlib
 from ansithemeprint import ANSIThemeStr, ansithemestr_join_list, ansithemeprint
@@ -40,11 +40,6 @@ from ansithemeprint import ANSIThemeStr, ansithemestr_join_list, ansithemeprint
 from kubernetes_helper import kubectl_get_version
 
 import about
-
-# Check file permissions:
-# .ssh should be 700
-# .ssh/authorized_keys should be 644, 640, or 600
-# .ssh/
 
 
 def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
@@ -1192,260 +1187,6 @@ def check_running_pods(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-recommended_directory_permissions = [
-    {
-        "path": BINDIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or overwrite files in ", "default"),
-            ANSIThemeStr(f"{BINDIR}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": CMTDIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("    If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{CMTDIR}", "path"),
-            ANSIThemeStr(" they may be able to obtain elevated privileges", "default")]
-    },
-    {
-        "path": CMT_LOGS_DIR,
-        "alertmask": 0o077,
-        "usergroup_alertmask": 0o027,
-        "severity": "error",
-        "justification": [
-            ANSIThemeStr("    If other users can read, create or replace files in ",
-                         "default"),
-            ANSIThemeStr(f"{CMT_LOGS_DIR}\n", "path"),
-            ANSIThemeStr("    they can cause ", "default"),
-            ANSIThemeStr("cmu", "programname"),
-            ANSIThemeStr(" to malfunction and possibly hide signs\n", "default"),
-            ANSIThemeStr("    of a compromised cluster and may be able to "
-                         "obtain sensitive information\n", "default"),
-            ANSIThemeStr("    from audit messages.", "default")]
-    },
-    {
-        "path": CMT_CONFIG_FILE_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{CMT_CONFIG_FILE_DIR}", "path"),
-            ANSIThemeStr(" they may be able to obtain elevated privileges", "default")]
-    },
-    {
-        "path": ANSIBLE_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{ANSIBLE_DIR}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": CMT_HOOKS_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{CMT_HOOKS_DIR}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": FilePath(os.path.join(CMT_HOOKS_DIR, "pre-upgrade.d")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{os.path.join(CMT_HOOKS_DIR, 'pre-upgrade.d')}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": FilePath(os.path.join(CMT_HOOKS_DIR, "post-upgrade.d")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{os.path.join(CMT_HOOKS_DIR, 'post-upgrade.d')}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": DEPLOYMENT_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{DEPLOYMENT_DIR}", "path"),
-            ANSIThemeStr(" they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": ANSIBLE_LOG_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "warning",
-        "justification": [
-            ANSIThemeStr("If others users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{ANSIBLE_LOG_DIR}", "path"),
-            ANSIThemeStr(" they can spoof results from playbook runs", "default")]
-    },
-    {
-        "path": KUBE_CONFIG_DIR,
-        "alertmask": 0o077,
-        "usergroup_alertmask": 0o027,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can read, create or replace files in ", "default"),
-            ANSIThemeStr(f"{KUBE_CONFIG_DIR}", "path"),
-            ANSIThemeStr(" they can obtain cluster access", "default")]
-    },
-    {
-        "path": THEME_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "error",
-        "justification": [
-            ANSIThemeStr("If others users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{THEME_DIR}", "path"),
-            ANSIThemeStr(" they can cause ", "default"),
-            ANSIThemeStr("cmu", "programname"),
-            ANSIThemeStr(" to malfunction", "default")]
-    },
-    {
-        "path": PARSER_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "error",
-        "justification": [
-            ANSIThemeStr("If others users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{PARSER_DIR}", "path"),
-            ANSIThemeStr(" they can cause ", "default"),
-            ANSIThemeStr("cmu", "programname"),
-            ANSIThemeStr(" to malfunction and possibly hide signs "
-                         "of a compromised cluster", "default")]
-    },
-    {
-        "path": VIEW_DIR,
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "severity": "error",
-        "justification": [
-            ANSIThemeStr("If others users can create or replace files in ", "default"),
-            ANSIThemeStr(f"{VIEW_DIR}", "path"),
-            ANSIThemeStr(" they can cause ", "default"),
-            ANSIThemeStr("cmu", "programname"),
-            ANSIThemeStr(" to malfunction and possibly hide signs of a "
-                         "compromised cluster", "default")]
-    },
-]
-
-recommended_file_permissions = [
-    {
-        "path": FilePath(os.path.join(BINDIR, "cmtadm")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": True,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can modify executables they can obtain "
-                         "elevated privileges", "default")]
-    },
-    {
-        "path": FilePath(os.path.join(BINDIR, "cmtinv")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": True,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can modify executables they can obtain "
-                         "elevated privileges", "default")]
-    },
-    {
-        "path": FilePath(os.path.join(BINDIR, "cmt")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": True,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can modify executables they can obtain "
-                         "elevated privileges", "default")]
-    },
-    {
-        "path": FilePath(os.path.join(BINDIR, "cmu")),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": True,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can modify configlets they may be able "
-                         "to obtain elevated privileges", "default")]
-    },
-    {
-        "path": CMT_CONFIG_FILE_DIR,
-        "suffixes": (".yml", ".yaml"),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": False,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can modify configlets they may be "
-                         "able to obtain elevated privileges", "default")]
-    },
-    {
-        "path": ANSIBLE_PLAYBOOK_DIR,
-        "suffixes": (".yml", ".yaml"),
-        "alertmask": 0o022,
-        "usergroup_alertmask": 0o002,
-        "executable": False,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can modify playbooks they can obtain "
-                         "elevated privileges", "default")]
-    },
-    {
-        "path": ANSIBLE_INVENTORY,
-        "alertmask": 0o077,
-        "usergroup_alertmask": 0o007,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If other users can read or modify the Ansible inventory "
-                         "they can obtain elevated privileges", "default")]
-    },
-    {
-        "path": KUBE_CONFIG_FILE,
-        "alertmask": 0o077,
-        "usergroup_alertmask": 0o077,
-        "executable": False,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can read or modify cluster configuration files "
-                         "they can obtain cluster access", "default")]
-    },
-    {
-        "path": KUBE_CREDENTIALS_FILE,
-        "alertmask": 0o077,
-        "usergroup_alertmask": 0o077,
-        "executable": False,
-        "severity": "critical",
-        "justification": [
-            ANSIThemeStr("If others users can read or modify cluster credential "
-                         "files they can obtain cluster access", "default")],
-        # This is not a required file, so don't warn if it doesn't exist
-        "optional": True,
-    },
-]
-
-
 # pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
 def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
                         **kwargs: Any) -> Tuple[bool, bool, int, int, int, int]:
@@ -1496,8 +1237,9 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
         alertmask = deep_get(permissions, DictPath("alertmask"), 0o077)
         usergroup_alertmask = deep_get(permissions, DictPath("usergroup_alertmask"), alertmask)
         severity = deep_get(permissions, DictPath("severity"), "critical")
-        justification = deep_get(permissions, DictPath("justification"),
-                                 [ANSIThemeStr("<no justification provided>", "emphasis")])
+        tmp_justification = deep_get(permissions, DictPath("justification"),
+                                     [("<no justification provided>", "emphasis")])
+        justification = ANSIThemeStr.tuplelist_to_ansithemearray(tmp_justification)
         executable = deep_get(permissions, DictPath("executable"), False)
         suffixes = deep_get(permissions, DictPath("suffixes"))
         optional = deep_get(permissions, DictPath("optional"), False)
