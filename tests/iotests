@@ -94,7 +94,6 @@ def test_execute_command(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     command = deep_get(checkdata, DictPath("command"), None)
     env = deep_get(checkdata, DictPath("env"), None)
     comparison = deep_get(checkdata, DictPath("comparison"), 0)
@@ -126,7 +125,6 @@ def test_execute_command_with_response(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     command = deep_get(checkdata, DictPath("command"), None)
     env = deep_get(checkdata, DictPath("env"), None)
     expect = deep_get(checkdata, DictPath("expect"))
@@ -157,7 +155,6 @@ def test_secure_read(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -196,7 +193,6 @@ def test_secure_read_string(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -235,7 +231,6 @@ def test_secure_read_yaml(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -269,7 +264,6 @@ def test_secure_read_yaml_all(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -302,7 +296,6 @@ def test_secure_which(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
     executable = deep_get(checkdata, DictPath("executable"), True)
@@ -338,7 +331,6 @@ def test_secure_rm(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -376,7 +368,6 @@ def test_secure_rmdir(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
 
@@ -414,7 +405,6 @@ def test_secure_mkdir(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     permissions = deep_get(checkdata, DictPath("permissions"))
     exist_ok = deep_get(checkdata, DictPath("exist_ok"))
@@ -450,7 +440,6 @@ def test_secure_copy(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     src = deep_get(checkdata, DictPath("src"), "")
     path = deep_get(checkdata, DictPath("path"), "")
     permissions = deep_get(checkdata, DictPath("permissions"))
@@ -489,7 +478,6 @@ def test_secure_symlink(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     src = deep_get(checkdata, DictPath("src"), "")
     path = deep_get(checkdata, DictPath("path"), "")
     expect = deep_get(checkdata, DictPath("expect"))
@@ -523,7 +511,6 @@ def test_expand_path(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     search_paths = deep_get(checkdata, DictPath("search_paths"), None)
     fallback = deep_get(checkdata, DictPath("fallback"), "")
@@ -548,7 +535,6 @@ def test_secure_write_string(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     permissions = deep_get(checkdata, DictPath("permissions"))
     expect = deep_get(checkdata, DictPath("expect"))
@@ -593,7 +579,6 @@ def test_secure_write_yaml(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     permissions = deep_get(checkdata, DictPath("permissions"))
     replace_empty = deep_get(checkdata, DictPath("replace_empty"), False)
@@ -643,7 +628,6 @@ def test_verify_checksum(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     path = deep_get(checkdata, DictPath("path"), "")
     filename = deep_get(checkdata, DictPath("filename"))
     checksum_type = deep_get(checkdata, DictPath("hash"))
@@ -672,7 +656,6 @@ def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
         Returns:
             retval (int): 0 on success, 1 on failure
     """
-
     status_set = deep_get(checkdata, DictPath("status_set"), set())
     separator = deep_get(checkdata, DictPath("separator"), ", ")
     expect = deep_get(checkdata, DictPath("expect"), "")
@@ -685,6 +668,70 @@ def test_join_securitystatus_set(checkdata: Dict) -> Tuple[int, str]:
 
 
 testcases = {
+    # Valid paths
+    "Correct type (Expected file)": {
+        "path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
+        "test": test_check_path,
+        "checks": [
+            SecurityChecks.PARENT_RESOLVES_TO_SELF,
+            SecurityChecks.RESOLVES_TO_SELF,
+            SecurityChecks.OWNER_IN_ALLOWLIST,
+            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+            SecurityChecks.PERMISSIONS,
+            SecurityChecks.PARENT_PERMISSIONS,
+            SecurityChecks.EXISTS,
+            SecurityChecks.IS_NOT_EXECUTABLE,
+            SecurityChecks.IS_FILE,
+        ],
+        "expect": [SecurityStatus.OK],
+    },
+    "Correct type (Expected directory)": {
+        "path": FilePath(f"{TEST_DIR}/13-correct_directory"),
+        "test": test_check_path,
+        "checks": [
+            SecurityChecks.PARENT_RESOLVES_TO_SELF,
+            SecurityChecks.RESOLVES_TO_SELF,
+            SecurityChecks.OWNER_IN_ALLOWLIST,
+            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+            SecurityChecks.PERMISSIONS,
+            SecurityChecks.PARENT_PERMISSIONS,
+            SecurityChecks.EXISTS,
+            SecurityChecks.IS_DIR,
+        ],
+        "expect": [SecurityStatus.OK],
+    },
+    "Correct type (Expected symlink)": {
+        "path": FilePath(f"{TEST_DIR}/02-symlink"),
+        "test": test_check_path,
+        "checks": [
+            SecurityChecks.PARENT_RESOLVES_TO_SELF,
+            SecurityChecks.OWNER_IN_ALLOWLIST,
+            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+            SecurityChecks.PERMISSIONS,
+            SecurityChecks.PARENT_PERMISSIONS,
+            SecurityChecks.EXISTS,
+            SecurityChecks.IS_SYMLINK,
+        ],
+        "expect": [SecurityStatus.OK],
+    },
+    "Valid path": {
+        "path": FilePath(f"{TEST_DIR}/13-correct_directory/"
+                         "16-correct_file_in_correct_permission_directory"),
+        "test": test_check_path,
+        "checks": [
+            SecurityChecks.PARENT_RESOLVES_TO_SELF,
+            SecurityChecks.RESOLVES_TO_SELF,
+            SecurityChecks.OWNER_IN_ALLOWLIST,
+            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+            SecurityChecks.PERMISSIONS,
+            SecurityChecks.PARENT_PERMISSIONS,
+            SecurityChecks.EXISTS,
+            SecurityChecks.IS_NOT_EXECUTABLE,
+            SecurityChecks.IS_FILE,
+        ],
+        "expect": [SecurityStatus.OK],
+    },
+    # Invalid paths
     "File permissions (default checks)": {
         "path": FilePath(f"{TEST_DIR}/01-wrong_permissions"),
         "test": test_check_path,
@@ -769,22 +816,6 @@ testcases = {
         ],
         "expect": [SecurityStatus.IS_NOT_FILE],
     },
-    "Correct type (Expected file)": {
-        "path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
-        "test": test_check_path,
-        "checks": [
-            SecurityChecks.PARENT_RESOLVES_TO_SELF,
-            SecurityChecks.RESOLVES_TO_SELF,
-            SecurityChecks.OWNER_IN_ALLOWLIST,
-            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-            SecurityChecks.PERMISSIONS,
-            SecurityChecks.PARENT_PERMISSIONS,
-            SecurityChecks.EXISTS,
-            SecurityChecks.IS_NOT_EXECUTABLE,
-            SecurityChecks.IS_FILE,
-        ],
-        "expect": [SecurityStatus.OK],
-    },
     "Wrong type (Expected directory)": {
         "path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
         "test": test_check_path,
@@ -815,21 +846,6 @@ testcases = {
         ],
         "expect": [SecurityStatus.PARENT_IS_NOT_DIR],
     },
-    "Correct type (Expected directory)": {
-        "path": FilePath(f"{TEST_DIR}/13-correct_directory"),
-        "test": test_check_path,
-        "checks": [
-            SecurityChecks.PARENT_RESOLVES_TO_SELF,
-            SecurityChecks.RESOLVES_TO_SELF,
-            SecurityChecks.OWNER_IN_ALLOWLIST,
-            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-            SecurityChecks.PERMISSIONS,
-            SecurityChecks.PARENT_PERMISSIONS,
-            SecurityChecks.EXISTS,
-            SecurityChecks.IS_DIR,
-        ],
-        "expect": [SecurityStatus.OK],
-    },
     "Wrong type (Expected symlink)": {
         "path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
         "test": test_check_path,
@@ -843,20 +859,6 @@ testcases = {
             SecurityChecks.IS_SYMLINK,
         ],
         "expect": [SecurityStatus.IS_NOT_SYMLINK],
-    },
-    "Correct type (Expected symlink)": {
-        "path": FilePath(f"{TEST_DIR}/02-symlink"),
-        "test": test_check_path,
-        "checks": [
-            SecurityChecks.PARENT_RESOLVES_TO_SELF,
-            SecurityChecks.OWNER_IN_ALLOWLIST,
-            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-            SecurityChecks.PERMISSIONS,
-            SecurityChecks.PARENT_PERMISSIONS,
-            SecurityChecks.EXISTS,
-            SecurityChecks.IS_SYMLINK,
-        ],
-        "expect": [SecurityStatus.OK],
     },
     "Not executable (should be)": {
         "path": FilePath(f"{TEST_DIR}/05-not_executable.sh"),
@@ -999,23 +1001,6 @@ testcases = {
         ],
         "expect": [SecurityStatus.PARENT_PATH_NOT_RESOLVING_TO_SELF],
     },
-    "Valid path": {
-        "path": FilePath(f"{TEST_DIR}/13-correct_directory/"
-                         "16-correct_file_in_correct_permission_directory"),
-        "test": test_check_path,
-        "checks": [
-            SecurityChecks.PARENT_RESOLVES_TO_SELF,
-            SecurityChecks.RESOLVES_TO_SELF,
-            SecurityChecks.OWNER_IN_ALLOWLIST,
-            SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-            SecurityChecks.PERMISSIONS,
-            SecurityChecks.PARENT_PERMISSIONS,
-            SecurityChecks.EXISTS,
-            SecurityChecks.IS_NOT_EXECUTABLE,
-            SecurityChecks.IS_FILE,
-        ],
-        "expect": [SecurityStatus.OK],
-    },
     "Invalid path (embedded <NUL>)": {
         "path": FilePath(f"{TEST_DIR}/13-correct_directory/"
                          "16-correct_file_in_correct_permission_directory\x00"),
@@ -1033,16 +1018,11 @@ testcases = {
         ],
         "expect_exception": ValueError,
     },
+    # Valid strings
     "Valid UTF-8": {
         "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
         "test": test_secure_read_string,
         "expect": "string",
-    },
-    "Valid Path, invalid read_mode": {
-        "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
-        "test": test_secure_read,
-        "expect": ValueError,
-        "read_mode": "z",
     },
     "Valid Path, symlinked, directory_is_symlinked = True": {
         "path": FilePath(f"{TEST_DIR}/15-symlink_directory/"
@@ -1052,6 +1032,20 @@ testcases = {
         "checks": None,
         "expect": "string",
     },
+    # Invalid strings
+    "Invalid UTF-8": {
+        "path": FilePath(f"{TEST_DIR}/08-not_utf8.txt"),
+        "test": test_secure_read_string,
+        "expect": "�",
+    },
+    # Invalid read-mode
+    "Valid Path, invalid read_mode": {
+        "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
+        "test": test_secure_read,
+        "expect": ValueError,
+        "read_mode": "z",
+    },
+    # Invalid paths
     "Non-readable path, directory_is_symlinked = True": {
         "path": FilePath("/var/lib/private/foobar"),
         "test": test_secure_read_string,
@@ -1066,23 +1060,30 @@ testcases = {
         "checks": None,
         "expect": FilePathAuditError,
     },
-    "Invalid single YAML (secure_read_yaml)": {
-        "path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
-        "test": test_secure_read_yaml,
-        "expect": yaml.parser.ParserError,
-    },
+    # Valid YAML
     "Valid single YAML (secure_read_yaml)": {
         "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
         "test": test_secure_read_yaml,
         "expect": "dict",
+    },
+    "Valid multi YAML (secure_read_yaml_all)": {
+        "path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+        "test": test_secure_read_yaml_all,
+        "expect": "generator",
+    },
+    # Invalid YAML
+    "Invalid single YAML (secure_read_yaml)": {
+        "path": FilePath(f"{TEST_DIR}/09-this_is_not_valid.yaml"),
+        "test": test_secure_read_yaml,
+        "expect": yaml.parser.ParserError,
     },
     "Valid multi YAML (secure_read_yaml)": {
         "path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
         "test": test_secure_read_yaml,
         "expect": yaml.composer.ComposerError,
     },
-    "Valid multi YAML (secure_read_yaml_all)": {
-        "path": FilePath(f"{TEST_DIR}/10-valid_yaml_for_load_all.yaml"),
+    "Valid single YAML (secure_read_yaml_all)": {
+        "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
         "test": test_secure_read_yaml_all,
         "expect": "generator",
     },
@@ -1091,11 +1092,6 @@ testcases = {
     #       NOT when loaded
     "Invalid YAML (secure_read_yaml_all)": {
         "path": FilePath(f"{TEST_DIR}/12-valid_yaml_followed_by_invalid_yaml.yaml"),
-        "test": test_secure_read_yaml_all,
-        "expect": "generator",
-    },
-    "Valid single YAML (secure_read_yaml_all)": {
-        "path": FilePath(f"{TEST_DIR}/11-valid_yaml_but_single.yaml"),
         "test": test_secure_read_yaml_all,
         "expect": "generator",
     },
@@ -1793,7 +1789,6 @@ def main() -> int:
         Returns:
             retval (int): number of failed tests
     """
-
     fail = 0
     success = 0
     failed_testcases = []
