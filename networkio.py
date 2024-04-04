@@ -73,7 +73,9 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
 
     for host in hosts:
         try:
-            transport = paramiko.Transport(host)
+            with paramiko.Transport(host) as transport:
+                transport.connect()
+                key = transport.get_remote_server_key()
         except socket.gaierror as e:
             if str(e) in ("[Errno -2] Name or service not known",
                           "[Errno -3] Temporary failure in name resolution",
@@ -92,20 +94,12 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
                                 ANSIThemeStr(": Could not extract errno from ", "default"),
                                 ANSIThemeStr(f"{e}; aborting.", "default")], stderr=True)
             sys.exit(errno.ENOENT)
-        except paramiko.ssh_exception.SSHException as e:
-            ansithemeprint([ANSIThemeStr("\nError", "error"),
-                            ANSIThemeStr(f": {e}; aborting.", "default")], stderr=True)
-            sys.exit(errno.EIO)
-
-        try:
-            with transport.connect():
-                key = transport.get_remote_server_key()
-        except paramiko.SSHException:
+        except paramiko.SSHException as e:
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Failed to get server key from remote host ",
                                          "default"),
                             ANSIThemeStr(host, "hostname"),
-                            ANSIThemeStr("; aborting.", "default")], stderr=True)
+                            ANSIThemeStr(f": {e}; aborting.", "default")], stderr=True)
             sys.exit(errno.EIO)
 
         hostfile.add(hostname=host, key=key, keytype=key.get_name())
