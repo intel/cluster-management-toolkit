@@ -332,6 +332,241 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_get_image_list(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_image_list
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                {
+                    "status": {
+                        "images": [
+                            {
+                                "names": [
+                                    "registry.k8s.io/pause@sha256:"
+                                    "7031c1b283388d2c2e09b57badb80"
+                                    "3c05ebed362dc88d84b480cc47f72a21097",
+                                    "registry.k8s.io/pause@sha256:"
+                                    "8d4106c88ec0bd28001e34c975d65"
+                                    "175d994072d65341f62a8ab0754b0fafe10",
+                                    "registry.k8s.io/pause:3.9"
+                                ],
+                                "sizeBytes": 750414
+                            },
+                            {
+                                "names": [
+                                    "quay.io/cilium/cilium@sha256:"
+                                    "36e636e4a678dcb1f5ae697e5fc27"
+                                    "554c1f119c40ebc23a93644a80797ff57d6",
+                                    "quay.io/cilium/cilium@sha256:"
+                                    "9cfd6a0a3a964780e73a11159f93c"
+                                    "c363e616f7d9783608f62af6cfdf3759619"
+                                ],
+                                "sizeBytes": 585706036
+                            },
+                            {
+                                "names": [
+                                    "quay.io/sustainable_computing_io/kepler@sha256:"
+                                    "c6cf9587633ce8a96b8f4a3ed8cae30e24370fd4238903d"
+                                    "beed380361c71e2b7",
+                                    "quay.io/sustainable_computing_io/kepler@sha256:"
+                                    "e5ff7514d154a474d306468cff54a1396d4ec3b7637f0af"
+                                    "ad9935f895a9ab155",
+                                    "quay.io/sustainable_computing_io/kepler:release-0.5.5"
+                                ],
+                                "sizeBytes": 1630590712
+                            },
+                        ]
+                    }
+                },
+                [
+                    (
+                        "quay.io/cilium/cilium@sha256:"
+                        "9cfd6a0a3a964780e73a11159f93cc363e616f7d9783608f62af6cfdf3759619",
+                        "558MiB"
+                    ),
+                    (
+                        "quay.io/sustainable_computing_io/kepler:release-0.5.5",
+                        "1GiB"
+                    ),
+                    (
+                        "registry.k8s.io/pause:3.9",
+                        "732KiB"
+                    ),
+                ],
+                None,
+            ),
+            (
+                {
+                    "status": {
+                        "images": [
+                            {
+                                "names": [],
+                                "sizeBytes": 750414
+                            },
+                        ]
+                    }
+                },
+                [],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, path=DictPath("status#images"))
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_key_value(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = itemgetters.get_key_value
+
+    if result:
+        # Indata format:
+        # (path, obj, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                DictPath("status#external-identifiers"),
+                {
+                    "status": {
+                        "external-identifiers": {
+                            "cni-attachment-id":
+                                "b84c914a6bf232b664f068e22dae9662911"
+                                "c8df66eb4805e587ce60b7e388187:eth0",
+                            "container-id":
+                                "b84c914a6bf232b664f068e22dae9662911c8df66eb4805e587ce60b7e388187",
+                            "k8s-namespace": "kube-system",
+                            "k8s-pod-name": "coredns-76f75df574-jblm6",
+                            "pod-name": "kube-system/coredns-76f75df574-jblm6"
+                        },
+                    },
+                },
+                [
+                    (
+                        "cni-attachment-id",
+                        "b84c914a6bf232b664f068e22dae9662911c8df66eb4805e587ce60b7e388187:eth0"
+                    ),
+                    (
+                        "container-id",
+                        "b84c914a6bf232b664f068e22dae9662911c8df66eb4805e587ce60b7e388187"
+                    ),
+                    (
+                        "k8s-namespace",
+                        "kube-system"
+                    ),
+                    (
+                        "k8s-pod-name",
+                        "coredns-76f75df574-jblm6"
+                    ),
+                    (
+                        "pod-name",
+                        "kube-system/coredns-76f75df574-jblm6"
+                    ),
+                ],
+                None,
+            ),
+            (
+                DictPath("foo"),
+                {
+                    "foo": {
+                        "a": 1,
+                        "b": 0.2,
+                        "c": "string",
+                        "d": ["foo", "bar", "baz"],
+                        "e": ("foo", "bar", "baz"),
+                        "f": {"bla": "blo", "biff": "boff"},
+                    },
+                },
+                [
+                    ("a", "1"),
+                    ("b", "0.2"),
+                    ("c", "string"),
+                    ("d", "foo,bar,baz"),
+                    ("e", "foo,bar,baz"),
+                    ("f", "bla:blo,biff:boff"),
+                ],
+                None,
+            ),
+            (
+                DictPath("foo"),
+                {
+                    "foo": {
+                        "a": Exception,
+                    },
+                },
+                None,
+                TypeError,
+            ),
+            (
+                DictPath(""),
+                {},
+                [],
+                None,
+            ),
+        )
+
+        for path, obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj, path=path)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_security_context(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -574,6 +809,14 @@ def test_get_volume_properties(verbose: bool = False) -> Tuple[str, bool]:
 tests: Dict = {
     ("get_conditions()",): {
         "callable": test_get_conditions,
+        "result": None,
+    },
+    ("get_image_list()",): {
+        "callable": test_get_image_list,
+        "result": None,
+    },
+    ("get_key_value()",): {
+        "callable": test_get_key_value,
         "result": None,
     },
     ("get_security_context()",): {
