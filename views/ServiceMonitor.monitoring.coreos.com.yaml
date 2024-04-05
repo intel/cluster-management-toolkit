@@ -42,8 +42,8 @@ infoview:
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
-      path: ""
-    infogetter: "get_svcmon_endpoints_info"
+      path: "spec#endpoints"
+    infogetter: "generic_infogetter"
     field_indexes:
       Normal:
         fields: ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"]
@@ -51,19 +51,35 @@ infoview:
     fields:
       bearer_token_file:
         header: "Bearer Token File:"
+        path: "bearerTokenFile"
+        type: "str"
       honor_labels:
         header: "Honor Labels:"
+        path: "honorLabels"
+        type: "str"
       interval:
         header: "Interval:"
+        path: "interval"
+        type: "str"
         formatter: "numerical_with_units"
         align: "right"
       path:
         header: "Path:"
+        path: "path"
+        type: "str"
       port:
         header: "Port:"
+        path: "port"
+        type: "str"
       proxy_url:
         header: "Proxy URL:"
+        path: "proxyUrl"
+        type: "str"
       scheme:
         header: "Scheme:"
+        path: "scheme"
+        type: "str"
       target_port:
         header: "Target Port:"
+        path: "targetPort"
+        type: "str"

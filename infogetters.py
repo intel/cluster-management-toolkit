@@ -913,46 +913,6 @@ def get_subsets_info(**kwargs: Any) -> List[Type]:
     return subsets_
 
 
-def get_svcmon_endpoints_info(**kwargs: Any) -> List[Type]:
-    """
-    Infogetter for Service Monitor Endpoints
-
-        Parameters:
-            **kwargs (dict[str, Any]): Keyword arguments
-        Returns:
-            ([InfoClass]): A list with info
-    """
-    obj = deep_get(kwargs, DictPath("_obj"))
-    info: List[Type] = []
-
-    if obj is None:
-        return []
-
-    for item in deep_get(obj, DictPath("spec#endpoints")):
-        bearer_token_file = deep_get(item, DictPath("bearerTokenFile"), "")
-        ref = item
-        port = deep_get(item, DictPath("port"), "")
-        target_port = deep_get(item, DictPath("targetPort"), "")
-        interval = deep_get(item, DictPath("interval"), "")
-        scheme = deep_get(item, DictPath("scheme"), "")
-        path = deep_get(item, DictPath("path"), "")
-        honor_labels = deep_get(item, DictPath("honorLabels"), "")
-        proxy_url = deep_get(item, DictPath("proxyUrl"), "")
-        info.append(type("InfoClass", (), {
-            "bearer_token_file": bearer_token_file,
-            "ref": ref,
-            "port": port,
-            "target_port": target_port,
-            "interval": interval,
-            "scheme": scheme,
-            "path": path,
-            "honor_labels": honor_labels,
-            "proxy_url": proxy_url
-        }))
-
-    return info
-
-
 # pylint: disable-next=unused-argument
 def get_themearrays(obj: Dict, **kwargs: Any) -> Dict:
     """
