@@ -18,8 +18,9 @@ import sys
 from typing import Dict, List, Tuple
 import yaml
 
+import cmtlib
 from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath, FilePath
+from cmttypes import deep_get, deep_set, DictPath, FilePath, StatusGroup
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import infogetters
 
@@ -163,9 +164,659 @@ def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_get_subsets_info(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = infogetters.get_subsets_info
+
+    if result:
+        test_obj = {
+            "subsets": [
+                {
+                    "addresses": [
+                        {
+                            "ip": "10.32.0.25",
+                            "nodeName": "spr-3",
+                            "targetRef": {
+                                "kind": "Pod",
+                                "name": "coredns-5dd5756b68-7msdj",
+                                "namespace": "kube-system",
+                                "uid": "cb4b198f-9952-4eec-bfd4-f14cee2333de"
+                            }
+                        },
+                        {
+                            "ip": "10.32.0.26",
+                            "nodeName": "spr-3",
+                            "targetRef": {
+                                "kind": "Pod",
+                                "name": "coredns-5dd5756b68-2hrl5",
+                                "namespace": "kube-system",
+                                "uid": "0a1b86f4-6b04-40bb-ab9c-71f6b1c7b395"
+                            }
+                        }
+                    ],
+                    "notReadyAddresses": [
+                        {
+                            "ip": "10.32.0.27",
+                            "nodeName": "spr-3",
+                            "targetRef": {
+                                "kind": "Pod",
+                                "name": "coredns-5dd5756b68-7adfs",
+                                "namespace": "kube-system",
+                                "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                            }
+                        },
+                    ],
+                    "ports": [
+                        {
+                            "name": "dns-tcp",
+                            "port": 53,
+                            "protocol": "TCP"
+                        },
+                        {
+                            "name": "dns",
+                            "port": 53,
+                            "protocol": "UDP"
+                        },
+                        {
+                            "name": "metrics",
+                            "port": 9153,
+                            "protocol": "TCP"
+                        },
+                    ],
+                },
+            ],
+        }
+
+        # Indata format:
+        # (obj, expand_subsets, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                test_obj,
+                "None",
+                [
+                    {
+                        "addresses": ["10.32.0.25", "10.32.0.26"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                test_obj,
+                "Port",
+                [
+                    {
+                        "addresses": ["10.32.0.25", "10.32.0.26"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.25", "10.32.0.26"],
+                        "ports": [
+                            ("dns", 53, "UDP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns", 53, "UDP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.25", "10.32.0.26"],
+                        "ports": [
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                test_obj,
+                "Address",
+                [
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.26"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                test_obj,
+                "Both",
+                [
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.26"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("dns", 53, "UDP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.26"],
+                        "ports": [
+                            ("dns", 53, "UDP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns", 53, "UDP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.26"],
+                        "ports": [
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [
+                                {
+                                    "ip": "10.32.0.25",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7msdj",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f14cee2333de"
+                                    }
+                                },
+                            ],
+                            "notReadyAddresses": [],
+                            "ports": [
+                                {
+                                    "name": "dns-tcp",
+                                    "port": 53,
+                                    "protocol": "TCP"
+                                },
+                                {
+                                    "name": "dns",
+                                    "port": 53,
+                                    "protocol": "UDP"
+                                },
+                                {
+                                    "name": "metrics",
+                                    "port": 9153,
+                                    "protocol": "TCP"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "None",
+                [
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "10.32.0.27",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7adfs",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                                    }
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "dns-tcp",
+                                    "port": 53,
+                                    "protocol": "TCP"
+                                },
+                                {
+                                    "name": "dns",
+                                    "port": 53,
+                                    "protocol": "UDP"
+                                },
+                                {
+                                    "name": "metrics",
+                                    "port": 9153,
+                                    "protocol": "TCP"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "None",
+                [
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                            ("dns", 53, "UDP"),
+                            ("metrics", 9153, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [],
+                            "ports": [
+                                {
+                                    "name": "dns-tcp",
+                                    "port": 53,
+                                    "protocol": "TCP"
+                                },
+                                {
+                                    "name": "dns",
+                                    "port": 53,
+                                    "protocol": "UDP"
+                                },
+                                {
+                                    "name": "metrics",
+                                    "port": 9153,
+                                    "protocol": "TCP"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "None",
+                [],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "10.32.0.27",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7adfs",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                                    }
+                                },
+                            ],
+                            "ports": [],
+                        },
+                    ],
+                },
+                "None",
+                [
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "10.32.0.27",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7adfs",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "None",
+                [],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [
+                                {
+                                    "ip": "10.32.0.25",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7msdj",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f14cee2333de"
+                                    }
+                                },
+                            ],
+                            "notReadyAddresses": [],
+                            "ports": [
+                                {
+                                    "name": "dns-tcp",
+                                    "port": 53,
+                                    "protocol": "TCP"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "Port",
+                [
+                    {
+                        "addresses": ["10.32.0.25"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Ready",
+                        "status_group": StatusGroup.OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "10.32.0.27",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7adfs",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                                    }
+                                },
+                            ],
+                            "ports": [
+                                {
+                                    "name": "dns-tcp",
+                                    "port": 53,
+                                    "protocol": "TCP"
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "Port",
+                [
+                    {
+                        "addresses": ["10.32.0.27"],
+                        "ports": [
+                            ("dns-tcp", 53, "TCP"),
+                        ],
+                        "status": "Not Ready",
+                        "status_group": StatusGroup.NOT_OK,
+                    },
+                ],
+                None,
+            ),
+            (
+                {
+                    "subsets": [
+                        {
+                            "addresses": [],
+                            "notReadyAddresses": [
+                                {
+                                    "ip": "10.32.0.27",
+                                    "nodeName": "spr-3",
+                                    "targetRef": {
+                                        "kind": "Pod",
+                                        "name": "coredns-5dd5756b68-7adfs",
+                                        "namespace": "kube-system",
+                                        "uid": "cb4b198f-9952-4eec-bfd4-f1abce34fdde"
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                },
+                "NotAValidValueForexpand_subsets",
+                [],
+                None,
+            ),
+            (
+                None,
+                "None",
+                [],
+                None,
+            ),
+        )
+
+        for obj, expand_subsets, expected_result, expected_exception in testdata:
+            deep_set(cmtlib.cmtconfig, DictPath("Endpoints#expand_subsets"),
+                     expand_subsets, create_path=True)
+            try:
+                tmp = fun(_obj=obj)
+                if len(tmp) != len(expected_result):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"   expand_subsets: {expand_subsets}\n" \
+                              f"              len: {len(tmp)}\n" \
+                              f"     expected len: {len(expected_result)}"
+                    result = False
+                    break
+                for i, item in enumerate(expected_result):
+                    for key, value in item.items():
+                        result = getattr(tmp[i], key)
+                        if len(tmp) != len(expected_result):
+                            message = f"{fun.__name__}() did not yield expected result:\n" \
+                                      f"   expand_subsets: {expand_subsets}\n" \
+                                      f"           result: {key}: {result}\n" \
+                                      f"  expected result: {key}: {value}"
+                            result = False
+                            break
+                    if not result:
+                        break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"   expand_subsets: {expand_subsets}\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"   expand_subsets: {expand_subsets}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_themearrays(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = infogetters.get_themearrays
+
+    d = {
+        "foo": "bar"
+    }
+
+    if result:
+        try:
+            tmp = fun(d)
+            if tmp != d:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           result: {tmp}\n" \
+                          f"  expected result: {d}"
+                result = False
+        except Exception as e:
+            message = f"{fun.__name__}() did not yield expected result:\n" \
+                      f"        exception: {type(e)}\n" \
+                      f"          message: {str(e)}\n" \
+                      f"  expected result: {d}"
+            result = False
+    return message, result
+
+
 tests: Dict = {
     ("format_controller()",): {
         "callable": test_format_controller,
+        "result": None,
+    },
+    ("get_subsets_info()",): {
+        "callable": test_get_subsets_info,
+        "result": None,
+    },
+    ("get_themearrays()",): {
+        "callable": test_get_themearrays,
         "result": None,
     },
 }
@@ -206,6 +857,8 @@ def main() -> int:
         else:
             sys.exit(f"Unknown argument: {opt}")
         i += 1
+
+    cmtlib.read_cmtconfig()
 
     for i, test in enumerate(tests):
         if i < start_at_task:

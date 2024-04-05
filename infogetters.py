@@ -846,15 +846,16 @@ def get_subsets_info(**kwargs: Any) -> List[Type]:
         Returns:
             ([InfoClass]): A list with info
     """
-    obj = deep_get(kwargs, DictPath("_obj"))
+    if (obj := deep_get(kwargs, DictPath("_obj"))) is None:
+        return []
+
     subsets_ = []
     subsets = []
 
-    if obj is None:
-        return []
-
     # Policy for subsets expansion
     expand_subsets = deep_get(cmtlib.cmtconfig, DictPath("Endpoints#expand_subsets"), "None")
+    if expand_subsets not in ("None", "Port", "Address", "Both"):
+        expand_subsets = "None"
 
     for subset in deep_get(obj, DictPath("subsets"), []):
         ready_addresses = []
@@ -902,6 +903,9 @@ def get_subsets_info(**kwargs: Any) -> List[Type]:
                     subsets.append(([address], [port], "Ready", StatusGroup.OK))
                 for address in not_ready_addresses:
                     subsets.append(([address], [port], "Not Ready", StatusGroup.NOT_OK))
+        else:  # pragma: nocover
+            raise ProgrammingError("get_subsets_info() got expand_subsets={expand_subsets}; "
+                                   "this shouldn't be possible")
 
     for addresses, ports, status, status_group in subsets:
         subsets_.append(type("InfoClass", (), {
