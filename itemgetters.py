@@ -35,7 +35,7 @@ from pvtypes import KNOWN_PV_TYPES
 # pylint: disable-next=unused-argument
 def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
-    Get a list of allowed IP-addresses
+    Get a list of allowed IP-addresses.
 
         Parameters:
             obj (dict): The object to get data from
@@ -71,7 +71,7 @@ def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
 
 def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
-    Get a list of conditions
+    Get a list of conditions.
 
         Parameters:
             obj (dict): The object to get data from
@@ -108,7 +108,7 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
 
 def get_endpoint_slices(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
-    Get a list of endpoint slices
+    Get a list of endpoint slices.
 
         Parameters:
             obj (dict): The object to get data from
@@ -144,7 +144,7 @@ def get_endpoint_slices(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
 def get_events(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
-    Get a list of events
+    Get a list of events.
 
         Parameters:
             obj (dict): The object to get data from
@@ -176,7 +176,7 @@ def get_events(obj: Dict, **kwargs: Any) -> List[Dict]:
 
 def get_image_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
-    Get a list of container images
+    Get a list of container images.
 
         Parameters:
             obj (dict): The object to get data from
@@ -204,7 +204,7 @@ def get_image_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
 def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
     """
-    Get a list of key/value data
+    Get a list of key/value data.
 
         Parameters:
             obj (dict): The object to get data from
@@ -238,7 +238,7 @@ def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
 # pylint: disable-next=too-many-branches
 def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
     """
-    Get data in list format
+    Get data in list format.
 
         Parameters:
             obj (dict): The object to get data from
@@ -337,7 +337,7 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
 # pylint: disable-next=too-many-locals,too-many-branches
 def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
     """
-    Get the specified fields from a dict list in list format
+    Get the specified fields from a dict list in list format.
 
         Parameters:
             obj (dict): The object to get data from
@@ -409,6 +409,9 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
 
 def get_package_version_list(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
     """
+    Get the package version list.
+
+        Parameters:
             obj (dict): The object to get data from
             **kwargs (dict[str, Any]): Keyword arguments
                 name_path (str): The path to the name of the node
@@ -428,7 +431,7 @@ def get_package_version_list(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[st
 # pylint: disable-next=unused-argument,too-many-locals
 def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
     """
-    Get a list of pod affinities
+    Get a list of pod affinities.
 
         Parameters:
             obj (dict): The object to get data from
@@ -488,7 +491,7 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
     """
-    Get a list of all pods referencing a configmap
+    Get a list of all pods referencing a configmap.
 
         Parameters:
             obj (dict): The object to get data from
@@ -570,7 +573,7 @@ def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
     Get a prepopulated list of actions;
     this itemgetter can be used, for instance, to populate
-    a list of actions that can be performed on an object
+    a list of actions that can be performed on an object.
 
         Parameters:
             obj (dict): The object to get data from
@@ -593,7 +596,6 @@ def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
         api_family = deep_get(action_args, DictPath("api_family"), "")
         api_family_path = deep_get(action_args, DictPath("api_family_path"))
         api_family = deep_get(obj, DictPath(api_family_path), api_family)
-        kind = deep_get(obj, DictPath(kind_path), kind)
         name_path = deep_get(action_args, DictPath("name_path"))
         name = deep_get(obj, DictPath(name_path))
         namespace_path = deep_get(action_args, DictPath("namespace_path"))
@@ -622,7 +624,7 @@ def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
 # pylint: disable-next=unused-argument
 def get_pod_tolerations(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
     """
-    Get a pod tolerations
+    Get a list of pod tolerations.
 
         Parameters:
             obj (dict): The object to get data from
@@ -661,7 +663,7 @@ def get_pod_tolerations(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, s
 # pylint: disable-next=unused-argument
 def get_resource_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
     """
-    Get a list of resources
+    Get a list of resources.
 
         Parameters:
             obj (dict): The object to get data from
@@ -684,7 +686,7 @@ def get_resource_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 # pylint: disable-next=unused-argument
 def get_resources(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
     """
-    Get a list of Prometheus resources
+    Get a list of Prometheus resources.
 
         Parameters:
             obj (dict): The object to get data from
@@ -724,7 +726,7 @@ def get_resources(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 # pylint: disable-next=unused-argument
 def get_strings_from_string(obj: Dict, **kwargs: Any) -> List[List[str]]:
     """
-    Get a list of strings from a string with embedded newlines
+    Get a list of strings from a string with embedded newlines.
 
         Parameters:
             obj (dict): The object to get data from
@@ -745,7 +747,7 @@ def get_strings_from_string(obj: Dict, **kwargs: Any) -> List[List[str]]:
 
 def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
     """
-    Get a list of endpoint IPs
+    Get a list of endpoint IPs.
 
         Parameters:
             subsets ([dict]): The subsets to get endpoint IPs from
@@ -824,7 +826,7 @@ security_context_values: Dict = {
 # pylint: disable-next=unused-argument
 def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
-    Get security context information
+    Get security context information.
 
         Parameters:
             obj (dict): The object to get data from
@@ -844,7 +846,7 @@ def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 # pylint: disable-next=unused-argument,too-many-locals
 def get_svc_port_target_endpoints(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str]]:
     """
-    Get the Service port target endpoints
+    Get the Service port target endpoints.
 
         Parameters:
             obj (dict): The object to get data from
@@ -895,7 +897,7 @@ def get_svc_port_target_endpoints(obj: Dict, **kwargs: Any) -> List[Tuple[str, s
 
 def get_pv_type(obj: Dict) -> Optional[str]:
     """
-    Given a volume object, return its type
+    Given a volume object, return its type.
 
         Parameters:
             obj (dict): The object to get data from
@@ -911,7 +913,7 @@ def get_pv_type(obj: Dict) -> Optional[str]:
 # pylint: disable-next=unused-argument
 def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
-    Get the properties for a persistent volume
+    Get the properties for a persistent volume.
 
         Parameters:
             obj (dict): The object to get data from

@@ -50,6 +50,8 @@ def get_kubernetes_list(*args: Any,
                 (int|str|[StatusGroup]): Server status (int),
                                          unused (str),
                                          or the individual StatusGroup for all objects
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_kubernetes_list() called without kubernetes_helper")
@@ -113,6 +115,8 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
             ([dict], [str]):
                 [dict]: The list of context information
                 [str]: The list of API-servers for those contexts
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_context_list() called without kubernetes_helper")

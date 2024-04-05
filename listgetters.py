@@ -225,8 +225,7 @@ def filter_list_entry(obj: Dict[str, Any], caller_obj: Dict[str, Any], filters: 
 
 # listview, listpad
 def generic_listgetter(kind: Tuple[str, str], namespace: str,
-                       **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                               Union[int, str, List[StatusGroup]]]:
+                       **kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str]]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("generic_listgetter() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -251,8 +250,18 @@ def generic_listgetter(kind: Tuple[str, str], namespace: str,
 
 
 # pylint: disable-next=too-many-locals
-def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                             Union[int, str, List[StatusGroup]]]:
+def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Get a list of Kubernetes metrics.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+        Returns:
+            (([dict[str, Any], int])):
+                ([dict[str, Any]): The list of metrics
+                (int): The status for the Kubernetes request
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_metrics_list() called without kubernetes_helper")
 
@@ -297,8 +306,7 @@ def get_metrics_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                    Union[int, str, List[StatusGroup]]]:
+def get_pod_containers_list(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[int, str]]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_pod_containers_list() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -358,8 +366,7 @@ def __recurse_data(path: Dict, obj: Any) -> Any:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                             Union[None, int, str, List[StatusGroup]]]:
+def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[None, int, str]]:
     paths = \
         deep_get_with_fallback(kwargs,
                                [DictPath("paths"),
@@ -443,8 +450,9 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
     return vlist, status
 
 
-def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                           Union[int, str, List[StatusGroup]]]:
+def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    status = 200
+
     dirpath = deep_get(kwargs, DictPath("dirpath"), "")
     # Substitute {HOME} for {HOMEDIR}
     if dirpath.startswith("{HOME}"):
@@ -483,14 +491,23 @@ def listgetter_dir(**kwargs: Any) -> Tuple[List[Dict[str, Any]],
                 "kind": kind,
             })
 
-    return vlist, 200
+    return vlist, status
 
 # Used by listpad
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                       Union[int, str, List[StatusGroup]]]:
+def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Get horizontal pod autoscaler metrics.
+
+        Parameters:
+            obj (dict): The object to extract data from
+        Returns:
+            (([dict[str, Any], int|str)):
+                ([dict[str, Any]]): The metrics
+                (int): The status for the request
+    """
     vlist = []
     status = 200
 
@@ -542,22 +559,20 @@ def get_hpa_metrics(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]],
 
 
 # pylint: disable-next=unused-argument
-def get_ingress_rule_list(obj: Dict,
-                          **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                  Union[int, str, List[StatusGroup]]]:
+def get_ingress_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
     """
-    Listgetter for Ingress rules
+    Listgetter for Ingress rules.
 
         Parameters:
             obj (Dict): The object to extract ingress rule information from
             kwargs (Dict): Additional parameters
         Returns:
-            ((vlist, retval)):
-                vlist (list[dict]): The ingress rules
-                retval (int): The return value
+            (([dict], int)):
+                ([dict]): The ingress rules
+                (int): The status for the request
     """
-
     vlist = []
+    status = 200
 
     for item in deep_get(obj, DictPath("spec#rules"), []):
         host = deep_get(item, DictPath("host"), "*")
@@ -591,14 +606,17 @@ def get_ingress_rule_list(obj: Dict,
                     "port": port,
                 })
 
-    return vlist, 200
+    return vlist, status
 
 
 # pylint: disable-next=unused-argument
-def get_netpol_rule_list(obj: Dict,
-                         **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                 Union[int, str, List[StatusGroup]]]:
+def get_netpol_rule_list(obj: Dict, **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Get a list of network policy rules.
+    """
     vlist = []
+    status = 200
+
     for item in deep_get(obj, DictPath("spec#ingress"), []):
         policy_type = "ingress"
         ports = []
@@ -665,7 +683,7 @@ def get_netpol_rule_list(obj: Dict,
                 "namespace_label_selector": namespace_label_selector,
             })
 
-    return vlist, 200
+    return vlist, status
 
 
 def get_pv_from_pvc_name(pvc_name: str,
@@ -710,9 +728,22 @@ def get_pv_status(pv: Dict[str, Any]) -> Tuple[str, StatusGroup]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def get_pod_resource_list(obj: Dict[str, Any],
-                          **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                  Union[int, str, List[StatusGroup]]]:
+def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Return a list of resources for a pod.
+
+        Parameters:
+            obj (dict): The pod object.
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+        Returns:
+            (([dict[str, Any], int])):
+                ([dict[str, Any]): The list of pod resources.
+                (int): The status.
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_pod_resource_list() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
@@ -1572,8 +1603,7 @@ def get_pod_resource_list(obj: Dict[str, Any],
 
 
 # pylint: disable-next=too-many-locals
-def get_info_by_last_applied_configuration(obj: Dict,
-                                           **kwargs: Any) -> Tuple[List[Dict], Union[str, int]]:
+def get_info_by_last_applied_configuration(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_info_by_last_applied_configuration() "
                                "called without kubernetes_helper")
@@ -1786,9 +1816,7 @@ def listgetter_configmap_data(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int
 # Return all items of a dict as a list of dicts
 # with the key and the value in the fields
 # "key" and "value", respectively
-def listgetter_dict_list(obj: Dict[str, Any],
-                         **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                 Union[int, str, List[StatusGroup]]]:
+def listgetter_dict_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
     path = deep_get(kwargs, DictPath("path"))
     vlist = []
     for key, value in deep_get(obj, DictPath(path), {}).items():
@@ -1796,9 +1824,7 @@ def listgetter_dict_list(obj: Dict[str, Any],
     return vlist, 200
 
 
-def listgetter_field(obj: Dict[str, Any],
-                     **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                             Union[int, str, List[StatusGroup]]]:
+def listgetter_field(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
     path = deep_get(kwargs, DictPath("path"))
     vlist = deep_get(obj, DictPath(path))
     return vlist, 200
@@ -1825,8 +1851,7 @@ def listgetter_field(obj: Dict[str, Any],
 # would generate the list
 # [{"foo": "d", "bar": 1, "baz": 2}, {"foo": "e", "bar": 2, "baz": 3}]
 def listgetter_join_dicts_to_list(obj: Dict[str, Any],
-                                  **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                          Union[int, str, List[StatusGroup]]]:
+                                  **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
     vlist = []
     key_paths = deep_get(kwargs, DictPath("key_paths"), "")
     key_name = deep_get(kwargs, DictPath("key_name"), "")
@@ -1856,9 +1881,7 @@ def listgetter_join_dicts_to_list(obj: Dict[str, Any],
     return vlist, 200
 
 
-def listgetter_join_lists(obj: Dict[str, Any],
-                          **kwargs: Any) -> Tuple[List[Dict[str, Any]],
-                                                  Union[int, str, List[StatusGroup]]]:
+def listgetter_join_lists(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
     paths = deep_get(kwargs, DictPath("paths"))
     vlist = []
 
@@ -1876,22 +1899,20 @@ def listgetter_join_lists(obj: Dict[str, Any],
 
 
 # pylint: disable-next=unused-argument
-def listgetter_matchrules(obj: Dict,
-                          **kwargs: Any) -> Tuple[List[Dict],
-                                                  Union[str, int, List[StatusGroup]]]:
+def listgetter_matchrules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], str]:
     """
-    Extract match rules from an object
+    Extract match rules from an object.
 
         Parameters:
             obj (Dict): The object to extract a list of matchrules from
             kwargs (Dict): Additional parameters
         Returns:
-            (match_list, retval):
-                match_list (list[dict]): The list of data
-                retval (str): Always "OK"
+            ([dict], str):
+                ([dict]): The list of data
+                (str): Always "OK"
     """
-
     match_list = []
+    status = "OK"
 
     for match_any in deep_get(obj, DictPath("matchAny"), []):
         for match_feature in deep_get(match_any, DictPath("matchFeatures"), []):
@@ -1918,7 +1939,7 @@ def listgetter_matchrules(obj: Dict,
             "match_expressions": match_expressions,
         })
 
-    return match_list, "OK"
+    return match_list, status
 
 
 def listgetter_namespaced_resources(obj: Dict,
@@ -1966,24 +1987,24 @@ def listgetter_namespaced_resources(obj: Dict,
 
 
 # pylint: disable-next=unused-argument
-def listgetter_noop(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], Union[str, int]]:
+def listgetter_noop(obj: Dict, **kwargs: Any) -> Tuple[List, str]:
     """
-    A noop listgetter that returns an empty list
+    A noop listgetter that returns an empty list.
+
         Parameters:
             obj (Dict): Unused
             kwargs (Dict): Unused
         Returns:
-            (match_list, retval):
-                match_list (list[dict]): An empty list
-                retval (str): Always "OK"
+            ([], str):
+                ([]): An empty list
+                (str): Always "OK"
     """
-
     return [], "OK"
 
 
 def listgetter_feature_gates(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], int]:
     """
-    Listgetter for FeatureGate.config.openshift.io
+    Listgetter for FeatureGate.config.openshift.io.
 
         Parameters:
             obj (Dict): The object to extract a list of data from
@@ -1993,7 +2014,6 @@ def listgetter_feature_gates(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List
                 vlist (list[dict]): The list of data
                 retval (int): The return value
     """
-
     vlist = []
     path = deep_get(kwargs, DictPath("path"))
 
@@ -2021,7 +2041,7 @@ def listgetter_feature_gates(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List
 # pylint: disable-next=too-many-locals,too-many-branches
 def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], int]:
     """
-    Listgetter for paths
+    Listgetter for paths.
 
         Parameters:
             obj (Dict): The object to extract a list of data from
@@ -2111,7 +2131,7 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
 # pylint: disable-next=unused-argument,too-many-branches,too-many-locals
 def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
     """
-    Listgetter for Role & ClusterRole policy rules
+    Listgetter for Role & ClusterRole policy rules.
 
         Parameters:
             obj (Dict): The object to extract ingress policy rule information from
@@ -2121,7 +2141,6 @@ def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
                 vlist (list[dict]): The ingress rules
                 retval (int): The return value
     """
-
     vlist: List[Dict] = []
 
     if obj is None:
