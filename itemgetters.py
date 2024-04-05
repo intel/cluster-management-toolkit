@@ -212,26 +212,26 @@ def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
                 path (str): The path to the key/value-pairs to get
         Returns:
             ([dict]): A list of key/value data
+        Raises:
+            TypeError: The type for value is not supported by get_key_value()
     """
     vlist = []
-    if "path" in kwargs:
-        path = deep_get(kwargs, DictPath("path"), "")
+
+    if (path := deep_get(kwargs, DictPath("path"), "")):
         d = deep_get(obj, DictPath(path), {})
 
-        for _key in d:
-            _value = d[_key]
-            if isinstance(_value, list):
-                value = ",".join(_value)
-            elif isinstance(_value, dict):
-                value = ",".join(f"{key}:{val}" for (key, val) in _value.items())
-            # We do not need to check for bool, since it is a subclass of int
-            elif isinstance(_value, (int, float)):
-                value = str(_value)
-            elif isinstance(_value, str):
-                value = _value
+        for key_, value_ in d.items():
+            if isinstance(value_, (list, tuple)):
+                value = ",".join(value_)
+            elif isinstance(value_, dict):
+                value = ",".join(f"{key}:{val}" for (key, val) in value_.items())
+            # We do not need to check for bool, since it is a subclass of int,
+            # and str(str) == str
+            elif isinstance(value_, (int, float, str)):
+                value = str(value_)
             else:
-                raise TypeError(f"Unhandled type {type(_value)} for {_key}={value}")
-            vlist.append((_key, value))
+                raise TypeError(f"Unhandled type {type(value_)} for {key_}={value_}")
+            vlist.append((key_, value))
     return vlist
 
 
