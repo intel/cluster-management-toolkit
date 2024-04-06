@@ -130,20 +130,18 @@ def get_endpointslices_endpoints(obj: Dict[str, Any],
             obj (dict): The endpoint slice object to return endpoints for
             **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
-            (list[(str, StatusGroup)]): A list of (address, status) for each endpoint
+            ([(str, StatusGroup)]): A list of (address, status) for each endpoint
     """
     endpoints = []
-
-    if deep_get(obj, DictPath("endpoints")) is not None:
-        for endpoint in deep_get(obj, DictPath("endpoints"), []):
-            for address in deep_get(endpoint, DictPath("addresses"), []):
-                ready = deep_get(endpoint, DictPath("conditions#ready"), False)
-                if ready:
-                    status_group = StatusGroup.OK
-                else:
-                    status_group = StatusGroup.NOT_OK
-                endpoints.append((address, status_group))
-    else:
+    for endpoint in deep_get(obj, DictPath("endpoints"), []):
+        for address in deep_get(endpoint, DictPath("addresses"), []):
+            ready = deep_get(endpoint, DictPath("conditions#ready"), False)
+            if ready:
+                status_group = StatusGroup.OK
+            else:
+                status_group = StatusGroup.NOT_OK
+            endpoints.append((address, status_group))
+    if not endpoints:
         endpoints.append(("<none>", StatusGroup.UNKNOWN))
     return endpoints
 
@@ -160,9 +158,6 @@ def datagetter_eps_endpoints(obj: Dict[str, Any],
         Returns:
             The return value from get_endpointslices_endpoints and an empty dict
     """
-    if obj is None:
-        return ("<none>", StatusGroup.UNKNOWN), {}
-
     return get_endpointslices_endpoints(obj), {}
 
 
@@ -171,13 +166,13 @@ def datagetter_metrics(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], D
     """
     A datagetter that returns metrics for the specified path
 
- §       Parameters:
+        Parameters:
             obj (dict): The object with metrics
             **kwargs (dict[str, Any]): Keyword arguments
                 path (DictPath): The path to the metrics to get
-                default (Any): Unused?
+                default ([str]): The list to return if obj or path is None
         Returns:
-            result (list[str]), {} (dict): A list with metrics and an empty dict
+            result ([str]), {} (dict): A list with metrics and an empty dict
     """
     path = deep_get(kwargs, DictPath("path"))
     default = deep_get(kwargs, DictPath("default"), [])
@@ -204,7 +199,7 @@ def datagetter_deprecated_api(obj: Dict[str, Any],
         **kwargs (dict[str, Any]): Keyword arguments
             kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
             path (str): The path to the metrics to get
-            default (Any): Unused?
+            default ([str]): The list to return if obj or path is None
         Returns:
             (str, str, [str], dict):
                 (str): Kind for the deprecated API
@@ -344,7 +339,7 @@ def get_endpoint_endpoints(subsets: List[Dict]) -> List[Tuple[str, StatusGroup]]
     Get the endpoints for an endpoint
 
         Parameters:
-            subsets (list[subset]): The subsets to return endpoints for
+            subsets ([subset]): The subsets to return endpoints for
         Returns:
             ([(str, StatusGroup)]): A list of tuples with address and status for each endpoint
     """
@@ -376,7 +371,9 @@ def datagetter_endpoint_ips(obj: Dict[str, Any],
             **kwargs (dict[str, Any]): Keyword arguments
                (str): The path to the endpoint subsets
         Returns:
-            The return value from get_endpointslices_endpoints and an empty dict
+            (([(str, StatusGroup)], dict)):
+                ([(str, StatusGroup)]): A list of tuples with address and status for each endpoint
+                (dict): An empty dict
     """
     path = deep_get(kwargs, DictPath("path"))
 
@@ -396,10 +393,12 @@ def datagetter_regex_split_to_tuples(obj: Dict[str, Any],
         Parameters:
             obj (dict): The object to split into tuples
             **kwargs (dict[str, Any]): Keyword arguments
-                paths (tuple(raw str, list[str]): The path(s) to split using the regex
-                default (Any): Unused
+                paths (tuple(raw str, [str]): The path(s) to split using the regex
+                default ([str|(str, str)]): The list to return if obj or path is None
         Returns:
-            The return value from get_endpointslices_endpoints and an empty dict
+            (([str|(str, str)], dict)):
+                (str|(str, str)): The data from the path split using the regex
+                (dict): An empty dict
     """
     paths = deep_get(kwargs, DictPath("path"))
     default = deep_get(kwargs, DictPath("default"))

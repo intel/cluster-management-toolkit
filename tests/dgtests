@@ -15,12 +15,21 @@
 
 import sys
 from typing import Dict, Tuple
+import yaml
 
 from cmttypes import deep_get, DictPath, StatusGroup
 from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
 import datagetters
 
 # unit-tests for datagetters.py
+
+
+def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+    result = ""
+    dump = yaml.dump(data)
+    for line in dump.splitlines():
+        result += f"{' '.ljust(base_indent)}{line}\n"
+    return result
 
 
 def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
@@ -193,7 +202,202 @@ def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
                     result = False
                     break
             except Exception as e:
-                raise
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_endpointslices_endpoints(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = datagetters.get_endpointslices_endpoints
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata = (
+            (
+                {
+                    "endpoints": [
+                        {
+                            "addresses": [
+                                "10.0.1.156",
+                            ],
+                            "conditions": {
+                                "ready": True,
+                                "serving": True,
+                                "terminating": False,
+                            },
+                        }
+                    ],
+                },
+                [
+                    (
+                        "10.0.1.156",
+                        StatusGroup.OK,
+                    ),
+                ],
+                None,
+            ),
+            (
+                {
+                    "endpoints": [
+                        {
+                            "addresses": [
+                                "192.168.32.119",
+                            ],
+                            "conditions": {
+                                "ready": False,
+                                "serving": False,
+                                "terminating": False,
+                            },
+                        },
+                        {
+                            "addresses": [
+                                "192.168.32.50",
+                            ],
+                            "conditions": {
+                                "ready": True,
+                                "serving": True,
+                                "terminating": True,
+                            },
+                        }
+                    ],
+                },
+                [
+                    (
+                        "192.168.32.119",
+                        StatusGroup.NOT_OK,
+                    ),
+                    (
+                        "192.168.32.50",
+                        StatusGroup.OK,
+                    ),
+                ],
+                None,
+            ),
+            (
+                {
+                    "endpoints": [],
+                },
+                [("<none>", StatusGroup.UNKNOWN)],
+                None,
+            ),
+            (
+                {},
+                [("<none>", StatusGroup.UNKNOWN)],
+                None,
+            ),
+            (
+                None,
+                [("<none>", StatusGroup.UNKNOWN)],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result:\n" \
+                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"  expected result:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_datagetter_eps_endpoints(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = datagetters.datagetter_eps_endpoints
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata = (
+            (
+                {
+                    "endpoints": [
+                        {
+                            "addresses": [
+                                "10.0.1.156",
+                            ],
+                            "conditions": {
+                                "ready": True,
+                                "serving": True,
+                                "terminating": False,
+                            },
+                        }
+                    ],
+                },
+                (
+                    [
+                        (
+                            "10.0.1.156",
+                            StatusGroup.OK,
+                        ),
+                    ],
+                    {},
+                ),
+                None,
+            ),
+            (
+                None,
+                ([("<none>", StatusGroup.UNKNOWN)], {}),
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result:\n" \
+                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"  expected result:\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+            except Exception as e:
                 if expected_exception is not None:
                     if isinstance(e, expected_exception):
                         pass
@@ -217,6 +421,14 @@ def test_get_container_status(verbose: bool = False) -> Tuple[str, bool]:
 tests: Dict = {
     ("get_container_status()",): {
         "callable": test_get_container_status,
+        "result": None,
+    },
+    ("get_endpointslices_endpoints()",): {
+        "callable": test_get_endpointslices_endpoints,
+        "result": None,
+    },
+    ("datagetter_eps_endpoints()",): {
+        "callable": test_datagetter_eps_endpoints,
         "result": None,
     },
 }
