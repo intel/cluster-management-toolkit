@@ -577,26 +577,7 @@
 						"type": "boolean"
 					},
 					"path": {
-						"anyOf": [
-							{
-								"$ref": "#/definitions/path"
-							}, {
-								"type": "array",
-								"items": {
-									"anyOf": [
-										{
-											"type": "array",
-											"items": {
-												"$ref": "#/definitions/path"
-											}
-										}, {
-											"description": "Literal string to return as if it were the result from a lookup",
-											"type": "string"
-										}
-									]
-								}
-							}
-						]
+						"$ref": "#/definitions/tuple_paths"
 					},
 					"paths": {
 						"type": "array",
@@ -935,6 +916,29 @@
 			"type": "string",
 			"pattern": "^[_A-Za-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
 		},
+		"tuple_paths": {
+			"description": "A tuple of paths and literal strings to use with deep_get()/deep_set()",
+			"anyOf": [
+				{
+					"$ref": "#/definitions/path"
+				}, {
+					"type": "array",
+					"items": {
+						"anyOf": [
+							{
+								"type": "array",
+								"items": {
+									"$ref": "#/definitions/path"
+								}
+							}, {
+								"description": "Literal string to return as if it were the result from a lookup",
+								"type": "string"
+							}
+						]
+					}
+				}
+			]
+		},
 		"view_name": {
 			"description": "The name of a view, as used from the command line; view names starting with __ are skipped",
 			"type": "string",
@@ -1252,7 +1256,8 @@
 						{
 							"enum": [
 								"get_context_list",
-								"get_inventory_list"
+								"get_inventory_list",
+								"get_kubernetes_list"
 							]
 						}, {
 							"type": "null"
@@ -1450,6 +1455,10 @@
 												"_name_path": {
 													"description": "Alternate path to use when getting the name for _named_title",
 													"$ref": "#/definitions/simple_path"
+												},
+												"_name_tuple_paths": {
+													"description": "Alternate path to use when getting a multi-component name for _named_title",
+													"$ref": "#/definitions/tuple_paths"
 												},
 												"_pass_obj": {
 													"description": "Pass obj to callback",
@@ -1773,8 +1782,7 @@
 								"get_rq_item_info",
 								"get_sas_info",
 								"get_strategy_info",
-								"get_subsets_info",
-								"get_svcmon_endpoints_info"
+								"get_subsets_info"
 							]
 						},
 						"infogetter_args": {
@@ -1995,12 +2003,12 @@
 														}
 													]
 												},
-												"path": {
-													"description": "Some actions take a path as argument",
-													"$ref": "#/definitions/simple_path"
-												},
 												"owner_reference_path": {
 													"description": "Path to get the name and namespace of the object from if there's an owner reference",
+													"$ref": "#/definitions/simple_path"
+												},
+												"path": {
+													"description": "Some actions take a path as argument",
 													"$ref": "#/definitions/simple_path"
 												},
 												"title": {
@@ -2017,6 +2025,10 @@
 												"_name_path": {
 													"description": "Alternate path to use when getting the name for _named_title",
 													"$ref": "#/definitions/simple_path"
+												},
+												"_name_tuple_paths": {
+													"description": "Alternate path to use when getting a multi-component name for _named_title",
+													"$ref": "#/definitions/tuple_paths"
 												},
 												"_parent_namespace_path": {
 													"description": "Path to get the namespace of the parent obj",
@@ -2167,6 +2179,7 @@
 												"get_prepopulated_list",
 												"get_resource_list",
 												"get_resources",
+												"get_security_context",
 												"get_strings_from_string",
 												"get_svc_port_target_endpoints",
 												"get_volume_properties"
