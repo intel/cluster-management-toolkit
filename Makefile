@@ -177,6 +177,8 @@ coverage-cluster: setup_tests
 	fi; \
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	printf -- "\n\n  Running: tests/async_fetch\n\n" ;\
+	$$cmd run --branch --append tests/dgtests || exit 1 ;\
+	printf -- "\n\n  Running: tests/dgtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/async_fetch || exit 1 ;\
 	printf -- "\n\n  Running: tests/khtests --include-cluster\n\n" ;\
 	$$cmd run --branch --append tests/khtests --include-cluster || exit 1 ;\

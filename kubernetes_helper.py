@@ -58,7 +58,7 @@ from cmtio import execute_command_with_response, secure_which
 from cmtio import secure_read
 from cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-from kubernetes_resources import kubernetes_resources
+from kubernetes_resources import kubernetes_resources, kubernetes_resource_types
 
 # Acceptable ciphers
 CIPHERS = [
@@ -211,61 +211,7 @@ def resource_kind_to_rtype(resource: Tuple[str, str]) -> str:
         Returns:
             (str): A Resource type
     """
-    rtypes = {
-        ("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
-        ("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
-        ("CiliumEndpoint", "cilium.io"): "[cilium_endpoint]",
-        ("ConfigAuditReport", "aquasecurity.github.io"): "[report]",
-        ("ConfigMap", ""): "[configmap]",
-        ("Container", ""): "[container]",
-        ("Controller", ""): "[controller]",
-        ("ControllerRevision", "apps"): "[controller_revision]",
-        ("CronJob", "batch"): "[job_controller]",
-        ("DaemonSet", "apps"): "[controller]",
-        ("Deployment", "apps"): "[controller]",
-        ("Endpoints", ""): "[endpoints]",
-        ("EndpointSlice", "discovery.k8s.io"): "[endpoint_slice]",
-        ("EphemeralContainer", ""): "[ephemeral_container]",
-        ("ExposedSecretReport", "aquasecurity.github.io"): "[report]",
-        ("Event", ""): "[event]",
-        ("Event", "events.k8s.io"): "[event]",
-        ("HorizontalPodAutoscaler", "autoscaling"): "[pod_autoscaler]",
-        ("InfraAssessmentReport", "aquasecurity.github.io"): "[report]",
-        ("Ingress", "networking.k8s.io"): "[ingress]",
-        ("InitContainer", ""): "[init_container]",
-        ("Job", "batch"): "[controller]",
-        ("Lease", "coordination.k8s.io"): "[lease]",
-        ("LimitRange", ""): "[limit]",
-        ("MutatingWebhookConfiguration",
-         "admissionregistration.k8s.io"): "[webhook_configuration]",
-        ("Node", ""): "[node]",
-        ("PersistentVolume", ""): "[volume]",
-        ("PersistentVolumeClaim", ""): "[volume_claim]",
-        ("Pod", ""): "[pod]",
-        ("PodDisruptionBudget", "policy"): "[pod_disruption_budget]",
-        ("PodMetrics", "metrics.k8s.io"): "[pod_metrics]",
-        ("PriorityClass", "scheduling.k8s.io"): "[priority_class]",
-        ("ReplicaSet", "apps"): "[controller]",
-        ("ReplicationController", ""): "[controller]",
-        ("ResourceClaim", "resource.k8s.io"): "[resource_claim]",
-        ("Role", "rbac.authorization.k8s.io"): "[role]",
-        ("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
-        ("RuntimeClass", "node.k8s.io"): "[runtime_class]",
-        ("SbomReport", "aquasecurity.github.io"): "[report]",
-        ("Scheduler", ""): "[scheduler]",
-        ("Secret", ""): "[secret]",
-        ("Service", ""): "[service]",
-        ("ServiceAccount", ""): "[service_account]",
-        ("ServiceEntry", ""): "[service_entry]",
-        ("StatefulSet", "apps"): "[controller]",
-        ("TASPolicy", "telemetry.intel.com"): "[scheduling_policy]",
-        ("TFJob", "kubeflow.org"): "[controller]",
-        ("ValidatingWebhookConfiguration",
-         "admissionregistration.k8s.io"): "[webhook_configuration]",
-        ("VulnerabilityReport", "aquasecurity.github.io"): "[report]",
-        ("Workflow", "argoproj.io"): "[controller]",
-    }
-    return rtypes.get(resource, "[unknown]")
+    return kubernetes_resource_types.get(resource, "[unknown]")
 
 
 class KubernetesResourceCache:

@@ -12,6 +12,7 @@ This generates and post-processes elements for various more complex types
 
 import copy
 from datetime import date, datetime
+import re
 from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
 import yaml
 
@@ -658,7 +659,9 @@ def generator_mem(obj: Dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
     array: List[Union[ThemeRef, ThemeStr]] = []
-    free, total = getattr(obj, field)
+    tmp_free, tmp_total = getattr(obj, field)
+    free = __remove_units(tmp_free)
+    total = __remove_units(tmp_total)
 
     if free is None and total is None:
         return generator_basic(obj, field, fieldlen, pad, ralign, selected)
@@ -1120,8 +1123,16 @@ def processor_age(obj: Dict, field: str) -> str:
     return cmtlib.seconds_to_age(seconds, negative_is_skew=True)
 
 
+def __remove_units(numstr: str) -> str:
+    if not (unitfree := re.match(r"^(\d+).*", numstr)):
+        raise ValueError(f"Could not remove unit from string {numstr}")
+    return unitfree[1]
+
+
 def processor_mem(obj: Dict, field: str) -> str:
-    free, total = getattr(obj, field)
+    tmp_free, tmp_total = getattr(obj, field)
+    free = __remove_units(tmp_free)
+    total = __remove_units(tmp_total)
 
     string = f"{100 - (100 * int(free)) / int(total):0.1f}"
     string += str(ThemeRef("separators", "percentage"))
@@ -1385,8 +1396,16 @@ builtin_fields: Dict[str, Dict[str, Any]] = {
     },
     "mem": {
         "header": "Mem% / Total:",
-        "path": (r"^(\d+).*", ["status#allocatable#memory", "status#capacity#memory"]),
-        "datagetter": datagetters.datagetter_regex_split_to_tuples,
+        "paths": [
+            {
+                "path": "status#allocatable#memory",
+                "pathtype": "str",
+            },
+            {
+                "path": "status#capacity#memory",
+                "pathtype": "str",
+            },
+        ],
         "generator": generator_mem,
         "ralign": True,
     },

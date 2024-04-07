@@ -11,7 +11,7 @@ to be expressed through parameters to generic_infogetter()
 """
 
 import re
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple
 
 from cmtlib import get_since, timestamp_to_datetime
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup, ProgrammingError
@@ -161,7 +161,6 @@ def datagetter_eps_endpoints(obj: Dict[str, Any],
     return get_endpointslices_endpoints(obj), {}
 
 
-# pylint: disable-next=unused-argument
 def datagetter_metrics(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], Dict]:
     """
     A datagetter that returns metrics for the specified path
@@ -177,7 +176,7 @@ def datagetter_metrics(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], D
     path = deep_get(kwargs, DictPath("path"))
     default = deep_get(kwargs, DictPath("default"), [])
 
-    if obj is None or path is None:
+    if obj is None or not obj or path is None:
         return default, {}
 
     result = []
@@ -197,7 +196,6 @@ def datagetter_deprecated_api(obj: Dict[str, Any],
             obj (dict): The object with metrics
             kwargs (dict):
         **kwargs (dict[str, Any]): Keyword arguments
-            kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
             path (str): The path to the metrics to get
             default ([str]): The list to return if obj or path is None
         Returns:
@@ -207,13 +205,10 @@ def datagetter_deprecated_api(obj: Dict[str, Any],
                 ([str]): Metrics for the deprecated API
                 (dict): Additional vars
     """
-    if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("datagetter_deprecated_api() called without kubernetes_helper")
-
     path = deep_get(kwargs, DictPath("path"))
     default = deep_get(kwargs, DictPath("default"), [])
 
-    result, extra_vars = datagetter_metrics(obj, kubernetes_helper=kh, path=path, default=default)
+    result, extra_vars = datagetter_metrics(obj, path=path, default=default)
     kind, api_family = guess_kind((result[0], result[1]))
     return (kind, api_family, result[2]), extra_vars
 
@@ -360,7 +355,6 @@ def get_endpoint_endpoints(subsets: List[Dict]) -> List[Tuple[str, StatusGroup]]
     return endpoints
 
 
-# pylint: disable-next=unused-argument
 def datagetter_endpoint_ips(obj: Dict[str, Any],
                             **kwargs: Any) -> Tuple[List[Tuple[str, StatusGroup]], Dict]:
     """
@@ -380,64 +374,6 @@ def datagetter_endpoint_ips(obj: Dict[str, Any],
     subsets = deep_get(obj, DictPath(path))
     endpoints = get_endpoint_endpoints(subsets)
     return endpoints, {}
-
-
-# Maybe this can be replaced with generic_listgetter()?
-# pylint: disable-next=too-many-branches,unused-argument
-def datagetter_regex_split_to_tuples(obj: Dict[str, Any],
-                                     **kwargs: Any) -> Tuple[List[Union[str, Tuple[str, str]]],
-                                                             Dict]:
-    """
-    A datagetter that uses a regex to split a path into tuples
-
-        Parameters:
-            obj (dict): The object to split into tuples
-            **kwargs (dict[str, Any]): Keyword arguments
-                paths (tuple(raw str, [str]): The path(s) to split using the regex
-                default ([str|(str, str)]): The list to return if obj or path is None
-        Returns:
-            (([str|(str, str)], dict)):
-                (str|(str, str)): The data from the path split using the regex
-                (dict): An empty dict
-    """
-    paths = deep_get(kwargs, DictPath("path"))
-    default = deep_get(kwargs, DictPath("default"))
-
-    if obj is None or paths is None or len(paths) < 2:
-        return default, {}
-
-    # paths is a tuple; the first item is a regex that specifies how to split,
-    # the second one is either a path to a list or a list of paths
-
-    list_fields: List[Union[str, Tuple[str, str]]] = []
-
-    if isinstance(paths[1], str):
-        for item in deep_get(obj, DictPath(paths[1]), []):
-            tmp = re.match(paths[0], item)
-            if tmp is not None:
-                # This handles ("").*("") | (""); we need to generalise this somehow
-                if len(tmp.groups()) >= 2 and tmp[1] is not None and tmp[2] is not None:
-                    list_fields.append((tmp[1], tmp[2]))
-                elif len(tmp.groups()) >= 3:
-                    list_fields.append(("", tmp[3]))
-            else:
-                list_fields.append(("", ""))
-    else:
-        for path in paths[1]:
-            item = deep_get(obj, DictPath(path), "")
-            tmp = re.match(paths[0], str(item))
-            if tmp is not None:
-                # This handles ("").*("") | (""); we need to generalise this somehow
-                if len(tmp.groups()) == 1 and tmp[1] is not None:
-                    list_fields.append(tmp[1])
-                if len(tmp.groups()) >= 2 and tmp[1] is not None and tmp[2] is not None:
-                    list_fields.append((tmp[1], tmp[2]))
-                elif len(tmp.groups()) >= 3:
-                    list_fields.append(("", tmp[3]))
-            else:
-                list_fields.append(("", ""))
-
-    return list_fields, {}
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
@@ -574,19 +510,21 @@ def datagetter_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, Dict
             obj (dict): The pod object to return pod status for
             **kwargs (dict[str, Any]): Keyword arguments
                 kh (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
                 default (Any): Unused
         Returns:
             The return value from get_endpointslices_endpoints and an empty dict
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("datagetter_pod_status() called without kubernetes_helper")
+    kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     default = deep_get(kwargs, DictPath("default"))
 
     if obj is None:
         return default, {}
 
-    status, status_group = get_pod_status(obj, kubernetes_helper=kh)
+    status, status_group = get_pod_status(obj, kubernetes_helper=kh, kh_cache=kh_cache)
 
     return status, {"status_group": status_group}
 
@@ -600,7 +538,7 @@ def datagetter_api_support(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str
     * Info (CMT has an info view)
 
         Parameters:
-            obj (dict): The pod object to return pod status for
+            obj (dict): The object to get the API-name from
             kwargs (dict):
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 default (opaque): Unused
