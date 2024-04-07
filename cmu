@@ -1011,7 +1011,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                              f"paths={paths}\ndatagetter={datagetter}")
 
         if datagetter is not None:
-            d[name], extradata = datagetter(obj, kubernetes_helper=kh, path=path, default=path)
+            d[name], extradata = datagetter(obj, kubernetes_helper=kh, path=path, default=default)
             for key, value in extradata.items():
                 d[key] = value
         else:
