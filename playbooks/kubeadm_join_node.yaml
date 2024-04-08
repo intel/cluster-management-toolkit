@@ -1,0 +1,48 @@
+- hosts: "selection:!nodes:!controlplane:!nas"
+  name: "Join a host as a worker node to the Kubernetes cluster using kubeadm"
+  vars:
+    metadata:
+      description: "Join a host as a worker node to the Kubernetes cluster using kubeadm"
+      summary:
+        "Other actions":
+          - description: "Configures Kubernetes node"
+          - description: "Joins the Kubernetes node to the cluster"
+      time_consumption: "Slow"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+  gather_subset:
+    - "!min"
+    - "!all"
+    - "distribution"
+  become: true
+  become_user: "root"
+  tasks:
+    - name: "Creating temporary file for node configuration"
+      ansible.builtin.tempfile:
+        state: "file"
+        suffix: "temp"
+      register: "node_config"
+    - name: "Creating node configuration"
+      ansible.builtin.template:
+        dest: "{{ node_config.path }}"
+        src: "{{ configuration_path }}"
+        mode: "0640"
+    - name: "Enabling kubelet"
+      ansible.builtin.systemd:
+        name: "kubelet"
+        enabled: true
+        state: "started"
+      when: "ansible_os_family == 'RedHat'"
+    - name: "The following node configuration will be used"
+      ansible.builtin.command: "cat {{ node_config.path }}"
+      changed_when: false
+    - name: "Joining node to the cluster"
+      ansible.builtin.shell: |
+        kubeadm join --config {{ node_config.path }}
+      changed_when: true
+    - name: "Remove temporary node configuration file"
+      ansible.builtin.file:
+        path: "{{ node_config.path }}"
+        state: "absent"
+      when: "node_config.path is defined"

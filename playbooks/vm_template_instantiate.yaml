@@ -1,0 +1,90 @@
+- hosts: "selection"
+  name: "Instantiate Virtual Machines"
+  vars:
+    metadata:
+      description: "Instantiate Virtual Machines"
+      time_consumption: "Potentially slow"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+      summary:
+        "Created files":
+          - description: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
+          - description: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
+        "Other actions":
+          - description: "Instantiates VMs"
+          - description: "Adds DHCP entries for the VM instances"
+          - description: "Adds /etc/hosts entries for the VM instances"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Create meta-data for the VM image instances"
+      ansible.builtin.template:
+        dest: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
+        src: "templates/vmimages/meta-data.yaml"
+      loop: "{{ instances }}"
+      become: true
+      become_user: "root"
+    - name: "Create user-data for the VM image instances"
+      ansible.builtin.template:
+        dest: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
+        src: "templates/vmimages/user-data.template.yaml"
+      loop: "{{ instances }}"
+      become: true
+      become_user: "root"
+    - name: "Start the default network"
+      ansible.builtin.shell: |
+        virsh --connect qemu:///system net-destroy default
+        virsh --connect qemu:///system net-start default
+      failed_when: false
+    - name: "Create DHCP entries for all instances"
+      ansible.builtin.shell: |
+        echo virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+        virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+      loop: "{{ instances }}"
+    - name: "Instantiate the VMs"
+      ansible.builtin.shell: |
+        echo virt-install --connect qemu:///system \
+            --cloud-init meta-data=/var/lib/libvirt/images/meta-data.{{ item.0 }},user-data=/var/lib/libvirt/images/user-data.{{ item.0 }} \
+            --virt-type kvm \
+            --name {{ item.0 }} \
+            --ram 4096 \
+            --vcpus=4 \
+            --os-variant detect=on \
+            --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
+            --import \
+            --network network=default,mac={{ item.2 }} \
+            --noautoconsole
+        virt-install --connect qemu:///system \
+            --cloud-init meta-data=/var/lib/libvirt/images/meta-data.{{ item.0 }},user-data=/var/lib/libvirt/images/user-data.{{ item.0 }} \
+            --virt-type kvm \
+            --name {{ item.0 }} \
+            --ram 4096 \
+            --vcpus=4 \
+            --os-variant detect=on \
+            --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
+            --import \
+            --network network=default,mac={{ item.2 }} \
+            --noautoconsole
+      loop: "{{ instances }}"
+    - name: "Create /etc/hosts entries for all instances"
+      ansible.builtin.shell: |
+        grep -q "{{ item.0 }}" /etc/hosts || printf -- "{{ item.1 }} {{item.0 }}  # VM instance created by CMT\n" >> /etc/hosts
+      loop: "{{ instances }}"
+      become: true
+      become_user: "root"
+    - name: "Wait a reasonable time for the VMs to start"
+      ansible.builtin.shell: |
+        count=0
+        while /bin/true; do
+            ping -c 1 {{ item.0 }} > /dev/null && break
+            count=$(( count + 1 ))
+            if [ count -gt 60 ]; then
+                printf -- "VMs failed to start within 60 seconds; giving up.\n"
+                exit 1
+            fi
+            sleep 1
+        done
+      loop: "{{ instances }}"

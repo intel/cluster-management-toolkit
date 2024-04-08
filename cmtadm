@@ -39,6 +39,8 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+from cluster_actions import create_vm_hosts, join_nodes, prepare_nodes, prepare_vm_template
+
 from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
 from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
@@ -50,7 +52,7 @@ from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDO
 from cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
 from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
-from cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE, VERSION_CACHE_DIR
+from cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
 
 from commandparser import parse_commandline
 
@@ -68,6 +70,7 @@ from networkio import scan_and_add_ssh_keys, update_version_cache
 
 import cmtlib
 from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper
+from cmtlib import get_latest_kubernetes_upstream_version, get_cluster_name
 from cmtlib import identify_distro, read_cmtconfig, substitute_list, substitute_string
 
 from cni_data import cni_data
@@ -1599,48 +1602,6 @@ def __get_theme(string: str, default: str) -> str:
     return translation.get(string, default)
 
 
-def get_latest_kubernetes_upstream_version() -> str:
-    """
-    Fetch the upstream version for Kubernetes
-
-        Returns:
-            (str): The latest upstream Kubernetes version;
-                   or an empty string if the version could not be determined
-    """
-    # We are OK with the file not existing
-    security_checks = [
-        SecurityChecks.PARENT_RESOLVES_TO_SELF,
-        SecurityChecks.OWNER_IN_ALLOWLIST,
-        SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
-        SecurityChecks.PERMISSIONS,
-        SecurityChecks.PARENT_PERMISSIONS,
-        SecurityChecks.IS_FILE,
-    ]
-
-    kubernetes_upstream_version: str = ""
-
-    try:
-        version_cache = secure_read_yaml(VERSION_CACHE_DIR.joinpath("kubernetes_current.yaml"),
-                                         checks=security_checks)
-    except FileNotFoundError:
-        version_cache = None
-
-    if version_cache is not None:
-        if (schedules := deep_get(version_cache, DictPath("schedules"), [])):
-            if (previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])):
-                kubernetes_upstream_version = \
-                    deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
-            else:
-                tmp = deep_get(schedules[0], DictPath("release"), "")
-                if tmp is not None and str(tmp):
-                    tmp = str(tmp)
-                    if len(tmp.split(".")) < 3:
-                        tmp = f"{tmp}.0"
-                    kubernetes_upstream_version = tmp
-
-    return kubernetes_upstream_version
-
-
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]],
                    verbose: bool = False) -> Tuple[List[Tuple[str, str, str, List[str]]],
@@ -2164,32 +2125,6 @@ def __task_setup_bash_completion(installation_info: Dict, verbose: bool = False)
     args = ["/usr/bin/kubectl", "completion", "bash"]
     result = execute_command_with_response(args)
     secure_write_string(BASH_COMPLETION_DIR.joinpath("kubectl"), result)
-
-
-def get_cluster_name() -> Optional[str]:
-    """
-    Return the name of the cluster
-
-        Returns:
-            (str): The name of the cluster
-    """
-    try:
-        d1 = secure_read_yaml(KUBE_CONFIG_FILE)
-    except FileNotFoundError:
-        return None
-
-    current_context = d1.get("current-context", None)
-    if current_context is None:
-        return None
-
-    cluster_name = None
-
-    for context in d1.get("contexts", []):
-        if context.get("name", "") == current_context:
-            cluster_name = context["context"].get("cluster", None)
-            break
-
-    return cluster_name
 
 
 # pylint: disable-next=unused-argument
@@ -4079,6 +4014,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     if k8s_distro == "kubeadm":
         add_playbooks += [
             ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_join_node.yaml"),
         ]
     elif k8s_distro == "rke2":
         add_playbooks += [
@@ -4176,10 +4112,18 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             args (list[str]): Arguments to use when executing this action
     """
     global kh  # pylint: disable=global-statement
+    global no_password  # pylint: disable=global-statement
 
     http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
+    if http_proxy is None:
+        http_proxy = ""
     https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
+    if https_proxy is None:
+        https_proxy = ""
     no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
+    if no_proxy is None:
+        no_proxy = ""
+
     env = {
         "KUBECONFIG": HOMEDIR.joinpath(".kube", "config"),
         "PATH": deep_get(dict(os.environ), DictPath("PATH"), ""),
@@ -4235,7 +4179,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         ANSIThemeStr(" configuration; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
-    if cd_api_version not in ("v1alpha1", "v1alpha2"):
+    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": ", "default"),
                         ANSIThemeStr("The apiVersion ", "default"),
@@ -4251,7 +4195,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     verbose = deep_get(cd, DictPath("options#verbose"), False)
     pod_network_cidr = deep_get(cd, DictPath("options#podNetworkCIDR"), "10.244.0.0/16")
     cni = deep_get(cd, DictPath("options#cni"), "cilium")
-    prompt_for_password = deep_get(cd, DictPath("options#promptForPassword"), True)
+    no_password = not deep_get(cd, DictPath("options#promptForPassword"), True)
     save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
 
     control_planes = deep_get(cd, DictPath("cluster#controlPlanes"))
@@ -4324,7 +4268,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         prepare_options.append(("--verbose", None))
     if save_ansible_logs:
         prepare_options.append(("--save-ansible-logs", None))
-    if not prompt_for_password:
+    if not no_password:
         prepare_options.append(("--no-password", None))
 
     prepare_args = [
@@ -4426,6 +4370,24 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             installation_info = \
                 update_installation_info(cluster_name=cluster_name, state=state, phase=phase)
 
+    # Set necessary Ansible keys before running playbooks
+    insecure_registries = deep_get(cmtlib.cmtconfig, DictPath("Docker#insecure_registries"), [])
+    registry_mirrors = deep_get(cmtlib.cmtconfig, DictPath("Containerd#registry_mirrors"), [])
+    retval = 0
+
+    use_proxy = "no"
+    if http_proxy or https_proxy:
+        use_proxy = "yes"
+
+    extra_values = {
+        "http_proxy": http_proxy,
+        "https_proxy": https_proxy,
+        "no_proxy": no_proxy,
+        "insecure_registries": insecure_registries,
+        "registry_mirrors": registry_mirrors,
+        "use_proxy": use_proxy,
+    }
+
     if state == "adding_nodes":
         i = 0
         # We (hopefully) don't need to check whether the nodes are part of the cluster already,
@@ -4468,7 +4430,72 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             # Don't add node groups again
             if i < phase:
                 continue
-            nodes = deep_get(data, DictPath("nodes"), [])
+            tmp_nodes: List[str] = deep_get(data, DictPath("nodes"), [])
+            hosts = []
+            hostname_template: str = deep_get(data, DictPath("vmNameTemplate"), "")
+            ranges: List = deep_get(data, DictPath("ranges"), [])
+            virtualise: bool = deep_get(data, DictPath("virtualise"), False)
+            vmhost: str = deep_get(data, DictPath("vmHost"), "")
+            if virtualise:
+                ipaddress_template: str = \
+                    deep_get(data, DictPath("ipTemplate"),
+                             "192.168.<<<item.0>>>.<<<item.1>>>")
+                macaddress_template: \
+                    str = deep_get(data, DictPath("macTemplate"),
+                                   "52:54:00:42.<<<item.0>>>.<<<item.1>>>")
+            else:
+                ipaddress_template = ""
+                macaddress_template = ""
+            os_image: FilePath = FilePath(deep_get(data, DictPath("osImage"), ""))
+            os_image = FilePath(substitute_string(os_image, {"{HOME}": HOMEDIR}))
+            template_balloon_size: str = \
+                FilePath(deep_get(data, DictPath("templateBalloonSize"), "5G"))
+            template_name: str = deep_get(data, DictPath("vmTemplateImageName"))
+            template_mac: str = ""
+            template_ip: str = ""
+            nodes: List[Tuple[str, str, str]] = []
+            if tmp_nodes:
+                for node in tmp_nodes:
+                    nodes.append((node, "", ""))
+                    hosts.append(node)
+            else:
+                if not hostname_template:
+                    sys.exit("Either nodes or vmNameTemplate is mandatory")
+                for address_range in ranges:
+                    if len(address_range) != 2:
+                        sys.exit("An address-range must be [[high-digit range], [low-digit range]]")
+                    tmp_highrange, tmp_lowrange = address_range
+                    if isinstance(tmp_highrange, int):
+                        highrange = [tmp_highrange]
+                    else:
+                        if len(tmp_highrange) != 2:
+                            sys.exit("An address-range must be [start, end]")
+                        highrange = range(tmp_highrange[0], tmp_highrange[1] + 1)
+                    if isinstance(tmp_lowrange, int):
+                        lowrange = [tmp_lowrange]
+                    else:
+                        if len(tmp_lowrange) != 2:
+                            sys.exit("An address-range must be [start, end]")
+                        lowrange = range(tmp_lowrange[0], tmp_lowrange[1] + 1)
+                    for highdigit in highrange:
+                        for lowdigit in lowrange:
+                            ipaddress = substitute_string(ipaddress_template, {
+                                                          "<<<item.1>>>": str(lowdigit),
+                                                          "<<<item.0>>>": str(highdigit)})
+                            macaddress = substitute_string(macaddress_template, {
+                                                           "<<<item.1>>>": f"{lowdigit:0>2x}",
+                                                           "<<<item.0>>>": f"{highdigit:0>2x}"})
+                            # The first IP is reserved for the template
+                            if not template_ip:
+                                template_ip = ipaddress
+                                template_mac = macaddress
+                                continue
+                            nodename = substitute_string(hostname_template, {
+                                                         "<<<item.1>>>": str(lowdigit),
+                                                         "<<<item.0>>>": str(highdigit)})
+                            nodes.append((nodename, ipaddress, macaddress))
+                            hosts.append(nodename)
+
             node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
             node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
             node_cordon_on_join = \
@@ -4510,7 +4537,47 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 [group],
             ]
 
-            add_nodes(add_nodes_options, add_nodes_args)
+            # Prepare nodes
+            if virtualise:
+                retval = prepare_vm_template(vmhost,
+                                             [(template_name, template_ip, template_mac)],
+                                             os_image=os_image,
+                                             template_name=template_name,
+                                             template_balloon_size=template_balloon_size,
+                                             extra_values=extra_values,
+                                             kubernetes_helper=kh, verbose=verbose)
+                if retval:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": failed to prepare a VM image template"
+                                                 "; aborting.", "default")], stderr=True)
+                    sys.exit(retval)
+                retval = create_vm_hosts(vmhost, nodes,
+                                         template_name=template_name,
+                                         extra_values=extra_values, verbose=verbose)
+                if retval:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": failed to instantiate VM hosts"
+                                                 "; aborting.", "default")], stderr=True)
+                    sys.exit(retval)
+                retval = join_nodes(hosts,
+                                    kubernetes_helper=kh,
+                                    k8s_distro=k8s_distro,
+                                    cri=cri,
+                                    extra_values=extra_values, verbose=verbose)
+                if retval:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": failed to join VM nodes to the cluster"
+                                                 "; aborting.", "default")], stderr=True)
+                    sys.exit(retval)
+            else:
+                retval = prepare_nodes(hosts=hosts, extra_values=extra_values, verbose=verbose)
+                if retval:
+                    ansithemeprint([ANSIThemeStr("Error", "error"),
+                                    ANSIThemeStr(": failed to prepare hosts for use as "
+                                                 "worker nodes; aborting.", "default")],
+                                   stderr=True)
+                    sys.exit(retval)
+                add_nodes(add_nodes_options, add_nodes_args)
             i += 1
             installation_info = \
                 update_installation_info(cluster_name=cluster_name, state=state, phase=i)

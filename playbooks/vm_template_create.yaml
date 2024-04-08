@@ -1,0 +1,37 @@
+- hosts: "selection"
+  name: "Create a Virtual Machine template"
+  vars:
+    metadata:
+      description: "Create a Virtual Machine template"
+      time_consumption: "Potentially slow"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+      summary:
+        "Created directories":
+          - description: "/var/lib/libvirt/images"
+        "Created files":
+          - description: "/var/lib/libvirt/images/{{ base_image_name }}"
+          - description: "/var/lib/libvirt/images/{{ template_name }}"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Create a directory for VM instances"
+      ansible.builtin.file:
+        path: "/var/lib/libvirt/images"
+        state: "directory"
+      become: true
+      become_user: "root"
+    - name: "Copy the base image to the VM image base directory (this might be slow)"
+      ansible.builtin.copy:
+        src: "{{ base_image }}"
+        dest: "/var/lib/libvirt/images"
+      become: true
+      become_user: "root"
+    - name: "Convert the image to a qcow2"
+      ansible.builtin.shell: |
+        qemu-img create -f qcow2 -F qcow2 -o backing_file=/var/lib/libvirt/images/{{ base_image_name }} /var/lib/libvirt/images/{{ template_name }}.qcow2 && qemu-img resize /var/lib/libvirt/images/{{ template_name }}.qcow2 {{ template_balloon_size }}
+      become: true
+      become_user: "root"

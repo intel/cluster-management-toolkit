@@ -1,0 +1,22 @@
+- hosts: "selection"
+  name: "Delete Virtual Machines"
+  vars:
+    metadata:
+      description: "Delete Virtual Machines"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+      summary:
+        "Other actions":
+          - description: "Destroys VM instances"
+          - description: "Undefines VM instances"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Delete and undefine the VM instances"
+      ansible.builtin.shell: |
+        virsh --connect qemu:///system shutdown {{ item.0 }} || /bin/true
+        virsh --connect qemu:///system undefine {{ item.0 }} || /bin/true
+      loop: "{{ instances }}"

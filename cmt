@@ -8,6 +8,9 @@
     exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
+#
+# Copyright the Cluster Management Toolkit for Kubernetes contributors.
+# SPDX-License-Identifier: MIT
 
 # Requires: ansible
 # Requires: python3 (>= 3.8)
@@ -47,7 +50,7 @@ except ModuleNotFoundError:  # pragma: no cover
 from cmttypes import deep_get, DictPath
 from cmttypes import FilePath, FilePathAuditError, HostNameStatus
 from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME
-from cmtpaths import DEFAULT_THEME_FILE, KUBE_CONFIG_FILE, VIEW_DIR
+from cmtpaths import DEFAULT_THEME_FILE, VIEW_DIR
 from cmtvalidators import validate_fqdn, validator_bool
 
 from commandparser import parse_commandline
@@ -62,7 +65,7 @@ import cmtlib
 from cmtlib import chunk_list, identify_distro, read_cmtconfig
 from cmtio import execute_command, secure_read_string
 from cmtio_yaml import secure_read_yaml
-from networkio import scan_and_add_ssh_keys, get_kubernetes_version
+from networkio import scan_and_add_ssh_keys, get_kubernetes_version, get_cluster_name
 
 import kubernetes_helper
 from kubernetes_helper import list_contexts, get_node_roles, get_node_status, kubectl_get_version
@@ -94,7 +97,7 @@ def request_ansible_password() -> None:
 
         ansible_password = ansithemeinput_password([ANSIThemeStr("\nPassword: ", "default")])
 
-        if ansible_password is None or len(ansible_password) == 0:
+        if ansible_password is None or not ansible_password:
             ansithemeprint([ANSIThemeStr("\nError", "error"),
                             ANSIThemeStr(": Empty password; aborting.", "default")], stderr=True)
             sys.exit(errno.EINVAL)
@@ -180,7 +183,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     retval, ansible_results = \
         ansible_run_playbook_on_selection(playbookpath, selection=hosts,
                                           values=merged_values, quiet=False)
-    if retval == -errno.ENOENT and len(ansible_results) == 0:
+    if retval == -errno.ENOENT and not ansible_results:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": ", "default"),
                         ANSIThemeStr(f"{ANSIBLE_INVENTORY}", "path"),
@@ -201,32 +204,6 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeStr:
     else:
         __string = ANSIThemeStr(string, fmt)
     return __string
-
-
-def get_cluster_name() -> Optional[str]:
-    """
-    Return the name of the cluster
-
-        Returns:
-            (str): The name of the cluster
-    """
-    try:
-        d1 = secure_read_yaml(KUBE_CONFIG_FILE)
-    except FileNotFoundError:
-        return None
-
-    current_context = d1.get("current-context", None)
-    if current_context is None:
-        return None
-
-    cluster_name = None
-
-    for context in d1.get("contexts", []):
-        if context.get("name", "") == current_context:
-            cluster_name = context["context"].get("cluster", None)
-            break
-
-    return cluster_name
 
 
 def get_control_planes() -> List[Tuple[str, List[str]]]:
@@ -1214,7 +1191,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
                               ANSIThemeStr("--ignore-existing", "option"),
                               ANSIThemeStr("“ was specified.", "default")])
 
-    if len(non_existing) == 0:
+    if not non_existing:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": No valid hosts specified; aborting.", "default")],
                        stderr=True)
@@ -1318,7 +1295,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
     if k8s_distro == "kubeadm":
         join_token = kh.get_join_token()
-        if len(join_token) == 0:
+        if not join_token:
             if confirm:
                 input_retval = \
                     ansithemeinput([ANSIThemeStr("Warning", "warning"),
@@ -1524,12 +1501,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
             # so we have to do all of that explicitly
             ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
             ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
+            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_join_node.yaml"),
         ]
 
-        if int(version_minor) < 23:
-            join_configuration_api_version = "kubeadm.k8s.io/v1beta2"
-        else:
-            join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        # Currently we only support v1beta3 (kubeadm >= 1.24)
+        join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
         extra_values = {
             "control_plane_ip": control_plane_ip,
@@ -2272,7 +2248,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                 # now check whether there's a view file and where it has list/info views
                 if kind_tuple == ("Event", ""):
                     filename = "Event.events.k8s.io.yaml"
-                elif len(kind_tuple[1]) == 0:
+                elif not kind_tuple[1]:
                     filename = f"{kind}.yaml"
                 else:
                     filename = f"{kind}.{api_group}.yaml"
@@ -2327,7 +2303,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
                 if has_data:
                     vlist, _status = kh.get_list_by_kind_namespace(kind=kind_tuple, namespace="")
-                    if vlist is None or len(vlist) == 0:
+                    if vlist is None or not vlist:
                         continue
 
             if known_filter["known"] is not None:
@@ -2362,7 +2338,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                             continue
 
         if api_version_selector is not None:
-            if len(api_version_selector) == 0:
+            if not api_version_selector:
                 if "/" in api_version:
                     continue
             else:
@@ -2403,7 +2379,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
         cmt_support_len = max(cmt_support_len, cmt_support_len_tmp)
         local_view_len = max(local_view_len, len(local_view))
 
-    if len(filtered_api_resources) == 0:
+    if not filtered_api_resources:
         ansithemeprint([ANSIThemeStr("Note", "note"),
                         ANSIThemeStr(": No matching APIs found.", "default")])
         return 0
@@ -2554,7 +2530,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                             continue
 
         if api_version_selector is not None:
-            if len(api_version_selector) == 0:
+            if not api_version_selector:
                 if "/" in api_version:
                     continue
             else:
@@ -2569,7 +2545,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                                    separator=ANSIThemeStr(",", "separator"))
         for item in shortnames_formatted:
             shortnames_len_tmp += len(item)
-        if len(shortnames_formatted) == 0:
+        if not shortnames_formatted:
             shortnames_formatted = [ANSIThemeStr("", "default")]
 
         verbs_len_tmp = 0
@@ -2578,7 +2554,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                                    separator=ANSIThemeStr(",", "separator"))
         for item in verbs_formatted:
             verbs_len_tmp += len(item)
-        if len(verbs_formatted) == 0:
+        if not verbs_formatted:
             verbs_formatted = [ANSIThemeStr("", "default")]
 
         cmt_support_len_tmp = 0
@@ -2587,7 +2563,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                                    separator=ANSIThemeStr(",", "separator"))
         for item in cmt_support_formatted:
             cmt_support_len_tmp += len(item)
-        if len(cmt_support_formatted) == 0:
+        if not cmt_support_formatted:
             cmt_support_formatted = [ANSIThemeStr("", "default")]
 
         tmp_str = [ANSIThemeStr(f"{name}".ljust(name_len + 2), "default")] + \
@@ -3982,7 +3958,7 @@ def main() -> int:
     ansible_configuration["ansible_forks"] = \
         deep_get(cmtlib.cmtconfig, DictPath("Ansible#forks"), 10)
     ansible_user = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_user"))
-    if ansible_user is None or len(ansible_user) == 0:
+    if ansible_user is None or not ansible_user:
         ansible_user = getuser()
     ansible_configuration["ansible_user"] = ansible_user
     ansible_password = deep_get(cmtlib.cmtconfig, DictPath("Ansible#ansible_password"))

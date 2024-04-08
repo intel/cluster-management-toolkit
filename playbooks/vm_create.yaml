@@ -1,0 +1,22 @@
+- hosts: "selection"
+  name: "Create a Virtual Machine instance file"
+  vars:
+    metadata:
+      description: "Create a Virtual Machine instance file"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+      summary:
+        "Created files":
+          - description: "/var/lib/libvirt/images/{{ item.0 }}.qcow2"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Convert the image to a qcow2"
+      ansible.builtin.shell: |
+        qemu-img create -f qcow2 -F qcow2 -o backing_file=/var/lib/libvirt/images/{{ base_image }}.qcow2 /var/lib/libvirt/images/{{ item.0 }}.qcow2
+      become: true
+      become_user: "root"
+      loop: "{{ instances }}"

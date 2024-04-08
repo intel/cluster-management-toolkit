@@ -20,10 +20,12 @@ import sys
 from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
 from ansithemeprint import ANSIThemeStr, ansithemeprint
-from cmttypes import deep_get, deep_get_with_fallback, DictPath
+from cmttypes import deep_get, deep_get_with_fallback, DictPath, SecurityChecks
 from cmttypes import FilePath, SecurityPolicy, ProgrammingError, LogLevel
-from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
+from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR, VERSION_CACHE_DIR
+from cmtpaths import KUBE_CONFIG_FILE
 import cmtio
+from cmtio_yaml import secure_read_yaml
 
 import kubernetes_helper
 
@@ -1204,3 +1206,71 @@ def identify_distro(**kwargs: Any) -> str:
         distro = "suse"
 
     return distro
+
+
+def get_latest_kubernetes_upstream_version() -> str:
+    """
+    Fetch the upstream version for Kubernetes
+
+        Returns:
+            (str): The latest upstream Kubernetes version;
+                   or an empty string if the version could not be determined
+    """
+    # We are OK with the file not existing
+    security_checks = [
+        SecurityChecks.PARENT_RESOLVES_TO_SELF,
+        SecurityChecks.OWNER_IN_ALLOWLIST,
+        SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
+        SecurityChecks.PERMISSIONS,
+        SecurityChecks.PARENT_PERMISSIONS,
+        SecurityChecks.IS_FILE,
+    ]
+
+    kubernetes_upstream_version: str = ""
+
+    try:
+        version_cache = secure_read_yaml(VERSION_CACHE_DIR.joinpath("kubernetes_current.yaml"),
+                                         checks=security_checks)
+    except FileNotFoundError:
+        version_cache = None
+
+    if version_cache is not None:
+        if (schedules := deep_get(version_cache, DictPath("schedules"), [])):
+            if (previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])):
+                kubernetes_upstream_version = \
+                    deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
+            else:
+                tmp = deep_get(schedules[0], DictPath("release"), "")
+                if tmp is not None and str(tmp):
+                    tmp = str(tmp)
+                    if len(tmp.split(".")) < 3:
+                        tmp = f"{tmp}.0"
+                    kubernetes_upstream_version = tmp
+
+    return kubernetes_upstream_version
+
+
+def get_cluster_name() -> Optional[str]:
+    """
+    Return the name of the cluster
+
+        Returns:
+            (str): The name of the cluster
+    """
+    try:
+        d1 = secure_read_yaml(KUBE_CONFIG_FILE)
+    except FileNotFoundError:
+        return None
+
+    current_context = d1.get("current-context", None)
+    if current_context is None:
+        return None
+
+    cluster_name = None
+
+    for context in d1.get("contexts", []):
+        if context.get("name", "") == current_context:
+            cluster_name = context["context"].get("cluster", None)
+            break
+
+    return cluster_name

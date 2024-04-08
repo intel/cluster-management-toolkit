@@ -70,6 +70,7 @@ test_lib_symlinks = \
 	cmtpaths.py \
 	cmttypes.py \
 	cmtvalidators.py \
+	cluster_actions.py \
 	cni_data.py \
 	commandparser.py \
 	curses_helper.py \

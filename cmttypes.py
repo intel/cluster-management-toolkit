@@ -31,6 +31,15 @@ class FilePath(str):
     def __init__(self, path: Union["FilePath", str, Path, PurePath]) -> None:
         self.path = str(path)
 
+    def basename(self) -> str:
+        """
+        Returns the filename part of the FilePath.
+
+            Returns:
+                (str): The filename path of the FilePath.
+        """
+        return os.path.basename(self.path)
+
     def joinpath(self, *paths: Any) -> "FilePath":
         """
         Perform a path join on a FilePath

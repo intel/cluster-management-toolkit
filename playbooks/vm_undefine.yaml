@@ -1,0 +1,17 @@
+- hosts: "selection"
+  name: "Undefine Virtual Machines"
+  vars:
+    metadata:
+      description: "Undefine Virtual Machines"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Undefine the VMs"
+      ansible.builtin.shell: |
+        virsh --connect qemu:///system undefine {{ item.0 }} || /bin/true
+      loop: "{{ instances }}"

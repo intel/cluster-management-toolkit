@@ -1,0 +1,21 @@
+- hosts: "selection"
+  name: "Purge Virtual Machine images"
+  vars:
+    metadata:
+      description: "Purge Virtual Machine images"
+      playbook_types:
+        - "internal"
+      category: "Setup"
+  gather_subset:
+  - "!min"
+  - "!all"
+  - "user_dir"
+  tasks:
+    - name: "Delete the VM images"
+      ansible.builtin.shell: |
+        rm -f /var/lib/libvirt/images/{{ item.0 }}.qcow2
+        rm -f /var/lib/libvirt/images/meta-data.{{ item.0 }}
+        rm -f /var/lib/libvirt/images/user-data.{{ item.0 }}
+      loop: "{{ instances }}"
+      become: true
+      become_user: "root"
