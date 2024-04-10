@@ -58,6 +58,11 @@ vm_create_template_playbooks = [
     ANSIBLE_PLAYBOOK_DIR.joinpath("vm_template_instantiate.yaml"),
 ]
 
+# Commit template changes to the backing image.
+vm_commit_template_playbooks = [
+    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_template_commit.yaml"),
+]
+
 # For now we require the host to have the requisite packages to create VMs installed already,
 # and for the ansible user to be a member of libvirt and kvm.
 vm_create_playbooks = [
@@ -332,7 +337,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    global add_playbooks  # pylint: disable=global-variable
+    global setup_playbooks  # pylint: disable=global-variable
 
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
@@ -343,11 +348,11 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "docker-shim":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_docker.io.yaml")]
+        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_docker.io.yaml")]
     elif cri == "containerd":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
+        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
+        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
 
     playbooks = populate_playbooks_from_paths(setup_playbooks)
     ansible_print_action_summary(playbooks)
@@ -447,6 +452,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     """
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     os_image: FilePath = deep_get(kwargs, DictPath("os_image"))
+    os_variant: str = deep_get(kwargs, DictPath("os_variant"))
     template_name: str = deep_get(kwargs, DictPath("template_name"))
     template_balloon_size: str = deep_get(kwargs, DictPath("template_balloon_size"))
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
@@ -460,6 +466,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
         **extra_values,
         "base_image": os_image,
         "base_image_name": os_image.basename(),
+        "os_variant": os_variant,
         "template_name": template_name,
         "template_balloon_size": template_balloon_size,
         "instances": hosts,
@@ -473,16 +480,23 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
 
     if not retval:
         # We've got a running VM to turn into a template;
-        # we need to prepare it as a Kubernetes node now.
+        # we need to set it up as a Kubernetes node now.
         # Every single step except adding it to the cluster.
-        retval = prepare_nodes(hostnames, extra_values=extra_values)
-    if not retval:
         retval = setup_nodes(hostnames, kubernetes_helper=kh, extra_values=extra_values)
 
     if not retval:
-        # OK, the template is prepared and all necessary packages
+        # The template image is prepared and all necessary packages
         # and configuration should be installed on it. At this point we need to shut down the VM.
         playbooks = populate_playbooks_from_paths(vm_destroy_template_playbooks)
+        ansible_print_action_summary(playbooks)
+        print()
+        retval = run_playbooks(playbooks=playbooks, hosts=[vmhost],
+                               extra_values=extra_values, verbose=verbose)
+
+    if not retval:
+        # The template image is no longer running as a VM.
+        # Time to commit the changes to the backing mimage.
+        playbooks = populate_playbooks_from_paths(vm_commit_template_playbooks)
         ansible_print_action_summary(playbooks)
         print()
         retval = run_playbooks(playbooks=playbooks, hosts=[vmhost],
@@ -500,13 +514,15 @@ def create_vm_hosts(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: An
             hosts ([(str, str, str)]): The hostname, IP-address, and MAC-address of the hosts
             **kwargs (dict[str, Any]): Keyword arguments
                 os_image (FilePath): The local path to the OS image to use
+                os_variant (str): The OS variant for the OS image
                 template_name (str): The name of the template image
                 extra_values (dict): Extra valeus to pass to Ansible
                 verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    template_name: str = deep_get(kwargs, DictPath("template_name"))
+    os_image: FilePath = deep_get(kwargs, DictPath("os_image"))
+    os_variant: str = deep_get(kwargs, DictPath("os_variant"))
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
@@ -516,7 +532,8 @@ def create_vm_hosts(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: An
 
     extra_values = {
         **extra_values,
-        "base_image": template_name,
+        "base_image_name": os_image.basename(),
+        "os_variant": os_variant,
         "instances": hosts,
     }
 

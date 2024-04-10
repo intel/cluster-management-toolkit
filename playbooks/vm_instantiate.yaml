@@ -52,7 +52,7 @@
             --name {{ item.0 }} \
             --ram 4096 \
             --vcpus=4 \
-            --os-variant detect=on \
+            --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
             --network network=default,mac={{ item.2 }} \
@@ -63,7 +63,7 @@
             --name {{ item.0 }} \
             --ram 4096 \
             --vcpus=4 \
-            --os-variant detect=on \
+            --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
             --network network=default,mac={{ item.2 }} \
@@ -78,13 +78,13 @@
     - name: "Wait a reasonable time for the VMs to start"
       ansible.builtin.shell: |
         count=0
-        while /bin/true; do
-            ping -c 1 {{ item.0 }} > /dev/null && break
+        until timeout 0.2 ping -c 1 {{ item.0 }} > /dev/null; do
             count=$(( count + 1 ))
-            if [ count -gt 60 ]; then
+            if [ ${count} -gt 60 ]; then
                 printf -- "VMs failed to start within 60 seconds; giving up.\n"
                 exit 1
             fi
             sleep 1
         done
+        sleep 1
       loop: "{{ instances }}"

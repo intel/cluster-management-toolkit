@@ -16,7 +16,7 @@
   tasks:
     - name: "Convert the image to a qcow2"
       ansible.builtin.shell: |
-        qemu-img create -f qcow2 -F qcow2 -o backing_file=/var/lib/libvirt/images/{{ base_image }}.qcow2 /var/lib/libvirt/images/{{ item.0 }}.qcow2
+        qemu-img create -f qcow2 -F qcow2 -o backing_file=/var/lib/libvirt/images/{{ base_image_name }} /var/lib/libvirt/images/{{ item.0 }}.qcow2
       become: true
       become_user: "root"
       loop: "{{ instances }}"

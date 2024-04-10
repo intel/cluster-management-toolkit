@@ -15,8 +15,15 @@
   - "!all"
   - "user_dir"
   tasks:
-    - name: "Delete and undefine the VM instances"
+    - name: "Shutdown the VM instances"
       ansible.builtin.shell: |
-        virsh --connect qemu:///system shutdown {{ item.0 }} || /bin/true
-        virsh --connect qemu:///system undefine {{ item.0 }} || /bin/true
+        virsh --connect qemu:///system shutdown {{ item.0 }}
+      loop: "{{ instances }}"
+    - name: "Wait for the VM instance shutdowns to complete and undefine the VM instances"
+      ansible.builtin.shell: |
+        # Wait for shutdown to complete
+        until virsh --connect qemu:///system domstate {{ item.0 }} | grep shut; do
+            sleep 1
+        done
+        virsh --connect qemu:///system undefine {{ item.0 }}
       loop: "{{ instances }}"

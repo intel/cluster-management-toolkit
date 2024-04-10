@@ -11,4 +11,5 @@ users:
 runcmd:
   - echo "AllowUsers {{ ansible_user }}" >> /etc/ssh/sshd_config
   - restart ssh
+  - systemctl disable snapd
   - printf -- "uninitialized\n" > /etc/machine-id

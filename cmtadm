@@ -4448,6 +4448,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 macaddress_template = ""
             os_image: FilePath = FilePath(deep_get(data, DictPath("osImage"), ""))
             os_image = FilePath(substitute_string(os_image, {"{HOME}": HOMEDIR}))
+            os_variant: str = deep_get(data, DictPath("osVariant"), "")
             template_balloon_size: str = \
                 FilePath(deep_get(data, DictPath("templateBalloonSize"), "5G"))
             template_name: str = deep_get(data, DictPath("vmTemplateImageName"))
@@ -4542,6 +4543,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 retval = prepare_vm_template(vmhost,
                                              [(template_name, template_ip, template_mac)],
                                              os_image=os_image,
+                                             os_variant=os_variant,
                                              template_name=template_name,
                                              template_balloon_size=template_balloon_size,
                                              extra_values=extra_values,
@@ -4552,7 +4554,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                                                  "; aborting.", "default")], stderr=True)
                     sys.exit(retval)
                 retval = create_vm_hosts(vmhost, nodes,
-                                         template_name=template_name,
+                                         os_image=os_image,
+                                         os_variant=os_variant,
                                          extra_values=extra_values, verbose=verbose)
                 if retval:
                     ansithemeprint([ANSIThemeStr("Error", "error"),
