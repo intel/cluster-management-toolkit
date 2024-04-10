@@ -120,6 +120,7 @@ def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:
     return controlplanes
 
 
+# pylint: disable-next=too-many-locals
 def get_api_server_package_version(**kwargs: Any) -> str:
     """
     Get the package version for kubeadm/rke2 from the API-server.
@@ -134,7 +135,7 @@ def get_api_server_package_version(**kwargs: Any) -> str:
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
 
-    control_plane_ip, control_plane_port, control_plane_path = kh.get_control_plane_address()
+    control_plane_ip, _control_plane_port, _control_plane_path = kh.get_control_plane_address()
 
     # If this is a kubeadm cluster we need the package version for kubeadm;
     # if it's an RKE2 cluster we try to deduce the channel from the control plane
@@ -337,24 +338,21 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    global setup_playbooks  # pylint: disable=global-variable
-
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
-    cri: str = deep_get(kwargs, DictPath("cr"))
+    cri: str = deep_get(kwargs, DictPath("cri"))
 
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
-    if cri == "docker-shim":
-        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_docker.io.yaml")]
-    elif cri == "containerd":
-        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
+    if cri == "containerd":
+        setup_playbooks_with_cri = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        setup_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
+        setup_playbooks_with_cri = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
+    setup_playbooks_with_cri += setup_playbooks
 
-    playbooks = populate_playbooks_from_paths(setup_playbooks)
+    playbooks = populate_playbooks_from_paths(setup_playbooks_with_cri)
     ansible_print_action_summary(playbooks)
     print()
 
@@ -371,6 +369,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
                          extra_values=extra_values, verbose=verbose)
 
 
+# pylint: disable-next=too-many-locals
 def join_nodes(hosts: List[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames join them as worker nodes to the cluster
@@ -456,6 +455,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     template_name: str = deep_get(kwargs, DictPath("template_name"))
     template_balloon_size: str = deep_get(kwargs, DictPath("template_balloon_size"))
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
+    cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     playbooks = populate_playbooks_from_paths(vm_create_template_playbooks)
@@ -482,7 +482,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
         # We've got a running VM to turn into a template;
         # we need to set it up as a Kubernetes node now.
         # Every single step except adding it to the cluster.
-        retval = setup_nodes(hostnames, kubernetes_helper=kh, extra_values=extra_values)
+        retval = setup_nodes(hostnames, kubernetes_helper=kh, extra_values=extra_values, cri=cri)
 
     if not retval:
         # The template image is prepared and all necessary packages

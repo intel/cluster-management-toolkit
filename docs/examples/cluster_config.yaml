@@ -1,4 +1,4 @@
-apiVersion: "v1alpha2"
+apiVersion: "v1alpha3"
 kind: "ClusterDeployment"
 
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
@@ -56,7 +56,7 @@ options:
 
 # Cluster-wide configuration and configuration for the control plane(s)
 cluster:
-  # control plane(s) for the cluster:
+  # Control plane(s) for the cluster:
   # Note: Currently only one control plane is supported
   # [mandatory]
   controlPlanes:
@@ -357,10 +357,39 @@ nodes:
   # Currently different Ansible groups are *not* processed in parallel.
   groups:
     # <group name1>:
-    # # A list of all nodes that belong to this group; leave empty
-    # # if only configuring a control plane at this time
+    #   # A list of all nodes that belong to this group; leave empty
+    #   # if only configuring a control plane at this time
     #   nodes:
     #   - "<node 1>"
+    #   # Set this to true if the nodes are virtualised; if so the nodes list should be empty or unset
+    #   # [optional; default: false]
+    #   # virtualise: true
+    #   # If the nodes in this group are virtual machines this is the host system for those VMs
+    #   # [optional]
+    #   # vmHost: "vmhost"
+    #
+    #   # Virtualised nodes names are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   # vmNameTemplate: "vmnode-<<<item.1>>>"
+    #   # Virtualised nodes IP-addresses are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   ipTemplate: "192.168.<<<item.0>>>.<<<item.1>>>"
+    #   # Virtualised nodes MAC-addresses are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   # (Note: for MAC-addresses the low- and high-byte are converted to hex).
+    #   macTemplate: "52:54:00:42:<<<item.0>>>:<<<item.1>>>"
+    #   # One or several ranges of hostnames/IP-addresses/MAC-addresses for the VM instances.
+    #   # ranges:
+    #   # - [122, [100, 101]]
+    #   # The Operating System image to use for the VMs in this group
+    #   # osImage: "{HOME}/iso/noble-server-cloudimg-amd64.img"
+    #   # The OS variant for this OS image. See the virt-install manual page for more info.
+    #   # If you don't mind suboptimal performance you can use detect=on.
+    #   osVariant: "ubuntu24.04"
+    #   # Each VM will be expanded beyond the size of the OS image to allow for updates, containers, etc.
+    #   # [optional; default: 5G]
+    #   # templateBalloonSize: "5G"
+    #   # The name of the template image used as the base when instantiating new VMs. You only need to change
+    #   # this value if you have multiple different VM groups.
+    #   # [optional; default: "template"]
+    #   # vmTemplateImageName: "template"
 
     #   # Group specific options
     #   options:

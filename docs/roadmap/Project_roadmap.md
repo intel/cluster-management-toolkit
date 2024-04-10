@@ -8,21 +8,19 @@ scare off first time contributors. It must be at least _theoretically possible_
 to distribute __CMT__ as a part of a Linux distribution
 (there's obviously no guarantee that any distro will distribute it).
 
+Note: the test coverage for `*.py` will drop whenever code
+is moved from `cmt`, `cmtadm`, `cmu`, and `cmtinv` to `*.py`, until
+tests have been added for the moved code.
+
 ## Q1 roadmap
 * _General_:
-    * [ ] Start writing release notes.
-    * [ ] tests: Achieve 30% test coverage for `*.py`.
+    * [x] First release.
+    * [x] OpenSSF Best Practice passing badge.
+    * [x] tests: Achieve 30% test coverage for `*.py`.
 * _cmtadm_:
-    * [ ] Support for virtualised nodes. It should be possible to create clusters
-      with a combination of virtualised and bare metal hosts. It should also be
-      possible to clusters that only have virtualised nodes. There should be three
-      base types of VMs:
-        * [ ] DHCP/routing (mandatory on hosts that run VMs; not part of the cluster. Minimal VM).
-        * [ ] Control plane (optional; the control plane can be bare metal).
-        * [ ] Node (optional; nodes can be bare metal).
-      Node groups can then be used to specify different VM images in case
-      a heterogenous cluster is wanted.
-    * [ ] Every bare metal host that runs virtual machines will run a DHCP/routing VM.
+    * [x] Support for virtualised nodes. It should be possible to create clusters
+      with virtualised nodes.
+    * [x] DHCP for the virtualised nodes is handled by the libvirt default network.
 * _cmu_:
     * [x] The User Interface should allow for, and in most cases default to, asynchronous data updates.
     * [x] To accomodate for asynchronous updates we also need to figure out how to deal
@@ -46,8 +44,11 @@ to distribute __CMT__ as a part of a Linux distribution
     * [ ] Refactor libraries in a way that makes a __CMT__ release possible. This includes:
         * [ ] No circular dependencies.
         * [ ] No logging from libraries; raise custom exceptions that include extra exception data
-          (formatted exception messages), no use of sys.exit() from libraries.
+          (formatted exception messages), limit the use of sys.exit() from libraries.
     * [ ] tests: Achieve 45% test coverage for `*.py`.
+* _cmtadm_:
+    * [ ] Support for clusters with virtualised control planes.
+    * [ ] Support for having multiple different VM-hosts in the same cluster.
 * _cmu_:
     * [ ] UI refactoring: data viewers (the logpad in genericinfoloop as well as
       the containerinfoloop log viewer) should be merged. Having two implementation
@@ -55,12 +56,10 @@ to distribute __CMT__ as a part of a Linux distribution
 
 ## Q3 roadmap
 * _General_:
-    * [ ] First release.
     * [ ] Distribute as (Note: requires legal process):
         * [ ] Source code.
         * [ ] Debian package.
         * [ ] Possibly via PIP?
-    * [ ] By this point we should be able to get the OpenSSF Best Practice passing badge.
     * [ ] tests: Achieve 55% test coverage for `*.py`.
 * _cmu_:
     * [ ] UI refactoring: Use the generic input handler from curses helper for all input.

@@ -4547,7 +4547,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                                              template_name=template_name,
                                              template_balloon_size=template_balloon_size,
                                              extra_values=extra_values,
-                                             kubernetes_helper=kh, verbose=verbose)
+                                             kubernetes_helper=kh, cri=cri, verbose=verbose)
                 if retval:
                     ansithemeprint([ANSIThemeStr("Error", "error"),
                                     ANSIThemeStr(": failed to prepare a VM image template"
