@@ -25,6 +25,8 @@
         dest: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
         src: "templates/vmimages/meta-data.yaml"
         mode: "0640"
+        owner: "{{ ansible_user }}"
+        group: "libvirt-qemu"
       loop: "{{ instances }}"
       become: true
       become_user: "root"
@@ -33,19 +35,20 @@
         dest: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
         src: "templates/vmimages/user-data.yaml"
         mode: "0640"
+        owner: "{{ ansible_user }}"
+        group: "libvirt-qemu"
       loop: "{{ instances }}"
       become: true
       become_user: "root"
-    - name: "Start the default network"
+    - name: "Start the cmt network"
       ansible.builtin.shell: |
-        virsh --connect qemu:///system net-destroy default
-        virsh --connect qemu:///system net-start default
-      failed_when: false
+        virsh --connect qemu:///system net-destroy cmt
+        virsh --connect qemu:///system net-start cmt
       changed_when: true
     - name: "Create DHCP entries for all instances"
       ansible.builtin.shell: |
-        echo virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
-        virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+        echo virsh --connect qemu:///system net-update cmt add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+        virsh --connect qemu:///system net-update cmt add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
       loop: "{{ instances }}"
       changed_when: true
     - name: "Instantiate the VMs"
@@ -59,7 +62,7 @@
             --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
-            --network network=default,mac={{ item.2 }} \
+            --network network=cmt,mac={{ item.2 }} \
             --noautoconsole
         virt-install --connect qemu:///system \
             --cloud-init meta-data=/var/lib/libvirt/images/meta-data.{{ item.0 }},user-data=/var/lib/libvirt/images/user-data.{{ item.0 }} \
@@ -70,7 +73,7 @@
             --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
-            --network network=default,mac={{ item.2 }} \
+            --network network=cmt,mac={{ item.2 }} \
             --noautoconsole
       loop: "{{ instances }}"
       changed_when: true

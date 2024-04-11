@@ -4323,6 +4323,14 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     if state is None or state in ("<none>", "preparing", "torn_down"):
         # First prepare all hosts
         prepare_installation(prepare_options, prepare_args)
+    elif state not in ("adding_nodes", "installed", "<done>", "setup_cni", "deploy_workloads",
+                       "prepared"):
+        ansithemeprint([ANSIThemeStr("\nError", "error"),
+                        ANSIThemeStr(": Invalid installation state ", "default"),
+                        ANSIThemeStr(f"{state}", "phase"),
+                        ANSIThemeStr("; aborting.", "default")],
+                       stderr=True)
+        sys.exit(errno.EINVAL)
 
     installation_info = get_installation_info()
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))

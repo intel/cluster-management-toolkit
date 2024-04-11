@@ -391,9 +391,19 @@ nodes:
     #   macTemplate: "52:54:00:42:<<<item.0>>>:<<<item.1>>>"
     #
     #   # One or several ranges of hostnames/IP-addresses/MAC-addresses for the VM instances.
+    #   # cmt creates its own network called cmt, which by default reserves 192.168.124.0/22,
+    #   # with 192.168.124.2-39 being dynamic DHCP-addresses. Thus the available ranges
+    #   # here are:
+    #   # - [124, [40, 254]]
+    #   # - [125, [1, 254]]
+    #   # - [126, [1, 254]]
+    #   # - [127, [1, 254]]
+    #   # In total this allows for 973 VMs.  If this isn't enough, and if CMT seems to scale
+    #   # past that, feel free to file a feature request and we'll be happy to
+    #   # make the maximum range larger.  The example below just creates 2 VM nodes.
     #   # [mandatory]
     #   # ranges:
-    #   # - [122, [100, 101]]
+    #   # - [124, [40, 42]]
     #
     #   # The Operating System image to use for the VMs in this group.
     #   # osImage: "{HOME}/iso/noble-server-cloudimg-amd64.img"

@@ -25,6 +25,8 @@
         dest: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
         src: "templates/vmimages/meta-data.yaml"
         mode: "0640"
+        owner: "{{ ansible_user }}"
+        group: "libvirt-qemu"
       loop: "{{ instances }}"
       become: true
       become_user: "root"
@@ -33,19 +35,34 @@
         dest: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
         src: "templates/vmimages/user-data.template.yaml"
         mode: "0640"
+        owner: "{{ ansible_user }}"
+        group: "libvirt-qemu"
       loop: "{{ instances }}"
       become: true
       become_user: "root"
-    - name: "Start the default network"
+    - name: "Creating temporary directory for net-cmt.xml"
+      ansible.builtin.tempfile:
+        state: "directory"
+        suffix: "temp"
+      register: "tempdir"
+    - name: "Copy net-cmt.yaml to the vmhost"
+      ansible.builtin.copy:
+        src: "templates/vmimages/net-cmt.xml"
+        dest: "{{ tempdir.path }}"
+        mode: "0640"
+    - name: "Create and start the cmt network"  # noqa risky-shell-pipe
       ansible.builtin.shell: |
-        virsh --connect qemu:///system net-destroy default
-        virsh --connect qemu:///system net-start default
-      failed_when: false
+        if ! $( virsh --connect qemu:///system net-list | grep cmt ); then
+            virsh --connect qemu:///system net-define {{ tempdir.path }}/net-cmt.xml
+            virsh --connect qemu:///system net-autostart cmt
+        fi
+        virsh --connect qemu:///system net-destroy cmt 2> /dev/null || /bin/true
+        virsh --connect qemu:///system net-start cmt
       changed_when: true
     - name: "Create DHCP entries for all instances"
       ansible.builtin.shell: |
-        echo virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
-        virsh --connect qemu:///system net-update default add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+        echo virsh --connect qemu:///system net-update cmt add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
+        virsh --connect qemu:///system net-update cmt add ip-dhcp-host "<host mac='{{ item.2 }}' name='{{ item.0 }}' ip='{{ item.1 }}'/>" --live --config || /bin/true
       loop: "{{ instances }}"
       changed_when: true
     - name: "Instantiate the VMs"
@@ -59,7 +76,7 @@
             --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
-            --network network=default,mac={{ item.2 }} \
+            --network network=cmt,mac={{ item.2 }} \
             --noautoconsole
         virt-install --connect qemu:///system \
             --cloud-init meta-data=/var/lib/libvirt/images/meta-data.{{ item.0 }},user-data=/var/lib/libvirt/images/user-data.{{ item.0 }} \
@@ -70,7 +87,7 @@
             --os-variant {{ os_variant }} \
             --disk path=/var/lib/libvirt/images/{{ item.0 }}.qcow2,format=qcow2 \
             --import \
-            --network network=default,mac={{ item.2 }} \
+            --network network=cmt,mac={{ item.2 }} \
             --noautoconsole
       loop: "{{ instances }}"
       changed_when: true
