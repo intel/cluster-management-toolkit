@@ -95,15 +95,17 @@ cluster:
         - none
         # This will be auto-populated from the cluster settings
         cluster-cidr: "{{ pod_network_cidr }}"
+
         # This will be auto-populated from the cluster settings
         container-runtime-endpoint: "{{ cri_socket }}"
+
         # disable is a comma-separated list of built-in features to disable;
         # unless you want to use rke2-canal as your CNI you should keep it here
         # if you make changes
         # [optional; default: "rke2-canal"]
         # disable: "rke2-canal"
-        disable: "rke2-canal"
-        disable-cloud-controller: true
+
+        # disable-cloud-controller: true
         #kube-apiserver-arg:
         # feature-gates is a comma-separated string
         # To Enable Dynamic Resource Allocations use the following:
@@ -358,36 +360,63 @@ nodes:
   groups:
     # <group name1>:
     #   # A list of all nodes that belong to this group; leave empty
-    #   # if only configuring a control plane at this time
+    #   # if only configuring a control plane at this time,
+    #   # or using virtualised nodes.
     #   nodes:
     #   - "<node 1>"
-    #   # Set this to true if the nodes are virtualised; if so the nodes list should be empty or unset
+    #
+    #   # Set this to true if the nodes are virtualised;
+    #   # if so the "nodes" should be empty or unset.
     #   # [optional; default: false]
-    #   # virtualise: true
-    #   # If the nodes in this group are virtual machines this is the host system for those VMs
-    #   # [optional]
+    #   # virtualise: false
+    #
+    #   # If the nodes in this group are virtual machines this is the host system for those VMs.
+    #   # [mandatory if virtualised nodes are used]
     #   # vmHost: "vmhost"
     #
-    #   # Virtualised nodes names are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
-    #   # vmNameTemplate: "vmnode-<<<item.1>>>"
-    #   # Virtualised nodes IP-addresses are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   # Virtualised nodes names are templated;
+    #   # item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   # [optional; default: "vmnode-<<<item.0>>>-<<<item.1>>>"]
+    #   # vmNameTemplate: "vmnode-<<<item.0>>>-<<<item.1>>>"
+    #
+    #   # Virtualised nodes IP-addresses are templated;
+    #   # item.0 is the high-byte of the range, item.1 is the low-byte.
+    #   # [optional; default: "192.168.<<<item.0>>>.<<<item.1>>>"]
     #   ipTemplate: "192.168.<<<item.0>>>.<<<item.1>>>"
-    #   # Virtualised nodes MAC-addresses are templated; item.0 is the high-byte of the range, item.1 is the low-byte.
+    #
+    #   # Virtualised nodes MAC-addresses are templated;
+    #   # item.0 is the high-byte of the range, item.1 is the low-byte.
     #   # (Note: for MAC-addresses the low- and high-byte are converted to hex).
+    #   # [optional; default: "52:54:00:42:<<<item.0>>>:<<<item.1>>>"]
     #   macTemplate: "52:54:00:42:<<<item.0>>>:<<<item.1>>>"
+    #
     #   # One or several ranges of hostnames/IP-addresses/MAC-addresses for the VM instances.
+    #   # [mandatory]
     #   # ranges:
     #   # - [122, [100, 101]]
-    #   # The Operating System image to use for the VMs in this group
+    #
+    #   # The Operating System image to use for the VMs in this group.
     #   # osImage: "{HOME}/iso/noble-server-cloudimg-amd64.img"
+    #
     #   # The OS variant for this OS image. See the virt-install manual page for more info.
     #   # If you don't mind suboptimal performance you can use detect=on.
-    #   osVariant: "ubuntu24.04"
-    #   # Each VM will be expanded beyond the size of the OS image to allow for updates, containers, etc.
+    #   # osVariant: "ubuntu24.04"
+    #
+    #   # Each VM will be expanded beyond the size of the OS image
+    #   # to allow for updates, containers, etc.
     #   # [optional; default: 5G]
     #   # templateBalloonSize: "5G"
-    #   # The name of the template image used as the base when instantiating new VMs. You only need to change
-    #   # this value if you have multiple different VM groups.
+    #
+    #   # How many vCPU cores should each VM be assigned?
+    #   # [optional; default: 4]
+    #   # vCPUs: 4
+    #
+    #   # How many MB of RAM should each VM be assigned?
+    #   # [optional; default: 4096]
+    #   # vmRAM: 4096
+    #
+    #   # The name of the template image used as the base when instantiating new VMs.
+    #   # You only need to change this value if you have multiple different VM groups.
     #   # [optional; default: "template"]
     #   # vmTemplateImageName: "template"
 

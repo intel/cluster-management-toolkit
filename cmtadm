@@ -4432,7 +4432,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 continue
             tmp_nodes: List[str] = deep_get(data, DictPath("nodes"), [])
             hosts = []
-            hostname_template: str = deep_get(data, DictPath("vmNameTemplate"), "")
+            hostname_template: str = deep_get(data, DictPath("vmNameTemplate"),
+                                                             "vmnode-<<<item.0>>>-<<<item.1>>>")
             ranges: List = deep_get(data, DictPath("ranges"), [])
             virtualise: bool = deep_get(data, DictPath("virtualise"), False)
             vmhost: str = deep_get(data, DictPath("vmHost"), "")
@@ -4449,9 +4450,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             os_image: FilePath = FilePath(deep_get(data, DictPath("osImage"), ""))
             os_image = FilePath(substitute_string(os_image, {"{HOME}": HOMEDIR}))
             os_variant: str = deep_get(data, DictPath("osVariant"), "")
+            vcpus: int = deep_get(data, DictPath("vCPUs"), 4)
+            extra_values["vcpus"] = vcpus
+            vmram: int = deep_get(data, DictPath("vmRAM"), 4096)
+            extra_values["vmram"] = vmram
             template_balloon_size: str = \
                 FilePath(deep_get(data, DictPath("templateBalloonSize"), "5G"))
-            template_name: str = deep_get(data, DictPath("vmTemplateImageName"))
+            template_name: str = deep_get(data, DictPath("vmTemplateImageName"), "template")
             template_mac: str = ""
             template_ip: str = ""
             nodes: List[Tuple[str, str, str]] = []

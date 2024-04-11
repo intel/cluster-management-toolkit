@@ -10,9 +10,9 @@
         "Created files":
           - description: "/var/lib/libvirt/images/{{ item.0 }}.qcow2"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "user_dir"
+    - "!min"
+    - "!all"
+    - "user_dir"
   tasks:
     - name: "Convert the image to a qcow2"
       ansible.builtin.shell: |
@@ -20,3 +20,4 @@
       become: true
       become_user: "root"
       loop: "{{ instances }}"
+      changed_when: true

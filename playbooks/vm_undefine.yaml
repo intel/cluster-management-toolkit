@@ -7,11 +7,12 @@
         - "internal"
       category: "Setup"
   gather_subset:
-  - "!min"
-  - "!all"
-  - "user_dir"
+    - "!min"
+    - "!all"
+    - "user_dir"
   tasks:
-    - name: "Undefine the VMs"
+    - name: "Undefine VMs"
       ansible.builtin.shell: |
-        virsh --connect qemu:///system undefine {{ item.0 }} || /bin/true
+        virsh --connect qemu:///system undefine {{ item.0 }}
       loop: "{{ instances }}"
+      changed_when: true
