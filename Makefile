@@ -189,6 +189,21 @@ coverage-cluster: setup_tests
 	$$cmd html --precision 1 ;\
 	$$cmd json
 
+unhack_sources:
+	@mkdir -p tests/modified_repo ;\
+	git archive main | tar -x -C tests/modified_repo ;\
+	(cd tests/modified_repo ;\
+	 mv cmt cmt.py ;\
+	 mv cmtadm cmtadm.py ;\
+	 mv cmt-install cmt-install.py ;\
+	 mv cmtinv cmtinv.py ;\
+	 mv cmu cmu.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3,;/^    grep '.*/d;/^    version=\\$$.*/d;/^    \[ \\$$.*/d;/^    exec \/usr\/bin.*/d" cmt.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3,;/^    grep '.*/d;/^    version=\\$$.*/d;/^    \[ \\$$.*/d;/^    exec \/usr\/bin.*/d" cmtadm.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3,;/^    grep '.*/d;/^    version=\\$$.*/d;/^    \[ \\$$.*/d;/^    exec \/usr\/bin.*/d" cmt-install.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3,;/^    grep '.*/d;/^    version=\\$$.*/d;/^    \[ \\$$.*/d;/^    exec \/usr\/bin.*/d" cmtinv.py ;\
+	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3,;/^    grep '.*/d;/^    version=\\$$.*/d;/^    \[ \\$$.*/d;/^    exec \/usr\/bin.*/d" cmu.py)
+
 # Semgrep gets confused by the horrible python hacks in cmt-install/cmt/cmtadm/cmtinv/cmu,
 # and also doesn't understand that python executables aren't necessarily suffixed with .py;
 # export the repository, rename the files, remove the hack, and run semgrep on that checkout.
@@ -197,7 +212,7 @@ coverage-cluster: setup_tests
 # --exclude-rule generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980
 # is necessary since it triggers on every single mention of the word secret
 # (which occurs a lot in various Kubernetes API names).
-semgrep:
+semgrep: unhack_sources
 	@cmd=semgrep ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
@@ -206,19 +221,7 @@ semgrep:
 	printf -- "\n\nRunning semgrep to check for common security issues in Python code\n" ;\
 	printf -- "Note: if this is taking a very long time you might be behind a proxy;\n" ;\
 	printf -- "if that's the case you need to set the environment variable https_proxy\n\n" ;\
-	mkdir -p tests/modified_repo ;\
-	git archive main | tar -x -C tests/modified_repo ;\
 	(cd tests/modified_repo ;\
-	 mv cmt cmt.py ;\
-	 mv cmtadm cmtadm.py ;\
-	 mv cmt-install cmt-install.py ;\
-	 mv cmtinv cmtinv.py ;\
-	 mv cmu cmu.py ;\
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt.py ;\
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtadm.py ;\
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmt-install.py ;\
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmtinv.py ;\
-	 sed -i -e "s/^''''eval.*$$//;s,#! /bin/sh,#! /usr/bin/env python3," cmu.py ;\
 	 $$cmd scan --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980" --timeout=0 --no-git-ignore)
 
 bandit:
