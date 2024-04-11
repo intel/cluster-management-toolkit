@@ -62,10 +62,10 @@ from ansible_helper import populate_playbooks_from_paths
 from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
 
 import cmtlib
-from cmtlib import chunk_list, identify_distro, read_cmtconfig
+from cmtlib import chunk_list, identify_distro, read_cmtconfig, get_cluster_name
 from cmtio import execute_command, secure_read_string
 from cmtio_yaml import secure_read_yaml
-from networkio import scan_and_add_ssh_keys, get_kubernetes_version, get_cluster_name
+from networkio import scan_and_add_ssh_keys, get_kubernetes_version
 
 import kubernetes_helper
 from kubernetes_helper import list_contexts, get_node_roles, get_node_status, kubectl_get_version
@@ -1055,9 +1055,6 @@ cri_data: Dict = {
     "cri-o": {
         "socket": "unix:///run/crio/crio.sock",
     },
-    "docker-shim": {
-        "socket": "unix:///run/dockershim.sock",
-    }
 }
 
 
@@ -1097,7 +1094,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         elif opt == "--forks":
             ansible_configuration["ansible_forks"] = optarg
         elif opt == "--cri":
-            if optarg in ("docker-shim", "containerd", "cri-o"):
+            if optarg in ("containerd", "cri-o"):
                 cri = optarg
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -1453,36 +1450,11 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         version_minor = match_tmp[2]
 
     if cri is None:
-        if int(version_minor) < 24 and k8s_distro != "rke2":
-            cri = "docker-shim"
-        else:
-            cri = "containerd"
-    else:
-        if cri == "docker-shim":
-            if k8s_distro == "rke2":
-                ansithemeprint([ANSIThemeStr("Error", "error"),
-                                ANSIThemeStr(": CRI cannot be “", "default"),
-                                ANSIThemeStr("docker-shim", "argument"),
-                                ANSIThemeStr("“ for ", "default"),
-                                ANSIThemeStr("RKE2", "argument"),
-                                ANSIThemeStr("; aborting.", "default")], stderr=True)
-                sys.exit(errno.ENOTSUP)
-            elif int(version_minor) >= 24:
-                ansithemeprint([ANSIThemeStr("Error", "error"),
-                                ANSIThemeStr(": CRI cannot be “", "default"),
-                                ANSIThemeStr("docker-shim", "argument"),
-                                ANSIThemeStr("“ for ", "default"),
-                                ANSIThemeStr("Kubernetes ", "programname"),
-                                ANSIThemeStr(">= ", "default"),
-                                ANSIThemeStr("1.24", "version"),
-                                ANSIThemeStr("; aborting.", "default")], stderr=True)
-                sys.exit(errno.ENOTSUP)
+        cri = "containerd"
 
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
-    if cri == "docker-shim":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_docker.io.yaml")]
-    elif cri == "containerd":
+    if cri == "containerd":
         add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
     elif cri == "cri-o":
         add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
@@ -3097,31 +3069,11 @@ CMT_COMMANDLINE = {
                 "extended_description": [
                     [ANSIThemeStr("Valid options for CRI", "description")],
                     [ANSIThemeStr("(Container Runtime Interface) are:", "description")],
-                    [ANSIThemeStr("docker-shim", "argument"),
-                     ANSIThemeStr(" (", "description"),
-                     ANSIThemeStr("Kubernetes", "programname"),
-                     ANSIThemeStr(" < ", "description"),
-                     ANSIThemeStr("1.24", "version"),
-                     ANSIThemeStr(")", "description"),
-                     ANSIThemeStr(",", "separator")],
                     [ANSIThemeStr("containerd", "argument"),
                      ANSIThemeStr(", ", "separator"),
                      ANSIThemeStr("cri-o", "argument")],
-                    [ANSIThemeStr("Default CRI:", "description")],
-                    [ANSIThemeStr("docker-shim", "argument"),
-                     ANSIThemeStr(" (", "description"),
-                     ANSIThemeStr("Kubernetes", "programname"),
-                     ANSIThemeStr(" < ", "description"),
-                     ANSIThemeStr("1.24", "version"),
-                     ANSIThemeStr(")", "description"),
-                     ANSIThemeStr(", ", "separator")],
-                    [ANSIThemeStr("containerd", "argument"),
-                     ANSIThemeStr(" (", "description"),
-                     ANSIThemeStr("Kubernetes", "programname"),
-                     ANSIThemeStr(" >= ", "description"),
-                     ANSIThemeStr("1.24", "version"),
-                     ANSIThemeStr(")", "description"),
-                     ANSIThemeStr(", ", "separator")],
+                    [ANSIThemeStr("Default CRI: ", "description"),
+                     ANSIThemeStr("containerd", "argument")],
                     [ANSIThemeStr("Note", "note"),
                      ANSIThemeStr(": ", "description"),
                      ANSIThemeStr("Kubernetes", "programname"),
@@ -3135,12 +3087,13 @@ CMT_COMMANDLINE = {
                      ANSIThemeStr("cri-o", "programname"),
                      ANSIThemeStr(".", "description")],
                     [ANSIThemeStr("If you intend to use DRA you should use ", "description"),
-                     ANSIThemeStr("cri-o", "programname")],
+                     ANSIThemeStr("cri-o", "programname"),
+                     ANSIThemeStr(".", "description")],
                 ],
                 "requires_arg": True,
                 "validation": {
                     "validator": "allowlist",
-                    "allowlist": ["containerd", "cri-o", "docker-shim"],
+                    "allowlist": ["containerd", "cri-o"],
                 },
             },
             "--forks": {

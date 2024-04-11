@@ -32,9 +32,6 @@ cri_data: Dict = {
     "cri-o": {
         "socket": "unix:///run/crio/crio.sock",
     },
-    "docker-shim": {
-        "socket": "unix:///run/dockershim.sock",
-    }
 }
 
 prepare_playbooks = [
