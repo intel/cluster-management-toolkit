@@ -9,7 +9,6 @@ Get information
 """
 
 import base64
-import sys
 from typing import Any, Dict, List, Tuple, Type
 
 import cmtlib
@@ -540,17 +539,17 @@ def get_promrules_info(**kwargs: Any) -> List[Type]:
             alert = deep_get(rule, DictPath("alert"), "")
             record = deep_get(rule, DictPath("record"), "")
             if alert and record:
-                sys.exit("We need a better way to handle PrometheusRule; "
-                         "this one has both an alert and a record")
-            elif alert:
+                # This is an invalid entry; just ignore it
+                continue
+            if alert:
                 rtype = "Alert"
                 alertrecord = alert
             elif record:
                 rtype = "Record"
                 alertrecord = record
             else:
-                sys.exit("We need a better way to handle PrometheusRule; "
-                         "this one has neither alert nor record")
+                # This is an invalid entry; just ignore it
+                continue
             _extra_data = {
                 "name": alertrecord,
                 "group": name,
@@ -573,7 +572,7 @@ def get_promrules_info(**kwargs: Any) -> List[Type]:
 
 def get_rq_item_info(**kwargs: Any) -> List[Type]:
     """
-    Infogetter for Prometheus Rules
+    Infogetter for Resource Quotas
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments

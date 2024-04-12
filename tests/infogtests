@@ -164,6 +164,367 @@ def test_format_controller(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_get_key_value_info(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = infogetters.get_key_value_info
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                {
+                    "auth-extra-groups":
+                        "c3lzdGVtOmJvb3RzdHJhcHBlcnM6a3ViZWFkbTpkZWZhdWx0LW5vZGUtdG9rZW4=",
+                    "token-id": "MzVpbGhv",
+                    "empty": "",
+                    "too-long": "42".ljust(10000),
+                    "base64-utf-8": "QSB0ZXN0IHN0cmluZyB3aXRoIFVURi3ikacK",
+                },
+                [
+                    {
+                        "key": "auth-extra-groups",
+                        "ref": {
+                            "key": "auth-extra-groups",
+                            "value": "system:bootstrappers:kubeadm:default-node-token",
+                            "decoded_value": "system:bootstrappers:kubeadm:default-node-token",
+                            "fully_decoded_value":
+                                "system:bootstrappers:kubeadm:default-node-token",
+                            "vtype": "string",
+                            "vlen": 47
+                        },
+                        "decoded_value": "system:bootstrappers:kubeadm:default-node-token",
+                        "value": "system:bootstrappers:kubeadm:default-node-token",
+                        "vtype": "string",
+                        "vlen": 47
+                    },
+                    {
+                        "key": "token-id",
+                        "ref": {
+                            "key": "token-id",
+                            "value": "35ilho",
+                            "decoded_value": "35ilho",
+                            "fully_decoded_value": "35ilho",
+                            "vtype": "string",
+                            "vlen": 6
+                        },
+                        "decoded_value": "35ilho",
+                        "value": "35ilho",
+                        "vtype": "string",
+                        "vlen": 6
+                    },
+                    {
+                        "key": "empty",
+                        "ref": {
+                            "key": "empty",
+                            "value": "",
+                            "decoded_value": "",
+                            "fully_decoded_value": "",
+                            "vtype": "empty",
+                            "vlen": 0
+                        },
+                        "decoded_value": "",
+                        "value": "",
+                        "vtype": "empty",
+                        "vlen": 0
+                    },
+                    {
+                        "key": "too-long",
+                        "ref": {
+                            "key": "too-long",
+                            "value": "42".ljust(10000),
+                            "decoded_value": "42".ljust(10000)[0:8192 - 1],
+                            "fully_decoded_value": "42".ljust(10000),
+                            "vtype": "string [truncated]",
+                            "vlen": 10000
+                        },
+                        "decoded_value": "42".ljust(10000)[0:8192 - 1],
+                        "value": "42".ljust(10000),
+                        "vtype": "string [truncated]",
+                        "vlen": 10000
+                    },
+                    {
+                        "key": "base64-utf-8",
+                        "ref": {
+                            "key": "base64-utf-8",
+                            "value": "QSB0ZXN0IHN0cmluZyB3aXRoIFVURi3ikacK",
+                            "decoded_value": "QSB0ZXN0IHN0cmluZyB3aXRoIFVURi3ikacK",
+                            "fully_decoded_value": "A test string with UTF-⑧\n",
+                            "vtype": "base64-utf-8",
+                            "vlen": 36
+                        },
+                        "decoded_value": "QSB0ZXN0IHN0cmluZyB3aXRoIFVURi3ikacK",
+                        "value": "QSB0ZXN0IHN0cmluZyB3aXRoIFVURi3ikacK",
+                        "vtype": "base64-utf-8",
+                        "vlen": 36
+                    },
+                ],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(_vlist=obj)
+                if len(tmp) != len(expected_result):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"              len: {len(tmp)}\n" \
+                              f"     expected len: {len(expected_result)}"
+                    result = False
+                    break
+                else:
+                    for i, item in enumerate(tmp):
+                        tmp2 = dict(item.__dict__)
+                        for key, value in expected_result[i].items():
+                            result_value = deep_get(tmp2, DictPath(key))
+                            if result_value != value:
+                                message = f"{fun.__name__}() did not yield expected result:\n" \
+                                          f"           result: {result_value}\n" \
+                                          f"         expected: {value}"
+                                result = False
+                                break
+                        if not result:
+                            break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"         expected: {len(expected_result)}\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_get_promrules_info(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = infogetters.get_promrules_info
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata: Tuple = (
+            (
+                {
+                    "spec": {
+                        "groups": [
+                            {
+                                "name": "GrafanaAlerts",
+                                "rules": [
+                                    {
+                                        "alert": "GrafanaRequestsFailing",
+                                        "annotations": {
+                                            "message":
+                                                "{{ $labels.namespace }}/{{ $labels.job }}/"
+                                                "{{ $labels.handler }} is experiencing "
+                                                "{{ $value | humanize }}% errors",
+                                            "runbook_url":
+                                                "https://runbooks.prometheus-operator.dev/"
+                                                "runbooks/grafana/grafanarequestsfailing"
+                                        },
+                                        "expr":
+                                            "100 * sum without (status_code) "
+                                            "(namespace_job_handler_statuscode:"
+                                            "grafana_http_request_duration_seconds_count:"
+                                            "rate5m{handler!~\"/api/datasources/proxy/:id.*|"
+                                            "/api/ds/query|/api/tsdb/query\", "
+                                            "status_code=~\"5..\"})\n/\nsum without (status_code) "
+                                            "(namespace_job_handler_statuscode:"
+                                            "grafana_http_request_duration_seconds_count:"
+                                            "rate5m{handler!~\"/api/datasources/proxy/:"
+                                            "id.*|/api/ds/query|/api/tsdb/query\"})\n\u003e 50\n",
+                                        "for": "5m",
+                                        "labels": {
+                                            "severity": "warning"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "grafana_rules",
+                                "rules": [
+                                    {
+                                        "expr":
+                                            "sum by (namespace, job, handler, status_code) "
+                                            "(rate("
+                                            "grafana_http_request_duration_seconds_count[5m]))\n",
+                                        "record":
+                                            "namespace_job_handler_statuscode:"
+                                            "grafana_http_request_duration_seconds_count:rate5m"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                [
+                    {
+                        "group": "GrafanaAlerts",
+                        "ref": {
+                            "alert": "GrafanaRequestsFailing",
+                            "annotations": {
+                                "message":
+                                    "{{ $labels.namespace }}/{{ $labels.job }}/"
+                                    "{{ $labels.handler }} is experiencing "
+                                    "{{ $value | humanize }}% errors",
+                                "runbook_url":
+                                    "https://runbooks.prometheus-operator.dev/runbooks/"
+                                    "grafana/grafanarequestsfailing"
+                            },
+                            "expr":
+                                "100 * sum without (status_code) "
+                                "(namespace_job_handler_statuscode:"
+                                "grafana_http_request_duration_seconds_count:"
+                                "rate5m{handler!~\"/api/datasources/proxy/:"
+                                "id.*|/api/ds/query|/api/tsdb/query\", "
+                                "status_code=~\"5..\"})\n/\nsum without (status_code) "
+                                "(namespace_job_handler_statuscode:"
+                                "grafana_http_request_duration_seconds_count:"
+                                "rate5m{handler!~\"/api/datasources/proxy/:"
+                                "id.*|/api/ds/query|/api/tsdb/query\"})\n> 50\n",
+                            "for": "5m",
+                            "labels": {
+                                "severity": "warning"
+                            },
+                            "_extra_data": {
+                                "name": "GrafanaRequestsFailing",
+                                "group": "GrafanaAlerts",
+                                "rtype": "Alert"
+                            }
+                        },
+                        "rtype": "Alert",
+                        "alertrecord": "GrafanaRequestsFailing",
+                        "duration": 300
+                    },
+                    {
+                        "group": "grafana_rules",
+                        "ref": {
+                            "expr":
+                                "sum by (namespace, job, handler, status_code) "
+                                "(rate(grafana_http_request_duration_seconds_count[5m]))\n",
+                            "record":
+                                "namespace_job_handler_statuscode:"
+                                "grafana_http_request_duration_seconds_count:rate5m",
+                            "_extra_data": {
+                                "name":
+                                    "namespace_job_handler_statuscode:"
+                                    "grafana_http_request_duration_seconds_count:rate5m",
+                                "group": "grafana_rules",
+                                "rtype": "Record"
+                            }
+                        },
+                        "rtype": "Record",
+                        "alertrecord":
+                            "namespace_job_handler_statuscode:"
+                            "grafana_http_request_duration_seconds_count:rate5m",
+                        "duration": -1
+                    }
+                ],
+                None,
+            ),
+            (
+                None,
+                [],
+                None,
+            ),
+            (
+                {
+                    "spec": {
+                        "groups": [
+                            {
+                                "name": "GrafanaAlerts",
+                                "rules": [
+                                    {
+                                        "alert": "GrafanaRequestsFailing",
+                                        "record":
+                                            "namespace_job_handler_statuscode:"
+                                            "grafana_http_request_duration_seconds_count:rate5m"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                [],
+                None,
+            ),
+            (
+                {
+                    "spec": {
+                        "groups": [
+                            {
+                                "name": "GrafanaAlerts",
+                                "rules": [
+                                    {}
+                                ]
+                            }
+                        ]
+                    }
+                },
+                [],
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(_obj=obj)
+                if len(tmp) != len(expected_result):
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"              len: {len(tmp)}\n" \
+                              f"     expected len: {len(expected_result)}"
+                    result = False
+                    break
+                else:
+                    for i, item in enumerate(tmp):
+                        tmp2 = dict(item.__dict__)
+                        for key, value in expected_result[i].items():
+                            result_value = deep_get(tmp2, DictPath(key))
+                            if result_value != value:
+                                message = f"{fun.__name__}() did not yield expected result:\n" \
+                                          f"           result: {result_value}\n" \
+                                          f"         expected: {value}"
+                                result = False
+                                break
+                        if not result:
+                            break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"         expected: {len(expected_result)}\n" \
+                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                    result = False
+                    break
+    return message, result
+
+
 def test_get_subsets_info(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -809,6 +1170,14 @@ def test_get_themearrays(verbose: bool = False) -> Tuple[str, bool]:
 tests: Dict = {
     ("format_controller()",): {
         "callable": test_format_controller,
+        "result": None,
+    },
+    ("get_key_value_info()",): {
+        "callable": test_get_key_value_info,
+        "result": None,
+    },
+    ("get_promrules_info()",): {
+        "callable": test_get_promrules_info,
         "result": None,
     },
     ("get_subsets_info()",): {
