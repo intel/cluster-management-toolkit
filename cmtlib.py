@@ -22,7 +22,7 @@ from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 from ansithemeprint import ANSIThemeStr, ansithemeprint
 from cmttypes import deep_get, deep_get_with_fallback, DictPath, SecurityChecks
 from cmttypes import FilePath, SecurityPolicy, ProgrammingError, LogLevel
-from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR, VERSION_CACHE_DIR
+from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR, VERSION_CANDIDATES_FILE
 from cmtpaths import KUBE_CONFIG_FILE
 import cmtio
 from cmtio_yaml import secure_read_yaml
@@ -1208,14 +1208,20 @@ def identify_distro(**kwargs: Any) -> str:
     return distro
 
 
-def get_latest_kubernetes_upstream_version() -> str:
+def get_latest_upstream_version(component: str) -> str:
     """
     Fetch the upstream version for Kubernetes
 
+        Parameters:
+            component (str): The component to return the latest version for
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
             (str): The latest upstream Kubernetes version;
                    or an empty string if the version could not be determined
     """
+    if not component:
+        return ""
+
     # We are OK with the file not existing
     security_checks = [
         SecurityChecks.PARENT_RESOLVES_TO_SELF,
@@ -1226,28 +1232,12 @@ def get_latest_kubernetes_upstream_version() -> str:
         SecurityChecks.IS_FILE,
     ]
 
-    kubernetes_upstream_version: str = ""
-
     try:
-        version_cache = secure_read_yaml(VERSION_CACHE_DIR.joinpath("kubernetes_current.yaml"),
-                                         checks=security_checks)
+        candidate_versions = secure_read_yaml(VERSION_CANDIDATES_FILE, checks=security_checks)
     except FileNotFoundError:
-        version_cache = None
+        candidate_versions = {}
 
-    if version_cache is not None:
-        if (schedules := deep_get(version_cache, DictPath("schedules"), [])):
-            if (previous_patches := deep_get(schedules[0], DictPath("previousPatches"), [])):
-                kubernetes_upstream_version = \
-                    deep_get(previous_patches[0], DictPath("release"), kubernetes_upstream_version)
-            else:
-                tmp = deep_get(schedules[0], DictPath("release"), "")
-                if tmp is not None and str(tmp):
-                    tmp = str(tmp)
-                    if len(tmp.split(".")) < 3:
-                        tmp = f"{tmp}.0"
-                    kubernetes_upstream_version = tmp
-
-    return kubernetes_upstream_version
+    return deep_get(candidate_versions, DictPath(f"{component}#release"), "")
 
 
 def get_cluster_name() -> Optional[str]:

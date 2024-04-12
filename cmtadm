@@ -70,7 +70,7 @@ from networkio import scan_and_add_ssh_keys, update_version_cache
 
 import cmtlib
 from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper
-from cmtlib import get_latest_kubernetes_upstream_version, get_cluster_name
+from cmtlib import get_latest_upstream_version, get_cluster_name
 from cmtlib import identify_distro, read_cmtconfig, substitute_list, substitute_string
 
 from cni_data import cni_data
@@ -81,6 +81,7 @@ from kubernetes_helper import get_node_roles
 from ansithemeprint import ANSIThemeStr, ansithemeinput, ansithemeinput_password, ansithemeprint
 from ansithemeprint import ansithemestr_join_list, themearray_override_formatting
 
+import fieldgetters
 import checks
 
 import about
@@ -792,9 +793,11 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr(f"Checking {upgradetype} candidate version", "action")])
         if candidate_version_function is not None:
-            if (candidate_version := candidate_version_function(candidate_version_url,
-                                                                candidate_version_regex)) is None:
+            tmp_candidate_version = candidate_version_function(candidate_version_url,
+                                                               candidate_version_regex)
+            if tmp_candidate_version is None:
                 check_and_print_status(False)
+            candidate_version, _release_data = tmp_candidate_version
         else:
             candidate_version = \
                 check_version_from_url(substitute_string(candidate_version_url,
@@ -1636,7 +1639,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
         pkg_versions = check_versions_yum(pkg_packages)
 
     kubernetes_installed_version = "<unknown>"
-    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+    if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         kubernetes_upstream_version = "<unknown>"
 
     # Get the API-server version (if available)
@@ -1651,22 +1654,9 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
     if kubernetes_installed_version == kubernetes_upstream_version:
         kubernetes_upstream_version = ""
 
-    crc_installed_version = ""
-    crc_upstream_version = ""
-
-    try:
-        crc_path = cmtio.secure_which(FilePath("crc"),
-                                      fallback_allowlist=["/bin", "/usr/bin", f"{HOMEDIR}/bin"],
-                                      security_policy=SecurityPolicy.ALLOWLIST_STRICT)
-        args = [crc_path, "version"]
-        response = execute_command_with_response(args)
-        for line in response.splitlines():
-            if (tmp := re.match(r"^CRC version: (\d+\.\d+\.\d+).*", line)) is not None:
-                crc_installed_version = tmp[1]
-            elif (tmp := re.match(r"^.*A new version \((\d+\.\d+\.\d+)\).*", line)) is not None:
-                crc_upstream_version = tmp[1]
-    except FileNotFoundError:
-        pass
+    if not (crc_upstream_version := get_latest_upstream_version("crc")):
+        crc_upstream_version = "<unknown>"
+    crc_installed_version = fieldgetters.fieldgetter_crc_version(fields=[0])[0]
 
     # Now check versions that need special checks
     for version_check in version_checks:
@@ -1996,7 +1986,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+    if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),
@@ -2055,7 +2045,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+    if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),
@@ -3353,7 +3343,7 @@ def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> Non
 
         # The first minor Kubernetes version available from the new repository is 1.24.0;
         # thus we don't support any version older than that.
-        if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+        if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                          "default"),
@@ -3698,7 +3688,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     ]
 
     if os_distro == "suse":
-        if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+        if (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
             _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
 
             for package in ("client", "kubeadm", "kubelet"):
@@ -5104,14 +5094,14 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
                                   r"^v(\d+)\.(\d+)\.\d+$")) is None or not tmp:
         check_and_print_status(False)
 
-    tmp = cast(list, tmp)
-    if requested_major < int(tmp[0]) \
-            or requested_major == int(tmp[0]) and requested_minor < int(tmp[1]):
+    version_tmp = cast(list, tmp[0])
+    if requested_major < int(version_tmp[0]) \
+            or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
         crio_major_version = str(requested_major)
         crio_minor_version = str(requested_minor)
     else:
-        crio_major_version = tmp[0]
-        crio_minor_version = tmp[1]
+        crio_major_version = version_tmp[0]
+        crio_minor_version = version_tmp[1]
 
     return crio_major_version, crio_minor_version
 
@@ -5296,7 +5286,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         setup_extras["kubernetes_major_minor_version"] = requested_major_minor
     elif k8s_distro == "rke2":
         if requested_version == "latest":
-            if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+            if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": “", "default"),
                                 ANSIThemeStr("latest", "version"),
@@ -5924,7 +5914,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
-    if not (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()):
+    if not (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),

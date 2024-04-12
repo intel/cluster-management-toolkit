@@ -1,16 +1,10 @@
 kubernetes:
-  description: "Upstream Kubernetes (kubeadm)"
+  description: "Kubernetes"
   candidate_version:
-    pre_fetch_function: null
-    pre_fetch_args: null
-    post_fetch_function: "get_kubernetes_version"
-    post_fetch_args:
-      path: "kubernetes_current.yaml"
-    regex: null
-    urls:
-    - url: "https://raw.githubusercontent.com/kubernetes/website/main/data/releases/schedule.yaml"
-      dest: "kubernetes_current.yaml"
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/kubernetes/kubernetes/releases/latest"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
   changelog:
-    urls:
-    - url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-<<<version>>>.md"
-      dest: "kubernetes_current_changelog.md"
+    url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-<<<version.0>>>.<<<version.2>>>.md"
+    dest: "kubernetes_current_changelog.md"

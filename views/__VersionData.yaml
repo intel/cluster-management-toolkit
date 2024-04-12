@@ -35,19 +35,27 @@ listview:
           include_end: true
           strip_empty_start: true
           strip_empty_end: true
-    - filepath: "{HOME}/.cmt/version-cache/kubernetes_current.yaml"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
       filetype: "yaml"
-      path: "schedules"
+      path: "crc"
       pathtype: "dict"
-      data:
-        path: 0
-        pathtype: "list"
-        data:
-          path: "previousPatches"
-          pathtype: "dict"
-          data:
-            path: 0
-            pathtype: "list"
+      _extra_data:
+        name: "CRC"
+        installed_version:
+          fieldgetter: "fieldgetter_crc_version"
+          fieldgetter_args:
+            fields:
+            - 0
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/crc_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "kubernetes"
+      pathtype: "dict"
       _extra_data:
         name: "Kubernetes"
         installed_version:
@@ -103,13 +111,32 @@ listview:
     release_date:
       header: "Release Date:"
       paths:
-      - path: ["targetDate", "release_date"]
+      - path: "release_date"
         pathtype: "str"
       type: "str"
       formatter: "timestamp"
+  listview_args:
+    filters:
+      uninstalled:
+        source: "data"
+        enabled: true
+        block:
+        - key: "installed_version"
+          values: [""]
   shortcuts:
     # Overrides:
     "Edit resource": null
+    "Show Uninstalled Components":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show / Hide uninstalled components"
+      action: "toggle_var"
+      action_args:
+        var: "filters#uninstalled#enabled"
+      force_update: true
+  statusmsg:
+  - ["Hide uninstalled components: ", ["var", "filters#uninstalled#enabled"]]
 infoview:
   name: "Version Info"
   infopad:

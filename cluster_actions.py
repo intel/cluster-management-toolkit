@@ -18,7 +18,7 @@ from ansible_helper import ansible_print_action_summary, populate_playbooks_from
 from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
 from ansible_helper import ansible_add_hosts
 from ansithemeprint import ANSIThemeStr, ansithemeprint
-from cmtlib import get_latest_kubernetes_upstream_version
+from cmtlib import get_latest_upstream_version
 from cmtpaths import ANSIBLE_INVENTORY, ANSIBLE_PLAYBOOK_DIR
 from cmttypes import deep_get, DictPath, FilePath
 from networkio import scan_and_add_ssh_keys
@@ -221,7 +221,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     """
     # The first patch revision that isn't available from the old repositories is 1.28.3;
     # this means that we need to include all minor versions from 28 and up.
-    if (kubernetes_upstream_version := get_latest_kubernetes_upstream_version()) is None:
+    if (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")) is None:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
                                      "default"),
