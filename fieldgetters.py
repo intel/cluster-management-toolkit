@@ -68,7 +68,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
         crc_path = None
 
     if crc_path:
-        args = [crc_path, "status"]
+        args = ["status"]
         result = execute_command_with_response([crc_path] + args)
 
         if result is not None:
@@ -79,7 +79,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
         if result is not None:
             # OK, we hopefully have a CRC cluster setup; it might not be running, but that's OK,
             # we want the version information anyway.
-            args = [crc_path, "version"]
+            args = ["version"]
             result = execute_command_with_response([crc_path] + args)
 
         if result is not None:
