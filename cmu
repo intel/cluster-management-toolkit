@@ -4825,6 +4825,10 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
     if title.endswith((".crt", "tls.key", ".pem", "CAKey")) \
             or isinstance(obj, str) and obj.startswith(("-----BEGIN", "-----END")):
         formatter = formatters.format_crt
+    elif title == ".dockercfg" or title.endswith(".json"):
+        formatter = formatters.reformat_json
+    elif title.endswith(".yaml"):
+        formatter = formatters.format_yaml
     else:
         formatter = formatters.format_none
     return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
