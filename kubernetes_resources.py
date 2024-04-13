@@ -2358,6 +2358,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "kubeletconfigs",
         "namespaced": False,
     },
+    ("MachineConfigNode", "machineconfiguration.openshift.io"): {
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api": "machineconfignodes",
+        "namespaced": False,
+    },
     ("MachineConfigPool", "machineconfiguration.openshift.io"): {
         "api_paths": ["apis/machineconfiguration.openshift.io/v1/"],
         "api": "machineconfigpools",
@@ -2850,6 +2855,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("KubeStorageVersionMigrator", "operator.openshift.io"): {
         "api_paths": ["apis/operator.openshift.io/v1/"],
         "api": "kubestorageversionmigrators",
+        "namespaced": False,
+    },
+    ("MachineConfiguration", "operator.openshift.io"): {
+        "api_paths": ["apis/operator.openshift.io/v1/"],
+        "api": "machineconfigurations",
         "namespaced": False,
     },
     ("Network", "operator.openshift.io"): {
