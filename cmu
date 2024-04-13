@@ -2775,6 +2775,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 generators.fieldgenerator(view=view,
                                           selected_namespace=selected_namespace,
                                           **fieldgenerator_args)
+            infogetter_extra_args["_field_index"] = field_index.lower()
+            infogetter_extra_args["_field_names"] = field_names
+            infogetter_extra_args["_field_dict"] = field_dict
+            vinfo = infogetter(**infogetter_extra_args)
+            uip.update_info(vinfo)
             update_field_widths(field_dict, field_names, uip.info)
             uip.reinit_window(field_list=field_dict, sortcolumn=sortcolumn)
             uip.resize_listpad(width=-1)
