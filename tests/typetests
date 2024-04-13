@@ -48,12 +48,12 @@ def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
     fun = cmttypes.FilePath
 
     try:
-        basepath = FilePath("/home/testuser")
+        basepath = FilePath(f"{os.path.sep}home{os.path.sep}testuser")
     except Exception as e:
         message = f"{fun.__name__}() did not yield expected result:\n" \
                   f"        exception: {type(e)}\n" \
                   f"          message: {str(e)}\n" \
-                  f"  expected result: FilePath('/home/testuser')"
+                  f"  expected result: FilePath('{os.path.sep}home{os.path.sep}testuser')"
         result = False
 
     if result:
@@ -68,6 +68,8 @@ def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
              os.path.join(f"{os.path.sep}home", "testuser", ".vimrc"), None),
             ([".config", Path("monitors.xml")],
              os.path.join(f"{os.path.sep}home", "testuser", ".config", "monitors.xml"), None),
+            ((FilePath(".config"), PurePath("user-dirs.dirs")),
+             os.path.join(f"{os.path.sep}home", "testuser", ".config", "user-dirs.dirs"), None),
             ((FilePath(".config"), PurePath("user-dirs.dirs")),
              os.path.join(f"{os.path.sep}home", "testuser", ".config", "user-dirs.dirs"), None),
             # Not a valid path segment
@@ -111,6 +113,43 @@ def test_filepath(verbose: bool = False) -> Tuple[str, bool]:
                               f"  expected result: {expected_result}"
                     result = False
                     break
+        if result:
+            path = FilePath(f"{os.path.sep}home").joinpath("testuser")
+            try:
+                tmp = path.basename()
+                if tmp != "testuser":
+                    message = f"{fun.__name__}.basename() did not yield expected result:\n" \
+                              f"             path: {path}\n" \
+                              f"           result: {tmp}\n" \
+                              "  expected result: testuser"
+                    result = False
+            except Exception as e:
+                if expected_exception is not None:
+                    message = f"{fun.__name__}.basename() did not yield expected result:\n" \
+                              f"             path: {path}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              "  expected result: testuser"
+                    result = False
+        if result:
+            basepath = FilePath(f"{os.path.sep}home")
+            path = basepath.joinpath("testuser")
+            try:
+                tmp = path.dirname()
+                if tmp != basepath:
+                    message = f"{fun.__name__}.dirname() did not yield expected result:\n" \
+                              f"             path: {path}\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {basepath}"
+                    result = False
+            except Exception as e:
+                if expected_exception is not None:
+                    message = f"{fun.__name__}.basename() did not yield expected result:\n" \
+                              f"             path: {path}\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {basepath}"
+                    result = False
     return message, result
 
 

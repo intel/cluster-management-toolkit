@@ -136,7 +136,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         [ANSIThemeStr("Extended description", "description")],
                     ],
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('__commandname', 'help')],
@@ -158,7 +158,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         [ANSIThemeStr("Extended description", "description")],
                     ],
                 },
-                commandparser.__command_usage,
+                None,
                 None,
                 DEFAULT_THEME_FILE,
                 Exception,
@@ -188,7 +188,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         },
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('__commandname', 'help')],
@@ -218,7 +218,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         },
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('--format', 'markdown'), ('__commandname', 'help')],
@@ -305,10 +305,54 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         },
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('__commandname', 'help')],
+                    [],
+                ),
+                None,
+                None,
+                None,
+            ),
+            # No args; options; no command; default
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "--read-only"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "callback": test_callback,
+                    },
+                    "__global_options": {
+                        "command": ["__global_options"],
+                        "description": [ANSIThemeStr("", "")],
+                        "options": {
+                            "--read-only": {
+                                "description":
+                                    [ANSIThemeStr("disable all commands that modify state",
+                                                  "description")],
+                            },
+                        },
+                    },
+                },
+                "hello",
+                (
+                    test_callback,
+                    [('--read-only', None), ('__commandname', 'hello')],
                     [],
                 ),
                 None,
@@ -392,7 +436,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         },
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('--format', 'markdown'), ('__commandname', 'help')],
@@ -401,6 +445,48 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                 None,
                 None,
                 None,
+            ),
+            # option requires arg; not getting any
+            (
+                "clptests",
+                "v42",
+                "tests for commandparser.py",
+                "various people",
+                ["clptests", "hello", "--takes-an-integer"],
+                {
+                    "Hello World": {
+                        "command": ["hello"],
+                        "description": [
+                            ANSIThemeStr("Update the package cache and show software versions",
+                                         "description")],
+                        "extended_description": [
+                            [ANSIThemeStr("Note", "note"),
+                             ANSIThemeStr(": some of the listed software may not be",
+                                          "description")],
+                            [ANSIThemeStr("relevant to the configuration in use",
+                                          "description")],
+                        ],
+                        "options": {
+                            "--takes-an-integer": {
+                                "description": [
+                                    ANSIThemeStr("This option takes an integer in the range [2-5]",
+                                                 "description")
+                                ],
+                                "requires_arg": True,
+                                "validation": {
+                                    "validator": "int",
+                                    "valid_range": (2, 5),
+                                },
+                            },
+                        },
+                        "callback": test_callback,
+                    },
+                },
+                None,
+                None,
+                None,
+                Exception,
+                "22",
             ),
             (
                 "clptests",
@@ -920,7 +1006,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         },
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 (
                     commandparser.__command_usage,
                     [('__commandname', 'help')],
@@ -1147,7 +1233,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         "callback": test_callback,
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 None,
                 None,
                 Exception,
@@ -1186,7 +1272,7 @@ def test_parse_commandline(verbose: bool = False) -> Tuple[str, bool]:
                         "callback": test_callback,
                     },
                 },
-                commandparser.__command_usage,
+                None,
                 None,
                 None,
                 Exception,

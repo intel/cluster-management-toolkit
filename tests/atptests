@@ -151,6 +151,71 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # pylint: disable-next=unused-argument
+def test_tuplelist_to_ansithemearray(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = ANSIThemeStr.tuplelist_to_ansithemearray
+
+    if result:
+        testdata = (
+            # Indata format:
+            # (indata, expected_result, expected_exception)
+            # Valid indata
+            (
+                [("This", "error"), (" is ", "warning"), ("a", "note"), (" message", "default")],
+                [ANSIThemeStr("This", "error"),
+                 ANSIThemeStr(" is ", "warning"),
+                 ANSIThemeStr("a", "note"),
+                 ANSIThemeStr(" message", "default")],
+                None,
+            ),
+            # Wrong type
+            (
+                42,
+                None,
+                ProgrammingError,
+            ),
+            # Wrong type
+            (
+                [42],
+                None,
+                ProgrammingError,
+            ),
+        )
+
+        for indata, expected_result, expected_exception in testdata:
+            try:
+                if (tmp := fun(indata)) != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"         output: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:  # pylint: disable=broad-except
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"          input: {indata}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+
+    return message, result
+
+
+# pylint: disable-next=unused-argument
 def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -676,51 +741,55 @@ def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
 
 
 tests: Dict = {
-    ("uninitialized ansithemeprint functions", ): {
+    ("uninitialized ansithemeprint functions",): {
         "callable": test_uninitialized_ansithemeprint_functions,
         "result": None,
     },
-    ("init_ansithemeprint_use_fallback_theme", ): {
+    ("init_ansithemeprint_use_fallback_theme",): {
         "callable": test_init_ansithemeprint_use_fallback_theme,
         "result": None,
     },
-    ("init_ansithemeprint", ): {
+    ("init_ansithemeprint",): {
         "callable": test_init_ansithemeprint,
         "result": None,
     },
-    ("format_error_msg", ): {
+    ("tuplelist_to_ansithemearray",): {
+        "callable": test_tuplelist_to_ansithemearray,
+        "result": None,
+    },
+    ("format_error_msg",): {
         "callable": test_format_error_msg,
         "result": None,
     },
-    ("ansithemeprint", ): {
+    ("ansithemeprint",): {
         "callable": test_ansithemeprint,
         "result": None,
     },
-    ("ansithemestr_join_list", ): {
+    ("ansithemestr_join_list",): {
         "callable": test_ansithemestr_join_list,
         "result": None,
     },
-    ("ansithemestr basic methods", ): {
+    ("ansithemestr basic methods",): {
         "callable": test_ansithemestr_basic_operations,
         "result": None,
     },
-    ("themearray_ljust", ): {
+    ("themearray_ljust",): {
         "callable": test_themearray_ljust,
         "result": None,
     },
-    ("themearray_len", ): {
+    ("themearray_len",): {
         "callable": test_themearray_len,
         "result": None,
     },
-    ("themearray_override_formatting", ): {
+    ("themearray_override_formatting",): {
         "callable": test_themearray_override_formatting,
         "result": None,
     },
-    ("themearray_to_string", ): {
+    ("themearray_to_string",): {
         "callable": test_ansithemearray_to_str,
         "result": None,
     },
-    ("__themearray_to_raw_string", ): {
+    ("__themearray_to_raw_string",): {
         "callable": test___themearray_to_raw_string,
         "result": None,
     },

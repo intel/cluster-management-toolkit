@@ -40,6 +40,15 @@ class FilePath(str):
         """
         return os.path.basename(self.path)
 
+    def dirname(self) -> "FilePath":
+        """
+        Returns the dirname part of the FilePath.
+
+            Returns:
+                (FilePath): The dirname path of the FilePath.
+        """
+        return FilePath(os.path.dirname(self.path))
+
     def joinpath(self, *paths: Any) -> "FilePath":
         """
         Perform a path join on a FilePath
