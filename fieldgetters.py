@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List
 import about
 from cmtio import execute_command_with_response, secure_which
 from cmtpaths import HOMEDIR
-from cmttypes import deep_get, DictPath, ProgrammingError, SecurityPolicy
+from cmttypes import deep_get, DictPath, FilePath, Optional, ProgrammingError, SecurityPolicy
 
 
 def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
@@ -62,16 +62,16 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
     versions = ["", "", ""]
 
     try:
-        crc_path = secure_which("crc", fallback_allowlist=fallback_allowlist,
+        crc_path = secure_which(FilePath("/usr/bin/crc"), fallback_allowlist=fallback_allowlist,
                                 security_policy=security_policy)
     except FileNotFoundError:
         crc_path = None
 
     if crc_path:
         args = ["status"]
-        result = execute_command_with_response([crc_path] + args)
+        result: Optional[str] = execute_command_with_response([crc_path] + args)
 
-        if result is not None:
+        if result:
             for line in result.splitlines():
                 if "Machine does not exist" in line:
                     result = None

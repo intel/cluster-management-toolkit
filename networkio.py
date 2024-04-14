@@ -22,7 +22,7 @@ import sys
 import tarfile
 import tempfile
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple
 
 import paramiko
 
@@ -402,7 +402,7 @@ def download_files(directory: str,
     return retval
 
 
-def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
+def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str], str]]:
     """
     Given a github repository find the latest released version
 
@@ -414,7 +414,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[List[str]]:
                 ([str]): A list of version number elements, or None in case of failure
                 (str): The release data
     """
-    version: Optional[List[str]] = []
+    version: List[str] = []
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
@@ -460,8 +460,8 @@ def update_version_cache(**kwargs: Any) -> None:
 
     if not Path(software_sources_dir).is_dir():
         ansithemeprint([ANSIThemeStr("Error", "error"),
-                        ANSIThemeStr(f"{software_sources_dir} does not exist; ", "default"),
-                        ANSIThemeStr("you may need to (re-)run `cmt-install`; aborting.")],
+                        ANSIThemeStr(f"{software_sources_dir} does not exist; you may ", "default"),
+                        ANSIThemeStr("need to (re-)run `cmt-install`; aborting.", "default")],
                        stderr=True)
         sys.exit(errno.ENOENT)
 
@@ -528,7 +528,8 @@ def update_version_cache(**kwargs: Any) -> None:
                     candidate_version_tuple, release_date = release_info
                     if key not in candidate_versions:
                         candidate_versions[key] = {"release": "", "release_date": ""}
-                    candidate_versions[key]["release"] = "".join(candidate_version_tuple)
+                    candidate_versions[key]["release"] = \
+                        "".join(cast(tuple, candidate_version_tuple))
                     candidate_versions[key]["release_date"] = "".join(release_date)
                     if key not in last_update_data:
                         last_update_data[key] = {}
@@ -545,7 +546,9 @@ def update_version_cache(**kwargs: Any) -> None:
             # Split it using the same regex that we'd normally use to split the string.
             candidate_version_regex = \
                 deep_get(candidate_version_args, DictPath("version_regex"), "")
-            candidate_version_tuple = re.match(candidate_version_regex, tmp)
+            tmp2 = re.match(candidate_version_regex, tmp)
+            if tmp2 is not None:
+                candidate_version_tuple = tmp2.groups()
 
         if not (force or not changelog_age
                 or changelog_age.days > 0 or changelog_age.seconds > interval):

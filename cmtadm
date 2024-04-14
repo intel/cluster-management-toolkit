@@ -665,7 +665,6 @@ def check_and_print_status(retval: bool) -> None:
         Parameters:
             retval (bool): True on success, False on failure
     """
-
     if retval:
         ansithemeprint([ANSIThemeStr("OK", "ok")])
     else:
@@ -4457,10 +4456,10 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             template_name: str = deep_get(data, DictPath("vmTemplateImageName"), "template")
             template_mac: str = ""
             template_ip: str = ""
-            nodes: List[Tuple[str, str, str]] = []
+            nodes_tuple: List[Tuple[str, str, str]] = []
             if tmp_nodes:
                 for node in tmp_nodes:
-                    nodes.append((node, "", ""))
+                    nodes_tuple.append((node, "", ""))
                     hosts.append(node)
             else:
                 if not hostname_template:
@@ -4474,13 +4473,13 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                     else:
                         if len(tmp_highrange) != 2:
                             sys.exit("An address-range must be [start, end]")
-                        highrange = range(tmp_highrange[0], tmp_highrange[1] + 1)
+                        highrange = list(range(tmp_highrange[0], tmp_highrange[1] + 1))
                     if isinstance(tmp_lowrange, int):
                         lowrange = [tmp_lowrange]
                     else:
                         if len(tmp_lowrange) != 2:
                             sys.exit("An address-range must be [start, end]")
-                        lowrange = range(tmp_lowrange[0], tmp_lowrange[1] + 1)
+                        lowrange = list(range(tmp_lowrange[0], tmp_lowrange[1] + 1))
                     for highdigit in highrange:
                         for lowdigit in lowrange:
                             ipaddress = substitute_string(ipaddress_template, {
@@ -4497,7 +4496,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             nodename = substitute_string(hostname_template, {
                                                          "<<<item.1>>>": str(lowdigit),
                                                          "<<<item.0>>>": str(highdigit)})
-                            nodes.append((nodename, ipaddress, macaddress))
+                            nodes_tuple.append((nodename, ipaddress, macaddress))
                             hosts.append(nodename)
 
             node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
@@ -4536,7 +4535,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
             add_nodes_args = [
                 # List of nodes
-                nodes,
+                hosts,
                 # Group(s) to add the nodes to
                 [group],
             ]
@@ -4556,7 +4555,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                                     ANSIThemeStr(": failed to prepare a VM image template"
                                                  "; aborting.", "default")], stderr=True)
                     sys.exit(retval)
-                retval = create_vm_hosts(vmhost, nodes,
+                retval = create_vm_hosts(vmhost, nodes_tuple,
                                          os_image=os_image,
                                          os_variant=os_variant,
                                          extra_values=extra_values, verbose=verbose)
@@ -4737,9 +4736,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         SecurityChecks.EXISTS,
                         SecurityChecks.IS_DIR,
                     ]
-                    retval = check_path(destination, checks=security_checks)
 
-                    if check_path(destination) == [SecurityStatus.OK]:
+                    if check_path(destination, checks=security_checks) == [SecurityStatus.OK]:
                         if fetch:
                             args = [git_path, "-C", destination, "fetch"]
                             check_and_print_status(execute_command(args, env=env))
@@ -5091,10 +5089,10 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
     requested_major, requested_minor = kubernetes_version
 
     if (tmp := get_github_version("https://api.github.com/repos/cri-o/cri-o/releases/latest",
-                                  r"^v(\d+)\.(\d+)\.\d+$")) is None or not tmp:
+                                  r"^v(\d+)\.(\d+)\.\d+$")) is None:
         check_and_print_status(False)
 
-    version_tmp = cast(list, tmp[0])
+    version_tmp, _release_date = tmp  # type: ignore
     if requested_major < int(version_tmp[0]) \
             or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
         crio_major_version = str(requested_major)

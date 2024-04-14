@@ -118,7 +118,7 @@ def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:
 
 
 # pylint: disable-next=too-many-locals
-def get_api_server_package_version(**kwargs: Any) -> str:
+def get_api_server_package_version(**kwargs: Any) -> Tuple[str, str, str]:
     """
     Get the package version for kubeadm/rke2 from the API-server.
 
@@ -127,12 +127,17 @@ def get_api_server_package_version(**kwargs: Any) -> str:
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 k8s_distro (str): The Kubernetes distribution
         Returns:
-            (str): The package version for kubeadm/rke2
+            ((str, str, str)): The package version for kubeadm/rke2
     """
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
 
     control_plane_ip, _control_plane_port, _control_plane_path = kh.get_control_plane_address()
+    if control_plane_ip is None:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": Failed to get control plane IP; "
+                                     "aborting.", "default")], stderr=True)
+        sys.exit(errno.EBADMSG)
 
     # If this is a kubeadm cluster we need the package version for kubeadm;
     # if it's an RKE2 cluster we try to deduce the channel from the control plane
@@ -238,7 +243,10 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     values = {
         "minor_versions": minor_versions,
     }
-    merged_values = {**values, **extra_values}
+    if extra_values:
+        merged_values = {**values, **extra_values}
+    else:
+        merged_values = {**values}
 
     retval, ansible_results = \
         ansible_run_playbook_on_selection(playbookpath, selection=hosts,
@@ -258,7 +266,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     return retval, ansible_results
 
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs: Any) -> bool:
+def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs: Any) -> int:
     """
     Run a set of playbooks
 
@@ -276,7 +284,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     if not playbooks or hosts is None:
-        return True
+        return 0
 
     for string, playbookpath in playbooks:
         ansithemeprint(string)
@@ -291,7 +299,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
     return retval
 
 
-def prepare_nodes(hosts: List[Tuple[str, str, str]], **kwargs: Any) -> int:
+def prepare_nodes(hosts: List[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames prepare them for use as cluster nodes.
 
@@ -385,7 +393,7 @@ def join_nodes(hosts: List[str], **kwargs: Any) -> int:
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
     cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
-    extra_values: Optional[Dict] = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"), {})
 
     cri_socket: str = deep_get(cri_data[cri], DictPath("socket"))
 
