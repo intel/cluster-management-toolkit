@@ -3473,8 +3473,22 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
         shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
 
-        # Always include the shortcut for YAML dump, unless overridden
+        # Always include the shortcuts for YAML dump and JSON dump, unless overridden
         if deep_get(views, DictPath(f"{view}#shortcuts#View YAML dump")) is None:
+            shortcuts["View JSON dump of resource"] = {
+                "shortcut": ord("j"),
+                "read_only": True,
+                "helptext": ("J", "View JSON dump of resource"),
+                "action": "call",
+                "action_call": view_json,
+                "action_args": {
+                    "title": "JSON dump",
+                    "_named_title": True,
+                    "_pass_obj": True,
+                },
+                "force_update": False,
+                "force_refresh": True,
+            }
             shortcuts["View YAML dump of resource"] = {
                 "shortcut": ord("y"),
                 "read_only": True,
@@ -4966,6 +4980,7 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
 
         # Always include the shortcut for YAML dump, unless overridden
         if "shortcuts" not in viewref or "View YAML dump" not in viewref["shortcuts"]:
+            helptext.append(("J", "View JSON dump of resource"))
             helptext.append(("Y", "View YAML dump of resource"))
 
         # Always include the shortcut for edit resource, unless overridden
@@ -5193,6 +5208,17 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
 
     # Always include the shortcut for YAML dump, unless overridden
     if deep_get(viewref, DictPath("shortcuts#YAML")) is None:
+        shortcuts["View JSON dump of resource"] = {
+            "shortcut": ord("j"),
+            "read_only": True,
+            "helptext": ("J", "View JSON dump of resource"),
+            "action": "call",
+            "action_call": view_json,
+            "action_args": {
+                "title": "JSON dump",
+                "_pass_obj": True,
+            },
+        }
         shortcuts["View YAML dump of resource"] = {
             "shortcut": ord("y"),
             "read_only": True,
@@ -7960,6 +7986,32 @@ def view_yaml(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
+def view_json(stdscr: curses.window, **kwargs):
+    selection = deep_get(kwargs, DictPath("selection"))
+    if selection is not None:
+        obj = selection
+    else:
+        obj = deep_get(kwargs, DictPath("obj"))
+
+    if obj is None:
+        return None
+    path = deep_get(kwargs, DictPath("path"))
+    if path is not None:
+        if deep_get(kwargs, DictPath("include_root"), False):
+            _obj = {f"{path.rsplit('#')[-1]}": deep_get(obj, DictPath(path))}
+        else:
+            _obj = deep_get(obj, DictPath(path))
+        if _obj is None:
+            return None
+        obj = [_obj]
+    else:
+        obj = [obj]
+    title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
+    formatter = formatters.reformat_json
+    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+                                title=title, formatter=formatter)
+
+
 def view_pod_logs(stdscr: curses.window, **kwargs):
     containers = []
     containers_full = []
@@ -9439,6 +9491,7 @@ action_call_allowlist = {
     "ssh_to_host": ssh_to_host,
     "view_obj": view_obj,
     "view_pod_logs": view_pod_logs,
+    "view_json": view_json,
     "view_yaml": view_yaml,
 }
 

@@ -528,9 +528,10 @@ def format_yaml(lines: Union[str, List[str]],
     """
     dumps: List[List[Union[ThemeRef, ThemeStr]]] = []
     indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
+    is_json = deep_get(kwargs, DictPath("json"), False)
 
     if isinstance(lines, str):
-        if deep_get(kwargs, DictPath("json"), False):
+        if is_json:
             try:
                 d = json.loads(lines)
                 lines = [json_dumps(d)]
@@ -551,8 +552,11 @@ def format_yaml(lines: Union[str, List[str]],
 
     for i, obj in enumerate(lines):
         if isinstance(obj, dict):
-            split_dump = yaml.dump(obj, default_flow_style=False,
-                                   indent=indent, width=sys.maxsize).splitlines()
+            if is_json:
+                split_dump = json.dumps(obj, indent=indent).splitlines()
+            else:
+                split_dump = yaml.dump(obj, default_flow_style=False,
+                                       indent=indent, width=sys.maxsize).splitlines()
         else:
             split_dump = obj.splitlines()
         first = True
