@@ -15,18 +15,88 @@ listview:
     Normal:
       fields: ["name", "allocatable", "capacity"]
       sortcolumn: "name"
+  is_taggable: false
   fields:
     allocatable:
       header: "Allocatable:"
       path: "allocatable"
       type: "raw"
       formatter: "numerical_with_units"
+      align: "right"
     capacity:
       header: "Capacity:"
       path: "capacity"
       type: "raw"
       formatter: "numerical_with_units"
+      align: "right"
     name:
       header: "Name:"
       path: "name"
       type: "str"
+  shortcuts:
+    "Edit resource": null
+    "View YAML dump": null
+infoview:
+  name: "Node Resource Info"
+  infopad:
+    name_path: "name"
+    row_indexes:
+      Normal:
+        fields: ["allocatable", "capacity"]
+    rows:
+      allocatable:
+        header: [["Allocatable:", ["main", "infoheader"]]]
+        path: "allocatable"
+        type: "raw"
+        formatter: "numerical_with_units"
+      capacity:
+        header: [["Capacity:", ["main", "infoheader"]]]
+        path: "capacity"
+        type: "raw"
+        formatter: "numerical_with_units"
+  shortcuts:
+    "YAML": null
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Node"
+      _pass_obj: true
+      filters:
+        resource:
+          enabled: true
+          allow:
+          - key: "status#allocatable#<<<name>>>"
+            substitutions:
+              "<<<name>>>": ["name"]
+            exists: true
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _pass_caller_obj: true
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Node"
+    field_indexes:
+      Normal:
+        fields: ["name", "allocatable", "capacity"]
+        sortcolumn: "name"
+    fields:
+      allocatable:
+        header: "Allocatable:"
+        path: "status#allocatable#<<<name>>>"
+        path_substitutions:
+          "<<<name>>>": ["name"]
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
+      capacity:
+        header: "Capacity:"
+        path: "status#capacity#<<<name>>>"
+        path_substitutions:
+          "<<<name>>>": ["name"]
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
+      name:
+        header: "Name:"
+        path: "metadata#name"
+        type: "str"

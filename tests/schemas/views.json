@@ -154,6 +154,9 @@
 						"path": {
 							"$ref": "#/definitions/path"
 						},
+						"path_substitutions": {
+							"description": "Substitutions to perform on path before fetching data"
+						},
 						"paths": {
 							"$ref": "#/definitions/paths"
 						},
@@ -355,6 +358,10 @@
 							"$ref": "#/definitions/simple_path"
 						}
 					]
+				},
+				"_pass_caller_obj": {
+					"description": "Pass caller obj to the infogetter",
+					"type": "boolean"
 				},
 				"_pass_obj": {
 					"description": "Pass obj to callback",
@@ -914,7 +921,7 @@
 		"simple_path": {
 			"description": "A path to use with deep_get()/deep_set()",
 			"type": "string",
-			"pattern": "^[_A-Za-z][A-Za-z0-9#_/.=-]*[A-Za-z0-9=]$"
+			"pattern": "^[_A-Za-z][A-Za-z0-9#_/.=<>-]*[A-Za-z0-9>=]$"
 		},
 		"tuple_paths": {
 			"description": "A tuple of paths and literal strings to use with deep_get()/deep_set()",
@@ -1708,7 +1715,7 @@
 												},
 												"fallback_on_empty": {
 													"description": "Normally an existing, but empty, field is treated as valid; this option allows for using the fallback path if the field is empty",
-												"type": "boolean"
+													"type": "boolean"
 												},
 												"formatter": {
 													"$ref": "#/definitions/formatter"

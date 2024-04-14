@@ -141,11 +141,19 @@ def filter_list_entry(obj: Dict[str, Any], caller_obj: Dict[str, Any], filters: 
                 if rtype == "":
                     key = deep_get(rule, DictPath("key"), "")
                     values = deep_get(rule, DictPath("values"), [])
+                    substitutions = {}
+                    for subst, subst_with in deep_get(rule, DictPath("substitutions"), {}).items():
+                        if isinstance(subst_with, list):
+                            subst_with = deep_get_with_fallback(caller_obj, subst_with)
+                        substitutions[subst] = subst_with
+                    key = cmtlib.substitute_string(key, substitutions)
+                    if deep_get(rule, DictPath("values#source"), "object") == "caller":
+                        src = caller_obj
+                    else:
+                        src = obj
+                    if deep_get(rule, DictPath("exists"), False) and deep_get(src, DictPath(key)):
+                        continue
                     if isinstance(values, dict):
-                        if deep_get(rule, DictPath("values#source"), "object") == "caller":
-                            src = caller_obj
-                        else:
-                            src = obj
                         values_path = deep_get(rule, DictPath("values#path"), "")
                         values = deep_get(src, DictPath(values_path), [])
                         if isinstance(values, str):

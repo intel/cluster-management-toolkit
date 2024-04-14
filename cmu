@@ -980,8 +980,28 @@ def transform_list(vlist: Union[List, Dict], transform: Dict) -> List:
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
-            field_index: str, view: str, filters: Dict, deleted: bool = False) -> Type:
+            field_index: str, view: str, **kwargs: Any) -> Type:
+    """
+    Extract data for all fields in a list row from an object.
+
+        Parameters:
+            obj (dict): The object to extract data from
+            field_dict (dict): The dict containing the description of the field
+            field_names ([str]): The names of the fields to populate
+            field_index (str): The index for the field list
+            view (str): The name of the view
+            **kwargs (dict[str, Any]): Keyword arguments
+                filters (dict): The filters to apply
+                deleted (bool): Is the entry deleted?
+                caller_obj (dict): Used for lookups when doing path substitutions
+        Returns:
+            (InfoClass): An InfoClass object with the data for all fields in the field_names list
+    """
     d = {}
+
+    filters: Dict[str, Any] = deep_get(kwargs, DictPath("filters"), {})
+    deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
+    caller_obj: Dict = deep_get(kwargs, DictPath("caller_obj"), {})
 
     # fields both specify formatting and where to get the data from;
     # here we are only concerned with the data
@@ -991,6 +1011,14 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
         field = field_dict[name]
         path = deep_get(field, DictPath("path"))
         paths = deep_get(field, DictPath("paths"), [])
+        path_substitutions = deep_get(field, DictPath("path_substitutions"), {})
+        if caller_obj and path_substitutions:
+            substitutions = {}
+            for subst, subst_with in path_substitutions.items():
+                if isinstance(subst_with, list):
+                    subst_with = deep_get_with_fallback(caller_obj, subst_with)
+                substitutions[subst] = subst_with
+            path = cmtlib.substitute_string(path, substitutions)
         datagetter = deep_get(field, DictPath("datagetter"))
         if datagetter is not None:
             if isinstance(datagetter, str):
@@ -1706,6 +1734,22 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
 
 
 def generic_infogetter(**kwargs: Any) -> List[Dict]:
+    """
+    Generic getter for information from an object.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                _vlist ([dict]): A list of already populated entries
+                field_dict (dict): The dict containing the description of the field
+                field_names ([str]): The names of the fields to populate
+                field_index (str): The index for the field list
+                filters (dict): The filters to apply
+                extra_data (dict): Extra data to add to the obj
+                caller_obj (dict): Used for lookups when doing path substitutions
+        Returns:
+            ([InfoClass]): A list of InfoClass objects
+                           with the data for all fields in the field_names list
+    """
     info = []
 
     # Generate an empty entry
@@ -1717,6 +1761,7 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
     field_index = deep_get(kwargs, DictPath("_field_index"), "Normal")
     filters = deep_get(kwargs, DictPath("_filters"), {})
     extra_data = deep_get(kwargs, DictPath("extra_data"), {})
+    caller_obj = deep_get(kwargs, DictPath("caller_obj"), {})
 
     if not field_dict or not field_names:
         sys.exit(f"generic_infogetter() received empty field_dict {field_dict} "
@@ -1731,7 +1776,7 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
         if deep_get(obj, DictPath("metadata#deletionTimestamp")) is not None:
             deleted = True
         tmp = get_obj(obj, field_dict=field_dict, field_names=field_names, field_index=field_index,
-                      view=view, filters=filters, deleted=deleted)
+                      view=view, filters=filters, deleted=deleted, caller_obj=caller_obj)
         if tmp is None:
             continue
 
@@ -5428,7 +5473,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                         # Only add stuff if there's a path
                         if "path" in value or "paths" in value:
                             # Use generic_infogetter for this
-                            data = get_obj(obj=obj, field_dict={key: value}, field_names=[key],
+                            data = get_obj(obj, field_dict={key: value}, field_names=[key],
                                            field_index="Normal", view="", filters={})
                             _formatter = {key: generators.get_formatter(value)}
                             _generator = deep_get(_formatter, DictPath(f"{key}#generator"))
@@ -5560,6 +5605,11 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
 
                 infogetter_args.pop("_obj", None)
                 infogetter_args["_obj"] = obj
+
+                if deep_get(infogetter_args, DictPath("_pass_caller_obj")):
+                    infogetter_args["caller_obj"] = copy.deepcopy(obj)
+                else:
+                    infogetter_args["caller_obj"] = {}
 
                 extra_data = {}
                 for key, value in deep_get(infogetter_args, DictPath("_extra_data"), {}).items():
