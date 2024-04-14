@@ -583,6 +583,292 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters.listgetter_policy_rules
+
+    if result:
+        # Indata format:
+        # (obj, expected_result, expected_exception)
+        testdata = (
+            (
+                {
+                    "rules": [
+                        {
+                            "verbs": [
+                                "get",
+                                "list",
+                                "watch",
+                                "update"
+                            ],
+                            "apiGroups": [""],
+                            "resources": [
+                                "secrets"
+                            ],
+                            "resourceNames": [
+                                "cert-manager-webhook-ca"
+                            ]
+                        },
+                        {
+                            "verbs": [
+                                "create"
+                            ],
+                            "apiGroups": [""],
+                            "resources": [
+                                "secrets"
+                            ]
+                        }
+                    ]
+                },
+                ([
+                    {
+                        "resource": "secrets",
+                        "api_group": "",
+                        "non_resource_urls": [],
+                        "resource_names": [
+                            "cert-manager-webhook-ca"
+                        ],
+                        "verbs": [
+                            "get",
+                            "list",
+                            "watch",
+                            "update",
+                            "create"
+                        ],
+                        "verbs_all": False,
+                        "verbs_get": True,
+                        "verbs_list": True,
+                        "verbs_watch": True,
+                        "verbs_create": True,
+                        "verbs_update": True,
+                        "verbs_patch": False,
+                        "verbs_delete": False,
+                        "verbs_misc": []
+                    }
+                ], 200),
+                None,
+            ),
+            (
+                {
+                    "rules": [
+                        {
+                            "verbs": [
+                                "create",
+                                "delete",
+                                "deletecollection",
+                                "patch",
+                                "update"
+                            ],
+                            "apiGroups": [
+                                "cert-manager.io"
+                            ],
+                            "resources": [
+                                "certificates",
+                                "certificaterequests",
+                                "issuers"
+                            ]
+                        },
+                    ]
+                },
+                ([
+                    {
+                        "resource": "certificates",
+                        "api_group": "cert-manager.io",
+                        "non_resource_urls": [],
+                        "resource_names": [],
+                        "verbs": [
+                            "create",
+                            "delete",
+                            "deletecollection",
+                            "patch",
+                            "update"
+                        ],
+                        "verbs_all": False,
+                        "verbs_get": False,
+                        "verbs_list": False,
+                        "verbs_watch": False,
+                        "verbs_create": True,
+                        "verbs_update": True,
+                        "verbs_patch": True,
+                        "verbs_delete": True,
+                        "verbs_misc": [
+                            "deletecollection"
+                        ]
+                    },
+                    {
+                        "resource": "certificaterequests",
+                        "api_group": "cert-manager.io",
+                        "non_resource_urls": [],
+                        "resource_names": [],
+                        "verbs": [
+                            "create",
+                            "delete",
+                            "deletecollection",
+                            "patch",
+                            "update"
+                        ],
+                        "verbs_all": False,
+                        "verbs_get": False,
+                        "verbs_list": False,
+                        "verbs_watch": False,
+                        "verbs_create": True,
+                        "verbs_update": True,
+                        "verbs_patch": True,
+                        "verbs_delete": True,
+                        "verbs_misc": [
+                            "deletecollection"
+                        ]
+                    },
+                    {
+                        "resource": "issuers",
+                        "api_group": "cert-manager.io",
+                        "non_resource_urls": [],
+                        "resource_names": [],
+                        "verbs": [
+                            "create",
+                            "delete",
+                            "deletecollection",
+                            "patch",
+                            "update"
+                        ],
+                        "verbs_all": False,
+                        "verbs_get": False,
+                        "verbs_list": False,
+                        "verbs_watch": False,
+                        "verbs_create": True,
+                        "verbs_update": True,
+                        "verbs_patch": True,
+                        "verbs_delete": True,
+                        "verbs_misc": [
+                            "deletecollection"
+                        ]
+                    }
+                ], 200),
+                None,
+            ),
+            (
+                {
+                    "rules": [
+                        {
+                            "verbs": [
+                                "*"
+                            ],
+                            "apiGroups": [
+                                "gpu.resource.intel.com"
+                            ],
+                            "resources": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                ([
+                    {
+                        "resource": "*",
+                        "api_group": "gpu.resource.intel.com",
+                        "non_resource_urls": [],
+                        "resource_names": [],
+                        "verbs": [
+                            "*"
+                        ],
+                        "verbs_all": True,
+                        "verbs_get": True,
+                        "verbs_list": True,
+                        "verbs_watch": True,
+                        "verbs_create": True,
+                        "verbs_update": True,
+                        "verbs_patch": True,
+                        "verbs_delete": True,
+                        "verbs_misc": [
+                            "*"
+                        ]
+                    }
+                ], 200),
+                None,
+            ),
+            (
+                {
+                    "rules": [
+                        {
+                            "nonResourceURLs": [
+                                "/healthz",
+                            ],
+                        },
+                    ],
+                    "verbs": [
+                        "get",
+                    ],
+                },
+                ([
+                    {
+                        "resource": "",
+                        "api_group": "",
+                        "non_resource_urls": [
+                            "/healthz"
+                        ],
+                        "resource_names": [],
+                        "verbs": [],
+                        "verbs_all": False,
+                        "verbs_get": False,
+                        "verbs_list": False,
+                        "verbs_watch": False,
+                        "verbs_create": False,
+                        "verbs_update": False,
+                        "verbs_patch": False,
+                        "verbs_delete": False,
+                        "verbs_misc": []
+                    },
+                ], 200),
+                None,
+            ),
+            (
+                {},
+                ([], 200),
+                None,
+            ),
+            (
+                None,
+                ([], 200),
+                None,
+            ),
+        )
+
+        for obj, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(obj)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  "            obj:\n" \
+                                  f"{yaml_dump(obj, base_indent = 17)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              "            obj:\n" \
+                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: Dict = {
     ("json_ujson",): {
         "callable": test_json_ujson,
@@ -598,6 +884,10 @@ tests: Dict = {
     },
     ("get_device_model()",): {
         "callable": test_get_device_model,
+        "result": None,
+    },
+    ("listgetter_policy_rules()",): {
+        "callable": test_listgetter_policy_rules,
         "result": None,
     },
 }

@@ -2134,12 +2134,12 @@ def listgetter_policy_rules(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int]:
     Listgetter for Role & ClusterRole policy rules.
 
         Parameters:
-            obj (Dict): The object to extract ingress policy rule information from
-            kwargs (Dict): Additional parameters
+            obj (Dict): The object to extract Role & ClusterRole policy rule information from
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
         Returns:
-            ((vlist, retval)):
-                vlist (list[dict]): The ingress rules
-                retval (int): The return value
+            (([dict], int)):
+                ([dict]): The policy rules
+                (int): The return value
     """
     vlist: List[Dict] = []
 
