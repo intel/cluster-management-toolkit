@@ -841,26 +841,24 @@ def dump_themearray(themearray: List[Any]) -> NoReturn:
             themearray (list): A themearray
     """
     tmp = ""
+    invalid = False
     for substr in themearray:
         if isinstance(substr, ThemeStr):
-            tmp += "ThemeStr:\n"
-            tmp += f"          str: “{substr}“\n"
-            tmp += f"       strlen: “{len(substr)}“\n"
-            tmp += f"         attr: {substr.themeattr}\n"
-            tmp += f"     selected: {substr.selected}\n"
+            tmp += f"-    ThemeStr: {repr(substr)}; (len: {len(substr)})\n"
         elif isinstance(substr, ThemeRef):
-            tmp += f"   ThemeRef: {substr}\n"
-            tmp += f"          str: “{str(substr)}“\n"
-            tmp += f"          ctx: {substr.context}\n"
-            tmp += f"          key: {substr.key}\n"
-            tmp += f"     selected: {substr.selected}\n"
+            tmp += f"-    ThemeRef: {repr(substr)} (“{str(substr)}“); (len: {len(substr)})\n"
         elif isinstance(substr, tuple):
-            tmp += f"      tuple: {substr}\n"
+            tmp += f"-     tuple: {substr} [invalid]\n"
+            invalid = True
         elif isinstance(substr, list):
-            tmp += f"       list: {substr}\n"
+            tmp += f"-      list: {substr} [invalid]\n"
+            invalid = True
         else:
-            tmp += f"TYPE {type(substr)}: {substr}\n"
-    raise TypeError(f"themearray contains invalid substring(s):\n{tmp}\n{themearray}")
+            tmp += f"- {type(substr)}: {repr(substr)} [invalid]\n"
+            invalid = True
+    if invalid:
+        raise TypeError(f"themearray contains invalid substring(s):\n{tmp}")
+    sys.exit(tmp)
 
 
 def color_log_severity(severity: LogLevel) -> ThemeAttr:
@@ -884,7 +882,24 @@ def color_status_group(status_group: StatusGroup) -> ThemeAttr:
         Returns:
             (ThemeAttr): The corresponding ThemeAttr
     """
-    return ThemeAttr("main", stgroup_mapping[status_group])
+    try:
+        return ThemeAttr("main", stgroup_mapping[status_group])
+    except KeyError:
+        msg = [
+            [("color_status_group()", "emphasis"),
+             (" called with invalid argument(s):", "error")],
+            [("status_group = ", "default"),
+             (f"{status_group}", "argument"),
+             (" (type: ", "default"),
+             (f"{type(status_group)}", "argument"),
+             (", expected: ", "default"),
+             (f"{repr(StatusGroup)}", "argument"),
+             (")", "default")],
+        ]
+        unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+        raise ProgrammingError(unformatted_msg,
+                               severity=LogLevel.ERR,
+                               formatted_msg=formatted_msg)
 
 
 def window_tee_hline(win: curses.window, y: int,

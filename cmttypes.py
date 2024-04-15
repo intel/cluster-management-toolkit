@@ -869,7 +869,7 @@ def loglevel_to_name(loglevel: LogLevel) -> str:
         Returns:
             (str): A severity string
     """
-    return loglevel_mappings[min(LogLevel.DIFFSAME, loglevel)]
+    return loglevel_mappings[max(LogLevel.EMERG, min(LogLevel.DIFFSAME, loglevel))]
 
 
 class Retval(Enum):
