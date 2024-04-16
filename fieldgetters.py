@@ -8,6 +8,7 @@ Get data for fields in a list; typically used to populate _extra_data
 """
 
 import copy
+import re
 from typing import Any, Callable, Dict, List
 
 import about
@@ -16,10 +17,44 @@ from cmtpaths import HOMEDIR
 from cmttypes import deep_get, DictPath, FilePath, Optional, ProgrammingError, SecurityPolicy
 
 
+def fieldgetter_executable_version(**kwargs: Any) -> List[Any]:
+    """
+    A fieldgetter that provides the version from an executable.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            [str]: The list of cmt versions
+    """
+    executable: FilePath = FilePath(deep_get(kwargs, DictPath("executable"), ""))
+    args: List[str] = deep_get(kwargs, DictPath("args"), [])
+    version_regex: str = deep_get(kwargs, DictPath("version_regex"), '')
+
+    security_policy = SecurityPolicy.ALLOWLIST_RELAXED
+    fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
+                          "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
+
+    try:
+        executable_path = secure_which(FilePath(executable), fallback_allowlist=fallback_allowlist,
+                                       security_policy=security_policy)
+    except FileNotFoundError:
+        executable_path = None
+
+    version = []
+
+    if executable_path:
+        result: Optional[str] = execute_command_with_response([executable_path] + args)
+        if result:
+            for line in result.splitlines():
+                if (tmp := re.match(version_regex, line)) is not None:
+                    for field in tmp.groups():
+                        version.append(field)
+    return ["".join(version)]
+
+
 def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
     """
-    A fieldgetter that provides the version
-    of the Cluster Version Toolkit
+    A fieldgetter that provides the version of the Cluster Version Toolkit.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -45,8 +80,7 @@ def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
 
 def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
     """
-    A fieldgetter that provides the version
-    of Code Ready Containers (CRC).
+    A fieldgetter that provides the version of Code Ready Containers (CRC).
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -100,8 +134,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
 
 def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
     """
-    A fieldgetter that provides the version
-    of the Kubernetes API-server.
+    A fieldgetter that provides the version of the Kubernetes API-server.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -127,7 +160,8 @@ def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
 
 # Fieldgetters acceptable for direct use in view files
 fieldgetter_allowlist: Dict[str, Callable] = {
-    "fieldgetter_cmt_version": fieldgetter_cmt_version,
     "fieldgetter_api_server_version": fieldgetter_api_server_version,
+    "fieldgetter_cmt_version": fieldgetter_cmt_version,
     "fieldgetter_crc_version": fieldgetter_crc_version,
+    "fieldgetter_executable_version": fieldgetter_executable_version,
 }

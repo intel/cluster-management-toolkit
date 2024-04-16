@@ -77,6 +77,32 @@ listview:
           include_end: false
           strip_empty_start: false
           strip_empty_end: true
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "helm"
+      pathtype: "dict"
+      _extra_data:
+        name: "Helm"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/helm"
+            args: ["version"]
+            version_regex: '^version.BuildInfo{Version:"v(\d+)(\.)(\d+)(\.)(\d+)".*'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/helm_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          start: "## Changelog since "
+          include_start: true
+          end: "# v"
+          include_end: false
+          strip_empty_start: false
+          strip_empty_end: true
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:
