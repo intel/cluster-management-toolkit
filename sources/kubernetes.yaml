@@ -1,9 +1,9 @@
 kubernetes:
   description: "Kubernetes"
   candidate_version:
-    function: "get_github_version"
+    function: "get_github_tag_version"
     args:
-      url: "https://api.github.com/repos/kubernetes/kubernetes/releases/latest"
+      url: "https://api.github.com/repos/kubernetes/kubernetes/releases"
       version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
   changelog:
     url: "https://raw.githubusercontent.com/kubernetes/kubernetes/master/CHANGELOG/CHANGELOG-<<<version.0>>>.<<<version.2>>>.md"

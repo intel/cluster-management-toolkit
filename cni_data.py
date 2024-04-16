@@ -126,7 +126,7 @@ cni_data: Dict[str, Any] = {
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/antrea-io/antrea/releases/latest",
+                "https://api.github.com/repos/antrea-io/antrea/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
@@ -141,7 +141,7 @@ cni_data: Dict[str, Any] = {
         "executable": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/projectcalico/calico/releases/latest",
+                "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "version_command": ["kubectl", "calico", "version"],
             "version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
@@ -161,7 +161,7 @@ cni_data: Dict[str, Any] = {
             "version_regex": r"^Cluster Version:\s*(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/projectcalico/calico/releases/latest",
+                "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
@@ -181,7 +181,7 @@ cni_data: Dict[str, Any] = {
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/projectcalico/calico/releases/latest",
+                "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
@@ -226,7 +226,7 @@ cni_data: Dict[str, Any] = {
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/flannel-io/flannel/releases/latest",
+                "https://api.github.com/repos/flannel-io/flannel/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
@@ -242,7 +242,7 @@ cni_data: Dict[str, Any] = {
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/cloudnativelabs/kube-router/releases/latest",
+                "https://api.github.com/repos/cloudnativelabs/kube-router/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
@@ -257,7 +257,7 @@ cni_data: Dict[str, Any] = {
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
-                "https://api.github.com/repos/weaveworks/weave/releases/latest",
+                "https://api.github.com/repos/weaveworks/weave/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {

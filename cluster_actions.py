@@ -212,7 +212,7 @@ def get_api_server_package_version(**kwargs: Any) -> Tuple[str, str, str]:
 def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None,
                  quiet: bool = False, verbose: bool = False) -> Tuple[int, Dict]:
     """
-    Run a playbook
+    Run an Ansible playbook.
 
         Parameters:
             playbookpath (FilePath): A path to the playbook to run
@@ -224,8 +224,8 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
             (int): The return value from ansible_run_playbook_on_selection()
             (dict): A dict with the results from the run
     """
-    # The first patch revision that isn't available from the old repositories is 1.28.3;
-    # this means that we need to include all minor versions from 28 and up.
+    # The first patch revision that isn't available from the new repositories is 1.24.0;
+    # so include all repositories from 1.24 and up for the time being.
     if (kubernetes_upstream_version := get_latest_upstream_version("kubernetes")) is None:
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": Could not get the latest upstream Kubernetes version; ",
@@ -237,7 +237,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     # Split the version tuple
     _upstream_major, upstream_minor, _rest = kubernetes_upstream_version.split(".")
     minor_versions = []
-    for minor_version in range(28, int(upstream_minor) + 1):
+    for minor_version in range(24, int(upstream_minor) + 1):
         minor_versions.append(f"{minor_version}")
 
     values = {
@@ -268,7 +268,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
 
 def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs: Any) -> int:
     """
-    Run a set of playbooks
+    Run a set of Ansible playbooks.
 
         Parameters:
             playbooks ([([ANSIThemeStr], FilePath)]): A list of playbooks
@@ -350,7 +350,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
     cri: str = deep_get(kwargs, DictPath("cri"))
 
     # Add the CRI to the setup playbooks for the control plane;
-    # the list is short enough that doing prepend isn't a performance issue
+    # the list is short enough that doing prepend isn't a performance issue.
     if cri == "containerd":
         setup_playbooks_with_cri = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
     elif cri == "cri-o":
@@ -377,7 +377,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
 # pylint: disable-next=too-many-locals
 def join_nodes(hosts: List[str], **kwargs: Any) -> int:
     """
-    Given a list of hostnames join them as worker nodes to the cluster
+    Given a list of hostnames join them as worker nodes to the cluster.
 
         earameters:
             hosts ([str]): A list of hosts to join to the cluster

@@ -404,7 +404,8 @@ def download_files(directory: str,
 
 def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str], str]]:
     """
-    Given a github repository find the latest released version
+    Given a github repository find the latest release;
+    exclude releases that do not match the regex and prereleases.
 
         Parameters:
             url (str): The github API URL to check for latest version
@@ -414,23 +415,29 @@ def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str]
                 ([str]): A list of version number elements, or None in case of failure
                 (str): The release data
     """
-    version: List[str] = []
+    compiled_version_regex = re.compile(version_regex)
+    versions: List[Tuple[List[str], str]] = []
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
-            if not download_files(td, [(url, "release.yaml", None, None)], permissions=0o600):
+            if not download_files(td, [(url, "releases.yaml", None, None)], permissions=0o600):
                 return None
-            tmp = secure_read_yaml(FilePath(f"{td}/release.yaml"))
-            result = deep_get(tmp, DictPath("tag_name"), "")
-            release_date = deep_get(tmp, DictPath("published_at"), "")
-            versionoutput = result.splitlines()
-            _version_regex = re.compile(version_regex)
-            for line in versionoutput:
-                tmp = _version_regex.match(line)
-                if tmp is not None:
-                    version = list(tmp.groups())
-                    break
-    return version, release_date
+            tmp = secure_read_yaml(FilePath(f"{td}/releases.yaml"))
+            for release in tmp:
+                prerelease = deep_get(release, DictPath("prerelease"), False)
+                draft = deep_get(release, DictPath("draft"), False)
+                if prerelease or draft:
+                    continue
+                name = deep_get(release, DictPath("tag_name"), "")
+                if (tmp := compiled_version_regex.match(name)) is None:
+                    continue
+                created_at = deep_get(release, DictPath("created_at"), "<unknown>")
+                published_at = deep_get(release, DictPath("published_at"), created_at)
+                versions.append((list(tmp.groups()), published_at))
+    if versions:
+        return cast(Tuple[List[str], str], natsorted(versions, reverse=True)[0])
+
+    return [], ""
 
 
 candidate_version_function_allowlist: Dict = {
@@ -452,8 +459,8 @@ def update_version_cache(**kwargs: Any) -> None:
     """
     software_sources_dir = deep_get(kwargs,
                                     DictPath("software_sources_dir"), SOFTWARE_SOURCES_DIR)
-    verbose = deep_get(kwargs, DictPath("verbose"), False)
-    force = deep_get(kwargs, DictPath("force"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+    force: bool = deep_get(kwargs, DictPath("force"), False)
     # Substitute {HOME}/ for {HOMEDIR}
     if software_sources_dir.startswith(("{HOME}/", "{HOME}\\")):
         software_sources_dir = HOMEDIR.joinpath(software_sources_dir[len('{HOME}/'):])
