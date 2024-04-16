@@ -1433,6 +1433,8 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     _values.append((tuple(__values), "raw"))
                 elif ptype == "fieldgetter":
                     fieldgetter_data = deep_get_with_fallback(obj, path, {})
+                    if not fieldgetter_data:
+                        continue
                     fieldgetter_tmp = deep_get(fieldgetter_data, DictPath("fieldgetter"))
                     fieldgetter = deep_get(fieldgetter_allowlist, DictPath(fieldgetter_tmp))
                     if fieldgetter is None:
