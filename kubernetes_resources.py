@@ -1642,6 +1642,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/helm.openshift.io/v1beta1/"],
         "api": "projecthelmchartrepositories",
     },
+    # helm.toolkit.fluxcd.io
+    ("HelmRelease", "helm.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/helm.toolkit.fluxcd.io/v2beta2/"],
+        "api": "helmreleases",
+    },
     # hostpathprovisioner.kubevirt.io
     ("HostPathProvisioner", "hostpathprovisioner.kubevirt.io"): {
         "api_paths": ["apis/hostpathprovisioner.kubevirt.io/v1beta1/"],
@@ -2226,6 +2231,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "cachedimages",
         "namespaced": False,
     },
+    # kustomize.toolkit.fluxcd.io
+    ("Kustomization", "kustomize.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/kustomize.toolkit.fluxcd.io/v1/"],
+        "api": "kustomizations",
+    },
     # kyverno.io
     ("AdmissionReport", "kyverno.io"): {
         "api_paths": ["apis/kyverno.io/v1alpha2/"],
@@ -2722,6 +2732,19 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Numatopology", "nodeinfo.volcano.sh"): {
         "api_paths": ["apis/nodeinfo.volcano.sh/v1alpha1/"],
         "api": "numatopologies",
+    },
+    # notification.toolkit.fluxcd.io
+    ("Receiver", "notification.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/notification.toolkit.fluxcd.io/v1/"],
+        "api": "receivers",
+    },
+    ("Alert", "notification.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/notification.toolkit.fluxcd.io/v1beta3/"],
+        "api": "alerts",
+    },
+    ("Provider", "notification.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/notification.toolkit.fluxcd.io/v1beta3/"],
+        "api": "providers",
     },
     # nvidia.com
     ("ClusterPolicy", "nvidia.com"): {
@@ -3242,6 +3265,27 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("SinkBinding", "sources.knative.dev"): {
         "api_paths": ["apis/sources.knative.dev/v1/", "apis/sources.knative.dev/v1beta1/"],
         "api": "sinkbindings",
+    },
+    # source.toolkit.fluxcd.io
+    ("GitRepository", "source.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/source.toolkit.fluxcd.io/v1/"],
+        "api": "gitrepositories",
+    },
+    ("Bucket", "source.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/source.toolkit.fluxcd.io/v1beta2/"],
+        "api": "buckets",
+    },
+    ("HelmChart", "source.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/source.toolkit.fluxcd.io/v1beta2/"],
+        "api": "helmcharts",
+    },
+    ("HelmRepository", "source.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/source.toolkit.fluxcd.io/v1beta2/"],
+        "api": "helmrepositories",
+    },
+    ("OCIRepository", "source.toolkit.fluxcd.io"): {
+        "api_paths": ["apis/source.toolkit.fluxcd.io/v1beta2/"],
+        "api": "ocirepositories",
     },
     # specs.smi-spec.io
     ("HTTPRouteGroup", "specs.smi-spec.io"): {
