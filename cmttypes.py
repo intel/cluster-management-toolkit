@@ -31,6 +31,9 @@ class FilePath(str):
     def __init__(self, path: Union["FilePath", str, Path, PurePath]) -> None:
         self.path = str(path)
 
+    def __str__(self) -> str:
+        return self.path
+
     def basename(self) -> str:
         """
         Returns the filename part of the FilePath.

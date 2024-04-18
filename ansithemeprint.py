@@ -49,9 +49,10 @@ class ANSIThemeStr:
                 themeref (str): The reference to the formatting to use
         """
         if not isinstance(string, str) or not isinstance(themeref, str):
-            raise TypeError("ANSIThemeStr only accepts (str, str)")
-        self.string = string
-        self.themeref = themeref
+            raise TypeError("ANSIThemeStr only accepts (str, str); "
+                            f"received ({type(string)}, {type(themeref)})")
+        self.string = str(string)
+        self.themeref = str(themeref)
 
     def __str__(self) -> str:
         """
@@ -83,7 +84,10 @@ class ANSIThemeStr:
             Returns:
                 (ANSIThemeStr): The ANSIThemeStr with new formatting applied
         """
-        self.themeref = themeref
+        if not isinstance(themeref, str):
+            raise TypeError("ANSIThemeStr().format() only accepts (str); "
+                            f"received ({type(themeref)})")
+        self.themeref = str(themeref)
         return self
 
     def get_themeref(self) -> str:
