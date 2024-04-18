@@ -1,0 +1,12 @@
+cilium-cli:
+  description: "cilium-cli (Calico)"
+  installed_version:
+    function: "get_executable_version"
+    executable: "/usr/bin/cilium"
+    args: ["version"]
+    version_regex: '^cilium-cli:\s+v(\d+)(\.)(\d+)(\.)(\d+).*'
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/cilium/cilium-cli/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'

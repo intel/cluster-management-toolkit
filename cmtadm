@@ -3639,8 +3639,11 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     # default options
     update_cache = True
     verbose = False
+    force = False
 
     for opt, _optarg in options:
+        if opt == "--force":
+            force = True
         if opt == "--no-cache-update":
             update_cache = False
         elif opt == "--verbose":
@@ -3661,7 +3664,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
             check_and_print_status(update_zypper_cache())
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr("Updating version cache", "action")])
-        update_version_cache(verbose=verbose)
+        update_version_cache(verbose=verbose, force=force)
 
     pkg_packages = [
         "ansible",
@@ -6581,6 +6584,15 @@ COMMANDLINE = {
             [ANSIThemeStr("relevant to the configuration in use", "description")],
         ],
         "options": {
+            "--force": {
+                "description": [
+                    ANSIThemeStr("Force update of the version cache", "description")],
+                "extended_description": [
+                    [ANSIThemeStr("Typically version cache updates are", "description")],
+                    [ANSIThemeStr("rate-limited to once per hour; this option", "description")],
+                    [ANSIThemeStr("forces an update during the cooldown period.", "description")],
+                ],
+            },
             "--no-cache-update": {
                 "description": [
                     ANSIThemeStr("Do not update the APT cache", "description")],

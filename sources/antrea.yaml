@@ -1,0 +1,12 @@
+antctl:
+  description: "antctl (Antrea)"
+  installed_version:
+    function: "get_executable_version"
+    executable: "/usr/bin/antctl"
+    args: ["version"]
+    version_regex: '^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)'
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/antrea-io/antrea/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'

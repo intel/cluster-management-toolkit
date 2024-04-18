@@ -10,6 +10,7 @@ listview:
   listgetter_args:
     # We should call update_version_cache() here
     file_not_found_status: "No version data found"
+    skip_empty_paths: true
     paths:
     - filepath: "{HOME}/cluster-management-toolkit/CHANGELOG/latest.yaml"
       filetype: "yaml"
@@ -92,6 +93,84 @@ listview:
         file_not_found_status: "No changelog found"
         paths:
         - filepath: "{HOME}/.cmt/version-cache/helm_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          start: "## Changelog since "
+          include_start: true
+          end: "# v"
+          include_end: false
+          strip_empty_start: false
+          strip_empty_end: true
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "antctl"
+      pathtype: "dict"
+      _extra_data:
+        name: "antctl (Antrea)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/antctl"
+            args: ["version"]
+            version_regex: '^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/antrea_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          start: "## Changelog since "
+          include_start: true
+          end: "# v"
+          include_end: false
+          strip_empty_start: false
+          strip_empty_end: true
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "calicoctl"
+      pathtype: "dict"
+      _extra_data:
+        name: "calicoctl (Calico)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/calicoctl"
+            args: ["version"]
+            version_regex: '^Client Version:\s+v(\d+)(\.)(\d+)(\.)(\d+)'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/calico_current_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+        formatter_args:
+          # First match in the file is what we want
+          start: "## Changelog since "
+          include_start: true
+          end: "# v"
+          include_end: false
+          strip_empty_start: false
+          strip_empty_end: true
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "cilium-cli"
+      pathtype: "dict"
+      _extra_data:
+        name: "cilium-cli (Cilium)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/cilium"
+            args: ["version"]
+            version_regex: '^cilium-cli:\s+v(\d+)(\.)(\d+)(\.)(\d+).*'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/cilium_current_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"

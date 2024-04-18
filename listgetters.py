@@ -385,6 +385,7 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[None, i
                                [DictPath("file_not_found_status"),
                                 DictPath("extra_values#_extra_data#file_not_found_status")],
                                "File not found", fallback_on_empty=True)
+    skip_empty_paths = deep_get(kwargs, DictPath("skip_empty_paths"), False)
     vlist: List[Dict[str, Any]] = []
     status = None
 
@@ -447,6 +448,8 @@ def listgetter_files(**kwargs: Any) -> Tuple[List[Dict[str, Any]], Union[None, i
                 item = d
         else:
             item = __recurse_data(path, d)
+        if (item is None or not item) and skip_empty_paths:
+            continue
         extra_data = deep_get(path, DictPath("_extra_data"), {})
         extra_data["mtime"] = mtime
 
