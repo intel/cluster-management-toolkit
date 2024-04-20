@@ -64,7 +64,7 @@
         else
           export https_proxy=
         fi
-        kubeadm config --config {{ cluster_config.path }} images pull
+        kubeadm config images pull --config {{ cluster_config.path }}
       when: "port_check.rc == 1"
       changed_when: true
     - name: "Initialising Kubernetes cluster"
