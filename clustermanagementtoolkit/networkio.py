@@ -26,14 +26,6 @@ from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple
 
 import paramiko
 
-import cmtlib
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-
-from cmtpaths import HOMEDIR, SSH_DIR, SOFTWARE_SOURCES_DIR
-from cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH, VERSION_CANDIDATES_FILE
-from ansithemeprint import ansithemeprint, ANSIThemeStr
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-
 try:
     from natsort import natsorted
 except ModuleNotFoundError:  # pragma: no cover
@@ -45,6 +37,18 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import urllib3; "
              "you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
+
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
+
+from clustermanagementtoolkit.cmtpaths import HOMEDIR, SSH_DIR, SOFTWARE_SOURCES_DIR
+from clustermanagementtoolkit.cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH
+from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE
+
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, ANSIThemeStr
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
 
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
@@ -584,12 +588,11 @@ def update_version_cache(**kwargs: Any) -> None:
                             ANSIThemeStr(f"{changelog_url}", "url"),
                             ANSIThemeStr("; skipping.", "default")], stderr=True)
             continue
-        else:
-            if key not in last_update_data:
-                last_update_data[key] = {}
-            last_update_data[key]["changelog"] = datetime.now()
-            secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
-                              last_update_data, permissions=0o644)
+        if key not in last_update_data:
+            last_update_data[key] = {}
+        last_update_data[key]["changelog"] = datetime.now()
+        secure_write_yaml(VERSION_CACHE_LAST_UPDATED_PATH,
+                          last_update_data, permissions=0o644)
 
     if changed:
         secure_write_yaml(VERSION_CANDIDATES_FILE, candidate_versions, permissions=0o644)

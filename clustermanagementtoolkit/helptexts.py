@@ -7,10 +7,10 @@
 This module contains helptexts for cmu
 """
 
-from about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION
-from about import UI_PROGRAM_NAME, UI_PROGRAM_VERSION
+from clustermanagementtoolkit.about import PROGRAM_SUITE_FULL_NAME, PROGRAM_SUITE_VERSION
+from clustermanagementtoolkit.about import UI_PROGRAM_NAME, UI_PROGRAM_VERSION
 
-from curses_helper import ThemeAttr, ThemeStr
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeStr
 
 # Improve to handle embedded color codes; probably through storing the log messages
 # as a list of lines

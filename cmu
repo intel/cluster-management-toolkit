@@ -61,82 +61,108 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback
-from cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
-from cmttypes import FilePath, Retval, SecurityPolicy, StatusGroup
-from cmttypes import ProgrammingError, FilePathAuditError
-from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
-from cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE
-from cmtpaths import CMT_CONFIG_FILENAME, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_list, deep_get_with_fallback
+from clustermanagementtoolkit.cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, Retval, SecurityPolicy, StatusGroup
+from clustermanagementtoolkit.cmttypes import ProgrammingError, FilePathAuditError
+from clustermanagementtoolkit.cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILENAME
+from clustermanagementtoolkit.cmtpaths import SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
 
-from cmtio import execute_command, execute_command_with_response
-from cmtio import expand_path, secure_read_string, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import expand_path
+from clustermanagementtoolkit.cmtio import secure_read_string, secure_which, secure_write_string
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 # from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 # from cmtlog import debuglog, CMTLogType, CMTLog
 
-from cmtvalidators import validate_name
+from clustermanagementtoolkit.cmtvalidators import validate_name
 
-from commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline
 
-import logparser as logparsers
-from logparser import logparser, logparser_initialised, LogLevel, LogparserConfiguration
-from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity
-from logparser import loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
-import curses_helper
-import cmtlib
-from cmtlib import decode_value
-from cmtlib import clamp, get_package_versions, identify_k8s_distro, make_set_expression_list
-from cmtlib import none_timestamp, timestamp_to_datetime, get_since
-from cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
-from cmtlib import normalise_cpu_usage_to_millicores
-from cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
-from curses_helper import CursesConfiguration, color_log_severity
-from curses_helper import format_helptext, get_mousemask, color_status_group
-from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
-from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len
-from curses_helper import themearray_truncate, ThemeAttr, ThemeRef, ThemeStr
+import clustermanagementtoolkit.logparser as logparsers
 
-import listgetters
-from listgetters import listgetter_allowlist
-import listgetters_async
-from listgetters_async import listgetter_async_allowlist
+from clustermanagementtoolkit.logparser import logparser, logparser_initialised
+from clustermanagementtoolkit.logparser import LogLevel, LogparserConfiguration
+from clustermanagementtoolkit.logparser import lvl_to_letter_severity, lvl_to_4letter_severity
+from clustermanagementtoolkit.logparser import lvl_to_word_severity
+from clustermanagementtoolkit.logparser import loglevel_to_name, get_loglevel_names
+from clustermanagementtoolkit.logparser import name_to_loglevel, get_parser_list
 
-import datagetters
-from datagetters import datagetter_allowlist
-import generators
-from generators import generator_allowlist, default_processor
-import infogetters
-import itemgetters
-from itemgetters import itemgetter_allowlist
-from objgetters import objgetter_allowlist
-import formatters
-from formatters import formatter_allowlist
-from fieldgetters import fieldgetter_allowlist
+from clustermanagementtoolkit import curses_helper
 
-from ansible_helper import ansible_configuration
-from ansible_helper import ansible_get_inventory_dict
-from ansible_helper import ansible_get_groups, ansible_get_groups_by_host
-from ansible_helper import ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
-from ansible_helper import ansible_print_play_results, get_playbook_path
-from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-import helptexts
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import decode_value, clamp, get_package_versions
+from clustermanagementtoolkit.cmtlib import identify_k8s_distro, make_set_expression_list
+from clustermanagementtoolkit.cmtlib import none_timestamp, timestamp_to_datetime, get_since
+from clustermanagementtoolkit.cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
+from clustermanagementtoolkit.cmtlib import normalise_cpu_usage_to_millicores
+from clustermanagementtoolkit.cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
 
-from kubernetes_helper import KubernetesHelper, KubernetesResourceCache
-from kubernetes_helper import get_controller_from_owner_references, get_image_version
-from kubernetes_helper import kubectl_get_version, make_selector
-from kubernetes_helper import update_api_status as kh_update_api_status, guess_kind
+from clustermanagementtoolkit.curses_helper import CursesConfiguration, color_log_severity
+from clustermanagementtoolkit.curses_helper import format_helptext, get_mousemask
+from clustermanagementtoolkit.curses_helper import color_status_group
+from clustermanagementtoolkit.curses_helper import UIProps, WidgetLineAttrs
+from clustermanagementtoolkit.curses_helper import get_theme_ref, read_theme
+from clustermanagementtoolkit.curses_helper import themearray_wrap_line, themearray_to_string
+from clustermanagementtoolkit.curses_helper import themearray_len
+from clustermanagementtoolkit.curses_helper import themearray_truncate
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 
-import checks
+from clustermanagementtoolkit import listgetters
+from clustermanagementtoolkit.listgetters import listgetter_allowlist
 
-from ansithemeprint import ANSIThemeStr, ansithemestr_join_list
-from ansithemeprint import clear_screen, ansithemeinput, ansithemeprint
+from clustermanagementtoolkit import listgetters_async
+from clustermanagementtoolkit.listgetters_async import listgetter_async_allowlist
 
-import reexecutor
+from clustermanagementtoolkit import datagetters
+from clustermanagementtoolkit.datagetters import datagetter_allowlist
 
-import about
+from clustermanagementtoolkit import generators
+from clustermanagementtoolkit.generators import generator_allowlist, default_processor
+
+from clustermanagementtoolkit import infogetters
+
+from clustermanagementtoolkit import itemgetters
+from clustermanagementtoolkit.itemgetters import itemgetter_allowlist
+
+from clustermanagementtoolkit.objgetters import objgetter_allowlist
+
+from clustermanagementtoolkit import formatters
+from clustermanagementtoolkit.formatters import formatter_allowlist
+
+from clustermanagementtoolkit.fieldgetters import fieldgetter_allowlist
+
+from clustermanagementtoolkit.ansible_helper import ansible_configuration
+from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_dict
+from clustermanagementtoolkit.ansible_helper import ansible_get_groups, ansible_get_groups_by_host
+from clustermanagementtoolkit.ansible_helper import ansible_add_hosts, ansible_remove_hosts
+from clustermanagementtoolkit.ansible_helper import ansible_set_vars
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import ansible_get_logs, ansible_delete_log
+from clustermanagementtoolkit.ansible_helper import ansible_print_play_results, get_playbook_path
+from clustermanagementtoolkit.ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+
+from clustermanagementtoolkit import helptexts
+
+from clustermanagementtoolkit.kubernetes_helper import KubernetesHelper, KubernetesResourceCache
+from clustermanagementtoolkit.kubernetes_helper import get_controller_from_owner_references
+from clustermanagementtoolkit.kubernetes_helper import get_image_version
+from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version, make_selector
+from clustermanagementtoolkit.kubernetes_helper import update_api_status as kh_update_api_status
+from clustermanagementtoolkit.kubernetes_helper import guess_kind
+
+from clustermanagementtoolkit import checks
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import clear_screen, ansithemeinput, ansithemeprint
+
+from clustermanagementtoolkit import reexecutor
+
+from clustermanagementtoolkit import about
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."

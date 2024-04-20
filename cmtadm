@@ -39,52 +39,70 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cluster_actions import create_vm_hosts, join_nodes, prepare_nodes, prepare_vm_template
+from clustermanagementtoolkit.cluster_actions import create_vm_hosts, join_nodes
+from clustermanagementtoolkit.cluster_actions import prepare_nodes, prepare_vm_template
 
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
-from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
-from cmtpaths import BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
-from cmtpaths import DEPLOYMENT_DIR
-from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
-from cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
-from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
-from cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
-from cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 
-from commandparser import parse_commandline
+from clustermanagementtoolkit.cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
+from clustermanagementtoolkit.cmtpaths import BINDIR, HOMEDIR
+from clustermanagementtoolkit.cmtpaths import SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
+from clustermanagementtoolkit.cmtpaths import DEPLOYMENT_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_UPGRADE_DIR, CMT_POST_UPGRADE_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
+from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts
-from ansible_helper import ansible_get_hosts_by_group, get_playbook_path
-from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
+from clustermanagementtoolkit.commandparser import parse_commandline
 
-import cmtio
-from cmtio import check_path, execute_command, execute_command_with_response, secure_mkdir
-from cmtio import secure_read_string, secure_rm, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from networkio import download_files, get_github_version
-from networkio import scan_and_add_ssh_keys, update_version_cache
+from clustermanagementtoolkit.ansible_helper import ansible_configuration
+from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_dict, ansible_set_vars
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import ansible_add_hosts
+from clustermanagementtoolkit.ansible_helper import ansible_get_hosts_by_group, get_playbook_path
+from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
+from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_paths
 
-import cmtlib
-from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper
-from cmtlib import get_latest_upstream_version, get_cluster_name
-from cmtlib import identify_distro, read_cmtconfig, substitute_list, substitute_string
+from clustermanagementtoolkit import cmtio
+from clustermanagementtoolkit.cmtio import check_path
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import secure_mkdir, secure_read_string, secure_rm
+from clustermanagementtoolkit.cmtio import secure_which, secure_write_string
 
-from cni_data import cni_data
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-import kubernetes_helper
-from kubernetes_helper import get_node_roles
+from clustermanagementtoolkit.networkio import download_files, get_github_version
+from clustermanagementtoolkit.networkio import scan_and_add_ssh_keys, update_version_cache
 
-from ansithemeprint import ANSIThemeStr, ansithemeinput, ansithemeinput_password, ansithemeprint
-from ansithemeprint import ansithemestr_join_list, themearray_override_formatting
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import check_versions_apt
+from clustermanagementtoolkit.cmtlib import check_versions_yum, check_versions_zypper
+from clustermanagementtoolkit.cmtlib import get_latest_upstream_version, get_cluster_name
+from clustermanagementtoolkit.cmtlib import identify_distro, read_cmtconfig
+from clustermanagementtoolkit.cmtlib import substitute_list, substitute_string
 
-import fieldgetters
-import checks
+from clustermanagementtoolkit.cni_data import cni_data
 
-import about
+from clustermanagementtoolkit import kubernetes_helper
+from clustermanagementtoolkit.kubernetes_helper import get_node_roles
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeinput
+from clustermanagementtoolkit.ansithemeprint import ansithemeinput_password, ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import themearray_override_formatting
+
+from clustermanagementtoolkit import fieldgetters
+
+from clustermanagementtoolkit import checks
+
+from clustermanagementtoolkit import about
+
 PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
@@ -3625,7 +3643,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     ansithemeprint([ANSIThemeStr("\nCluster import successful", "success")])
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Check whether there are newer versions of packages that are related to the cluster
@@ -4388,6 +4406,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         "use_proxy": use_proxy,
     }
 
+    # pylint: disable-next=too-many-nested-blocks
     if state == "adding_nodes":
         i = 0
         # We (hopefully) don't need to check whether the nodes are part of the cluster already,

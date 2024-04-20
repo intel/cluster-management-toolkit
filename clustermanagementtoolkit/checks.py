@@ -23,23 +23,29 @@ import re
 import sys
 from typing import Any, cast, Dict, Generator, List, Tuple, Union
 
-from ansible_helper import ansible_configuration
-from ansible_helper import ansible_run_playbook_on_selection, ansible_print_play_results
+from clustermanagementtoolkit.ansible_helper import ansible_configuration
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
 
-from recommended_permissions import recommended_directory_permissions
-from recommended_permissions import recommended_file_permissions
+from clustermanagementtoolkit.recommended_permissions import recommended_directory_permissions
+from clustermanagementtoolkit.recommended_permissions import recommended_file_permissions
 
-from cmtio import execute_command_with_response
-from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE
-from cmtpaths import SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
-import cmtlib
-from ansithemeprint import ANSIThemeStr, ansithemestr_join_list, ansithemeprint
+from clustermanagementtoolkit.cmtio import execute_command_with_response
 
-from kubernetes_helper import kubectl_get_version
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 
-import about
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE
+from clustermanagementtoolkit.cmtpaths import SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
+
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint
+
+from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version
+
+from clustermanagementtoolkit import about
 
 
 def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, int, int, int]:

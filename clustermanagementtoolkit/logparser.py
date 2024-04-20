@@ -71,20 +71,26 @@ except ModuleNotFoundError:
     # pylint: disable-next=invalid-name
     validators = None  # type: ignore
 
-from cmtpaths import HOMEDIR, PARSER_DIR
-from cmttypes import deep_get, deep_get_with_fallback, DictPath
-from cmttypes import FilePath, LogLevel, loglevel_mappings, loglevel_to_name, ProgrammingError
+from clustermanagementtoolkit.cmtpaths import HOMEDIR, PARSER_DIR
 
-from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath
+from clustermanagementtoolkit.cmttypes import LogLevel, loglevel_mappings, loglevel_to_name
+from clustermanagementtoolkit.cmttypes import ProgrammingError
 
-import cmtlib
-from cmtlib import none_timestamp, strip_ansicodes
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import none_timestamp, strip_ansicodes
+
 # from cmtlog import debuglog
-import formatters
 
-from curses_helper import themearray_len, themearray_to_string, ThemeAttr, ThemeRef, ThemeStr
+from clustermanagementtoolkit import formatters
 
-from ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.curses_helper import themearray_len, themearray_to_string
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
 
 # pylint: disable-next=too-few-public-methods

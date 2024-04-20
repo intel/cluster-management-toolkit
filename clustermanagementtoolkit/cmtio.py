@@ -21,9 +21,11 @@ from subprocess import PIPE, STDOUT  # nosec
 import sys
 from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
 
-from cmttypes import deep_get, DictPath
-from cmttypes import FilePath, FilePathAuditError, SecurityChecks, SecurityPolicy, SecurityStatus
-from cmtpaths import HOMEDIR
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+
+from clustermanagementtoolkit.cmtpaths import HOMEDIR
 
 
 # pylint: disable-next=too-many-branches

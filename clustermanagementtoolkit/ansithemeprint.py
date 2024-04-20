@@ -17,18 +17,20 @@ import subprocess  # nosec
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from cmttypes import deep_get, DictPath
-from cmttypes import FilePath, FilePathAuditError, ProgrammingError, LogLevel
-from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
-import cmtio
 try:
     # python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
     # pylint: disable-next=unused-import
     import yaml  # noqa
-    from cmtio_yaml import secure_read_yaml
+    from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
     USE_FALLBACK_THEME = False
 except ModuleNotFoundError:
     USE_FALLBACK_THEME = True
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
+from clustermanagementtoolkit.cmttypes import FilePathAuditError, ProgrammingError, LogLevel
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+
+from clustermanagementtoolkit import cmtio
 
 
 class ANSIThemeStr:

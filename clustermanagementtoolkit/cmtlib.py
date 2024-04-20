@@ -19,15 +19,20 @@ import re
 import sys
 from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 
-from ansithemeprint import ANSIThemeStr, ansithemeprint
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, SecurityChecks
-from cmttypes import FilePath, SecurityPolicy, ProgrammingError, LogLevel
-from cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR, VERSION_CANDIDATES_FILE
-from cmtpaths import KUBE_CONFIG_FILE
-import cmtio
-from cmtio_yaml import secure_read_yaml
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
-import kubernetes_helper
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy
+from clustermanagementtoolkit.cmttypes import FilePath, ProgrammingError, LogLevel
+
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
+from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE, KUBE_CONFIG_FILE
+
+from clustermanagementtoolkit import cmtio
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
+
+from clustermanagementtoolkit import kubernetes_helper
 
 cmtconfig = {}
 
@@ -385,10 +390,6 @@ def read_cmtconfig() -> Dict:
         Returns:
             (Dict): A reference to the global cmtconfig dict
     """
-    # This is for the benefit of avoiding dependency cycles
-    # pylint: disable-next=import-outside-toplevel
-    import cmtio_yaml
-
     try:
         # This is for the benefit of avoiding dependency cycles
         # pylint: disable-next=import-outside-toplevel
@@ -403,7 +404,7 @@ def read_cmtconfig() -> Dict:
         return {}
 
     # Read the base configuration file
-    cmtconfig = cmtio_yaml.secure_read_yaml(CMT_CONFIG_FILE)
+    cmtconfig = secure_read_yaml(CMT_CONFIG_FILE)
 
     # Now read cmt.yaml.d/* if available
     if not Path(CMT_CONFIG_FILE_DIR).is_dir():
@@ -419,7 +420,7 @@ def read_cmtconfig() -> Dict:
             continue
 
         # Read the conflet files
-        morecmtconfig = cmtio_yaml.secure_read_yaml(FilePath(str(path)))
+        morecmtconfig = secure_read_yaml(FilePath(str(path)))
 
         # Handle config files without any values defined
         if morecmtconfig is not None:
@@ -773,8 +774,10 @@ def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
         Returns:
             ([(str, str)]): The list of package versions
     """
-    # pylint: disable-next=unused-import,import-outside-toplevel
-    from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
+    # pylint: disable-next=import-outside-toplevel
+    from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+    # pylint: disable-next=import-outside-toplevel
+    from clustermanagementtoolkit.ansible_helper import get_playbook_path
 
     if not isinstance(hostname, str):
         raise TypeError(f"hostname {hostname} is type: {type(hostname)}, expected str")

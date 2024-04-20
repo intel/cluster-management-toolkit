@@ -19,11 +19,15 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityStatus
-from ansible_helper import ansible_run_playbook_on_selection, get_playbook_path
-from cmtio import check_path, join_securitystatus_set
-from cmtio_yaml import secure_read_yaml
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus
+
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import get_playbook_path
+
+from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
 
 def objgetter_ansible_facts(obj: Dict) -> Dict:

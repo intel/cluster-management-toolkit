@@ -33,12 +33,12 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import yaml; "
              "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
-from cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 
-import cmtlib
-from cmtlib import split_msg, strip_ansicodes
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import split_msg, strip_ansicodes
 
-from curses_helper import ThemeAttr, ThemeRef, ThemeStr, themearray_len
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr, themearray_len
 
 
 if json_is_ujson:
@@ -513,7 +513,7 @@ def format_yaml_line(line: str,
     return tmpline, remnants
 
 
-# pylint: disable-next=too-many-branches
+# pylint: disable-next=too-many-branches,too-many-locals
 def format_yaml(lines: Union[str, List[str]],
                 **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     """
