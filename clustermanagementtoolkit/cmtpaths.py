@@ -8,12 +8,27 @@
 This file contains paths used by CMT
 """
 
+import os
 from pathlib import Path
 from typing import List
 
-from cmttypes import FilePath
+from clustermanagementtoolkit.cmttypes import FilePath
 
 HOMEDIR = FilePath(Path.home())
+
+ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
+SOFTWARE_SOURCES_DIRNAME = "sources"
+PARSER_DIRNAME = "parsers"
+THEME_DIRNAME = "themes"
+VIEW_DIRNAME = "views"
+
+SYSTEM_CMTDIR = FilePath(os.path.join(f"{os.path.sep}etc", "cmt"))
+SYSTEM_DATA_DIR = FilePath(os.path.join(f"{os.path.sep}usr", "share", "cluster-management-toolkit"))
+SYSTEM_ANSIBLE_PLAYBOOK_DIR = os.path.join(SYSTEM_DATA_DIR, ANSIBLE_PLAYBOOK_DIRNAME)
+SYSTEM_PARSERS_DIR = os.path.join(SYSTEM_DATA_DIR, PARSER_DIRNAME)
+SYSTEM_SOFTWARE_SOURCES_DIR = os.path.join(SYSTEM_DATA_DIR, SOFTWARE_SOURCES_DIRNAME)
+SYSTEM_THEMES_DIR = os.path.join(SYSTEM_DATA_DIR, THEME_DIRNAME)
+SYSTEM_VIEWS_DIR = os.path.join(SYSTEM_DATA_DIR, VIEW_DIRNAME)
 
 BIN_DIRNAME = "bin"
 BINDIR = HOMEDIR.joinpath(BIN_DIRNAME)
@@ -30,13 +45,13 @@ VERSION_CACHE_DIRNAME = "version-cache"
 VERSION_CACHE_DIR = CMTDIR.joinpath(VERSION_CACHE_DIRNAME)
 VERSION_CACHE_LAST_UPDATED_PATH = CMTDIR.joinpath(VERSION_CACHE_DIRNAME, "last-updated")
 VERSION_CANDIDATES_FILE = VERSION_CACHE_DIR.joinpath("candidate_versions.yaml")
-SOFTWARE_SOURCES_DIRNAME = "sources"
 SOFTWARE_SOURCES_DIR = CMTDIR.joinpath(SOFTWARE_SOURCES_DIRNAME)
 AUDIT_LOG_BASENAME = "audit_log_"
 DEBUG_LOG_BASENAME = "debug_log_"
 
 CMT_CONFIG_FILENAME = "cmt.yaml"
 CMT_CONFIG_FILE = CMTDIR.joinpath(CMT_CONFIG_FILENAME)
+CMT_SYSTEM_CONFIG_FILE = SYSTEM_CMTDIR.joinpath(CMT_CONFIG_FILENAME)
 
 CMT_CONFIG_FILE_DIRNAME = f"{CMT_CONFIG_FILENAME}.d"
 CMT_CONFIG_FILE_DIR = CMTDIR.joinpath(CMT_CONFIG_FILE_DIRNAME)
@@ -46,14 +61,12 @@ CMT_INSTALLATION_INFO_FILE = CMTDIR.joinpath("installation_info.yaml")
 DEPLOYMENT_DIRNAME = "deployments"
 DEPLOYMENT_DIR = CMTDIR.joinpath(DEPLOYMENT_DIRNAME)
 
-THEME_DIRNAME = "themes"
 THEME_DIR = CMTDIR.joinpath(THEME_DIRNAME)
 DEFAULT_THEME_FILE = THEME_DIR.joinpath("default.yaml")
 
 ANSIBLE_DIRNAME = "ansible"
 ANSIBLE_DIR = CMTDIR.joinpath(ANSIBLE_DIRNAME)
 
-ANSIBLE_PLAYBOOK_DIRNAME = "playbooks"
 ANSIBLE_PLAYBOOK_DIR = CMTDIR.joinpath(ANSIBLE_PLAYBOOK_DIRNAME)
 
 ANSIBLE_LOG_DIRNAME = "logs"
@@ -73,10 +86,8 @@ CMT_POST_TEARDOWN_DIR = CMT_HOOKS_DIR.joinpath("post-teardown.d")
 CMT_PRE_PURGE_DIR = CMT_HOOKS_DIR.joinpath("pre-purge.d")
 CMT_POST_PURGE_DIR = CMT_HOOKS_DIR.joinpath("post-purge.d")
 
-PARSER_DIRNAME = "parsers"
 PARSER_DIR = CMTDIR.joinpath(PARSER_DIRNAME)
 
-VIEW_DIRNAME = "views"
 VIEW_DIR = CMTDIR.joinpath(VIEW_DIRNAME)
 
 KUBE_CONFIG_DIR = HOMEDIR.joinpath(".kube")

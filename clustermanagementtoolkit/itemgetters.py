@@ -20,16 +20,18 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from curses_helper import ThemeAttr, ThemeStr, WidgetLineAttrs
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeStr, WidgetLineAttrs
 
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, ProgrammingError
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import ProgrammingError
 
-import cmtlib
-from cmtlib import disksize_to_human, get_package_versions, get_since
-from cmtlib import make_set_expression, split_msg, timestamp_to_datetime
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import disksize_to_human, get_package_versions, get_since
+from clustermanagementtoolkit.cmtlib import make_set_expression, split_msg, timestamp_to_datetime
 
-import kubernetes_helper
-from pvtypes import KNOWN_PV_TYPES
+from clustermanagementtoolkit import kubernetes_helper
+
+from clustermanagementtoolkit.pvtypes import KNOWN_PV_TYPES
 
 
 # pylint: disable-next=unused-argument

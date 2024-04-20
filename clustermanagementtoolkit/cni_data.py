@@ -10,9 +10,11 @@ Helper for installing and upgrading CNI
 
 from typing import Any, Dict
 
-from cmtio import check_path, execute_command, join_securitystatus_set
-from cmttypes import FilePath, FilePathAuditError, SecurityStatus
-from networkio import get_github_version
+from clustermanagementtoolkit.cmtio import check_path, execute_command, join_securitystatus_set
+
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, SecurityStatus
+
+from clustermanagementtoolkit.networkio import get_github_version
 
 
 def __patch_cni_calico(cni_path: FilePath, pod_network_cidr: str) -> bool:

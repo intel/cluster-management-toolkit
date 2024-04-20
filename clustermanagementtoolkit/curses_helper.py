@@ -31,16 +31,18 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmtio import check_path, join_securitystatus_set
-from cmtio_yaml import secure_read_yaml
-from cmttypes import DictPath, FilePath, LogLevel, StatusGroup, Retval
-from cmttypes import FilePathAuditError, ProgrammingError
-from cmttypes import SecurityChecks, SecurityStatus
-from cmttypes import deep_get, loglevel_to_name, stgroup_mapping
+from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 
-from ansithemeprint import ANSIThemeStr, ansithemeprint
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
-import cmtlib
+from clustermanagementtoolkit.cmttypes import DictPath, FilePath, LogLevel, StatusGroup, Retval
+from clustermanagementtoolkit.cmttypes import FilePathAuditError, ProgrammingError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus
+from clustermanagementtoolkit.cmttypes import deep_get, loglevel_to_name, stgroup_mapping
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
+
+from clustermanagementtoolkit import cmtlib
 
 theme: Dict = {}
 themefile: Optional[FilePath] = None
@@ -884,7 +886,7 @@ def color_status_group(status_group: StatusGroup) -> ThemeAttr:
     """
     try:
         return ThemeAttr("main", stgroup_mapping[status_group])
-    except KeyError:
+    except KeyError as e:
         msg = [
             [("color_status_group()", "emphasis"),
              (" called with invalid argument(s):", "error")],
@@ -899,7 +901,7 @@ def color_status_group(status_group: StatusGroup) -> ThemeAttr:
         unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
         raise ProgrammingError(unformatted_msg,
                                severity=LogLevel.ERR,
-                               formatted_msg=formatted_msg)
+                               formatted_msg=formatted_msg) from e
 
 
 def window_tee_hline(win: curses.window, y: int,

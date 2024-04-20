@@ -13,9 +13,13 @@ to be expressed through parameters to generic_infogetter()
 import re
 from typing import Any, Callable, Dict, List, Tuple
 
-from cmtlib import get_since, timestamp_to_datetime
-from cmttypes import deep_get, deep_get_with_fallback, DictPath, StatusGroup, ProgrammingError
-from kubernetes_helper import get_node_status, kind_tuple_to_name, guess_kind
+from clustermanagementtoolkit.cmtlib import get_since, timestamp_to_datetime
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import StatusGroup, ProgrammingError
+
+from clustermanagementtoolkit.kubernetes_helper import get_node_status
+from clustermanagementtoolkit.kubernetes_helper import kind_tuple_to_name, guess_kind
 
 
 # pylint: disable-next=too-many-branches

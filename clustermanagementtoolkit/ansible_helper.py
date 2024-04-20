@@ -25,15 +25,22 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import yaml; "
              "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
-import cmtlib
-from cmtio import check_path, join_securitystatus_set, secure_mkdir, secure_rm, secure_rmdir
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from cmtpaths import HOMEDIR
-from cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
-from cmtpaths import ANSIBLE_INVENTORY
-from ansithemeprint import ANSIThemeStr, ansithemeprint
-from cmttypes import deep_get, deep_set, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityStatus, validate_args
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
+from clustermanagementtoolkit.cmtio import secure_mkdir, secure_rm, secure_rmdir
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
+
+from clustermanagementtoolkit.cmtpaths import HOMEDIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus, validate_args
 
 ansible_configuration: Dict = {
     "ansible_forks": 10,

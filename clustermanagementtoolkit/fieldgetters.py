@@ -9,12 +9,16 @@ Get data for fields in a list; typically used to populate _extra_data
 
 import copy
 import re
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
-import about
-from cmtio import execute_command_with_response, secure_which
-from cmtpaths import HOMEDIR
-from cmttypes import deep_get, DictPath, FilePath, Optional, ProgrammingError, SecurityPolicy
+from clustermanagementtoolkit import about
+
+from clustermanagementtoolkit.cmtio import execute_command_with_response, secure_which
+
+from clustermanagementtoolkit.cmtpaths import HOMEDIR
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
+from clustermanagementtoolkit.cmttypes import ProgrammingError, SecurityPolicy
 
 
 def fieldgetter_executable_version(**kwargs: Any) -> List[Any]:
@@ -78,6 +82,7 @@ def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
     return version_strings
 
 
+# pylint: disable-next=too-many-branches
 def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
     """
     A fieldgetter that provides the version of Code Ready Containers (CRC).

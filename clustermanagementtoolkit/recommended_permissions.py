@@ -12,13 +12,15 @@ used when auditing the local system.
 import os
 from typing import Dict, List
 
-from cmttypes import FilePath
+from clustermanagementtoolkit.cmttypes import FilePath
 
-from cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
-from cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR, ANSIBLE_PLAYBOOK_DIR
-from cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
-from cmtpaths import KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
+from clustermanagementtoolkit.cmtpaths import BINDIR, CMTDIR, CMT_LOGS_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_DIR, ANSIBLE_INVENTORY, ANSIBLE_LOG_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR
+from clustermanagementtoolkit.cmtpaths import DEPLOYMENT_DIR, CMT_CONFIG_FILE_DIR, CMT_HOOKS_DIR
+from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_DIR, PARSER_DIR, THEME_DIR, VIEW_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE
+from clustermanagementtoolkit.cmtpaths import KUBE_CREDENTIALS_FILE
 
 
 # TODO:

@@ -47,18 +47,25 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import urllib3; "
              "you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
 
-from cmtpaths import HOMEDIR, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
-import cmtlib
-# from cmtlog import debuglog
-# from cmttypes import LogLevel
-from cmttypes import deep_get, deep_get_with_fallback, DictPath
-from cmttypes import FilePath, FilePathAuditError, ProgrammingError
-from cmttypes import SecurityChecks, SecurityPolicy, StatusGroup
-from cmtio import execute_command_with_response, secure_which
-from cmtio import secure_read
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
+from clustermanagementtoolkit.cmtpaths import HOMEDIR, KUBE_CONFIG_FILE, KUBE_CREDENTIALS_FILE
 
-from kubernetes_resources import kubernetes_resources, kubernetes_resource_types
+from clustermanagementtoolkit import cmtlib
+
+# from clustermanagementtoolkit.cmtlog import debuglog
+
+# from clustermanagementtoolkit.cmttypes import LogLevel
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, ProgrammingError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, StatusGroup
+
+from clustermanagementtoolkit.cmtio import execute_command_with_response, secure_which
+from clustermanagementtoolkit.cmtio import secure_read
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
+
+from clustermanagementtoolkit.kubernetes_resources import kubernetes_resources
+from clustermanagementtoolkit.kubernetes_resources import kubernetes_resource_types
 
 # Acceptable ciphers
 CIPHERS = [

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Known Persistent Volumne types. Note: with the introduction of CSIDrivers
+Known Persistent Volume types. Note: with the introduction of CSIDrivers
 most of these are deprecated.
 """
 

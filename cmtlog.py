@@ -22,11 +22,11 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmtpaths import CMT_LOGS_DIR, AUDIT_LOG_BASENAME, DEBUG_LOG_BASENAME
-from cmttypes import FilePath, LogLevel, ProgrammingError
-from cmtio_yaml import secure_write_yaml
+from clustermanagementtoolkit.cmtpaths import CMT_LOGS_DIR, AUDIT_LOG_BASENAME, DEBUG_LOG_BASENAME
+from clustermanagementtoolkit.cmttypes import FilePath, LogLevel, ProgrammingError
+from clustermanagementtoolkit.cmtio_yaml import secure_write_yaml
 
-from ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
 auditlog = None  # pylint: disable=invalid-name
 debuglog = None  # pylint: disable=invalid-name

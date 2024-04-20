@@ -17,8 +17,9 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import yaml; "
              "you may need to (re-)run `cmt-install` or `pip3 install PyYAML`; aborting.")
 
-import cmtio
-from cmttypes import deep_get, DictPath, FilePath, SecurityChecks
+from clustermanagementtoolkit import cmtio
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityChecks
 
 
 def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], **kwargs: Any) -> None:

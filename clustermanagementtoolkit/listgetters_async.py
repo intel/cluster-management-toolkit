@@ -18,9 +18,9 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-import cmtlib
-from cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
-import infogetters
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
+from clustermanagementtoolkit import infogetters
 
 
 # pylint: disable-next=unused-argument,disable-next=too-many-locals
