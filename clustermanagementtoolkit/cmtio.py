@@ -816,6 +816,8 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
             Path(directory).mkdir(mode=permissions, exist_ok=exist_ok)
         except FileExistsError:
             violations.append(SecurityStatus.EXISTS)
+        if not violations:
+            violations.append(SecurityStatus.OK)
 
     return violations
 

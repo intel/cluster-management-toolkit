@@ -63,10 +63,13 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_list, deep_get_with_fallback
 from clustermanagementtoolkit.cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
-from clustermanagementtoolkit.cmttypes import FilePath, Retval, SecurityPolicy, StatusGroup
+from clustermanagementtoolkit.cmttypes import FilePath, Retval
+from clustermanagementtoolkit.cmttypes import SecurityPolicy, SecurityStatus, StatusGroup
 from clustermanagementtoolkit.cmttypes import ProgrammingError, FilePathAuditError
+
+from clustermanagementtoolkit import cmtpaths
 from clustermanagementtoolkit.cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
-from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILENAME
@@ -9778,10 +9781,6 @@ def populate_views(force_refresh: bool = False) -> None:
         if deep_get(kind_data, DictPath("available"), False):
             available_api_families.add(kind)
 
-    viewdir = os.path.join(VIEW_DIR)
-    if not os.path.isdir(viewdir):
-        sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
-
     # Get a full list of views from all view directories
     # Start by adding files from the views directory
     view_dirs = []
@@ -9789,7 +9788,8 @@ def populate_views(force_refresh: bool = False) -> None:
 
     views = {**views_special}
 
-    view_dirs.append(viewdir)
+    view_dirs.append(cmtpaths.VIEW_DIR)
+    view_dirs.append(cmtpaths.SYSTEM_VIEWS_DIR)
 
     view_files = []
 
@@ -11031,6 +11031,11 @@ def main() -> None:
     if os.geteuid() == 0:
         sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
+    # Now check if all necessary paths exist
+    if (violations := cmtlib.setup_paths()) != [SecurityStatus.OK]:
+        violations_joined = cmtio.join_securitystatus_set(",", set(violations))
+        sys.exit(f"Failed to create necessary directories; violated rules: {violations_joined}")
+
     # Now initialise the audit log and the debug log
     # auditlog = CMTLog(CMTLogType.AUDIT)
     # debuglog = CMTLog(CMTLogType.DEBUG)
@@ -11053,7 +11058,8 @@ def main() -> None:
     if themeindex is None:
         tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
     themefile, theme_path_found = \
-        expand_path(path=tmpthemefile, search_paths=[os.getcwd(), THEME_DIR],
+        expand_path(path=tmpthemefile,
+                    search_paths=[os.getcwd(), THEME_DIR, cmtpaths.SYSTEM_THEMES_DIR],
                     suffixes=[".yaml"], fallback=defaultthemefile)
 
     try:

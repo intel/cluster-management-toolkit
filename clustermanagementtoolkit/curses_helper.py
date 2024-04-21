@@ -35,6 +35,8 @@ from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
+from clustermanagementtoolkit.cmtpaths import SYSTEM_DEFAULT_THEME_FILE
+
 from clustermanagementtoolkit.cmttypes import DictPath, FilePath, LogLevel, StatusGroup, Retval
 from clustermanagementtoolkit.cmttypes import FilePathAuditError, ProgrammingError
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus
@@ -718,7 +720,8 @@ def read_theme(configthemefile: FilePath, defaultthemefile: FilePath) -> None:
     global theme  # pylint: disable=global-statement
     global themefile  # pylint: disable=global-statement
 
-    for item in (configthemefile, f"{configthemefile}.yaml", defaultthemefile):
+    for item in (configthemefile, f"{configthemefile}.yaml",
+                 defaultthemefile, SYSTEM_DEFAULT_THEME_FILE):
         if item is not None and Path(item).is_file():
             themefile = cast(FilePath, item)
             break
