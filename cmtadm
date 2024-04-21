@@ -7633,6 +7633,11 @@ def main() -> None:
     if os.geteuid() == 0:
         sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
+    # Now check if all necessary paths exist
+    if (violations := cmtlib.setup_paths()) != [SecurityStatus.OK]:
+        violations_joined = cmtio.join_securitystatus_set(",", set(violations))
+        sys.exit(f"Failed to create necessary directories; violated rules: {violations_joined}")
+
     # Then initialise the configuration file
     read_cmtconfig()
 

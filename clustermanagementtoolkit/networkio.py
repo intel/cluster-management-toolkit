@@ -42,7 +42,8 @@ from clustermanagementtoolkit import cmtlib
 
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-from clustermanagementtoolkit.cmtpaths import HOMEDIR, SSH_DIR, SOFTWARE_SOURCES_DIR
+from clustermanagementtoolkit import cmtpaths
+from clustermanagementtoolkit.cmtpaths import HOMEDIR, SSH_DIR
 from clustermanagementtoolkit.cmtpaths import VERSION_CACHE_DIR, VERSION_CACHE_LAST_UPDATED_PATH
 from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE
 
@@ -461,22 +462,33 @@ def update_version_cache(**kwargs: Any) -> None:
                 verbose (bool): True for verbose output about actions
                 force (bool): Force update the cache even if the interval isn't exceeded
     """
-    software_sources_dir = deep_get(kwargs,
-                                    DictPath("software_sources_dir"), SOFTWARE_SOURCES_DIR)
+    software_sources_dir = \
+        deep_get(kwargs, DictPath("software_sources_dir"), cmtpaths.SOFTWARE_SOURCES_DIR)
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     force: bool = deep_get(kwargs, DictPath("force"), False)
     # Substitute {HOME}/ for {HOMEDIR}
     if software_sources_dir.startswith(("{HOME}/", "{HOME}\\")):
         software_sources_dir = HOMEDIR.joinpath(software_sources_dir[len('{HOME}/'):])
 
-    if not Path(software_sources_dir).is_dir():
-        ansithemeprint([ANSIThemeStr("Error", "error"),
-                        ANSIThemeStr(f"{software_sources_dir} does not exist; you may ", "default"),
-                        ANSIThemeStr("need to (re-)run `cmt-install`; aborting.", "default")],
-                       stderr=True)
-        sys.exit(errno.ENOENT)
-
     sources: Dict = {}
+    for path in natsorted(Path(cmtpaths.SYSTEM_SOFTWARE_SOURCES_DIR).iterdir()):
+        path = str(path)
+        if not path.endswith((".yml", ".yaml")):
+            continue
+        source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
+        for key, data in source.items():
+            if verbose and key in sources:
+                old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
+                ansithemeprint([ANSIThemeStr("Note", "note"),
+                                ANSIThemeStr(": overriding entry ", "default"),
+                                ANSIThemeStr(f"{key}", "emphasis"),
+                                ANSIThemeStr(" from ", "default"),
+                                ANSIThemeStr(f"{old_path}", "path"),
+                                ANSIThemeStr(" with entry from ", "default"),
+                                ANSIThemeStr(f"{path}", "path")])
+                sources.pop(key)
+            sources[key] = data
+
     for path in natsorted(Path(software_sources_dir).iterdir()):
         path = str(path)
         if not path.endswith((".yml", ".yaml")):

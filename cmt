@@ -47,7 +47,7 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, SecurityStatus
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, HostNameStatus
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, VIEW_DIR
@@ -67,6 +67,8 @@ from clustermanagementtoolkit.ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBL
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import chunk_list, identify_distro, read_cmtconfig
 from clustermanagementtoolkit.cmtlib import get_cluster_name, get_latest_upstream_version
+
+from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmtio import execute_command, secure_read_string
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 from clustermanagementtoolkit.networkio import scan_and_add_ssh_keys
@@ -3885,6 +3887,11 @@ def main() -> int:
     # Before doing anything else, make sure that the user is not running as root
     if os.geteuid() == 0:
         sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+    # Now check if all necessary paths exist
+    if (violations := cmtlib.setup_paths()) != [SecurityStatus.OK]:
+        violations_joined = cmtio.join_securitystatus_set(",", set(violations))
+        sys.exit(f"Failed to create necessary directories; violated rules: {violations_joined}")
 
     # Then initialise the configuration file
     read_cmtconfig()

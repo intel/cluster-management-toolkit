@@ -22,11 +22,10 @@ from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
-from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 from clustermanagementtoolkit.cmttypes import FilePath, ProgrammingError, LogLevel
 
-from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILE_DIR
-from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE, KUBE_CONFIG_FILE
+from clustermanagementtoolkit import cmtpaths
 
 from clustermanagementtoolkit import cmtio
 
@@ -400,23 +399,37 @@ def read_cmtconfig() -> Dict:
 
     global cmtconfig  # pylint: disable=global-statement
 
-    if not Path(CMT_CONFIG_FILE).is_file():
-        return {}
+    if Path(str(cmtpaths.SYSTEM_CMT_CONFIG_FILE)).is_file():
+        # Read the base configuration file from /etc (if available)
+        cmtconfig = secure_read_yaml(cmtpaths.SYSTEM_CMT_CONFIG_FILE)
+    elif Path(str(cmtpaths.CMT_CONFIG_FILE)).is_file():
+        # Read the base configuration file from /home/.cmt (if available)
+        cmtconfig = secure_read_yaml(cmtpaths.CMT_CONFIG_FILE)
+    else:
+        # Use an empty base configuration
+        cmtconfig = {}
 
-    # Read the base configuration file
-    cmtconfig = secure_read_yaml(CMT_CONFIG_FILE)
-
-    # Now read cmt.yaml.d/* if available
-    if not Path(CMT_CONFIG_FILE_DIR).is_dir():
-        return cmtconfig
-
-    for path in natsorted(Path(CMT_CONFIG_FILE_DIR).iterdir()):
+    # Now read /etc/cmt.yaml.d/*
+    for path in natsorted(Path(str(cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR)).iterdir()):
         filename = PurePath(str(path)).name
 
-        # Only read entries that end with .y{,a}ml
-        if filename.startswith(("~", ".")):
+        # Skip tempfiles and only read entries that end with .y{,a}ml
+        if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
             continue
-        if not filename.endswith((".yaml", ".yml")):
+
+        # Read the conflet files
+        morecmtconfig = secure_read_yaml(FilePath(str(path)))
+
+        # Handle config files without any values defined
+        if morecmtconfig is not None:
+            cmtconfig = {**cmtconfig, **morecmtconfig}
+
+    # Finally {HOMEDIR}/cmt.yaml.d/*
+    for path in natsorted(Path(str(cmtpaths.CMT_CONFIG_FILE_DIR)).iterdir()):
+        filename = PurePath(str(path)).name
+
+        # Skip tempfiles and only read entries that end with .y{,a}ml
+        if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
             continue
 
         # Read the conflet files
@@ -1236,7 +1249,8 @@ def get_latest_upstream_version(component: str) -> str:
     ]
 
     try:
-        candidate_versions = secure_read_yaml(VERSION_CANDIDATES_FILE, checks=security_checks)
+        candidate_versions = \
+            secure_read_yaml(cmtpaths.VERSION_CANDIDATES_FILE, checks=security_checks)
     except FileNotFoundError:
         candidate_versions = {}
 
@@ -1251,7 +1265,7 @@ def get_cluster_name() -> Optional[str]:
             (str): The name of the cluster
     """
     try:
-        d1 = secure_read_yaml(KUBE_CONFIG_FILE)
+        d1 = secure_read_yaml(cmtpaths.KUBE_CONFIG_FILE)
     except FileNotFoundError:
         return None
 
@@ -1267,3 +1281,99 @@ def get_cluster_name() -> Optional[str]:
             break
 
     return cluster_name
+
+
+"""
+The following paths are necessary:
+${HOMEDIR}
+└── .cmt (main directory for CMT)
+    ├── ansible (Ansible files)
+    │   └── log (Ansible logs)
+    ├── cmt.yaml.d (configlets)
+    ├── deployments (generic workloads)
+    ├── hooks (installation hooks)
+    │   └── pre-prepare.d (hooks run before the prepare step)
+    │   ├── post-prepare.d (hooks run after the prepare step)
+    │   ├── pre-setup.d (hooks run before the setup step)
+    │   ├── post-setup.d (hooks run after the setup step)
+    │   ├── pre-upgrade.d (hooks run before the upgrade step)
+    │   ├── post-upgrade.d (hooks run after the upgrade step)
+    │   ├── pre-teardown.d (hooks run before the teardown step)
+    │   ├── post-teardown.d (hooks run after the teardown step)
+    │   ├── pre-purge.d (hooks run before the purge step)
+    │   └── post-purge.d (hooks run after the purge step)
+    ├── logs (debug logs)
+    ├── parsers (parser files; symlink if cmt-install, dir when system path)
+    ├── playbooks (Ansible playbooks; symlink if cmt-install, dir when system path)
+    ├── sources (data sources; symlink if cmt-install, dir when system path)
+    ├── themes (theme files; symlink if cmt-install, dir when system path)
+    ├── version-cache (version data cache)
+    └── views (view files; symlink if cmt-install, dir when system path)
+"""
+required_dir_paths: Tuple[str, int] = [
+    (cmtpaths.CMTDIR, 0o755),
+    (cmtpaths.ANSIBLE_DIR, 0o755),
+    (cmtpaths.ANSIBLE_LOG_DIR, 0o700),
+    (cmtpaths.CMT_CONFIG_FILE_DIR, 0o755),
+    (cmtpaths.DEPLOYMENT_DIR, 0o700),
+    (cmtpaths.CMT_HOOKS_DIR, 0o755),
+    (cmtpaths.CMT_PRE_PREPARE_DIR, 0o755),
+    (cmtpaths.CMT_POST_PREPARE_DIR, 0o755),
+    (cmtpaths.CMT_PRE_SETUP_DIR, 0o755),
+    (cmtpaths.CMT_POST_SETUP_DIR, 0o755),
+    (cmtpaths.CMT_PRE_UPGRADE_DIR, 0o755),
+    (cmtpaths.CMT_POST_UPGRADE_DIR, 0o755),
+    (cmtpaths.CMT_POST_TEARDOWN_DIR, 0o755),
+    (cmtpaths.CMT_POST_TEARDOWN_DIR, 0o755),
+    (cmtpaths.CMT_PRE_PURGE_DIR, 0o755),
+    (cmtpaths.CMT_POST_PURGE_DIR, 0o755),
+    (cmtpaths.CMT_LOGS_DIR, 0o700),
+    (cmtpaths.VERSION_CACHE_DIR, 0o700),
+]
+
+required_dir_or_symlink_paths: Tuple[str, int] = [
+    (cmtpaths.ANSIBLE_PLAYBOOK_DIR, 0o755),
+    (cmtpaths.PARSER_DIR, 0o755),
+    (cmtpaths.SOFTWARE_SOURCES_DIR, 0o755),
+    (cmtpaths.THEME_DIR, 0o755),
+    (cmtpaths.VIEW_DIR, 0o755),
+]
+
+
+def setup_paths() -> List[SecurityStatus]:
+    """
+    Create all directories & files that need to be present
+    for CMT to work properly; this should've been handled by .cmt-install
+    if we're running directly from git + ${HOMEDIR}/bin.
+
+    If /usr/share/cluster-management-toolkit doesn't exist we assume local installation;
+    this heuristic may need revisiting later on.
+
+        Returns:
+            ([SecurityStatus]): SecurityStatus.OK on success,
+                                a list of SecurityStatus violations on failure
+    """
+    system_path_installation = True
+
+    if not Path(str(cmtpaths.SYSTEM_DATA_DIR)).is_dir():
+        system_path_installation = False
+
+    for path, permissions in required_dir_paths:
+        if not Path(str(path)).is_dir():
+            if not system_path_installation:
+                sys.exit(f"The directory {path} is missing; "
+                         "you may need to (re-)run `cmt-install`; aborting.")
+            result = cmtio.secure_mkdir(directory=path, permissions=permissions, exist_ok=False)
+            if result != [SecurityStatus.OK]:
+                return result
+
+    for path, permissions in required_dir_or_symlink_paths:
+        if not Path(str(path)).is_dir():
+            if not system_path_installation:
+                if not Path(str(path)).is_symlink():
+                    sys.exit(f"The symlink {path} is missing; "
+                             "you may need to (re-)run `cmt-install`; aborting.")
+            result = cmtio.secure_mkdir(directory=path, permissions=permissions, exist_ok=False)
+            if result != [SecurityStatus.OK]:
+                return result
+    return [SecurityStatus.OK]

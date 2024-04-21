@@ -12,7 +12,7 @@ Print themed strings to the console
 import errno
 import getpass
 import copy
-from pathlib import PurePath
+from pathlib import Path, PurePath
 import subprocess  # nosec
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -25,6 +25,8 @@ try:
     USE_FALLBACK_THEME = False
 except ModuleNotFoundError:
     USE_FALLBACK_THEME = True
+
+from clustermanagementtoolkit.cmtpaths import SYSTEM_DEFAULT_THEME_FILE
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 from clustermanagementtoolkit.cmttypes import FilePathAuditError, ProgrammingError, LogLevel
@@ -657,6 +659,10 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
         theme = FALLBACK_THEME
         themepath = FilePath("<built-in default>")
         return
+
+    # If we get a theme but it doesn't exist we use the system theme file
+    if themefile and not Path(str(themefile)).is_file():
+        themefile = SYSTEM_DEFAULT_THEME_FILE
 
     themepath = themefile
 
