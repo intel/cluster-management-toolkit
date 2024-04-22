@@ -131,9 +131,9 @@ def objgetter_ansible_log(obj: FilePath) -> Dict:
 
     logs = []
     for path in natsorted(Path(str(obj)).iterdir()):
-        if (filename := str(PurePath(str(path)).name)) == "metadata.yaml":
+        if (filename := PurePath(str(path)).name) == "metadata.yaml":
             continue
-        log = secure_read_yaml(FilePath(str(path)))
+        log = secure_read_yaml(FilePath(path))
         logs.append({
             "index": filename.split("-", maxsplit=1)[0],
             "log": log

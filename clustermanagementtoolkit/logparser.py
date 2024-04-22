@@ -46,7 +46,7 @@ except ModuleNotFoundError:
     import json  # type: ignore
     json_is_ujson = False  # pylint: disable=invalid-name
     DecodeException = json.decoder.JSONDecodeError  # type: ignore
-from pathlib import Path, PurePath
+from pathlib import Path
 import re
 import sys
 from typing import Any, cast, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
@@ -3513,11 +3513,9 @@ def init_parser_list() -> None:
             continue
 
         for path in natsorted(Path(parser_dir).iterdir()):
-            filename = PurePath(str(path)).name
+            filename = path.name
 
-            if filename.startswith(("~", ".")):
-                continue
-            if not filename.endswith((".yaml", ".yml")):
+            if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
                 continue
 
             parser_files.append(FilePath(path))
