@@ -22,12 +22,17 @@ from typing import Any, Dict, List, Tuple
 from unittest import mock
 import yaml
 
-from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import formatters
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 
-from curses_helper import read_theme, ThemeAttr, ThemeRef, ThemeStr, dump_themearray
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import formatters
+
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
+from clustermanagementtoolkit.curses_helper import read_theme, dump_themearray
 
 real_import = None
 

@@ -21,11 +21,12 @@ import sys
 from typing import Any, Dict, List, Tuple
 from unittest import mock
 
-import ansithemeprint
-from ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit import ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
-from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, ProgrammingError
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, ProgrammingError
 
 real_import = None
 
@@ -732,7 +733,8 @@ def test_clear_screen(verbose: bool = False) -> Tuple[str, bool]:
             message = f"{fun.__name__} failed (error code: {tmp}"
             result = False
     if result:
-        with mock.patch("ansithemeprint.cmtio.secure_which", side_effect=FileNotFoundError):
+        with mock.patch("clustermanagementtoolkit.ansithemeprint.cmtio.secure_which",
+                        side_effect=FileNotFoundError):
             if (tmp := fun()) != errno.ENOENT:
                 message = f"{fun.__name__} failed; returned {tmp} (expected errno.ENOENT)"
                 result = False

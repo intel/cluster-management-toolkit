@@ -23,13 +23,19 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-import cmtlib
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmttypes import deep_get, deep_set, DictPath
-from cmttypes import FilePath, ArgumentValidationError, FilePathAuditError
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import ansible_helper
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
+
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, ArgumentValidationError, FilePathAuditError
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import ansible_helper
 
 TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybooks")))
 
@@ -229,13 +235,15 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (mock_path, mock_value, mock_return_value, inventory, expected_result)
         testdata = (
-            ("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None,
+            ("clustermanagementtoolkit.ansible_helper.ANSIBLE_INVENTORY",
+             "/doesnotexist", None,
              {"all": {"hosts": {}, "vars": {}}}),
-            ("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
-            ("ansible_helper.secure_read_yaml", None,
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml",
+             None, {}, {"all": {"hosts": {}, "vars": {}}}),
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml", None,
              {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}},
              {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
-            ("ansible_helper.secure_read_yaml", None,
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml", None,
              {"all": {"hosts": None, "vars": None}},
              {"all": {"hosts": {}, "vars": {}}}),
         )
@@ -247,7 +255,8 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
                         tmp = fun()
                 else:
                     # We might not have an inventory available, so pretend that we do
-                    with mock.patch("ansible_helper.Path.is_file", return_value=True), \
+                    with mock.patch("clustermanagementtoolkit.ansible_helper.Path.is_file",
+                                    return_value=True), \
                          mock.patch(mock_path, return_value=mock_return_value):
                         tmp = fun()
                 if tmp != expected_result:
@@ -270,7 +279,8 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 
     if result:
         expected_result = False
-        with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
+        with mock.patch("clustermanagementtoolkit.ansible_helper.ANSIBLE_INVENTORY",
+                        "/doesnotexist"):
             if (tmp := fun(groups=["all"], highlight=False, include_groupvar=False,
                            include_hostvars=False, include_hosts=False)):
                 message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -319,8 +329,10 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
             groups, highlight, include_groupvars, \
                 include_hostvars, include_hosts, expected_exception = indata
             try:
-                with mock.patch("ansible_helper.Path.is_file", return_value=True), \
-                     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
+                with mock.patch("clustermanagementtoolkit.ansible_helper.Path.is_file",
+                                return_value=True), \
+                        mock.patch("clustermanagementtoolkit.ansible_helper.secure_read_yaml",
+                                   return_value=inventory):
                     tmp = fun(groups=groups, highlight=highlight,
                               include_groupvar=include_groupvars,
                               include_hostvars=include_hostvars, include_hosts=include_hosts)

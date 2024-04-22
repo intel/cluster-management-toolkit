@@ -18,12 +18,19 @@ import sys
 from typing import Dict, List, Tuple
 import yaml
 
-from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, DictPath, FilePath, ProgrammingError, StatusGroup
-import curses_helper
-from curses_helper import ThemeAttr, ThemeRef, ThemeStr, color_status_group
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import generators
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, ProgrammingError, StatusGroup
+
+from clustermanagementtoolkit import curses_helper
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
+from clustermanagementtoolkit.curses_helper import color_status_group
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import generators
 
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 

@@ -5,10 +5,6 @@ python_executables = \
 	cmt-install \
 	cmtinv \
 	cmu
-python_data_coverage = \
-	clustermanagementtoolkit/helptexts.py \
-	clustermanagementtoolkit/recommended_permissions.py \
-	clustermanagementtoolkit/pvtypes.py
 python_test_executables = \
 	tests/async_fetch \
 	tests/ansibletests \
@@ -20,6 +16,7 @@ python_test_executables = \
 	tests/cnitests \
 	tests/coverage_stats \
 	tests/cursestests \
+	tests/datatests \
 	tests/dump_cluster \
 	tests/dump_logs \
 	tests/fgtests \
@@ -59,8 +56,7 @@ python_unit_tests = \
 	tests/ogtests \
 	tests/typetests \
 	tests/validatortests
-test_lib_symlinks = \
-	clustermanagementtoolkit/*.py
+test_libs_symlink = clustermanagementtoolkit
 
 # F841 is the warning about unused assignments.
 # flake8 doesn't recognise "_<variable>" to capture unused return values;
@@ -95,11 +91,6 @@ coverage: setup_tests
 	@cmd=python3-coverage ;\
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --end-at 0 || exit 1 ;\
-	printf -- "\n\nRunning python3-coverage to check test coverage on data\n" ;\
-	for test in $(python_data_coverage); do \
-		printf -- "\n\n  Running: $$test\n\n" ;\
-		$$cmd run --branch --append $$test || exit 1 ;\
-	done ;\
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in $(python_unit_tests); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
@@ -363,16 +354,10 @@ parser_bundle:
 	done
 
 remove_test_symlinks:
-	@(cd tests ;\
-	  for file in $(test_lib_symlinks); do \
-		rm -f $$file; \
-	  done)
+	@(cd tests; rm -f $(test_libs_symlink))
 
 create_test_symlinks:
-	@(cd tests ;\
-	  for file in $(test_lib_symlinks); do \
-		test -L $$file || ln -s ../$$file . ;\
-	  done)
+	@(cd tests; test -L $(test_libs_symlink) || ln -s ../$(test_libs_symlink) .)
 
 setup_tests: create_test_symlinks
 	@(cd tests ;\

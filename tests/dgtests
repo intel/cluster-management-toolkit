@@ -18,10 +18,11 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-from cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import datagetters
-import kubernetes_helper
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, StatusGroup, ProgrammingError
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+from clustermanagementtoolkit import datagetters
+from clustermanagementtoolkit import kubernetes_helper
 
 # unit-tests for datagetters.py
 
@@ -945,7 +946,8 @@ def test_datagetter_api_support(verbose: bool = False) -> Tuple[str, bool]:
 
         for khelper, obj, mock_response, expected_result, expected_exception in testdata:
             try:
-                with mock.patch("kubernetes_helper.KubernetesHelper.get_available_kinds",
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                                "KubernetesHelper.get_available_kinds",
                                 return_value=mock_response):
                     tmp = fun(obj, kubernetes_helper=khelper)
                 if tmp != expected_result:

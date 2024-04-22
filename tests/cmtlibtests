@@ -20,10 +20,11 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-from cmttypes import deep_get, DictPath, FilePath, ProgrammingError
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint, ansithemestr_join_list
-import cmtlib
-import kubernetes_helper
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, ProgrammingError
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import init_ansithemeprint, ansithemestr_join_list
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit import kubernetes_helper
 
 kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
@@ -760,7 +761,15 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
 
     if result:
         try:
-            with mock.patch("cmtlib.CMT_CONFIG_FILE", "/doesnotexist"):
+            with mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.SYSTEM_CMT_CONFIG_FILE",
+                            "/doesnotexist"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE",
+                               "/doesnotexist"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths."
+                               "SYSTEM_CMT_CONFIG_FILE_DIR",
+                               "/doesnotexist"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE_DIR",
+                               "/doesnotexist"):
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -770,14 +779,20 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
                           f"  expected type: dict"
                 result = False
         except Exception as e:
-            raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
                       f"      exception: {type(e)}\n"
             result = False
     if result:
         try:
-            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", "/dev/zero"), \
-                    mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+            with mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.SYSTEM_CMT_CONFIG_FILE",
+                            f"{TEST_DIR}/cmt.yaml"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE",
+                               "/dev/zero"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib."
+                               "cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR",
+                               "/dev/zero"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE_DIR",
+                               "/dev/zero"):
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": True}}:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -787,14 +802,20 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
                           f"  expected type: dict"
                 result = False
         except Exception as e:
-            raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
                       f"      exception: {type(e)}\n"
             result = False
     if result:
         try:
-            with mock.patch("cmtlib.CMT_CONFIG_FILE_DIR", f"{TEST_DIR}/cmt.yaml.d"), \
-                 mock.patch("cmtlib.CMT_CONFIG_FILE", f"{TEST_DIR}/cmt.yaml"):
+            with mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.SYSTEM_CMT_CONFIG_FILE",
+                            f"{TEST_DIR}/cmt.yaml"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE",
+                               "/dev/zero"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths."
+                               "SYSTEM_CMT_CONFIG_FILE_DIR",
+                               f"{TEST_DIR}/cmt.yaml.d"), \
+                    mock.patch("clustermanagementtoolkit.cmtlib.cmtpaths.CMT_CONFIG_FILE_DIR",
+                               "/dev/zero"):
                 tmp = fun()
             if not isinstance(tmp, dict) or tmp != {"Debug": {"developer_mode": False}}:
                 message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -804,7 +825,6 @@ def test_read_cmtconfig(verbose: bool = False) -> Tuple[str, bool]:
                           f"  expected type: dict"
                 result = False
         except Exception as e:
-            raise
             message = f"{fun.__name__}() did not yield expected result:\n" \
                       f"      exception: {type(e)}\n"
             result = False
@@ -1428,7 +1448,8 @@ def test_get_package_versions(verbose: bool = False) -> Tuple[str, bool]:
                     break
     if result:
         try:
-            with mock.patch("ansible_helper.ansible_run_playbook_on_selection",
+            with mock.patch("clustermanagementtoolkit.ansible_helper."
+                            "ansible_run_playbook_on_selection",
                             return_value=(-1, [])):
                 tmp = fun("localhost")
                 message = f"{fun.__name__}() with mocked ansible_run_playbook_on_selection() " \
