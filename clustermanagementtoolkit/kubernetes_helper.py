@@ -1062,7 +1062,7 @@ class KubernetesHelper:
         elif config_path is None:
             config_path = KUBE_CONFIG_FILE
 
-        config_path = FilePath(str(config_path))
+        config_path = FilePath(config_path)
 
         # We are semi-OK with the file not existing
         checks = [

@@ -661,7 +661,7 @@ def init_ansithemeprint(themefile: Optional[FilePath] = None) -> None:
         return
 
     # If we get a theme but it doesn't exist we use the system theme file
-    if themefile and not Path(str(themefile)).is_file():
+    if themefile and not Path(themefile).is_file():
         themefile = SYSTEM_DEFAULT_THEME_FILE
 
     themepath = themefile

@@ -399,10 +399,10 @@ def read_cmtconfig() -> Dict:
 
     global cmtconfig  # pylint: disable=global-statement
 
-    if Path(str(cmtpaths.SYSTEM_CMT_CONFIG_FILE)).is_file():
+    if Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE).is_file():
         # Read the base configuration file from /etc (if available)
         cmtconfig = secure_read_yaml(cmtpaths.SYSTEM_CMT_CONFIG_FILE)
-    elif Path(str(cmtpaths.CMT_CONFIG_FILE)).is_file():
+    elif Path(cmtpaths.CMT_CONFIG_FILE).is_file():
         # Read the base configuration file from /home/.cmt (if available)
         cmtconfig = secure_read_yaml(cmtpaths.CMT_CONFIG_FILE)
     else:
@@ -410,22 +410,24 @@ def read_cmtconfig() -> Dict:
         cmtconfig = {}
 
     # Now read /etc/cmt.yaml.d/*
-    for path in natsorted(Path(str(cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR)).iterdir()):
-        filename = PurePath(str(path)).name
+    system_config_dir = Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR)
+    if system_config_dir.is_dir():
+        for path in natsorted(system_config_dir.iterdir()):
+            filename = PurePath(str(path)).name
 
-        # Skip tempfiles and only read entries that end with .y{,a}ml
-        if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
-            continue
+            # Skip tempfiles and only read entries that end with .y{,a}ml
+            if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
+                continue
 
-        # Read the conflet files
-        morecmtconfig = secure_read_yaml(FilePath(str(path)))
+            # Read the conflet files
+            morecmtconfig = secure_read_yaml(FilePath(path))
 
-        # Handle config files without any values defined
-        if morecmtconfig is not None:
-            cmtconfig = {**cmtconfig, **morecmtconfig}
+            # Handle config files without any values defined
+            if morecmtconfig is not None:
+                cmtconfig = {**cmtconfig, **morecmtconfig}
 
     # Finally {HOMEDIR}/cmt.yaml.d/*
-    for path in natsorted(Path(str(cmtpaths.CMT_CONFIG_FILE_DIR)).iterdir()):
+    for path in natsorted(Path(cmtpaths.CMT_CONFIG_FILE_DIR).iterdir()):
         filename = PurePath(str(path)).name
 
         # Skip tempfiles and only read entries that end with .y{,a}ml
@@ -433,7 +435,7 @@ def read_cmtconfig() -> Dict:
             continue
 
         # Read the conflet files
-        morecmtconfig = secure_read_yaml(FilePath(str(path)))
+        morecmtconfig = secure_read_yaml(FilePath(path))
 
         # Handle config files without any values defined
         if morecmtconfig is not None:
@@ -1310,7 +1312,7 @@ ${HOMEDIR}
     ├── version-cache (version data cache)
     └── views (view files; symlink if cmt-install, dir when system path)
 """
-required_dir_paths: Tuple[str, int] = [
+required_dir_paths: List[Tuple[FilePath, int]] = [
     (cmtpaths.CMTDIR, 0o755),
     (cmtpaths.ANSIBLE_DIR, 0o755),
     (cmtpaths.ANSIBLE_LOG_DIR, 0o700),
@@ -1331,7 +1333,7 @@ required_dir_paths: Tuple[str, int] = [
     (cmtpaths.VERSION_CACHE_DIR, 0o700),
 ]
 
-required_dir_or_symlink_paths: Tuple[str, int] = [
+required_dir_or_symlink_paths: List[Tuple[FilePath, int]] = [
     (cmtpaths.ANSIBLE_PLAYBOOK_DIR, 0o755),
     (cmtpaths.PARSER_DIR, 0o755),
     (cmtpaths.SOFTWARE_SOURCES_DIR, 0o755),
@@ -1355,11 +1357,11 @@ def setup_paths() -> List[SecurityStatus]:
     """
     system_path_installation = True
 
-    if not Path(str(cmtpaths.SYSTEM_DATA_DIR)).is_dir():
+    if not Path(cmtpaths.SYSTEM_DATA_DIR).is_dir():
         system_path_installation = False
 
     for path, permissions in required_dir_paths:
-        if not Path(str(path)).is_dir():
+        if not Path(path).is_dir():
             if not system_path_installation:
                 sys.exit(f"The directory {path} is missing; "
                          "you may need to (re-)run `cmt-install`; aborting.")
@@ -1368,9 +1370,9 @@ def setup_paths() -> List[SecurityStatus]:
                 return result
 
     for path, permissions in required_dir_or_symlink_paths:
-        if not Path(str(path)).is_dir():
+        if not Path(path).is_dir():
             if not system_path_installation:
-                if not Path(str(path)).is_symlink():
+                if not Path(path).is_symlink():
                     sys.exit(f"The symlink {path} is missing; "
                              "you may need to (re-)run `cmt-install`; aborting.")
             result = cmtio.secure_mkdir(directory=path, permissions=permissions, exist_ok=False)
