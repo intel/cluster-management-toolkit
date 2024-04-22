@@ -427,19 +427,21 @@ def read_cmtconfig() -> Dict:
                 cmtconfig = {**cmtconfig, **morecmtconfig}
 
     # Finally {HOMEDIR}/cmt.yaml.d/*
-    for path in natsorted(Path(cmtpaths.CMT_CONFIG_FILE_DIR).iterdir()):
-        filename = PurePath(str(path)).name
+    config_dir = Path(cmtpaths.CMT_CONFIG_FILE_DIR)
+    if config_dir.is_dir():
+        for path in natsorted(Path(cmtpaths.CMT_CONFIG_FILE_DIR).iterdir()):
+            filename = PurePath(str(path)).name
 
-        # Skip tempfiles and only read entries that end with .y{,a}ml
-        if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
-            continue
+            # Skip tempfiles and only read entries that end with .y{,a}ml
+            if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
+                continue
 
-        # Read the conflet files
-        morecmtconfig = secure_read_yaml(FilePath(path))
+            # Read the conflet files
+            morecmtconfig = secure_read_yaml(FilePath(path))
 
-        # Handle config files without any values defined
-        if morecmtconfig is not None:
-            cmtconfig = {**cmtconfig, **morecmtconfig}
+            # Handle config files without any values defined
+            if morecmtconfig is not None:
+                cmtconfig = {**cmtconfig, **morecmtconfig}
 
     return cmtconfig
 

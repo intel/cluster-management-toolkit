@@ -21,13 +21,21 @@ import sys
 from typing import Dict, Tuple
 import yaml
 
-import cmtlib
-from cmtio import expand_path
-from cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
-from cmttypes import deep_get, DictPath, ProgrammingError, LogLevel, StatusGroup
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import curses_helper
-from curses_helper import ThemeAttr, ThemeRef, ThemeStr, ThemeArray, WidgetLineAttrs
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtio import expand_path
+
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, THEME_DIR
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import ProgrammingError, LogLevel, StatusGroup
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import curses_helper
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
+from clustermanagementtoolkit.curses_helper import ThemeArray, WidgetLineAttrs
 
 TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 

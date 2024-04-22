@@ -20,17 +20,25 @@ from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
 
-from cmtio import check_path, expand_path, join_securitystatus_set
-from cmtio import execute_command, execute_command_with_response
-from cmtio import secure_copy, secure_mkdir, secure_read, secure_read_string
-from cmtio import secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
-from networkio import verify_checksum
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+from clustermanagementtoolkit.cmtio import check_path, expand_path, join_securitystatus_set
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import secure_copy, secure_mkdir
+from clustermanagementtoolkit.cmtio import secure_read, secure_read_string
+from clustermanagementtoolkit.cmtio import secure_rm, secure_rmdir, secure_symlink
+from clustermanagementtoolkit.cmtio import secure_which, secure_write_string
 
-from cmtpaths import HOMEDIR
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmtio_yaml import secure_write_yaml
+
+from clustermanagementtoolkit.networkio import verify_checksum
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+
+from clustermanagementtoolkit.cmtpaths import HOMEDIR
 
 """
 A checker that validates cmtio, cmtio_yaml, and networkio
@@ -1186,7 +1194,7 @@ testcases = {
         "test": test_secure_mkdir,
         "exist_ok": True,
         "permissions": 0o700,
-        "expect": set(),
+        "expect": {SecurityStatus.OK},
     },
     "Creating testdir; exist_ok = False (secure_mkdir)": {
         "path": FilePath(f"{TEST_DIR}/testdir"),
