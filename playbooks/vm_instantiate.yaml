@@ -23,7 +23,7 @@
     - name: "Create meta-data for the VM image instances"
       ansible.builtin.template:
         dest: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
-        src: "templates/vmimages/meta-data.yaml"
+        src: "templates/vmimages/meta-data.yaml.j2"
         mode: "0640"
         owner: "{{ ansible_user }}"
         group: "libvirt-qemu"
@@ -33,7 +33,7 @@
     - name: "Create user-data for the VM image instances"
       ansible.builtin.template:
         dest: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
-        src: "templates/vmimages/user-data.yaml"
+        src: "templates/vmimages/user-data.yaml.j2"
         mode: "0640"
         owner: "{{ ansible_user }}"
         group: "libvirt-qemu"

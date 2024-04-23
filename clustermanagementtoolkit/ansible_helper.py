@@ -33,6 +33,7 @@ from clustermanagementtoolkit.cmtio import secure_mkdir, secure_rm, secure_rmdir
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from clustermanagementtoolkit.cmtpaths import HOMEDIR
+from clustermanagementtoolkit.cmtpaths import SYSTEM_ANSIBLE_PLAYBOOK_DIR
 from clustermanagementtoolkit.cmtpaths import ANSIBLE_DIR, ANSIBLE_PLAYBOOK_DIR, ANSIBLE_LOG_DIR
 from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
 
@@ -61,14 +62,17 @@ except ModuleNotFoundError:  # pragma: no cover
 
 def get_playbook_path(playbook: FilePath) -> FilePath:
     """
-    Pass in the name of a playbook that exists in {ANSIBLE_PLAYBOOK_DIR};
+    Pass in the name of a playbook that exists in either
+    {SYSTEM_PLAYBOOK_DIR} or {ANSIBLE_PLAYBOOK_DIR};
     returns the path to the drop-in playbook with the highest priority
     (or the same playbook in case there is no override)
 
         Parameters:
-            playbook (str): The name of the playbook to get the path to
+            playbook (FilePath): The name of the playbook to get the path to
         Returns:
             (FilePath): The playbook path with the highest priority
+        Raises:
+            FilePathAuditError: No usable match playbook was found
     """
     path = ""
 
@@ -78,8 +82,11 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
         raise ValueError("len(playbook) == 0; expected a filename")
 
     # Check if there's a local playbook overriding this one
-    local_playbooks = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
-    for playbook_path in local_playbooks:
+    playbook_dirs = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
+    playbook_dirs.append(ANSIBLE_PLAYBOOK_DIR)
+    playbook_dirs.append(SYSTEM_ANSIBLE_PLAYBOOK_DIR)
+
+    for playbook_path in playbook_dirs:
         # Substitute {HOME}/ for {HOMEDIR}
         if playbook_path.startswith("{HOME}/"):
             playbook_path = f"{HOMEDIR}/{playbook_path[len('{HOME}/'):]}"
@@ -87,13 +94,14 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
         # Skip non-existing playbook paths
         if not playbook_path_entry.is_dir():
             continue
-        # We can have multiple directories with local playbooks;
+        # We can have multiple directories with playbooks;
         # the first match wins
         if Path(f"{playbook_path}/{playbook}").is_file():
             path = f"{playbook_path}/{playbook}"
             break
     if not path:
-        path = f"{ANSIBLE_PLAYBOOK_DIR}/{playbook}"
+        raise FilePathAuditError(f"Could not find a usable match for playbook `{playbook}`",
+                                 path=playbook)
     return FilePath(path)
 
 
@@ -101,7 +109,7 @@ def get_playbook_path(playbook: FilePath) -> FilePath:
 def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeStr],
                                                                        FilePath]]:
     """
-    Populate a playbook list
+    Populate a list of playbook paths.
 
         Parameters:
             paths ([FilePath]): A list of paths to playbooks
@@ -172,6 +180,26 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
         # If there's no description we fallback to just using the filename
         playbooks.append(([ANSIThemeStr("  • ", "separator")] + description, playbookpath))
     return playbooks
+
+
+# Add all playbooks in the array
+def populate_playbooks_from_filenames(playbooks: List[FilePath]) -> List[Tuple[List[ANSIThemeStr],
+                                                                               FilePath]]:
+    """
+    Given a list of playbook names, populate a list of playbook paths.
+
+        Parameters:
+            paths ([FilePath]): A list of playbook names
+        Returns:
+            [([ANSIThemeStr], FilePath)]:
+                ([ANSIThemeStr]): An ansithemearray with the namer of the playbook
+                (FilePath): The path to the playbook
+    """
+    playbook_paths = []
+
+    for playbook in playbooks:
+        playbook_paths.append(get_playbook_path(playbook))
+    return populate_playbooks_from_paths(playbook_paths)
 
 
 # pylint: disable-next=unused-argument
