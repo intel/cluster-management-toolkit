@@ -54,7 +54,7 @@ from clustermanagementtoolkit.cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_
 from clustermanagementtoolkit.cmtpaths import CMT_PRE_UPGRADE_DIR, CMT_POST_UPGRADE_DIR
 from clustermanagementtoolkit.cmtpaths import CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
 from clustermanagementtoolkit.cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
-from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
 from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
@@ -67,7 +67,7 @@ from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_sele
 from clustermanagementtoolkit.ansible_helper import ansible_add_hosts
 from clustermanagementtoolkit.ansible_helper import ansible_get_hosts_by_group, get_playbook_path
 from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
-from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_paths
+from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_filenames
 
 from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmtio import check_path
@@ -126,10 +126,10 @@ prepare_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("prepare_control_plane.yaml"),
+            FilePath("add_kubernetes_repo.yaml"),
         ],
         "deb_packages": [
         ],
@@ -141,9 +141,9 @@ prepare_targets: Dict = {
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("add_kubernetes_repo.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "ansible",
@@ -158,9 +158,9 @@ prepare_targets: Dict = {
     "rke2": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_control_plane.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("prepare_control_plane.yaml"),
         ],
         "deb_packages": [
         ],
@@ -175,9 +175,9 @@ setup_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("fetch_kube_config.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("kubeadm_setup_control_plane.yaml"),
+            FilePath("fetch_kube_config.yaml"),
         ],
         "deb_packages": [
             "kubeadm",
@@ -221,7 +221,7 @@ setup_control_plane_targets: Dict = {
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "kubectl",
@@ -247,8 +247,8 @@ setup_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_setup_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("fetch_kube_config.yaml"),
+            FilePath("rke2_setup_control_plane.yaml"),
+            FilePath("fetch_kube_config.yaml"),
         ],
         "extra_values": {},
     },
@@ -258,14 +258,14 @@ upgrade_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_upgrade_control_plane.yaml"),
+            FilePath("kubeadm_upgrade_control_plane.yaml"),
         ],
         "extra_values": {},
     },
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "kubectl",
@@ -283,7 +283,7 @@ upgrade_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_upgrade_control_plane.yaml"),
+            FilePath("rke2_upgrade_control_plane.yaml"),
         ],
         "extra_values": {},
     },
@@ -293,14 +293,14 @@ teardown_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_teardown_control_plane.yaml"),
+            FilePath("teardown_cni.yaml"),
+            FilePath("kubeadm_teardown_control_plane.yaml"),
         ],
     },
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_teardown_control_plane.yaml"),
+            FilePath("rke2_teardown_control_plane.yaml"),
         ],
     },
 }
@@ -309,7 +309,7 @@ purge_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_purge.yaml"),
+            FilePath("kubeadm_purge.yaml"),
         ],
         "deb_packages": [
             "kubeadm",
@@ -337,7 +337,7 @@ purge_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("rke2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_purge.yaml"),
+            FilePath("rke2_purge.yaml"),
         ],
     },
 }
@@ -1166,9 +1166,9 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
         check_and_print_status(execute_command(substitute_list(uninstall_command, substitutions)))
 
     uninstall_cni_playbooks = [
-        ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
+        FilePath("teardown_cni.yaml"),
     ]
-    playbooks = populate_playbooks_from_paths(uninstall_cni_playbooks)
+    playbooks = populate_playbooks_from_filenames(uninstall_cni_playbooks)
 
     retval = run_playbooks(playbooks=playbooks, hosts=all_nodes_in_cluster)
     if retval:
@@ -1872,7 +1872,7 @@ def populate_playbooks_from_dir(path: FilePath) -> List[Tuple[List[ANSIThemeStr]
     """
     playbook_paths = __playbook_paths_from_path(path)
 
-    return populate_playbooks_from_paths(playbook_paths)
+    return populate_playbooks_from_filenames(playbook_paths)
 
 
 # pylint: disable-next=unused-argument
@@ -1961,7 +1961,7 @@ def __generic_task_run_playbooks_on_selection(selection: List[str], installation
             verbose (bool): If the results are printed, should skipped tasks be printed too?
     """
     paths = __playbook_paths_from_path(playbook_dir)
-    playbooks = populate_playbooks_from_paths(paths)
+    playbooks = populate_playbooks_from_filenames(paths)
     if extra_values is None:
         extra_values = {}
     __run_playbooks_on_selection(playbooks=playbooks, selection=selection,
@@ -1998,8 +1998,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
     """
     os_distro = identify_distro()
     selection = __selection_localhost()
-    playbooks = populate_playbooks_from_paths(cast(List[FilePath],
-                                              prepare_targets["localhost"]["playbooks"]))
+    playbooks = populate_playbooks_from_filenames(prepare_targets["localhost"]["playbooks"])
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
@@ -2057,8 +2056,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
         selection = __selection_control_planes()
     else:
         selection = control_planes + nodes
-    playbooks = populate_playbooks_from_paths(cast(List[FilePath],
-                                                   prepare_targets[k8s_distro]["playbooks"]))
+    playbooks = populate_playbooks_from_filenames(prepare_targets[k8s_distro]["playbooks"])
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
@@ -2165,8 +2163,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
     os_distro = identify_distro()
     selection = __selection_localhost()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           setup_control_plane_targets["localhost"]["playbooks"]))
+        populate_playbooks_from_filenames(setup_control_plane_targets["localhost"]["playbooks"])
 
     if os_distro in ("debian",):
         packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
@@ -2206,8 +2203,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict,
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           setup_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(setup_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
     extra_values_setup = \
@@ -2582,8 +2578,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict,
     requested_version = installation_info[cluster_name]["requested_version"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           upgrade_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(upgrade_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
     extra_values_upgrade = \
@@ -2696,8 +2691,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict,
     k8s_distro = installation_info[cluster_name]["distro"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           teardown_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(teardown_control_plane_targets[k8s_distro]["playbooks"])
 
     __run_playbooks_on_selection(playbooks=playbooks, selection=selection,
                                  extra_values={}, verbose=verbose)
@@ -2826,8 +2820,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict,
     os_distro = identify_distro()
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           purge_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(purge_control_plane_targets[k8s_distro]["playbooks"])
 
     if os_distro in ("debian",):
         packages = \
@@ -3580,7 +3573,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         install_ansible_posix()
 
         retval, ansible_results = \
-            run_playbook(ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
+            run_playbook(get_playbook_path(FilePath("prepare_passwordless_ansible.yaml")),
                          hosts=[controlplane], extra_values=extra_values, quiet=True)
         if retval != 0:
             break
@@ -3961,12 +3954,11 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     if k8s_distro == "kubeadm":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config", "join_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "join_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher",
-                                          "rke2", "config.agent.yaml.j2"),
+            FilePath("templates").joinpath("etc", "rancher", "rke2", "config.agent.yaml.j2"),
         ]
 
     for opt, optarg in options:
@@ -4008,9 +4000,9 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "containerd":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
+        add_playbooks = [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
+        add_playbooks = [FilePath("setup_cri-o.yaml")]
         crio_major_version, crio_minor_version = \
             get_crio_version((int(requested_major), int(requested_minor)))
 
@@ -4019,16 +4011,16 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     add_playbooks += [
         # cmtadm does not use run_before/run_after/add_to_groups/remove_from_groups,
         # so we have to do all of that explicitly
-        ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+        FilePath("add_kubernetes_repo.yaml"),
     ]
     if k8s_distro == "kubeadm":
         add_playbooks += [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_join_node.yaml"),
+            FilePath("kubeadm_setup_node.yaml"),
+            FilePath("kubeadm_join_node.yaml"),
         ]
     elif k8s_distro == "rke2":
         add_playbooks += [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_setup_node.yaml"),
+            FilePath("rke2_setup_node.yaml"),
         ]
 
     join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
@@ -4072,7 +4064,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     elif k8s_distro == "rke2":
         extra_values["requested_version"] = control_plane_version
 
-    playbooks = populate_playbooks_from_paths(add_playbooks)
+    playbooks = populate_playbooks_from_filenames(add_playbooks)
 
     retval = run_playbooks(playbooks=playbooks, hosts=nodes,
                            extra_values=extra_values, verbose=verbose)
@@ -5147,20 +5139,15 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     if k8s_distro == "kubeadm":
         setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "cluster_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "init_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "kubelet_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "kube_proxy_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "cluster_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "init_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "kubelet_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "kube_proxy_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         setup_control_plane_tasks = __setup_rke2_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher", "rke2",
-                                          "config.yaml.j2"),
+            FilePath("templates").joinpath("etc", "rancher", "rke2", "config.yaml.j2"),
         ]
 
     if "--list-tasks" in (tmp[0] for tmp in options):
@@ -5355,10 +5342,10 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "containerd":
-        cri_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")
+        cri_playbook_path = FilePath("setup_containerd.yaml")
         setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, cri_playbook_path)
     elif cri == "cri-o":
-        cri_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")
+        cri_playbook_path = FilePath("setup_cri-o.yaml")
         setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, cri_playbook_path)
         crio_major_version, crio_minor_version = \
             get_crio_version((int(requested_major), int(requested_minor)))
@@ -5961,7 +5948,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
                                      "and controlplane(s)", "action")])
         selection = __selection_control_planes() + ["localhost"]
         _retval, _ansible_results = \
-            run_playbook(ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+            run_playbook(get_playbook_path(FilePath("add_kubernetes_repo.yaml")),
                          hosts=selection, extra_values=extra_values, quiet=True)
 
         if os_distro == "debian" and update_cache:

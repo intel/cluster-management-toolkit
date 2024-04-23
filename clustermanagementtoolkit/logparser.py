@@ -71,7 +71,7 @@ except ModuleNotFoundError:
     # pylint: disable-next=invalid-name
     validators = None  # type: ignore
 
-from clustermanagementtoolkit.cmtpaths import HOMEDIR, PARSER_DIR
+from clustermanagementtoolkit.cmtpaths import HOMEDIR, SYSTEM_PARSERS_DIR, PARSER_DIR
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath
@@ -3495,6 +3495,7 @@ def init_parser_list() -> None:
     parser_dirs = []
     parser_dirs += deep_get(cmtlib.cmtconfig, DictPath("Pod#local_parsers"), [])
     parser_dirs.append(PARSER_DIR)
+    parser_dirs.append(SYSTEM_PARSERS_DIR)
 
     parser_files = []
 
