@@ -1477,6 +1477,8 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
             resource_tuple = (kind[0], "", report_name)
 
             message = ""
+            message_array = []
+
             status = ""
 
             if message_array:

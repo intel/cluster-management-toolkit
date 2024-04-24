@@ -2935,6 +2935,9 @@ def yaml_line(message: str,
             elif matchtype == "startswith":
                 if message.startswith(matchkey):
                     matched = True
+            elif matchtype == "endswith":
+                if message.endswith(matchkey):
+                    matched = True
             elif matchtype == "regex":
                 tmp = re.match(matchkey, message)
                 if tmp is not None:
@@ -3045,6 +3048,9 @@ def diff_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable
                     matched = True
             elif matchtype == "startswith":
                 if message.startswith(matchkey):
+                    matched = True
+            elif matchtype == "endswith":
+                if message.endswith(matchkey):
                     matched = True
             elif matchtype == "regex":
                 tmp = matchkey.match(message)
