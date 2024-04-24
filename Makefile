@@ -15,8 +15,10 @@ python_test_executables = \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/coverage_stats \
+	tests/cnitests \
 	tests/cursestests \
 	tests/datatests \
+	tests/dgtests \
 	tests/dump_cluster \
 	tests/dump_logs \
 	tests/fgtests \
@@ -43,6 +45,7 @@ python_unit_tests = \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/cursestests \
+	tests/datatests \
 	tests/dgtests \
 	tests/fgtests \
 	tests/fmttests \
@@ -451,6 +454,7 @@ install:
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_CONFIGLET_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_DATA_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(DIST_PACKAGE_DIR) &&\
+	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
 	tar cf - clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
 	tar cf - views parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) || printf -- "Installation failed.\n"

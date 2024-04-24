@@ -1690,7 +1690,8 @@ def test_identify_k8s_distro(verbose: bool = False) -> Tuple[str, bool]:
                       f"      exception: {type(e)}\n"
             result = False
     if result:
-        with mock.patch("kubernetes_helper.KubernetesHelper.get_list_by_kind_namespace",
+        with mock.patch("clustermanagementtoolkit.kubernetes_helper."
+                        "KubernetesHelper.get_list_by_kind_namespace",
                         return_value=([], 404)):
             try:
                 tmp, status = fun(kubernetes_helper=kh,
