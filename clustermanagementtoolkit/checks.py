@@ -26,6 +26,7 @@ from typing import Any, cast, Dict, Generator, List, Tuple, Union
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
 from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
+from clustermanagementtoolkit.ansible_helper import get_playbook_path
 
 from clustermanagementtoolkit.recommended_permissions import recommended_directory_permissions
 from clustermanagementtoolkit.recommended_permissions import recommended_file_permissions
@@ -34,7 +35,6 @@ from clustermanagementtoolkit.cmtio import execute_command_with_response
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 
-from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, KUBE_CONFIG_FILE
 from clustermanagementtoolkit.cmtpaths import SSH_BIN_PATH, NETRC_PATH, DOT_ANSIBLE_PATH
 
@@ -1528,7 +1528,7 @@ def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
     # The host(s) to check
     hosts = deep_get(kwargs, DictPath("hosts"), [])
-    playbookpath = ANSIBLE_PLAYBOOK_DIR.joinpath("preflight_check.yaml")
+    playbookpath = get_playbook_path(FilePath("preflight_check.yaml"))
 
     ansithemeprint([ANSIThemeStr("[Checking whether ", "phase")]
                    + ansithemestr_join_list(hosts, formatting="hostname")
@@ -1554,6 +1554,7 @@ def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
             if taskname == "Checking whether the host runs an OS supported for control planes":
                 if deep_get(taskdata, DictPath("retval")) != 0:
+                    abort = True
                     critical += 1
                     ansithemeprint([ANSIThemeStr("  ", "default"),
                                     ANSIThemeStr("Critical", "critical"),
@@ -1572,6 +1573,7 @@ def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
             if taskname == "Check whether the host is a Kubernetes control plane":
                 if deep_get(taskdata, DictPath("retval")) != 0:
+                    abort = True
                     critical += 1
                     ansithemeprint([ANSIThemeStr("  ", "default"),
                                     ANSIThemeStr("Critical", "critical"),
@@ -1585,6 +1587,7 @@ def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
             if taskname == "Check whether the host is a Kubernetes node":
                 if deep_get(taskdata, DictPath("retval")) != 0:
+                    abort = True
                     critical += 1
                     ansithemeprint([ANSIThemeStr("  ", "default"),
                                     ANSIThemeStr("Critical", "critical"),
@@ -1594,5 +1597,7 @@ def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
                                     ANSIThemeStr(" seems to already have a running kubelet; "
                                                  "aborting.\n", "default")], stderr=True)
                     break
+    if not abort:
+        print()
 
     return abort, critical, error, warning, note

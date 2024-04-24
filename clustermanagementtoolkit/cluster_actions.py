@@ -15,16 +15,16 @@ import sys
 from typing import Any, cast, Dict, List, Optional, Tuple
 
 from clustermanagementtoolkit.ansible_helper import ansible_print_action_summary
-from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_paths
+from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_filenames
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
 from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
-from clustermanagementtoolkit.ansible_helper import ansible_add_hosts
+from clustermanagementtoolkit.ansible_helper import ansible_add_hosts, get_playbook_path
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
 from clustermanagementtoolkit.cmtlib import get_latest_upstream_version
 
-from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY, ANSIBLE_PLAYBOOK_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 
@@ -42,43 +42,43 @@ cri_data: Dict = {
 }
 
 prepare_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-    ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_node.yaml"),
+    FilePath("prepare_passwordless_ansible.yaml"),
+    FilePath("prepare_node.yaml"),
 ]
 
 setup_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
-    ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
+    FilePath("add_kubernetes_repo.yaml"),
+    FilePath("kubeadm_setup_node.yaml"),
 ]
 
 join_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_join_node.yaml"),
+    FilePath("kubeadm_join_node.yaml"),
 ]
 
 # For now we require the host to have the requisite packages to create VMs installed already,
 # and for the ansible user to be a member of libvirt and kvm.
 vm_create_template_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_template_create.yaml"),
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_template_instantiate.yaml"),
+    FilePath("vm_template_create.yaml"),
+    FilePath("vm_template_instantiate.yaml"),
 ]
 
 # Commit template changes to the backing image.
 vm_commit_template_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_template_commit.yaml"),
+    FilePath("vm_template_commit.yaml"),
 ]
 
 # For now we require the host to have the requisite packages to create VMs installed already,
 # and for the ansible user to be a member of libvirt and kvm.
 vm_create_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_create.yaml"),
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_instantiate.yaml"),
+    FilePath("vm_create.yaml"),
+    FilePath("vm_instantiate.yaml"),
 ]
 
 # While destroy might sound extremely destructive, the VM-image remains untouched.
 # destroy refers to the virtual machine, which we don't want running, since we will need
 # use it as base image for new images.
 vm_destroy_template_playbooks = [
-    ANSIBLE_PLAYBOOK_DIR.joinpath("vm_destroy.yaml"),
+    FilePath("vm_destroy.yaml"),
 ]
 
 
@@ -150,7 +150,7 @@ def get_api_server_package_version(**kwargs: Any) -> Tuple[str, str, str]:
     # if it's an RKE2 cluster we try to deduce the channel from the control plane
     # Kubernetes version
     if k8s_distro == "kubeadm":
-        get_version_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")
+        get_version_playbook_path = get_playbook_path(FilePath("get_versions.yaml"))
         retval, ansible_results = \
             ansible_run_playbook_on_selection(get_version_playbook_path,
                                               selection=[control_plane_ip], quiet=False)
@@ -321,7 +321,7 @@ def prepare_nodes(hosts: List[str], **kwargs: Any) -> int:
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
-    playbooks = populate_playbooks_from_paths(prepare_playbooks)
+    playbooks = populate_playbooks_from_filenames(prepare_playbooks)
     ansible_print_action_summary(playbooks)
     print()
 
@@ -359,12 +359,12 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue.
     if cri == "containerd":
-        setup_playbooks_with_cri = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
+        setup_playbooks_with_cri = [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        setup_playbooks_with_cri = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
+        setup_playbooks_with_cri = [FilePath("setup_cri-o.yaml")]
     setup_playbooks_with_cri += setup_playbooks
 
-    playbooks = populate_playbooks_from_paths(setup_playbooks_with_cri)
+    playbooks = populate_playbooks_from_filenames(setup_playbooks_with_cri)
     ansible_print_action_summary(playbooks)
     print()
 
@@ -420,7 +420,7 @@ def join_nodes(hosts: List[str], **kwargs: Any) -> int:
                                      "default")], stderr=True)
         sys.exit(errno.ENOENT)
 
-    playbooks = populate_playbooks_from_paths(join_playbooks)
+    playbooks = populate_playbooks_from_filenames(join_playbooks)
     ansible_print_action_summary(playbooks)
     print()
 
@@ -470,7 +470,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
-    playbooks = populate_playbooks_from_paths(vm_create_template_playbooks)
+    playbooks = populate_playbooks_from_filenames(vm_create_template_playbooks)
     ansible_print_action_summary(playbooks)
     print()
 
@@ -499,7 +499,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     if not retval:
         # The template image is prepared and all necessary packages
         # and configuration should be installed on it. At this point we need to shut down the VM.
-        playbooks = populate_playbooks_from_paths(vm_destroy_template_playbooks)
+        playbooks = populate_playbooks_from_filenames(vm_destroy_template_playbooks)
         ansible_print_action_summary(playbooks)
         print()
         retval = run_playbooks(playbooks=playbooks, hosts=[vmhost],
@@ -508,7 +508,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     if not retval:
         # The template image is no longer running as a VM.
         # Time to commit the changes to the backing mimage.
-        playbooks = populate_playbooks_from_paths(vm_commit_template_playbooks)
+        playbooks = populate_playbooks_from_filenames(vm_commit_template_playbooks)
         ansible_print_action_summary(playbooks)
         print()
         retval = run_playbooks(playbooks=playbooks, hosts=[vmhost],
@@ -538,7 +538,7 @@ def create_vm_hosts(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: An
     extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
-    playbooks = populate_playbooks_from_paths(vm_create_playbooks)
+    playbooks = populate_playbooks_from_filenames(vm_create_playbooks)
     ansible_print_action_summary(playbooks)
     print()
 

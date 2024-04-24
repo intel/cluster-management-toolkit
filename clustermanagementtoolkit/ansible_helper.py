@@ -13,7 +13,6 @@ Ansible-related helpers
 
 from datetime import datetime
 import errno
-import os
 from pathlib import Path, PurePath
 import re
 import sys
@@ -115,8 +114,10 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
             paths ([FilePath]): A list of paths to playbooks
         Returns:
             [([ANSIThemeStr], FilePath)]:
-                ([ANSIThemeStr]): An ansithemearray with the namer of the playbook
+                ([ANSIThemeStr]): An ansithemearray with the name of the playbook
                 (FilePath): The path to the playbook
+        Raises:
+            FilePathAuditError: The playbook exists but violates path constraints
     """
     playbooks = []
 
@@ -192,8 +193,11 @@ def populate_playbooks_from_filenames(playbooks: List[FilePath]) -> List[Tuple[L
             paths ([FilePath]): A list of playbook names
         Returns:
             [([ANSIThemeStr], FilePath)]:
-                ([ANSIThemeStr]): An ansithemearray with the namer of the playbook
+                ([ANSIThemeStr]): An ansithemearray with the name of the playbook
                 (FilePath): The path to the playbook
+        Raises:
+            FilePathAuditError: The playbook exists but violates path constraints,
+                                or no valid playbook was found.
     """
     playbook_paths = []
 
@@ -1711,7 +1715,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
         validate_args(kwargs_spec={"__allof": ("selection",), "selection": {"types": (list,)}},
                       kwargs={"selection": selection})
 
-    playbook_path = FilePath(os.path.join(ANSIBLE_PLAYBOOK_DIR, "ping.yaml"))
+    playbook_path = FilePath(get_playbook_path("ping.yaml"))
     _retval, ansible_results = ansible_run_playbook_on_selection(playbook_path,
                                                                  selection=selection, quiet=False)
 

@@ -117,9 +117,11 @@ def test_init_ansithemeprint(verbose: bool = False) -> Tuple[str, bool]:
         result = False
 
     if result:
-        themepath = FilePath(os.path.join(THEME_DIR, "/etc/passwd/nonexistingtheme.yaml"))
         try:
-            fun(themefile=themepath)
+            with mock.patch("clustermanagementtoolkit.ansithemeprint.SYSTEM_DEFAULT_THEME_FILE",
+                            "/etc/passwd/nonexistingtheme.yaml"):
+                themepath = FilePath(os.path.join(THEME_DIR, "/etc/passwd/nonexistingtheme.yaml"))
+                fun(themefile=themepath)
             message = f"{fun.__name__} did not raise an exception for invalid path"
             result = False
         except FilePathAuditError:
