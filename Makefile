@@ -442,7 +442,7 @@ check_theme_use: setup_tests
 INSTALL := install --mode=755
 INSTALL_DATA := install --mode=644
 INSTALL_DIRECTORY := install -d
-BASH_COMPLETION_DIR := /etc/bash_completion.d
+BASH_COMPLETION_DIR := /usr/share/bash-completion/completions
 CMT_CONFIG_DIR := /etc/cmt
 CMT_CONFIGLET_DIR := $(CMT_CONFIG_DIR)/cmt.yaml.d
 CMT_DATA_DIR := /usr/share/cluster-management-toolkit
@@ -454,6 +454,7 @@ install:
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_CONFIGLET_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_DATA_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(DIST_PACKAGE_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(BINDIR) &&\
 	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
 	tar cf - clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
