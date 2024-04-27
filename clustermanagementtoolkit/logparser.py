@@ -1926,8 +1926,7 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
             _severity = LogLevel.INFO
         elif tmp[1] == "Warning":
             _severity = LogLevel.WARNING
-        if _severity < severity:
-            severity = _severity
+        severity = min(severity, _severity)
     remnants.append(([ThemeStr(" ".ljust(indent) + raw_message[eventstart:refstart],
                                ThemeAttr("types", "yaml_reference"))], severity))
     for _key_value in raw_message[refstart:refend].split(", "):
