@@ -1287,33 +1287,32 @@ def get_cluster_name() -> Optional[str]:
     return cluster_name
 
 
-"""
-The following paths are necessary:
-${HOMEDIR}
-└── .cmt (main directory for CMT)
-    ├── ansible (Ansible files)
-    │   └── log (Ansible logs)
-    ├── cmt.yaml.d (configlets)
-    ├── deployments (generic workloads)
-    ├── hooks (installation hooks)
-    │   └── pre-prepare.d (hooks run before the prepare step)
-    │   ├── post-prepare.d (hooks run after the prepare step)
-    │   ├── pre-setup.d (hooks run before the setup step)
-    │   ├── post-setup.d (hooks run after the setup step)
-    │   ├── pre-upgrade.d (hooks run before the upgrade step)
-    │   ├── post-upgrade.d (hooks run after the upgrade step)
-    │   ├── pre-teardown.d (hooks run before the teardown step)
-    │   ├── post-teardown.d (hooks run after the teardown step)
-    │   ├── pre-purge.d (hooks run before the purge step)
-    │   └── post-purge.d (hooks run after the purge step)
-    ├── logs (debug logs)
-    ├── parsers (parser files; symlink if cmt-install, dir when system path)
-    ├── playbooks (Ansible playbooks; symlink if cmt-install, dir when system path)
-    ├── sources (data sources; symlink if cmt-install, dir when system path)
-    ├── themes (theme files; symlink if cmt-install, dir when system path)
-    ├── version-cache (version data cache)
-    └── views (view files; symlink if cmt-install, dir when system path)
-"""
+# The following paths are necessary:
+# ${HOMEDIR}
+# └── .cmt (main directory for CMT)
+#     ├── ansible (Ansible files)
+#     │   └── log (Ansible logs)
+#     ├── cmt.yaml.d (configlets)
+#     ├── deployments (generic workloads)
+#     ├── hooks (installation hooks)
+#     │   └── pre-prepare.d (hooks run before the prepare step)
+#     │   ├── post-prepare.d (hooks run after the prepare step)
+#     │   ├── pre-setup.d (hooks run before the setup step)
+#     │   ├── post-setup.d (hooks run after the setup step)
+#     │   ├── pre-upgrade.d (hooks run before the upgrade step)
+#     │   ├── post-upgrade.d (hooks run after the upgrade step)
+#     │   ├── pre-teardown.d (hooks run before the teardown step)
+#     │   ├── post-teardown.d (hooks run after the teardown step)
+#     │   ├── pre-purge.d (hooks run before the purge step)
+#     │   └── post-purge.d (hooks run after the purge step)
+#     ├── logs (debug logs)
+#     ├── parsers (parser files; symlink if cmt-install, dir when system path)
+#     ├── playbooks (Ansible playbooks; symlink if cmt-install, dir when system path)
+#     ├── sources (data sources; symlink if cmt-install, dir when system path)
+#     ├── themes (theme files; symlink if cmt-install, dir when system path)
+#     ├── version-cache (version data cache)
+#     └── views (view files; symlink if cmt-install, dir when system path)
+#
 required_dir_paths: List[Tuple[FilePath, int]] = [
     (cmtpaths.CMTDIR, 0o755),
     (cmtpaths.ANSIBLE_DIR, 0o755),

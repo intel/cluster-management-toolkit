@@ -2186,7 +2186,7 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 
 
 # To make the failure case easier, return both the ref and the name of the control plane
-def get_control_plane() -> Tuple[Dict, str]:
+def get_control_plane() -> Tuple[Optional[Dict], str]:
     if not kubernetes_support:
         return None, ""
 
@@ -2225,7 +2225,7 @@ def get_control_plane() -> Tuple[Dict, str]:
 
 
 # pylint: disable-next=unused-argument
-def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
+def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
     global force_refresh_apis  # pylint: disable=global-statement
 
     selected = deep_get(kwargs, DictPath("selected"))
@@ -2237,6 +2237,7 @@ def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
     # to a role that does not have access to a particular API)
     if retval:
         force_refresh_apis = True
+    return Retval.RETURNDONE
 
 
 # pylint: disable-next=too-many-locals
@@ -3792,7 +3793,7 @@ def __resource_map_cursor(**kwargs: Any) -> Tuple[Retval, Dict]:
     }
 
 
-def __open_reference(**kwargs) -> Tuple[Retval, Dict]:
+def __open_reference(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     pod_name = deep_get(kwargs, DictPath("pod_name"))
@@ -3825,7 +3826,7 @@ def __open_reference(**kwargs) -> Tuple[Retval, Dict]:
     return Retval.MATCH, {}
 
 
-def __fetch_package_versions(**kwargs) -> Tuple[Retval, Dict]:
+def __fetch_package_versions(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
@@ -4726,7 +4727,7 @@ def update_cni(stdscr: curses.window, cni: str, current_version: str, candidate_
     return retval
 
 
-def __update_cni(uip: UIProps, **kwargs):
+def __update_cni(uip: UIProps, **kwargs: Any):
     cni = deep_get(kwargs, DictPath("cni"))
     cni_version = deep_get(kwargs, DictPath("cni_version"))
     candidate_version = deep_get(kwargs, DictPath("candidate_version"))
@@ -4741,7 +4742,7 @@ def __update_cni(uip: UIProps, **kwargs):
         update_cni(uip.stdscr, cni, cni_version, candidate_version)
     uip.refresh_all()
 
-    return Retval.MATCH, {}
+    return Retval.MATCH
 
 
 cniloop_shortcuts = {
@@ -4900,7 +4901,7 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
             return retval
 
 
-def decode_and_view_data(stdscr: curses.window, **kwargs):
+def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     if "selected" in kwargs:
         bvalue = kwargs["selected"].value
         title = kwargs["selected"].key
@@ -4915,10 +4916,10 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
         title = deep_get(kwargs, DictPath("title"), "")
         vtype, value = decode_value(bvalue)
     else:
-        return None
+        return Retval.RETURNDONE
 
     if vtype == "empty" or vtype.startswith(("base64-binary", "gzip")):
-        return None
+        return Retval.RETURNDONE
 
     if vtype.startswith("string"):
         obj = value
@@ -4939,13 +4940,13 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
+def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"), {})
     if not selection:
-        return None
+        return Retval.RETURNDONE
     obj = deep_get(kwargs, DictPath("obj"), {})
     if not obj:
-        return None
+        return Retval.RETURNDONE
     name_path = deep_get(kwargs, DictPath("name_path"))
     name = selection[1][name_path][0]
     file_path = deep_get(kwargs, DictPath("file_path"))
@@ -4954,7 +4955,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
         if deep_get(file, DictPath("path"), "") == name:
             break
     else:
-        return None
+        return Retval.RETURNDONE
     encoding = deep_get(file, DictPath("encoding"), "")
     content = deep_get(file, DictPath("content"))
     title = name
@@ -4969,19 +4970,19 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
     elif vtype.startswith("base64-utf-8"):
         obj = base64.b64decode(value).decode("utf-8")
     elif vtype.startswith(("base64-binary", "gzip")):
-        return None
+        return Retval.RETURNDONE
     formatter = formatters.map_dataformat(title)
     return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
 # pylint: disable-next=unused-argument
-def export_data(stdscr: curses.window, **kwargs):
+def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     selected = deep_get(kwargs, DictPath("selected"))
     obj = deep_get(kwargs, DictPath("obj"))
 
     if selected is None and obj is None:
-        return
+        return Retval.RETURNDONE
 
     extra_args = deep_get(kwargs, DictPath("_extra_args"), {})
     base_path = deep_get(extra_args, DictPath("base_path"))
@@ -5015,6 +5016,7 @@ def export_data(stdscr: curses.window, **kwargs):
         secure_write_string(filename, tmp, write_mode="wb")
     else:
         raise TypeError(f"Trying to export unknown vtype: {vtype}")
+    return Retval.RETURNDONE
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
@@ -6294,13 +6296,32 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 uip.force_update()
 
 
-def eventdispatch(stdscr: curses.window, **kwargs):
+def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch from an event to the infoview of an involved object;
+    this could probably be achieved using the regular dispatcher.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind_path (DictPath): The path to get the kind from
+                api_version_path (DictPath): The path to get the API-version from
+                name_path (DictPath): The path to get name from
+                namespace_path (DictPath): The path to get namespace from
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
     obj = deep_get(kwargs, DictPath("obj"))
     if obj is None:
         return Retval.RETURNDONE
 
     kind_path = deep_get(kwargs, DictPath("kind_path"))
     kind = deep_get_with_fallback(obj, kind_path)
+    # In some cases we don't get a kind from involvedObject/regarding;
+    # just return, otherwise we'll crash in guess_kind().
+    if kind is None:
+        return Retval.RETURNDONE
     api_version_path = deep_get(kwargs, DictPath("api_version_path"))
     api_version = deep_get_with_fallback(obj, api_version_path, "")
     # Is this a core API?
@@ -7657,7 +7678,7 @@ def executecommand(stdscr: curses.window,
 
 
 # pylint: disable-next=too-many-branches
-def listviewdispatch(stdscr: curses.window, **kwargs):
+def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     obj = deep_get(kwargs, DictPath("obj"))
     selection = deep_get(kwargs, DictPath("selection"))
     if obj is None and selection is None:
@@ -7710,7 +7731,7 @@ def listviewdispatch(stdscr: curses.window, **kwargs):
 
 
 # pylint: disable-next=unused-argument
-def patch_object(stdscr: curses.window, **kwargs):
+def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(kwargs, DictPath("name"))
     namespace = deep_get(kwargs, DictPath("namespace"))
@@ -7721,17 +7742,31 @@ def patch_object(stdscr: curses.window, **kwargs):
     _message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch,
                                                             subresource=subresource,
                                                             strategic_merge=strategic_merge)
-
     return Retval.RETURNDONE
 
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
-def resourceinfodispatch(stdscr: curses.window, obj, kind, **kwargs: Any) -> Optional[Retval]:
+def resourceinfodispatch(stdscr: curses.window, obj: dict,
+                         kind: Union[str, Tuple[str, str]], **kwargs: Any) -> Retval:
+    """
+    Dispatch from an object to the infoview of another object.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind_path (DictPath): The path to get the kind from
+                api_version_path (DictPath): The path to get the API-version from
+                name_path (DictPath): The path to get name from
+                namespace_path (DictPath): The path to get namespace from
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
     info = deep_get(kwargs, DictPath("info"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
 
     if kind == ("", ""):
         kind = deep_get(obj, DictPath("kind"), "")
@@ -7751,14 +7786,14 @@ def resourceinfodispatch(stdscr: curses.window, obj, kind, **kwargs: Any) -> Opt
     if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
         # Do not try to open pending containers
         if deep_get(info, DictPath("status#phase")) in ("Pending", "Failed"):
-            return None
+            return Retval.RETURNDONE
         return containerinfoloop(stdscr, obj, kind, info)
 
-    return None
+    return Retval.RETURNDONE
 
 
 def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
-                                                kind=None, info=None, **kwargs) -> Optional[Retval]:
+                                                kind=None, info=None, **kwargs: Any) -> Retval:
     kind = deep_get(obj, DictPath("kind"))
     api_family = deep_get(obj, DictPath("api_group"), "")
     obj = deep_get(obj, DictPath("ref"))
@@ -7766,7 +7801,7 @@ def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optional[Retval]:
+def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Retval:
     # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("obj"))
     # pylint: disable-next=too-many-nested-blocks
@@ -7921,7 +7956,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optiona
                 name = str(name)
 
     if kind is None or isinstance(kind, tuple) and kind[0] is None:
-        return None
+        return Retval.RETURNDONE
 
     if name is None:
         if namespaced_name_path is not None:
@@ -7932,7 +7967,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optiona
                 namespace, name = tmp
 
     if name is None or not name:
-        return None
+        return Retval.RETURNDONE
 
     if namespace is None and obj is not None:
         namespace = deep_get_with_fallback(obj, namespace_path)
@@ -8022,14 +8057,14 @@ def run_playbook(playbook: Dict, nodes: List[str],
     return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes, values=values)
 
 
-def view_obj(stdscr: curses.window, **kwargs):
+def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
     else:
         obj = deep_get(kwargs, DictPath("obj"))
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
     title_path = deep_get(kwargs, DictPath("title_path"))
     if title_path is not None:
@@ -8055,7 +8090,7 @@ def view_obj(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_yaml(stdscr: curses.window, **kwargs):
+def view_yaml(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8063,7 +8098,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
         obj = deep_get(kwargs, DictPath("obj"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     path = deep_get(kwargs, DictPath("path"))
     if path is not None:
         if deep_get(kwargs, DictPath("include_root"), False):
@@ -8071,7 +8106,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
         else:
             _obj = deep_get(obj, DictPath(path))
         if _obj is None:
-            return None
+            return Retval.RETURNDONE
         obj = [_obj]
     else:
         obj = [obj]
@@ -8081,7 +8116,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_json(stdscr: curses.window, **kwargs):
+def view_json(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8089,7 +8124,7 @@ def view_json(stdscr: curses.window, **kwargs):
         obj = deep_get(kwargs, DictPath("obj"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     path = deep_get(kwargs, DictPath("path"))
     if path is not None:
         if deep_get(kwargs, DictPath("include_root"), False):
@@ -8097,7 +8132,7 @@ def view_json(stdscr: curses.window, **kwargs):
         else:
             _obj = deep_get(obj, DictPath(path))
         if _obj is None:
-            return None
+            return Retval.RETURNDONE
         obj = [_obj]
     else:
         obj = [obj]
@@ -8107,7 +8142,7 @@ def view_json(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_pod_logs(stdscr: curses.window, **kwargs):
+def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
     containers = []
     containers_full = []
     items = deep_get(kwargs, DictPath("_tagged_items"), [])
@@ -8134,11 +8169,11 @@ def view_pod_logs(stdscr: curses.window, **kwargs):
 
 
 # pylint: disable=unused-argument
-def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs):
+def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any):
     return view_pod_logs(uip.stdscr, **values)
 
 
-def view_last_applied_configuration(stdscr: curses.window, **kwargs):
+def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Retval:
     obj = deep_get(kwargs, DictPath("obj"))
 
     last_applied_configuration_path = \
@@ -8146,12 +8181,12 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs):
     last_applied_configuration = \
         deep_get(obj, last_applied_configuration_path, {})
     if last_applied_configuration is None or not last_applied_configuration:
-        return None
+        return Retval.RETURNDONE
 
     try:
         data = json.loads(last_applied_configuration)
     except DecodeException:
-        return None
+        return Retval.RETURNDONE
 
     title = deep_get(kwargs, DictPath("title"))
     # themearrays = formatters.format_yaml([data])
@@ -8196,12 +8231,12 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
 
 
 # pylint: disable=unused-argument
-def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any):
     values["__force"] = True
     return delete_resource(uip, items=items, action=action, values=values, kind=kind)
 
 
-def create_namespace(stdscr: curses.window, **kwargs):
+def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection_vars = deep_get(kwargs, DictPath("selection_vars"))
     name = deep_get(selection_vars, DictPath("namespace"))
 
@@ -8235,6 +8270,8 @@ def create_namespace(stdscr: curses.window, **kwargs):
     if waitforkeypress:
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     stdscr.refresh()
+
+    return Retval.RETURNDONE
 
 
 # Valid kinds:
@@ -8797,7 +8834,7 @@ nodeplaybooks = {}  # type: ignore
 
 
 # pylint: disable-next=too-many-locals
-def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
+def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     SSH to a host
 
@@ -8808,6 +8845,8 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
                 name_path (str): The path to the member of the object
                                  to fetch the name from (optional)
                 name (str): The name of the host (optional)
+        Returns:
+            (Retval): Retval.RETURNDONE
     """
     host = None
 
@@ -8825,11 +8864,11 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
                 kind = guess_kind((_kind, _api_group))
             except NameError:
                 # If we cannot guess the kind we return
-                return
+                return Retval.RETURNDONE
 
             if kind != ("Node", ""):
                 # If this is not a Node object, return
-                return
+                return Retval.RETURNDONE
             host = deep_get(ref, DictPath("name"), "")
     elif "obj" in kwargs:
         obj = deep_get(kwargs, DictPath("obj"), {})
@@ -8838,7 +8877,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
     host = deep_get(kwargs, DictPath("name"), host)
 
     if host is None or not host:
-        return
+        return Retval.RETURNDONE
 
     msg = [ANSIThemeStr("SSH:ing to ", "action"),
            ANSIThemeStr(host, "hostname"),
@@ -8882,6 +8921,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
     subprocess.run(args, check=False)
 
     stdscr.refresh()
+    return Retval.RETURNDONE
 
 
 def list_configuration_files(basedir):
