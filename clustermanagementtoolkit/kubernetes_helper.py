@@ -479,10 +479,10 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
             TypeError: kind is not a str or (str, str) tuple
     """
     if not isinstance(kind, (str, tuple)):
-        raise TypeError("kind must be str or (str, str)")
+        raise TypeError(f"kind must be str or (str, str); got {repr(kind)}")
     if isinstance(kind, tuple) \
             and not (len(kind) == 2 and isinstance(kind[0], str) and isinstance(kind[1], str)):
-        raise TypeError("kind must be str or (str, str)")
+        raise TypeError(f"kind must be str or (str, str); got {repr(kind)}")
 
     if isinstance(kind, str):
         if "." in kind:

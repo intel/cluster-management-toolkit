@@ -1228,8 +1228,8 @@ listview:
       action_args:
         _pass_obj: true
         kind_path: ["regarding#kind", "involvedObject#kind"]
-        name_path: ["regarding#kind", "involvedObject#name"]
-        namespace_path: ["regarding#kind", "involvedObject#namespace"]
+        name_path: ["regarding#name", "involvedObject#name"]
+        namespace_path: ["regarding#namespace", "involvedObject#namespace"]
         api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]
   actions:
     actionlist:
@@ -2459,6 +2459,6 @@ infoview:
       action_args:
         _pass_obj: true
         name_path: ["regarding#name", "involvedObject#name"]
-        namespace_path: "metadata#namespace"
+        namespace_path: ["regarding#namespace", "involvedObject#namespace"]
         kind_path: ["regarding#kind", "involvedObject#kind"]
         api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]
