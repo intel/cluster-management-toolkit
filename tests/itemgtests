@@ -13,6 +13,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
 from typing import Dict, List, Tuple
@@ -51,6 +52,9 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
     fun = itemgetters.get_conditions
 
     if result:
+        now = datetime.now(timezone.utc)
+        now_str = f"{now:%Y-%m-%d %H:%M:%S}Z"
+        now_str_fmt = f"{now.astimezone():%Y-%m-%d %H:%M:%S}"
         # Indata format:
         # (obj, path, expected_result, expected_exception)
         testdata: Tuple = (
@@ -63,28 +67,28 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                                 'type': 'PodReadyToStartContainers',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-03-24T02:22:32Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Initialized',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:19:59Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Ready',
                                 'status': 'True',
                                 # Randomly set the readiness probe
-                                'lastProbeTime': '2024-03-31T02:12:32Z',
-                                'lastTransitionTime': '2024-03-31T02:12:32Z'},
+                                'lastProbeTime': now_str,
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'ContainersReady',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-03-31T02:12:32Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'PodScheduled',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:19:59Z'},
+                                'lastTransitionTime': now_str},
                         ],
                     },
                 },
@@ -93,27 +97,27 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                     {
                         "fields": [
                             'PodReadyToStartContainers', 'True',
-                            '<unset>', '2024-03-24 04:22:32', ''],
+                            '<unset>', now_str_fmt, ''],
                     },
                     {
                         "fields": [
                             'Initialized', 'True',
-                            '<unset>', '2024-02-23 01:19:59', ''],
+                            '<unset>', now_str_fmt, ''],
                     },
                     {
                         "fields": [
                             'Ready', 'True',
-                            '2024-03-31 05:12:32', '2024-03-31 05:12:32', ''],
+                            now_str_fmt, now_str_fmt, ''],
                     },
                     {
                         "fields": [
                             'ContainersReady', 'True',
-                            '<unset>', '2024-03-31 05:12:32', ''],
+                            '<unset>', now_str_fmt, ''],
                     },
                     {
                         "fields": [
                             'PodScheduled', 'True',
-                            '<unset>', '2024-02-23 01:19:59', ''],
+                            '<unset>', now_str_fmt, ''],
                     },
                 ],
                 None,
@@ -127,27 +131,27 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                                 'type': 'PodReadyToStartContainers',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Initialized',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Ready',
                                 'status': 'False',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T02:03:00Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'ContainersReady',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'PodScheduled',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                                'lastTransitionTime': now_str},
                         ],
                     },
                 },
@@ -156,23 +160,28 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                     {
                         'fields': [
                             'PodReadyToStartContainers', 'True',
-                            '<unset>', '2024-02-23 01:30:48', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Initialized', 'True',
-                            '<unset>', '2024-02-23 01:20:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Ready', 'False',
-                            '<unset>', '2024-02-23 04:03:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'ContainersReady', 'True',
-                            '<unset>', '2024-02-23 01:30:48', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'PodScheduled', 'True',
-                            '<unset>', '2024-02-23 01:20:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                 ],
                 None,
             ),
@@ -185,12 +194,12 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                                 'type': 'PodReadyToStartContainers',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Initialized',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Ready',
                                 'status': 'False',
@@ -200,12 +209,12 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                                 'type': 'ContainersReady',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:30:48Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'PodScheduled',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-22T23:20:00Z'},
+                                'lastTransitionTime': now_str},
                         ],
                     },
                 },
@@ -214,11 +223,13 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                     {
                         'fields': [
                             'PodReadyToStartContainers', 'True',
-                            '<unset>', '2024-02-23 01:30:48', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Initialized', 'True',
-                            '<unset>', '2024-02-23 01:20:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Ready', 'False',
@@ -226,11 +237,13 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                     {
                         'fields': [
                             'ContainersReady', 'True',
-                            '<unset>', '2024-02-23 01:30:48', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'PodScheduled', 'True',
-                            '<unset>', '2024-02-23 01:20:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                 ],
                 None,
             ),
@@ -243,32 +256,32 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                                 'type': 'PodReadyToStartContainers',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T00:28:57Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Initialized',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T00:28:56Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'Ready',
                                 'status': 'False',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T02:03:00Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'ContainersReady',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T00:29:07Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'PodScheduled',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T00:28:55Z'},
+                                'lastTransitionTime': now_str},
                             {
                                 'type': 'DisruptionTarget',
                                 'status': 'True',
                                 'lastProbeTime': None,
-                                'lastTransitionTime': '2024-02-23T02:08:05Z',
+                                'lastTransitionTime': now_str,
                                 'reason': 'DeletionByTaintManager',
                                 'message': 'Taint manager: deleting due to NoExecute taint'},
                         ],
@@ -279,27 +292,32 @@ def test_get_conditions(verbose: bool = False) -> Tuple[str, bool]:
                     {
                         'fields': [
                             'PodReadyToStartContainers', 'True',
-                            '<unset>', '2024-02-23 02:28:57', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Initialized', 'True',
-                            '<unset>', '2024-02-23 02:28:56', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'Ready', 'False',
-                            '<unset>', '2024-02-23 04:03:00', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'ContainersReady', 'True',
-                            '<unset>', '2024-02-23 02:29:07', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'PodScheduled', 'True',
-                            '<unset>', '2024-02-23 02:28:55', '']},
+                            '<unset>', now_str_fmt, ''],
+                    },
                     {
                         'fields': [
                             'DisruptionTarget', 'True',
-                            '<unset>', '2024-02-23 04:08:05',
+                            '<unset>', now_str_fmt,
                             'Taint manager: deleting due to NoExecute taint']},
                 ],
                 None,
