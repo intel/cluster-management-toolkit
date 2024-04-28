@@ -27,7 +27,7 @@ from clustermanagementtoolkit import infogetters
 def get_kubernetes_list(*args: Any,
                         **kwargs: Any) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
     """
-    Fetch a list of Kubernetes objects, optionally with postprocessing
+    Fetch a list of Kubernetes objects, optionally with postprocessing.
 
         Parameters:
             *args [Any]: Positional arguments (unused)
@@ -97,7 +97,7 @@ def get_kubernetes_list(*args: Any,
 
 def get_inventory_list() -> None:
     """
-    Dummy function used as a cookie for inventory list
+    Dummy function used as a cookie for inventory list.
     """
     return
 
@@ -105,7 +105,7 @@ def get_inventory_list() -> None:
 # pylint: disable-next=too-many-locals
 def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
     """
-    Get the list of Kubernetes contexts
+    Get the list of Kubernetes contexts.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -172,6 +172,8 @@ def add_resource(key: str, units: Dict[str, List[str]],
                  resources: Union[int, float, List[str]],
                  resource: Optional[Union[str, int, float]]) -> Union[int, float, List[str]]:
     """
+    Add a resource to the node resource list.
+
         Parameters:
             key (str): The name of the resource
             units (dict): The list of known resource types
