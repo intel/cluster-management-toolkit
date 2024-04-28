@@ -1830,12 +1830,28 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
     return info
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
-def get_journalctl_log(obj: Dict, **kwargs: Any):
-    timestamps = []
-    facilities = []
-    severities = []
-    messages = []
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from journalctl.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+                _show_raw (bool): Return unformatted entries?
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
+    timestamps: List[str] = []
+    messages: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
     objlist = deep_get(obj, DictPath("obj"))
@@ -1901,11 +1917,25 @@ def get_journalctl_log(obj: Dict, **kwargs: Any):
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_traceflow(obj: Dict, **kwargs: Any):
-    timestamps = []
-    facilities = []
-    severities = []
-    messages = []
+def get_traceflow(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from a traceflow.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
+    timestamps: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -1917,7 +1947,7 @@ def get_traceflow(obj: Dict, **kwargs: Any):
             saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
         else:
             saved_timestamp = ""
-        message = []
+        message: List[Union[ThemeRef, ThemeStr]] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp
@@ -1941,7 +1971,7 @@ def get_traceflow(obj: Dict, **kwargs: Any):
 
 
 # pylint: disable-next=unused-argument
-def get_task_log(obj: Dict, **kwargs: Any):
+def get_task_log(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     field = []
 
     skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2027,13 +2057,27 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, Them
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def get_cmt_log(obj: Dict, **kwargs: Any):
+def get_cmt_log(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from CMT log.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
     filepath = deep_get(obj, DictPath("filepath"), "")
-    timestamps = []
-    messages = []
-    facilities = []
-    severities = []
-    messages = []
+    timestamps: List[str] = []
+    messages: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     d = secure_read_yaml(filepath)
 
@@ -2144,7 +2188,7 @@ def get_name_by_kind_from_owner_references(owner_references: List[Dict], kind: s
     return name
 
 
-def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str):
+def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str) -> str:
     holder_kind = ""
 
     for owr in owner_references:
@@ -4013,7 +4057,7 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[S
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def clusteroverviewloop(stdscr: curses.window, view):
+def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
     global executor  # pylint: disable=global-statement
 
     # Just in case there are leftover futures from other views
@@ -4727,7 +4771,7 @@ def update_cni(stdscr: curses.window, cni: str, current_version: str, candidate_
     return retval
 
 
-def __update_cni(uip: UIProps, **kwargs: Any):
+def __update_cni(uip: UIProps, **kwargs: Any) -> Retval:
     cni = deep_get(kwargs, DictPath("cni"))
     cni_version = deep_get(kwargs, DictPath("cni_version"))
     candidate_version = deep_get(kwargs, DictPath("candidate_version"))
@@ -6544,10 +6588,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             uip.refresh_statusbar()
             curses.doupdate()
 
-            timestamps = []
-            facilities = []
-            severities = []
-            messages = []
+            timestamps: List[str] = []
+            facilities: List[str] = []
+            severities: List[str] = []
+            messages: Union[List[Union[ThemeRef, ThemeStr]], str] = []
             parser = None
             prev_timestamp = None
             prev_facility = ""
@@ -8169,7 +8213,7 @@ def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable=unused-argument
-def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any):
+def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     return view_pod_logs(uip.stdscr, **values)
 
 
@@ -8196,7 +8240,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
 
 
 # pylint: disable=unused-argument,too-many-locals
-def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     success = True
     force = deep_get(values, DictPath("__force"), False)
 
@@ -8229,9 +8273,11 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
             del win
             break
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any):
+def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     values["__force"] = True
     return delete_resource(uip, items=items, action=action, values=values, kind=kind)
 
@@ -8555,7 +8601,7 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 
 
 # pylint: disable=unused-argument
-def patch_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
     action_str = deep_get(values, DictPath("action_str"))
@@ -8584,9 +8630,11 @@ def patch_resource(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
+def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8610,9 +8658,11 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
+def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8633,9 +8683,11 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8661,11 +8713,13 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # Valid kinds:
 # ("Deployment", "apps")
 # pylint: disable=unused-argument
-def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
+def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8690,11 +8744,15 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for item in items:
         ansible_delete_log(item)
+
+    return Retval.RETURNDONE
 
 
 # pylint: disable=unused-argument,too-many-locals,too-many-branches
@@ -8819,15 +8877,17 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
 
 
 # pylint: disable=unused-argument
-def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.cordon_node(node)
+    return Retval.RETURNDONE
 
 
 # pylint: disable=unused-argument
-def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.uncordon_node(node)
+    return Retval.RETURNDONE
 
 
 nodeplaybooks = {}  # type: ignore
@@ -9261,7 +9321,7 @@ def populate_playbooklist(**kwargs: Any) -> Tuple[List[Dict], Dict]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def format_selection_list(uip: UIProps, refresh_apis: bool = False):
+def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> List[Dict[str, Any]]:
     global force_refresh_apis  # pylint: disable=global-statement
 
     if force_refresh_apis:
