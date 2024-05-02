@@ -125,6 +125,21 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
 
 cni_data: Dict[str, Any] = {
     "antrea": {
+        "executable": {
+            "candidate_version_function": get_github_version,
+            "candidate_version_url":
+                "https://api.github.com/repos/antrea-io/antrea/releases",
+            "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "version_command": ["antctl", "version"],
+            "version_regex": r"^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)$",
+            "urls": [
+                {
+                    "url": "https://github.com/antrea-io/antrea/releases/"
+                           "download/v2.0.0/antctl-linux-x86_64",
+                    "filename": "antctl",
+                }
+            ]
+        },
         "CNI": {
             "candidate_version_function": get_github_version,
             "candidate_version_url":
@@ -219,7 +234,7 @@ cni_data: Dict[str, Any] = {
             "version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
             "candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
-            "upgrade": ["cilium", "--context", "<<<context>>>", "upgrade"],
+            "upgrade": ["cilium", "--reuse-values", "--context", "<<<context>>>", "upgrade"],
             "install": ["cilium", "--context", "<<<context>>>", "install"],
             "uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
         }
