@@ -50,7 +50,7 @@ except ModuleNotFoundError:  # pragma: no cover
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, SecurityStatus
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, HostNameStatus
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME
-from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, VIEW_DIR
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE, VIEW_DIR, SYSTEM_VIEWS_DIR
 from clustermanagementtoolkit.cmtvalidators import validate_fqdn, validator_bool
 
 from clustermanagementtoolkit.commandparser import parse_commandline
@@ -2188,17 +2188,14 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
     cmt_support_len = len(cmt_support_header)
     local_view_len = len(local_view_header)
 
-    viewdir = os.path.join(VIEW_DIR)
-    if not os.path.isdir(viewdir):
-        sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
-
     # Get a full list of views from all view directories
     # Start by adding files from the views directory
     view_dirs = []
     if local_only is None or local_only is not None and local_only:
         view_dirs += deep_get(cmtlib.cmtconfig, DictPath("General#local_views"), [])
     if local_only is None or local_only is not None and not local_only:
-        view_dirs.append(viewdir)
+        view_dirs.append(VIEW_DIR)
+        view_dirs.append(SYSTEM_VIEWS_DIR)
 
     filtered_api_resources = []
 
@@ -2215,7 +2212,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                 kind_tuple = guess_kind((name, api_group))
 
                 # OK, this is a kind known by CMT that is available in the cluster;
-                # now check whether there's a view file and where it has list/info views
+                # now check whether there's a view file and whether it has list/info views
                 if kind_tuple == ("Event", ""):
                     filename = "Event.events.k8s.io.yaml"
                 elif not kind_tuple[1]:
@@ -2228,7 +2225,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                         d = secure_read_yaml(view_file, directory_is_symlink=True)
                         has_list_view = "listview" in d
                         has_info_view = "infoview" in d
-                        is_local = view_dir != viewdir
+                        is_local = view_dir not in (VIEW_DIR, SYSTEM_VIEWS_DIR)
                         kh_update_api_status(kind_tuple, listview=has_list_view,
                                              infoview=has_info_view, local=is_local)
                         # This won't do any updates except get the updated list & info view flags
