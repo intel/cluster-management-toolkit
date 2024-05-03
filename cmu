@@ -373,7 +373,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
     """
-    Given the name of a container, return the name and the version field
+    Given the name of a container, return the name and the version field.
 
         Paramters:
             image (str): The full container name
@@ -430,7 +430,7 @@ def __get_container_info(obj: Dict, container_type: str,
 # pylint: disable-next=unused-argument,too-many-locals
 def get_container_info(**kwargs: Any) -> List[Type]:
     """
-    Infogetter for Containers.
+    Infogetter for containers.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -635,11 +635,9 @@ def __process_sum_mem_usage(values: List[str]) -> str:
     return normalise_mem_bytes_to_str(mem_usage_sum)
 
 
-def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str,
-                                target_type: str) -> Union[Sequence[Union[str, Tuple]], str]:
-    new_values: List[Union[str, Tuple]] = []
-
-    compiled_regex = re.compile(match_regex)
+def __process_regex_to_sequence(values: Union[str, List[str]],
+                                match_regex: str) -> Union[Sequence[Tuple[str]], str]:
+    new_values: List[Union[str, Tuple[str]]] = []
 
     if values:
         if isinstance(values, str):
@@ -652,10 +650,7 @@ def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str,
                 for group in tmp_match.groups():
                     if group is not None:
                         groups.append(group)
-                if target_type == "tuples":
-                    new_values.append(tuple(groups))
-                else:
-                    new_values += groups
+                new_values.append(tuple(groups))
 
     if len(new_values) == 1:
         return new_values[0]
@@ -696,9 +691,34 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-def process_value(field_name: str, value: Any, vtype: str, view: str,
-                  field_index: str, action: str, formatter: str, replace_quotes: str,
-                  _regex: str) -> Union[int, float, str, List[str], datetime, None]:
+def process_value(value: Any, vtype: str, **kwargs: Any) -> \
+        Union[int, float, str, List[str], List[Tuple[str]], datetime, None]:
+    """
+    Reformat values; returns data in a format suitable for further processing.
+
+        Parameters:
+            value (Any): The value to process
+            vtype (str): The value-type
+            **kwargs (dict[str, Any]): Keyword arguments
+                action (str): Additional actions to perform when processing
+                field_index (str): The field index for formatting of a particular kind
+                field_name (str): The name of the field the data originates from
+                formatter (str): Formatter to use (specifically used when processing timestamps)
+                regex_ (str): A regex to use to split a string value into multiple values
+                              (either a list or a tuple)
+                replace_quotes (str): Quote replacement policy (no, pretty, same)
+                view (str): The view being processed
+        Returns:
+            (int|float|str|[str]|datetime): The processed value
+    """
+    action: str = deep_get(kwargs, DictPath("action"))
+    field_index: str = deep_get(kwargs, DictPath("field_index"))
+    field_name: str = deep_get(kwargs, DictPath("field_name"))
+    formatter: str = deep_get(kwargs, DictPath("formatter"))
+    regex_: str = deep_get(kwargs, DictPath("regex_"))
+    replace_quotes: str = deep_get(kwargs, DictPath("replace_quotes"))
+    view: str = deep_get(kwargs, DictPath("view"))
+
     override_kind = \
         deep_get_with_fallback(cmtlib.cmtconfig,
                                [DictPath(f"Views#{view}#kind_format_{field_index}"),
@@ -732,10 +752,10 @@ def process_value(field_name: str, value: Any, vtype: str, view: str,
         else:
             tmp_int = normalise_mem_to_bytes(value)
             new_value = normalise_mem_bytes_to_str(tmp_int)
-    elif vtype in ("regex_to_tuples", "regex_to_list"):
-        target_type = vtype[len("regex_to_"):]
-        new_value = __process_regex_to_sequence(cast(Union[List[str], str], value),
-                                                _regex, target_type)
+    elif vtype == "disk_usage":
+        new_value = cmtlib.disksize_to_human(value)
+    elif vtype == "regex_to_tuples":
+        new_value = __process_regex_to_sequence(cast(Union[List[str], str], value), regex_)
     elif vtype == "len":
         if value is None:
             new_value = "0"
@@ -1704,25 +1724,30 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     value = deep_get_with_fallback(obj, path, default,
                                                    fallback_on_empty=fallback_on_empty)
                     _values.append((value, vtype))
-
             values = []
 
-            for value, _vtype in _values:
-                _regex = deep_get(_path, DictPath("regex"))
-                if isinstance(_vtype, list):
+            processor_args = {
+                "action": action,
+                "field_index": field_index,
+                "field_name": name,
+                "formatter": formatter,
+                "regex_": deep_get(_path, DictPath("regex")),
+                "replace_quotes": replace_quotes,
+                "view": view,
+            }
+            for value, vtype_ in _values:
+                if isinstance(vtype_, list):
                     if value is None or not value:
                         value = []
-                if isinstance(value, list) and _vtype == "raw":
+                if isinstance(value, list) and vtype_ == "raw":
                     values += value
                     continue
-                if isinstance(value, list) and isinstance(_vtype, list):
+                if isinstance(value, list) and isinstance(vtype_, list):
                     tmp = []
-                    for _value in value:
-                        tmp.append(process_value(name, _value, _vtype, view, field_index, action,
-                                                 formatter, replace_quotes, _regex))
+                    for value_ in value:
+                        tmp.append(process_value(value_, vtype_, **processor_args))
                 else:
-                    tmp = process_value(name, value, _vtype, view, field_index, action,
-                                        formatter, replace_quotes, _regex)
+                    tmp = process_value(value, vtype_, **processor_args)
                 values.append(tmp)
 
             if not values:
@@ -3211,7 +3236,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     if deep_get(obj, DictPath("metadata#name")) not in itemlist:
                         continue
 
-                labelref = deep_get(obj, DictPath("metadata#labels"), {})
+                labelpath = deep_get(views, DictPath(f"{view}#labels"), "metadata#labels")
+                labelref = deep_get(obj, DictPath(labelpath), {})
                 for key in labelref:
                     if (key, labelref[key]) not in labels:
                         labels.append((key, labelref[key]))
@@ -9871,6 +9897,12 @@ def map_key(view_file: str, shortcut: str, activatedfun,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def populate_views(force_refresh: bool = False) -> None:
+    """
+    Populate the list- and info-view data from view-files.
+
+        Parameters:
+            force_refresh (bool): Force fresh of the list of available APIs
+    """
     global views  # pylint: disable=global-statement
 
     if kubernetes_support:
@@ -10077,6 +10109,8 @@ def populate_views(force_refresh: bool = False) -> None:
                         sys.exit(f"{activatedfun} is not in the activatedfun allow list")
                     activatedfun = _activatedfun
 
+            labels = deep_get(d, DictPath("listview#labels"))
+
             listview_entry = {
                 "kind": (kind, api_family),
                 "commandline": command,
@@ -10089,6 +10123,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 "listview_args": deep_get(d, DictPath("listview#listview_args"), {}),
                 "statusmsg": deep_get(d, DictPath("listview#statusmsg"), {}),
                 "is_taggable": deep_get(d, DictPath("listview#is_taggable"), True),
+                "labels": labels,
                 "listgetter": listgetter,
                 "listgetter_async": listgetter_async,
                 "listgetter_args": listgetter_args,
@@ -10237,6 +10272,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 on_activation["kind"] = viewoverride
                 on_activation.pop("api_family", "")
 
+            labels = deep_get(d, DictPath("infoview#labels"))
             annotations = deep_get(d, DictPath("infoview#annotations"))
 
             sortcolumn = deep_get(listpad, DictPath("sortcolumn"))
@@ -10279,6 +10315,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 "infopad": row_fields,
                 "listpad": {},
                 "reversible": reversible,
+                "labels": labels,
                 "annotations": annotations,
                 "shortcuts": {},
                 "no_reload_on_refresh": deep_get(d, DictPath("infoview#no_reload_on_refresh"),
