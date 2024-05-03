@@ -12,6 +12,7 @@ command:
 listview:
   name: "Images"
   group: "OpenShift"
+  labels: "dockerImageMetadata#Config#Labels"
   field_indexes:
     Wide:
       fields: ["label_name", "name", "image_reference", "age"]
@@ -21,7 +22,7 @@ listview:
       sortcolumn: "label_name"
   fields:
     image_reference:
-      header: "Reference:"
+      header: "Image Reference:"
       path: "dockerImageReference"
       type: "str"
     label_name:
@@ -31,3 +32,86 @@ listview:
         pathtype: "value"
         default: "<unset>"
       type: "str"
+infoview:
+  name: "Image Info"
+  labels: "dockerImageMetadata#Config#Labels"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "metadata_version", "image_reference", "architecture", "author", "manifest_type", "size"]
+    rows:
+      architecture:
+        header: [["Architecture:", ["main", "infoheader"]]]
+        path: "dockerImageMetadata#Architecture"
+        type: "str"
+      author:
+        header: [["Author:", ["main", "infoheader"]]]
+        paths:
+        - path: ["dockerImageMetadata#Author", "dockerImageMetadata#Config#Labels#vendor"]
+          pathtype: "value"
+          default: "foo"
+        type: "str"
+      description:
+        header: [["Summary:", ["main", "infoheader"]]]
+        path: "dockerImageMetadata#Config#Labels#summary"
+        type: "str"
+        default: "<unset>"
+      image_reference:
+        header: [["Image Reference:", ["main", "infoheader"]]]
+        path: "dockerImageReference"
+        type: "str"
+      manifest_type:
+        header: [["Manifest Type:", ["main", "infoheader"]]]
+        path: "dockerImageManifestMediaType"
+        type: "str"
+      metadata_version:
+        header: [["Metadata Version:", ["main", "infoheader"]]]
+        path: "dockerImageMetadataVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      size:
+        header: [["Size:", ["main", "infoheader"]]]
+        paths:
+        - path: "dockerImageMetadata#Size"
+          type: "disk_usage"
+        formatter: "numerical_with_units"
+  shortcuts:
+    "Docker Image Configuration":
+      key: "c"
+      read_only: true
+      helptext: "Show Docker Image Configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Docker Image Configuration"
+        _pass_obj: true
+        path: "dockerImageMetadata#Config"
+    "Container Configuration":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Container Configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Container Configuration"
+        _pass_obj: true
+        path: "dockerImageMetadata#ContainerConfig"
+    "Docker Image Layers":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Docker Image Layers"
+      widget: "windowwidget"
+      title: "Docker Image Layers:"
+      headers: ["Name:", "Size:", "Media Type:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "dockerImageLayers"
+        fields:
+        - "name"
+        - "size"
+        - "mediaType"
+        # pass_ref: true
