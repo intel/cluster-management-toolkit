@@ -1127,7 +1127,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
         kind = ("PodMetrics", "metrics.k8s.io")
         podmetrics = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace,
                                                        resource_cache=kh_cache)
-        if podmetrics is not None:
+        if podmetrics is not None and podmetrics:
             ref = podmetrics
             rtype = resource_kind_to_rtype(kind)
             resource_tuple = ("", "", pod_name)
@@ -1150,7 +1150,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
         kind = ("CiliumEndpoint", "cilium.io")
         ref = kh.get_ref_by_kind_name_namespace(kind, pod_name, pod_namespace,
                                                 resource_cache=kh_cache)
-        if ref is not None:
+        if ref is not None and ref:
             rtype = resource_kind_to_rtype(kind)
             resource_tuple = ("", "", pod_name)
             status = deep_get(ref, DictPath("status#state"), "Unknown")
@@ -1172,7 +1172,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
         kind = ("RuntimeClass", "node.k8s.io")
         name = deep_get(obj, DictPath("spec#runtimeClassName"))
         ref = kh.get_ref_by_kind_name_namespace(kind, name, "", resource_cache=kh_cache)
-        if ref is not None:
+        if ref is not None and ref:
             rtype = resource_kind_to_rtype(kind)
             resource_tuple = ("", "", name)
             vlist.append({
@@ -1261,7 +1261,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
         if kind == ("ConfigAuditReport", "aquasecurity.github.io"):
             ref = vlist_[0]
-            if ref is None:
+            if ref is None or not ref:
                 continue
 
             report_name = deep_get(ref, DictPath("metadata#name"))
@@ -1312,7 +1312,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
         if kind == ("InfraAssessmentReport", "aquasecurity.github.io"):
             ref = vlist_[0]
-            if ref is None:
+            if ref is None or not ref:
                 continue
 
             report_name = deep_get(ref, DictPath("metadata#name"))
@@ -1363,7 +1363,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
         if kind == ("VulnerabilityReport", "aquasecurity.github.io"):
             ref = vlist_[0]
-            if ref is None:
+            if ref is None or not ref:
                 continue
 
             report_name = deep_get(ref, DictPath("metadata#name"))
@@ -1418,7 +1418,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
         if kind == ("ExposedSecretReport", "aquasecurity.github.io"):
             ref = vlist_[0]
-            if ref is None:
+            if ref is None or not ref:
                 continue
 
             report_name = deep_get(ref, DictPath("metadata#name"))
@@ -1469,7 +1469,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
 
         if kind == ("SbomReport", "aquasecurity.github.io"):
             ref = vlist_[0]
-            if ref is None:
+            if ref is None or not ref:
                 continue
 
             report_name = deep_get(ref, DictPath("metadata#name"))
