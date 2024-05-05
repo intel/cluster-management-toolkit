@@ -814,7 +814,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                                                candidate_version_regex)
             if tmp_candidate_version is None:
                 check_and_print_status(False)
-            candidate_version, _release_data = tmp_candidate_version
+            candidate_version, _release_data, _body = tmp_candidate_version
         else:
             candidate_version = \
                 check_version_from_url(substitute_string(candidate_version_url,
@@ -5106,7 +5106,7 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
                                   r"^v(\d+)\.(\d+)\.\d+$")) is None:
         check_and_print_status(False)
 
-    version_tmp, _release_date = tmp  # type: ignore
+    version_tmp, _release_date, _body = tmp  # type: ignore
     if requested_major < int(version_tmp[0]) \
             or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
         crio_major_version = str(requested_major)

@@ -40,6 +40,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 from clustermanagementtoolkit import cmtlib
 
+from clustermanagementtoolkit.cmtio import secure_write_string
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
 from clustermanagementtoolkit import cmtpaths
@@ -50,6 +51,45 @@ from clustermanagementtoolkit.cmtpaths import VERSION_CANDIDATES_FILE
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, ANSIThemeStr
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+
+
+def reformat_github_release_notes(changelog: str = "") -> str:
+    """
+    Given a release message from GitHub reformat it as rudimentary Markdown.
+
+        Parametres:
+            changelog (str): The changelog to reformat
+        Returns:
+            (str): The reformatted changelog
+    """
+    formatted_changelog = []
+
+    previous_line = None
+    git_shortlog = False
+    githash = re.compile(r"^([0-9a-f]{8})( .+)$")
+    for line in changelog.splitlines():
+        # We might possibly have an issue here if we get a new header where
+        # the first word is exactly 8 characters long and matches [0-9a-f].
+        # For now let's not overcomplicate things though.
+        if git_shortlog and (tmp := githash.match(line)) is not None:
+            formatted_changelog.append(f"`{tmp[1]}`{tmp[2]}")
+            previous_line = None
+            continue
+        if previous_line is None:
+            previous_line = line
+            continue
+        if line == "---":
+            formatted_changelog.append(f"## {previous_line}")
+            git_shortlog = previous_line == "git shortlog"
+            previous_line = None
+            continue
+        formatted_changelog.append(previous_line)
+        previous_line = line
+
+    if previous_line is not None:
+        formatted_changelog.append(previous_line)
+
+    return "\n".join(formatted_changelog)
 
 
 def scan_and_add_ssh_keys(hosts: List[str]) -> None:
@@ -407,7 +447,7 @@ def download_files(directory: str,
     return retval
 
 
-def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str], str]]:
+def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str], str, str]]:
     """
     Given a github repository find the latest release;
     exclude releases that do not match the regex and prereleases.
@@ -419,9 +459,10 @@ def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str]
             ([str], str):
                 ([str]): A list of version number elements, or None in case of failure
                 (str): The release data
+                (str): The release page body
     """
     compiled_version_regex = re.compile(version_regex)
-    versions: List[Tuple[List[str], str]] = []
+    versions: List[Tuple[List[str], str, str]] = []
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
@@ -438,15 +479,20 @@ def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str]
                     continue
                 created_at = deep_get(release, DictPath("created_at"), "<unknown>")
                 published_at = deep_get(release, DictPath("published_at"), created_at)
-                versions.append((list(tmp.groups()), published_at))
+                body = deep_get(release, DictPath("body"), "")
+                versions.append((list(tmp.groups()), published_at, body))
     if versions:
-        return cast(Tuple[List[str], str], natsorted(versions, reverse=True)[0])
+        return cast(Tuple[List[str], str, str], natsorted(versions, reverse=True)[0])
 
-    return [], ""
+    return [], "", ""
 
 
 candidate_version_function_allowlist: Dict = {
     "get_github_version": get_github_version,
+}
+
+reformatter_allowlist: Dict = {
+    "reformat_github_release_notes": reformat_github_release_notes,
 }
 
 
@@ -541,6 +587,7 @@ def update_version_cache(**kwargs: Any) -> None:
         candidate_version_args: Dict = deep_get(data, DictPath("candidate_version#args"), {})
 
         candidate_version_tuple: Optional[Tuple] = None
+        release_body = ""
 
         # By default we only update the cache once per hour unless forced
         # or the configuration says differently
@@ -548,7 +595,7 @@ def update_version_cache(**kwargs: Any) -> None:
             if candidate_version_func:
                 release_info = candidate_version_func(**candidate_version_args)
                 if release_info is not None:
-                    candidate_version_tuple, release_date = release_info
+                    candidate_version_tuple, release_date, release_body = release_info
                     if key not in candidate_versions:
                         candidate_versions[key] = {"release": "", "release_date": ""}
                     candidate_versions[key]["release"] = \
@@ -580,26 +627,40 @@ def update_version_cache(**kwargs: Any) -> None:
         # We (hopefully) have a version now; time to fetch the changelog (if requested)
         changelog_url: str = deep_get(data, DictPath("changelog#url"), "")
         changelog_dest: str = deep_get(data, DictPath("changelog#dest"), "")
+        changelog_from_body: str = deep_get(data, DictPath("changelog#from_body"), False)
+        reformatter: str = deep_get(data, DictPath("changelog#reformatter"))
 
-        if not changelog_url or not changelog_dest:
+        if not (changelog_url or changelog_from_body and release_body) or not changelog_dest:
             continue
 
-        version_substitutions: Dict = {}
-        if candidate_version_tuple:
-            for i, item in enumerate(candidate_version_tuple):
-                version_substitutions[f"<<<version.{i}>>>"] = item
-        changelog_url = cmtlib.substitute_string(changelog_url, version_substitutions)
-        if "<<<version" in changelog_url:
-            # If still have remaining substitutions to be made after using the versions we have
-            # there is no recourse but to skip fetching the changelog.
-            continue
-        fetch_url = [(changelog_url, changelog_dest, None, None)]
-        if not download_files(VERSION_CACHE_DIR, fetch_url):
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": Failed to fetch ", "default"),
-                            ANSIThemeStr(f"{changelog_url}", "url"),
-                            ANSIThemeStr("; skipping.", "default")], stderr=True)
-            continue
+        if changelog_from_body:
+            # First step: replace \r\n with \n.
+            release_body = release_body.replace("\r\n", "\n")
+            # Add extra newlines at the end; one to help the reformatter,
+            # one because the field typically lacks a trailing newline.
+            release_body += "\n\n\n"
+
+            if (reformatter := deep_get(reformatter_allowlist, DictPath(reformatter))) is not None:
+                release_body = reformatter(release_body)
+            secure_write_string(VERSION_CACHE_DIR.joinpath(changelog_dest), release_body,
+                                allow_relative_path=True, permissions=0o644)
+        else:
+            version_substitutions: Dict = {}
+            if candidate_version_tuple:
+                for i, item in enumerate(candidate_version_tuple):
+                    version_substitutions[f"<<<version.{i}>>>"] = item
+            changelog_url = cmtlib.substitute_string(changelog_url, version_substitutions)
+            if "<<<version" in changelog_url:
+                # If still have remaining substitutions to be made after using the versions we have
+                # there is no recourse but to skip fetching the changelog.
+                continue
+            fetch_url = [(changelog_url, changelog_dest, None, None)]
+            if not download_files(VERSION_CACHE_DIR, fetch_url):
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Failed to fetch ", "default"),
+                                ANSIThemeStr(f"{changelog_url}", "url"),
+                                ANSIThemeStr("; skipping.", "default")], stderr=True)
+                continue
         if key not in last_update_data:
             last_update_data[key] = {}
         last_update_data[key]["changelog"] = datetime.now()
