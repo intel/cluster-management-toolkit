@@ -49,7 +49,7 @@ listview:
             - 0
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/crc_current_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/crc_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
@@ -92,18 +92,10 @@ listview:
             version_regex: '^version.BuildInfo{Version:"v(\d+)(\.)(\d+)(\.)(\d+)".*'
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/helm_current_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/helm_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          start: "## Changelog since "
-          include_start: true
-          end: "# v"
-          include_end: false
-          strip_empty_start: false
-          strip_empty_end: true
     - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
       filetype: "yaml"
       path: "antctl"
@@ -118,18 +110,10 @@ listview:
             version_regex: '^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)'
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/antrea_current_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/antrea_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          start: "## Changelog since "
-          include_start: true
-          end: "# v"
-          include_end: false
-          strip_empty_start: false
-          strip_empty_end: true
     - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
       filetype: "yaml"
       path: "calicoctl"
@@ -144,18 +128,10 @@ listview:
             version_regex: '^Client Version:\s+v(\d+)(\.)(\d+)(\.)(\d+)'
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/calico_current_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/calico_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          start: "## Changelog since "
-          include_start: true
-          end: "# v"
-          include_end: false
-          strip_empty_start: false
-          strip_empty_end: true
     - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
       filetype: "yaml"
       path: "cilium-cli"
@@ -170,18 +146,10 @@ listview:
             version_regex: '^cilium-cli:\s+v(\d+)(\.)(\d+)(\.)(\d+).*'
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/cilium_current_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/cilium_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
-        formatter_args:
-          # First match in the file is what we want
-          start: "## Changelog since "
-          include_start: true
-          end: "# v"
-          include_end: false
-          strip_empty_start: false
-          strip_empty_end: true
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:
