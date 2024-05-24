@@ -1615,6 +1615,7 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("openshift-kube-scheduler", "scheduler-kubeconfig", "kubeconfig", "", "JSON"),
     ("openshift-machine-config-operator", "coreos-bootimages", "stream", "", "JSON"),
     ("openshift-operator", "applied-cluster", "applied", "", "JSON"),
+    ("openshift-ovn-kubernetes", "ovnkube-config", "ovnkube.conf", "ovnkube.conf", "INI"),
     # Keep last; match everything that does not match anything
     ("", "", "", "", "Text"),
 ]
