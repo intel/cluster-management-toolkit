@@ -1,0 +1,223 @@
+kind: "RoleBinding"
+api_family: "authorization.openshift.io"
+default_command: "rolebindings.authorization.openshift.io"
+command:
+- "rolebinding.authorization.openshift.io"
+- "osrolebindings"
+- "osrolebinding"
+- "osrb"
+listview:
+  name: "Role Bindings"
+  group: "Authorization & Access Control"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "role", "subjects", "age"]
+      sortcolumn: "namespace"
+    Normal:
+      fields: ["namespace", "name", "subjects", "age"]
+      sortcolumn: "namespace"
+  fields:
+    role:
+      header: "Role:"
+      paths:
+      - path: "roleRef#name"
+    subjects:
+      header: "Subjects:"
+      paths:
+      - path: "subjects"
+        pathtype: "items"
+        subpaths:
+        - "kind"
+        - "name"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "generic"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Role Binding Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "role_ref_header", "role_ref_name", "role_ref_kind", "role_ref_exists"]
+    rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      role_ref_exists:
+        header: [["  Exists:", ["main", "infoheader"]]]
+        paths:
+        - path: ["Role", "authorization.openshift.io", ["metadata#namespace"], ["roleRef#name"], []]
+          pathtype: "lookup"
+          when:
+          - key: "metadata#name"
+            notnone: true
+          substitute: "True"
+          unknown: "Unknown"
+        default: "False"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Unknown":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      role_ref_header:
+        header: [["R", ["main", "infoheader_shortcut"]], ["ole Reference:", ["main", "infoheader"]]]
+      role_ref_kind:
+        header: [["  Kind:", ["main", "infoheader"]]]
+        paths:
+        - path: ["Role", "authorization.openshift.io"]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+      role_ref_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "roleRef#name"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "subjects"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: ["metadata#namespace"]
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "kind"
+      api_group_path: "apiGroup"
+      namespace_path: ["namespace", "_extra_data#namespace"]
+      name_path: "name"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "kind", "exists"]
+        sortcolumn: "kind"
+    fields:
+      exists:
+        header: "Exists:"
+        paths:
+        - path: [["kind"], ["apiGroup"], ["namespace", "_extra_data#namespace"], ["name"], []]
+          pathtype: "lookup"
+          when:
+          - key: "metadata#name"
+            notnone: true
+          substitute: "True"
+          unknown: "Unknown"
+        default: "False"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Unknown":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      namespace:
+        header: "Namespace:"
+        paths:
+        - path: ["namespace", "_extra_data#namespace"]
+        type: "str"
+      kind:
+        header: "Kind:"
+        paths:
+        - path: [["kind"], ["apiGroup"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "Group Names":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Group Names"
+      widget: "windowwidget"
+      headers: ["Name:"]
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "groupNames"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "Role Reference":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for role reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "roleRef#name"
+        namespace_path: "metadata#namespace"
+        kind: "ClusterRole"
+        api_family: "authorization.openshift.io"
+    "User Names":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show User Names"
+      widget: "windowwidget"
+      headers: ["Name:"]
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "userNames"
+      # This isn't supported for now
+      sortcolumn: "name"
