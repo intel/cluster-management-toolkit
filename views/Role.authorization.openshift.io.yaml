@@ -1,0 +1,175 @@
+kind: "Role"
+api_family: "authorization.openshift.io"
+default_command: "roles.authorization.openshift.io"
+command:
+- "role.authorization.openshift.io"
+- "osroles"
+- "osrole"
+listview:
+  name: "Roles"
+  group: "Authorization & Access Control"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Role Info"
+  infopad:
+  listpad:
+    listgetter: "listgetter_policy_rules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Wide:
+        fields: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs_all", "verbs_get", "verbs_list", "verbs_watch", "verbs_create", "verbs_update", "verbs_patch", "verbs_delete", "verbs_misc"]
+        sortcolumn: "api_group"
+      Normal:
+        fields: ["resource", "api_group", "non_resource_urls", "resource_names", "verbs"]
+        sortcolumn: "api_group"
+    fields:
+      api_group:
+        header: "API-Group:"
+        path: "api_group"
+        type: "str"
+      non_resource_urls:
+        header: "Non-Resource URLs:"
+        path: "non_resource_urls"
+        type: "raw"
+        formatter: "list"
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: "str"
+      resource_names:
+        header: "Resource Names:"
+        path: "resource_names"
+        type: "raw"
+        formatter: "list"
+      verbs:
+        header: "Verbs:"
+        path: "verbs"
+        type: "raw"
+        formatter: "list"
+      verbs_all:
+        header: "All:"
+        path: "verbs_all"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_create:
+        header: "Create:"
+        path: "verbs_create"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_delete:
+        header: "Delete:"
+        path: "verbs_delete"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_get:
+        header: "Get:"
+        path: "verbs_get"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_list:
+        header: "List:"
+        path: "verbs_list"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_misc:
+        header: "Other:"
+        path: "verbs_misc"
+        type: "raw"
+        formatter: "list"
+      verbs_patch:
+        header: "Patch:"
+        path: "verbs_patch"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_update:
+        header: "Update:"
+        path: "verbs_update"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
+      verbs_watch:
+        header: "Watch:"
+        path: "verbs_watch"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            substitutions:
+              "True":
+                context: "strings"
+                type: "positive_check"
+              "False":
+                context: "strings"
+                type: "negative_ballot"
