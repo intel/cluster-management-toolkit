@@ -517,41 +517,48 @@ def update_version_cache(**kwargs: Any) -> None:
         software_sources_dir = HOMEDIR.joinpath(software_sources_dir[len('{HOME}/'):])
 
     sources: Dict = {}
-    for path in natsorted(Path(cmtpaths.SYSTEM_SOFTWARE_SOURCES_DIR).iterdir()):
-        path = str(path)
-        if not path.endswith((".yml", ".yaml")):
-            continue
-        source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
-        for key, data in source.items():
-            if verbose and key in sources:
-                old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
-                ansithemeprint([ANSIThemeStr("Note", "note"),
-                                ANSIThemeStr(": overriding entry ", "default"),
-                                ANSIThemeStr(f"{key}", "emphasis"),
-                                ANSIThemeStr(" from ", "default"),
-                                ANSIThemeStr(f"{old_path}", "path"),
-                                ANSIThemeStr(" with entry from ", "default"),
-                                ANSIThemeStr(f"{path}", "path")])
-                sources.pop(key)
-            sources[key] = data
+    try:
+        for path in natsorted(Path(cmtpaths.SYSTEM_SOFTWARE_SOURCES_DIR).iterdir()):
+            path = str(path)
+            if not path.endswith((".yml", ".yaml")):
+                continue
+            source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
+            for key, data in source.items():
+                if verbose and key in sources:
+                    old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
+                    ansithemeprint([ANSIThemeStr("Note", "note"),
+                                    ANSIThemeStr(": overriding entry ", "default"),
+                                    ANSIThemeStr(f"{key}", "emphasis"),
+                                    ANSIThemeStr(" from ", "default"),
+                                    ANSIThemeStr(f"{old_path}", "path"),
+                                    ANSIThemeStr(" with entry from ", "default"),
+                                    ANSIThemeStr(f"{path}", "path")])
+                    sources.pop(key)
+                sources[key] = data
+    except FileNotFoundError:
+        pass
 
-    for path in natsorted(Path(software_sources_dir).iterdir()):
-        path = str(path)
-        if not path.endswith((".yml", ".yaml")):
-            continue
-        source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
-        for key, data in source.items():
-            if verbose and key in sources:
-                old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
-                ansithemeprint([ANSIThemeStr("Note", "note"),
-                                ANSIThemeStr(": overriding entry ", "default"),
-                                ANSIThemeStr(f"{key}", "emphasis"),
-                                ANSIThemeStr(" from ", "default"),
-                                ANSIThemeStr(f"{old_path}", "path"),
-                                ANSIThemeStr(" with entry from ", "default"),
-                                ANSIThemeStr(f"{path}", "path")])
-                sources.pop(key)
-            sources[key] = data
+    try:
+        for path in natsorted(Path(software_sources_dir).iterdir()):
+            path = str(path)
+            if not path.endswith((".yml", ".yaml")):
+                continue
+            source = secure_read_yaml(FilePath(path), directory_is_symlink=True)
+            for key, data in source.items():
+                if verbose and key in sources:
+                    old_path = deep_get(sources, DictPath(f"{key}#entry_path"), {})
+                    ansithemeprint([ANSIThemeStr("Note", "note"),
+                                    ANSIThemeStr(": overriding entry ", "default"),
+                                    ANSIThemeStr(f"{key}", "emphasis"),
+                                    ANSIThemeStr(" from ", "default"),
+                                    ANSIThemeStr(f"{old_path}", "path"),
+                                    ANSIThemeStr(" with entry from ", "default"),
+                                    ANSIThemeStr(f"{path}", "path")])
+                    sources.pop(key)
+                sources[key] = data
+    except FileNotFoundError:
+        pass
+
     if Path(VERSION_CACHE_LAST_UPDATED_PATH).is_file():
         last_update_data = secure_read_yaml(VERSION_CACHE_LAST_UPDATED_PATH)
     else:
