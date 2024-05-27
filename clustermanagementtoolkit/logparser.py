@@ -3167,50 +3167,6 @@ def ansible_line(message: str,
     return message, remnants
 
 
-# pylint: disable-next=unused-argument
-def raw_formatter(message: str,
-                  **kwargs: Any) -> Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]],
-                                          Optional[LogLevel], str]:
-    severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
-    facility: str = deep_get(kwargs, DictPath("facility"), "")
-    options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
-
-    format_rules = deep_get(options, DictPath("format_rules"), {})
-
-    if not format_rules:
-        raise ValueError("format_rules is empty")
-
-    # Iterate until first matching rule, if any
-    for format_rule in format_rules:
-        matchtype = deep_get(format_rule, DictPath("matchtype"), "")
-        matchkey = deep_get(format_rule, DictPath("matchkey"), "")
-        formatting = deep_get(format_rule, DictPath("formatting"), {})
-
-        if matchtype == "regex":
-            tmp = re.match(matchkey, message)
-            if tmp is None or not tmp.groups():
-                continue
-            tmp_msg = []
-
-            field_colors = deep_get(formatting, DictPath("field_colors"), [])
-            for color_index, group in enumerate(tmp.groups()):
-                if not field_colors:
-                    tmp_msg.append(ThemeStr(group, ThemeAttr("types", "generic")))
-                elif color_index > len(field_colors):
-                    tmp_msg.append(ThemeStr(group,
-                                            ThemeAttr(field_colors[-1]["context"],
-                                                      field_colors[-1]["type"])))
-                else:
-                    tmp_msg.append(ThemeStr(group,
-                                            ThemeAttr(field_colors[color_index]["context"],
-                                                      field_colors[color_index]["type"])))
-            message = tmp_msg
-            break
-        raise TypeError(f"Unsupported matchtype {matchtype}")
-
-    return message, severity, facility
-
-
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
         Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], Optional[LogLevel], str]:
@@ -3357,11 +3313,6 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
                 if _filter[0] == "bracketed_timestamp_severity_facility":
                     message, severity, facility = \
                         split_bracketed_timestamp_severity_facility(message, default=_filter[1])
-                elif _filter[0] == "raw_formatter":
-                    _parser_options = _filter[1]
-                    message, severity, facility = \
-                        raw_formatter(message, severity=severity, facility=facility,
-                                      fold_msg=fold_msg, options=_parser_options)
                 elif _filter[0] == "custom_splitter":
                     _parser_options = _filter[1]
                     message, severity, facility = \
@@ -3610,7 +3561,6 @@ def init_parser_list() -> None:
                                            "json_with_leading_message",
                                            "key_value",
                                            "key_value_with_leading_message",
-                                           "raw_formatter",
                                            "tab_separated",
                                            "yaml_line"):
                             options = {}
