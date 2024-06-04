@@ -4325,8 +4325,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     if state is None or state in ("<none>", "preparing", "torn_down"):
         # First prepare all hosts
         prepare_installation(prepare_options, prepare_args)
-    elif state not in ("adding_nodes", "installed", "<done>", "setup_cni", "deploy_workloads",
-                       "prepared"):
+    elif state not in ("adding_nodes", "installing", "installed",
+                       "<done>", "setup_cni", "deploy_workloads", "deployed", "prepared"):
         ansithemeprint([ANSIThemeStr("\nError", "error"),
                         ANSIThemeStr(": Invalid installation state ", "default"),
                         ANSIThemeStr(f"{state}", "phase"),
