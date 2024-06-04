@@ -434,11 +434,16 @@ def download_files(directory: str,
                     # Here we atomically move it in place
                     shutil.move(f.name, f"{directory}/{filename}")
         else:
+            reason = ""
+            if r1.reason is not None:
+                reason = [ANSIThemeStr(" (reason: ", "default"),
+                          ANSIThemeStr(f"{r1.reason}", "emphasis"),
+                          ANSIThemeStr(")", "default")]
             ansithemeprint([ANSIThemeStr("Error ", "error"),
                             ANSIThemeStr(": Failed to fetch URL ", "default"),
                             ANSIThemeStr(f"{url}", "url"),
                             ANSIThemeStr("; HTTP code: ", "default"),
-                            ANSIThemeStr(f"{r1.status}", "errorvalue")], stderr=True)
+                            ANSIThemeStr(f"{r1.status}", "errorvalue")] + reason, stderr=True)
             retval = False
             continue
     pm.clear()  # type: ignore
