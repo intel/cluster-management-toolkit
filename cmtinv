@@ -836,6 +836,9 @@ def populate_playbooks() -> Dict:
 
     # This should be moved to ansible_helper and generalised to be usable both in cmu and cmtinv
     for playbook_dir in playbook_dirs:
+        # Skip non-existing playbook paths
+        if not os.path.isdir(playbook_dir):
+            continue
         for playbook_path in Path(playbook_dir).iterdir():
             if playbook_path.name.startswith(("~", ".")):
                 continue
