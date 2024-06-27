@@ -28,7 +28,7 @@ from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 
-from clustermanagementtoolkit.networkio import scan_and_add_ssh_keys
+from clustermanagementtoolkit.networkio import get_github_version, scan_and_add_ssh_keys
 
 from clustermanagementtoolkit import kubernetes_helper
 
@@ -80,6 +80,36 @@ vm_create_playbooks = [
 vm_destroy_template_playbooks = [
     FilePath("vm_destroy.yaml"),
 ]
+
+
+def get_crio_version(kubernetes_version: Tuple[int, int]) -> Optional[Tuple[str, str]]:
+    """
+    Given a Kubernetes version, return the matching cri-o version
+
+        Parameters:
+            kubernetes_version ((int, int)): A version tuple (major, minor)
+        Returns:
+            (str, str): The cri-o version (major, minor)
+    """
+    # cri-o is built/distributed using OBS, hence we need to know the major.minor version
+    # Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
+    # and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
+    requested_major, requested_minor = kubernetes_version
+
+    if (tmp := get_github_version("https://api.github.com/repos/cri-o/cri-o/releases",
+                                  r"^v(\d+)\.(\d+)\.\d+$")) is None:
+        return None
+
+    version_tmp, _release_date, _body = tmp  # type: ignore
+    if requested_major < int(version_tmp[0]) \
+            or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
+        crio_major_version = str(requested_major)
+        crio_minor_version = str(requested_minor)
+    else:
+        crio_major_version = version_tmp[0]
+        crio_minor_version = version_tmp[1]
+
+    return crio_major_version, crio_minor_version
 
 
 def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:

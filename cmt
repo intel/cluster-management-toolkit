@@ -47,6 +47,8 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
+from clustermanagementtoolkit.cluster_actions import get_crio_version
+
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, SecurityStatus
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, HostNameStatus
 from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_CONFIG_FILENAME
@@ -1477,6 +1479,15 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         # Currently we only support v1beta3 (kubeadm >= 1.24).
         join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
 
+        tmp_crio_version = get_crio_version((int(version_major), int(version_minor)))
+        if tmp_crio_version is None:
+            check_and_print_status(False)
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Could not get the cri-o version", "default"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
+            sys.exit(errno.ENOENT)
+        crio_major_version, crio_minor_version = tmp_crio_version
+
         extra_values = {
             "control_plane_ip": control_plane_ip,
             "control_plane_port": control_plane_port,
@@ -1485,6 +1496,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
             "ca_cert_hash": ca_cert_hash,
             "configuration_path": FilePath("templates").joinpath("config", "nodeconfig.yaml.j2"),
             "control_plane_k8s_version": kubeadm_version,
+            "crio_major_version": crio_major_version,
+            "crio_minor_version": crio_minor_version,
             "cri_socket": cri_socket,
             "kubernetes_major_minor_version": f"{version_major}.{version_minor}",
             "join_configuration_api_version": join_configuration_api_version,
