@@ -9118,7 +9118,7 @@ def populate_actionlist(**kwargs: Any) -> Tuple[List[Dict], List[Dict]]:
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Optional[Dict]:
     if not os.path.isdir(path):
-        return None
+        return action_list
 
     if action_list is None:
         action_list = {}
