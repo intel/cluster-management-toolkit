@@ -37,6 +37,10 @@
             conditions:
               - "Debian and derivatives"
               - "SUSE and derivatives"
+          - description: "https://ftp.lysator.liu.se/pub/opensuse/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v1.28/deb/Release.key"
+            conditions:
+              - "Debian and derivatives"
+              - "SUSE and derivatives"
           - description: "https://download.opensuse.org/repositories/security:/netfilter/openSUSE_Leap_15.4/repodata/repomd.xml.key"
             conditions:
               - "SUSE and derivatives"
@@ -98,7 +102,7 @@
       when: "(ansible_os_family in ['Debian', 'Suse'])"
     - name: "Fetching CRI-O OBS repository key"
       ansible.builtin.get_url:
-        url: "https://download.opensuse.org/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v1.29/deb/Release.key"
+        url: "https://ftp.lysator.liu.se/pub/opensuse/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v1.28/deb/Release.key"
         dest: "/etc/apt/keyrings/cri-o-obs-keyring.asc"
         mode: "0644"
         force: true
