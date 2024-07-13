@@ -135,7 +135,7 @@ cni_data: Dict[str, Any] = {
             "urls": [
                 {
                     "url": "https://github.com/antrea-io/antrea/releases/"
-                           "download/v2.0.0/antctl-linux-x86_64",
+                           "download/<<<version>>>/antctl-linux-x86_64",
                     "filename": "antctl",
                 }
             ]
