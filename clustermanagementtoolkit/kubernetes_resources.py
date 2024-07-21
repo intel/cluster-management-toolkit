@@ -1021,6 +1021,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "builds",
         "namespaced": False,
     },
+    ("ClusterImagePolicy", "config.openshift.io"): {
+        "api_paths": ["apis/config.openshift.io/v1alpha1/"],
+        "api": "clusterimagepolicies",
+        "namespaced": False,
+    },
     ("ClusterOperator", "config.openshift.io"): {
         "api_paths": ["apis/config.openshift.io/v1/"],
         "api": "clusteroperators",
@@ -2383,6 +2388,21 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "machineconfigs",
         "namespaced": False,
     },
+    ("MachineOSBuild", "machineconfiguration.openshift.io"): {
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api": "machineosbuilds",
+        "namespaced": False,
+    },
+    ("MachineOSConfig", "machineconfiguration.openshift.io"): {
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api": "machineosconfigs",
+        "namespaced": False,
+    },
+    ("PinnedImageSet", "machineconfiguration.openshift.io"): {
+        "api_paths": ["apis/machineconfiguration.openshift.io/v1alpha1/"],
+        "api": "pinnedimagesets",
+        "namespaced": False,
+    },
     # machinelearning.seldon.io
     ("SeldonDeployment", "machinelearning.seldon.io"): {
         "api_paths": ["apis/machinelearning.seldon.io/v1/",
@@ -2631,6 +2651,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "clusternetworks",
         "namespaced": False,
     },
+    ("DNSNameResolver", "network.openshift.io"): {
+        "api_paths": ["apis/network.openshift.io/v1alpha1/"],
+        "api": "dnsnameresolvers",
+    },
     ("EgressNetworkPolicy", "network.openshift.io"): {
         "api_paths": ["apis/network.openshift.io/v1/"],
         "api": "egressnetworkpolicies",
@@ -2777,6 +2801,16 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/oauth.openshift.io/v1/"],
         "api": "useroauthaccesstokens",
         "namespaced": False,
+    },
+    # olm.operatorframework.io
+    ("ClusterExtension", "olm.operatorframework.io"): {
+        "api_paths": ["apis/olm.operatorframework.io/v1alpha1/"],
+        "api": "clusterextensions",
+        "namespaced": False,
+    },
+    ("Extension", "olm.operatorframework.io"): {
+        "api_paths": ["apis/olm.operatorframework.io/v1alpha1/"],
+        "api": "extensions",
     },
     # opentelemetry.io
     ("OpenTelemetryCollector", "opentelemetry.io"): {
