@@ -1,0 +1,37 @@
+kind: "MachineConfiguration"
+api_family: "operator.openshift.io"
+default_command: "machineconfigurations"
+listview:
+  name: "Machine Configurations"
+  group: "OpenShift"
+  field_indexes:
+    Normal:
+      fields: ["name", "ready_replicas", "age"]
+  fields:
+    ready_replicas:
+      header: "Ready Replicas:"
+      path: "status#readyReplicas"
+      type: "int"
+      align: "right"
+      formatting:
+        field_colors:
+        - type: "numerical"
+infoview:
+  name: "Machine Configuration Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["loglevel", "operator_loglevel", "management_state"]
+    rows:
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#logLevel"
+        type: "str"
+      management_state:
+        header: [["Management State:", ["main", "infoheader"]]]
+        path: "spec#managementState"
+        type: "str"
+      operator_loglevel:
+        header: [["Operator Loglevel:", ["main", "infoheader"]]]
+        path: "spec#operatorLogLevel"
+        type: "str"
