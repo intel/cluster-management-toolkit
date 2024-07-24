@@ -8481,6 +8481,14 @@ def perform_action_on_configuration(uip: UIProps, items, action,
 
     args.append(resource_path)
     result = subprocess.run(args, universal_newlines=True, check=False)
+
+    # waitforkeypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
+    waitforkeypress = True
+
+    if waitforkeypress:
+        ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
+    uip.stdscr.refresh()
+
     return result.returncode, args
 
 
@@ -9643,7 +9651,7 @@ listviewactions = {
         },
     },
     "Diff resource creation (local)": {
-        "description": "Show what changes applying file or Kustomization would make (autodetect)",
+        "description": "Show what changes applying file or Kustomization would make (autodetected)",
         "actionfunc": diff_resource_configuration,
         "query": "Choose file or Kustomization to show difference against:",
         "queryval": "resource_path",
