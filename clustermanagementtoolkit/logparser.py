@@ -302,6 +302,11 @@ def str_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
         "debug": LogLevel.DEBUG,
         "debu": LogLevel.DEBUG,
     }
+    # Special case for severity found in trust-manager
+    if string.lower().startswith("debug+"):
+        tmp = re.match(r"debug\+(\d+)$", string, re.IGNORECASE)
+        if tmp is not None:
+            return LogLevel.DEBUG
     return severities.get(string.lower(), default)
 
 

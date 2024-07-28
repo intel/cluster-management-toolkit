@@ -1188,6 +1188,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "networkpolicies",
         "namespaced": False,
     },
+    ("SupportBundleCollection", "controlplane.antrea.io"): {
+        "api_paths": ["apis/controlplane.antrea.io/v1beta2/"],
+        "api": "supportbundlecollections",
+        "namespaced": False,
+    },
     # controlplane.cluster.x-k8s.io
     ("AWSManagedControlPlane", "controlplane.cluster.x-k8s.io"): {
         "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta2/"],
@@ -3359,9 +3364,19 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/stats.antrea.io/v1alpha1/"],
         "api": "antreanetworkpolicystats",
     },
+    ("MulticastGroup", "stats.antrea.io"): {
+        "api_paths": ["apis/stats.antrea.io/v1alpha1/"],
+        "api": "multicastgroups",
+        "namespaced": False,
+    },
     ("NetworkPolicyStats", "stats.antrea.io"): {
         "api_paths": ["apis/stats.antrea.io/v1alpha1/"],
         "api": "networkpolicystats",
+    },
+    ("NodeLatencyStats", "stats.antrea.io"): {
+        "api_paths": ["apis/stats.antrea.io/v1alpha1/"],
+        "api": "nodelatencystats",
+        "namespaced": False,
     },
     # status.gatekeeper.sh
     ("MutatorPodStatus", "status.gatekeeper.sh"): {
@@ -3662,6 +3677,12 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("TriggerTemplate", "triggers.tekton.dev"): {
         "api_paths": ["apis/triggers.tekton.dev/v1beta1/"],
         "api": "triggertemplates",
+    },
+    # trust.cert-manager.io
+    ("Bundle", "trust.cert-manager.io"): {
+        "api_paths": ["apis/trust.cert-manager.io/v1alpha1/"],
+        "api": "bundles",
+        "namespaced": False,
     },
     # tuned.openshift.io
     ("Profile", "tuned.openshift.io"): {
