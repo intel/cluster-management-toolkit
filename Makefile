@@ -457,5 +457,5 @@ install:
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(BINDIR) &&\
 	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
-	tar cf - clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
-	tar cf - views parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) || printf -- "Installation failed.\n"
+	tar cf - --exclude=.*.swp clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
+	tar cf - --exclude=.*.swp views parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) || printf -- "Installation failed.\n"
