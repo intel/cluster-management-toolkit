@@ -1251,6 +1251,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "antreacontrollerinfos",
         "namespaced": False,
     },
+    ("BGPPolicy", "crd.antrea.io"): {
+        "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
+        "api": "bgppolicies",
+        "namespaced": False,
+    },
     ("ClusterGroup", "crd.antrea.io"): {
         "api_paths": ["apis/crd.antrea.io/v1alpha3/",
                       "apis/crd.antrea.io/v1alpha2/"],
@@ -1292,6 +1297,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("NetworkPolicy", "crd.antrea.io"): {
         "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
         "api": "networkpolicies",
+    },
+    ("NodeLatencyMonitor", "crd.antrea.io"): {
+        "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
+        "api": "nodelatencymonitors",
+        "namespaced": False,
     },
     ("SupportBundleCollection", "crd.antrea.io"): {
         "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
