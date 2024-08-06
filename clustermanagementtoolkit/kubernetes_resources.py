@@ -3162,6 +3162,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaims",
     },
+    ("ResourceClaimParameters", "resource.k8s.io"): {
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+        "api": "resourceclaimparameters",
+    },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
         "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaimtemplates",
@@ -3169,6 +3173,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("ResourceClass", "resource.k8s.io"): {
         "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclasses",
+        "namespaced": False,
+    },
+    ("ResourceClassParameters", "resource.k8s.io"): {
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+        "api": "resourceclassparameters",
+    },
+    ("ResourceSlice", "resource.k8s.io"): {
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+        "api": "resourceslices",
         "namespaced": False,
     },
     # route.openshift.io
