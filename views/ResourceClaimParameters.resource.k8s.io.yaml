@@ -1,0 +1,31 @@
+kind: "ResourceClaimParameters"
+api_family: "resource.k8s.io"
+default_command: "resourceclaimparameters"
+command:
+- "resclaimparams"
+- "resclaimparam"
+listview:
+  name: "Resource Claim Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "generated_from", "age"]
+  fields:
+    generated_from:
+      header: "Generated From:"
+      paths:
+      - path: 
+        - ["generatedFrom#kind"]
+        - ["generatedFrom#apiGroup"]
+        - ["generatedFrom#name"]
+        pathtype: "tuple"
+      type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"

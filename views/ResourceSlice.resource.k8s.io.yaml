@@ -1,0 +1,70 @@
+kind: "ResourceSlice"
+api_family: "resource.k8s.io"
+default_command: "resourceslices"
+command:
+- "resslices"
+- "resslice"
+listview:
+  name: "Resource Slices"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "node", "driver", "age"]
+  fields:
+    driver:
+      header: "Driver:"
+      path: "driverName"
+      type: "str"
+    node:
+      header: "Node:"
+      path: "nodeName"
+      type: "str"
+infoview:
+  name: "Resource Slice Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "driver"]
+    rows:
+      driver:
+        header: [["Driver:", ["main", "infoheader"]]]
+        path: "driverName"
+        type: "str"
+        default: "<none>"
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        path: "nodeName"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "host"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "nodeName"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "namedResources#instances"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["resource", "attributes"]
+    fields:
+      resource:
+        header: "Resource:"
+        path: "name"
+        type: "str"
+      attributes:
+        header: "Attributes:"
+        path: "attributes"
+        type: "raw"
+        formatter: "list"
