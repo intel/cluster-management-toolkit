@@ -1403,6 +1403,9 @@ class KubernetesHelper:
         # Kube-OVN:
         cni += self.__identify_cni("kube-ovn", ("DaemonSet", "apps"),
                                    "metadata.name=kube-ovn-cni", "cni-server")
+        # OVN-Kubernetes:
+        cni += self.__identify_cni("ovn-kubernetes", ("DaemonSet", "apps"),
+                                   "metadata.name=ovnkube-node", "ovn-controller")
         # OpenShift-SDN:
         cni += self.__identify_cni("sdn", ("DaemonSet", "apps"),
                                    "metadata.name=sdn", "sdn")
