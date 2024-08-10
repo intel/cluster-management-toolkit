@@ -499,6 +499,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "deploymentconfigs",
     },
     # argoproj.io
+    ("AnalysisRun", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "analysisruns",
+    },
+    ("AnalysisTemplate", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "analysistemplates",
+    },
     ("Application", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "applications",
@@ -511,6 +519,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "appprojects",
     },
+    ("ClusterAnalysisTemplate", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "clusteranalysistemplates",
+        "namespaced": False,
+    },
     ("ClusterWorkflowTemplate", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "clusterworkflowtemplates",
@@ -518,6 +531,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("CronWorkflow", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "cronworkflows",
+    },
+    ("Experiment", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "experiments",
+    },
+    ("Rollout", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "rollouts",
     },
     ("WorkflowEventBinding", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
@@ -3875,6 +3896,7 @@ kubernetes_resource_types: Dict[Tuple[str, str], str] = {
     ("ResourceClaim", "resource.k8s.io"): "[resource_claim]",
     ("Role", "rbac.authorization.k8s.io"): "[role]",
     ("RoleBinding", "rbac.authorization.k8s.io"): "[role_binding]",
+    ("Rollout", "argoproj.io"): "[controller]",
     ("RuntimeClass", "node.k8s.io"): "[runtime_class]",
     ("SbomReport", "aquasecurity.github.io"): "[report]",
     ("Scheduler", ""): "[scheduler]",
