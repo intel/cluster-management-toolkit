@@ -1895,6 +1895,22 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
         "api": "openstackmachinetemplates",
     },
+    ("VirtinkCluster", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "virtinkclusters",
+    },
+    ("VirtinkClusterTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "virtinkclustertemplates",
+    },
+    ("VirtinkMachine", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "virtinkmachines",
+    },
+    ("VirtinkMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "virtinkmachinetemplates",
+    },
     # ingress.operator.openshift.io
     ("DNSRecord", "ingress.operator.openshift.io"): {
         "api_paths": ["apis/ingress.operator.openshift.io/v1/"],
@@ -1943,6 +1959,19 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("IPAddress", "ipam.cluster.x-k8s.io"): {
         "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha1/"],
         "api": "ipaddresses",
+    },
+    # ipam.metal3.io
+    ("IPAddress", "ipam.metal3.io"): {
+        "api_paths": ["apis/ipam.metal3.io/v1alpha1/"],
+        "api": "ipaddresses",
+    },
+    ("IPClaim", "ipam.metal3.io"): {
+        "api_paths": ["apis/ipam.metal3.io/v1alpha1/"],
+        "api": "ipclaims",
+    },
+    ("IPPool", "ipam.metal3.io"): {
+        "api_paths": ["apis/ipam.metal3.io/v1alpha1/"],
+        "api": "ippools",
     },
     # jaegertracing.io
     ("Jaeger", "jaegertracing.io"): {
