@@ -1,0 +1,16 @@
+- name: "kuberay"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "capch-controller-manager"
+  parser_rules:
+  - name: "ts_8601"
+  - name: "glog"
+  - name: "custom_splitter"
+    options:
+      regex: '^\t([A-Z]+)\t(.+)'
+      severity:
+        field: 1
+        transform: "str"
+      message:
+        field: 2
+  - name: "json_with_leading_message"
