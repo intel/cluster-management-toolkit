@@ -546,12 +546,15 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
                              pod_network_cidr=pod_network_cidr)
 
 
-def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
+def get_installation_info(cluster_name: Optional[str] = None,
+                          ignore_non_existing: bool = True) -> Dict:
     """
     Return installation info for a cluster, or prepares a new entry if no entry exists yet
 
         Parameters:
             cluster_name (str): The name of the cluster to get information for
+            ignore_non_existing (bool): Ignore and recreate installation_info.yaml
+                                        if the file doesn't exist
         Returns:
             (dict): A dictionary with information about a cluster
     """
@@ -570,7 +573,8 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
     try:
         info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks=security_checks)
     except FileNotFoundError:
-        pass
+        if not ignore_non_existing:
+            return None
 
     if info is None or info.get("installation_target") is None \
             or (info.get("installation_target") is not None
@@ -5816,7 +5820,18 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     # This is the cluster name according to .kube/config; this is what we care about when upgrading,
     # not whatever is currently set as the target in installation info
     cluster_name = get_cluster_name()
-    installation_info = get_installation_info()
+    installation_info = get_installation_info(ignore_non_existing=False)
+    if installation_info is None:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
+                        ANSIThemeStr(" does not exist; ", "default"),
+                        ANSIThemeStr("most likely ", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("the cluster was not ", "default"),
+                        ANSIThemeStr("installed using ", "default"),
+                        ANSIThemeStr(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
     installation_info = update_installation_info(installation_target=cluster_name)
 
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
