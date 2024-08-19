@@ -12,6 +12,9 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "http2: server: error"
+      loglevel: "error"
   - name: "key_value_with_leading_message"
 - name: "prometheus"
   show_in_selector: false
@@ -70,6 +73,8 @@
   - pod_name: "blackbox-exporter"
     container_name: "blackbox-exporter"
   - pod_name: "alertmanager"
+  - pod_name: "alertmanager"
+    container_type: "init_container"
   parser_rules:
   - name: "key_value"
     options:
