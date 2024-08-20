@@ -1984,10 +1984,14 @@ def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool =
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_PREPARE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_PREPARE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_PREPARE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -2112,10 +2116,14 @@ def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool 
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_PREPARE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_PREPARE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_PREPARE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -2148,10 +2156,14 @@ def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_SETUP_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_SETUP_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_SETUP_DIR not in str(e):
+            raise
 
 
 def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
@@ -2256,10 +2268,14 @@ def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = Fals
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_SETUP_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_SETUP_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_SETUP_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument,too-many-locals
@@ -2559,10 +2575,14 @@ def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = Fal
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_UPGRADE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_UPGRADE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_UPGRADE_DIR not in str(e):
+            raise
 
 
 # Run upgrade playbooks on control planes
@@ -2635,10 +2655,14 @@ def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = Fa
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_UPGRADE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_UPGRADE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_UPGRADE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -2675,10 +2699,14 @@ def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = Fa
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_TEARDOWN_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_TEARDOWN_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_TEARDOWN_DIR not in str(e):
+            raise
 
 
 # Run teardown playbooks on control planes
@@ -2713,10 +2741,14 @@ def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = F
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_TEARDOWN_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_TEARDOWN_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_TEARDOWN_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument,too-many-branches
@@ -2803,10 +2835,14 @@ def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_PURGE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_PURGE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_PURGE_DIR not in str(e):
+            raise
 
 
 # Run purge playbooks on control planes
@@ -2863,10 +2899,14 @@ def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = Fals
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_PURGE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_PURGE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_PURGE_DIR not in str(e):
+            raise
 
 
 def __validate_task_index(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
@@ -4559,6 +4599,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 # Group(s) to add the nodes to
                 [group],
             ]
+
+            if not nodes_tuple:
+                continue
 
             # Prepare nodes
             if virtualise:
