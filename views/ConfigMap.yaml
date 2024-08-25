@@ -37,8 +37,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["immutable"]
+        fields: ["controller", "immutable"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       immutable:
         header: [["Immutable:", ["main", "infoheader"]]]
         paths:
@@ -71,7 +94,7 @@ infoview:
         type: "str"
   shortcuts:
     "Attempt to display Certificate info":
-      key: "c"
+      key: "d"
       modifier: "shift"
       read_only: true
       helptext: "Attempt to display certificate information"
@@ -101,7 +124,7 @@ infoview:
           name_attr: "data"
           raw_export: true
     "Decode and Export":
-      key: "d"
+      key: "x"
       modifier: "shift"
       read_only: false
       helptext: "Decode and export selected configmap to a file"
@@ -140,3 +163,14 @@ infoview:
         kind: "Pod"
         name_path: 1
         namespace_path: 0
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

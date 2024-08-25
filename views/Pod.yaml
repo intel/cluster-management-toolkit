@@ -137,7 +137,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "pod_ips", "termination_grace_period", "enable_service_links"]
+        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "host_ips", "pod_ips", "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
@@ -243,6 +243,13 @@ infoview:
         header: [["Enable Service Links:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"
         type: "bool"
+      host_ips:
+        header: [["Host IPs:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#hostIPs"
+          pathtype: "items"
+          subpath: "ip"
+        formatter: "address"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         paths:
