@@ -91,13 +91,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     ("ValidatingAdmissionPolicy", "admissionregistration.k8s.io"): {
-        "api_paths": ["apis/admissionregistration.k8s.io/v1beta1/",
+        "api_paths": ["apis/admissionregistration.k8s.io/v1/",
+                      "apis/admissionregistration.k8s.io/v1beta1/",
                       "apis/admissionregistration.k8s.io/v1alpha1/"],
         "api": "validatingadmissionpolicies",
         "namespaced": False,
     },
     ("ValidatingAdmissionPolicyBinding", "admissionregistration.k8s.io"): {
-        "api_paths": ["apis/admissionregistration.k8s.io/v1beta1/",
+        "api_paths": ["apis/admissionregistration.k8s.io/v1/",
+                      "apis/admissionregistration.k8s.io/v1beta1/",
                       "apis/admissionregistration.k8s.io/v1alpha1/"],
         "api": "validatingadmissionpolicybindings",
         "namespaced": False,
@@ -1354,7 +1356,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     ("BGPFilter", "crd.projectcalico.org"): {
-        "api_paths": ["apis/crd.projectcalico.org/v3/"],
+        "api_paths": ["apis/crd.projectcalico.org/v1/"],
         "api": "bgpfilters",
         "namespaced": False,
     },
