@@ -91,12 +91,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     ("ValidatingAdmissionPolicy", "admissionregistration.k8s.io"): {
-        "api_paths": ["apis/admissionregistration.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/admissionregistration.k8s.io/v1beta1/",
+                      "apis/admissionregistration.k8s.io/v1alpha1/"],
         "api": "validatingadmissionpolicies",
         "namespaced": False,
     },
     ("ValidatingAdmissionPolicyBinding", "admissionregistration.k8s.io"): {
-        "api_paths": ["apis/admissionregistration.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/admissionregistration.k8s.io/v1beta1/",
+                      "apis/admissionregistration.k8s.io/v1alpha1/"],
         "api": "validatingadmissionpolicybindings",
         "namespaced": False,
     },
@@ -1169,7 +1171,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     ("ConsolePlugin", "console.openshift.io"): {
-        "api_paths": ["apis/console.openshift.io/v1alpha1/"],
+        "api_paths": ["apis/console.openshift.io/v1/",
+                      "apis/console.openshift.io/v1alpha1/"],
         "api": "consoleplugins",
         "namespaced": False,
     },
@@ -1234,7 +1237,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # core.rukpak.io
     ("BundleDeployment", "core.rukpak.io"): {
-        "api_paths": ["apis/core.rukpak.io/v1alpha1/"],
+        "api_paths": ["apis/core.rukpak.io/v1alpha2/", "apis/core.rukpak.io/v1alpha1/"],
         "api": "bundledeployments",
         "namespaced": False,
     },
@@ -1953,11 +1956,13 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # ipam.cluster.x-k8s.io
     ("IPAddressClaim", "ipam.cluster.x-k8s.io"): {
-        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
+                      "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
         "api": "ipaddressclaims",
     },
     ("IPAddress", "ipam.cluster.x-k8s.io"): {
-        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
+                      "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
         "api": "ipaddresses",
     },
     # ipam.metal3.io
@@ -2633,7 +2638,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "alertmanagers",
     },
     ("AlertmanagerConfig", "monitoring.coreos.com"): {
-        "api_paths": ["apis/monitoring.coreos.com/v1alpha1/"],
+        "api_paths": ["apis/monitoring.coreos.com/v1beta1/",
+                      "apis/monitoring.coreos.com/v1alpha1/"],
         "api": "alertmanagerconfigs",
     },
     ("PodMonitor", "monitoring.coreos.com"): {

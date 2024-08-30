@@ -1481,7 +1481,6 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
         tmp_crio_version = get_crio_version((int(version_major), int(version_minor)))
         if tmp_crio_version is None:
-            check_and_print_status(False)
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Could not get the cri-o version", "default"),
                             ANSIThemeStr("; aborting.", "default")], stderr=True)
@@ -2099,6 +2098,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
     has_data = False
     known_filter: Dict[str, Any] = {
         "known": None,
+        "updated": None,
         "list": None,
         "info": None,
     }
@@ -2127,6 +2127,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                     known_filter["known"] = True
                 elif optarg in ("!known", "not-known", "unknown"):
                     known_filter["known"] = False
+                elif optarg == "updated":
+                    known_filter["updated"] = True
                 elif optarg == "list":
                     known_filter["list"] = True
                 elif optarg in ("!list", "not-list"):
@@ -2167,8 +2169,12 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
     result, api_resources = kh.get_api_resources()
     kubernetes_resources = None
+    # Treat unknown,updated == updated
+    if known_filter["updated"] and known_filter["known"] is not None and not known_filter["known"]:
+        known_filter["known"] = None
     if wide or \
        known_filter["known"] is not None or \
+       known_filter["updated"] is not None or \
        known_filter["list"] is not None or \
        known_filter["info"] is not None:
         kubernetes_resources, _result2, _modified = kh.get_available_kinds()
@@ -2217,15 +2223,26 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
     for name, shortnames, api_version, namespaced, kind, verbs in sorted_list:
         kind_tuple = None
+        updated = False
         if kubernetes_resources is not None:
             try:
                 api_group = ""
                 if "/" in api_version:
                     api_group = api_version.split("/")[0]
+                    api_group_version = f"apis/{api_version}/"
+                else:
+                    api_group_version = f"api/{api_version}/"
                 kind_tuple = guess_kind((name, api_group))
 
                 # OK, this is a kind known by CMT that is available in the cluster;
-                # now check whether there's a view file and whether it has list/info views
+                # is this particular API-version known by CMT?
+                if known_filter["updated"]:
+                    if api_group_version in deep_get(kubernetes_resources[kind_tuple],
+                                                     DictPath("api_paths")):
+                        continue
+                    updated = True
+
+                # Now check whether there's a view file and whether it has list/info views
                 if kind_tuple == ("Event", ""):
                     filename = "Event.events.k8s.io.yaml"
                 elif not kind_tuple[1]:
@@ -2267,6 +2284,8 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
             list_support = False
             info_support = False
             if kind_tuple is not None and kind_tuple in kubernetes_resources:
+                if known_filter["updated"] and not updated:
+                    continue
                 if "list" in kubernetes_resources[kind_tuple] \
                         and deep_get(kubernetes_resources[kind_tuple], DictPath("list")):
                     list_support = True
@@ -2286,11 +2305,11 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
                     if vlist is None or not vlist:
                         continue
 
-            if known_filter["known"] is not None:
+            if known_filter["known"] is not None or known_filter["updated"] is not None:
                 if "list" not in verbs:
                     continue
 
-                if not known_filter["known"] and kind_tuple in kubernetes_resources:
+                if not known_filter["known"] and kind_tuple in kubernetes_resources and not updated:
                     continue
 
                 if known_filter["known"]:
@@ -3630,7 +3649,9 @@ CMT_COMMANDLINE = {
                     [ANSIThemeStr("Valid values are:", "description")],
                     [ANSIThemeStr("unknown", "argument"),
                      ANSIThemeStr("/", "separator"),
-                     ANSIThemeStr("not-known", "argument")],
+                     ANSIThemeStr("not-known", "argument"),
+                     ANSIThemeStr(", ", "separator"),
+                     ANSIThemeStr("updated", "argument")],
                     [ANSIThemeStr("or a combination of:", "description")],
                     [ANSIThemeStr("known", "argument"),
                      ANSIThemeStr(", ", "separator"),
@@ -3649,6 +3670,11 @@ CMT_COMMANDLINE = {
                     [ANSIThemeStr("are unknown to ", "description"),
                      ANSIThemeStr("CMT", "programname"),
                      ANSIThemeStr(".", "description")],
+                    [ANSIThemeStr("updated", "argument"),
+                     ANSIThemeStr(" limits the output to APIs that are", "description")],
+                    [ANSIThemeStr("either unknown to ", "description"),
+                     ANSIThemeStr("CMT", "programname"),
+                     ANSIThemeStr(" or have been updated.", "description")],
                     [ANSIThemeStr("known", "argument"),
                      ANSIThemeStr(" limits the output to APIs that are", "description")],
                     [ANSIThemeStr("known by ", "description"),
@@ -3675,6 +3701,7 @@ CMT_COMMANDLINE = {
                     "allowlist": [
                         "known",
                         "!known", "not-known", "unknown",
+                        "updated",
                         "list",
                         "!list", "not-list",
                         "info",
