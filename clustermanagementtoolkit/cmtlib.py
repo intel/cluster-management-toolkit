@@ -728,6 +728,9 @@ def make_set_expression_list(expression_list: List[Dict],
             elif operator == "NotIn":
                 new_operator = "Not In "
                 requires_values = "1+"
+            elif operator == "Equals":
+                new_operator = "= "
+                requires_values = "1+"
             elif operator == "Exists":
                 new_operator = "Exists"
                 requires_values = "0"

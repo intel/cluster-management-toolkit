@@ -1151,6 +1151,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "schedulers",
         "namespaced": False,
     },
+    # config.nri
+    ("BalloonsPolicy", "config.nri"): {
+        "api_paths": ["apis/config.nri/v1alpha1/"],
+        "api": "balloonspolicies",
+    },
     # console.openshift.io
     ("ConsoleCLIDownload", "console.openshift.io"): {
         "api_paths": ["apis/console.openshift.io/v1/"],
