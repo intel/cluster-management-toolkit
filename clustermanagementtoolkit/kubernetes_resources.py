@@ -699,6 +699,18 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta2/"],
         "api": "eksconfigtemplates",
     },
+    ("K0sControllerConfig", "bootstrap.cluster.x-k8s.io"): {
+        "api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0scontrollerconfigs",
+    },
+    ("K0sWorkerConfig", "bootstrap.cluster.x-k8s.io"): {
+        "api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0sworkerconfigs",
+    },
+    ("K0sWorkerConfigTemplate", "bootstrap.cluster.x-k8s.io"): {
+        "api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0sworkerconfigtemplates",
+    },
     ("KubeadmConfig", "bootstrap.cluster.x-k8s.io"): {
         "api_paths": ["apis/bootstrap.cluster.x-k8s.io/v1beta1/"],
         "api": "kubeadmconfigs",
@@ -1228,6 +1240,22 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("AWSManagedControlPlane", "controlplane.cluster.x-k8s.io"): {
         "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta2/"],
         "api": "awsmanagedcontrolplanes",
+    },
+    ("K0sControlPlane", "controlplane.cluster.x-k8s.io"): {
+        "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0scontrolplanes",
+    },
+    ("K0sControlPlaneTemplate", "controlplane.cluster.x-k8s.io"): {
+        "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0scontrolplanetemplates",
+    },
+    ("K0smotronControlPlane", "controlplane.cluster.x-k8s.io"): {
+        "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0smotroncontrolplanes",
+    },
+    ("K0smotronControlPlaneTemplate", "controlplane.cluster.x-k8s.io"): {
+        "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
+        "api": "k0smotroncontrolplanetemplates",
     },
     ("KubeadmControlPlane", "controlplane.cluster.x-k8s.io"): {
         "api_paths": ["apis/controlplane.cluster.x-k8s.io/v1beta1/"],
@@ -1905,6 +1933,22 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha4/"],
         "api": "openstackmachinetemplates",
     },
+    ("PooledRemoteMachine", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "pooledremotemachines",
+    },
+    ("RemoteCluster", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "remoteclusters",
+    },
+    ("RemoteMachine", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "remotemachines",
+    },
+    ("RemoteMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "remotemachinetemplates",
+    },
     ("VirtinkCluster", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "virtinkclusters",
@@ -1989,6 +2033,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Jaeger", "jaegertracing.io"): {
         "api_paths": ["apis/jaegertracing.io/v1/"],
         "api": "jaegers",
+    },
+    # k0smotron.io
+    ("Cluster", "k0smotron.io"): {
+        "api_paths": ["apis/k0smotron.io/v1beta1/"],
+        "api": "clusters",
+    },
+    ("JoinTokenRequest", "k0smotron.io"): {
+        "api_paths": ["apis/k0smotron.io/v1beta1/"],
+        "api": "jointokenrequests",
     },
     # k3s.cattle.io
     ("Addon", "k3s.cattle.io"): {

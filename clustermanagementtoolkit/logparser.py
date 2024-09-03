@@ -1123,7 +1123,7 @@ def tab_separated(message: str, **kwargs: Any) \
 
     # If the first field is not a timestamp
     # we cannot trust the rest of the message to be what we hope for.
-    if len(fields) < 4 or not is_timestamp(fields[0]):
+    if not is_timestamp(fields[0]) or len(fields) < 3:
         return message, severity, facility, remnants
 
     severity = str_to_severity(fields[1], default=severity)
