@@ -5299,7 +5299,16 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         # First remove the distro revision
         major_minor_patchrev = requested_version.split("-")
         # Now split the version tuple
-        requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
+        split_tuple = major_minor_patchrev[0].split(".")
+        if len(split_tuple) < 2:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Could not parse version “", "default"),
+                            ANSIThemeStr(f"{major_minor_patchrev[0]}", "version"),
+                            ANSIThemeStr("“; aborting.",
+                                         "default")], stderr=True)
+            sys.exit(errno.EINVAL)
+        requested_major = split_tuple[0]
+        requested_minor = split_tuple[1]
 
         cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
         init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
