@@ -881,7 +881,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     ("CiliumNodeConfig", "cilium.io"): {
-        "api_paths": ["apis/cilium.io/v2alpha1/"],
+        "api_paths": ["apis/cilium.io/v2/", "apis/cilium.io/v2alpha1/"],
         "api": "ciliumnodeconfigs",
     },
     ("CiliumPodIPPool", "cilium.io"): {
