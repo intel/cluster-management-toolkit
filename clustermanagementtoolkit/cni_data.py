@@ -130,6 +130,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/antrea-io/antrea/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"^(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "version_command": ["antctl", "version"],
             "version_regex": r"^antctlVersion: v(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
@@ -145,6 +146,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/antrea-io/antrea/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://raw.githubusercontent.com/"
@@ -160,6 +162,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "version_command": ["kubectl", "calico", "version"],
             "version_regex": r"^Client Version:\s+(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
@@ -180,6 +183,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://raw.githubusercontent.com/projectcalico/"
@@ -200,6 +204,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/projectcalico/calico/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://raw.githubusercontent.com/projectcalico/"
@@ -217,6 +222,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://github.com/cilium/cilium-cli/releases/"
@@ -234,6 +240,7 @@ cni_data: Dict[str, Any] = {
             "version_regex": r"^cilium image \(running\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "candidate_version_command": ["cilium", "--context", "<<<context>>>", "version"],
             "candidate_version_regex": r"^cilium image \(default\): (v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "upgrade": ["cilium", "--reuse-values", "--context", "<<<context>>>", "upgrade"],
             "install": ["cilium", "--context", "<<<context>>>", "install"],
             "uninstall": ["cilium", "--context", "<<<context>>>", "uninstall"],
@@ -245,6 +252,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/flannel-io/flannel/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://github.com/flannel-io/flannel/releases/"
@@ -261,6 +269,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/cloudnativelabs/kube-router/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://raw.githubusercontent.com/cloudnativelabs/"
@@ -276,6 +285,7 @@ cni_data: Dict[str, Any] = {
             "candidate_version_url":
                 "https://api.github.com/repos/weaveworks/weave/releases",
             "candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
+            "manual_candidate_version_regex": r"(v)(\d+)(\.)(\d+)(\.)(\d+)$",
             "urls": [
                 {
                     "url": "https://github.com/weaveworks/weave/releases/"

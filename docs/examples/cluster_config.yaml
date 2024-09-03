@@ -1,4 +1,4 @@
-apiVersion: "v1alpha3"
+apiVersion: "v1alpha4"
 kind: "ClusterDeployment"
 
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
@@ -41,6 +41,14 @@ options:
   # none [no cni will be installed]
   # [optional; default: cilium]
   # cni: "cilium"
+
+  # Hardcoded version of CNI;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # cni_version: "v0.16.16"
+
+  # Hardcoded version of CNI executable;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # cni_executable_version: "v0.16.16"
 
   # Should the program prompt for an ansible/host password; valid options:
   # true

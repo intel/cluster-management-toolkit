@@ -774,8 +774,10 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
             upgradetype (str): Valid options CNI, executable
             context (str): The cluster context
             pod_network_cidr (str): The CIDR of the pod network
+            cni_version (str): A hardcoded CNI version
     """
     verbose = deep_get(kwargs, DictPath("verbose"), False)
+    cni_version = deep_get(kwargs, DictPath("cni_version"))
 
     if upgradetype not in ("CNI", "executable"):
         raise ValueError(f"Unknown upgradetype {upgradetype}; this is a programming error.")
@@ -790,6 +792,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
     candidate_version_function = \
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_function"))
+    manual_candidate_version_regex = \
+        deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#manual_candidate_version_regex"))
     candidate_version_regex = \
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
     install_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#install"))
@@ -810,7 +814,12 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                                           version_substitutions),
                                           version_command_regex)
     candidate_version = []
-    if candidate_version_url is not None:
+    if cni_version is not None:
+        tmp_candidate_version = re.match(manual_candidate_version_regex, cni_version)
+        if tmp_candidate_version is None:
+            check_and_print_status(False)
+        candidate_version = list(tmp_candidate_version.groups())
+    elif candidate_version_url is not None:
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr(f"Checking {upgradetype} candidate version", "action")])
         if candidate_version_function is not None:
@@ -834,10 +843,26 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                           candidate_version_regex)
 
     if "urls" in deep_get(cni_data, DictPath(f"{cni}#{upgradetype}"), {}):
+        # We should probably use semver here instead
+        if version is not None and candidate_version is not None:
+            is_new_version = None
+            for v1, v2 in zip(version, candidate_version):
+                if v1 != v2:
+                    if v1.isnumeric() and v2.isnumeric():
+                        is_new_version = int(v1) < int(v2)
+                    else:
+                        is_new_version = v1 < v2
+                    break
+            if is_new_version is None:
+                if len(candidate_version) > len(version):
+                    is_new_version = True
+                else:
+                    is_new_version = False
+
         # pylint: disable-next=too-many-boolean-expressions
         if (version is None or not version) \
                 or version is not None and (candidate_version is None or not candidate_version) \
-                or version < candidate_version:
+                or is_new_version:
             new_version = "".join(candidate_version)
 
             ansithemeprint([ANSIThemeStr("\n• ", "separator"),
@@ -1201,6 +1226,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     pod_network_cidr = None
     verbose = False
+    cni_version = None
+    cni_executable_version = None
 
     if args:
         cni = args[0]
@@ -1246,12 +1273,16 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     install_cni = False
     action_str = "Upgrading"
-    for opt, _optarg in options:
+    for opt, optarg in options:
         if opt == "install":
             install_cni = True
             action_str = "Installing"
         elif opt == "--verbose":
             verbose = True
+        elif opt == "--cni-version":
+            cni_version = optarg
+        elif opt == "--cni-executable-version":
+            cni_executable_version = optarg
 
     if cni not in cni_data:
         ansithemeprint([ANSIThemeStr(f"{action_str} ", "default"),
@@ -1271,8 +1302,10 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
     else:
         ansithemeprint([ANSIThemeStr("\n[Upgrading CNI]", "phase")])
 
-    __upgrade_cni(cni, "executable", context_name, pod_network_cidr, verbose=verbose)
-    __upgrade_cni(cni, "CNI", context_name, pod_network_cidr, verbose=verbose)
+    __upgrade_cni(cni, "executable", context_name, pod_network_cidr,
+                  cni_version=cni_executable_version, verbose=verbose)
+    __upgrade_cni(cni, "CNI", context_name, pod_network_cidr,
+                  cni_version=cni_version, verbose=verbose)
 
     if install_cni:
         ansithemeprint([ANSIThemeStr("\nCNI installation successful", "success")])
@@ -1288,6 +1321,8 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
             cni (str): The CNI to configure and install
             context_name (str): The name of the cluster context
             cluster_name (str): The name of the cluster
+            cni_version (str): A hardcoded CNI version
+            cni_executable_version (str): A hardcoded CNI executable version
         Returns:
             result (bool): True on success, False on failure
     """
@@ -1295,6 +1330,8 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
 
     pass_cni = []
     verbose = deep_get(kwargs, DictPath("verbose"), False)
+    cni_version = deep_get(kwargs, DictPath("cni_version"))
+    cni_executable_version = deep_get(kwargs, DictPath("cni_executable_version"))
 
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -1338,7 +1375,10 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
     # if run with a CNI, and thus tries to get all information from the cluster.
     # This will most likely fail during installation, since the cluster
     # hasn't started fully yet and thus cannot provide the necessary information
-    upgrade_cni(options=[("install", ""), ("--verbose", verbose)], args=pass_cni)
+    upgrade_cni(options=[("install", ""),
+                         ("--verbose", verbose),
+                         ("--cni-version", cni_version),
+                         ("--cni-executable-version", cni_executable_version)], args=pass_cni)
     # FIXME
     return True
 
@@ -4227,7 +4267,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         ANSIThemeStr(" configuration; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
-    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3"):
+    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3", "v1alpha4"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": ", "default"),
                         ANSIThemeStr("The apiVersion ", "default"),
@@ -4243,6 +4283,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     verbose = deep_get(cd, DictPath("options#verbose"), False)
     pod_network_cidr = deep_get(cd, DictPath("options#podNetworkCIDR"), "10.244.0.0/16")
     cni = deep_get(cd, DictPath("options#cni"), "cilium")
+    cni_version = deep_get(cd, DictPath("options#cni_version"))
+    cni_executable_version = deep_get(cd, DictPath("options#cni_executable_version"))
     no_password = not deep_get(cd, DictPath("options#promptForPassword"), True)
     save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
 
@@ -4661,7 +4703,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     context_name = f"{admin_name}@{cluster_name}"
 
     if state == "setup_cni":
-        __setup_cni(cni, context_name, cluster_name)
+        __setup_cni(cni, context_name, cluster_name,
+                    cni_version=cni_version, cni_executable_version=cni_executable_version)
         phase = 0
         state = "deploy_workloads"
         installation_info = \
