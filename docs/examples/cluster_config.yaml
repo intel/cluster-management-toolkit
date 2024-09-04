@@ -44,10 +44,12 @@ options:
 
   # Hardcoded version of CNI;
   # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # [optional; default: latest]
   # cni_version: "v0.16.16"
 
   # Hardcoded version of CNI executable;
   # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # [optional; default: latest]
   # cni_executable_version: "v0.16.16"
 
   # Should the program prompt for an ansible/host password; valid options:
@@ -76,6 +78,12 @@ cluster:
   # cri-o
   # [optional; default: containerd]
   cri: "containerd"
+
+  # Hardcoded version of CRI;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # Currently only supported for cri-o.
+  # [optional; default: auto]
+  # cri_version: "1.30"
 
   # Name of the cluster:
   # [mandatory]
@@ -272,6 +280,12 @@ nodes:
     # [optional; if not provided the cluster-wide default will be used]
     # cri: "containerd"
 
+    # Hardcoded version of CRI;
+    # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+    # Currently only supported for cri-o.
+    # [optional; default: auto]
+    # cri_version: "1.30"
+
     # Ansible parallelism:
     # [optional; default: 5]
     # forks: 5
@@ -446,6 +460,13 @@ nodes:
     #     # cri-o
     #     # [optional; if not provided the cluster-wide default will be used]
     #     # cri: "containerd"
+
+    #     # Hardcoded version of CRI;
+    #     # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+    #     # [optional; default: auto]
+    #     # Currently only supported for cri-o.
+    #     # cri_version: "1.30"
+
 
     #     # Ansible parallelism:
     #     # [optional; default: 5]

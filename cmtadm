@@ -4030,6 +4030,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     cordon_on_join = False
     cri = "containerd"
+    cri_version = None
 
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -4056,6 +4057,8 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
             cordon_on_join = optarg
         elif opt == "--cri":
             cri = optarg
+        elif opt == "--cri-version":
+            cri_version = optarg
         elif opt == "--forks":
             ansible_configuration["ansible_forks"] = optarg
 
@@ -4087,10 +4090,17 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
         add_playbooks = [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
         add_playbooks = [FilePath("setup_cri-o.yaml")]
-        tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
-        if tmp_crio_version is None:
-            check_and_print_status(False)
-        crio_major_version, crio_minor_version = tmp_crio_version
+        if cri_version is None:
+            tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
+            if tmp_crio_version is None:
+                check_and_print_status(False)
+            crio_major_version, crio_minor_version = tmp_crio_version
+        else:
+            tmp_crio_version = cri_version.split(".")
+            if len(tmp_crio_version) < 2:
+                check_and_print_status(False)
+            crio_major_version = tmp_crio_version[0]
+            crio_minor_version = tmp_crio_version[1]
 
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
@@ -4284,7 +4294,11 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     pod_network_cidr = deep_get(cd, DictPath("options#podNetworkCIDR"), "10.244.0.0/16")
     cni = deep_get(cd, DictPath("options#cni"), "cilium")
     cni_version = deep_get(cd, DictPath("options#cni_version"))
+    if cni_version == "latest":
+        cni_version = None
     cni_executable_version = deep_get(cd, DictPath("options#cni_executable_version"))
+    if cni_executable_version == "latest":
+        cni_executable_version = None
     no_password = not deep_get(cd, DictPath("options#promptForPassword"), True)
     save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
 
@@ -4299,6 +4313,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         sys.exit(errno.EINVAL)
 
     cri = deep_get(cd, DictPath("cluster#cri"), "containerd")
+    cri_version = deep_get(cd, DictPath("options#cri_version"))
+    if cri_version == "auto":
+        cri_version = None
 
     cluster_name = deep_get(cd, DictPath("cluster#clusterName"))
     if cluster_name is None or not cluster_name:
@@ -4373,6 +4390,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     setup_control_plane_options = [
         ("-Y", None),
         ("--cri", cri),
+        ("--cri-version", cri_version),
     ]
 
     if k8s_distro == "kubeadm":
@@ -4518,6 +4536,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 ansible_configuration["ansible_password"] = ansible_password
 
         node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
+        node_global_cri_version = deep_get(cd, DictPath("nodes#options#cri_version"))
+        if node_global_cri_version == "auto":
+            node_global_cri_version = None
         node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
         node_global_cordon_on_join = deep_get(cd, DictPath("nodes#options#cordonOnJoin"), False)
         node_global_configuration = \
@@ -4602,6 +4623,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             hosts.append(nodename)
 
             node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
+            node_cri_version = deep_get(cd, DictPath("options#cri_version"))
+            if node_cri_version == "auto":
+                node_cri_version = None
             node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
             node_cordon_on_join = \
                 deep_get(cd, DictPath("options#cordonOnJoin"), node_global_cordon_on_join)
@@ -4624,6 +4648,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
             add_nodes_options = [
                 ("--cri", node_cri),
+                ("--cri-version", node_cri_version),
                 ("--configuration-paths", [
                     join_configuration_path,
                 ]),
@@ -5243,6 +5268,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         phase = 0
 
     cri = None
+    cri_version = None
     enable_dra = False
     extra_values: Dict = {}
 
@@ -5274,6 +5300,8 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
                                 ANSIThemeStr(f"{optarg}", "argument"),
                                 ANSIThemeStr("“ specified; aborting.", "default")], stderr=True)
                 sys.exit(errno.EINVAL)
+        elif opt == "--cri-version":
+            cri_version = optarg
         elif opt == "--override-cni":
             override_cni = True
         elif opt == "--save-ansible-logs":
@@ -5418,10 +5446,17 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     elif cri == "cri-o":
         cri_playbook_path = FilePath("setup_cri-o.yaml")
         setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, cri_playbook_path)
-        tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
-        if tmp_crio_version is None:
-            check_and_print_status(False)
-        crio_major_version, crio_minor_version = tmp_crio_version
+        if cri_version is None:
+            tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
+            if tmp_crio_version is None:
+                check_and_print_status(False)
+            crio_major_version, crio_minor_version = tmp_crio_version
+        else:
+            tmp_crio_version = cri_version.split(".")
+            if len(tmp_crio_version) < 2:
+                check_and_print_status(False)
+            crio_major_version = tmp_crio_version[0]
+            crio_minor_version = tmp_crio_version[1]
         setup_extras["crio_major_version"] = crio_major_version
         setup_extras["crio_minor_version"] = crio_minor_version
 
