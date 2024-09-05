@@ -639,8 +639,8 @@ def update_installation_info(**kwargs: Any) -> Dict:
     cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
     pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))
     cri: Optional[str] = deep_get(kwargs, DictPath("cri"))
-    control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
-    nodes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
+    control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_planes"))
+    nodes: Optional[List[str]] = deep_get(kwargs, DictPath("nodes"))
 
     info = get_installation_info(cluster_name=cluster_name)
 
