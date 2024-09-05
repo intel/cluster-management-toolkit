@@ -4623,7 +4623,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             hosts.append(nodename)
 
             node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
-            node_cri_version = deep_get(cd, DictPath("options#cri_version"))
+            node_cri_version = deep_get(cd, DictPath("options#cri_version"),
+                                        node_global_cri_version)
             if node_cri_version == "auto":
                 node_cri_version = None
             node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
