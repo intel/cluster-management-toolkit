@@ -4084,6 +4084,9 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     # Add all nodes to the inventory
     ansible_add_hosts(inventory=ANSIBLE_INVENTORY, hosts=nodes, skip_all=False)
 
+    crio_major_version = None
+    crio_minor_version = None
+
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "containerd":
