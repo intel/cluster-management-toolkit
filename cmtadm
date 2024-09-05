@@ -4313,7 +4313,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         sys.exit(errno.EINVAL)
 
     cri = deep_get(cd, DictPath("cluster#cri"), "containerd")
-    cri_version = deep_get(cd, DictPath("options#cri_version"))
+    cri_version = deep_get(cd, DictPath("cluster#cri_version"))
     if cri_version == "auto":
         cri_version = None
 
@@ -4535,8 +4535,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             else:
                 ansible_configuration["ansible_password"] = ansible_password
 
-        node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
-        node_global_cri_version = deep_get(cd, DictPath("nodes#options#cri_version"))
+        node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), cri)
+        node_global_cri_version = deep_get(cd, DictPath("nodes#options#cri_version"), cri_version)
         if node_global_cri_version == "auto":
             node_global_cri_version = None
         node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
