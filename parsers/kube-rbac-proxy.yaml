@@ -14,3 +14,20 @@
     - matchtype: "startswith"
       matchkey: "Flag --logtostderr has been deprecated"
       loglevel: "warning"
+  - name: "custom_line"
+    options:
+      block_start:
+      - matchtype: "startswith"
+        matchkey: "==== Deprecation Warning"
+        matchline: "any"
+        format_block_start: true
+      - matchtype: "startswith"
+        matchkey: "==== Removed Flag Warning"
+        matchline: "any"
+        format_block_start: true
+      block_end:
+      - matchtype: "startswith"
+        matchkey: "========================"
+        matchline: "any"
+        format_block_end: true
+      loglevel: "warning"

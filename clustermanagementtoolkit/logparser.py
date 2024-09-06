@@ -3172,6 +3172,117 @@ def ansible_line(message: str,
     return message, remnants
 
 
+# pylint: disable-next=too-many-locals,too-many-branches
+def custom_line_scanner(message: str,
+                        **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
+                                                Tuple[datetime, str, LogLevel,
+                                                      List[Tuple[List[Union[ThemeRef, ThemeStr]],
+                                                                 LogLevel]]]]:
+    options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
+    loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
+
+    timestamp = none_timestamp()
+    facility = ""
+    severity = LogLevel.INFO
+    message, _timestamp = split_iso_timestamp(message, none_timestamp())
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
+    matched = True
+
+    # If no block end is defined we continue until EOF
+    block_end = deep_get(options, DictPath("block_end"), [])
+
+    format_block_end = False
+    process_block_end = True
+
+    for _be in block_end:
+        matchtype = deep_get(_be, DictPath("matchtype"))
+        matchkey = deep_get(_be, DictPath("matchkey"))
+        format_block_end = deep_get(_be, DictPath("format_block_end"), False)
+        process_block_end = deep_get(_be, DictPath("process_block_end"), True)
+        if matchtype == "empty":
+            if not message.strip():
+                matched = False
+        elif matchtype == "exact":
+            if message == matchkey:
+                matched = False
+        elif matchtype == "startswith":
+            if message.startswith(matchkey):
+                matched = False
+        elif matchtype == "regex":
+            tmp = matchkey.match(message)
+            if tmp is not None:
+                matched = False
+
+    if matched:
+        remnants = [ThemeStr(message, ThemeAttr("logview", f"severity_{loglevel_name}"))]
+        processor: Tuple[str, Optional[Callable], Dict] = ("block", custom_line_scanner, options)
+    else:
+        if process_block_end:
+            if format_block_end:
+                remnants = [ThemeStr(message, ThemeAttr("logview", f"severity_{loglevel_name}"))]
+            else:
+                severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+                remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
+            processor = ("end_block", None, {})
+        else:
+            processor = ("end_block_not_processed", None, {})
+
+    return processor, (timestamp, facility, severity, remnants)
+
+
+# pylint: disable-next=too-many-locals,too-many-branches
+def custom_line(message: str, **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
+                                                      List[Tuple[List[Union[ThemeRef, ThemeStr]],
+                                                                 LogLevel]]]:
+    severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
+    options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
+
+    if options is None:
+        options = {}
+
+    block_start: List[Dict] = deep_get(options, DictPath("block_start"), [])
+    loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
+
+    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
+    matched = False
+
+    line = deep_get(options, DictPath("__line"), 0)
+    if deep_get(options, DictPath("eof")) is None:
+        options["eof"] = "end_block"
+
+    for _bs in block_start:
+        matchtype = _bs["matchtype"]
+        matchkey = _bs["matchkey"]
+        matchline = _bs["matchline"]
+        format_block_start = deep_get(_bs, DictPath("format_block_start"), False)
+        if matchline == "any" or matchline == "first" and not line:
+            if matchtype == "exact":
+                if message == matchkey:
+                    matched = True
+            elif matchtype == "startswith":
+                if message.startswith(matchkey):
+                    matched = True
+            elif matchtype == "endswith":
+                if message.endswith(matchkey):
+                    matched = True
+            elif matchtype == "regex":
+                tmp = matchkey.match(message)
+                if tmp is not None:
+                    matched = True
+
+    if matched:
+        if format_block_start:
+            remnants = [ThemeStr(message, ThemeAttr("logview", f"severity_{loglevel_name}"))]
+        else:
+            severity_name = f"severity_{loglevel_to_name(severity).lower()}"
+            remnants = [ThemeStr(message, ThemeAttr("logview", severity_name))]
+        processor: Tuple[str, Optional[Callable], Dict] = \
+            ("start_block", custom_line_scanner, options)
+        return processor, remnants
+
+    return message, remnants
+
+
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
         Tuple[Union[str, List[Union[ThemeRef, ThemeStr]]], Optional[LogLevel], str]:
@@ -3409,6 +3520,11 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
                     message, remnants = \
                         ansible_line(message, fold_msg=fold_msg, severity=severity,
                                      options=_parser_options)
+                elif _filter[0] == "custom_line":
+                    _parser_options = {**_filter[1], **options}
+                    message, remnants = \
+                        custom_line(message, fold_msg=fold_msg, severity=severity,
+                                  options=_parser_options)
                 elif _filter[0] == "tab_separated":
                     _parser_options = _filter[1]
                     message, severity, facility, remnants = \
@@ -3556,6 +3672,7 @@ def init_parser_list() -> None:
                                          "ts_8601"):
                             rules.append(rule_name)
                         elif rule_name in ("ansible_line",
+                                           "custom_line",
                                            "custom_splitter",
                                            "diff_line",
                                            "http",
