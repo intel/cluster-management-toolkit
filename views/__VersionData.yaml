@@ -150,6 +150,42 @@ listview:
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "argocd"
+      pathtype: "dict"
+      _extra_data:
+        name: "argocd (Argo CD)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/argocd"
+            args: ["version"]
+            version_regex: '^argocd: v(\d+)(\.)(\d+)(\.)(\d+)\+.*|$'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/argocd_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "kargo"
+      pathtype: "dict"
+      _extra_data:
+        name: "kargo (Kargo)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/kargo"
+            args: ["version"]
+            version_regex: '^Client Version: v(\d+)(\.)(\d+)(\.)(\d+)'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/kargo_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:

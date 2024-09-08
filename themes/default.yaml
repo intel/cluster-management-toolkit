@@ -523,6 +523,12 @@ color_pairs_curses:
   type_dir_symlink_name: [["cyan", "bright"], ["black", "normal"]]
   type_dir_pipe: [["yellow", "normal"], ["black", "bright"]]
   type_dir_socket: [["magenta", "normal"], ["black", "normal"]]
+  type_generic_comment:
+    unselected: [["black", "bright"], ["black", "normal"]]
+    selected: [["black", "normal"], ["white", "normal"]]
+  type_generic_crypto:
+    unselected: [["blue", "bright"], ["black", "normal"]]
+    selected: [["blue", "bright"], ["white", "normal"]]
   type_ini_comment: [["green", "normal"], ["black", "normal"]]
   type_ini_section: [["white", "bright"], ["black", "normal"]]
   type_ini_key: [["blue", "bright"], ["black", "normal"]]
@@ -849,6 +855,10 @@ types:
   key_error: "type_key_error"
   key: "type_key"
   kind: "type_kind"
+  known_hosts_comment: "type_generic_comment"
+  known_hosts_hostname: "hostname"
+  known_hosts_crypto: "type_generic_crypto"
+  known_hosts_key: "type_generic"
   lineno: "type_lineno"
   logbullet: ["severity_debug", "bold"]
   mainheader_prefix: ["mainheader", "bold"]

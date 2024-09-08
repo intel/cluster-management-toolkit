@@ -1480,6 +1480,56 @@ def format_ini(lines: Union[str, List[str]],
     return dumps
 
 
+def format_known_hosts(lines: Union[str, List[str]],
+                       **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
+    """
+    known_hosts formatter; returns the text with syntax highlighting for .ssh/known_hosts
+
+        Parameters:
+            lines (list[str]): A list of strings
+            *or*
+            lines (str): A string with newlines that should be split
+            kwargs (dict): Unused
+        Returns:
+            list[themearray]: A list of themearrays
+    """
+
+    dumps: List[List[Union[ThemeRef, ThemeStr]]] = []
+
+    if deep_get(kwargs, DictPath("raw"), False):
+        return format_none(lines)
+
+    if isinstance(lines, str):
+        lines = split_msg(lines)
+
+    host_keytype_key_regex = re.compile(r"^(\S+)(\s+)(\S+)(\s+)(\S+)")
+
+    for line in lines:
+        tmpline: List[Union[ThemeRef, ThemeStr]] = []
+        if line.lstrip().startswith(("#", ";")):
+            tmpline = [
+                ThemeStr(line, ThemeAttr("types", "known_hosts_comment")),
+            ]
+        else:
+            tmp = host_keytype_key_regex.match(line)
+            if tmp is not None:
+                hostname = tmp[1]
+                whitespace1 = tmp[2]
+                crypto = tmp[3]
+                whitespace2 = tmp[4]
+                key = tmp[5]
+
+                tmpline = [
+                    ThemeStr(f"{hostname}", ThemeAttr("types", "known_hosts_hostname")),
+                    ThemeStr(whitespace1, ThemeAttr("types", "generic")),
+                    ThemeStr(f"{crypto}", ThemeAttr("types", "known_hosts_crypto")),
+                    ThemeStr(whitespace2, ThemeAttr("types", "generic")),
+                    ThemeStr(f"{key}", ThemeAttr("types", "known_hosts_key")),
+                ]
+        dumps.append(tmpline)
+    return dumps
+
+
 formatter_mapping = (
     # (startswith, endswith, formatter)
     ("YAML", "YAML", format_yaml),
@@ -1495,6 +1545,7 @@ formatter_mapping = (
     ("INI", "INI", format_ini),
     ("", ".ini", format_ini),
     ("JWS", "JWS", format_none),
+    ("known_hosts", "known_hosts", format_known_hosts),
     ("FluentBit", "FluentBit", format_fluentbit),
     ("HAProxy", "HAProxy", format_haproxy),
     ("haproxy.cfg", "haproxy.cfg", format_haproxy),
@@ -1528,6 +1579,7 @@ formatter_allowlist: Dict[str, Callable] = {
     "format_fluentbit": format_fluentbit,
     "format_haproxy": format_haproxy,
     "format_ini": format_ini,
+    "format_known_hosts": format_known_hosts,
     "format_markdown": format_markdown,
     "format_mosquitto": format_mosquitto,
     "format_nginx": format_nginx,
@@ -1560,6 +1612,8 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("", "", "", ".xml", "XML"),
     ("", "", "", ".yaml", "YAML"),
     ("", "", "", ".yml", "YAML"),
+    ("", "", "known_hosts", "known_hosts", "known_hosts"),
+    ("", "", "ssh_known_hosts", "ssh_known_hosts", "known_hosts"),
     ("calico-system", "cni-config", "", "", "JSON"),
     ("", "canal-config", "cni_network_config", "", "JSON"),
     ("", "", "fluentbit.conf", "", "FluentBit"),
