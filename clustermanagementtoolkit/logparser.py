@@ -1962,26 +1962,30 @@ def format_key_value(key: str, value: str,
             **kwargs (dict[str, Any]): Keyword arguments
                 force_severity (bool): Override default formatting; use severity instead
                 error_keys ((str, ...)): A tuple of keys that should be formatted as errors
+                allow_bare_keys (bool): Should keys without a value be accepted?
         Returns:
             (ThemeArray): The formatted message
     """
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
+    allow_bare_keys = deep_get(kwargs, DictPath("allow_bare_keys"), False)
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     tmp: List[Union[ThemeRef, ThemeStr]]
 
+    separator = [ThemeRef("separators", "keyvalue_log")]
     if key in error_keys:
-        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error")),
-               ThemeRef("separators", "keyvalue_log"),
-               ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error"))] \
+              + separator \
+              + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     elif force_severity:
-        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key")),
-               ThemeRef("separators", "keyvalue_log"),
-               ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))] \
+              + separator \
+              + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     else:
-        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key")),
-               ThemeRef("separators", "keyvalue_log"),
-               ThemeStr(f"{value}", ThemeAttr("types", "value"))]
+        tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))]
+        if value is not None:
+            tmp += separator \
+                   + [ThemeStr(f"{value}", ThemeAttr("types", "value"))]
     return tmp
 
 
@@ -2055,6 +2059,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     facilities = deep_get(options, DictPath("facilities"),
                           ["source", "subsys", "caller", "logger", "Topic"])
     versions = deep_get(options, DictPath("versions"), [])
+    allow_bare_keys = deep_get(options, DictPath("allow_bare_keys"), False)
     substitute_bullets_ = deep_get(options, DictPath("substitute_bullets"), True)
     collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
     is_event: bool = deep_get(options, DictPath("is_event"), False)
@@ -2071,9 +2076,13 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
         for item in tmp:
             tmp2 = key_value_regex.match(item)
             if tmp2 is None:
-                # Give up; this line cannot be parsed as a set of key=value
-                return facility, severity, message, remnants
-            if tmp2 is not None:
+                if allow_bare_keys:
+                    if item not in d:
+                        d[item] = None
+                else:
+                    # Give up; this line cannot be parsed as a set of key=value
+                    return facility, severity, message, remnants
+            else:
                 key = tmp2[1]
                 value = tmp2[2]
                 if key not in d:
@@ -2260,9 +2269,13 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                                                          overrides=severity_overrides)
                             force_severity = severity_ != severity
                             tmp.append(format_key_value(d_key, d_value, severity_,
-                                                        force_severity=force_severity))
+                                                        force_severity=force_severity,
+                                                        allow_bare_keys=allow_bare_keys))
                 else:
-                    tmp.append(f"{d_key}={d_value}")
+                    if d_value:
+                        tmp.append(f"{d_key}={d_value}")
+                    else:
+                        tmp.append(f"{d_key}")
 
             if fold_msg:
                 message = " ".join(tmp)
