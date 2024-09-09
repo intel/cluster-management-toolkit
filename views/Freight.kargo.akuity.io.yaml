@@ -34,7 +34,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["alias", "origin", "warehouse"]
+        fields: ["alias", "origin", "warehouse", "verified_in"]
     rows:
       alias:
         header: [["Alias:", ["main", "infoheader"]]]
@@ -53,6 +53,12 @@ infoview:
           - type: "generic"
           field_separators:
           - type: "kind"
+      verified_in:
+        header: [["Verified In:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#verifiedIn"
+          pathtype: "dictkeys"
+        formatter: "list"
       warehouse:
         header: [["Warehouse:", ["main", "infoheader"]]]
         path: "warehouse"

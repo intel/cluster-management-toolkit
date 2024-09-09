@@ -189,3 +189,48 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#requestedFreight"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["requested_freight", "stages", "direct"]
+        sortcolumn: "requested_freight"
+    fields:
+      direct:
+        header: "Direct:"
+        path: "sources#direct"
+        default: "False"
+        type: "str"
+      requested_freight:
+        header: "Requested Freight:"
+        paths:
+        - path: [["origin#kind"], ["origin#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "generic"
+          field_separators:
+          - type: "kind"
+      stages:
+        header: "Stages:"
+        path: "sources#stages"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Promotion Mechanisms":
+      key: "p"
+      modifier: "shift"
+      helptext: "Show promotion mechanisms"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Promotion Mechanisms"
+        _pass_obj: true
+        path: "spec#promotionMechanisms"
