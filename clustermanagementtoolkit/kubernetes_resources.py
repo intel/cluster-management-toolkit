@@ -2048,6 +2048,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/k3s.cattle.io/v1/"],
         "api": "addons",
     },
+    ("ETCDSnapshotFile", "k3s.cattle.io"): {
+        "api_paths": ["apis/k3s.cattle.io/v1/"],
+        "api": "etcdsnapshotfiles",
+        "namespaced": False,
+    },
     # k8s.cni.cncf.io
     ("NetworkAttachmentDefinition", "k8s.cni.cncf.io"): {
         "api_paths": ["apis/k8s.cni.cncf.io/v1/"],
@@ -3806,6 +3811,47 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     ("TraefikService", "traefik.containo.us"): {
         "api_paths": ["apis/traefik.containo.us/v1alpha1/"],
+        "api": "traefikservices",
+    },
+    # traefik.io
+    ("IngressRoute", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "ingressroutes",
+    },
+    ("IngressRouteTCP", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "ingressroutetcps",
+    },
+    ("IngressRouteUDP", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "ingressrouteudps",
+    },
+    ("Middleware", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "middlewares",
+    },
+    ("MiddlewareTCP", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "middlewaretcps",
+    },
+    ("ServersTransport", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "serverstransports",
+    },
+    ("ServersTransportTCP", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "serverstransporttcps",
+    },
+    ("TLSOption", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "tlsoptions",
+    },
+    ("TLSStore", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
+        "api": "tlsstores",
+    },
+    ("TraefikService", "traefik.io"): {
+        "api_paths": ["apis/traefik.io/v1alpha1/"],
         "api": "traefikservices",
     },
     # triggers.tekton.dev
