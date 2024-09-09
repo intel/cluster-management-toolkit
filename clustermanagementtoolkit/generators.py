@@ -878,10 +878,9 @@ def processor_timestamp(obj: Dict, field: str) -> str:
 
     if isinstance(value, str):
         return value
-    if isinstance(value, date):
-        return str(value)
-
-    return f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
+    if isinstance(value, datetime):
+        return f"{value.astimezone():%Y-%m-%d %H:%M:%S}"
+    return str(value)
 
 
 def processor_timestamp_with_age(obj: Dict, field: str, formatting: Dict) -> str:

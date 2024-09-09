@@ -622,10 +622,10 @@ def datetime_to_timestamp(timestamp: datetime) -> str:
         # Replace epoch with an empty string
         # with the same length as a timestamp
         string = "".ljust(len(str(datetime.fromtimestamp(0).astimezone())))
-    elif isinstance(timestamp, date):
-        string = f"{timestamp:%Y-%m-%d}"
-    else:
+    elif isinstance(timestamp, datetime):
         string = f"{timestamp.astimezone():%Y-%m-%d %H:%M:%S}"
+    else:
+        string = f"{timestamp:%Y-%m-%d}"
     return string
 
 
