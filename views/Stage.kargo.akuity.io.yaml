@@ -1,0 +1,191 @@
+kind: "Stage"
+api_family: "kargo.akuity.io"
+default_command: "stages"
+command:
+- "kargostages"
+- "kargostage"
+listview:
+  name: "Stages"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "current_freight", "health", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    current_freight:
+      header: "Current Freight:"
+      path: "status#freightSummary"
+      type: "str"
+    health:
+      header: "Health:"
+      path: "status#health#status"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Healthy:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Unhealthy:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Aborted:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            Error:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Inconclusive:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            NotApplicable:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Promoting:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Steady:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Successful:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Verifying:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+infoview:
+  name: "Stage Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["health", "phase"]
+    rows:
+      current_freight:
+        header: [["Current Freight:", ["main", "infoheader"]]]
+        path: "status#freightSummary"
+        type: "str"
+      health:
+        header: [["Health:", ["main", "infoheader"]]]
+        path: "status#health#status"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Healthy:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Unhealthy:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Unknown:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+      phase:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Aborted:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              Error:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Inconclusive:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              NotApplicable:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Promoting:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Steady:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Successful:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Verifying:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"

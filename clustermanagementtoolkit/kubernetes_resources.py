@@ -2095,6 +2095,28 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/kamaji.clastix.io/v1alpha1/"],
         "api": "tenantcontrolplanes",
     },
+    # kargo.akuity.io
+    ("Freight", "kargo.akuity.io"): {
+        "api_paths": ["apis/kargo.akuity.io/v1alpha1/"],
+        "api": "freights",
+    },
+    ("Project", "kargo.akuity.io"): {
+        "api_paths": ["apis/kargo.akuity.io/v1alpha1/"],
+        "api": "projects",
+        "namespaced": False,
+    },
+    ("Promotion", "kargo.akuity.io"): {
+        "api_paths": ["apis/kargo.akuity.io/v1alpha1/"],
+        "api": "promotions",
+    },
+    ("Stage", "kargo.akuity.io"): {
+        "api_paths": ["apis/kargo.akuity.io/v1alpha1/"],
+        "api": "stages",
+    },
+    ("Warehouse", "kargo.akuity.io"): {
+        "api_paths": ["apis/kargo.akuity.io/v1alpha1/"],
+        "api": "warehouses",
+    },
     # keda.sh
     ("ClusterTriggerAuthentication", "keda.sh"): {
         "api_paths": ["apis/keda.sh/v1alpha1/"],

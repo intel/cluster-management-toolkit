@@ -1,0 +1,55 @@
+kind: "Warehouse"
+api_family: "kargo.akuity.io"
+default_command: "warehouses"
+command:
+- "kargowarehouses"
+- "kargowarehouse"
+listview:
+  name: "Warehouses"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Warehouse Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["freight_creation_policy", "interval"]
+    rows:
+      freight_creation_policy:
+        header: [["Freight Creation Policy:", ["main", "infoheader"]]]
+        path: "spec#freightCreationPolicy"
+        default: "<unset>"
+        type: "str"
+      interval:
+        header: [["Interval:", ["main", "infoheader"]]]
+        path: "spec#interval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+  shortcuts:
+    "Artifact Images":
+      key: "a"
+      modifier: "shift"
+      helptext: "Show discovered artifacts"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Discovered artifacts"
+        _pass_obj: true
+        path: "status#discoveredArtifacts"
+    "Subscriptions":
+      key: "s"
+      modifier: "shift"
+      helptext: "Show subscriptions"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Subscriptions"
+        _pass_obj: true
+        path: "spec#subscriptions"
+        include_root: true

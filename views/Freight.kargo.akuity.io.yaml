@@ -1,0 +1,102 @@
+kind: "Freight"
+api_family: "kargo.akuity.io"
+default_command: "freights"
+command:
+- "kargofreights"
+- "kargofreight"
+listview:
+  name: "Freights"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "alias", "origin", "age"]
+      sortcolumn: "name"
+  fields:
+    alias:
+      header: "Alias:"
+      path: "alias"
+      default: "<unset>"
+      type: "str"
+    origin:
+      header: "Origin:"
+      paths:
+      - path: [["origin#kind"], ["origin#name"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "generic"
+        field_separators:
+        - type: "kind"
+infoview:
+  name: "Freight Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["alias", "origin", "warehouse"]
+    rows:
+      alias:
+        header: [["Alias:", ["main", "infoheader"]]]
+        path: "alias"
+        default: "<unset>"
+        type: "str"
+      origin:
+        header: [["O", ["main", "infoheader_shortcut"]], ["rigin:", ["main", "infoheader"]]]
+        paths:
+        - path: [["origin#kind"], ["origin#name"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "generic"
+          field_separators:
+          - type: "kind"
+      warehouse:
+        header: [["Warehouse:", ["main", "infoheader"]]]
+        path: "warehouse"
+        default: "<unset>"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "images"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["digest", "repo_url", "tag"]
+        sortcolumn: "repo_url"
+    fields:
+      digest:
+        header: "Digest:"
+        path: "digest"
+        type: "str"
+      repo_url:
+        header: "Repo URL:"
+        path: "repoURL"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      tag:
+        header: "tag:"
+        path: "tag"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Origin":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for origin"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "origin#name"
+        namespace_path: "metadata#namespace"
+        kind_path: "origin#kind"
+        api_family: "kargo.akuity.io"

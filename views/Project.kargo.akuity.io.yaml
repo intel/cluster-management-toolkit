@@ -1,0 +1,71 @@
+kind: "Project"
+api_family: "kargo.akuity.io"
+default_command: "projects"
+command:
+- "kargoprojs"
+- "kargoproj"
+listview:
+  name: "Projects"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["name", "phase", "age", "message"]
+      sortcolumn: "name"
+  fields:
+    message:
+      header: "Message:"
+      path: "status#message"
+      default: "<unset>"
+      type: "str"
+    phase:
+      header: "Status:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Initializing:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            InitializationFailed:
+              field_colors:
+              - context: "main"
+                type: "status_error"
+            Ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Project Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["phase", "message"]
+    rows:
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        default: "<unset>"
+        type: "str"
+      phase:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Initializing:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              InitializationFailed:
+                field_colors:
+                - context: "main"
+                  type: "status_error"
+              Ready:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
