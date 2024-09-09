@@ -1701,6 +1701,11 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             value = (deep_get(_path, DictPath("lookup#messages#ok")),
                                      StatusGroup.NEUTRAL)
                     _values.append((value, "raw"))
+                elif ptype == "dictkeys":
+                    for mpath in mpaths:
+                        tmp = list(deep_get_with_fallback(obj, mpath, {}).keys())
+                        if tmp:
+                            _values.append((tmp, "raw"))
                 elif ptype == "dictfields":
                     subpaths = deep_get_with_fallback(_path, [DictPath("subpaths"),
                                                               DictPath("subpath")], [])
