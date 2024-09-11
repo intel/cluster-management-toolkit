@@ -312,15 +312,26 @@ def format_diff_line(line: str, **kwargs: Any) -> List[Union[ThemeRef, ThemeStr]
     _override_formatting: Optional[Union[ThemeAttr, Dict]] = \
         deep_get(kwargs, DictPath("override_formatting"))
     indent = deep_get(kwargs, DictPath("indent"), "")
+    diffspace = deep_get(kwargs, DictPath("diffspace"), " ")
 
     tmpline: List[Union[ThemeRef, ThemeStr]] = []
 
-    if line.startswith(f"{indent}+ "):
+    if line.startswith(("+++ ", "--- ")):
+        tmpline += [
+            ThemeStr(line, ThemeAttr("logview", "severity_diffheader")),
+        ]
+        return tmpline
+    if line.startswith("@@ "):
+        tmpline += [
+            ThemeStr(line, ThemeAttr("logview", "severity_diffatat")),
+        ]
+        return tmpline
+    if line.startswith(f"{indent}+{diffspace}"):
         tmpline += [
             ThemeStr(line, ThemeAttr("logview", "severity_diffplus")),
         ]
         return tmpline
-    if line.startswith(f"{indent}- "):
+    if line.startswith(f"{indent}-{diffspace}"):
         tmpline += [
             ThemeStr(line, ThemeAttr("logview", "severity_diffminus")),
         ]
@@ -1643,8 +1654,8 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("", "kubeapps", "vhost.conf", "vhost.conf", "NGINX"),
     ("", "kubeapps", "k8s-api-proxy.conf", "k8s-api-proxy.conf", "NGINX"),
     ("", "linkerd-config", "values", "", "YAML"),
-    ("", "nfd-master-conf", "nfd-master.conf", "", "YAML"),
-    ("", "nfd-worker-conf", "nfd-worker.conf", "", "YAML"),
+    ("", "", "nfd-master.conf", "", "YAML"),
+    ("", "", "nfd-worker.conf", "", "YAML"),
     ("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
     ("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
     ("", "trivy-operator", "scanJob.podTemplateContainerSecurityContext", "", "JSON"),

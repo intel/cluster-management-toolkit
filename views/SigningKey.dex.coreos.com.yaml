@@ -10,5 +10,60 @@ listview:
   group: "Authorization & Access Control"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "next_rotation", "age"]
       sortcolumn: "namespace"
+  fields:
+    next_rotation:
+      header: "Next Rotation:"
+      path: "nextRotation"
+      type: "timestamp"
+      formatter: "timestamp"
+      default: -1
+infoview:
+  name: "Signing Key Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["next_rotation"]
+    rows:
+      next_rotation:
+        header: [["Next Rotation:", ["main", "infoheader"]]]
+        path: "nextRotation"
+        type: "timestamp"
+        formatter: "timestamp"
+        default: -1
+  shortcuts:
+    "Show Private Signing Key":
+      key: "p"
+      modifier: "shift"
+      helptext: "Show private signing key"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Private signing key"
+        _pass_obj: true
+        path: "signingKey"
+    "Show Public Signing Key":
+      key: "s"
+      modifier: "shift"
+      helptext: "Show public signing key"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Public signing key"
+        _pass_obj: true
+        path: "signingKeyPub"
+    "Show Verification Keys":
+      key: "v"
+      modifier: "shift"
+      helptext: "Show verification keys"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Verification keys"
+        _pass_obj: true
+        path: "verificationKeys"
+        include_root: true

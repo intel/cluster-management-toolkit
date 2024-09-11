@@ -3015,7 +3015,9 @@ def diff_line_scanner(message: str,
 
     if matched:
         remnants = formatters.format_diff_line(message,
-                                               indent=deep_get(options, DictPath("indent"), ""))
+                                               indent=deep_get(options, DictPath("indent"), ""),
+                                               diffspace=deep_get(options,
+                                                                  DictPath("diffspace"), ""))
         processor: Tuple[str, Optional[Callable], Dict] = ("block", diff_line_scanner, options)
     else:
         if process_block_end:

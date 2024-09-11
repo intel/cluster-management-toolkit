@@ -686,6 +686,11 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
     if tmp is not None:
         timestamp = f"{tmp[1]}{tmp[2]}"
     else:
+        # If the timestamp has too many, or too few, decimals (should be 6), adjust it
+        tmp = re.match(r"^(\d{4}-\d\d-\d\d.\d\d:\d\d:\d\d\.)(\d+)", timestamp)
+        if tmp is not None:
+            if len(tmp[2]) != 6:
+                timestamp = f"{tmp[1]}{tmp[2]:06.6}"
         # For timestamp without timezone add one; all timestamps are assumed to be UTC
         timestamp += "+0000"
 

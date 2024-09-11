@@ -552,6 +552,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "workflows",
     },
+    ("WorkflowTaskResult", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "workflowtaskresults",
+    },
+    ("WorkflowTaskSet", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "workflowtasksets",
+    },
     ("WorkflowTemplate", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "workflowtemplates",
@@ -1168,6 +1176,36 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/config.nri/v1alpha1/"],
         "api": "balloonspolicies",
     },
+    # configuration.konghq.com
+    ("KongClusterPlugin", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1/"],
+        "api": "kongclusterplugins",
+        "namespaced": False,
+    },
+    ("KongConsumer", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1/"],
+        "api": "kongconsumers",
+    },
+    ("KongIngress", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1/"],
+        "api": "kongingresses",
+    },
+    ("KongPlugin", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1/"],
+        "api": "kongplugins",
+    },
+    ("IngressClassParameters", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1alpha1/"],
+        "api": "ingressclassparameterses",
+    },
+    ("TCPIngress", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1beta1/"],
+        "api": "tcpingresses",
+    },
+    ("UDPIngress", "configuration.konghq.com"): {
+        "api_paths": ["apis/configuration.konghq.com/v1beta1/"],
+        "api": "udpingresses",
+    },
     # console.openshift.io
     ("ConsoleCLIDownload", "console.openshift.io"): {
         "api_paths": ["apis/console.openshift.io/v1/"],
@@ -1537,6 +1575,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/dex.coreos.com/v1/"],
         "api": "connectors",
     },
+    ("DeviceRequest", "dex.coreos.com"): {
+        "api_paths": ["apis/dex.coreos.com/v1/"],
+        "api": "devicerequests",
+    },
+    ("DeviceToken", "dex.coreos.com"): {
+        "api_paths": ["apis/dex.coreos.com/v1/"],
+        "api": "devicetokens",
+    },
     ("OAuth2Client", "dex.coreos.com"): {
         "api_paths": ["apis/dex.coreos.com/v1/"],
         "api": "oauth2clients",
@@ -1588,7 +1634,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # extensions.istio.io
     ("WasmPlugin", "extensions.istio.io"): {
-        "api_paths": ["apis/install.istio.io/v1alpha1/"],
+        "api_paths": ["apis/extensions.istio.io/v1alpha1/", "apis/install.istio.io/v1alpha1/"],
         "api": "wasmplugins",
     },
     # externaldata.gatekeeper.sh
@@ -1628,6 +1674,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Sequence", "flows.knative.dev"): {
         "api_paths": ["apis/flows.knative.dev/v1/"],
         "api": "sequences",
+    },
+    # flow.volcano.sh
+    ("JobFlow", "flow.volcano.sh"): {
+        "api_paths": ["apis/flow.volcano.sh/v1alpha1/"],
+        "api": "jobflows",
+    },
+    ("JobTemplate", "flow.volcano.sh"): {
+        "api_paths": ["apis/flow.volcano.sh/v1alpha1/"],
+        "api": "jobtemplates",
     },
     # forecastle.stakater.com
     ("ForecastleApp", "forecastle.stakater.com"): {
@@ -2217,7 +2272,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     ("ScheduledWorkflow", "kubeflow.org"): {
         "api_paths": ["apis/kubeflow.org/v1beta1/"],
-        "api": "scheduledworkflow",
+        "api": "scheduledworkflows",
     },
     ("Suggestion", "kubeflow.org"): {
         "api_paths": ["apis/kubeflow.org/v1alpha3/", "apis/kubeflow.org/v1beta1/"],
@@ -2888,7 +2943,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "workloadentries",
     },
     ("WorkloadGroup", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
         "api": "workloadgroups",
     },
     # nfd.k8s-sigs.io
@@ -3365,7 +3420,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # security.istio.io
     ("AuthorizationPolicy", "security.istio.io"): {
-        "api_paths": ["apis/security.istio.io/v1beta1/"],
+        "api_paths": ["apis/security.istio.io/v1/", "apis/security.istio.io/v1beta1/"],
         "api": "authorizationpolicies",
     },
     ("PeerAuthentication", "security.istio.io"): {
@@ -3373,7 +3428,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "peerauthentications",
     },
     ("RequestAuthentication", "security.istio.io"): {
-        "api_paths": ["apis/security.istio.io/v1beta1/"],
+        "api_paths": ["apis/security.istio.io/v1/", "apis/security.istio.io/v1beta1/"],
         "api": "requestauthentications",
     },
     # security.internal.openshift.io
@@ -3405,7 +3460,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "configurations",
     },
     ("DomainMapping", "serving.knative.dev"): {
-        "api_paths": ["apis/serving.knative.dev/v1alpha1/"],
+        "api_paths": ["apis/serving.knative.dev/v1beta1/", "apis/serving.knative.dev/v1alpha1/"],
         "api": "domainmappings",
     },
     ("Revision", "serving.knative.dev"): {
@@ -3419,6 +3474,24 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Service", "serving.knative.dev"): {
         "api_paths": ["apis/serving.knative.dev/v1/", "apis/serving.knative.dev/v1beta1/"],
         "api": "services",
+    },
+    # serving.kserve.io
+    ("ClusterServingRuntime", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "clusterservingruntimes",
+        "namespaced": False,
+    },
+    ("InferenceGraph", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "inferencegraphs",
+    },
+    ("ServingRuntime", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "servingruntimes",
+    },
+    ("TrainedModel", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "trainedmodels",
     },
     # serving.kubeflow.org
     ("InferenceService", "serving.kubeflow.org"): {

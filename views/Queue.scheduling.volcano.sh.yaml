@@ -1,0 +1,107 @@
+kind: "Queue"
+api_family: "scheduling.volcano.sh"
+default_command: "queues"
+command:
+- "volcanoqs"
+- "volcanoq"
+- "volqueues"
+- "volqueue"
+- "volqs"
+- "volq"
+listview:
+  name: "Queues"
+  group: "Batch Scheduling"
+  field_indexes:
+    Wide:
+      fields: ["name", "allocated", "capability", "weight", "reclaimable", "status", "age"]
+    Normal:
+      fields: ["name", "allocated", "capability", "status", "age"]
+  fields:
+    allocated:
+      header: "Allocated:"
+      paths:
+      - path: "status#allocated"
+        pathtype: "key_value"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "key"
+        - type: "value"
+        field_separators:
+        - type: "keyvalue"
+    capability:
+      header: "Capability:"
+      paths:
+      - path: "spec#capability"
+        pathtype: "key_value"
+      default: ["<unset>"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "key"
+        - type: "value"
+        field_separators:
+        - type: "keyvalue"
+    reclaimable:
+      header: "Reclaimable:"
+      path: "spec#reclaimable"
+      type: "str"
+    status:
+      header: "Status:"
+      path: "status#state"
+      type: "str"
+    weight:
+      header: "Weight:"
+      path: "spec#weight"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Queue Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["allocated", "capability", "weight", "reclaimable", "status"]
+    rows:
+      allocated:
+        header: [["Allocated:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#allocated"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      capability:
+        header: [["Capability:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#capability"
+          pathtype: "key_value"
+        default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      reclaimable:
+        header: [["Reclaimable:", ["main", "infoheader"]]]
+        path: "spec#reclaimable"
+        type: "str"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+      weight:
+        header: [["Weight:", ["main", "infoheader"]]]
+        path: "spec#weight"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"

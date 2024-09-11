@@ -1,0 +1,77 @@
+kind: "ClusterServingRuntime"
+api_family: "serving.kserve.io"
+default_command: "clusterservingruntimes"
+command:
+- "clrservingruntimes"
+- "clrservingruntime"
+- "clrsrvruntimes"
+- "clrsrvruntime"
+listview:
+  name: "Cluster Serving Runtimes"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Cluster Serving Runtime Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["protocol_versions"]
+    rows:
+      protocol_versions:
+        header: [["Protocol Versions:", ["main", "infoheader"]]]
+        path: "spec#protocolVersions"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#supportedModelFormats"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["model_format", "version", "autoselect"]
+        sortcolumn: "model_format"
+    fields:
+      autoselect:
+        header: "Autoselect:"
+        path: "autoSelect"
+        type: "str"
+      model_format:
+        header: "Model Format:"
+        path: "name"
+        type: "str"
+      version:
+        header: "Version:"
+        path: "name"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Applied annotations":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show applied annotations"
+      widget: "windowwidget"
+      headers: ["Annotation:", "Value:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#annotations"
+      # This isn't supported for now
+      sortcolumn: "annotation"
+    "Containers":
+      key: "c"
+      modifier: "shift"
+      helptext: "Show containers"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Containers"
+        _pass_obj: true
+        path: "spec#containers"
+        include_root: true
