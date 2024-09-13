@@ -20,19 +20,19 @@ PROGRAM_SUITE_FULL_NAME = "Cluster Management Toolkit for Kubernetes"
 PROGRAM_SUITE_VERSION = "0.8.4"
 
 UI_PROGRAM_NAME = "cmu"
-UI_PROGRAM_VERSION = "0.5.1"
+UI_PROGRAM_VERSION = "0.5.2"
 
 TOOL_PROGRAM_NAME = "cmt"
 TOOL_PROGRAM_VERSION = "0.6.6"
 
 INSTALL_PROGRAM_NAME = "cmt-install"
-INSTALL_PROGRAM_VERSION = "0.13.6"
+INSTALL_PROGRAM_VERSION = "0.13.7"
 
 ADMIN_PROGRAM_NAME = "cmtadm"
 ADMIN_PROGRAM_VERSION = "0.9.3"
 
 INVENTORY_PROGRAM_NAME = "cmtinv"
-INVENTORY_PROGRAM_VERSION = "0.4.5"
+INVENTORY_PROGRAM_VERSION = "0.4.6"
 
 # We don't support Python-versions older than 3.8
 version_info = sys.version_info

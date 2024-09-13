@@ -13,11 +13,12 @@ in path lookup and various I/O-operations.
 ## Dependencies for the toolkit (from `requirements.txt`)
 
 * `python3-ansible-runner` (>= 2.1.3)
+* `python3-jinja2` (>= 2.10.1)
 * `python3-natsort` (>= 8.0.2)
-* `python3-yaml` (>= 6.0)
 * `python3-ujson` (>= 5.4.0; not a strict necessity, just a nice performance improvement)
 * `python3-urllib3` (>= 1.26.18)
 * `python3-validators` (>= 0.22.0)
+* `python3-yaml` (>= 6.0)
 
 # Pre-requisites / tested platforms for setting up Kubernetes clusters
 

@@ -1,0 +1,263 @@
+kind: "Event"
+api_family: "events.k8s.io"
+# Make sure to keep this one in sync with Event.yaml
+default_command: "events.events.k8s.io"
+command:
+- "event.events.k8s.io"
+- "event.events"
+- "ev.events.k8s.io"
+- "ev.events"
+- "evev"
+listview:
+  name: "Events"
+  group: "Core"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "reporter", "first_seen", "count", "message"]
+      sortcolumn: "seen"
+    Normal:
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "message"]
+      sortcolumn: "seen"
+  fields:
+    count:
+      header: "Count:"
+      paths:
+      - path: ["series#count", "deprecatedCount", "count"]
+        pathtype: "value"
+        type: "raw"
+        default: 0
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    first_seen:
+      header: "First Seen:"
+      paths:
+      - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+        pathtype: "value"
+        type: "timestamp"
+      formatter: "age"
+      align: "right"
+    involved_obj:
+      header: "Regarding:"
+      paths:
+      - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
+        pathtype: "tuple"
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+    message:
+      header: "Message:"
+      paths:
+      - path: "note"
+        pathtype: "value"
+        type: "str"
+        replace_quotes: "same"
+    reason:
+      header: "Reason:"
+      path: "reason"
+      type: "str"
+      default: "<unset>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            {%- for line in event_reasons.split("\n") %}
+            {{ line }}
+            {%- endfor %}
+    reporter:
+      header: "Reporter:"
+      paths:
+      - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
+        default: ["", ""]
+        # This is needed, because the old Events API can return the new fields empty
+        fallback_on_empty: true
+        pathtype: "tuple"
+        type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "generic"
+    seen:
+      header: "Last Seen:"
+      paths:
+      - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+        pathtype: "value"
+        type: "timestamp"
+      formatter: "age"
+      align: "right"
+    type:
+      header: "Type:"
+      path: "type"
+      type: "str"
+      default: "<unset>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Error:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Normal:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Warning:
+              field_colors:
+              - context: "main"
+                type: "status_admin"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
+  shortcuts:
+    "Show Resource":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for the resource that triggered the event"
+      action: "call"
+      action_call: "eventdispatch"
+      action_args:
+        _pass_obj: true
+        kind_path: ["regarding#kind", "involvedObject#kind"]
+        name_path: ["regarding#name", "involvedObject#name"]
+        namespace_path: ["regarding#namespace", "involvedObject#namespace"]
+        api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Event Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["involved_obj", "reporter", "message", "reason", "type", "seen", "first_seen", "count"]
+    rows:
+      count:
+        header: [["Count:", ["main", "infoheader"]]]
+        paths:
+        - path: ["series#count", "deprecatedCount", "count"]
+          pathtype: "value"
+          type: "raw"
+        default: -1
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      first_seen:
+        header: [["First Seen:", ["main", "infoheader"]]]
+        paths:
+        - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+          pathtype: "value"
+          type: "timestamp"
+        formatter: "age"
+        align: "right"
+      involved_obj:
+        header: [["I", ["main", "infoheader_shortcut"]], ["nvolved Object:", ["main", "infoheader"]]]
+        paths:
+        - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "note"
+          pathtype: "value"
+          type: "str"
+          replace_quotes: "same"
+      reason:
+        header: [["Reason:", ["main", "infoheader"]]]
+        path: "reason"
+        type: "str"
+        default: "<unset>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              {%- for line in event_reasons.split("\n") %}
+              {{ line }}
+              {%- endfor %}
+      reporter:
+        header: [["Reporter:", ["main", "infoheader"]]]
+        paths:
+        - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
+          default: ["", ""]
+          # This is needed, because the old Events API can return the new fields empty
+          fallback_on_empty: true
+          pathtype: "tuple"
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "generic"
+      seen:
+        header: [["Last Seen:", ["main", "infoheader"]]]
+        paths:
+        - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+          pathtype: "value"
+          type: "timestamp"
+        formatter: "age"
+        align: "right"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "type"
+        type: "str"
+        default: "<unset>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Error:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Normal:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Warning:
+                field_colors:
+                - context: "main"
+                  type: "status_admin"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+  shortcuts:
+    "Open involved object":
+      key: "i"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for involved object"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: ["regarding#name", "involvedObject#name"]
+        namespace_path: ["regarding#namespace", "involvedObject#namespace"]
+        kind_path: ["regarding#kind", "involvedObject#kind"]
+        api_version_path: ["regarding#apiVersion", "involvedObject#apiVersion"]

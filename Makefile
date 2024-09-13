@@ -438,6 +438,9 @@ check_theme_use: setup_tests
 		./tests/check_theme_use $$theme $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py ;\
 	done
 
+build:
+	./build.py views/templates views/variables views
+
 # This rule is used when making a system-wide install
 INSTALL := install --mode=755
 INSTALL_DATA := install --mode=644
@@ -458,4 +461,5 @@ install:
 	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
 	tar cf - --exclude=.*.swp clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
-	tar cf - --exclude=.*.swp views parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) || printf -- "Installation failed.\n"
+	tar cf - --exclude=.*.swp parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) &&\
+	cp views/*.yaml $(DESTDIR)$(CMT_DATA_DIR)/views || printf -- "Installation failed.\n"
