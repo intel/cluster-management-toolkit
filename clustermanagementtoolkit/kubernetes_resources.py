@@ -1699,22 +1699,50 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "fpgaregions",
     },
     # gateway.networking.k8s.io
-    ("ReferenceGrant", "gateway.networking.k8s.io"): {
+    ("BackendLBPolicy", "gateway.networking.k8s.io"): {
         "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
-        "api": "referencegrants",
+        "api": "backendlbpolicies",
+    },
+    ("BackendTLSPolicy", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1alpha3/"],
+        "api": "backendtlspolicies",
     },
     ("GatewayClass", "gateway.networking.k8s.io"): {
-        "api_paths": ["apis/gateway.networking.k8s.io/v1beta1/"],
+        "api_paths": ["apis/gateway.networking.k8s.io/v1/",
+                      "apis/gateway.networking.k8s.io/v1beta1/"],
         "api": "gatewayclasses",
         "namespaced": False,
     },
     ("Gateway", "gateway.networking.k8s.io"): {
-        "api_paths": ["apis/gateway.networking.k8s.io/v1beta1/"],
+        "api_paths": ["apis/gateway.networking.k8s.io/v1/",
+                      "apis/gateway.networking.k8s.io/v1beta1/"],
         "api": "gateways",
     },
+    ("GRPCRoute", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1/"],
+        "api": "grpcroutes",
+    },
     ("HTTPRoute", "gateway.networking.k8s.io"): {
-        "api_paths": ["apis/gateway.networking.k8s.io/v1beta1/"],
+        "api_paths": ["apis/gateway.networking.k8s.io/v1/",
+                      "apis/gateway.networking.k8s.io/v1beta1/"],
         "api": "httproutes",
+    },
+    ("ReferenceGrant", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1beta1/",
+                      "apis/gateway.networking.k8s.io/v1alpha2/"],
+        "api": "referencegrants",
+    },
+    ("TCPRoute", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
+        "api": "tcproutes",
+    },
+    ("TLSRoute", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
+        "api": "tlsroutes",
+    },
+    ("UDPRoute", "gateway.networking.k8s.io"): {
+        "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
+        "api": "udproutes",
     },
     # gpu.resource.intel.com
     ("DeviceClassParameters", "gpu.resource.intel.com"): {
