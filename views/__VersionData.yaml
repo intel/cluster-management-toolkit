@@ -186,6 +186,24 @@ listview:
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "rke2"
+      pathtype: "dict"
+      _extra_data:
+        name: "RKE2"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/local/bin/rke2"
+            args: ["--version"]
+            version_regex: '^rke2 version v(\d+)(\.)(\d+)(\.)(\d+)(\+)([a-z0-9]+).*'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/kargo_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
   infogetter: "generic_infogetter"
   field_indexes:
     Normal:
