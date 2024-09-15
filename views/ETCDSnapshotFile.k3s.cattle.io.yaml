@@ -1,0 +1,88 @@
+kind: "ETCDSnapshotFile"
+api_family: "k3s.cattle.io"
+default_command: "etcdsnapshotfiles"
+command:
+- "etcdsnapshots"
+- "etcdsnapshot"
+listview:
+  name: "etcd Snapshot Files"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["name", "snapshotname", "node", "location", "size", "ready_to_use", "age"]
+  fields:
+    location:
+      header: "Location:"
+      path: "spec#location"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "url"
+    node:
+      header: "Node:"
+      path: "spec#nodeName"
+      type: "host"
+      default: "<none>"
+      formatting:
+        field_colors:
+        - type: "host"
+    ready_to_use:
+      header: "Ready to Use:"
+      path: "status#readyToUse"
+      type: "str"
+    size:
+      header: "Size:"
+      path: "status#size"
+      type: "str"
+      formatter: "numerical_with_units"
+    snapshotname:
+      header: "Snapshot Name:"
+      path: "spec#snapshotName"
+      type: "str"
+infoview:
+  name: "etcd Snapshot File Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["snapshotname", "node", "location", "size", "ready_to_use"]
+    rows:
+      location:
+        header: [["Location:", ["main", "infoheader"]]]
+        path: "spec#location"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      node:
+        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      ready_to_use:
+        header: [["Ready to Use:", ["main", "infoheader"]]]
+        path: "status#readyToUse"
+        type: "str"
+      size:
+        header: [["Size:", ["main", "infoheader"]]]
+        path: "status#size"
+        type: "str"
+        formatter: "numerical_with_units"
+      snapshotname:
+        header: [["Snapshot Name:", ["main", "infoheader"]]]
+        path: "spec#snapshotName"
+        type: "str"
+  shortcuts:
+    "Node":
+      key: "n"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "spec#nodeName"
