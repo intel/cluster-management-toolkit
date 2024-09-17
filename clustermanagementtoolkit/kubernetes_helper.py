@@ -1322,7 +1322,7 @@ class KubernetesHelper:
 
             for obj2 in vlist2:
                 # Try to get the version
-                for container in deep_get(obj2, DictPath("spec#containers"), []):
+                for container in deep_get(obj2, DictPath("status#containerStatuses"), []):
                     if deep_get(container, DictPath("name"), "") != container_name:
                         continue
                     image_version = get_image_version(deep_get(container, DictPath("image"), ""))
