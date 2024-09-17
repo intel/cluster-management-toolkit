@@ -5603,8 +5603,8 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     ansithemeprint([ANSIThemeStr("\nControl plane setup successful", "success")])
 
     if k8s_distro == "rke2":
-        ansithemeprint([ANSIThemeStr("\nNote", "note")])
-        ansithemeprint([ANSIThemeStr(": If this is an RKE2 installation you may need "
+        ansithemeprint([ANSIThemeStr("\nNote", "note")],
+                        ANSIThemeStr(": If this is an RKE2 installation you may need "
                                      "to substitute ", "default"),
                         ANSIThemeStr("127.0.0.1", "hostname")])
         ansithemeprint([ANSIThemeStr("in ", "default"),
