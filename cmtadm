@@ -1152,7 +1152,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
         if security_violations != [SecurityStatus.OK]:
             ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": The CNI deployment file {cni_filename} is either "
+                            ANSIThemeStr(f": The CNI deployment file {cni_filename} is either "
                                          "missing or unsafe to use; aborting.",
                                          "default")], stderr=True)
             sys.exit(errno.EINVAL)
