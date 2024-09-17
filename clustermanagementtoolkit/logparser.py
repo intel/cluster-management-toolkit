@@ -2342,6 +2342,7 @@ def key_value_with_leading_message(message: str,
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
+    allow_bare_keys = deep_get(options, DictPath("allow_bare_keys"), False)
 
     # This warning seems incorrect
     # pylint: disable-next=global-variable-not-assigned
@@ -2366,7 +2367,7 @@ def key_value_with_leading_message(message: str,
 
         for item in tmp[1:]:
             # we could not parse this as "msg key=value"; give up
-            if "=" not in item:
+            if "=" not in item and not allow_bare_keys:
                 return facility, severity, message, remnants
         rest = message[len(tmp[0]):].lstrip()
         new_message = tmp[0]
