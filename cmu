@@ -7971,7 +7971,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
 
     if obj is not None:
         kind = deep_get_with_fallback(obj, kind_path, kind)
-        if kind is not None and kind and isinstance(api_version_path, str):
+        if kind is not None and kind and isinstance(api_version_path, list):
             api_version = deep_get_with_fallback(obj, api_version_path)
             if api_version is not None:
                 if "/" in api_version:
