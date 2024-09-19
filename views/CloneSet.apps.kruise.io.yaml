@@ -1,18 +1,14 @@
-kind: "StatefulSet"
+kind: "CloneSet"
 api_family: "apps.kruise.io"
-default_command: "statefulsets"
-command:
-- "kruisests"
+default_command: "clonesets"
 listview:
-  name: "Stateful Sets"
+  name: "Clone Sets"
   group: "Kruise"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "containers", "images", "age"]
-      sortcolumn: "namespace"
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "containers", "images", "age"]
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "age"]
-      sortcolumn: "namespace"
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "age"]
   fields:
     containers:
       header: "Containers:"
@@ -33,23 +29,12 @@ listview:
         - type: "version"
     current_replicas:
       header: "Current:"
-      paths:
-      - path: ["status#currentReplicas", "spec#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
-      formatter: "value_mapper"
+      path: "status#replicas"
+      default: 0
+      type: "int"
       formatting:
-        mapping:
-          ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+        field_colors:
+        - type: "numerical"
       align: "right"
     desired_replicas:
       header: "Desired:"
@@ -63,7 +48,7 @@ listview:
     ready_replicas:
       header: "Ready:"
       paths:
-      - path: ["status#readyReplicas", "status#currentReplicas"]
+      - path: ["status#readyReplicas", "status#replicas"]
         pathtype: "comparison"
         default: [0, 0]
       formatter: "value_mapper"
@@ -94,22 +79,40 @@ listview:
         pathtype: "items"
         subpaths:
         - subpath: "image"
-          regex: ["^(.+)/([^:^/]+):(.+?)@.*", "^(.+)/([^:^/]+):(.+)"]
+          regex: ["^([^:]+):(.+)"]
         type: "raw"
       formatter: "list"
       formatting:
         field_colors:
         - type: "generic"
         - type: "generic"
-        - type: "version"
         field_separators:
         - type: "field"
         - type: "field"
-        - type: "version"
     uptodate_replicas:
       header: "Up to Date:"
       paths:
-      - path: ["status#updatedReplicas", "status#currentReplicas"]
+      - path: ["status#updatedReplicas", "status#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+      align: "right"
+    uptodate_ready_replicas:
+      header: "Up to Date Ready:"
+      paths:
+      - path: ["status#updatedReadyReplicas", "status#replicas"]
         pathtype: "comparison"
         default: [0, 0]
       formatter: "value_mapper"
@@ -148,11 +151,11 @@ listview:
         confirm: true
         actionfunc: "restart_resource_rollout"
 infoview:
-  name: "Stateful Set Info"
+  name: "Clone Set Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "service_name", "pod_management_policy", "update_strategy", "replicas", "revision_history_limit", "collision_count"]
+        fields: ["label_selector", "set_based_selector", "update_strategy", "replicas", "revision_history_limit", "collision_count"]
     rows:
       collision_count:
         header: [["Collision Count:", ["main", "infoheader"]]]
@@ -173,19 +176,17 @@ infoview:
           - type: "value"
           field_separators:
           - type: "selector"
-      pod_management_policy:
-        header: [["Pod Management Policy:", ["main", "infoheader"]]]
-        path: "spec#podManagementPolicy"
-        type: "str"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#replicas"], " Desired", ["status#currentReplicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Updated"]
+        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Updated", ["status#updatedReadyReplicas"], " Updated Ready"]
           pathtype: "tuple"
           default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
+          - type: "numerical"
+          - type: "generic"
           - type: "numerical"
           - type: "generic"
           - type: "numerical"
@@ -202,17 +203,14 @@ infoview:
           - type: "no_pad"
           - type: "fraction_spaced"
           - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
       revision_history_limit:
         header: [["Revision History Limit:", ["main", "infoheader"]]]
         path: "spec#revisionHistoryLimit"
         default: "<unset>"
         type: "int"
         formatter: "numerical"
-      service_name:
-        header: [["Service Name:", ["main", "infoheader"]]]
-        path: "spec#serviceName"
-        default: "<unset>"
-        type: "str"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
@@ -242,6 +240,15 @@ infoview:
           - key: "spec#updateStrategy#type"
             eq: "RollingUpdate"
           default: ["RollingUpdate", "", "", "1", "", "", "<unset>", "", "", "<unset>", "", "", "<unset>", ""]
+        - path: [["spec#updateStrategy#type"],
+                 " (", "Partition: ", ["spec#updateStrategy#partition"], ", ",
+                 "Max Unavailable: ", ["spec#updateStrategy#maxUnavailable"], ", ",
+                 "Max Surge: ", ["spec#updateStrategy#maxSurge"],
+                 ")"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#updateStrategy#type"
+            eq: "ReCreate"
         - path: [["spec#updateStrategy#type"]]
           pathtype: "tuple"
           when:
@@ -270,6 +277,18 @@ infoview:
           field_separators:
           - type: "no_pad"
   shortcuts:
+    "Volume Claim template":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show volume claim template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Volume Claim template"
+        _pass_obj: true
+        path: "spec#volumeClaimTemplates"
+        include_root: true
     "Pod template":
       key: "t"
       modifier: "shift"
