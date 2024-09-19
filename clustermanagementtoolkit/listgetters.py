@@ -1837,10 +1837,18 @@ def listgetter_configmap_data(obj: Dict, **kwargs: Any) -> Tuple[List[Dict], int
     return vlist, 200
 
 
-# Return all items of a dict as a list of dicts
-# with the key and the value in the fields
-# "key" and "value", respectively
 def listgetter_dict_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Given a dict, return a list of dicts.
+    The format of the newly generated dict is:
+    {"key": key_from_dict, "value": value_from_dict}
+    This is to ensure that we can get the key without knowing the name of the key
+
+        Parameters:
+            obj (Dict): The object to convert to a list
+        Returns:
+            ([Dict]): The list representation of the dict
+    """
     path = deep_get(kwargs, DictPath("path"))
     vlist = []
     for key, value in deep_get(obj, DictPath(path), {}).items():
