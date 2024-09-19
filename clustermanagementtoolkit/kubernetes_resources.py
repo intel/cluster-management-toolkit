@@ -453,6 +453,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/apps.kruise.io/v1alpha1/"],
         "api": "daemonsets",
     },
+    ("ImageListPullJob", "apps.kruise.io"): {
+        "api_paths": ["apis/apps.kruise.io/v1alpha1/"],
+        "api": "imagelistpulljobs",
+    },
     ("ImagePullJob", "apps.kruise.io"): {
         "api_paths": ["apis/apps.kruise.io/v1alpha1/"],
         "api": "imagepulljobs",
