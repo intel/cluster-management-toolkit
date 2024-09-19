@@ -1,0 +1,69 @@
+kind: "PodProbeMarker"
+api_family: "apps.kruise.io"
+default_command: "podprobemarkers"
+listview:
+  name: "Pod Probe Markers"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Pod Probe Markers Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector", "set_based_selector"]
+    rows:
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      set_based_selector:
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__PodProbeMarkerProbe"
+      api_family: "apps.kruise.io"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#probes"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "container_name", "pod_condition_type"]
+    fields:
+      container_name:
+        header: "Container Name:"
+        path: "containerName"
+        type: "str"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      pod_condition_type:
+        header: "Pod Condition Type:"
+        path: "podConditionType"
+        type: "str"

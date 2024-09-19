@@ -1,0 +1,68 @@
+kind: "PersistentPodState"
+api_family: "apps.kruise.io"
+default_command: "persistentpodstates"
+listview:
+  name: "Persistent Pod States"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Persistent Pod State Info"
+  infopad:
+  listpad:
+    listgetter: "listgetter_dict_list"
+    listgetter_args:
+      path: "status#podStates"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "node_name", "topology_labels"]
+    fields:
+      name:
+        header: "Name:"
+        path: "key"
+        type: "str"
+      node_name:
+        header: "Node Name:"
+        path: "value#nodeName"
+        type: "str"
+      topology_labels:
+        header: "Topology Labels:"
+        paths:
+        - path: ["value#nodeTopologyLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+  shortcuts:
+    "Open target reference":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#targetRef#kind"
+        api_version_path: "spec#targetRef#apiVersion"
+        name_path: "spec#targetRef#name"
+        namespace_path: "metadata#namespace"
+    "Preferred Persistent Topology":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show preferrred persistent topology"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Preferred Persistent Topology"
+        _pass_obj: true
+        path: "spec#preferredPersistentTopology"
+        include_root: true
