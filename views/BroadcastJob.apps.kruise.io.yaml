@@ -1,0 +1,187 @@
+kind: "BroadcastJob"
+api_family: "apps.kruise.io"
+default_command: "broadcastjobs"
+command:
+- "bcastjobs"
+- "bcastjob"
+listview:
+  name: "Broadcast Jobs"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "desired_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    active_replicas:
+      header: "Active:"
+      path: "status#active"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    desired_replicas:
+      header: "Desired:"
+      path: "status#desired"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    failed_replicas:
+      header: "Failed:"
+      path: "status#failed"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "completed":
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            "failed":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "paused":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "running":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+    succeeded_replicas:
+      header: "Succeeded:"
+      path: "status#succeeded"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+      align: "right"
+infoview:
+  name: "Broadcast Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["phase", "completion_policy_header", "completion_policy_ttl_seconds_after_finished", "completion_policy_type", "failure_policy_header", "failure_policy_type", "replicas"]
+    rows:
+      completion_policy_header:
+        header: [["Completion Policy:", ["main", "infoheader"]]]
+      completion_policy_ttl_seconds_after_finished:
+        header: [["  TTL Seconds After Finished:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#ttlSecondsAfterFinished"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      completion_policy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#type"
+        type: "str"
+      failure_policy_header:
+        header: [["Failure Policy:", ["main", "infoheader"]]]
+      failure_policy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy#type"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "completed":
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              "failed":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "paused":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+  shortcuts:
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"
