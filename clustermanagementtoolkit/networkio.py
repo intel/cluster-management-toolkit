@@ -366,16 +366,25 @@ def download_files(directory: str,
                 retval = False
                 break
 
-        if url.startswith("http://"):
-            r1 = pm.request("GET", url)  # type: ignore
-        elif url.startswith("https://"):
-            r1 = spm.request("GET", url)  # type: ignore
-        else:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": Unknown or missing protocol; URL ", "default"),
-                            ANSIThemeStr(f"{url}", "url")], stderr=True)
-            retval = False
-            continue
+        try:
+            if url.startswith("http://"):
+                r1 = pm.request("GET", url)  # type: ignore
+            elif url.startswith("https://"):
+                r1 = spm.request("GET", url)  # type: ignore
+            else:
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": Unknown or missing protocol; URL ", "default"),
+                                ANSIThemeStr(f"{url}", "url")], stderr=True)
+                retval = False
+                continue
+        except urllib3.exceptions.MaxRetryError as e:
+            if "No route to host" in str(e):
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": No route to host; URL ", "default"),
+                                ANSIThemeStr(f"{url}", "url")], stderr=True)
+                retval = False
+                continue
+            raise
 
         if r1.status == 200:
             # Check that we actually got any data
