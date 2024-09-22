@@ -2064,12 +2064,9 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
     is_event: bool = deep_get(options, DictPath("is_event"), False)
 
-    # Replace embedded quotes with fancy quotes
-    message = message.replace("\\\"", "”")
-
     # split all key=value pairs
     key_value_regex = re.compile(r"^(.*?)=(.*)")
-    tmp = re.findall(r"(?:\".*?\"|\S)+", message)
+    tmp = re.findall(r"(?:\".*?\"|\S)+", message.replace("\\\"", "<<<quote>>>"))
     # pylint: disable-next=too-many-nested-blocks
     if tmp is not None:
         d = {}
@@ -2084,7 +2081,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
                     return facility, severity, message, remnants
             else:
                 key = tmp2[1]
-                value = tmp2[2]
+                value = tmp2[2].replace("<<<quote>>>", "\\\"")
                 if key not in d:
                     d[key] = value
                 else:
@@ -2354,7 +2351,7 @@ def key_value_with_leading_message(message: str,
         return facility, severity, message, remnants
 
     # Split into substrings based on spaces
-    tmp = re.findall(r"(?:\".*?\"|\S)+", message)
+    tmp = re.findall(r"(?:\".*?\"|\S)+", message.replace("\\\"", "<<<quote>>>"))
     if tmp is not None and tmp:
         if "=" in tmp[0]:
             # Try parsing this as regular key_value

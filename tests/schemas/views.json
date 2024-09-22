@@ -474,13 +474,13 @@
 				"bool",
 				"cpu_usage",
 				"cpu_usage_round",
+				"disk_usage",
 				"int",
 				"kind",
 				"kind_api_group",
 				"mem_usage",
 				"name",
 				"raw",
-				"regex_to_tuples",
 				"str",
 				"timestamp"
 			]
@@ -842,6 +842,7 @@
 				"comparison",
 				"count",
 				"dictfields",
+				"dictkeys",
 				"dictlist",
 				"fieldgetter",
 				"items",
@@ -1235,7 +1236,13 @@
 				},
 				"labels": {
 					"description": "Do the list entries support labels",
-					"type": "boolean"
+					"oneOf": [
+						{
+							"$ref": "#/definitions/simple_path"
+						}, {
+							"type": "null"
+						}
+					]
 				},
 				"listgetter": {
 					"description": "Function to use to get list entries",
@@ -1892,7 +1899,15 @@
 												},
 												"api_family_path": {
 													"description": "Path to get the API family of the object from",
-													"$ref": "#/definitions/simple_path"
+													"anyof": [
+														{
+															"$ref": "#/definitions/simple_path"
+														}, {
+															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
+															"type": "integer",
+															"minimum": 0
+														}
+													]
 												},
 												"api_group": {
 													"$ref": "#/definitions/api_family"
@@ -2006,7 +2021,7 @@
 														}, {
 															"description": "a field index to the field in the data returned by the itemgetter to get the data from",
 															"type": "integer",
-															"minimum": 0
+															"minimum": -1
 														}
 													]
 												},

@@ -5147,7 +5147,7 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
         if deep_get(viewref, DictPath("is_taggable"), True):
             helptext += helptexts.tagactions
             helptext += helptexts.spacer
-            if deep_get(viewref, DictPath("labels"), True):
+            if deep_get(viewref, DictPath("labels")):
                 helptext += helptexts.selectoractions
                 helptext += helptexts.spacer
 
@@ -5244,8 +5244,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
     reversible = deep_get(viewref, DictPath("reversible"), True)
     activatedfun = deep_get(viewref, DictPath("activatedfun"))
     on_activation = deep_get(viewref, DictPath("listpad#on_activation"), {})
-    labels = deep_get(viewref, DictPath("labels"), "metadata#labels")
-    annotations = deep_get(viewref, DictPath("annotations"), "metadata#annotations")
+    labels = deep_get(viewref, DictPath("labels"))
+    annotations = deep_get(viewref, DictPath("annotations"))
     extraref = deep_get(viewref, DictPath("extraref"))
     data = deep_get(viewref, DictPath("data"), None)
     if data is not None:
@@ -10102,7 +10102,10 @@ def populate_views(force_refresh: bool = False) -> None:
                         sys.exit(f"{activatedfun} is not in the activatedfun allow list")
                     activatedfun = _activatedfun
 
-            labels = deep_get(d, DictPath("listview#labels"))
+            if "labels" in deep_get(d, DictPath("listview"), {}):
+                labels = deep_get(d, DictPath("listview#labels"))
+            else:
+                labels = "metadata#labels"
 
             listview_entry = {
                 "kind": (kind, api_family),
@@ -10265,8 +10268,14 @@ def populate_views(force_refresh: bool = False) -> None:
                 on_activation["kind"] = viewoverride
                 on_activation.pop("api_family", "")
 
-            labels = deep_get(d, DictPath("infoview#labels"))
-            annotations = deep_get(d, DictPath("infoview#annotations"))
+            if "labels" in deep_get(d, DictPath("listview"), {}):
+                labels = deep_get(d, DictPath("listview#labels"))
+            else:
+                labels = "metadata#labels"
+            if "annotations" in deep_get(d, DictPath("listview"), {}):
+                annotations = deep_get(d, DictPath("infoview#annotations"))
+            else:
+                annotations = "metadata#annotations"
 
             sortcolumn = deep_get(listpad, DictPath("sortcolumn"))
             reversible = deep_get(listpad, DictPath("reversible"), True)
