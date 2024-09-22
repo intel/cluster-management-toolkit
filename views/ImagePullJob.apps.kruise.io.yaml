@@ -9,7 +9,7 @@ listview:
   group: "Kruise"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "total_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "age"]
+      fields: ["namespace", "name", "total_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "image", "pull_policy", "age", "message"]
       sortcolumn: "namespace"
   fields:
     active_replicas:
@@ -45,6 +45,27 @@ listview:
             - context: "main"
               type: "status_not_ok"
       align: "right"
+    image:
+      header: "Image:"
+      paths:
+      - path: "spec#image"
+        pathtype: "regex"
+        regex: "^([^:]+):(.*)"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
+    message:
+      header: "Message:"
+      path: "status#message"
+      type: "str"
+    pull_policy:
+      header: "Pull Policy:"
+      path: "spec#imagePullPolicy"
+      type: "str"
     succeeded_replicas:
       header: "Succeeded:"
       path: "status#succeeded"
@@ -76,3 +97,180 @@ listview:
 infoview:
   name: "Image Pull Job Info"
   infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "node_selector_header", "node_selector_names", "node_selector_label", "pod_selector_header", "pod_selector_label", "pod_selector_set_based", "pull_policy_header", "pull_policy_policy", "pull_policy_backoff_limit", "pull_policy_timeout_seconds", "completion_policy_header", "completion_policy_active_deadline_seconds", "completion_policy_ttl_seconds_after_finished", "completion_policy_type", "parallelism", "replicas", "completion_time_with_age", "message"]
+    rows:
+      node_selector_header:
+        header: [["Node Selector:", ["main", "infoheader"]]]
+      node_selector_names:
+        header: [["  Na", ["main", "infoheader"]], ["m", ["main", "infoheader_shortcut"]], ["es:", ["main", "infoheader"]]]
+        path: "spec#selector#names"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      node_selector_label:
+        header: [["  Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      pod_selector_header:
+        header: [["Pod Selector:", ["main", "infoheader"]]]
+      pod_selector_label:
+        header: [["  Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#podSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      pod_selector_set_based:
+        header: [["  Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#podSelector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      completion_policy_active_deadline_seconds:
+        header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#activeDeadlineSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      completion_policy_header:
+        header: [["Completion Policy:", ["main", "infoheader"]]]
+      completion_policy_ttl_seconds_after_finished:
+        header: [["  TTL Seconds After Finished:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#ttlSecondsAfterFinished"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      completion_policy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#type"
+        type: "str"
+      completion_time_with_age:
+        header: [["Completion Time:", ["main", "infoheader"]]]
+        paths:
+        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+          pathtype: "timestamp_with_age"
+        formatter: "timestamp_with_age"
+        formatting:
+          field_colors:
+          # This is a meta-type, indicating where the timestamp goes
+          - type: "timestamp"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          # This is a meta-type, indicating where the age goes
+          - type: "age"
+          - type: "generic"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        type: "str"
+      parallelism:
+        header: [["Parallelism:", ["main", "infoheader"]]]
+        path: "spec#parallelism"
+        default: 1
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      pull_policy_backoff_limit:
+        header: [["  Backoff Limit:", ["main", "infoheader"]]]
+        path: "spec#pullPolicy#backoffLimit"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      pull_policy_header:
+        header: [["Pull Policy:", ["main", "infoheader"]]]
+      pull_policy_policy:
+        header: [["  Policy:", ["main", "infoheader"]]]
+        path: "spec#imagePullPolicy"
+        type: "str"
+      pull_policy_timeout_seconds:
+        header: [["  Timeout Seconds:", ["main", "infoheader"]]]
+        path: "spec#pullPolicy#timeoutSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+  shortcuts:
+    "Show node names":
+      key: "m"
+      read_only: true
+      helptext: "List node name selector"
+      widget: "windowwidget"
+      title: "Node names:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#selector#names"]
+      # Not supported for now
+      sortcolumn: "names"

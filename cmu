@@ -635,29 +635,6 @@ def __process_sum_mem_usage(values: List[str]) -> str:
     return normalise_mem_bytes_to_str(mem_usage_sum)
 
 
-def __process_regex_to_sequence(values: Union[str, List[str]],
-                                match_regex: str) -> Union[Sequence[Tuple[str]], str]:
-    new_values: List[Union[str, Tuple[str]]] = []
-
-    if values:
-        if isinstance(values, str):
-            values = [values]
-        compiled_regex = re.compile(match_regex)
-        for item in values:
-            tmp_match = compiled_regex.match(item)
-            groups = []
-            if tmp_match is not None:
-                for group in tmp_match.groups():
-                    if group is not None:
-                        groups.append(group)
-                new_values.append(tuple(groups))
-
-    if len(new_values) == 1:
-        return new_values[0]
-
-    return new_values
-
-
 def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: str,
                         formatter: str) -> Union[datetime, int]:
     if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
@@ -754,8 +731,6 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
             new_value = normalise_mem_bytes_to_str(tmp_int)
     elif vtype == "disk_usage":
         new_value = cmtlib.disksize_to_human(value)
-    elif vtype == "regex_to_tuples":
-        new_value = __process_regex_to_sequence(cast(Union[List[str], str], value), regex_)
     elif vtype == "len":
         if value is None:
             new_value = "0"
@@ -1484,7 +1459,12 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     else:
                         timediff = \
                             timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
-                        duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+                        if duration := timediff.days * 24 * 60 * 60 + timediff.seconds == 0:
+                            duration = 1
+                        # If the task completes so quickly that start_time == end_time
+                        # duration will end up as 0. The result of this would be that
+                        # it's represented as <unset>.
+                        # To work around this we set duration to 1 if duration == 0.
                     __values = []
                     for i, mpath in enumerate(mpaths):
                         if i == start_time_index:
