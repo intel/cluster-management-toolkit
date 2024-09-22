@@ -1,0 +1,78 @@
+kind: "ImagePullJob"
+api_family: "apps.kruise.io"
+default_command: "imagepulljobs"
+command:
+- "imgpulljobs"
+- "imgpulljob"
+listview:
+  name: "Image Pull Jobs"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "total_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "age"]
+      sortcolumn: "namespace"
+  fields:
+    active_replicas:
+      header: "Active:"
+      path: "status#activeReplicas"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    failed_replicas:
+      header: "Failed:"
+      path: "status#failed"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
+    succeeded_replicas:
+      header: "Succeeded:"
+      path: "status#succeeded"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+      align: "right"
+    total_replicas:
+      header: "Total:"
+      path: "status#totalReplicas"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Image Pull Job Info"
+  infopad:
