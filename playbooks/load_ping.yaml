@@ -5,20 +5,20 @@
       description: "Ping nodes by fetching /proc/{loadavg,meminfo,stat}"
       summary:
         "Other actions":
-        - description: "Pings hosts by fetching /proc/{loadavg,meminfo,stat}"
+          - description: "Pings hosts by fetching /proc/{loadavg,meminfo,stat}"
       # playbook_types:
-      # - "internal"
+      #   - "internal"
       category: "Information"
       quiet: true
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Fetching /proc/loadavg"
-    ansible.builtin.command: "cat /proc/loadavg"
-    changed_when: false
-  - name: "Fetching /proc/meminfo"
-    ansible.builtin.command: "cat /proc/meminfo"
-    changed_when: false
-  - name: "Fetching /proc/stat"
-    ansible.builtin.command: "cat /proc/stat"
-    changed_when: false
+    - name: "Fetching /proc/loadavg"
+      ansible.builtin.command: "cat /proc/loadavg"
+      changed_when: false
+    - name: "Fetching /proc/meminfo"
+      ansible.builtin.command: "cat /proc/meminfo"
+      changed_when: false
+    - name: "Fetching /proc/stat"
+      ansible.builtin.command: "cat /proc/stat"
+      changed_when: false
