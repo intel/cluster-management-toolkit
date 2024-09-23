@@ -11,7 +11,7 @@ This generates and post-processes elements for various more complex types
 # pylint: disable=too-many-lines
 
 import copy
-from datetime import date, datetime
+from datetime import datetime
 import re
 from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
 import yaml

@@ -1968,7 +1968,6 @@ def format_key_value(key: str, value: str,
     """
     force_severity = deep_get(kwargs, DictPath("force_severity"), False)
     error_keys = deep_get(kwargs, DictPath("error_keys"), ("error", "err"))
-    allow_bare_keys = deep_get(kwargs, DictPath("allow_bare_keys"), False)
     severity_name = f"severity_{loglevel_to_name(severity).lower()}"
     tmp: List[Union[ThemeRef, ThemeStr]]
 

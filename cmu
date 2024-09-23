@@ -681,8 +681,6 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
                 field_index (str): The field index for formatting of a particular kind
                 field_name (str): The name of the field the data originates from
                 formatter (str): Formatter to use (specifically used when processing timestamps)
-                regex_ (str): A regex to use to split a string value into multiple values
-                              (either a list or a tuple)
                 replace_quotes (str): Quote replacement policy (no, pretty, same)
                 view (str): The view being processed
         Returns:
@@ -692,7 +690,6 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
     field_index: str = deep_get(kwargs, DictPath("field_index"))
     field_name: str = deep_get(kwargs, DictPath("field_name"))
     formatter: str = deep_get(kwargs, DictPath("formatter"))
-    regex_: str = deep_get(kwargs, DictPath("regex_"))
     replace_quotes: str = deep_get(kwargs, DictPath("replace_quotes"))
     view: str = deep_get(kwargs, DictPath("view"))
 
