@@ -116,7 +116,7 @@
       changed_when: false
     - name: "Planning upgrade"
       ansible.builtin.shell: |
-        kubeadm upgrade plan --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        kubeadm upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
       changed_when: false
     - name: "Pulling Kubernetes images"
       ansible.builtin.shell: |

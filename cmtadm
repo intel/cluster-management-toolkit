@@ -4122,7 +4122,10 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
             FilePath("rke2_setup_node.yaml"),
         ]
 
-    join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+    if int(requested_minor) < 31:
+        join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+    else:
+        join_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
     minor_versions = []
     for minor_version in range(24, int(requested_minor) + 1):
@@ -5385,8 +5388,12 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         requested_major = split_tuple[0]
         requested_minor = split_tuple[1]
 
-        cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-        init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        if int(requested_minor) < 31:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        else:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         setup_extras["cluster_configuration_api_version"] = cluster_configuration_api_version
         setup_extras["init_configuration_api_version"] = init_configuration_api_version
@@ -6232,12 +6239,19 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
         # Now split the version tuple
         requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
-        cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-        init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        if int(requested_minor) < 31:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            upgrade_configuration_api_version = "<unused>"
+        else:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            upgrade_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
             "cluster_configuration_api_version": cluster_configuration_api_version,
             "init_configuration_api_version": init_configuration_api_version,
+            "upgrade_configuration_api_version": upgrade_configuration_api_version,
             # Add major/minor to extra_values
             "kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
         }
