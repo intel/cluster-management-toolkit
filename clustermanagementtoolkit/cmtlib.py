@@ -484,7 +484,7 @@ def age_to_seconds(age: str) -> int:
     seconds = 0
 
     if not isinstance(age, str):
-        raise TypeError(f"age is type {type(age)}, expected str")
+        raise TypeError(f"age {age} is type {type(age)}, expected str")
 
     if not age:
         return -1
@@ -515,7 +515,7 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
             TypeError: The input was not an integer
     """
     if not isinstance(seconds, int):
-        raise TypeError(f"age is type {type(seconds)}, expected int")
+        raise TypeError(f"age {seconds} is type {type(seconds)}, expected int")
 
     age = ""
     fields = 0
