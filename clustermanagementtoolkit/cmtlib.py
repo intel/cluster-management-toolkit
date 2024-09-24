@@ -1388,3 +1388,30 @@ def setup_paths() -> List[SecurityStatus]:
             if result != [SecurityStatus.OK]:
                 return result
     return [SecurityStatus.OK]
+
+
+def check_allowlist(allowlist: Dict, allowlist_name: str, value: Optional[Any],
+                    default: Optional[Any] = None, exit_on_fail: bool = True,
+                    allow_none: bool = False) -> Optional[Any]:
+    """
+    Check whether the provided value is in the allowlist,
+    and either return a default, or exit if it's not in the allowlist
+
+        Parameters:
+            allowlist (Dict): A list of allowed values and the corresponding return value
+            allowlist_name (str): The name of the allow list (used for exit message)
+            value (Any): A value that can be used as a dict key
+            default (Any): The value to return if the value isn't in the allow list
+            exit_on_fail (bool): Exit on failure
+            allow_none (bool): Allow None as value
+        Returns:
+            (Any): An acceptable value
+    """
+    if value is None and allow_none:
+        return None
+    if value not in allowlist.keys() and exit_on_fail:
+        allowed_values = ""
+        for key in allowlist.keys():
+            allowed_values += f"\n- {key}"
+        sys.exit(f"{value} is not in {allowlist_name}; allowed values:{allowed_values}\nAborting.")
+    return allowlist.get(value, default)

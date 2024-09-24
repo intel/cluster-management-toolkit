@@ -953,6 +953,7 @@ def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 itemgetter_allowlist: Dict[str, Callable] = {
     "get_allowed_ips": get_allowed_ips,
     "get_endpoint_slices": get_endpoint_slices,
+    "get_events": get_events,
     "get_image_list": get_image_list,
     "get_key_value": get_key_value,
     "get_dict_list": get_dict_list,

@@ -106,6 +106,7 @@ from clustermanagementtoolkit.cmtlib import none_timestamp, timestamp_to_datetim
 from clustermanagementtoolkit.cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
 from clustermanagementtoolkit.cmtlib import normalise_cpu_usage_to_millicores
 from clustermanagementtoolkit.cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
+from clustermanagementtoolkit.cmtlib import check_allowlist
 
 from clustermanagementtoolkit.curses_helper import CursesConfiguration, color_log_severity
 from clustermanagementtoolkit.curses_helper import format_helptext, get_mousemask
@@ -3616,52 +3617,6 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
         shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
 
-        # Always include the shortcuts for YAML dump and JSON dump, unless overridden
-        if deep_get(views, DictPath(f"{view}#shortcuts#View YAML dump")) is None:
-            shortcuts["View JSON dump of resource"] = {
-                "shortcut": ord("j"),
-                "read_only": True,
-                "helptext": ("J", "View JSON dump of resource"),
-                "action": "call",
-                "action_call": view_json,
-                "action_args": {
-                    "title": "JSON dump",
-                    "_named_title": True,
-                    "_pass_obj": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-            shortcuts["View YAML dump of resource"] = {
-                "shortcut": ord("y"),
-                "read_only": True,
-                "helptext": ("Y", "View YAML dump of resource"),
-                "action": "call",
-                "action_call": view_yaml,
-                "action_args": {
-                    "title": "YAML dump",
-                    "_named_title": True,
-                    "_pass_obj": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-        # Always include the shortcut for edit resource, unless overridden
-        if deep_get(views, DictPath(f"{view}#shortcuts#Edit resource")) is None:
-            shortcuts["Edit resource"] = {
-                "shortcut": ord("e"),
-                "read_only": False,
-                "helptext": ("E", "Edit resource"),
-                "action": "call",
-                "action_call": edit_resource,
-                "action_args": {
-                    "_pass_obj": True,
-                    "_pass_kind": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-
         for key, value in shortcuts.items():
             read_only = deep_get(value, DictPath("read_only"), False)
             if read_only_mode and not read_only:
@@ -5122,15 +5077,6 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
         if viewref["kind"] in infoviews:
             helptext += helptexts.openresource
 
-        # Always include the shortcut for YAML dump, unless overridden
-        if "shortcuts" not in viewref or "View YAML dump" not in viewref["shortcuts"]:
-            helptext.append(("J", "View JSON dump of resource"))
-            helptext.append(("Y", "View YAML dump of resource"))
-
-        # Always include the shortcut for edit resource, unless overridden
-        if "shortcuts" not in viewref or "Edit resource" not in viewref["shortcuts"]:
-            helptext.append(("E", "Edit resource"))
-
         if "shortcuts" in viewref:
             for shortcut in deep_get(viewref, DictPath("shortcuts")):
                 read_only = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#read_only"), False)
@@ -5176,10 +5122,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
         formatter = deep_get(obj, DictPath(formatter_path))
     elif formatter is not None:
         if isinstance(formatter, str):
-            _formatter = deep_get(formatter_allowlist, DictPath(formatter))
-            if _formatter is None:
-                raise ValueError(f"{formatter} is not in formatter_allowlist")
-            formatter = _formatter
+            formatter = check_allowlist(formatter_allowlist, "formatter_allowlist", formatter)
     obj_path = deep_get(kwargs, DictPath("obj_path"))
     title = None
     if obj_path is not None:
@@ -5327,66 +5270,6 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             "title": "Conditions:",
             "headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
             "itemgetter": itemgetters.get_conditions,
-        }
-
-    # Always include the shortcut for events unless overriden
-    if deep_get(viewref, DictPath("shortcuts#Show Events")) is None:
-        shortcuts["Show Events"] = {
-            "shortcut": ord("e"),
-            "read_only": True,
-            "helptext": ("E", "Show events"),
-            "widget": "windowwidget",
-            "selectable": True,
-            "action": "call",
-            "action_call": resourceinfodispatch_with_lookup,
-            "action_args": {
-                "kind": "Event",
-                "namespace_path": 0,
-                "name_path": 1,
-            },
-            "title": "Events:",
-            "headers": ["Namespace:", "Name:", "Last Seen:", "Status:",
-                        "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-            "itemgetter": itemgetters.get_events,
-        }
-
-    # Always include the shortcut for YAML dump, unless overridden
-    if deep_get(viewref, DictPath("shortcuts#YAML")) is None:
-        shortcuts["View JSON dump of resource"] = {
-            "shortcut": ord("j"),
-            "read_only": True,
-            "helptext": ("J", "View JSON dump of resource"),
-            "action": "call",
-            "action_call": view_json,
-            "action_args": {
-                "title": "JSON dump",
-                "_pass_obj": True,
-            },
-        }
-        shortcuts["View YAML dump of resource"] = {
-            "shortcut": ord("y"),
-            "read_only": True,
-            "helptext": ("Y", "View YAML dump of resource"),
-            "action": "call",
-            "action_call": view_yaml,
-            "action_args": {
-                "title": "YAML dump",
-                "_pass_obj": True,
-            },
-        }
-
-    # Always include the shortcut for last applied configuration, unless overridden
-    if deep_get(viewref, DictPath("shortcuts#Last Applied Configuration")) is None:
-        shortcuts["Last Applied Configuration"] = {
-            "shortcut": ord("L"),
-            "read_only": True,
-            "helptext": ("[Shift] + L", "Show last applied configuration"),
-            "action": "call",
-            "action_call": view_last_applied_configuration,
-            "action_args": {
-                "_pass_obj": True,
-                "title": "Last applied configuration",
-            }
         }
 
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
@@ -6054,8 +5937,6 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     w_headers = deep_get(sc_value, DictPath("headers"))
                     if (w_itemgetter := deep_get(sc_value, DictPath("itemgetter"))) is None:
                         continue
-                    if isinstance(w_itemgetter, str):
-                        w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
                     w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
                     w_itemgetter_args["kubernetes_helper"] = kh
                     w_itemgetter_args["kh_cache"] = kh_cache
@@ -9693,6 +9574,7 @@ action_call_allowlist = {
     "create_namespace": create_namespace,
     "decode_and_view_data": decode_and_view_data,
     "decode_and_view_file_templates": decode_and_view_file_templates,
+    "edit_resource": edit_resource,
     "eventdispatch": eventdispatch,
     "export_data": export_data,
     "listviewdispatch": listviewdispatch,
@@ -9701,6 +9583,7 @@ action_call_allowlist = {
     "resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
     "set_cluster_context": set_cluster_context,
     "ssh_to_host": ssh_to_host,
+    "view_last_applied_configuration": view_last_applied_configuration,
     "view_obj": view_obj,
     "view_pod_logs": view_pod_logs,
     "view_json": view_json,
@@ -9996,11 +9879,11 @@ def populate_views(force_refresh: bool = False) -> None:
             name = deep_get(d, DictPath("listview#name"), "<missing>")
             group = deep_get(d, DictPath("listview#group"))
 
-            check_availability = deep_get(d, DictPath("listview#check_availability"), None)
-            if check_availability is not None:
-                if isinstance(check_availability, str):
-                    check_availability = deep_get(availability_checker_allowlist,
-                                                  DictPath(check_availability))
+            check_availability = \
+                check_allowlist(availability_checker_allowlist,
+                                "availability_checker_allowlist",
+                                deep_get(d, DictPath("listview#check_availability")),
+                                allow_none=True)
 
             sortcolumn = deep_get(d, DictPath("listview#sortcolumn"))
             reversible = deep_get(d, DictPath("listview#reversible"), True)
@@ -10065,20 +9948,20 @@ def populate_views(force_refresh: bool = False) -> None:
             # This complexity is required because if the key is missing we want to use the default,
             # but if the key is explicitly None we do not want any fallback
             if "infogetter" in deep_get(d, DictPath("listview")):
-                infogetter = deep_get(d, DictPath("listview#infogetter"))
-                if infogetter is not None:
-                    infogetter = \
-                        deep_get(infogetter_allowlist, DictPath(infogetter), generic_infogetter)
+                infogetter = check_allowlist(infogetter_allowlist, "infogetter_allowlist",
+                                             deep_get(d, DictPath("listview#infogetter")),
+                                             allow_none=True)
             else:
                 infogetter = generic_infogetter
 
-            listgetter_async = deep_get(d, DictPath("listview#listgetter_async"))
-            if listgetter_async is not None:
-                listgetter_async = deep_get(listgetter_async_allowlist, DictPath(listgetter_async))
+            listgetter_async = check_allowlist(listgetter_async_allowlist,
+                                               "listgetter_async_allowlist",
+                                               deep_get(d, DictPath("listview#listgetter_async")),
+                                               allow_none=True)
 
-            listgetter = deep_get(d, DictPath("listview#listgetter"))
-            if listgetter is not None:
-                listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
+            listgetter = check_allowlist(listgetter_allowlist, "listgetter_allowlist",
+                                         deep_get(d, DictPath("listview#listgetter")),
+                                         allow_none=True)
 
             # If both are unset we use the default asynchronous listgetter
             if "listgetter" not in deep_get(d, DictPath("listview")) and \
@@ -10091,13 +9974,9 @@ def populate_views(force_refresh: bool = False) -> None:
             if on_activation is None or "call" not in on_activation:
                 activatedfun = genericinfoloop
             else:
-                activatedfun = deep_get(on_activation, DictPath("call"))
-                if isinstance(activatedfun, str):
-                    _activatedfun = \
-                        deep_get(activatedfun_allowlist, DictPath(cast(str, activatedfun)))
-                    if _activatedfun is None:
-                        sys.exit(f"{activatedfun} is not in the activatedfun allow list")
-                    activatedfun = _activatedfun
+                activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
+                                               deep_get(on_activation, DictPath("call")),
+                                               allow_none=True)
 
             if "labels" in deep_get(d, DictPath("listview"), {}):
                 labels = deep_get(d, DictPath("listview#labels"))
@@ -10129,6 +10008,54 @@ def populate_views(force_refresh: bool = False) -> None:
             shortcuts = {}
 
             _shortcuts = deep_get(d, DictPath("listview#shortcuts"), {})
+
+            # Always include the shortcuts for YAML dump and JSON dump, unless overridden
+            if "View YAML dump" not in _shortcuts:
+                _shortcuts["View JSON dump of resource"] = {
+                    "key": "j",
+                    "read_only": True,
+                    "helptext": "View JSON dump of resource",
+                    "action": "call",
+                    "action_call": "view_json",
+                    "action_args": {
+                        "title": "JSON dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+                _shortcuts["View YAML dump of resource"] = {
+                    "key": "y",
+                    "read_only": True,
+                    "helptext": "View YAML dump of resource",
+                    "action": "call",
+                    "action_call": "view_yaml",
+                    "action_args": {
+                        "title": "YAML dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+
+            # Always include the shortcut for edit resource, unless overridden
+            if "Edit resource" not in _shortcuts:
+                _shortcuts["Edit resource"] = {
+                    "key": "e",
+                    "read_only": False,
+                    "helptext": "Edit resource",
+                    "action": "call",
+                    "action_call": "edit_resource",
+                    "action_args": {
+                        "_pass_obj": True,
+                        "_pass_kind": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+
             for shortcut in _shortcuts:
                 # If the shortcut is empty we are disabling a default shortcut
                 if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
@@ -10140,7 +10067,6 @@ def populate_views(force_refresh: bool = False) -> None:
                 helptext = deep_get(_shortcuts[shortcut], DictPath("helptext"), "<missing>")
                 action = deep_get(_shortcuts[shortcut], DictPath("action"), "<missing>")
                 action_args = deep_get(_shortcuts[shortcut], DictPath("action_args"), {})
-                action_call = deep_get(_shortcuts[shortcut], DictPath("action_call"))
                 queryfunc = deep_get(_shortcuts[shortcut], DictPath("queryfunc"))
                 queryval = deep_get(_shortcuts[shortcut], DictPath("queryval"))
                 query = deep_get(_shortcuts[shortcut], DictPath("query"))
@@ -10176,10 +10102,10 @@ def populate_views(force_refresh: bool = False) -> None:
                     "force_refresh": force_refresh,
                 }
                 if action == "call":
-                    _action_call = deep_get(action_call_allowlist, DictPath(action_call))
-                    if _action_call is None:
-                        sys.exit(f"{action_call} is not in the action_call allow list")
-                    shortcuts[shortcut]["action_call"] = _action_call
+                    shortcuts[shortcut]["action_call"] = \
+                        check_allowlist(action_call_allowlist, "action_call_allowlist",
+                                        deep_get(_shortcuts[shortcut], DictPath("action_call")),
+                                        allow_none=True)
 
             if shortcuts:
                 listview_entry["shortcuts"] = shortcuts
@@ -10248,12 +10174,9 @@ def populate_views(force_refresh: bool = False) -> None:
             listpad = deep_get(d, DictPath("infoview#listpad"), {})
 
             on_activation = deep_get(listpad, DictPath("on_activation"))
-            activatedfun = deep_get(on_activation, DictPath("call"))
-            if isinstance(activatedfun, str):
-                _activatedfun = deep_get(activatedfun_allowlist, DictPath(activatedfun))
-                if _activatedfun is None:
-                    sys.exit(f"{activatedfun} is not in the activatedfun allow list")
-                activatedfun = _activatedfun
+            activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
+                                           deep_get(on_activation, DictPath("call")),
+                                           allow_none=True)
             override_kind = deep_get(on_activation, DictPath("kind"))
             override_api_family = deep_get(on_activation, DictPath("api_family"), "")
             on_activation_extraref = deep_get(on_activation, DictPath("extraref"))
@@ -10320,9 +10243,10 @@ def populate_views(force_refresh: bool = False) -> None:
                 "no_reload_on_refresh": deep_get(d, DictPath("infoview#no_reload_on_refresh"),
                                                  False),
             }
-            objgetter = deep_get(infopad, DictPath("objgetter"))
-            if objgetter is not None:
-                infoview_entry["objgetter"] = deep_get(objgetter_allowlist, DictPath(objgetter))
+            infoview_entry["objgetter"] = \
+                check_allowlist(objgetter_allowlist, "objgetter_allowlist",
+                                deep_get(infopad, DictPath("objgetter")),
+                                allow_none=True)
 
             if listpad:
                 infoview_entry["listpad"]["on_activation"] = on_activation
@@ -10346,11 +10270,8 @@ def populate_views(force_refresh: bool = False) -> None:
                                      "listpad specified, but no infogetter is provided")
             else:
                 infoview_entry["listpad"]["infogetter"] = \
-                    deep_get(infogetter_allowlist, DictPath(list_infogetter))
-                if infoview_entry["listpad"]["infogetter"] is None:
-                    raise ValueError(f"View-file {view_file} is invalid: infogetter "
-                                     f"{list_infogetter} for listpad "
-                                     "is not in infogetter_allowlist")
+                    check_allowlist(infogetter_allowlist, "infogetter_allowlist",
+                                    list_infogetter)
                 infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
             if list_listgetter is None:
                 if listpad:
@@ -10358,16 +10279,77 @@ def populate_views(force_refresh: bool = False) -> None:
                                      "listpad specified, but no listgetter is provided")
             else:
                 infoview_entry["listpad"]["listgetter"] = \
-                    deep_get(listgetter_allowlist, DictPath(list_listgetter))
-                if infoview_entry["listpad"]["listgetter"] is None:
-                    raise ValueError(f"View-file {view_file} is invalid: listgetter "
-                                     f"{list_listgetter} for listpad "
-                                     "is not in listgetter_allowlist")
+                    check_allowlist(listgetter_allowlist, "listgetter_allowlist",
+                                    list_listgetter)
                 infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
 
             shortcuts = {}
 
             _shortcuts = deep_get(d, DictPath("infoview#shortcuts"), {})
+
+            # Always include the shortcuts for YAML dump and JSON dump, unless overridden
+            if "YAML" not in _shortcuts:
+                _shortcuts["View JSON dump of resource"] = {
+                    "key": "j",
+                    "read_only": True,
+                    "helptext": "View JSON dump of resource",
+                    "action": "call",
+                    "action_call": "view_json",
+                    "action_args": {
+                        "title": "JSON dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                }
+                _shortcuts["View YAML dump of resource"] = {
+                    "key": "y",
+                    "read_only": True,
+                    "helptext": "View YAML dump of resource",
+                    "action": "call",
+                    "action_call": "view_yaml",
+                    "action_args": {
+                        "title": "YAML dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                }
+
+            # Always include the shortcut for last applied configuration, unless overridden
+            if "Last Applied Configuration" not in _shortcuts:
+                _shortcuts["Last Applied Configuration"] = {
+                    "key": "l",
+                    "modifier": "shift",
+                    "read_only": True,
+                    "helptext": "Show last applied configuration",
+                    "action": "call",
+                    "action_call": "view_last_applied_configuration",
+                    "action_args": {
+                        "_pass_obj": True,
+                        "title": "Last applied configuration",
+                    }
+                }
+
+            # Always include the shortcut for events unless overriden
+            if "Show Events" not in _shortcuts:
+                _shortcuts["Show Events"] = {
+                    "key": "e",
+                    "read_only": True,
+                    "helptext": "Show events",
+                    "widget": "windowwidget",
+                    "selectable": True,
+                    "action": "call",
+                    "action_call": "resourceinfodispatch_with_lookup",
+                    "action_args": {
+                        "kind": "Event",
+                        "namespace_path": 0,
+                        "name_path": 1,
+                    },
+                    "title": "Events:",
+                    "headers": ["Namespace:", "Name:", "Last Seen:", "Status:",
+                                "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
+                    "itemgetter": "get_events",
+                }
+
             for shortcut in _shortcuts:
                 # If the shortcut is empty we are disabling a default shortcut
                 if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
@@ -10379,7 +10361,6 @@ def populate_views(force_refresh: bool = False) -> None:
                 helptext = deep_get(_shortcuts[shortcut], DictPath("helptext"), "<missing>")
                 action = deep_get(_shortcuts[shortcut], DictPath("action"), "<missing>")
                 action_args = deep_get(_shortcuts[shortcut], DictPath("action_args"), {})
-                action_call = deep_get(_shortcuts[shortcut], DictPath("action_call"))
                 queryfunc = deep_get(_shortcuts[shortcut], DictPath("queryfunc"))
                 queryval = deep_get(_shortcuts[shortcut], DictPath("queryval"))
                 query = deep_get(_shortcuts[shortcut], DictPath("query"))
@@ -10391,10 +10372,10 @@ def populate_views(force_refresh: bool = False) -> None:
                 w_title = deep_get(_shortcuts[shortcut], DictPath("title"))
                 w_headers = deep_get(_shortcuts[shortcut], DictPath("headers"))
                 w_selectable = deep_get(_shortcuts[shortcut], DictPath("selectable"))
-                w_itemgetter = deep_get(_shortcuts[shortcut], DictPath("itemgetter"))
-                if w_itemgetter is not None:
-                    if isinstance(w_itemgetter, str):
-                        w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
+                w_itemgetter = check_allowlist(itemgetter_allowlist, "itemgetter_allowlist",
+                                               deep_get(_shortcuts[shortcut],
+                                                        DictPath("itemgetter")),
+                                               allow_none=True)
                 w_itemgetter_args = deep_get(_shortcuts[shortcut], DictPath("itemgetter_args"), {})
                 _w_formatting = deep_get(_shortcuts[shortcut], DictPath("formatting"))
                 w_formatting = None
@@ -10427,7 +10408,7 @@ def populate_views(force_refresh: bool = False) -> None:
                     "helptext": (help_key, helptext),
                     "action": action,
                     "action_args": action_args,
-                    "action_call": action_args,
+                    "action_call": None,
                     "queryfunc": queryfunc,
                     "queryval": queryval,
                     "query": query,
@@ -10445,10 +10426,10 @@ def populate_views(force_refresh: bool = False) -> None:
                     "sortcolumn": w_sortcolumn,
                 }
                 if action == "call":
-                    _action_call = deep_get(action_call_allowlist, DictPath(action_call))
-                    if _action_call is None:
-                        sys.exit(f"{action_call} is not in the action_call allow list")
-                    shortcuts[shortcut]["action_call"] = _action_call
+                    shortcuts[shortcut]["action_call"] = \
+                        check_allowlist(action_call_allowlist, "action_call_allowlist",
+                                        deep_get(_shortcuts[shortcut], DictPath("action_call")),
+                                        allow_none=True)
 
             logpad = deep_get(d, DictPath("infoview#logpad"), {})
 
