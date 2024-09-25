@@ -6,3 +6,19 @@
   parser_rules:
   - name: "glog"
   - name: "tab_separated"
+- name: "k0smotron"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/k0sproject/k0s"
+    container_name: "controller"
+  parser_rules:
+  - name: "json"
+  - name: "key_value"
+  - name: "custom_line"
+    options:
+      block_start:
+      - matchtype: "startswith"
+        matchkey: "panic: runtime error"
+        matchline: "any"
+        format_block_start: true
+      loglevel: "critical"
