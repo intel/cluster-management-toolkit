@@ -12,8 +12,14 @@
   parser_rules:
   - name: "glog"
   - name: "key_value_with_leading_message"
+    options:
+      versions:
+      allow_bare_keys: true
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+    - matchtype: "regex"
+      matchkey: "^Flag.*has been deprecated"
+      loglevel: "warning"

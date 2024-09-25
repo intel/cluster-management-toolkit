@@ -3076,21 +3076,37 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "opentelemetrycollectors",
     },
     # operator.cluster.x-k8s.io
+    ("AddonProvider", "operator.cluster.x-k8s.io"): {
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/"],
+        "api": "addonproviders",
+    },
     ("BootstrapProvider", "operator.cluster.x-k8s.io"): {
-        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/",
+                      "apis/operator.cluster.x-k8s.io/v1alpha1/"],
         "api": "bootstrapproviders",
     },
     ("ControlPlaneProvider", "operator.cluster.x-k8s.io"): {
-        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/",
+                      "apis/operator.cluster.x-k8s.io/v1alpha1/"],
         "api": "controlplaneproviders",
     },
     ("CoreProvider", "operator.cluster.x-k8s.io"): {
-        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/",
+                      "apis/operator.cluster.x-k8s.io/v1alpha1/"],
         "api": "coreproviders",
     },
     ("InfrastructureProvider", "operator.cluster.x-k8s.io"): {
-        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha1/"],
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/",
+                      "apis/operator.cluster.x-k8s.io/v1alpha1/"],
         "api": "infrastructureproviders",
+    },
+    ("IPAMProvider", "operator.cluster.x-k8s.io"): {
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/"],
+        "api": "ipamproviders",
+    },
+    ("RuntimeExtensionProvider", "operator.cluster.x-k8s.io"): {
+        "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/"],
+        "api": "runtimeextensionproviders",
     },
     # operator.openshift.io
     ("Authentication", "operator.openshift.io"): {
