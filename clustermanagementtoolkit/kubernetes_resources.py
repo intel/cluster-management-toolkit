@@ -1945,6 +1945,30 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "azuremanagedmachinepools",
     },
+    ("DockerCluster", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockerclusters",
+    },
+    ("DockerClusterTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockerclustertemplates",
+    },
+    ("DockerMachinePool", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockermachinepools",
+    },
+    ("DockerMachinePoolTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockermachinepooltemplates",
+    },
+    ("DockerMachine", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockermachines",
+    },
+    ("DockerMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
+        "api": "dockermachinetemplates",
+    },
     ("GCPCluster", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "gcpclusters",
@@ -2033,6 +2057,22 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "pooledremotemachines",
     },
+    ("ProxmoxCluster", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha1/"],
+        "api": "proxmoxclusters",
+    },
+    ("ProxmoxClusterTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha1/"],
+        "api": "proxmoxclustertemplates",
+    },
+    ("ProxmoxMachine", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha1/"],
+        "api": "proxmoxmachines",
+    },
+    ("ProxmoxMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha1/"],
+        "api": "proxmoxmachinetemplates",
+    },
     ("RemoteCluster", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "remoteclusters",
@@ -2044,6 +2084,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("RemoteMachineTemplate", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
         "api": "remotemachinetemplates",
+    },
+    ("VCluster", "infrastructure.cluster.x-k8s.io"): {
+        "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1alpha1/"],
+        "api": "vclusters",
     },
     ("VirtinkCluster", "infrastructure.cluster.x-k8s.io"): {
         "api_paths": ["apis/infrastructure.cluster.x-k8s.io/v1beta1/"],
@@ -2106,6 +2150,16 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
                       "apis/ipam.cluster.x-k8s.io/v1alpha1/"],
         "api": "ipaddressclaims",
+    },
+    # ipam.cluster.x-k8s.io
+    ("GlobalInClusterIPPool", "ipam.cluster.x-k8s.io"): {
+        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha2/"],
+        "api": "globalinclusterippools",
+        "namespaced": False,
+    },
+    ("InClusterIPPool", "ipam.cluster.x-k8s.io"): {
+        "api_paths": ["apis/ipam.cluster.x-k8s.io/v1alpha2/"],
+        "api": "inclusterippools",
     },
     ("IPAddress", "ipam.cluster.x-k8s.io"): {
         "api_paths": ["apis/ipam.cluster.x-k8s.io/v1beta1/",
@@ -2797,6 +2851,35 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/metal3.io/v1alpha1/"],
         "api": "provisionings",
         "namespaced": False,
+    },
+    # metallb.io
+    ("BFDProfile", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "bfdprofiles",
+    },
+    ("BGPAdvertisement", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "bgpadvertisements",
+    },
+    ("Community", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "communities",
+    },
+    ("IPAddressPool", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "ipaddresspools",
+    },
+    ("L2Advertisement", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "l2advertisements",
+    },
+    ("ServiceL2Status", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta1/"],
+        "api": "servicel2statuses",
+    },
+    ("BGPPeer", "metallb.io"): {
+        "api_paths": ["apis/metallb.io/v1beta2/"],
+        "api": "bgppeers",
     },
     # migration.k8s.io
     ("StorageState", "migration.k8s.io"): {

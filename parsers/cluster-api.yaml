@@ -9,6 +9,10 @@
     container_name: "cluster-kube-cluster-api-operator"
   - pod_name: "capo-"
     container_name: "manager"
+  - pod_name: "capd-controller-manager"
+    container_name: "manager"
+  - pod_name: "capmox-controller-manager"
+    container_name: "manager"
   parser_rules:
   - name: "glog"
   - name: "key_value_with_leading_message"
@@ -23,3 +27,11 @@
     - matchtype: "regex"
       matchkey: "^Flag.*has been deprecated"
       loglevel: "warning"
+- name: "cluster-api"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "capch-controller-manager"
+    container_name: "manager"
+  parser_rules:
+  - name: "glog"
+  - name: "tab_separated"
