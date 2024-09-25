@@ -2992,6 +2992,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
         "api": "nodefeatures",
     },
+    ("NodeFeatureGroup", "nfd.k8s-sigs.io"): {
+        "api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
+        "api": "nodefeaturegroups",
+    },
     ("NodeFeatureRule", "nfd.k8s-sigs.io"): {
         "api_paths": ["apis/nfd.k8s-sigs.io/v1alpha1/"],
         "api": "nodefeaturerules",
