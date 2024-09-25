@@ -2384,7 +2384,10 @@ def key_value_with_leading_message(message: str,
             new_remnants_strs, new_remnants_severity = tmp_new_remnants
             new_remnants = ([first_message] + new_remnants_strs, new_remnants_severity)
         else:
-            new_remnants = ([first_message], severity)
+            if first_message:
+                new_remnants = ([first_message], severity)
+            else:
+                new_remnants = None
         return facility, severity, new_message, new_remnants
     return facility, severity, message, remnants
 
