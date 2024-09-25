@@ -15,8 +15,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cpu_header", "cpu_vendor", "cpu_family", "cpu_model", "cpu_cstate", "cpu_flags", "cpu_sgx", "pstate_header", "pstate_governor", "pstate_turbo", "pstate_status", "network_devices", "storage"]
+        fields: ["controller", "cpu_header", "cpu_vendor", "cpu_family", "cpu_model", "cpu_cstate", "cpu_flags", "cpu_sgx", "pstate_header", "pstate_governor", "pstate_turbo", "pstate_status", "network_devices", "storage"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       cpu_family:
         header: [["  Family:", ["main", "infoheader"]]]
         path: "spec#features#attributes#cpu.model#elements#family"
@@ -176,6 +199,17 @@ infoview:
         - "attributes#speed"
       # This isn't supported for now
       sortcolumn: "name"
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
     "Storage Devices":
       key: "s"
       modifier: "shift"
