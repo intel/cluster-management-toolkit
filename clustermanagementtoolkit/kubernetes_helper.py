@@ -3021,7 +3021,7 @@ class KubernetesHelper:
                 count = ""
             else:
                 count = str(count)
-            message: str = deep_get(obj, DictPath("message"), "")
+            message: str = deep_get_with_fallback(obj, [DictPath("message"), DictPath("note")], "")
             message = message.replace("\\\"", "“").replace("\n", "\\n").rstrip()
             if kind == involved_kind and name == involved_name and ev_namespace == namespace:
                 event = (str(ev_namespace),
