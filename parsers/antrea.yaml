@@ -16,6 +16,7 @@
     container_name: "antrea-agent"
   parser_rules:
   - name: "glog"
+  - name: "key_value_with_leading_message"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
@@ -27,6 +28,7 @@
   - pod_name: "antrea-controller"
   parser_rules:
   - name: "glog"
+  - name: "key_value_with_leading_message"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
