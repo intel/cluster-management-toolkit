@@ -116,7 +116,13 @@
       changed_when: false
     - name: "Planning upgrade"
       ansible.builtin.shell: |
-        kubeadm upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        if [ -r /etc/kubernetes/super-admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/super-admin.conf upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        elif [ -r /etc/kubernetes/admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/admin.conf upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        else
+          kubeadm upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        fi
       changed_when: false
     - name: "Pulling Kubernetes images"
       ansible.builtin.shell: |
@@ -129,7 +135,11 @@
       changed_when: false
     - name: "Upgrading control plane"
       ansible.builtin.shell: |
-        kubeadm upgrade apply --ignore-preflight-errors=CreateJob -f {{ requested_control_plane_k8s_version.split("-")[0] }}
+        if [ -r /etc/kubernetes/super-admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/super-admin.conf upgrade apply --ignore-preflight-errors=CreateJob -f {{ requested_control_plane_k8s_version.split("-")[0] }}
+        elif [ -r /etc/kubernetes/admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/admin.conf upgrade apply --ignore-preflight-errors=CreateJob -f {{ requested_control_plane_k8s_version.split("-")[0] }}
+        fi
       changed_when: false
     - name: "Remove temporary cluster configuration file"
       ansible.builtin.file:
