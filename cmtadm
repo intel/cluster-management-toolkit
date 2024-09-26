@@ -5942,6 +5942,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
             options ([(str, str)]): Options to use when executing this action
             args ([str]): Arguments to use when executing this action
     """
+    global kh  # pylint: disable=global-statement
+
     confirm = True
 
     # default options
@@ -5992,6 +5994,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
+    ignore_feature_gates = False
 
     if state is None or state == "<none>":
         ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -6042,8 +6045,42 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
             verbose = True
         elif opt == "--save-ansible-logs":
             ansible_configuration["save_logs"] = True
+        elif opt == "--ignore-feature-gates":
+            ignore_feature_gates = True
         elif opt == "-Y":
             confirm = False
+
+    if kh is None:
+        kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME,
+                                                about.PROGRAM_SUITE_VERSION, None)
+    if kh is not None:
+        fg = kh.check_for_feature_gates()
+
+        has_fg = []
+
+        for config, feature_gates in fg.items():
+            if feature_gates is not None and feature_gates:
+                has_fg.append(config)
+        if has_fg:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": the following configurations have ", "default"),
+                            ANSIThemeStr("changes to feature gates:", "default")], stderr=True)
+            for key in has_fg:
+                ansithemeprint([ANSIThemeStr("• ", "separator"),
+                                ANSIThemeStr(f"{key}", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("\nUpgrading is not supported when", "default"),
+                            ANSIThemeStr(" feature gates have been altered.", "default")],
+                           stderr=True)
+
+            if not ignore_feature_gates:
+                ansithemeprint([ANSIThemeStr("To override, pass “", "default"),
+                                ANSIThemeStr("--ignore-feature-gates", "option"),
+                                ANSIThemeStr("“. Aborting.", "default")], stderr=True)
+                sys.exit(errno.ENOTSUP)
+            ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr("--ignore-feature-gates", "option"),
+                            ANSIThemeStr("“ passed; continuing.", "default")], stderr=True)
 
     # XXX: How do we check that nodes are drained? We can check whether they are cordoned
     node_status = __get_node_info()
@@ -7106,12 +7143,12 @@ COMMANDLINE = {
                     [ANSIThemeStr("containerd", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("rke2", "programname"),
-                     ANSIThemeStr("), ", "description")],
+                     ANSIThemeStr("),", "description")],
                     [ANSIThemeStr("containerd", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("kubeadm", "programname"),
                      ANSIThemeStr(")", "description"),
-                     ANSIThemeStr(", ", "separator")],
+                     ANSIThemeStr(",", "separator")],
                     [ANSIThemeStr("cri-o", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("kubeadm", "programname"),
@@ -7331,6 +7368,21 @@ COMMANDLINE = {
             [ANSIThemeStr("installed first; this applies to nodes too.", "description")],
         ],
         "options": {
+            "--ignore-feature-gates": {
+                "description": [
+                    ANSIThemeStr("Ignore the result of the feature gates check", "description")],
+                "extended_description": [
+                    [ANSIThemeStr("Upgrading a cluster may fail if the default", "description")],
+                    [ANSIThemeStr("set of feature gates has been altered; ", "description"),
+                     ANSIThemeStr("by default", "description")],
+                    [ANSIThemeStr("upgrades are aborted if such changes", "description"),
+                     ANSIThemeStr("are detected.", "description")],
+                    [ANSIThemeStr("This option makes the check non-aborting.", "description")],
+                    [ANSIThemeStr("Note", "note"),
+                     ANSIThemeStr(": this may yield a failed installation", "description")],
+                    [ANSIThemeStr("or non-operational cluster", "description")],
+                ],
+            },
             "--no-cache-update": {
                 "description": [
                     ANSIThemeStr("Do not update the APT cache", "description")],

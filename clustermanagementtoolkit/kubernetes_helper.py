@@ -3029,3 +3029,49 @@ class KubernetesHelper:
                          str(reason), str(source), first_seen, count, message)
                 events.append(event)
         return events
+
+    def check_for_feature_gates(self, **kwargs: Any) -> Dict[str, Dict[str, Any]]:
+        """
+        Upgrading typically isn't supported when feature gates are enabled;
+        this provides a quick way to check whether there are feature gates enabled.
+        Note that this isn't 100% proof; we won't be able to detect manually enabled
+        feature gates.
+
+            Parameters:
+                **kwargs (dict[str, Any]): Keyword arguments
+                    resource_cache (KubernetesResourceCache): A KubernetesResourceCache
+            Returns:
+                (Dict): A dict with that contains the set feature gates, if any
+        """
+        resource_cache: Optional[KubernetesResourceCache] = \
+            deep_get(kwargs, DictPath("resource_cache"))
+
+        # We can find out whether feature gates were enabled by checking the configuration
+        # used when setting up the cluster.
+        ref = self.get_ref_by_kind_name_namespace(("ConfigMap", ""),
+                                                  "kube-proxy", "kube-system",
+                                                  resource_cache=resource_cache)
+        cm_str = deep_get(ref, DictPath("data#config.conf"), {})
+        cm = yaml.safe_load(cm_str)
+        kube_proxy_feature_gates = deep_get(cm, DictPath("featureGates"), {})
+
+        ref = self.get_ref_by_kind_name_namespace(("ConfigMap", ""),
+                                                  "kubeadm-config", "kube-system",
+                                                  resource_cache=resource_cache)
+        cm_str = deep_get(ref, DictPath("data#ClusterConfiguration"), {})
+        cm = yaml.safe_load(cm_str)
+        api_server_feature_gates = deep_get(cm, DictPath("apiServer#extraArgs#feature-gates"), {})
+        scheduler_feature_gates = deep_get(cm, DictPath("scheduler#extraArgs#feature-gates"), {})
+
+        ref = self.get_ref_by_kind_name_namespace(("ConfigMap", ""),
+                                                  "kubelet-config", "kube-system",
+                                                  resource_cache=resource_cache)
+        cm_str = deep_get(ref, DictPath("data#kubelet"), {})
+        cm = yaml.safe_load(cm_str)
+        kubelet_feature_gates = deep_get(cm, DictPath("featureGates"), {})
+        return {
+            "kube_proxy_feature_gates": copy.deepcopy(kube_proxy_feature_gates),
+            "api_server_feature_gates": copy.deepcopy(api_server_feature_gates),
+            "scheduler_feature_gates": copy.deepcopy(scheduler_feature_gates),
+            "kubelet_feature_gates": copy.deepcopy(kubelet_feature_gates),
+        }

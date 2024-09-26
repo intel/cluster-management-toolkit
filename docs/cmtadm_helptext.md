@@ -11,8 +11,18 @@ Setup or teardown a Kubernetes cluster
 _Note_: some of the listed software may not be relevant to the configuration in use
   
   
+  __--force__
+  Force update of the version cache  
+
+  Typically version cache updates are
+
+  rate-limited to once per hour; this option
+
+  forces an update during the cooldown period.
   __--no-cache-update__
   Do not update the APT cache  
+  __--verbose__
+  Be more verbose  
 ### import-cluster _[_CLUSTER_NAME_,_..._]_
 #### Import existing cluster(s) for use with CMT
   
@@ -25,6 +35,10 @@ If _CLUSTER_NAME_,_..._ is not specified all clusters in _~/.kube/config_ will b
   Do not ask for confirmation  
   __--no-password__
   Do not prompt for a password  
+
+  Use this if the hosts you are importing
+
+  are already configured for login using an SSH key
 ### prepare __CLUSTER_NAME_ [[_KUBERNETES_DISTRO_=]_KUBERNETES_VERSION_]_
 #### Install and configure pre-requisites
   
@@ -35,18 +49,36 @@ Run this before setup-control-plane. If _KUBERNETES_VERSION_ is not specified th
   
   __--control-plane__ __HOST__
   Use _HOST_ as control plane   
+
+  _Note_: if possible _HOST_ should be a resolvable
+
+  hostname; using an IP-address may cause issues
   __--resume__
   Resume preparation  
+
+  This can be used to resume operations
+
+  if preparation was aborted
   __--start-at-task__ __TASK__
   Start at _TASK_ instead of running all tasks  
   __--skip-tasks__ __TASK_,_...__
   Skip _TASK_,_..._  
   __--list-tasks__
   List valid values for _TASK_  
+
+  List valid values to use with __--start-at-task__
+
+  and __--skip-tasks__
   __--no-password__
   Do not prompt for a password  
+
+  Use this if the hosts you are preparing
+
+  are already configured for login using an SSH key
   __--save-ansible-logs__
   Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
   __--verbose__
   Be more verbose  
   __-Y__
@@ -73,20 +105,58 @@ Valid options for CNI (Container Network Interface, aka Pod Network):  _antrea_,
   
   __--resume__
   Resume setup  
+
+  This can be used to resume operations
+
+  if control plane setup was aborted
   __--start-at-task__ __TASK__
   Start at _TASK_ instead of running all tasks  
   __--skip-tasks__ __TASK_,_...__
   Skip _TASK_,_..._  
   __--list-tasks__
   List valid values for _TASK_  
+
+  List valid values to use with __--start-at-task__
+
+  and __--skip-tasks__
   __--save-ansible-logs__
   Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
   __--cri__ __CRI__
   Use _CRI_ instead of the default CRI  
+
+  Valid options for CRI
+
+  (Container Runtime Interface) are:
+
+  _containerd_, _cri-o_
+
+  Default CRI:
+
+  _containerd_ (rke2),
+
+  _containerd_ (kubeadm),
+
+  _cri-o_ (kubeadm with __--enable-dra__)
+
+  _Note_: Kubernetes >= _1.26_ requires
+
+  _containerd_ >= _1.6_ or _cri-o_
   __--enable-dra__
   Enable DRA  
+
+  Enables the feature gates necessary to use
+
+  Dynamic Resource Allocation (DRA).
+
+  Currently only _cri-o_ supports DRA
   __--override-cni__
   Override CNI  
+
+  Allow a change of CNI even if installation
+
+  started with a different CNI
   __--verbose__
   Be more verbose  
   __-Y__
@@ -115,6 +185,12 @@ This should be used in case you want to switch to another CNI
   
   __--cni-version__ __CNI_VERSION__
   The installed CNI version  
+
+  Use this option to specify
+
+  the version in case it cannot
+
+  be autodetected
   __-Y__
   Do not ask for confirmation  
   __--verbose__
@@ -133,22 +209,50 @@ This should be used in case you want to switch to another CNI
 If _KUBERNETES_VERSION_ is not specified the newest available version will be used. Upgrading requires all nodes to be drained first. Once the control plane has been uppgraded you __must__ upgrade all nodes to the same version. __Important__: skipping PATCH REVISIONS is acceptable, but when upgrading to a newer MINOR version all intermediate MINOR versions must be installed first; this applies to nodes too.
   
   
+  __--ignore-feature-gates__
+  Ignore the result of the feature gates check  
+
+  Upgrading a cluster may fail if the default
+
+  set of feature gates has been altered; by default
+
+  upgrades are aborted if such changesare detected.
+
+  This option makes the check non-aborting.
+
+  _Note_: this may yield a failed installation
+
+  or non-operational cluster
   __--no-cache-update__
   Do not update the APT cache  
   __--resume__
   Resume upgrade  
+
+  This can be used to resume operations
+
+  if upgrade was aborted
   __--start-at-task__ __TASK__
   Start at _TASK_ instead of running all tasks  
   __--skip-tasks__ __TASK_,_...__
   Skip _TASK_,_..._  
   __--list-tasks__
   List valid values for _TASK_  
+
+  List valid values to use with __--start-at-task__
+
+  and __--skip-tasks__
   __--reinstall__
   Allow installing the same version  
+
+  This option allows you to install the same
+
+  version that's already running in the cluster
   __--override__
   Override/rebuild installation info  
   __--save-ansible-logs__
   Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
   __--verbose__
   Be more verbose  
   __-Y__
@@ -163,14 +267,24 @@ __Note__: Before running this command all nodes must have been removed first. Th
   
   __--resume__
   Resume teardown  
+
+  This can be used to resume operations
+
+  if teardown was aborted
   __--start-at-task__ __TASK__
   Start at _TASK_ instead of running all tasks  
   __--skip-tasks__ __TASK_,_...__
   Skip _TASK_,_..._  
   __--list-tasks__
   List valid values for _TASK_  
+
+  List valid values to use with __--start-at-task__
+
+  and __--skip-tasks__
   __--save-ansible-logs__
   Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
   __--verbose__
   Be more verbose  
   __-Y__
@@ -191,8 +305,14 @@ Software and configuration needed for CMT itself will not be purged
   Skip _TASK_,_..._  
   __--list-tasks__
   List valid values for _TASK_  
+
+  List valid values to use with __--start-at-task__
+
+  and __--skip-tasks__
   __--save-ansible-logs__
   Save logs from Ansible runs  
+
+  The logs can be viewed using “cmu logs“
   __--verbose__
   Be more verbose  
   __-Y__
@@ -223,6 +343,12 @@ __Note__: If the system is configured to use __usergroups__ (every user have the
   
   __--disable-usergroup-autodetect__
   Disable usergroup autodetect  
+
+  __Note__: the audit command attempts
+
+  to autodetect whether __usergroups__ are in use;
+
+  use this option to disable autodetect
   __--usergroup__ __USERGROUP__
   The name of the usergroup  
 ### preflight-check __CONTROLPLANE__
@@ -235,6 +361,10 @@ Check for potential pitfalls that may prevent preparation or setup from succeedi
   
   __--no-password__
   Do not prompt for a password  
+
+  Use this if the hosts you are preparing
+
+  are already configured for login using an SSH key
 ### troubleshoot
 #### Search for potential problems in the cluster
   
@@ -247,12 +377,20 @@ Check for potential pitfalls that may prevent preparation or setup from succeedi
   
   __--format__ __FORMAT__
   Output the help as _FORMAT_ instead  
+
+  Valid formats are:
+
+  _default_, _markdown_
 ### help|--help
 #### Display this help and exit
   
   
   __--format__ __FORMAT__
   Output the help as _FORMAT_ instead  
+
+  Valid formats are:
+
+  _default_, _markdown_
 ### version|--version
 #### Output version information and exit
   

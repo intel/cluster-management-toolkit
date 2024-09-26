@@ -27,6 +27,16 @@ Query or modify the host inventory
   
   __--color__ __WHEN__
   WHEN should the output use ANSI-colors  
+
+  Valid arguments are:
+
+  _always_ (always color the output)
+
+  _auto_ (color the output when outputting
+
+  to a terminal)
+
+  _never_ (never color the output)
   __--include-vars__
   Show variables  
 ### list-hosts
@@ -35,8 +45,28 @@ Query or modify the host inventory
   
   __--color__ __WHEN__
   WHEN should the output use ANSI-colors  
+
+  Valid arguments are:
+
+  _always_ (always color the output)
+
+  _auto_ (color the output when outputting
+
+  to a terminal)
+
+  _never_ (never color the output)
   __--format__ __FORMAT__
   Format the output as FORMAT  
+
+  Valid formats are:
+
+  _default_ (inventory in tree format)
+
+  _csv_ (comma-separated values)
+
+  _ssv_ (space-separated values)
+
+  _tsv_ (tab-separated values)
   __--include-vars__
   Show host variables  
 ### list-groups
@@ -45,8 +75,28 @@ Query or modify the host inventory
   
   __--color__ __WHEN__
   WHEN should the output use ANSI-colors  
+
+  Valid arguments are:
+
+  _always_ (always color the output)
+
+  _auto_ (color the output when outputting
+
+  to a terminal)
+
+  _never_ (never color the output)
   __--format__ __FORMAT__
   Format the output as FORMAT  
+
+  Valid formats are:
+
+  _default_ (inventory in tree format)
+
+  _csv_ (comma-separated values)
+
+  _ssv_ (space-separated values)
+
+  _tsv_ (tab-separated values)
   __--include-vars__
   Show group variables  
 ### ping _[_GROUP/HOST_,_..._]_
@@ -89,8 +139,28 @@ _Note_: Removing the group “_all_“ is not permitted
   
   __--color__ __WHEN__
   WHEN should the output use ANSI-colors  
+
+  Valid arguments are:
+
+  _always_ (always color the output)
+
+  _auto_ (color the output when outputting
+
+  to a terminal)
+
+  _never_ (never color the output)
   __--format__ __FORMAT__
   Format the output as FORMAT  
+
+  Valid formats are:
+
+  _default_ (default format)
+
+  _csv_ (comma-separated values)
+
+  _ssv_ (space-separated values)
+
+  _tsv_ (tab-separated values)
 ### run __PLAYBOOK_ _HOST_,_..._|_GROUP_,_...__
 #### Run playbook on _HOST_,_..._ or _GROUP_,_..._
   
@@ -137,12 +207,20 @@ Unsetting global variables is equivalent to unsetting variables for the group �
   
   __--format__ __FORMAT__
   Output the help as _FORMAT_ instead  
+
+  Valid formats are:
+
+  _default_, _markdown_
 ### help|--help
 #### Display this help and exit
   
   
   __--format__ __FORMAT__
   Output the help as _FORMAT_ instead  
+
+  Valid formats are:
+
+  _default_, _markdown_
 ### version|--version
 #### Output version information and exit
   
