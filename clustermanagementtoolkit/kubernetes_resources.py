@@ -3516,11 +3516,13 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "podschedulings",
     },
     ("PodSchedulingContext", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+                      "apis/resource.k8s.io/v1alpha2/"],
         "api": "podschedulingcontexts",
     },
     ("ResourceClaim", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/",
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+                      "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaims",
     },
@@ -3529,7 +3531,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "resourceclaimparameters",
     },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/",
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+                      "apis/resource.k8s.io/v1alpha2/",
                       "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaimtemplates",
     },
