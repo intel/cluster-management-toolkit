@@ -190,6 +190,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/coordination.k8s.io/v1/"],
         "api": "leases",
     },
+    ("LeaseCandidate", "coordination.k8s.io"): {
+        "api_paths": ["apis/coordination.k8s.io/v1alpha1/"],
+        "api": "leasecandidates",
+    },
     # discovery.k8s.io
     ("EndpointSlice", "discovery.k8s.io"): {
         "api_paths": ["apis/discovery.k8s.io/v1/",
@@ -3501,6 +3505,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "resolutionrequests",
     },
     # resource.k8s.io
+    ("DeviceClass", "resource.k8s.io"): {
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/"],
+        "api": "deviceclasses",
+        "namespaced": False,
+    },
     ("PodScheduling", "resource.k8s.io"): {
         # => PodSchedulingContext
         "api_paths": ["apis/resource.k8s.io/v1alpha1/"],
@@ -3511,7 +3520,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "podschedulingcontexts",
     },
     ("ResourceClaim", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/",
+                      "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaims",
     },
     ("ResourceClaimParameters", "resource.k8s.io"): {
@@ -3519,11 +3529,13 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "resourceclaimparameters",
     },
     ("ResourceClaimTemplate", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/",
+                      "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclaimtemplates",
     },
     ("ResourceClass", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/", "apis/resource.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/resource.k8s.io/v1alpha2/",
+                      "apis/resource.k8s.io/v1alpha1/"],
         "api": "resourceclasses",
         "namespaced": False,
     },
@@ -3532,7 +3544,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "resourceclassparameters",
     },
     ("ResourceSlice", "resource.k8s.io"): {
-        "api_paths": ["apis/resource.k8s.io/v1alpha2/"],
+        "api_paths": ["apis/resource.k8s.io/v1alpha3/",
+                      "apis/resource.k8s.io/v1alpha2/"],
         "api": "resourceslices",
         "namespaced": False,
     },
@@ -3564,7 +3577,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # security.istio.io
     ("AuthorizationPolicy", "security.istio.io"): {
-        "api_paths": ["apis/security.istio.io/v1/", "apis/security.istio.io/v1beta1/"],
+        "api_paths": ["apis/security.istio.io/v1/",
+                      "apis/security.istio.io/v1beta1/"],
         "api": "authorizationpolicies",
     },
     ("PeerAuthentication", "security.istio.io"): {
@@ -3572,7 +3586,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "peerauthentications",
     },
     ("RequestAuthentication", "security.istio.io"): {
-        "api_paths": ["apis/security.istio.io/v1/", "apis/security.istio.io/v1beta1/"],
+        "api_paths": ["apis/security.istio.io/v1/",
+                      "apis/security.istio.io/v1beta1/"],
         "api": "requestauthentications",
     },
     # security.internal.openshift.io
