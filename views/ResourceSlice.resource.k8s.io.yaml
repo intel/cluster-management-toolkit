@@ -9,51 +9,82 @@ listview:
   group: "Dynamic Resource Allocation"
   field_indexes:
     Normal:
-      fields: ["name", "node", "driver", "age"]
+      fields: ["name", "pool", "resource_slice_count", "age"]
   fields:
-    driver:
-      header: "Driver:"
-      path: "driverName"
+    pool:
+      header: "Pool:"
+      path: "spec#pool#name"
+      default: "<unset>"
       type: "str"
-    node:
-      header: "Node:"
-      path: "nodeName"
-      type: "str"
+    resource_slice_count:
+      header: "Count:"
+      path: "spec#pool#resourceSliceCount"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
 infoview:
   name: "Resource Slice Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name", "driver"]
+        fields: ["controller", "node_name", "pool", "resource_slice_count", "driver"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       driver:
         header: [["Driver:", ["main", "infoheader"]]]
-        path: "driverName"
+        paths:
+        - path: ["spec#driver", "driverName"]
+          pathtype: "str"
+          default: "<unset>"
         type: "str"
-        default: "<none>"
       node_name:
         header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
-        path: "nodeName"
+        paths:
+        - path: ["spec#nodeName", "nodeName"]
+          pathtype: "str"
+          default: "<unset>"
         type: "str"
-        default: "<unset>"
         formatting:
           field_colors:
           - type: "host"
-  shortcuts:
-    "Open Node":
-      key: "d"
-      read_only: true
-      helptext: "Open info page for Node"
-      action: "call"
-      action_call: "resourceinfodispatch_with_lookup"
-      action_args:
-        _pass_obj: true
-        kind: "Node"
-        name_path: "nodeName"
+      pool:
+        header: [["Pool:", ["main", "infoheader"]]]
+        path: "spec#pool#name"
+        default: "<unset>"
+        type: "str"
+      resource_slice_count:
+        header: [["Resource Slice Count:", ["main", "infoheader"]]]
+        path: "spec#pool#resourceSliceCount"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
-      path: "namedResources#instances"
+      path: "spec#devices"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -65,6 +96,28 @@ infoview:
         type: "str"
       attributes:
         header: "Attributes:"
-        path: "attributes"
+        path: "basic#attributes"
         type: "raw"
         formatter: "list"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: ["spec#nodeName", "nodeName"]

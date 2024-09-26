@@ -4,6 +4,8 @@ default_command: "resourceclaimtemplates"
 command:
 - "resclaimtemplates"
 - "resclaimtemplate"
+- "resclaimtempls"
+- "resclaimtempl"
 listview:
   name: "Resource Claim Templates"
   group: "Dynamic Resource Allocation"
@@ -16,18 +18,30 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["parameters_ref", "resource_class", "allocation_mode"]
+        fields: ["parameters_ref", "resource_class", "allocation_mode", "device_requests"]
     rows:
       allocation_mode:
         header: [["Allocation Mode:", ["main", "infoheader"]]]
         path: "spec#spec#allocationMode"
+        default: "<unset>"
         type: "str"
+      device_requests:
+        header: [["Device Re", ["main", "infoheader"]], ["q", ["main", "infoheader_shortcut"]], ["uests:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#spec#devices#requests"
+          pathtype: "items"
+          subpaths:
+          - "name"
+        default: "<none>"
+        formatter: "list"
       parameters_ref:
         header: [["P", ["main", "infoheader_shortcut"]], ["arameters Ref:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#spec#parametersRef#kind"], ["spec#spec#parametersRef#apiVersion"], ["spec#spec#parametersRef#name"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name"]
+          default: ["<unset>"]
+          fallback_on_empty: true
         default: "<none>"
         formatter: "list"
         formatting:
@@ -41,6 +55,7 @@ infoview:
       resource_class:
         header: [["Resource Class:", ["main", "infoheader"]]]
         path: "spec#spec#resourceClassName"
+        default: "<unset>"
         type: "str"
   shortcuts:
     "Open parameters":
@@ -56,3 +71,27 @@ infoview:
         kind_path: "spec#spec#parametersRef#kind"
         namespace_path: "metadata#namespace"
         name_path: "spec#spec#parametersRef#name"
+  shortcuts:
+    "Show device requests":
+      key: "q"
+      read_only: true
+      helptext: "Show device requests"
+      widget: "windowwidget"
+      title: "Device requests:"
+      headers: ["Request:"]
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#spec#devices#requests"
+        pass_ref: true
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Device requests"
+        _named_title: true
+        _name_path: "name"
+        _pass_selected_obj: true

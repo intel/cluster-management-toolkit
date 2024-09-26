@@ -9,23 +9,19 @@ listview:
   group: "Dynamic Resource Allocation"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "driver", "age"]
+      fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
-  fields:
-    driver:
-      header: "Driver:"
-      path: "status#driverName"
-      type: "str"
 infoview:
   name: "Resource Claim Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "parameters_ref", "resource_class", "driver", "allocation_mode", "reserved_for"]
+        fields: ["controller", "parameters_ref", "resource_class", "allocation_mode", "deallocation_requested", "device_header", "device_requests", "device_allocations", "reserved_for"]
     rows:
       allocation_mode:
         header: [["Allocation Mode:", ["main", "infoheader"]]]
         path: "spec#allocationMode"
+        default: "<unset>"
         type: "str"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -50,18 +46,39 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      driver:
-        header: [["Driver:", ["main", "infoheader"]]]
-        path: "status#driverName"
+      deallocation_requested:
+        header: [["Deallocation Requested:", ["main", "infoheader"]]]
+        path: "status#deallocationRequested"
         type: "str"
+        default: false
+      device_allocations:
+        header: [["  ", ["main", "infoheader"]], ["A", ["main", "infoheader_shortcut"]], ["llocations:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#allocation#devices#results"
+          pathtype: "items"
+          subpaths:
+          - "request"
         default: "<none>"
+        formatter: "list"
+      device_header:
+        header: [["Devices:", ["main", "infoheader"]]]
+      device_requests:
+        header: [["  Re", ["main", "infoheader"]], ["q", ["main", "infoheader_shortcut"]], ["uests:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#devices#requests"
+          pathtype: "items"
+          subpaths:
+          - "name"
+        default: "<none>"
+        formatter: "list"
       parameters_ref:
         header: [["P", ["main", "infoheader_shortcut"]], ["arameters Ref:", ["main", "infoheader"]]]
         paths:
         - path: [["spec#parametersRef#kind"], ["spec#parametersRef#apiVersion"], ["spec#parametersRef#name"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name"]
-        default: "<none>"
+          default: ["<unset>"]
+          fallback_on_empty: true
         formatter: "list"
         formatting:
           field_colors:
@@ -92,8 +109,21 @@ infoview:
       resource_class:
         header: [["Resource Class:", ["main", "infoheader"]]]
         path: "spec#resourceClassName"
+        default: "<unset>"
         type: "str"
   shortcuts:
+    "Node Selectors":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Node Selectors"
+        _pass_obj: true
+        path: "status#allocation#nodeSelector#nodeSelectorTerms"
+        include_root: true
     "Open controller":
       key: "c"
       modifier: "shift"
@@ -118,6 +148,53 @@ infoview:
         kind_path: "spec#parametersRef#kind"
         namespace_path: "metadata#namespace"
         name_path: "spec#parametersRef#name"
+    "Show device allocations":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show device allocations"
+      widget: "windowwidget"
+      title: "Device allocations:"
+      headers: ["Request:"]
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "status#allocation#devices#results"
+        pass_ref: true
+        fields:
+        - "request"
+      # Not supported for now
+      sortcolumn: "request"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Device allocation"
+        _named_title: true
+        _name_path: "request"
+        _pass_selected_obj: true
+    "Show device requests":
+      key: "q"
+      read_only: true
+      helptext: "Show device requests"
+      widget: "windowwidget"
+      title: "Device requests:"
+      headers: ["Request:"]
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#devices#requests"
+        pass_ref: true
+        fields:
+        - "name"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Device requests"
+        _named_title: true
+        _name_path: "name"
+        _pass_selected_obj: true
     "Show reservations list":
       key: "r"
       modifier: "shift"
@@ -125,12 +202,22 @@ infoview:
       helptext: "List reservations"
       widget: "windowwidget"
       title: "Reserved For:"
+      headers: ["Resource:", "API-group:", "Name:", "UID:"]
+      selectable: true
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#reservedFor"
         fields:
         - "resource"
+        - "apiGroup"
         - "name"
         - "uid"
       # Not supported for now
       sortcolumn: "resource"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind_path: 0
+        api_group_path: 1
+        name_path: 2
+        _parent_namespace_path: "metadata#namespace"
