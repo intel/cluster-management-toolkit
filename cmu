@@ -5620,7 +5620,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     decoded_obj = obj
 
                 if formatter is not None:
-                    formatted_obj = formatter(decoded_obj, raw=raw_output)
+                    formatter_args = deep_get(infoview_args, DictPath("formatter_args"), {})
+                    formatted_obj = formatter(decoded_obj, raw=raw_output, **formatter_args)
                 else:
                     formatted_obj = decoded_obj
 

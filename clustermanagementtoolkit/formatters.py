@@ -540,9 +540,10 @@ def format_yaml(lines: Union[str, List[str]],
     dumps: List[List[Union[ThemeRef, ThemeStr]]] = []
     indent = deep_get(cmtlib.cmtconfig, DictPath("Global#indent"), 2)
     is_json = deep_get(kwargs, DictPath("json"), False)
+    unfold_msg = deep_get(kwargs, DictPath("unfold_msg"), False)
 
     if isinstance(lines, str):
-        if is_json:
+        if is_json or (lines.startswith("{") and lines.rstrip().endswith("}") and unfold_msg):
             try:
                 d = json.loads(lines)
                 lines = [json_dumps(d)]
