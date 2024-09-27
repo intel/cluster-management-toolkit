@@ -2063,16 +2063,23 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
     is_event: bool = deep_get(options, DictPath("is_event"), False)
 
-    # split all key=value pairs
+    # Split all key=value pairs.
     key_value_regex = re.compile(r"^(.*?)=(.*)")
     tmp = re.findall(r"(?:\".*?\"|\S)+", message.replace("\\\"", "<<<quote>>>"))
     # pylint: disable-next=too-many-nested-blocks
     if tmp is not None:
+        # First go through the list of matches and check that there are at least one
+        # key=value pair; we do not allow *only* bare keys. While it could theoretically
+        # occur, it leaves too much room for false positives.
+        if not any(["=" in item for item in tmp]):
+            # Give up; this line cannot be parsed as a set of key=value
+            return facility, severity, message, remnants
+
         d = {}
         for item in tmp:
             tmp2 = key_value_regex.match(item)
             if tmp2 is None:
-                if allow_bare_keys:
+                if allow_bare_keys and not item.endswith(":"):
                     if item not in d:
                         d[item] = None
                 else:
@@ -2352,6 +2359,13 @@ def key_value_with_leading_message(message: str,
     # Split into substrings based on spaces
     tmp = re.findall(r"(?:\".*?\"|\S)+", message.replace("\\\"", "<<<quote>>>"))
     if tmp is not None and tmp:
+        # First go through the list of matches and check that there are at least one
+        # key=value pair; we do not allow *only* bare keys. While it could theoretically
+        # occur, it leaves too much room for false positives.
+        if not any(["=" in item for item in tmp]):
+            # Give up; this line cannot be parsed as a set of key=value
+            return facility, severity, message, remnants
+
         if "=" in tmp[0]:
             # Try parsing this as regular key_value
             facility, severity, new_message, remnants = \
@@ -2363,7 +2377,7 @@ def key_value_with_leading_message(message: str,
 
         for item in tmp[1:]:
             # we could not parse this as "msg key=value"; give up
-            if "=" not in item and not allow_bare_keys:
+            if "=" not in item and (item.endswith(":") or not allow_bare_keys):
                 return facility, severity, message, remnants
         rest = message[len(tmp[0]):].lstrip()
         new_message = tmp[0]
