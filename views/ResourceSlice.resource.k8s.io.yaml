@@ -96,9 +96,18 @@ infoview:
         type: "str"
       attributes:
         header: "Attributes:"
-        path: "basic#attributes"
-        type: "raw"
+        paths:
+        - path: "basic#attributes"
+          pathtype: "key_value"
+          subpaths:
+          - "bool"
+          - "int"
+          - "string"
+          - "version"
         formatter: "list"
+        formatting:
+          field_separators:
+          - type: "keyvalue"
   shortcuts:
     "Open controller":
       key: "c"
