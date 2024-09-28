@@ -15,8 +15,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["target_namespaces", "namespaces", "last_updated"]
+        fields: ["cluster_version", "target_namespaces", "namespaces", "last_updated"]
     rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
       last_updated:
         header: [["Last Updated:", ["main", "infoheader"]]]
         path: "status#lastUpdated"
@@ -40,6 +51,18 @@ infoview:
           field_colors:
           - type: "namespace"
   shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
     "Show Namespace list":
       key: "s"
       read_only: true

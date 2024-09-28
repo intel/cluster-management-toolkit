@@ -20,8 +20,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["storage_class_name", "node_topology_header", "node_topology_label_selector", "node_topology_set_based_selector"]
+        fields: ["controller", "storage_class", "node_topology_header", "node_topology_label_selector", "node_topology_set_based_selector"]
     rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       node_topology_header:
         header: [["Node Topology:", ["main", "infoheader"]]]
       node_topology_label_selector:
@@ -52,7 +75,32 @@ infoview:
           field_separators:
           - type: "space"
           - type: "no_pad"
-      storage_class_name:
-        header: [["Storage Class Name:", ["main", "infoheader"]]]
+      storage_class:
+        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
         path: "storageClassName"
+        default: "<none>"
         type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Storage Class":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Storage Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "StorageClass"
+        api_family: "storage.k8s.io"
+        name_path: "storageClassName"

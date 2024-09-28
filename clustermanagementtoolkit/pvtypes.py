@@ -72,13 +72,14 @@ KNOWN_PV_TYPES = {
         "properties": {
             "Volume Handle:": {"path": "volumeHandle"},
             "Driver:": {"path": "driver"},
-            "Filesystem Type:": {"path": "fsType"},
+            "Filesystem Type:": {"path": "fsType", "default": "<unset>"},
             # {"path": "controllerExpandSecretRef"},
             # {"path": "controllerPublishSecretRef"},
             # {"path": "nodeExpandSecretRef"},
             # {"path": "nodePublishSecretRef"},
-            "Read Only:": {"path": "readOnly"},
+            "Read Only:": {"path": "readOnly", "default": False},
             # {"path": "volumeAttributes"}, # dict(str, str)
+            "Storage Pool": {"path": "volumeAttributes#storagePool"},
         },
     },
     "fc": {

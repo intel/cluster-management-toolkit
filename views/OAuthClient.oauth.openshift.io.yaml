@@ -44,8 +44,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["secret", "www_challenge", "token_max_age", "redirect_uris"]
+        fields: ["cluster_version", "secret", "www_challenge", "token_max_age", "redirect_uris"]
     rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
       secret:
         header: [["Secret:", ["main", "infoheader"]]]
         path: "secret"
@@ -70,6 +81,18 @@ infoview:
         type: "raw"
         formatter: "list"
   shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
     "Show Redirect URI list":
       key: "r"
       modifier: "shift"

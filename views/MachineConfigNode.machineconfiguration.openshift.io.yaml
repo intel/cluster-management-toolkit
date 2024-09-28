@@ -315,7 +315,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["machine_config_pool", "updated", "update_prepared", "update_executed", "update_postaction_complete", "update_complete", "resumed", "update_compatible", "updated_files_and_os", "cordoned", "drained", "rebooted", "reloaded_crio", "configuration_header", "configuration_current", "configuration_desired"]
+        fields: ["node_name", "machine_config_pool", "updated", "update_prepared", "update_executed", "update_postaction_complete", "update_complete", "resumed", "update_compatible", "updated_files_and_os", "cordoned", "drained", "rebooted", "reloaded_crio", "configuration_header", "configuration_current", "configuration_desired"]
     rows:
       configuration_current:
         header: [["  Current:", ["main", "infoheader"]]]
@@ -387,6 +387,20 @@ infoview:
         header: [["Machine Config ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["ool:", ["main", "infoheader"]]]
         path: "spec#pool#name"
         type: "str"
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Node"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "host"
       rebooted:
         header: [["Rebooted:", ["main", "infoheader"]]]
         paths:
@@ -650,3 +664,13 @@ infoview:
         name_path: "spec#pool#name"
         kind: "MachineConfigPool"
         api_family: "machineconfiguration.openshift.io"
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        owner_reference_path: "metadata#ownerReferences"

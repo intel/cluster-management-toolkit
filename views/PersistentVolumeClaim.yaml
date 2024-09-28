@@ -138,6 +138,41 @@ infoview:
         header: [["Volume Mode:", ["main", "infoheader"]]]
         path: "spec#volumeMode"
         type: "str"
+  listpad:
+    listgetter: "listgetter_join_dicts_to_list"
+    listgetter_args:
+      key_paths: ["spec#resources#limits", "spec#resources#requests"]
+      key_name: "resource"
+      fields:
+      - path: "spec#resources#limits"
+        name: "limit"
+        default:
+      - path: "spec#resources#requests"
+        name: "request"
+        default:
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["resource", "request", "limit"]
+        sortcolumn: "resource"
+    fields:
+      limit:
+        header: "Limit:"
+        path: "limit"
+        default: "<none>"
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: "str"
+      request:
+        header: "Request:"
+        path: "request"
+        type: "raw"
+        formatter: "numerical_with_units"
+        align: "right"
   shortcuts:
     "Persistent Volume":
       key: "p"

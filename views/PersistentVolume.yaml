@@ -91,7 +91,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "storage_class", "reclaim_policy", "volume_mode", "volume_node_affinity"]
+        fields: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "storage_class", "reclaim_policy", "volume_mode"]
     rows:
       access_modes:
         header: [["Access Modes:", ["main", "infoheader"]]]
@@ -111,6 +111,11 @@ infoview:
         type: "raw"
         formatter: "numerical_with_units"
         align: "right"
+      csi_driver:
+        header: [["CSI ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["river:", ["main", "infoheader"]]]
+        path: "spec#csi#driver"
+        default: "<unset>"
+        type: "str"
       persistent_volume_claim:
         header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume Claim:", ["main", "infoheader"]]]
         paths:
@@ -128,6 +133,7 @@ infoview:
       reason:
         header: [["Reason:", ["main", "infoheader"]]]
         path: "status#reason"
+        default: "<unset>"
         type: "str"
       reclaim_policy:
         header: [["Reclaim Policy:", ["main", "infoheader"]]]
@@ -162,7 +168,7 @@ infoview:
                 - context: "main"
                   type: "status_not_ok"
       storage_class:
-        header: [["Storage Class:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
         path: "spec#storageClassName"
         default: "<none>"
         type: "str"
@@ -170,18 +176,6 @@ infoview:
         header: [["Volume Mode:", ["main", "infoheader"]]]
         path: "spec#volumeMode"
         type: "str"
-      volume_node_affinity:
-        header: [["Volume Node Affinity:", ["main", "infoheader"]]]
-        paths:
-        - path: ["spec#volumeNodeAffinity"]
-          pathtype: "key_value"
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "key"
-          - type: "value"
-          field_separators:
-          - type: "selector"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -298,6 +292,18 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Open Storage Class":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Storage Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "StorageClass"
+        api_family: "storage.k8s.io"
+        name_path: "spec#storageClassName"
     "Mount Options":
       key: "m"
       read_only: true
@@ -307,6 +313,18 @@ infoview:
       itemgetter: "get_list_as_list"
       itemgetter_args:
         path: "spec#mountOptions"
+    "Volume Node Affinity":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show volume node affinity selector"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Volume Node Affinity Selectors"
+        _pass_obj: true
+        path: "spec#nodeAffinity#required#nodeSelectorTerms"
+        include_root: true
     "Persistent Volume Claim":
       key: "p"
       modifier: "shift"
@@ -321,7 +339,6 @@ infoview:
         namespace_path: "spec#claimRef#namespace"
     "Source properties":
       key: "s"
-      modifier: "shift"
       read_only: true
       helptext: "Show properties for volume source"
       widget: "windowwidget"

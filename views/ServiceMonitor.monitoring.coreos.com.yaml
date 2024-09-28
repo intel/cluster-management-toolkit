@@ -16,11 +16,23 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["job_label", "selector", "namespace_selector"]
+        fields: ["cluster_version", "job_label", "selector", "namespace_selector"]
     rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
       job_label:
         header: [["Job Label:", ["main", "infoheader"]]]
         path: "spec#jobLabel"
+        default: "<unset>"
         type: "str"
       namespace_selector:
         header: [["Namespace Selector:", ["main", "infoheader"]]]
@@ -83,3 +95,16 @@ infoview:
         header: "Target Port:"
         path: "targetPort"
         type: "str"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

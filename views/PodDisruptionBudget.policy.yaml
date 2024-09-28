@@ -46,31 +46,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
+        fields: ["cluster_version", "min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
     rows:
-      controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
         - path: "metadata#ownerReferences"
           pathtype: "items"
           subpaths:
-          - "kind"
-          - "apiVersion"
           - "name"
           when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - key: "kind"
+            eq: "ClusterVersion"
         default: "<none>"
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
-          field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
       current_healthy:
         header: [["  Current Healthy:", ["main", "infoheader"]]]
         path: "status#currentHealthy"
@@ -150,14 +138,15 @@ infoview:
         type: "str"
         default: "<unset>"
   shortcuts:
-    "Open controller":
-      key: "c"
+    "Cluster Version":
+      key: "v"
       modifier: "shift"
       read_only: true
-      helptext: "Open info page for controller"
+      helptext: "Open info page for Cluster Version"
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
       action_args:
         _pass_obj: true
-        namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
