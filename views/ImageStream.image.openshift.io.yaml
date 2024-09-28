@@ -14,14 +14,14 @@ listview:
   group: "OpenShift"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "image_repository", "tags", "age"]
+      fields: ["namespace", "name", "public_image_repository", "tags", "age"]
       sortcolumn: "namespace"
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
   fields:
-    image_repository:
-      header: "Image Repository:"
+    public_image_repository:
+      header: "Public Image Repository:"
       path: "status#publicDockerImageRepository"
       type: "str"
     tags:
@@ -36,3 +36,109 @@ listview:
       formatting:
         field_colors:
         - type: "version"
+infoview:
+  name: "Image Stream Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "lookup_policy", "tags", "public_image_repository", "image_repository"]
+    rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      image_repository:
+        header: [["Docker Image Repository:", ["main", "infoheader"]]]
+        path: "status#publicDockerImageRepository"
+        type: "str"
+      lookup_policy:
+        header: [["Lookup Policy:", ["main", "infoheader"]]]
+        path: "spec#lookupPolicy#local"
+        type: "bool"
+      public_image_repository:
+        header: [["Public Docker Image Repository:", ["main", "infoheader"]]]
+        path: "status#publicDockerImageRepository"
+        type: "str"
+      tags:
+        header: [["Tags:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#tags"
+          pathtype: "items"
+          subpaths:
+          - "tag"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "version"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#tags"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__ImageStreamSub"
+      api_family: "image.openshift.io"
+    field_indexes:
+      Normal:
+        fields: ["kind", "image_name", "import_mode", "scheduled", "tag", "reference_policy", "generation"]
+        sortcolumn: "name"
+    fields:
+      image_name:
+        header: "Name:"
+        path: "from#name"
+        type: "str"
+      generation:
+        header: "Generation:"
+        path: "generation"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      kind:
+        header: "Kind:"
+        path: "from#kind"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+      import_mode:
+        header: "Import Mode:"
+        path: "importPolicy#importMode"
+        type: "str"
+      reference_policy:
+        header: "Reference Policy:"
+        path: "referencePolicy#type"
+        type: "str"
+      scheduled:
+        header: "Scheduled:"
+        path: "importPolicy#scheduled"
+        default: "<unset>"
+        type: "bool"
+      tag:
+        header: "Tag:"
+        path: "name"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

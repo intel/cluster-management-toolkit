@@ -2166,12 +2166,19 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]
         Returns:
             ([themearray]): A list of themearrays
     """
+    path = deep_get(kwargs, DictPath("path"), "")
+    messages = []
 
     try:
-        tmp = yaml.dump(obj)
-        messages = formatters.format_yaml(tmp, **kwargs)
+        if path:
+            data = deep_get(obj, DictPath(path))
+        else:
+            data = obj
+        if data is not None:
+            tmp = yaml.dump(data, width=16384)
+            messages = formatters.format_yaml(tmp, **kwargs)
     except yaml.YAMLError:
-        messages = []
+        pass
 
     return messages
 

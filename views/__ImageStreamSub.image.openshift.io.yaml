@@ -1,0 +1,56 @@
+kind: "__ImageStreamSub"
+api_family: "image.openshift.io"
+default_command: "__"
+infoview:
+  name: "Image Stream Sub Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image_name", "kind", "tag", "import_mode", "scheduled", "reference_policy", "generation"]
+    rows:
+      generation:
+        header: [["Generation:", ["main", "infoheader"]]]
+        path: "generation"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      image_name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "from#name"
+        type: "str"
+      kind:
+        header: [["Kind:", ["main", "infoheader"]]]
+        path: "from#kind"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+      import_mode:
+        header: [["Import Node:", ["main", "infoheader"]]]
+        path: "importPolicy#importMode"
+        type: "str"
+      reference_policy:
+        header: [["Reference Policy:", ["main", "infoheader"]]]
+        path: "referencePolicy#type"
+        type: "str"
+      scheduled:
+        header: [["Scheduled:", ["main", "infoheader"]]]
+        path: "importPolicy#scheduled"
+        default: "<unset>"
+        type: "bool"
+      tag:
+        header: [["Tag:", ["main", "infoheader"]]]
+        path: "name"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  logpad:
+    infogetter: "logpad_yaml"
+    timestamps: false
+    infogetter_args:
+      path: "annotations"
+  shortcuts:
+    # __ImageStreamSub has no last applied configuration or events
+    "Show Events": null
+    "Last Applied Configuration": null
