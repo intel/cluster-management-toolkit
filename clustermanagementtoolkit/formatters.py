@@ -357,7 +357,7 @@ def format_yaml_line(line: str,
             (themearray): A themearray
             ([themearray]): A list of themearrays,
                             in case the YAML-line is expanded into multiple lines;
-                            used when encountering keys belonging to expandd_newline_fields
+                            used when encountering keys belonging to expand_newline_fields
     """
     override_formatting: Optional[Union[ThemeAttr, Dict]] = \
         deep_get(kwargs, DictPath("override_formatting"))
@@ -1657,6 +1657,8 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("", "linkerd-config", "values", "", "YAML"),
     ("", "", "nfd-master.conf", "", "YAML"),
     ("", "", "nfd-worker.conf", "", "YAML"),
+    ("", "", "resourceClaimParameters.config", "resourceClaimParameters.config", "INI"),
+    ("", "", "vf-memory.config", "vf-memory.config", "JSON"),
     ("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
     ("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
     ("", "trivy-operator", "scanJob.podTemplateContainerSecurityContext", "", "JSON"),

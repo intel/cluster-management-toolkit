@@ -2696,10 +2696,81 @@ def substitute_bullets(message: str, prefix: str) -> str:
 
 
 # pylint: disable-next=unused-argument
+def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
+        -> Tuple[Tuple[str, Optional[Callable], Dict],
+                 Tuple[datetime, str, LogLevel, List[Union[ThemeRef, ThemeStr]]]]:
+    timestamp = none_timestamp()
+    facility = ""
+    severity = LogLevel.ERR
+    message, _timestamp = split_iso_timestamp(message, none_timestamp())
+    processor: Tuple[str, Optional[Callable], Dict] = \
+        ("block", python_traceback_scanner_nested_exception, {})
+
+    # Default case
+    remnants: List[Union[ThemeRef, ThemeStr]] = [
+        ThemeStr(message, ThemeAttr("logview", "severity_info"))
+    ]
+
+    if (tmp := re.match(r"^(\s+\+ )"
+                        r"(Exception Group Traceback "
+                        r"\(most recent call last\):)", message)) is not None:
+        remnants = [
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("logview", "severity_error")),
+        ]
+    elif (tmp := re.match(r"^(\s+\|\s+)(During handling of the above "
+                          r"exception, another exception occurred:)",
+                          message)) is not None:
+        remnants = [
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("logview", "severity_error")),
+        ]
+    elif (tmp := re.match(r"^(\s+\|\s+)(Traceback "
+                          r"\(most recent call last\):)", message)) is not None:
+        remnants = [
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("logview", "severity_error")),
+        ]
+    elif (tmp := re.match(r"^(\s+\|\s+)(File \")(.+?)(\", line )"
+                          r"(\d+)(, in )(.*)", message)) is not None:
+        remnants = [
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("types", "path")),
+            ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
+            ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[6], ThemeAttr("types", "path")),
+        ]
+    elif re.match(r"^\s+\+-+$", message):
+        remnants = [
+            ThemeStr(message, ThemeAttr("logview", "severity_info")),
+        ]
+        processor = ("end_block", None, {})
+    else:
+        if (tmp := re.match(r"^(\s+\|\s+)"
+                            r"(\S+?Error:|"
+                            r"\S+?Exception:|"
+                            r"ExceptionGroup:|"
+                            r"GeneratorExit:|"
+                            r"KeyboardInterrupt:|"
+                            r"StopIteration:|"
+                            r"StopAsyncIteration:|"
+                            r"SystemExit:|"
+                            r"socket.gaierror:"
+                            r")( .*)", message)) is not None:
+            remnants = [
+                ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+                ThemeStr(tmp[2], ThemeAttr("logview", "severity_error")),
+                ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
+            ]
+
+    return processor, (timestamp, facility, severity, remnants)
+
+
+# pylint: disable-next=unused-argument
 def python_traceback_scanner(message: str, **kwargs: Any) \
         -> Tuple[Tuple[str, Optional[Callable], Dict],
-                 Tuple[datetime, str, LogLevel,
-                       List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]]:
+                 Tuple[datetime, str, LogLevel, List[Union[ThemeRef, ThemeStr]]]]:
     timestamp = none_timestamp()
     facility = ""
     severity = LogLevel.ERR
@@ -2707,18 +2778,18 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
     processor: Tuple[str, Optional[Callable], Dict] = ("block", python_traceback_scanner, {})
 
     # Default case
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = [
-        ([ThemeStr(message, ThemeAttr("logview", "severity_info"))], severity),
+    remnants: List[Union[ThemeRef, ThemeStr]] = [
+        ThemeStr(message, ThemeAttr("logview", "severity_info"))
     ]
 
     if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
         remnants = [
-            ([ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
-              ThemeStr(tmp[2], ThemeAttr("types", "path")),
-              ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
-              ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
-              ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
-              ThemeStr(tmp[6], ThemeAttr("types", "path"))], severity)
+            ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[2], ThemeAttr("types", "path")),
+            ThemeStr(tmp[3], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[4], ThemeAttr("types", "lineno")),
+            ThemeStr(tmp[5], ThemeAttr("logview", "severity_info")),
+            ThemeStr(tmp[6], ThemeAttr("types", "path")),
         ]
     else:
         if (tmp := re.match(r"(^\S+?Error:|"
@@ -2756,16 +2827,22 @@ def python_traceback(message: str, **kwargs: Any) \
             ("start_block", python_traceback_scanner, {})
         return processor, remnants
 
+    if message == "During handling of the above exception, " \
+                  "another exception occurred:":
+        remnants = [ThemeStr(message, ThemeAttr("logview", "severity_error"))]
+        processor: Tuple[str, Optional[Callable], Dict] = \
+            ("start_block", python_traceback_scanner_nested_exception, {})
+        return processor, remnants
+
     return message, remnants
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def json_line_scanner(message: str,
-                      **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
-                                              Tuple[datetime, str, LogLevel,
-                                                    Optional[List[Tuple[List[Union[ThemeRef,
-                                                                                   ThemeStr]],
-                                                                        LogLevel]]]]]:
+def json_line_scanner(message: str, **kwargs: Any) \
+        -> Tuple[Tuple[str, Optional[Callable], Dict],
+                 Tuple[datetime, str, LogLevel,
+                       Optional[List[Tuple[List[Union[ThemeRef, ThemeStr]],
+                                           LogLevel]]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
 
     allow_empty_lines = deep_get(options, DictPath("allow_empty_lines"), True)
@@ -3202,11 +3279,9 @@ def ansible_line(message: str,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def custom_line_scanner(message: str,
-                        **kwargs: Any) -> Tuple[Tuple[str, Optional[Callable], Dict],
-                                                Tuple[datetime, str, LogLevel,
-                                                      List[Tuple[List[Union[ThemeRef, ThemeStr]],
-                                                                 LogLevel]]]]:
+def custom_line_scanner(message: str, **kwargs: Any) \
+        -> Tuple[Tuple[str, Optional[Callable], Dict],
+                 Tuple[datetime, str, LogLevel, List[Union[ThemeRef, ThemeStr]]]]:
     options: Optional[Dict] = deep_get(kwargs, DictPath("options"))
     loglevel_name: str = deep_get(options, DictPath("loglevel"), "info")
 
@@ -3214,7 +3289,7 @@ def custom_line_scanner(message: str,
     facility = ""
     severity = LogLevel.INFO
     message, _timestamp = split_iso_timestamp(message, none_timestamp())
-    remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
+    remnants: List[Union[ThemeRef, ThemeStr]] = []
     matched = True
 
     # If no block end is defined we continue until EOF
