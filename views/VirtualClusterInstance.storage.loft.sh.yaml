@@ -45,7 +45,7 @@ infoview:
         fields: ["owner_header", "owner_user", "owner_team", "cluster_ref", "virtual_cluster_ref", "template_ref", "phase", "status"]
     rows:
       cluster_ref:
-        header: [["C", ["main", "infoheader_shortcut"]], ["luster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
         paths:
         - path: ["Cluster", "storage.loft.sh", ["spec#clusterRef#cluster"]]
           pathtype: "tuple"
@@ -152,8 +152,7 @@ infoview:
         formatter: "list"
   shortcuts:
     "Open Cluster":
-      key: "c"
-      modifier: "shift"
+      key: "u"
       read_only: true
       helptext: "Open info page for Cluster"
       action: "call"

@@ -123,6 +123,16 @@ infoview:
           field_colors:
           - type: "numerical"
   shortcuts:
+    "Show affinities":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show affinities"
+      widget: "windowwidget"
+      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      itemgetter: "get_pod_affinity"
+      # This isn't supported for now
+      sortcolumn: "type"
     "Open Node":
       key: "d"
       read_only: true
@@ -146,8 +156,7 @@ infoview:
         name_path: "status#vmPodName"
         namespace_path: "metadata#namespace"
     "Power actions":
-      key: "a"
-      modifier: "shift"
+      key: "p"
       read_only: false
       helptext: "Power actions"
       widget: "windowwidget"

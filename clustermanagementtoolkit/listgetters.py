@@ -44,7 +44,8 @@ from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import disksize_to_human, get_since
-from clustermanagementtoolkit.cmtlib import timestamp_to_datetime, make_set_expression_list
+from clustermanagementtoolkit.cmtlib import timestamp_to_datetime
+from clustermanagementtoolkit.cmtlib import make_label_selector, make_set_expression_list
 
 from clustermanagementtoolkit.cmttypes import deep_get, deep_get_with_fallback, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
@@ -54,7 +55,7 @@ from clustermanagementtoolkit.datagetters import get_container_status
 
 from clustermanagementtoolkit import formatters
 
-from clustermanagementtoolkit.kubernetes_helper import get_node_status, make_selector
+from clustermanagementtoolkit.kubernetes_helper import get_node_status
 from clustermanagementtoolkit.kubernetes_helper import resource_kind_to_rtype
 
 from clustermanagementtoolkit import listgetters_async
@@ -934,7 +935,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
         "trivy-operator.resource.kind": trivy_kind,
         "trivy-operator.resource.name": trivy_name,
     }
-    trivy_selector = make_selector(selector_dict)
+    trivy_selector = make_label_selector(selector_dict)
 
     # OK, we have the controller kind (and thus trivy_selector);
     # time to fire off the requests for lists.
@@ -942,7 +943,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
             ("event", {
                 "kind": ("Event", ""),
                 "namespace": pod_namespace,
-                "field_selector": make_selector({
+                "field_selector": make_label_selector({
                     "involvedObject.name": pod_name,
                     "involvedObject.namespace": pod_namespace})}),
             ("pod_disruption_budget", {
@@ -1574,7 +1575,7 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
                     continue
                 vlist2_, status = \
                     kh.get_list_by_kind_namespace(("Pod", ""), pod_namespace,
-                                                  label_selector=make_selector(selector),
+                                                  label_selector=make_label_selector(selector),
                                                   field_selector=f"metadata.name={pod_name},"
                                                                  "metadata.namespace="
                                                                  f"{pod_namespace}",

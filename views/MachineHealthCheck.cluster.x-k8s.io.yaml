@@ -19,6 +19,7 @@ listview:
     current_healthy:
       header: "Current Healthy:"
       path: "status#currentHealthy"
+      default: "0"
       type: "int"
       formatting:
         field_colors:
@@ -39,3 +40,107 @@ listview:
         pathtype: "str"
       formatter: "numerical_with_units"
       align: "right"
+infoview:
+  name: "Machine Health Check Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster", "label_selector", "set_based_selector", "max_unhealthy", "expected_machines", "current_healthy", "remediations_allowed", "node_startup_timeout"]
+    rows:
+      cluster:
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Cluster"
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      current_healthy:
+        header: [["Current Healthy:", ["main", "infoheader"]]]
+        path: "status#currentHealthy"
+        default: "0"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      expected_machines:
+        header: [["Expected Machines:", ["main", "infoheader"]]]
+        path: "status#expectedMachines"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      max_unhealthy:
+        header: [["Max Unhealthy:", ["main", "infoheader"]]]
+        path: "spec#maxUnhealthy"
+        type: "raw"
+        formatter: "numerical_with_units"
+      node_startup_timeout:
+        header: [["Node Startup Timeout:", ["main", "infoheader"]]]
+        path: "spec#nodeStartupTimeout"
+        type: "raw"
+        formatter: "numerical_with_units"
+      remediations_allowed:
+        header: [["Remediations Allowed:", ["main", "infoheader"]]]
+        path: "status#remediationsAllowed"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      set_based_selector:
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+  shortcuts:
+    "Open Cluster":
+      key: "u"
+      read_only: true
+      helptext: "Open info page for cluster"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Cluster"
+        api_group: "cluster.x-k8s.io"
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

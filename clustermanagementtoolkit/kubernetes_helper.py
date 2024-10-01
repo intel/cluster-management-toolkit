@@ -689,24 +689,6 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
     return status, status_group, taints, full_taints
 
 
-def make_selector(selector_dict: Dict) -> str:
-    """
-    Given a selector dict entry, create a selector list
-
-        Parameters:
-            selector_dict (dict): The dict with selectors
-        Returns:
-            selector_str (str): The selector string
-    """
-    selectors = []
-
-    if selector_dict is not None:
-        for key, value in selector_dict.items():
-            selectors.append(f"{key}={value}")
-
-    return ",".join(selectors)
-
-
 def get_image_version(image: str, default: str = "<undefined>") -> str:
     """
     Given the version of a container image, return its version
@@ -1312,7 +1294,7 @@ class KubernetesHelper:
                     cni_status = ("Available", StatusGroup.OK, "")
 
             match_label_selector = \
-                make_selector(deep_get(obj, DictPath("spec#selector#matchLabels")))
+                cmtlib.make_label_selector(deep_get(obj, DictPath("spec#selector#matchLabels")))
             vlist2, _status = \
                 self.get_list_by_kind_namespace(("Pod", ""), "",
                                                 label_selector=match_label_selector)

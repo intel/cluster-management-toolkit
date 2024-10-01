@@ -27,7 +27,8 @@ from clustermanagementtoolkit.cmttypes import ProgrammingError
 
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import disksize_to_human, get_package_versions, get_since
-from clustermanagementtoolkit.cmtlib import make_set_expression, split_msg, timestamp_to_datetime
+from clustermanagementtoolkit.cmtlib import make_label_selector, make_set_expression
+from clustermanagementtoolkit.cmtlib import split_msg, timestamp_to_datetime
 
 from clustermanagementtoolkit import kubernetes_helper
 
@@ -469,22 +470,36 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
                     weight = deep_get(selector, DictPath("weight"), "")
                     if isinstance(weight, int):
                         weight = f"/{weight}"
-                    topology = deep_get(selector, DictPath("topologyKey"), "")
+                    topology = deep_get_with_fallback(selector,
+                                                      [DictPath("podAffinityTerm#topologyKey"),
+                                                                DictPath("topologyKey")], "")
                     # We are combining a few different policies,
                     # so the expressions can be in various places; not simultaneously though
                     # hence += should be OK.
                     # The best thing would probably be to use deep_get_with_fallback though.
                     paths = [
+                        DictPath("podAffinityTerm#labelSelector#matchExpressions"),
+                        DictPath("podAffinityTerm#labelSelector#matchFields"),
                         DictPath("labelSelector#matchExpressions"),
                         DictPath("labelSelector#matchFields"),
+                        DictPath("labelSelector#matchLabels"),
                         DictPath("preference#matchExpressions"),
                         DictPath("preference#matchFields"),
                         DictPath("matchExpressions"),
                         DictPath("matchFields"),
                     ]
 
-                    for path in paths:
-                        selectors += make_set_expression(deep_get(selector, path, []))
+                    tmp2 = deep_get_with_fallback(selector, paths)
+
+                    if tmp2 is None:
+                        continue
+                    elif isinstance(tmp2, list):
+                        selectors = make_set_expression(tmp2)
+                    elif isinstance(tmp2, dict):
+                        selectors = make_label_selector(tmp2)
+                    else:
+                        # XXX: We have no idea how to handle this
+                        continue
                     affinities.append((atype, f"{scheduling}{weight}",
                                        execution, selectors, topology))
     return affinities

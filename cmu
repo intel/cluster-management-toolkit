@@ -102,6 +102,7 @@ from clustermanagementtoolkit import curses_helper
 from clustermanagementtoolkit import cmtlib
 from clustermanagementtoolkit.cmtlib import decode_value, clamp, get_package_versions
 from clustermanagementtoolkit.cmtlib import identify_k8s_distro, make_set_expression_list
+from clustermanagementtoolkit.cmtlib import make_label_selector
 from clustermanagementtoolkit.cmtlib import none_timestamp, timestamp_to_datetime, get_since
 from clustermanagementtoolkit.cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
 from clustermanagementtoolkit.cmtlib import normalise_cpu_usage_to_millicores
@@ -157,7 +158,7 @@ from clustermanagementtoolkit import helptexts
 from clustermanagementtoolkit.kubernetes_helper import KubernetesHelper, KubernetesResourceCache
 from clustermanagementtoolkit.kubernetes_helper import get_controller_from_owner_references
 from clustermanagementtoolkit.kubernetes_helper import get_image_version
-from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version, make_selector
+from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version
 from clustermanagementtoolkit.kubernetes_helper import update_api_status as kh_update_api_status
 from clustermanagementtoolkit.kubernetes_helper import guess_kind
 
@@ -1284,7 +1285,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             if isinstance(ls_value, list):
                                 ls_value = deep_get_with_fallback(obj, ls_value)
                             _lookup_selector[ls_key] = ls_value
-                        lookup_selector = make_selector(_lookup_selector)
+                        lookup_selector = make_label_selector(_lookup_selector)
 
                     try:
                         if not lookup_name:
@@ -3299,7 +3300,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 for i, label in enumerate(labels):
                     if i in tagged_labels:
                         selectors[label[0]] = label[1]
-                label_selector = make_selector(selectors)
+                label_selector = make_label_selector(selectors)
                 uip.force_update()
             tagged_items.clear()
             uip.update_info([])
@@ -5511,7 +5512,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     deep_get(listgetter_args, DictPath("_label_selector_key_values"))
                 if _label_selector_path is not None:
                     listgetter_args["label_selector"] = \
-                        make_selector(deep_get(obj, DictPath(_label_selector_path)))
+                        make_label_selector(deep_get(obj, DictPath(_label_selector_path)))
                 elif _label_selector_key_values is not None:
                     label_selectors = {}
                     for label_key, label_value in _label_selector_key_values:
@@ -5519,7 +5520,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             label_selectors[label_key] = label_value
                         elif isinstance(label_value, list):
                             label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
-                    listgetter_args["label_selector"] = make_selector(label_selectors)
+                    listgetter_args["label_selector"] = make_label_selector(label_selectors)
                 if not deep_get(listgetter_args, DictPath("label_selector"), "") \
                         and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
                     listgetter = listgetters.listgetter_noop
@@ -5531,7 +5532,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             field_selectors[field_key] = deep_get_with_fallback(obj, field_value)
                         else:
                             field_selectors[field_key] = field_value
-                    listgetter_args["field_selector"] = make_selector(field_selectors)
+                    listgetter_args["field_selector"] = make_label_selector(field_selectors)
                 if _kind is None:
                     _kind = deep_get(obj, DictPath(_kind_path))
                 if _api_family is None:

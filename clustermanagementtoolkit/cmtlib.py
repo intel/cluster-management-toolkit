@@ -790,6 +790,24 @@ def make_set_expression(expression_list: List[Dict]) -> str:
     return ", ".join(xlist)
 
 
+def make_label_selector(selector_dict: Dict) -> str:
+    """
+    Given a label selector dict entry, create a selector list string
+
+        Parameters:
+            selector_dict (dict): The dict with selectors
+        Returns:
+            selector_str (str): The selector string
+    """
+    selectors = []
+
+    if selector_dict is not None:
+        for key, value in selector_dict.items():
+            selectors.append(f"{key}={value}")
+
+    return ",".join(selectors)
+
+
 def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
     """
     Returns a list of predefined packages for a host

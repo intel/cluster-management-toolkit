@@ -639,52 +639,6 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_make_selector(verbose: bool = False) -> Tuple[str, bool]:
-    message = ""
-    result = True
-
-    fun = kubernetes_helper.make_selector
-
-    if result:
-        # Indata format:
-        # (indata, expected_result, expected_exception)
-        testdata = (
-            ({"foo": "bar", "baz": "1", }, "foo=bar,baz=1", None),
-            (None, "", None),
-        )
-        for indata, expected_result, expected_exception in testdata:
-            try:
-                if (tmp := fun(indata)) != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
-                              f"          output: {tmp}\n" \
-                              f"        expected: {expected_result}"
-                    result = False
-                    break
-            except Exception as e:
-                if expected_exception is not None:
-                    if isinstance(e, expected_exception):
-                        pass
-                    else:
-                        message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  "           input:\n" \
-                                  f"{yaml_dump(indata, base_indent = 17)}\n" \
-                                  f"       exception: {type(e)}\n" \
-                                  f"        expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_result}"
-                    result = False
-                    break
-    return message, result
-
-
 def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -991,10 +945,6 @@ tests: Dict = {
     },
     ("get_node_status()",): {
         "callable": test_get_node_status,
-        "result": None,
-    },
-    ("make_selector()",): {
-        "callable": test_make_selector,
         "result": None,
     },
     ("get_image_version()",): {
