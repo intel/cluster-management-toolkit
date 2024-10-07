@@ -2188,7 +2188,7 @@
 											"description": "Function to use to get items",
 											"enum": [
 												"get_allowed_ips",
-												"get_endpoint_slices",
+												"get_kubernetes_objects",
 												"get_image_list",
 												"get_key_value",
 												"get_dict_list",
@@ -2214,6 +2214,14 @@
 												{
 													"type": "object",
 													"properties": {
+														"api_family": {
+															"description": "The API family of the object (used with get_kubernetes_objects)",
+															"$ref": "#/definitions/api_family"
+														},
+														"api_family_path": {
+															"description": "Path to get the API family of the object from (used with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
+														},
 														"cm_name": {
 															"description": "Name or name paths for the ConfigMap",
 															"oneOf": [
@@ -2235,6 +2243,9 @@
 															]
 														},
 														"fields": {
+															"type": "array"
+														},
+														"field_paths": {
 															"type": "array"
 														},
 														"items": {
@@ -2270,6 +2281,13 @@
 																}
 															}
 														},
+														"kind": {
+															"$ref": "#/definitions/kind"
+														},
+														"kind_path": {
+															"description": "Path to get the kind of the object from (used with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
+														},
 														"override_types": {
 															"description": "Override the type of the object",
 															"type": "array",
@@ -2284,6 +2302,22 @@
 																]
 															},
 															"minItems": 1
+														},
+														"name": {
+															"description": "The name of the object (used for selectors with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
+														},
+														"name_path": {
+															"description": "Path to get the name of the object from (used for selectors with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
+														},
+														"namespace": {
+															"description": "The namespace of the objects (used with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
+														},
+														"namespace_path": {
+															"description": "Path to get the namespace of the objects from (used with get_kubernetes_objects)",
+															"$ref": "#/definitions/path"
 														},
 														"path": {
 															"$ref": "#/definitions/path"
@@ -2305,10 +2339,25 @@
 														"regex": {
 															"description": "A regular expression used to split elements into capture groups",
 															"type": "string"
+														},
+														"selector": {
+															"description": "The selector or selector component (used with get_kubernetes_objects)",
+															"type": "string"
+														},
+														"selector_type": {
+															"description": "The selector type; label or field",
+															"enum": [
+																"field",
+																"label"
+															]
 														}
 													},
 													"oneOf": [
 														{
+															"required": [ "field_paths", "kind" ]
+														}, {
+															"required": [ "field_paths", "kind_path" ]
+														}, {
 															"required": [ "items" ]
 														}, {
 															"required": [ "path" ]

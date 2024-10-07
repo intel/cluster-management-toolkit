@@ -109,39 +109,85 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     return condition_list
 
 
-def get_endpoint_slices(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
+def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
     """
-    Get a list of endpoint slices.
+    Get a list of fields from Kubernetes objects
 
         Parameters:
             obj (dict): The object to get data from
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+                field_paths ([DictPath]): A list of DictPath to get data from
+                kind (str): The Kubernetes kind to get objects from
+                kind_path (str): The path to the Kubernetes kind to get objects from
+                api_family (str): The Kubernetes API-family to get objects from
+                api_family_path (str): The path to the Kubernetes API-family to get objects from
+                name (str): The name to use in the selector
+                name_path (str): The path to the name to use in the selector
+                namespace (str): The namespace for the objects
+                namespace_path (str): The path to the namespace for the objects
+                selector_type (str): "field" or "label"
+                selector (str): The selector to use; if name is provided the selector will use name,
+                                otherwise the selector will be used bare
         Returns:
-            ([(str, str)]): A list of endpoint slices
+            ([(str, str)]): A list of fields from Kubernetes objects
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_endpoint_slices() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    svcname = deep_get(obj, DictPath("metadata#name"))
-    svcnamespace = deep_get(obj, DictPath("metadata#namespace"))
-    # We need to find all Endpoint Slices in the same namespace
-    # as the service that have this service as its controller
+    field_paths = deep_get(kwargs, DictPath("field_paths"), [])
+    kind_path = deep_get(kwargs, DictPath("kind_path"))
+    kind = deep_get(kwargs, DictPath("kind"))
+    kind = deep_get(obj, DictPath(kind_path), kind)
+
+    api_family_path = deep_get(kwargs, DictPath("api_family_path"))
+    api_family = deep_get(kwargs, DictPath("api_family"), "")
+    api_family = deep_get(obj, DictPath(api_family_path), api_family)
+
+    namespace_path = deep_get(kwargs, DictPath("namespace_path"))
+    namespace = deep_get(kwargs, DictPath("namespace"), "")
+    namespace = deep_get(obj, DictPath(namespace_path), namespace)
+
+    name_path = deep_get(kwargs, DictPath("name_path"))
+    name = deep_get(kwargs, DictPath("name"))
+    name = deep_get(obj, DictPath(name_path), name)
+
+    selector_type = deep_get(kwargs, DictPath("selector_type"), "label")
+    selector_str = deep_get(kwargs, DictPath("selector"))
+
+    label_selector = ""
+    field_selector = ""
+
+    if selector_str:
+        if name:
+            selector = f"{selector_str}={name}"
+        else:
+            selector = selector_str
+
+        if selector_type == "label":
+            label_selector = selector
+        else:
+            field_selector = selector
+
     vlist, _status = \
-        kh.get_list_by_kind_namespace(("EndpointSlice", "discovery.k8s.io"),
-                                      svcnamespace,
-                                      label_selector=f"kubernetes.io/service-name={svcname}",
+        kh.get_list_by_kind_namespace((kind, api_family),
+                                      namespace,
+                                      label_selector=label_selector,
+                                      field_selector=field_selector,
                                       resource_cache=kh_cache)
+
     tmp: List[Tuple[str, str]] = []
     if vlist is None or _status != 200:
         return tmp
 
     for item in vlist:
-        epsnamespace = deep_get(item, DictPath("metadata#namespace"))
-        epsname = deep_get(item, DictPath("metadata#name"))
-        tmp.append((epsnamespace, epsname))
+        entry = []
+        for field_path in field_paths:
+            entry.append(deep_get(item, DictPath(field_path)))
+        tmp.append(entry)
+
     return tmp
 
 
@@ -967,7 +1013,7 @@ def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 # Itemgetters acceptable for direct use in view files
 itemgetter_allowlist: Dict[str, Callable] = {
     "get_allowed_ips": get_allowed_ips,
-    "get_endpoint_slices": get_endpoint_slices,
+    "get_kubernetes_objects": get_kubernetes_objects,
     "get_events": get_events,
     "get_image_list": get_image_list,
     "get_key_value": get_key_value,

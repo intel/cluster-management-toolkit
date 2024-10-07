@@ -1,0 +1,217 @@
+kind: "Bundle"
+api_family: "trust.cert-manager.io"
+default_command: "bundles"
+listview:
+  name: "Bundles"
+  group: "Certificate Management"
+  field_indexes:
+    Normal:
+      fields: ["name", "secret_target", "configmap_target", "condition_synced", "condition_synced_reason", "age", "condition_synced_message"]
+  fields:
+    condition_synced:
+      header: "Synced:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Synced"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    condition_synced_message:
+      header: "Message:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Synced"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    condition_synced_reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "reason"
+        when:
+        - key: "type"
+          eq: "Synced"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    configmap_target:
+      header: "ConfigMap Target:"
+      path: "spec#target#configMap#key"
+      default: "<unset>"
+      type: "str"
+    secret_target:
+      header: "Secret Target:"
+      path: "spec#target#secret#key"
+      default: "<unset>"
+      type: "str"
+infoview:
+  name: "Bundle Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["secret_target", "configmap_target", "additional_formats", "condition_synced", "condition_synced_reason", "namespace_label_selector"]
+    rows:
+      additional_formats:
+        header: [["Additional Formats:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#target#additionalFormats"
+          pathtype: "key_value"
+          subpaths:
+          - "key"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_separators:
+          - type: "keyvalue"
+      condition_synced:
+        header: [["Synced:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Synced"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      condition_synced_reason:
+        header: [["Reason:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+          - key: "type"
+            eq: "Synced"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      configmap_target:
+        header: [["C", ["main", "infoheader_shortcut"]], ["onfigMap Target:", ["main", "infoheader"]]]
+        path: "spec#target#configMap#key"
+        default: "<unset>"
+        type: "str"
+      namespace_label_selector:
+        header: [["Namespace Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#target#namespaceSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      secret_target:
+        header: [["Secret Target:", ["main", "infoheader"]]]
+        path: "spec#target#secret#key"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Config Maps":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Config Maps"
+      widget: "windowwidget"
+      title: "Config Maps:"
+      headers: ["Namespace:", "Name:"]
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        kind: "ConfigMap"
+        name_path: "metadata#name"
+        field_paths: ["metadata#namespace", "metadata#name"]
+        selector: "metadata.name"
+        selector_type: "field"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "ConfigMap"
+        name_path: 1
+        namespace_path: 0
+      # This isn't supported for now
+      sortcolumn: "namespace"

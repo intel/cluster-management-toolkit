@@ -343,7 +343,15 @@ infoview:
       widget: "windowwidget"
       title: "Endpoint Slices:"
       headers: ["Namespace:", "Name:"]
-      itemgetter: "get_endpoint_slices"
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        kind: "EndpointSlice"
+        api_family: "discovery.k8s.io"
+        selector: "kubernetes.io/service-name"
+        selector_type: "label"
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+        field_paths: ["metadata#namespace", "metadata#name"]
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
