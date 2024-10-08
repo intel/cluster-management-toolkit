@@ -617,6 +617,20 @@ infoview:
         kind: "PriorityClass"
         api_family: "scheduling.k8s.io"
         name_path: "spec#priorityClassName"
+    "Show container resources":
+      key: "r"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show container resources"
+      title: "Resources:"
+      widget: "windowwidget"
+      headers: ["Requests:", "Limits:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        source: "selected"
+        path: "resources"
+      # This isn't supported for now
+      sortcolumn: "requests"
     "SSH to Node":
       key: "s"
       modifier: "shift"
@@ -628,3 +642,38 @@ infoview:
         _pass_selected: true
       kind_filter:
         kind: "Node"
+    "Show container volume mounts":
+      key: "m"
+      read_only: false
+      helptext: "Show container volume mounts"
+      title: "Volume Mounts:"
+      widget: "windowwidget"
+      headers: ["Name:", "Mount Point:", "Read Only:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        source: "selected"
+        path: "volumeMounts"
+        fields:
+        - "name"
+        - "mountPath"
+        - "readOnly"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "Show volumes":
+      key: "v"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show volumes"
+      title: "Volumes:"
+      widget: "windowwidget"
+      headers: ["Name:", "Type:", "Configuration:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#volumes"
+        fields:
+        - "name"
+        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
+          value: "key"
+        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
+      # This isn't supported for now
+      sortcolumn: "name"

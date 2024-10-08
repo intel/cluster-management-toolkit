@@ -412,11 +412,21 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
             tmp = []
             for i, field in enumerate(fields):
                 default = ""
+                value_type = "value"
                 if isinstance(field, dict):
                     default = deep_get(field, DictPath("default"), "")
-                    field = deep_get(field, DictPath("name"))
-                value_ = deep_get(item, DictPath(field), default)
-                if (isinstance(value_, list)
+                    value_type = deep_get(field, DictPath("value"), "value")
+                    field = deep_get(field, DictPath("name"), "")
+
+                if isinstance(field, str):
+                    field = [DictPath(field)]
+
+                value_ = deep_get_with_fallback(item, field, default)
+                if value_type ==  "key":
+                    for key in field:
+                        if key in item:
+                            value = key
+                elif (isinstance(value_, list)
                         or (i < len(fields) and i < len(override_types)
                             and override_types[i] == "list")):
                     value = ", ".join(value_)
