@@ -101,7 +101,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["secret_target", "configmap_target", "additional_formats", "condition_synced", "condition_synced_reason", "namespace_label_selector"]
+        fields: ["secret_target", "configmap_target", "additional_formats", "namespace_label_selector", "condition_synced", "condition_synced_reason", "condition_synced_message"]
     rows:
       additional_formats:
         header: [["Additional Formats:", ["main", "infoheader"]]]
@@ -121,6 +121,32 @@ infoview:
         - path: "status#conditions"
           pathtype: "items"
           subpath: "status"
+          when:
+          - key: "type"
+            eq: "Synced"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      condition_synced_message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
           when:
           - key: "type"
             eq: "Synced"

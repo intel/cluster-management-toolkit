@@ -1660,6 +1660,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "providers",
         "namespaced": False,
     },
+    # eventing.keda.sh
+    ("CloudEventSource", "eventing.keda.sh"): {
+        "api_paths": ["apis/eventing.keda.sh/v1alpha1/"],
+        "api": "cloudeventsources",
+    },
     # eventing.knative.dev
     ("Broker", "eventing.knative.dev"): {
         "api_paths": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],

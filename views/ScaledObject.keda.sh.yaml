@@ -8,7 +8,7 @@ listview:
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "scale_target_kind", "scale_target_name", "min_replica_count", "max_replica_count", "triggers", "authentication", "ready", "active", "fallback", "age"]
+      fields: ["namespace", "name", "scale_target_kind", "scale_target_name", "min_replica_count", "max_replica_count", "triggers", "authentication", "condition_ready", "condition_ready_reason", "active", "fallback", "age", "condition_ready_message"]
       sortcolumn: "namespace"
   fields:
     active:
@@ -38,33 +38,9 @@ listview:
       paths:
       - path: "spec#triggers"
         pathtype: "items"
-        subpath: "type"
+        subpath: "authenticationRef#name"
       formatter: "list"
-    fallback:
-      header: "Fallback:"
-      paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Fallback"
-      type: "str"
-    max_replica_count:
-      header: "Max Replica Count:"
-      path: "spec#maxReplicaCount"
-      type: "int"
-      formatting:
-        field_colors:
-        - type: "numerical"
-    min_replica_count:
-      header: "Min Replica Count:"
-      path: "spec#minReplicaCount"
-      type: "int"
-      formatting:
-        field_colors:
-        - type: "numerical"
-    ready:
+    condition_ready:
       header: "Ready:"
       paths:
       - path: "status#conditions"
@@ -86,6 +62,86 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+    condition_ready_message:
+      header: "Message:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Ready"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    condition_ready_reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "reason"
+        when:
+        - key: "type"
+          eq: "Ready"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    fallback:
+      header: "Fallback:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Fallback"
+      type: "str"
+    max_replica_count:
+      header: "Max Replica Count:"
+      path: "spec#maxReplicaCount"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    min_replica_count:
+      header: "Min Replica Count:"
+      path: "spec#minReplicaCount"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
     scale_target_kind:
       header: "Scale Target Kind:"
       path: "status#scaleTargetKind"
@@ -102,5 +158,123 @@ listview:
       paths:
       - path: "spec#triggers"
         pathtype: "items"
-        subpath: "authenticationRef#name"
+        subpath: "type"
       formatter: "list"
+infoview:
+  name: "Scaled Object Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["max_replica_count", "condition_ready", "condition_ready_reason", "condition_ready_message"]
+    rows:
+      condition_ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      condition_ready_message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+          - key: "type"
+            eq: "Ready"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      condition_ready_reason:
+        header: [["Reason:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+          - key: "type"
+            eq: "Ready"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      max_replica_count:
+        header: [["Max Replica Count:", ["main", "infoheader"]]]
+        path: "spec#maxReplicaCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: ["_extra_data#kind"]
+      kind: "TriggerAuthentication"
+      api_family: "keda.sh"
+      name_path: "authenticationRef#name"
+      namespace_path: "_extra_data#namespace"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#triggers"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        kind: ["authenticationRef#kind"]
+        namespace: ["metadata#namespace"]
+    field_indexes:
+      Normal:
+        fields: ["type", "authentication_ref"]
+        sortcolumn: "type"
+    fields:
+      authentication_ref:
+        header: "Authentication Reference:"
+        path: "authenticationRef#name"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
