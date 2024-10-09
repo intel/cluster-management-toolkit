@@ -1,0 +1,82 @@
+kind: "ClusterImagePolicy"
+api_family: "config.openshift.io"
+default_command: "clusterimagepolicies"
+command:
+- "clrimgpols"
+- "clrimgpol"
+listview:
+  name: "Cluster Image Policies"
+  group: "OpenShift"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Cluster Image Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_version", "scopes", "policy_header", "policy_root_of_trust_header", "policy_root_of_trust_type", "policy_root_of_trust_public_key"]
+    rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
+      policy_header:
+        header: [["Policy:", ["main", "infoheader"]]]
+      policy_root_of_trust_header:
+        header: [["  Root of Trust:", ["main", "infoheader"]]]
+      policy_root_of_trust_type:
+        header: [["    Type:", ["main", "infoheader"]]]
+        path: "spec#policy#rootOfTrust#policyType"
+        type: "str"
+      policy_root_of_trust_public_key:
+        header: [["    Public ", ["main", "infoheader"]], ["K", ["main", "infoheader_shortcut"]], ["ey:", ["main", "infoheader"]]]
+        path: "spec#policy#rootOfTrust#publicKey#keyData"
+        type: "str"
+      scopes:
+        header: [["S", ["main", "infoheader_shortcut"]], ["copes:", ["main", "infoheader"]]]
+        path: "spec#scopes"
+        type: "raw"
+        formatter: "list"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"
+    "List scopes":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List scopes"
+      widget: "windowwidget"
+      title: "Scopes:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#scopes"
+      # This isn't supported for now
+      sortcolumn: "scopes"
+    "View Public Key":
+      key: "k"
+      modifier: "shift"
+      read_only: false
+      helptext: "Decode and view public key"
+      action: "call"
+      action_call: "decode_and_view_data"
+      action_args:
+        _pass_obj: true
+        path: "spec#policy#rootOfTrust#publicKey#keyData"

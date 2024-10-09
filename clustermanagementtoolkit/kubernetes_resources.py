@@ -784,6 +784,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "catalogs",
         "namespaced": False,
     },
+    ("ClusterCatalog", "catalogd.operatorframework.io"): {
+        "api_paths": ["apis/catalogd.operatorframework.io/v1alpha1/"],
+        "api": "clustercatalogs",
+        "namespaced": False,
+    },
     ("Package", "catalogd.operatorframework.io"): {
         "api_paths": ["apis/catalogd.operatorframework.io/v1alpha1/"],
         "api": "packages",
@@ -2217,6 +2222,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/k8s.cni.cncf.io/v1/"],
         "api": "network-attachment-definitions",
     },
+    ("IPAMClaim", "k8s.cni.cncf.io"): {
+        "api_paths": ["apis/k8s.cni.cncf.io/v1alpha1/"],
+        "api": "ipamclaims",
+    },
     # k8s.otterize.com
     ("ClientIntents", "k8s.otterize.com"): {
         "api_paths": ["apis/k8s.otterize.com/v1alpha2/"],
@@ -2248,6 +2257,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("EgressService", "k8s.ovn.org"): {
         "api_paths": ["apis/k8s.ovn.org/v1/"],
         "api": "egressservices",
+    },
+    ("UserDefinedNetwork", "k8s.ovn.org"): {
+        "api_paths": ["apis/k8s.ovn.org/v1/"],
+        "api": "userdefinednetworks",
     },
     # kamaji.clastix.io
     ("DataStore", "kamaji.clastix.io"): {
