@@ -200,7 +200,25 @@ listview:
             version_regex: '^rke2 version v(\d+)(\.)(\d+)(\.)(\d+)(\+)([a-z0-9]+).*'
         file_not_found_status: "No changelog found"
         paths:
-        - filepath: "{HOME}/.cmt/version-cache/kargo_changelog.md"
+        - filepath: "{HOME}/.cmt/version-cache/rke2_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
+      path: "cmctl"
+      pathtype: "dict"
+      _extra_data:
+        name: "cmctl (cert-manager)"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/cmctl"
+            args: ["version", "--client"]
+            version_regex: '^.*GitVersion:"v(\d+)(\.)(\d+)(\.)(\d+)".*$'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/cert-manager_changelog.md"
           filetype: "text"
           pathtype: "raw"
         formatter: "markdown"

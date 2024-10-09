@@ -1,0 +1,15 @@
+cmctl:
+  description: "cmctl (cert-manager)"
+  installed_version:
+    function: "get_executable_version"
+    executable: "/usr/bin/cmctl"
+    args: ["version", "--client"]
+    version_regex: '^.*gitVersion: "v(\d+)(\.)(\d+)(\.)(\d+)".*$'
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/cert-manager/cmctl/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
+  changelog:
+    from_body: true
+    dest: "cert-manager_changelog.md"
