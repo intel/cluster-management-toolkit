@@ -413,9 +413,12 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
             for i, field in enumerate(fields):
                 default = ""
                 value_type = "value"
+                quote = False
                 if isinstance(field, dict):
                     default = deep_get(field, DictPath("default"), "")
                     value_type = deep_get(field, DictPath("value"), "value")
+                    quote = deep_get(field, DictPath("quote"), False)
+                    # Needs to be last here, since it overwrites field
                     field = deep_get(field, DictPath("name"), "")
 
                 if isinstance(field, str):
@@ -458,6 +461,8 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
                         value = value_
                 else:
                     raise ValueError(f"Unhandled type {type(value_)} for {field}={value}")
+                if quote:
+                    value = f"\"{value}\""
                 tmp.append(value)
             if pass_ref:
                 vlist.append({"fields": tmp, "ref": item})
