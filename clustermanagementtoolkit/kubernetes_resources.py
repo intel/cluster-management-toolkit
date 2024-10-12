@@ -552,13 +552,17 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "rollouts",
     },
-    ("WorkflowEventBinding", "argoproj.io"): {
-        "api_paths": ["apis/argoproj.io/v1alpha1/"],
-        "api": "workfloweventbindings",
-    },
     ("Workflow", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
         "api": "workflows",
+    },
+    ("WorkflowArtifactGCTask", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "workflowartifactgctasks",
+    },
+    ("WorkflowEventBinding", "argoproj.io"): {
+        "api_paths": ["apis/argoproj.io/v1alpha1/"],
+        "api": "workfloweventbindings",
     },
     ("WorkflowTaskResult", "argoproj.io"): {
         "api_paths": ["apis/argoproj.io/v1alpha1/"],
@@ -2383,6 +2387,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "profiles",
         "namespaced": False,
     },
+    ("PVCViewer", "kubeflow.org"): {
+        "api_paths": ["apis/kubeflow.org/v1alpha1/"],
+        "api": "pvcviewers",
+    },
     ("PyTorchJob", "kubeflow.org"): {
         "api_paths": ["apis/kubeflow.org/v1/"],
         "api": "pytorchjobs",
@@ -3057,39 +3065,54 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # networking.istio.io
     ("DestinationRule", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "destinationrules",
     },
     ("EnvoyFilter", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "envoyfilters",
     },
     ("Gateway", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "gateways",
     },
     ("ProxyConfig", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "proxyconfigs",
     },
     ("ServiceEntry", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "serviceentries",
     },
     ("Sidecar", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "sidecars",
     },
     ("VirtualService", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "virtualservices",
     },
     ("WorkloadEntry", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/"],
         "api": "workloadentries",
     },
     ("WorkloadGroup", "networking.istio.io"): {
-        "api_paths": ["apis/networking.istio.io/v1beta1/", "apis/networking.istio.io/v1alpha3/"],
+        "api_paths": ["apis/networking.istio.io/v1/",
+                      "apis/networking.istio.io/v1beta1/",
+                      "apis/networking.istio.io/v1alpha3/"],
         "api": "workloadgroups",
     },
     # nfd.k8s-sigs.io
@@ -3603,7 +3626,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "authorizationpolicies",
     },
     ("PeerAuthentication", "security.istio.io"): {
-        "api_paths": ["apis/security.istio.io/v1beta1/"],
+        "api_paths": ["apis/security.istio.io/v1/",
+                      "apis/security.istio.io/v1beta1/"],
         "api": "peerauthentications",
     },
     ("RequestAuthentication", "security.istio.io"): {
@@ -3661,9 +3685,18 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "clusterservingruntimes",
         "namespaced": False,
     },
+    ("ClusterStorageContainer", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
+        "api": "clusterstoragecontainers",
+        "namespaced": False,
+    },
     ("InferenceGraph", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
         "api": "inferencegraphs",
+    },
+    ("InferenceService", "serving.kserve.io"): {
+        "api_paths": ["apis/serving.kserve.io/v1beta1/"],
+        "api": "inferenceservices",
     },
     ("ServingRuntime", "serving.kserve.io"): {
         "api_paths": ["apis/serving.kserve.io/v1alpha1/"],
@@ -3962,7 +3995,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # telemetry.istio.io
     ("Telemetry", "telemetry.istio.io"): {
-        "api_paths": ["apis/telemetry.istio.io/v1alpha1/"],
+        "api_paths": ["apis/telemetry.istio.io/v1/",
+                      "apis/telemetry.istio.io/v1alpha1/"],
         "api": "telemetries",
     },
     # template.openshift.io
