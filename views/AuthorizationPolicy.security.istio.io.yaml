@@ -25,13 +25,36 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["workload_selector", "action"]
+        fields: ["controller", "workload_selector", "action"]
     rows:
       action:
         header: [["Action:", ["main", "infoheader"]]]
         path: "spec#action"
         type: "str"
         default: "ALLOW"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       workload_selector:
         header: [["Selector:", ["main", "infoheader"]]]
         paths:
@@ -51,12 +74,12 @@ infoview:
     infogetter: "get_auth_rule_info"
     field_indexes:
       Normal:
-        fields: ["source", "operation", "condition"]
-        sortcolumn: "source"
+        fields: ["sources", "operations", "conditions"]
+        sortcolumn: "sources"
     fields:
-      condition:
+      conditions:
         header: "Condition:"
-        path: "condition"
+        path: "conditions"
         type: "raw"
         formatter: "list"
         formatting:
@@ -86,9 +109,9 @@ infoview:
             - type: "no_pad"
           -
             - type: "set_end"
-      operation:
+      operations:
         header: "Operation:"
-        path: "operation"
+        path: "operations"
         type: "raw"
         formatter: "list"
         formatting:
@@ -142,9 +165,9 @@ infoview:
             - type: "list_end"
           -
             - type: "list_end"
-      source:
+      sources:
         header: "Source:"
-        path: "source"
+        path: "sources"
         type: "raw"
         formatter: "list"
         formatting:
@@ -198,3 +221,15 @@ infoview:
             - type: "list_end"
           -
             - type: "list_end"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

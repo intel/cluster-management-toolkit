@@ -2154,7 +2154,15 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
                             d[key] = value
                     vlist.append(d)
                 else:
+                    sys.exit(f"{item=}")
                     vlist.append(item)
+        elif flatten_dicts and tmp2 is not None:
+            for item in tmp2:
+                d = {}
+                for key, value in item.items():
+                    d["key"] = key
+                    d["value"] = value
+                    vlist.append(d)
         else:
             vlist = tmp2
 

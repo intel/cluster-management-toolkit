@@ -166,9 +166,16 @@ def format_list(items: Any, fieldlen: int, pad: int,
 
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
-                import sys
                 if isinstance(field_prefixes[i], (tuple, ThemeRef)):
                     array.append(field_prefixes[i])
+                elif isinstance(field_prefixes[i], list):
+                    for fix in field_prefixes[i]:
+                        if isinstance(fix, dict):
+                            context = deep_get(fix, DictPath("context"), "separators")
+                            key = deep_get(fix, DictPath("type"))
+                            array.append(ThemeRef(context, key, selected))
+                        else:
+                            array.append(fix)
                 else:
                     for prefix in field_prefixes:
                         pref = prefix
@@ -179,6 +186,14 @@ def format_list(items: Any, fieldlen: int, pad: int,
             if field_suffixes is not None and i < len(field_suffixes):
                 if isinstance(field_prefixes[i], (tuple, ThemeRef)):
                     array.append(field_suffixes[i])
+                elif isinstance(field_suffixes[i], list):
+                    for fix in field_suffixes[i]:
+                        if isinstance(fix, dict):
+                            context = deep_get(fix, DictPath("context"), "separators")
+                            key = deep_get(fix, DictPath("type"))
+                            array.append(ThemeRef(context, key, selected))
+                        else:
+                            array.append(fix)
                 else:
                     for suffix in field_suffixes:
                         suff = suffix
@@ -952,6 +967,10 @@ def __fix_to_str(fix: Union[List[Union[ThemeRef, Tuple[str, str]]],
         for subfix in fix:
             if isinstance(subfix, ThemeRef):
                 fixstr += str(subfix)
+            elif isinstance(subfix, dict):
+                context = deep_get(subfix, DictPath("context"), "separators")
+                key = deep_get(subfix, DictPath("type"))
+                fixstr += str(ThemeRef(context, key))
             elif isinstance(subfix, tuple) and len(subfix) == 2:
                 fixstr += str(ThemeRef(subfix[0], subfix[1]))
             else:
@@ -995,7 +1014,11 @@ def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
     field_prefixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_prefixes"))
     field_suffixes: List[ThemeRef] = deep_get(kwargs, DictPath("field_suffixes"))
 
-    items = getattr(obj, field)
+    try:
+        items = getattr(obj, field)
+    except AttributeError:
+        import sys
+        sys.exit(dir(obj))
 
     strings: List[str] = []
 
@@ -1208,9 +1231,10 @@ def get_formatting(field: Dict[str, Any],
         return ThemeRef(context, key)
 
     for item in items:
-        # field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeStr]]
+        # field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeStr]],
+        # list[list[Union[ThemeRef, ThemeStr]]],
         # or Union[ThemeRef, ThemeStr]; in the latter case turn it into a list
-        if isinstance(item, (ThemeAttr, ThemeRef, ThemeStr)):
+        if isinstance(item, (ThemeAttr, ThemeRef, ThemeStr, list)):
             result.append(item)
         elif isinstance(item, dict):
             context = deep_get(item, DictPath("context"), default_context)

@@ -32,7 +32,7 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["model_format", "version", "autoselect"]
+        fields: ["model_format", "version", "autoselect", "priority"]
         sortcolumn: "model_format"
     fields:
       autoselect:
@@ -43,6 +43,13 @@ infoview:
         header: "Model Format:"
         path: "name"
         type: "str"
+      priority:
+        header: "Priority:"
+        path: "priority"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
       version:
         header: "Version:"
         path: "name"
