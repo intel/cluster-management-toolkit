@@ -188,6 +188,24 @@ listview:
         formatter: "markdown"
     - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
       filetype: "yaml"
+      path: "kustomize"
+      pathtype: "dict"
+      _extra_data:
+        name: "kustomize"
+        installed_version:
+          fieldgetter: "fieldgetter_executable_version"
+          fieldgetter_args:
+            executable: "/usr/bin/kustomize"
+            args: ["version"]
+            version_regex: '^v(\d+)(\.)(\d+)(\.)(\d+)'
+        file_not_found_status: "No changelog found"
+        paths:
+        - filepath: "{HOME}/.cmt/version-cache/kustomize_changelog.md"
+          filetype: "text"
+          pathtype: "raw"
+        formatter: "markdown"
+    - filepath: "{HOME}/.cmt/version-cache/candidate_versions.yaml"
+      filetype: "yaml"
       path: "rke2"
       pathtype: "dict"
       _extra_data:
