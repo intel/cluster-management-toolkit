@@ -166,7 +166,8 @@ def format_list(items: Any, fieldlen: int, pad: int,
 
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
-                if isinstance(field_prefixes[i], tuple):
+                import sys
+                if isinstance(field_prefixes[i], (tuple, ThemeRef)):
                     array.append(field_prefixes[i])
                 else:
                     for prefix in field_prefixes:
@@ -176,7 +177,7 @@ def format_list(items: Any, fieldlen: int, pad: int,
             array.append(formatted_string)
             # And now the suffix
             if field_suffixes is not None and i < len(field_suffixes):
-                if isinstance(field_suffixes[i], tuple):
+                if isinstance(field_prefixes[i], (tuple, ThemeRef)):
                     array.append(field_suffixes[i])
                 else:
                     for suffix in field_suffixes:
