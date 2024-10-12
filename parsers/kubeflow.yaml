@@ -12,6 +12,13 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+- name: "kubeflow"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kubeflownotebookswg/kfam"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value"
 - name: "tensorflow"
   show_in_selector: false
   matchkeys:
@@ -58,3 +65,21 @@
         - "|"
       message:
         field: 3
+- name: "kubeflow"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kubeflownotebookswg/profile-controller"
+  - image_name: "/kubeflownotebookswg/notebook-controller"
+  - image_name: "/kubeflownotebookswg/pvcviewer-controller"
+  - image_name: "/kubeflownotebookswg/tensorboard-controller"
+  parser_rules:
+  - name: "glog"
+  - name: "tab_separated"
+- name: "kubeflow"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kubeflowkatib/katib-controller"
+  - image_name: "/kubeflowkatib/katib-db-manager"
+  parser_rules:
+  - name: "glog"
+  - name: "json"
