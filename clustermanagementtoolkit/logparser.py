@@ -662,9 +662,16 @@ def iptables(message: str,
         for themearray, _loglevel in remnants:
             old_messages.append(themearray_to_string(themearray))
 
+    variable_regex = re.compile(r"^[A-Z][A-Z0-9_]*=.*")
     for i, items in enumerate(old_messages):
         tmp_message: List[Union[ThemeRef, ThemeStr]] = []
         for j, item in enumerate(items.split(" ")):
+            # Variables consume the entire line
+            if variable_regex.match(items) is not None:
+                tmp_message.append(ThemeStr(items,
+                                   ThemeAttr("types", "iptables_variable")))
+                break
+
             if not j:
                 if item.startswith(("/usr/sbin/iptables", "/sbin/iptables")):
                     tmp_message.append(ThemeStr(item,
@@ -678,6 +685,9 @@ def iptables(message: str,
                 elif item.startswith("COMMIT"):
                     tmp_message.append(ThemeStr(item,
                                        ThemeAttr("types", "iptables_command")))
+                elif item.startswith("-"):
+                    tmp_message.append(ThemeStr(item,
+                                       ThemeAttr("types", "iptables_option")))
                 elif item.startswith("#"):
                     tmp_message.append(ThemeStr(items[j:],
                                        ThemeAttr("types", "iptables_comment")))
