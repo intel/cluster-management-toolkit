@@ -4,3 +4,11 @@
   - pod_name: "dex"
   parser_rules:
   - name: "key_value"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Dex Version:"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "failed to list custom resource"
+      loglevel: "error"
