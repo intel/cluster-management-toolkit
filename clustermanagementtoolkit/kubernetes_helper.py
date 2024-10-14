@@ -2149,7 +2149,8 @@ class KubernetesHelper:
             # was in an unsupported format;
             # check Content-Type, Content-Encoding, and the data itself.
             raise TypeError("415: Unsupported Media Type; this is probably a programming error; "
-                            f"method: {method}, URL: {url}; header_params: {header_params}")
+                            f"method: {method}, URL: {url}; header_params: {header_params}, "
+                            f"body: {body}")
         elif status == 422:
             # Unprocessable entity
             # The content and syntax is correct, but the request cannot be processed
