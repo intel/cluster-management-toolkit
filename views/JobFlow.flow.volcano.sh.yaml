@@ -7,3 +7,35 @@ listview:
   field_indexes:
     Wide:
       fields: ["namespace", "name", "age"]
+infoview:
+  name: "Job Flow Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["job_retain_policy"]
+    rows:
+      job_retain_policy:
+        header: [["Job Retain Policy:", ["main", "infoheader"]]]
+        path: "spec#jobRetainPolicy"
+        type: "str"
+  shortcuts:
+    "Flows":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "List flows"
+      widget: "windowwidget"
+      title: "Flows:"
+      selectable: true
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#flows"
+        fields:
+        - "name"
+        pass_ref: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Flow Information"
+        _named_title: true
+        _name_path: "name"

@@ -11,7 +11,7 @@ listview:
   group: "Batch Scheduling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "phase", "min_members", "running", "queue", "age"]
+      fields: ["namespace", "name", "min_members", "running", "queue", "phase", "age"]
       sortcolumn: "phase"
   fields:
     min_members:
@@ -38,6 +38,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_error"
+            Inqueue:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
             Pending:
               field_colors:
               - context: "main"
@@ -46,6 +50,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            Unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
     queue:
       header: "Queue:"
       path: "spec#queue"
@@ -96,7 +104,6 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
-        align: "right"
       min_task_members:
         header: [["Min Task Members:", ["main", "infoheader"]]]
         paths:
@@ -133,6 +140,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_error"
+              Inqueue:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
               Pending:
                 field_colors:
                 - context: "main"
@@ -174,7 +185,6 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
-        align: "right"
   shortcuts:
     "Open controller":
       key: "c"
