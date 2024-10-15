@@ -6,7 +6,7 @@ command:
 - "clusterq"
 listview:
   name: "Cluster Queues"
-  group: "Job Queueing"
+  group: "Batch Scheduling"
   field_indexes:
     Normal:
       fields: ["name", "cohort", "strategy", "pending_workloads", "admitted_workloads", "age"]
@@ -75,6 +75,7 @@ infoview:
       namespace_selector:
         header: [["Namespace Selector:", ["main", "infoheader"]]]
         path: "spec#namespaceSelector#matchNames"
+        default: ["<unset>"]
         type: "raw"
         formatter: "list"
       preemption_header:
