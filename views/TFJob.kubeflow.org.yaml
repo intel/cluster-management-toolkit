@@ -1,0 +1,121 @@
+kind: "TFJob"
+api_family: "kubeflow.org"
+default_command: "tfjobs"
+listview:
+  name: "TFJobs"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "state"]
+      sortcolumn: "namespace"
+  fields:
+    state:
+      header: "State:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "type"
+        index: -1
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            TFJobCreated:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Succeeded:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+infoview:
+  name: "TFJob Info"
+  infopad:
+    row_indexes:
+      Normal:
+        # fields: ["chief_header", "evaluators_header", "parameter_servers_header", "workers_header", "state"]
+        fields: ["parameter_servers_header", "parameter_servers_replicas", "parameter_servers_restart_policy", "workers_header", "workers_replicas", "workers_restart_policy", "state"]
+    rows:
+    # chief_header:
+    #   header: [["Chief:", ["main", "infoheader"]]]
+    # evaluators_header:
+    #   header: [["Evaluators:", ["main", "infoheader"]]]
+      parameter_servers_header:
+        header: [["Parameter Servers:", ["main", "infoheader"]]]
+      parameter_servers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#tfReplicaSpecs#PS#replicas"
+        type: "int"
+        formatter: "numerical"
+      parameter_servers_restart_policy:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#tfReplicaSpecs#PS#restartPolicy"
+        type: "str"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              TFJobCreated:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Succeeded:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+      workers_header:
+        header: [["Workers:", ["main", "infoheader"]]]
+      workers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#tfReplicaSpecs#Worker#replicas"
+        type: "int"
+        formatter: "numerical"
+      workers_restart_policy:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#tfReplicaSpecs#Worker#restartPolicy"
+        type: "str"
+  shortcuts:
+    "View Parameter Server Replica Template":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show parameter server replica template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Parameter server replica template"
+        _pass_obj: true
+        path: "spec#tfReplicaSpecs#PS"
+    "View Worker Replica Template":
+      key: "w"
+      read_only: true
+      helptext: "Show worker replica template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Worker replica template"
+        _pass_obj: true
+        path: "spec#tfReplicaSpecs#Worker"

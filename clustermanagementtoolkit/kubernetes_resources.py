@@ -2363,7 +2363,9 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "experiments",
     },
     ("MPIJob", "kubeflow.org"): {
-        "api_paths": ["apis/kubeflow.org/v1alpha2/", "apis/kubeflow.org/v1/"],
+        "api_paths": ["apis/kubeflow.org/v2beta1/",
+                      "apis/kubeflow.org/v1/",
+                      "apis/kubeflow.org/v1alpha2/"],
         "api": "mpijobs",
     },
     ("MXJob", "kubeflow.org"): {
@@ -2383,7 +2385,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "poddefaults",
     },
     ("Profile", "kubeflow.org"): {
-        "api_paths": ["apis/kubeflow.org/v1beta1/", "apis/kubeflow.org/v1/"],
+        "api_paths": ["apis/kubeflow.org/v1/",
+                      "apis/kubeflow.org/v1beta1/"],
         "api": "profiles",
         "namespaced": False,
     },
@@ -2400,7 +2403,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "scheduledworkflows",
     },
     ("Suggestion", "kubeflow.org"): {
-        "api_paths": ["apis/kubeflow.org/v1alpha3/", "apis/kubeflow.org/v1beta1/"],
+        "api_paths": ["apis/kubeflow.org/v1beta1/",
+                      "apis/kubeflow.org/v1alpha3/"],
         "api": "suggestions",
     },
     ("TFJob", "kubeflow.org"): {
@@ -2408,11 +2412,13 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "tfjobs",
     },
     ("Trial", "kubeflow.org"): {
-        "api_paths": ["apis/kubeflow.org/v1alpha3/", "apis/kubeflow.org/v1beta1/"],
+        "api_paths": ["apis/kubeflow.org/v1beta1/",
+                      "apis/kubeflow.org/v1alpha3/"],
         "api": "trials",
     },
     ("Viewer", "kubeflow.org"): {
-        "api_paths": ["apis/kubeflow.org/v1alpha1/", "apis/kubeflow.org/v1beta1/"],
+        "api_paths": ["apis/kubeflow.org/v1beta1/",
+                      "apis/kubeflow.org/v1alpha3/"],
         "api": "viewers",
     },
     # kubeovn.io

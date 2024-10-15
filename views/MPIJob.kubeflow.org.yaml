@@ -20,6 +20,10 @@ listview:
       formatting:
         mapping:
           mappings:
+            Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             MPIJobCreated:
               field_colors:
               - context: "main"
@@ -37,15 +41,25 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["slots_per_worker", "state"]
+        fields: ["launchers_header", "launchers_replicas", "workers_header", "workers_replicas", "workers_slots_per_worker", "run_policy_header", "run_policy_clean_pod_policy", "run_policy_suspend", "state"]
     rows:
-      slots_per_worker:
-        header: [["Slots per worker:", ["main", "infoheader"]]]
-        path: "spec#slotsPerWorker"
+      launchers_header:
+        header: [["Launchers:", ["main", "infoheader"]]]
+      launchers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#mpiReplicaSpecs#Launcher#replicas"
         type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
+        formatter: "numerical"
+      run_policy_clean_pod_policy:
+        header: [["  Clean Pod Policy:", ["main", "infoheader"]]]
+        path: "spec#runPolicy#cleanPodPolicy"
+        type: "str"
+      run_policy_header:
+        header: [["Run Policy:", ["main", "infoheader"]]]
+      run_policy_suspend:
+        header: [["  Suspend:", ["main", "infoheader"]]]
+        path: "spec#runPolicy#suspend"
+        type: "bool"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
@@ -57,6 +71,10 @@ infoview:
         formatting:
           mapping:
             mappings:
+              Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
               MPIJobCreated:
                 field_colors:
                 - context: "main"
@@ -69,6 +87,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_done"
+      workers_header:
+        header: [["Workers:", ["main", "infoheader"]]]
+      workers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#mpiReplicaSpecs#Worker#replicas"
+        type: "int"
+        formatter: "numerical"
+      workers_slots_per_worker:
+        header: [["  Slots per worker:", ["main", "infoheader"]]]
+        path: "spec#slotsPerWorker"
+        type: "int"
+        formatter: "numerical"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -173,24 +203,24 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
-    "View Launcher Replica Specs":
+    "View Launcher Replica Template":
       key: "s"
       modifier: "shift"
       read_only: true
-      helptext: "Show launcher replica specs"
+      helptext: "Show launcher replica template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Launcher replica specs"
+        title: "Launcher replica template"
         _pass_obj: true
         path: "spec#mpiReplicaSpecs#Launcher"
-    "View Worker Replica Specs":
+    "View Worker Replica Template":
       key: "w"
       read_only: true
-      helptext: "Show worker replica specs"
+      helptext: "Show worker replica template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Worker replica specs"
+        title: "Worker replica template"
         _pass_obj: true
         path: "spec#mpiReplicaSpecs#Worker"
