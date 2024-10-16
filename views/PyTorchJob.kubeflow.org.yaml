@@ -1,8 +1,11 @@
-kind: "TFJob"
+kind: "PyTorchJob"
 api_family: "kubeflow.org"
-default_command: "tfjobs"
+default_command: "pytorchjobs"
+command:
+- "ptjobs"
+- "ptjob"
 listview:
-  name: "TensorFlow Jobs"
+  name: "PyTorch Jobs"
   group: "Kubeflow"
   field_indexes:
     Normal:
@@ -56,15 +59,12 @@ listview:
               - context: "main"
                 type: "status_pending"
 infoview:
-  name: "TensorFlow Job Info"
+  name: "PyTorch Job Info"
   infopad:
     row_indexes:
       Normal:
-        # fields: ["chief_header", "evaluators_header", "parameter_servers_header", "workers_header", "state"]
-        fields: ["parameter_servers_header", "parameter_servers_replicas", "parameter_servers_restart_policy", "parameter_servers_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
+        fields: ["masters_header", "masters_replicas", "masters_restart_policy", "masters_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
     rows:
-    # chief_header:
-    #   header: [["Chief:", ["main", "infoheader"]]]
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
@@ -81,23 +81,21 @@ infoview:
           # This is a meta-type, indicating where the age goes
           - type: "age"
           - type: "generic"
-    # evaluators_header:
-    #   header: [["Evaluators:", ["main", "infoheader"]]]
-      parameter_servers_header:
-        header: [["Parameter Servers:", ["main", "infoheader"]]]
-      parameter_servers_replicas:
+      masters_header:
+        header: [["Masters:", ["main", "infoheader"]]]
+      masters_replicas:
         header: [["  Replicas:", ["main", "infoheader"]]]
-        path: "spec#tfReplicaSpecs#PS#replicas"
+        path: "spec#pytorchReplicaSpecs#Master#replicas"
         type: "int"
         formatter: "numerical"
-      parameter_servers_restart_policy:
+      masters_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
-        path: "spec#tfReplicaSpecs#PS#restartPolicy"
+        path: "spec#pytorchReplicaSpecs#Master#restartPolicy"
         type: "str"
-      parameter_servers_status:
+      masters_status:
         header: [["  Status:", ["main", "infoheader"]]]
         paths:
-        - path: ["Succeeded: ", ["status#replicaStatuses#PS#succeeded"], "Active: ", ["status#replicaStatuses#PS#active"], "Failed: ", ["status#replicaStatuses#PS#failed"]]
+        - path: ["Succeeded: ", ["status#replicaStatuses#Master#succeeded"], "Active: ", ["status#replicaStatuses#Master#active"], "Failed: ", ["status#replicaStatuses#Master#failed"]]
           pathtype: "tuple"
           default: ["", 0, "", 0, "", 0]
         formatter: "list"
@@ -150,12 +148,12 @@ infoview:
         header: [["Workers:", ["main", "infoheader"]]]
       workers_replicas:
         header: [["  Replicas:", ["main", "infoheader"]]]
-        path: "spec#tfReplicaSpecs#Worker#replicas"
+        path: "spec#pytorchReplicaSpecs#Worker#replicas"
         type: "int"
         formatter: "numerical"
       workers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
-        path: "spec#tfReplicaSpecs#Worker#restartPolicy"
+        path: "spec#pytorchReplicaSpecs#Worker#restartPolicy"
         type: "str"
       workers_status:
         header: [["  Status:", ["main", "infoheader"]]]
@@ -282,17 +280,16 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
-    "View Parameter Server Replica Template":
-      key: "p"
-      modifier: "shift"
+    "View Master Replica Template":
+      key: "s"
       read_only: true
-      helptext: "Show parameter server replica template"
+      helptext: "Show master replica template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Parameter server replica template"
+        title: "Master replica template"
         _pass_obj: true
-        path: "spec#tfReplicaSpecs#PS"
+        path: "spec#pytorchReplicaSpecs#Master"
     "View Worker Replica Template":
       key: "w"
       read_only: true
@@ -302,4 +299,4 @@ infoview:
       action_args:
         title: "Worker replica template"
         _pass_obj: true
-        path: "spec#tfReplicaSpecs#Worker"
+        path: "spec#pytorchReplicaSpecs#Worker"
