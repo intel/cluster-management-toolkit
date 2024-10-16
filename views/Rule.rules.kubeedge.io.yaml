@@ -1,0 +1,68 @@
+kind: "Rule"
+api_family: "rules.kubeedge.io"
+default_command: "rules"
+listview:
+  name: "Rules"
+  group: "KubeEdge"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "source", "target", "age"]
+  fields:
+    source:
+      header: "Source:"
+      path: "spec#source"
+      type: "str"
+    target:
+      header: "Target:"
+      path: "spec#target"
+      type: "str"
+infoview:
+  name: "Rule Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["source", "source_resource", "target", "target_resource"]
+    rows:
+      source:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ource:", ["main", "infoheader"]]]
+        path: "spec#source"
+        type: "str"
+      source_resource:
+        header: [["Source Resource:", ["main", "infoheader"]]]
+        path: "spec#sourceResource"
+        type: "str"
+      target:
+        header: [["T", ["main", "infoheader_shortcut"]], ["arget:", ["main", "infoheader"]]]
+        path: "spec#target"
+        type: "str"
+      target_resource:
+        header: [["Target Resource:", ["main", "infoheader"]]]
+        path: "spec#targetResource"
+        type: "str"
+  shortcuts:
+    "Open source Rule Endpoint":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for source Rule Endpoint"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RuleEndpoint"
+        api_family: "rules.kubeedge.io"
+        name_path: "spec#source"
+        namespace_path: "metadata#namespace"
+    "Open target Rule Endpoint":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target Rule Endpoint"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "RuleEndpoint"
+        api_family: "rules.kubeedge.io"
+        name_path: "spec#target"
+        namespace_path: "metadata#namespace"

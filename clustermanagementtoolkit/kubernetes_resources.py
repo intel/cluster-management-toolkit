@@ -436,6 +436,16 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "apirequestcounts",
         "namespaced": False,
     },
+    # apps.kubeedge.io
+    ("EdgeApplication", "apps.kubeedge.io"): {
+        "api_paths": ["apis/apps.kubeedge.io/v1alpha1/"],
+        "api": "edgeapplications",
+    },
+    ("NodeGroup", "apps.kubeedge.io"): {
+        "api_paths": ["apis/apps.kubeedge.io/v1alpha1/"],
+        "api": "nodegroups",
+        "namespaced": False,
+    },
     # apps.kruise.io
     ("AdvancedCronJob", "apps.kruise.io"): {
         "api_paths": ["apis/apps.kruise.io/v1alpha1/"],
@@ -1587,6 +1597,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/deviceplugin.intel.com/v1/"],
         "api": "sgxdeviceplugins",
         "namespaced": False,
+    },
+    # devices.kubeedge.io
+    ("DeviceModel", "devices.kubeedge.io"): {
+        "api_paths": ["apis/devices.kubeedge.io/v1beta1/"],
+        "api": "devicemodels",
+    },
+    ("Device", "devices.kubeedge.io"): {
+        "api_paths": ["apis/devices.kubeedge.io/v1beta1/"],
+        "api": "devices",
     },
     # dex.coreos.com
     ("AuthCode", "dex.coreos.com"): {
@@ -3209,6 +3228,17 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/opentelemetry.io/v1alpha1/"],
         "api": "opentelemetrycollectors",
     },
+    # operations.kubeedge.io
+    ("ImagePrePullJob", "operations.kubeedge.io"): {
+        "api_paths": ["apis/operations.kubeedge.io/v1alpha1/"],
+        "api": "imageprepulljobs",
+        "namespaced": False,
+    },
+    ("NodeUpgradeJob", "operations.kubeedge.io"): {
+        "api_paths": ["apis/operations.kubeedge.io/v1alpha1/"],
+        "api": "nodeupgradejobs",
+        "namespaced": False,
+    },
     # operator.cluster.x-k8s.io
     ("AddonProvider", "operator.cluster.x-k8s.io"): {
         "api_paths": ["apis/operator.cluster.x-k8s.io/v1alpha2/"],
@@ -3450,6 +3480,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/policy.kruise.io/v1alpha1/"],
         "api": "podunavailablebudgets",
     },
+    # policy.kubeedge.io
+    ("ServiceAccountAccess", "policy.kubeedge.io"): {
+        "api_paths": ["apis/policy.kubeedge.io/v1alpha1/"],
+        "api": "serviceaccountaccesses",
+    },
     # policy.linkerd.io
     ("AuthorizationPolicy", "policy.linkerd.io"): {
         "api_paths": ["apis/policy.linkerd.io/v1alpha1/"],
@@ -3541,6 +3576,16 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/reaper.cassandra-reaper.io/v1alpha1/"],
         "api": "reapers",
     },
+    # reliablesyncs.kubeedge.io
+    ("ClusterObjectSync", "reliablesyncs.kubeedge.io"): {
+        "api_paths": ["apis/reliablesyncs.kubeedge.io/v1alpha1/"],
+        "api": "clusterobjectsyncs",
+        "namespaced": False,
+    },
+    ("ObjectSync", "reliablesyncs.kubeedge.io"): {
+        "api_paths": ["apis/reliablesyncs.kubeedge.io/v1alpha1/"],
+        "api": "objectsyncs",
+    },
     # reporting.kio.kasten.io
     ("Report", "reporting.kio.kasten.io"): {
         "api_paths": ["apis/reporting.kio.kasten.io/v1alpha1/"],
@@ -3603,6 +3648,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Route", "route.openshift.io"): {
         "api_paths": ["apis/route.openshift.io/v1/"],
         "api": "routes",
+    },
+    # rules.kubeedge.io
+    ("RuleEndpoint", "rules.kubeedge.io"): {
+        "api_paths": ["apis/rules.kubeedge.io/v1/"],
+        "api": "ruleendpoints",
+    },
+    ("Rule", "rules.kubeedge.io"): {
+        "api_paths": ["apis/rules.kubeedge.io/v1/"],
+        "api": "rules",
     },
     # runtime.cluster.x-k8s.io
     ("ExtensionConfig", "runtime.cluster.x-k8s.io"): {
