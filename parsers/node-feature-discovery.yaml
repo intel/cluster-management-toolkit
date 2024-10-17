@@ -6,6 +6,8 @@
   - pod_name: "nfd-worker"
   - pod_name: "nfd-topology-updater"
   - pod_name: "nfd-node-feature-discovery"
+  - pod_name: "fpga-discovery-master"
+  - pod_name: "fpga-discovery-worker"
   parser_rules:
   - name: "ts_8601"
   - name: "glog"
@@ -19,6 +21,18 @@
       block_end:
       - matchtype: "startswith"
         matchkey: "}"
+        format_block_end: false
+        process_block_end: false
+  - name: "yaml_line"
+    options:
+      block_start:
+      - matchtype: "endswith"
+        matchkey: '"configuration successfully updated" configuration=<'
+        matchline: "any"
+        format_block_start: false
+      block_end:
+      - matchtype: "startswith"
+        matchkey: " >"
         format_block_end: false
         process_block_end: false
   - name: "override_severity"

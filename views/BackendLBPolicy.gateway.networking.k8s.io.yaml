@@ -1,0 +1,63 @@
+kind: "BackendLBPolicy"
+api_family: "gateway.networking.k8s.io"
+default_command: "backendlbpolicies"
+command:
+- "backendlbps"
+- "backendlbp"
+listview:
+  name: "Backend Load Balancer Policies"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Backend Load Balancer Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["session_persistance_header", "session_persistance_name", "session_persistance_type", "session_persistance_cookie_config_header", "session_persistance_cookie_config_lifetime_type", "session_persistance_absolute_timeout", "session_persistance_idle_timeout"]
+    rows:
+      session_persistance_absolute_timeout:
+        header: [["  Absolute Timeout:", ["main", "infoheader"]]]
+        path: "spec#sessionPersistence#absoluteTimeout"
+        type: "str"
+        formatter: "numerical_with_units"
+      session_persistance_cookie_config_header:
+        header: [["  Cookie Config:", ["main", "infoheader"]]]
+      session_persistance_cookie_config_lifetime_type:
+        header: [["    Lifetime Type:", ["main", "infoheader"]]]
+        path: "spec#sessionPersistence#cookieConfig#lifetimeType"
+        type: "str"
+      session_persistance_header:
+        header: [["Session Persistance:", ["main", "infoheader"]]]
+      session_persistance_idle_timeout:
+        header: [["  Idle Timeout:", ["main", "infoheader"]]]
+        path: "spec#sessionPersistence#idleTimeout"
+        type: "str"
+        formatter: "numerical_with_units"
+      session_persistance_name:
+        header: [["  Session Name:", ["main", "infoheader"]]]
+        path: "spec#sessionPersistence#sessionName"
+        type: "str"
+      session_persistance_type:
+        header: [["  Session Type:", ["main", "infoheader"]]]
+        path: "spec#sessionPersistence#type"
+        type: "str"
+  shortcuts:
+    "Target References":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show target references"
+      widget: "windowwidget"
+      headers: ["Kind:", "Group:", "Name:"]
+      sortcolumn: "group"
+      itemgetter: "get_list_fields"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#targetRefs"
+        fields:
+        - "kind"
+        - "group"
+        - "name"

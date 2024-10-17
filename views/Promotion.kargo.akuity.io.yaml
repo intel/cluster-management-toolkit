@@ -1,0 +1,146 @@
+kind: "Promotion"
+api_family: "kargo.akuity.io"
+default_command: "promotions"
+command:
+- "kargopromotions"
+- "kargopromotion"
+- "kargoproms"
+- "kargoprom"
+listview:
+  name: "Promotions"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "stage", "freight", "phase", "age", "message"]
+      sortcolumn: "namespace"
+  fields:
+    freight:
+      header: "Freight:"
+      path: "spec#freight"
+      type: "str"
+    message:
+      header: "Message:"
+      path: "status#message"
+      default: "<unset>"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Errored:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Succeeded:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+    stage:
+      header: "Stage:"
+      path: "spec#stage"
+      type: "str"
+infoview:
+  name: "Promotion Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "stage", "freight", "phase", "message", "finished_at"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      finished_at:
+        header: [["Finished At:", ["main", "infoheader"]]]
+        path: "status#finishedAt"
+        type: "timestamp"
+        formatter: "timestamp"
+        default: -1
+      freight:
+        header: [["Freight:", ["main", "infoheader"]]]
+        path: "spec#freight"
+        type: "str"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        path: "status#message"
+        default: "<unset>"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Errored:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Succeeded:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      stage:
+        header: [["Stage:", ["main", "infoheader"]]]
+        path: "spec#stage"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

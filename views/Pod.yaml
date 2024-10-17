@@ -108,6 +108,12 @@ listview:
           values: ["Failed"]
         - key: "status#reason"
           values: ["Evicted"]
+      successful:
+        source: "object"
+        enabled: false
+        block:
+        - key: "status#phase"
+          values: ["Succeeded"]
   actions:
     actionlist:
       "Delete resource":
@@ -130,14 +136,24 @@ listview:
       action_args:
         var: "filters#evicted#enabled"
       force_update: true
+    "Show Successful Pods":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show / Hide successful pods"
+      action: "toggle_var"
+      action_args:
+        var: "filters#successful#enabled"
+      force_update: true
   statusmsg:
   - ["Hide evicted pods: ", ["var", "filters#evicted#enabled"]]
+  - ["Hide successful pods: ", ["var", "filters#successful#enabled"]]
 infoview:
   name: "Pod Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "pod_ips", "termination_grace_period", "enable_service_links"]
+        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "host_ips", "pod_ips", "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
@@ -243,6 +259,13 @@ infoview:
         header: [["Enable Service Links:", ["main", "infoheader"]]]
         path: "spec#enableServiceLinks"
         type: "bool"
+      host_ips:
+        header: [["Host IPs:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#hostIPs"
+          pathtype: "items"
+          subpath: "ip"
+        formatter: "address"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         paths:
@@ -298,6 +321,7 @@ infoview:
       priority_class:
         header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
         path: "spec#priorityClassName"
+        default: "<default>"
         type: "str"
       qos_class:
         header: [["QoS Class:", ["main", "infoheader"]]]
@@ -593,6 +617,20 @@ infoview:
         kind: "PriorityClass"
         api_family: "scheduling.k8s.io"
         name_path: "spec#priorityClassName"
+    "Show container resources":
+      key: "r"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show container resources"
+      title: "Resources:"
+      widget: "windowwidget"
+      headers: ["Requests:", "Limits:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        source: "selected"
+        path: "resources"
+      # This isn't supported for now
+      sortcolumn: "requests"
     "SSH to Node":
       key: "s"
       modifier: "shift"
@@ -604,3 +642,38 @@ infoview:
         _pass_selected: true
       kind_filter:
         kind: "Node"
+    "Show container volume mounts":
+      key: "m"
+      read_only: false
+      helptext: "Show container volume mounts"
+      title: "Volume Mounts:"
+      widget: "windowwidget"
+      headers: ["Name:", "Mount Point:", "Read Only:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        source: "selected"
+        path: "volumeMounts"
+        fields:
+        - "name"
+        - "mountPath"
+        - "readOnly"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "Show volumes":
+      key: "v"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show volumes"
+      title: "Volumes:"
+      widget: "windowwidget"
+      headers: ["Name:", "Type:", "Configuration:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#volumes"
+        fields:
+        - "name"
+        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
+          value: "key"
+        - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
+      # This isn't supported for now
+      sortcolumn: "name"

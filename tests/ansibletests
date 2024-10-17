@@ -23,13 +23,21 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-import cmtlib
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmttypes import deep_get, deep_set, DictPath
-from cmttypes import FilePath, ArgumentValidationError, FilePathAuditError
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import ansible_helper
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
+
+from clustermanagementtoolkit.cmtpaths import SYSTEM_ANSIBLE_PLAYBOOK_DIR, ANSIBLE_PLAYBOOK_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, ArgumentValidationError, FilePathAuditError
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import ansible_helper
+from clustermanagementtoolkit.ansible_helper import get_playbook_path
 
 TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybooks")))
 
@@ -63,16 +71,18 @@ def test_get_playbook_path(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (playbook, expected_result, expected_exception)
         testdata = (
-            ("get_versions.yaml", ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"), None),
+            ("get_versions.yaml",
+             (SYSTEM_ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"),
+              ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")), None),
             ("NONEXISTINGPLAYBOOK.yaml",
-             ANSIBLE_PLAYBOOK_DIR.joinpath("NONEXISTINGPLAYBOOK.yaml"), None),
+             None, FilePathAuditError),
             ("", None, ValueError),
             (None, None, TypeError),
             (1, None, TypeError),
         )
         for indata, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata)) != expected_result:
+                if (tmp := fun(indata)) not in expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
@@ -100,11 +110,15 @@ def test_get_playbook_path(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool]:
+def test_populate_playbooks_from_filenames(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    fun = ansible_helper.populate_playbooks_from_paths
+    fun = ansible_helper.populate_playbooks_from_filenames
+
+    # Add test playbooks dir to cmtconfig
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"),
+             [TEST_PLAYBOOKS_DIR], create_path=True)
 
     if result:
         ansithemeprint([ANSIThemeStr("  Note", "note"),
@@ -114,26 +128,31 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
         # Indata format:
         # (playbook, expected_result, expected_exception)
         testdata = (
-            ([ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")],
+            ([FilePath("get_versions.yaml")],
              [([ANSIThemeStr(string="  • ", themeref="separator"),
                 ANSIThemeStr(string="Get package versions", themeref="play")],
-               ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"))], None),
-            ([ANSIBLE_PLAYBOOK_DIR.joinpath("NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
-            ([TEST_PLAYBOOKS_DIR.joinpath("hostname.yml")],
+               (SYSTEM_ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml"),
+                ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")))], None),
+
+            ([FilePath("NONEXISTINGPLAYBOOK.yml")], None, FilePathAuditError),
+
+            ([FilePath("hostname.yml")],
              [([ANSIThemeStr(string="  • ", themeref="separator"),
                ANSIThemeStr(string="Hostname test playbook; local, lacks summary",
                             themeref="play")],
-               TEST_PLAYBOOKS_DIR.joinpath("hostname.yml"))], None),
-            ([TEST_PLAYBOOKS_DIR.joinpath(".hostname.yml")], [], None),
-            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml")],
+               (TEST_PLAYBOOKS_DIR.joinpath("hostname.yml"),))], None),
+
+            ([FilePath(".hostname.yml")], None, FilePathAuditError),
+
+            ([FilePath("uptime.yaml")],
              [([ANSIThemeStr(string="  • ", themeref="separator"),
                 ANSIThemeStr(string="Running “", themeref="play"),
                 ANSIThemeStr(string="uptime", themeref="programname"),
                 ANSIThemeStr(string="“", themeref="play")],
-               TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"))], None),
-            ([TEST_PLAYBOOKS_DIR.joinpath("~uptime.yaml")], [], None),
-            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.json")], None, ValueError),
-            ([TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml", "NonExistingFile.yaml")],
+               (TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"),))], None),
+            ([FilePath("~uptime.yaml")], [], None),
+            ([FilePath("uptime.json")], None, ValueError),
+            ([FilePath("uptime.yaml").joinpath("NonExistingFile.yaml")],
              None, FilePathAuditError),
             ([""], None, ValueError),
             (None, None, TypeError),
@@ -141,12 +160,18 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
         )
         for indata, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata)) != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              f"          input: {indata}\n" \
-                              f"         output: {tmp}\n" \
-                              f"       expected: {expected_result}"
-                    result = False
+                tmp = fun(indata)
+                for i, entry in enumerate(tmp):
+                    themearray, path = entry
+                    expected_themearray, expected_paths = expected_result[i]
+                    if themearray != expected_themearray or path not in expected_paths:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"          input: {indata}\n" \
+                                  f"         output: {tmp}\n" \
+                                  f"       expected: {expected_result}"
+                        result = False
+                        break
+                if not result:
                     break
             except Exception as e:
                 if expected_exception is not None:
@@ -156,6 +181,7 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
                                   f"      exception: {type(e)}\n" \
+                                  f"        message: {str(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break
@@ -163,6 +189,7 @@ def test_populate_playbooks_from_paths(verbose: bool = False) -> Tuple[str, bool
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"      exception: {type(e)}\n" \
+                              f"        message: {str(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False
                     break
@@ -175,6 +202,10 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
 
     fun = ansible_helper.ansible_print_action_summary
 
+    # Add test playbooks dir to cmtconfig
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"),
+             [TEST_PLAYBOOKS_DIR], create_path=True)
+
     if result:
         ansithemeprint([ANSIThemeStr("  Note", "note"),
                         ANSIThemeStr(": These testcases only works correctly if the playbooks "
@@ -186,10 +217,10 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
         # Indata format:
         # (playbook, expected_result, expected_exception)
         testdata = (
-            (ansible_helper.populate_playbooks_from_paths([
-                ANSIBLE_PLAYBOOK_DIR.joinpath("get_versions.yaml")]), None),
-            (ansible_helper.populate_playbooks_from_paths([
-                TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml")]), None),
+            (ansible_helper.populate_playbooks_from_filenames([
+                FilePath("get_versions.yaml")]), None),
+            (ansible_helper.populate_playbooks_from_filenames([
+                FilePath("uptime.yaml")]), None),
             ([], ValueError),
             ([1], TypeError),
             (None, TypeError),
@@ -206,13 +237,15 @@ def test_ansible_print_action_summary(verbose: bool = False) -> Tuple[str, bool]
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {indata}\n" \
                                   f"      exception: {type(e)}\n" \
+                                  f"        message: {str(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
-                              f"      exception: {type(e)}\n"
+                              f"      exception: {type(e)}\n" \
+                              f"        message: {str(e)}\n"
                     result = False
                     break
     return message, result
@@ -229,13 +262,15 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (mock_path, mock_value, mock_return_value, inventory, expected_result)
         testdata = (
-            ("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist", None,
+            ("clustermanagementtoolkit.ansible_helper.ANSIBLE_INVENTORY",
+             "/doesnotexist", None,
              {"all": {"hosts": {}, "vars": {}}}),
-            ("ansible_helper.secure_read_yaml", None, {}, {"all": {"hosts": {}, "vars": {}}}),
-            ("ansible_helper.secure_read_yaml", None,
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml",
+             None, {}, {"all": {"hosts": {}, "vars": {}}}),
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml", None,
              {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}},
              {"all": {"hosts": {"foo": {}}, "vars": {"bar": 42}}}),
-            ("ansible_helper.secure_read_yaml", None,
+            ("clustermanagementtoolkit.ansible_helper.secure_read_yaml", None,
              {"all": {"hosts": None, "vars": None}},
              {"all": {"hosts": {}, "vars": {}}}),
         )
@@ -247,7 +282,8 @@ def test_ansible_get_inventory_dict(verbose: bool = False) -> Tuple[str, bool]:
                         tmp = fun()
                 else:
                     # We might not have an inventory available, so pretend that we do
-                    with mock.patch("ansible_helper.Path.is_file", return_value=True), \
+                    with mock.patch("clustermanagementtoolkit.ansible_helper.Path.is_file",
+                                    return_value=True), \
                          mock.patch(mock_path, return_value=mock_return_value):
                         tmp = fun()
                 if tmp != expected_result:
@@ -270,7 +306,8 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
 
     if result:
         expected_result = False
-        with mock.patch("ansible_helper.ANSIBLE_INVENTORY", "/doesnotexist"):
+        with mock.patch("clustermanagementtoolkit.ansible_helper.ANSIBLE_INVENTORY",
+                        "/doesnotexist"):
             if (tmp := fun(groups=["all"], highlight=False, include_groupvar=False,
                            include_hostvars=False, include_hosts=False)):
                 message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -319,8 +356,10 @@ def test_ansible_get_inventory_pretty(verbose: bool = False) -> Tuple[str, bool]
             groups, highlight, include_groupvars, \
                 include_hostvars, include_hosts, expected_exception = indata
             try:
-                with mock.patch("ansible_helper.Path.is_file", return_value=True), \
-                     mock.patch("ansible_helper.secure_read_yaml", return_value=inventory):
+                with mock.patch("clustermanagementtoolkit.ansible_helper.Path.is_file",
+                                return_value=True), \
+                        mock.patch("clustermanagementtoolkit.ansible_helper.secure_read_yaml",
+                                   return_value=inventory):
                     tmp = fun(groups=groups, highlight=highlight,
                               include_groupvar=include_groupvars,
                               include_hostvars=include_hostvars, include_hosts=include_hosts)
@@ -583,11 +622,12 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
                 try:
                     if override_ansible_configuration:
                         deep_set(ansible_helper.ansible_configuration,
-                                 DictPath("ansible_user"), "foo")
+                                 DictPath("ansible_user"), "foo", create_path=True)
                         deep_set(ansible_helper.ansible_configuration,
-                                 DictPath("ansible_password"), "bar")
+                                 DictPath("ansible_password"), "bar", create_path=True)
                         deep_set(ansible_helper.ansible_configuration,
-                                 DictPath("disable_strict_host_key_checking"), True)
+                                 DictPath("disable_strict_host_key_checking"), True,
+                                 create_path=True)
                     if (tmp := fun(path, overwrite=overwrite, temporary=True)) != expected_result:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           path: {path}\n" \
@@ -628,12 +668,12 @@ def test___ansible_create_inventory(verbose: bool = False) -> Tuple[str, bool]:
                         result = False
                         break
             deep_set(ansible_helper.ansible_configuration,
-                     DictPath("ansible_user"), real_ansible_user)
+                     DictPath("ansible_user"), real_ansible_user, create_path=True)
             deep_set(ansible_helper.ansible_configuration,
-                     DictPath("ansible_password"), real_ansible_password)
+                     DictPath("ansible_password"), real_ansible_password, create_path=True)
             deep_set(ansible_helper.ansible_configuration,
                      DictPath("disable_strict_host_key_checking"),
-                     real_ansible_disable_strict_host_key_checking)
+                     real_ansible_disable_strict_host_key_checking, create_path=True)
             os.unlink(tf.name)
     return message, result
 
@@ -1914,7 +1954,7 @@ def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (path, inventory, verbose, expected_retval, expected_result, expected_exception)
         testdata = (
-            (TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"), d, False, 0, {"Checking uptime": {
+            (get_playbook_path(FilePath("uptime.yaml")), d, False, 0, {"Checking uptime": {
                 "task": "Checking uptime",
                 "start_date": None,
                 "end_date": None,
@@ -1927,7 +1967,7 @@ def test_ansible_run_playbook(verbose: bool = False) -> Tuple[str, bool]:
                 "stderr_lines": [],
                 "msg_lines": [],
                 "ansible_facts": None}}, None),
-            (TEST_PLAYBOOKS_DIR.joinpath("uptime.yaml"), d, True, 0, {"Checking uptime": {
+            (get_playbook_path(FilePath("uptime.yaml")), d, True, 0, {"Checking uptime": {
                 "task": "Checking uptime",
                 "start_date": None,
                 "end_date": None,
@@ -2057,8 +2097,8 @@ tests: Dict = {
         "callable": test_get_playbook_path,
         "result": None,
     },
-    ("populate_playbooks_from_paths()",): {
-        "callable": test_populate_playbooks_from_paths,
+    ("populate_playbooks_from_filenames()",): {
+        "callable": test_populate_playbooks_from_filenames,
         "result": None,
     },
     ("ansible_print_action_summary()",): {
@@ -2162,7 +2202,8 @@ def main() -> int:
 
     init_ansithemeprint(themefile=None)
     cmtlib.read_cmtconfig()
-    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR)
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR,
+             create_path=True)
 
     # How many non-prepare testcases do we have?
     testcount = sum(1 for i in tests if not deep_get(tests[i], DictPath("prepare"), False))

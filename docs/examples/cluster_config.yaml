@@ -1,4 +1,4 @@
-apiVersion: "v1alpha3"
+apiVersion: "v1alpha4"
 kind: "ClusterDeployment"
 
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
@@ -42,6 +42,16 @@ options:
   # [optional; default: cilium]
   # cni: "cilium"
 
+  # Hardcoded version of CNI;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # [optional; default: latest]
+  # cni_version: "v0.16.16"
+
+  # Hardcoded version of CNI executable;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # [optional; default: latest]
+  # cni_executable_version: "v0.16.16"
+
   # Should the program prompt for an ansible/host password; valid options:
   # true
   # false
@@ -68,6 +78,12 @@ cluster:
   # cri-o
   # [optional; default: containerd]
   cri: "containerd"
+
+  # Hardcoded version of CRI;
+  # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+  # Currently only supported for cri-o.
+  # [optional; default: auto]
+  # cri_version: "1.30"
 
   # Name of the cluster:
   # [mandatory]
@@ -264,6 +280,12 @@ nodes:
     # [optional; if not provided the cluster-wide default will be used]
     # cri: "containerd"
 
+    # Hardcoded version of CRI;
+    # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+    # Currently only supported for cri-o.
+    # [optional; default: auto]
+    # cri_version: "1.30"
+
     # Ansible parallelism:
     # [optional; default: 5]
     # forks: 5
@@ -439,6 +461,13 @@ nodes:
     #     # [optional; if not provided the cluster-wide default will be used]
     #     # cri: "containerd"
 
+    #     # Hardcoded version of CRI;
+    #     # useful (for instance) when behind a corporate firewall that ratelimits github API requests.
+    #     # [optional; default: auto]
+    #     # Currently only supported for cri-o.
+    #     # cri_version: "1.30"
+
+
     #     # Ansible parallelism:
     #     # [optional; default: 5]
     #     # forks: 5
@@ -563,7 +592,7 @@ workloads:
       # if <<<version>>> is encountered in a URI it will be substituted for the value
       # of the version field.
       # [optional; default: ""]
-      version: "v0.15.1"
+      version: "v0.16.4"
       # The URI[s] to the data;
       # this field can be either a string (a single URI) or a list (a single or multiple URIs)
       # All URIs need to be prefixed with their type
@@ -582,7 +611,7 @@ workloads:
   - kubectl:
       method: "apply"
       type: "file"
-      version: "v1.14.3"
+      version: "v1.16.0"
       uri: "https://github.com/cert-manager/cert-manager/releases/download/<<<version>>>/cert-manager.crds.yaml"
   - helm:
       # The name of the helm repo to add
@@ -598,7 +627,7 @@ workloads:
       # Create the namespace if it doesn't exist?
       createNamespace: true
       # The version to install
-      version: "v1.14.3"
+      version: "v1.16.0"
 - name: "intel-resource-drivers-for-kubernetes"
   description: |
     Intel GPU resource driver is a better alternative for Intel GPU device plugin,

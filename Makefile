@@ -5,10 +5,6 @@ python_executables = \
 	cmt-install \
 	cmtinv \
 	cmu
-python_data_coverage = \
-	helptexts.py \
-	recommended_permissions.py \
-	pvtypes.py
 python_test_executables = \
 	tests/async_fetch \
 	tests/ansibletests \
@@ -19,7 +15,10 @@ python_test_executables = \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/coverage_stats \
+	tests/cnitests \
 	tests/cursestests \
+	tests/datatests \
+	tests/dgtests \
 	tests/dump_cluster \
 	tests/dump_logs \
 	tests/fgtests \
@@ -46,6 +45,7 @@ python_unit_tests = \
 	tests/cmtlibtests \
 	tests/cnitests \
 	tests/cursestests \
+	tests/datatests \
 	tests/dgtests \
 	tests/fgtests \
 	tests/fmttests \
@@ -59,38 +59,7 @@ python_unit_tests = \
 	tests/ogtests \
 	tests/typetests \
 	tests/validatortests
-test_lib_symlinks = \
-	about.py \
-	ansible_helper.py \
-	ansithemeprint.py \
-	checks.py \
-	cmtio.py \
-	cmtio_yaml.py \
-	cmtlib.py \
-	cmtpaths.py \
-	cmttypes.py \
-	cmtvalidators.py \
-	cluster_actions.py \
-	cni_data.py \
-	commandparser.py \
-	curses_helper.py \
-	datagetters.py \
-	fieldgetters.py \
-	formatters.py \
-	generators.py \
-	helptexts.py \
-	infogetters.py \
-	itemgetters.py \
-	kubernetes_helper.py \
-	kubernetes_resources.py \
-	listgetters.py \
-	listgetters_async.py \
-	logparser.py \
-	networkio.py \
-	objgetters.py \
-	pvtypes.py \
-	recommended_permissions.py \
-	reexecutor.py
+test_libs_symlink = clustermanagementtoolkit
 
 # F841 is the warning about unused assignments.
 # flake8 doesn't recognise "_<variable>" to capture unused return values;
@@ -125,11 +94,6 @@ coverage: setup_tests
 	@cmd=python3-coverage ;\
 	printf -- "\n\n  Running: tests/atptests --include-clear\n\n" ;\
 	$$cmd run --branch --append tests/atptests --include-clear --end-at 0 || exit 1 ;\
-	printf -- "\n\nRunning python3-coverage to check test coverage on data\n" ;\
-	for test in $(python_data_coverage); do \
-		printf -- "\n\n  Running: $$test\n\n" ;\
-		$$cmd run --branch --append $$test || exit 1 ;\
-	done ;\
 	printf -- "\n\nRunning python3-coverage to check test coverage\n" ;\
 	for test in $(python_unit_tests); do \
 		printf -- "\n\n  Running: $$test\n\n" ;\
@@ -231,7 +195,7 @@ bandit:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning bandit to check for common security issues in Python code\n\n" ;\
-	$$cmd -c .bandit $(python_executables) $(python_test_executables) *.py
+	$$cmd -c .bandit $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py
 
 ruff:
 	@cmd=ruff ;\
@@ -240,7 +204,7 @@ ruff:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning $$cmd to check Python code quality\n\n" ;\
-	for file in $(python_executables) *.py; do \
+	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
@@ -256,7 +220,7 @@ pylint:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to check Python code quality\n\n" ;\
-	for file in $(python_executables) *.py; do \
+	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
@@ -272,7 +236,7 @@ pylint-markdown:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning pylint to generate Pylint Markdown output\n\n" ;\
-	for file in $(python_executables) *.py; do \
+	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
@@ -298,7 +262,7 @@ flake8:
 		exit 0 ;\
 	fi ;\
 	printf -- "\n\nRunning flake8 to check Python code quality\n\n" ;\
-	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 --statistics $(python_executables) *.py && printf -- "OK\n\n" ;\
+	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 --statistics $(python_executables) clustermanagementtoolkit/*.py && printf -- "OK\n\n" ;\
 	printf -- "\n\nRunning flake8 to check Python test case code quality\n\n" ;\
 	$$cmd --ignore $(FLAKE8_IGNORE) --max-line-length 100 --statistics $(python_test_executables) && printf -- "OK\n\n"
 
@@ -312,7 +276,7 @@ regexploit:
 	printf -- "Checking executables\n" ;\
 	$$cmd $(python_executables) $(python_test_executables) &&\
 	printf -- "\nChecking libraries\n" ;\
-	$$cmd *.py
+	$$cmd clustermanagementtoolkit/*.py
 
 yamllint:
 	@cmd=yamllint ;\
@@ -335,7 +299,7 @@ mypy:
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) $(python_test_executables) *.py; do \
+	for file in $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py; do \
 		$$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file || true; \
 	done
 
@@ -348,7 +312,7 @@ mypy-markdown:
 		exit 0; \
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
-	for file in $(python_executables) $(python_test_executables) *.py; do \
+	for file in $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
@@ -393,16 +357,10 @@ parser_bundle:
 	done
 
 remove_test_symlinks:
-	@(cd tests ;\
-	  for file in $(test_lib_symlinks); do \
-		rm -f $$file; \
-	  done)
+	@(cd tests; rm -f $(test_libs_symlink))
 
 create_test_symlinks:
-	@(cd tests ;\
-	  for file in $(test_lib_symlinks); do \
-		test -L $$file || ln -s ../$$file . ;\
-	  done)
+	@(cd tests; test -L $(test_libs_symlink) || ln -s ../$(test_libs_symlink) .)
 
 setup_tests: create_test_symlinks
 	@(cd tests ;\
@@ -477,5 +435,31 @@ check_theme_use: setup_tests
 	for theme in themes/*.yaml; do \
 		printf -- "\nChecking against theme file $$theme:\n" ;\
 		printf -- "---\n" ;\
-		./tests/check_theme_use $$theme $(python_executables) $(python_test_executables) *.py ;\
+		./tests/check_theme_use $$theme $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py ;\
 	done
+
+build:
+	./build.py views/templates views/variables views
+
+# This rule is used when making a system-wide install
+INSTALL := install --mode=755
+INSTALL_DATA := install --mode=644
+INSTALL_DIRECTORY := install -d
+BASH_COMPLETION_DIR := /usr/share/bash-completion/completions
+CMT_CONFIG_DIR := /etc/cmt
+CMT_CONFIGLET_DIR := $(CMT_CONFIG_DIR)/cmt.yaml.d
+CMT_DATA_DIR := /usr/share/cluster-management-toolkit
+DIST_PACKAGE_DIR := /usr/lib/python3/dist-packages
+BINDIR := /usr/bin
+
+install:
+	@$(INSTALL_DIRECTORY) $(DESTDIR)$(BASH_COMPLETION_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_CONFIGLET_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_DATA_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(DIST_PACKAGE_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(BINDIR) &&\
+	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
+	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
+	tar cf - --exclude=.*.swp clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
+	tar cf - --exclude=.*.swp parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) &&\
+	cp views/*.yaml $(DESTDIR)$(CMT_DATA_DIR)/views || printf -- "Installation failed.\n"

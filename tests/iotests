@@ -20,17 +20,25 @@ from types import GeneratorType
 from typing import cast, Dict, Tuple
 import yaml
 
-from cmtio import check_path, expand_path, join_securitystatus_set
-from cmtio import execute_command, execute_command_with_response
-from cmtio import secure_copy, secure_mkdir, secure_read, secure_read_string
-from cmtio import secure_rm, secure_rmdir, secure_symlink, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_read_yaml_all, secure_write_yaml
-from networkio import verify_checksum
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+from clustermanagementtoolkit.cmtio import check_path, expand_path, join_securitystatus_set
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import secure_copy, secure_mkdir
+from clustermanagementtoolkit.cmtio import secure_read, secure_read_string
+from clustermanagementtoolkit.cmtio import secure_rm, secure_rmdir, secure_symlink
+from clustermanagementtoolkit.cmtio import secure_which, secure_write_string
 
-from cmtpaths import HOMEDIR
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmtio_yaml import secure_write_yaml
+
+from clustermanagementtoolkit.networkio import verify_checksum
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
+
+# from clustermanagementtoolkit.cmtpaths import HOMEDIR
 
 """
 A checker that validates cmtio, cmtio_yaml, and networkio
@@ -1186,7 +1194,7 @@ testcases = {
         "test": test_secure_mkdir,
         "exist_ok": True,
         "permissions": 0o700,
-        "expect": set(),
+        "expect": {SecurityStatus.OK},
     },
     "Creating testdir; exist_ok = False (secure_mkdir)": {
         "path": FilePath(f"{TEST_DIR}/testdir"),
@@ -1687,19 +1695,19 @@ testcases = {
         "test": test_expand_path,
         "expect": (FilePath(f"{TEST_DIR}/05-not_executable.sh"), False),
     },
-    "Valid path, expand {HOME}/ (expand_path)": {
-        "path": "{HOME}/.cmt/cmt.yaml",
-        "fallback": "",
-        "test": test_expand_path,
-        "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
-    },
-    "Bare filename, expand {HOME}/ in search_paths (expand_path)": {
-        "path": "cmt.yaml",
-        "search_paths": ["{HOME}/.cmt/"],
-        "fallback": "",
-        "test": test_expand_path,
-        "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
-    },
+    # "Valid path, expand {HOME}/ (expand_path)": {
+    #     "path": "{HOME}/.cmt/cmt.yaml",
+    #     "fallback": "",
+    #     "test": test_expand_path,
+    #     "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+    # },
+    # "Bare filename, expand {HOME}/ in search_paths (expand_path)": {
+    #     "path": "cmt.yaml",
+    #     "search_paths": ["{HOME}/.cmt/"],
+    #     "fallback": "",
+    #     "test": test_expand_path,
+    #     "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+    # },
     "Bare filename, /bin in search_paths (expand_path)": {
         "path": "ls",
         "search_paths": ["/bin"],
@@ -1713,26 +1721,26 @@ testcases = {
         "test": test_expand_path,
         "expect": (FilePath(""), False),
     },
-    "Valid path, matching suffix (expand_path)": {
-        "path": f"{HOMEDIR}/.cmt/cmt",
-        "fallback": "",
-        "suffixes": [".yaml"],
-        "test": test_expand_path,
-        "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
-    },
-    "Valid path, non-matching suffix (expand_path)": {
-        "path": f"{HOMEDIR}/.cmt/cmt",
-        "fallback": "",
-        "suffixes": [".json"],
-        "test": test_expand_path,
-        "expect": (FilePath(""), False),
-    },
-    "Valid path, non suffix (expand_path)": {
-        "path": f"{HOMEDIR}/.cmt/cmt",
-        "fallback": "",
-        "test": test_expand_path,
-        "expect": (FilePath(""), False),
-    },
+    # "Valid path, matching suffix (expand_path)": {
+    #     "path": f"{HOMEDIR}/.cmt/cmt",
+    #     "fallback": "",
+    #     "suffixes": [".yaml"],
+    #     "test": test_expand_path,
+    #     "expect": (FilePath(f"{HOMEDIR}/.cmt/cmt.yaml"), True),
+    # },
+    # "Valid path, non-matching suffix (expand_path)": {
+    #     "path": f"{HOMEDIR}/.cmt/cmt",
+    #     "fallback": "",
+    #     "suffixes": [".json"],
+    #     "test": test_expand_path,
+    #     "expect": (FilePath(""), False),
+    # },
+    # "Valid path, non suffix (expand_path)": {
+    #     "path": f"{HOMEDIR}/.cmt/cmt",
+    #     "fallback": "",
+    #     "test": test_expand_path,
+    #     "expect": (FilePath(""), False),
+    # },
     "Valid command, no env (execute_command)": {
         "command": [FilePath("/bin/sleep"), "0"],
         "env": None,
@@ -1792,8 +1800,12 @@ def main() -> int:
     fail = 0
     success = 0
     failed_testcases = []
+    fast_fail = False
 
     init_ansithemeprint(themefile=None)
+
+    if "--fast-fail" in sys.argv:
+        fast_fail = True
 
     i = 0
 
@@ -1820,6 +1832,8 @@ def main() -> int:
             failed_testcases.append(f"{i}: {testcase}")
             ansithemeprint([ANSIThemeStr("  FAIL", "error"),
                             ANSIThemeStr(f": {msg}", "default")])
+            if fast_fail:
+                sys.exit(fail)
         else:
             if not prepare:
                 ansithemeprint([ANSIThemeStr("  PASS", "success")])

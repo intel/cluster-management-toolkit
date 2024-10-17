@@ -15,7 +15,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["oauth_metadata", "integrated_oauth_metadata", "cluster_version", "service_account_issuer", "webhook_token_authenticator_config", "type"]
+        fields: ["cluster_version", "oauth_metadata", "integrated_oauth_metadata", "service_account_issuer", "webhook_token_authenticator_config", "type"]
     rows:
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
@@ -35,6 +35,7 @@ infoview:
       oauth_metadata:
         header: [["O", ["main", "infoheader_shortcut"]], ["Auth Metadata:", ["main", "infoheader"]]]
         path: "spec#oauthMetadata#name"
+        default: "<unset>"
         type: "str"
       service_account_issuer:
         header: [["Service Account Issuer:", ["main", "infoheader"]]]
@@ -45,6 +46,7 @@ infoview:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"
         default: "IntegratedOAuth"
+        fallback_on_empty: true
         type: "str"
       webhook_token_authenticator_config:
         header: [["Webhook ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["oken Authenticator Config:", ["main", "infoheader"]]]

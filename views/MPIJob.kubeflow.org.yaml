@@ -6,9 +6,24 @@ listview:
   group: "Kubeflow"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age", "state"]
+      fields: ["namespace", "name", "age", "state", "completion_time_with_age"]
       sortcolumn: "state"
   fields:
+    completion_time_with_age:
+      header: "Completion Time:"
+      paths:
+      - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+        pathtype: "timestamp_with_age"
+      formatter: "timestamp_with_age"
+      formatting:
+        field_colors:
+        # This is a meta-type, indicating where the timestamp goes
+        - type: "timestamp"
+        - type: "generic"
+        - type: "generic"
+        # This is a meta-type, indicating where the age goes
+        - type: "age"
+        - type: "generic"
     state:
       header: "State:"
       paths:
@@ -20,6 +35,14 @@ listview:
       formatting:
         mapping:
           mappings:
+            Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
             MPIJobCreated:
               field_colors:
               - context: "main"
@@ -37,15 +60,62 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["slots_per_worker", "state"]
+        fields: ["launchers_header", "launchers_replicas", "launchers_status", "workers_header", "workers_replicas", "workers_slots_per_worker", "workers_status", "run_policy_header", "run_policy_clean_pod_policy", "run_policy_suspend", "completion_time_with_age", "state"]
     rows:
-      slots_per_worker:
-        header: [["Slots per worker:", ["main", "infoheader"]]]
-        path: "spec#slotsPerWorker"
-        type: "int"
+      completion_time_with_age:
+        header: [["Completion Time:", ["main", "infoheader"]]]
+        paths:
+        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
+          pathtype: "timestamp_with_age"
+        formatter: "timestamp_with_age"
         formatting:
           field_colors:
+          # This is a meta-type, indicating where the timestamp goes
+          - type: "timestamp"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          # This is a meta-type, indicating where the age goes
+          - type: "age"
+          - type: "generic"
+      launchers_header:
+        header: [["Launchers:", ["main", "infoheader"]]]
+      launchers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#mpiReplicaSpecs#Launcher#replicas"
+        type: "int"
+        formatter: "numerical"
+      launchers_status:
+        header: [["  Status:", ["main", "infoheader"]]]
+        paths:
+        - path: ["Succeeded: ", ["status#replicaStatuses#Launcher#succeeded"], "Active: ", ["status#replicaStatuses#Launcher#active"], "Failed: ", ["status#replicaStatuses#Launcher#failed"]]
+          pathtype: "tuple"
+          default: ["", 0, "", 0, "", 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
           - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          field_separators:
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+      run_policy_clean_pod_policy:
+        header: [["  Clean Pod Policy:", ["main", "infoheader"]]]
+        path: "spec#runPolicy#cleanPodPolicy"
+        type: "str"
+      run_policy_header:
+        header: [["Run Policy:", ["main", "infoheader"]]]
+      run_policy_suspend:
+        header: [["  Suspend:", ["main", "infoheader"]]]
+        path: "spec#runPolicy#suspend"
+        type: "bool"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
@@ -57,6 +127,14 @@ infoview:
         formatting:
           mapping:
             mappings:
+              Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
               MPIJobCreated:
                 field_colors:
                 - context: "main"
@@ -69,6 +147,39 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_done"
+      workers_header:
+        header: [["Workers:", ["main", "infoheader"]]]
+      workers_replicas:
+        header: [["  Replicas:", ["main", "infoheader"]]]
+        path: "spec#mpiReplicaSpecs#Worker#replicas"
+        type: "int"
+        formatter: "numerical"
+      workers_slots_per_worker:
+        header: [["  Slots per worker:", ["main", "infoheader"]]]
+        path: "spec#slotsPerWorker"
+        type: "int"
+        formatter: "numerical"
+      workers_status:
+        header: [["  Status:", ["main", "infoheader"]]]
+        paths:
+        - path: ["Succeeded: ", ["status#replicaStatuses#Worker#succeeded"], "Active: ", ["status#replicaStatuses#Worker#active"], "Failed: ", ["status#replicaStatuses#Worker#failed"]]
+          pathtype: "tuple"
+          default: ["", 0, "", 0, "", 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          field_separators:
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -173,24 +284,23 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
-    "View Launcher Replica Specs":
-      key: "s"
-      modifier: "shift"
+    "View Launcher Replica Template":
+      key: "l"
       read_only: true
-      helptext: "Show launcher replica specs"
+      helptext: "Show launcher replica template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Launcher replica specs"
+        title: "Launcher replica template"
         _pass_obj: true
         path: "spec#mpiReplicaSpecs#Launcher"
-    "View Worker Replica Specs":
+    "View Worker Replica Template":
       key: "w"
       read_only: true
-      helptext: "Show worker replica specs"
+      helptext: "Show worker replica template"
       action: "call"
       action_call: "view_yaml"
       action_args:
-        title: "Worker replica specs"
+        title: "Worker replica template"
         _pass_obj: true
         path: "spec#mpiReplicaSpecs#Worker"

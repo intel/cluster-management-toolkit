@@ -1,0 +1,17 @@
+kind: "RuleEndpoint"
+api_family: "rules.kubeedge.io"
+default_command: "ruleendpoints"
+listview:
+  name: "Rule Endpoints"
+  group: "KubeEdge"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "type", "age"]
+  fields:
+    type:
+      header: "Type:"
+      path: "spec#ruleEndpointType"
+      type: "str"
+infoview:
+  name: "Rule Endpoint Info"
+  infopad:

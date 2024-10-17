@@ -9,9 +9,12 @@ infoview:
     decoder:
       override_decoder: false
       decoder: "decode_base64"
+    formatter_args:
+      unfold_msg: false
   statusmsg:
   - ["Decode Base64: ", ["var", "decoder#override_decoder"]]
   - ["Formatter: ", ["var", "formatter"]]
+  - ["Unfold Message: ", ["var", "formatter_args#unfold_msg"]]
   shortcuts:
     # __ResourceView has no last applied configuration or events, and is a YAML-viewer so cannot view itself...
     "Show Events": null
@@ -24,4 +27,13 @@ infoview:
       action: "toggle_var"
       action_args:
         var: "decoder#override_decoder"
+      force_update: true
+    "Toggle message unfolding":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "Toggle message unfolding"
+      action: "toggle_var"
+      action_args:
+        var: "formatter_args#unfold_msg"
       force_update: true

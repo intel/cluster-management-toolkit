@@ -1,0 +1,193 @@
+kind: "__JWTRule"
+default_command: "__"
+infoview:
+  name: "JSON Web Token Rule Info"
+  infopad:
+    name_path: null
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["issuer", "timeout", "forward_original_token", "audiences", "jwks_uri", "from_headers", "from_cookies", "from_params", "output_claim_to_headers", "output_payload_to_header"]
+    rows:
+      audiences:
+        header: [["A", ["main", "infoheader_shortcut"]], ["udiences:", ["main", "infoheader"]]]
+        path: "audiences"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          ellipsise: 5
+      forward_original_token:
+        header: [["Forward Original Token:", ["main", "infoheader"]]]
+        path: "forwardOriginalToken"
+        default: false
+        type: "bool"
+      from_cookies:
+        header: [["From ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ookies:", ["main", "infoheader"]]]
+        path: "fromCookies"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          ellipsise: 5
+      from_headers:
+        header: [["F", ["main", "infoheader_shortcut"]], ["rom Headers (name:prefix):", ["main", "infoheader"]]]
+        paths:
+        - path: "fromHeaders"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          - "prefix"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+          field_prefixes:
+          - type: "no_pad"
+          - type: "quote"
+          field_suffixes:
+          - type: "no_pad"
+          - type: "quote"
+          ellipsise: 3
+      from_params:
+        header: [["From ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["arams:", ["main", "infoheader"]]]
+        path: "fromParams"
+        default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          ellipsise: 5
+      issuer:
+        header: [["Issuer:", ["main", "infoheader"]]]
+        path: "issuer"
+        type: "str"
+      jwks_uri:
+        header: [["JSON Web Key Set URI:", ["main", "infoheader"]]]
+        path: "jwks"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      output_claim_to_headers:
+        header: [["O", ["main", "infoheader_shortcut"]], ["utput Claim to Headers (header:claim):", ["main", "infoheader"]]]
+        paths:
+        - path: "outputClaimToHeaders"
+          pathtype: "items"
+          subpaths:
+          - "header"
+          - "claim"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+          field_prefixes:
+          - type: "quote"
+          - type: "quote"
+          field_suffixes:
+          - type: "quote"
+          - type: "quote"
+          ellipsise: 3
+      output_payload_to_header:
+        header: [["Output Payload to Header:", ["main", "infoheader"]]]
+        path: "outputPayloadToHeader"
+        default: "<unset>"
+        type: "str"
+      timeout:
+        header: [["Timeout:", ["main", "infoheader"]]]
+        path: "timeout"
+        default: 5
+        type: "int"
+        formatter: "numerical"
+  shortcuts:
+    # __JWTRule has no last applied configuration or events
+    "Show Events": null
+    "Last Applied Configuration": null
+    "Audiences":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "List audiences"
+      widget: "windowwidget"
+      title: "Audiences:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "audiences"
+      # This isn't supported for now
+      sortcolumn: "audiences"
+    "From Cookies":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "List From cookies"
+      widget: "windowwidget"
+      title: "From Cookies:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "fromCookies"
+      # This isn't supported for now
+      sortcolumn: "from_cookies"
+    "From Headers":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "List From headers"
+      widget: "windowwidget"
+      title: "From Headers:"
+      headers: ["Name:", "Prefix:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "fromHeaders"
+        fields:
+        - "name"
+        - name: "prefix"
+          quote: true
+      # This isn't supported for now
+      sortcolumn: "name"
+    "From Params":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List From params"
+      widget: "windowwidget"
+      title: "From Params:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "fromParams"
+      # This isn't supported for now
+      sortcolumn: "from_params"
+    "View JSON Web Key Set":
+      key: "j"
+      modifier: "shift"
+      read_only: true
+      helptext: "View JSON Web Key Set"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "JSON Web Key Set"
+        _pass_obj: true
+        path: "jwks"
+        include_root: true
+    "Output Claim to Headers":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "List output claim to headers"
+      widget: "windowwidget"
+      title: "Output Claim to Headers:"
+      headers: ["Header:", "Claim:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "outputClaimToHeaders"
+        fields:
+        - "header"
+        - name: "claim"
+          quote: true
+      # This isn't supported for now
+      sortcolumn: "header"

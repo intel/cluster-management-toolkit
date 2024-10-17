@@ -1,0 +1,40 @@
+kind: "ApplicationSet"
+api_family: "argoproj.io"
+default_command: "applicationsets"
+command:
+- "appsets"
+- "appset"
+listview:
+  name: "Application Sets"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Application Set Info"
+  infopad:
+  shortcuts:
+    "Application template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Application template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Application template"
+        _pass_obj: true
+        path: "spec#template"
+    "Generators":
+      key: "g"
+      modifier: "shift"
+      helptext: "Show generators"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Generators"
+        _pass_obj: true
+        path: "spec#generators"
+        include_root: true

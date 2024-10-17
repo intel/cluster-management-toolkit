@@ -30,12 +30,35 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["attach_required", "pod_info_on_mount", "fs_group_policy", "selinux_mount", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
+        fields: ["controller", "attach_required", "pod_info_on_mount", "fs_group_policy", "selinux_mount", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
     rows:
       attach_required:
         header: [["Attach Required:", ["main", "infoheader"]]]
         path: "spec#attachRequired"
         type: "bool"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       fs_group_policy:
         header: [["FS Group Policy:", ["main", "infoheader"]]]
         path: "spec#fsGroupPolicy"
@@ -62,3 +85,15 @@ infoview:
         - path: "spec#volumeLifecycleModes"
           pathtype: "list"
         formatter: "list"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

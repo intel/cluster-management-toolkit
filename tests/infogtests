@@ -18,11 +18,16 @@ import sys
 from typing import Dict, List, Tuple
 import yaml
 
-import cmtlib
-from cmtpaths import DEFAULT_THEME_FILE
-from cmttypes import deep_get, deep_set, DictPath, FilePath, StatusGroup
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import infogetters
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath, FilePath, StatusGroup
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import infogetters
 
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 

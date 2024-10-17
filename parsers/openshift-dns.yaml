@@ -12,6 +12,7 @@
     - matchtype: "startswith"
       matchkey: "CoreDNS"
       loglevel: "notice"
+  - name: "http"
 - name: "openshift-dns"
   show_in_selector: false
   matchkeys:
@@ -20,8 +21,10 @@
   parser_rules:
   - name: "glog"
   - name: "key_value"
+  - name: "tab_separated"
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+  - name: "expand_event"

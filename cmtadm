@@ -39,52 +39,70 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cluster_actions import create_vm_hosts, join_nodes, prepare_nodes, prepare_vm_template
+from clustermanagementtoolkit.cluster_actions import create_vm_hosts, join_nodes, get_crio_version
+from clustermanagementtoolkit.cluster_actions import prepare_nodes, prepare_vm_template
 
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
-from cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
-from cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
-from cmtpaths import BINDIR, HOMEDIR, SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
-from cmtpaths import DEPLOYMENT_DIR
-from cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
-from cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR, CMT_PRE_UPGRADE_DIR
-from cmtpaths import CMT_POST_UPGRADE_DIR, CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
-from cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
-from cmtpaths import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
-from cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, FilePathAuditError
+from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityPolicy, SecurityStatus
 
-from commandparser import parse_commandline
+from clustermanagementtoolkit.cmtpaths import BASH_COMPLETION_BASE_DIR, BASH_COMPLETION_DIR
+from clustermanagementtoolkit.cmtpaths import BINDIR, HOMEDIR
+from clustermanagementtoolkit.cmtpaths import SSH_DIR, SSH_KEYGEN_BIN_PATH, SSH_KEYGEN_ARGS
+from clustermanagementtoolkit.cmtpaths import DEPLOYMENT_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_PREPARE_DIR, CMT_POST_PREPARE_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_SETUP_DIR, CMT_POST_SETUP_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_UPGRADE_DIR, CMT_POST_UPGRADE_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_TEARDOWN_DIR, CMT_POST_TEARDOWN_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_PRE_PURGE_DIR, CMT_POST_PURGE_DIR
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_INVENTORY
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE, CMT_INSTALLATION_INFO_FILE
+from clustermanagementtoolkit.cmtpaths import KUBE_CONFIG_DIR, KUBE_CONFIG_FILE
 
-from ansible_helper import ansible_configuration, ansible_get_inventory_dict, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_add_hosts
-from ansible_helper import ansible_get_hosts_by_group, get_playbook_path
-from ansible_helper import ansible_print_play_results, populate_playbooks_from_paths
+from clustermanagementtoolkit.commandparser import parse_commandline
 
-import cmtio
-from cmtio import check_path, execute_command, execute_command_with_response, secure_mkdir
-from cmtio import secure_read_string, secure_rm, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_write_yaml
-from networkio import download_files, get_github_version
-from networkio import scan_and_add_ssh_keys, update_version_cache
+from clustermanagementtoolkit.ansible_helper import ansible_configuration
+from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_dict, ansible_set_vars
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import ansible_add_hosts
+from clustermanagementtoolkit.ansible_helper import ansible_get_hosts_by_group, get_playbook_path
+from clustermanagementtoolkit.ansible_helper import ansible_print_play_results
+from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_filenames
 
-import cmtlib
-from cmtlib import check_versions_apt, check_versions_yum, check_versions_zypper
-from cmtlib import get_latest_upstream_version, get_cluster_name
-from cmtlib import identify_distro, read_cmtconfig, substitute_list, substitute_string
+from clustermanagementtoolkit import cmtio
+from clustermanagementtoolkit.cmtio import check_path
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import secure_mkdir, secure_read_string, secure_rm
+from clustermanagementtoolkit.cmtio import secure_which, secure_write_string
 
-from cni_data import cni_data
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_write_yaml
 
-import kubernetes_helper
-from kubernetes_helper import get_node_roles
+from clustermanagementtoolkit.networkio import download_files
+from clustermanagementtoolkit.networkio import scan_and_add_ssh_keys, update_version_cache
 
-from ansithemeprint import ANSIThemeStr, ansithemeinput, ansithemeinput_password, ansithemeprint
-from ansithemeprint import ansithemestr_join_list, themearray_override_formatting
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import check_versions_apt
+from clustermanagementtoolkit.cmtlib import check_versions_yum, check_versions_zypper
+from clustermanagementtoolkit.cmtlib import get_latest_upstream_version, get_cluster_name
+from clustermanagementtoolkit.cmtlib import identify_distro, read_cmtconfig
+from clustermanagementtoolkit.cmtlib import substitute_list, substitute_string
 
-import fieldgetters
-import checks
+from clustermanagementtoolkit.cni_data import cni_data
 
-import about
+from clustermanagementtoolkit import kubernetes_helper
+from clustermanagementtoolkit.kubernetes_helper import get_node_roles
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeinput
+from clustermanagementtoolkit.ansithemeprint import ansithemeinput_password, ansithemeprint
+from clustermanagementtoolkit.ansithemeprint import ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import themearray_override_formatting
+
+from clustermanagementtoolkit import fieldgetters
+
+from clustermanagementtoolkit import checks
+
+from clustermanagementtoolkit import about
+
 PROGRAMDESCRIPTION = "Setup or teardown a Kubernetes cluster"
 PROGRAMAUTHORS = "Written by David Weinehall."
 
@@ -108,10 +126,10 @@ prepare_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("prepare_control_plane.yaml"),
+            FilePath("add_kubernetes_repo.yaml"),
         ],
         "deb_packages": [
         ],
@@ -123,9 +141,9 @@ prepare_targets: Dict = {
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("add_kubernetes_repo.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "ansible",
@@ -140,9 +158,9 @@ prepare_targets: Dict = {
     "rke2": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_control_plane.yaml"),
+            FilePath("prepare_passwordless_ansible.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("prepare_control_plane.yaml"),
         ],
         "deb_packages": [
         ],
@@ -157,9 +175,9 @@ setup_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("fetch_kube_config.yaml"),
+            FilePath("install_packages.yaml"),
+            FilePath("kubeadm_setup_control_plane.yaml"),
+            FilePath("fetch_kube_config.yaml"),
         ],
         "deb_packages": [
             "kubeadm",
@@ -203,7 +221,7 @@ setup_control_plane_targets: Dict = {
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "kubectl",
@@ -229,8 +247,8 @@ setup_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_setup_control_plane.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("fetch_kube_config.yaml"),
+            FilePath("rke2_setup_control_plane.yaml"),
+            FilePath("fetch_kube_config.yaml"),
         ],
         "extra_values": {},
     },
@@ -240,14 +258,14 @@ upgrade_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_upgrade_control_plane.yaml"),
+            FilePath("kubeadm_upgrade_control_plane.yaml"),
         ],
         "extra_values": {},
     },
     "localhost": {
         "pretty_name": [("host system", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("install_packages.yaml"),
+            FilePath("install_packages.yaml"),
         ],
         "deb_packages": [
             "kubectl",
@@ -265,7 +283,7 @@ upgrade_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_upgrade_control_plane.yaml"),
+            FilePath("rke2_upgrade_control_plane.yaml"),
         ],
         "extra_values": {},
     },
@@ -275,14 +293,14 @@ teardown_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_teardown_control_plane.yaml"),
+            FilePath("teardown_cni.yaml"),
+            FilePath("kubeadm_teardown_control_plane.yaml"),
         ],
     },
     "rke2": {
         "pretty_name": [("RKE2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_teardown_control_plane.yaml"),
+            FilePath("rke2_teardown_control_plane.yaml"),
         ],
     },
 }
@@ -291,7 +309,7 @@ purge_control_plane_targets: Dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_purge.yaml"),
+            FilePath("kubeadm_purge.yaml"),
         ],
         "deb_packages": [
             "kubeadm",
@@ -319,7 +337,7 @@ purge_control_plane_targets: Dict = {
     "rke2": {
         "pretty_name": [("rke2", "programname")],
         "playbooks": [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_purge.yaml"),
+            FilePath("rke2_purge.yaml"),
         ],
     },
 }
@@ -528,12 +546,15 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
                              pod_network_cidr=pod_network_cidr)
 
 
-def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
+def get_installation_info(cluster_name: Optional[str] = None,
+                          ignore_non_existing: bool = True) -> Dict:
     """
     Return installation info for a cluster, or prepares a new entry if no entry exists yet
 
         Parameters:
             cluster_name (str): The name of the cluster to get information for
+            ignore_non_existing (bool): Ignore and recreate installation_info.yaml
+                                        if the file doesn't exist
         Returns:
             (dict): A dictionary with information about a cluster
     """
@@ -552,7 +573,8 @@ def get_installation_info(cluster_name: Optional[str] = None) -> Dict:
     try:
         info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks=security_checks)
     except FileNotFoundError:
-        pass
+        if not ignore_non_existing:
+            return None
 
     if info is None or info.get("installation_target") is None \
             or (info.get("installation_target") is not None
@@ -617,8 +639,8 @@ def update_installation_info(**kwargs: Any) -> Dict:
     cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
     pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))
     cri: Optional[str] = deep_get(kwargs, DictPath("cri"))
-    control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
-    nodes: Optional[List[str]] = deep_get(kwargs, DictPath("control_plane"))
+    control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_planes"))
+    nodes: Optional[List[str]] = deep_get(kwargs, DictPath("nodes"))
 
     info = get_installation_info(cluster_name=cluster_name)
 
@@ -752,8 +774,10 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
             upgradetype (str): Valid options CNI, executable
             context (str): The cluster context
             pod_network_cidr (str): The CIDR of the pod network
+            cni_version (str): A hardcoded CNI version
     """
     verbose = deep_get(kwargs, DictPath("verbose"), False)
+    cni_version = deep_get(kwargs, DictPath("cni_version"))
 
     if upgradetype not in ("CNI", "executable"):
         raise ValueError(f"Unknown upgradetype {upgradetype}; this is a programming error.")
@@ -768,6 +792,8 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_command"))
     candidate_version_function = \
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_function"))
+    manual_candidate_version_regex = \
+        deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#manual_candidate_version_regex"))
     candidate_version_regex = \
         deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#candidate_version_regex"))
     install_command = deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#install"))
@@ -788,7 +814,12 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                                           version_substitutions),
                                           version_command_regex)
     candidate_version = []
-    if candidate_version_url is not None:
+    if cni_version is not None:
+        tmp_candidate_version = re.match(manual_candidate_version_regex, cni_version)
+        if tmp_candidate_version is None:
+            check_and_print_status(False)
+        candidate_version = list(tmp_candidate_version.groups())
+    elif candidate_version_url is not None:
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr(f"Checking {upgradetype} candidate version", "action")])
         if candidate_version_function is not None:
@@ -796,7 +827,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                                                candidate_version_regex)
             if tmp_candidate_version is None:
                 check_and_print_status(False)
-            candidate_version, _release_data = tmp_candidate_version
+            candidate_version, _release_data, _body = tmp_candidate_version
         else:
             candidate_version = \
                 check_version_from_url(substitute_string(candidate_version_url,
@@ -812,10 +843,26 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                           candidate_version_regex)
 
     if "urls" in deep_get(cni_data, DictPath(f"{cni}#{upgradetype}"), {}):
+        # We should probably use semver here instead
+        if version is not None and candidate_version is not None:
+            is_new_version = None
+            for v1, v2 in zip(version, candidate_version):
+                if v1 != v2:
+                    if v1.isnumeric() and v2.isnumeric():
+                        is_new_version = int(v1) < int(v2)
+                    else:
+                        is_new_version = v1 < v2
+                    break
+            if is_new_version is None:
+                if len(candidate_version) > len(version):
+                    is_new_version = True
+                else:
+                    is_new_version = False
+
         # pylint: disable-next=too-many-boolean-expressions
         if (version is None or not version) \
                 or version is not None and (candidate_version is None or not candidate_version) \
-                or version < candidate_version:
+                or is_new_version:
             new_version = "".join(candidate_version)
 
             ansithemeprint([ANSIThemeStr("\n• ", "separator"),
@@ -1105,7 +1152,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
         if security_violations != [SecurityStatus.OK]:
             ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": The CNI deployment file {cni_filename} is either "
+                            ANSIThemeStr(f": The CNI deployment file {cni_filename} is either "
                                          "missing or unsafe to use; aborting.",
                                          "default")], stderr=True)
             sys.exit(errno.EINVAL)
@@ -1148,9 +1195,9 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
         check_and_print_status(execute_command(substitute_list(uninstall_command, substitutions)))
 
     uninstall_cni_playbooks = [
-        ANSIBLE_PLAYBOOK_DIR.joinpath("teardown_cni.yaml"),
+        FilePath("teardown_cni.yaml"),
     ]
-    playbooks = populate_playbooks_from_paths(uninstall_cni_playbooks)
+    playbooks = populate_playbooks_from_filenames(uninstall_cni_playbooks)
 
     retval = run_playbooks(playbooks=playbooks, hosts=all_nodes_in_cluster)
     if retval:
@@ -1179,6 +1226,8 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     pod_network_cidr = None
     verbose = False
+    cni_version = None
+    cni_executable_version = None
 
     if args:
         cni = args[0]
@@ -1224,12 +1273,16 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     install_cni = False
     action_str = "Upgrading"
-    for opt, _optarg in options:
+    for opt, optarg in options:
         if opt == "install":
             install_cni = True
             action_str = "Installing"
         elif opt == "--verbose":
             verbose = True
+        elif opt == "--cni-version":
+            cni_version = optarg
+        elif opt == "--cni-executable-version":
+            cni_executable_version = optarg
 
     if cni not in cni_data:
         ansithemeprint([ANSIThemeStr(f"{action_str} ", "default"),
@@ -1249,8 +1302,10 @@ def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
     else:
         ansithemeprint([ANSIThemeStr("\n[Upgrading CNI]", "phase")])
 
-    __upgrade_cni(cni, "executable", context_name, pod_network_cidr, verbose=verbose)
-    __upgrade_cni(cni, "CNI", context_name, pod_network_cidr, verbose=verbose)
+    __upgrade_cni(cni, "executable", context_name, pod_network_cidr,
+                  cni_version=cni_executable_version, verbose=verbose)
+    __upgrade_cni(cni, "CNI", context_name, pod_network_cidr,
+                  cni_version=cni_version, verbose=verbose)
 
     if install_cni:
         ansithemeprint([ANSIThemeStr("\nCNI installation successful", "success")])
@@ -1266,6 +1321,8 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
             cni (str): The CNI to configure and install
             context_name (str): The name of the cluster context
             cluster_name (str): The name of the cluster
+            cni_version (str): A hardcoded CNI version
+            cni_executable_version (str): A hardcoded CNI executable version
         Returns:
             result (bool): True on success, False on failure
     """
@@ -1273,6 +1330,8 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
 
     pass_cni = []
     verbose = deep_get(kwargs, DictPath("verbose"), False)
+    cni_version = deep_get(kwargs, DictPath("cni_version"))
+    cni_executable_version = deep_get(kwargs, DictPath("cni_executable_version"))
 
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -1316,7 +1375,10 @@ def __setup_cni(cni: str, context_name: str, cluster_name: str, **kwargs: Any) -
     # if run with a CNI, and thus tries to get all information from the cluster.
     # This will most likely fail during installation, since the cluster
     # hasn't started fully yet and thus cannot provide the necessary information
-    upgrade_cni(options=[("install", ""), ("--verbose", verbose)], args=pass_cni)
+    upgrade_cni(options=[("install", ""),
+                         ("--verbose", verbose),
+                         ("--cni-version", cni_version),
+                         ("--cni-executable-version", cni_executable_version)], args=pass_cni)
     # FIXME
     return True
 
@@ -1854,7 +1916,7 @@ def populate_playbooks_from_dir(path: FilePath) -> List[Tuple[List[ANSIThemeStr]
     """
     playbook_paths = __playbook_paths_from_path(path)
 
-    return populate_playbooks_from_paths(playbook_paths)
+    return populate_playbooks_from_filenames(playbook_paths)
 
 
 # pylint: disable-next=unused-argument
@@ -1943,7 +2005,7 @@ def __generic_task_run_playbooks_on_selection(selection: List[str], installation
             verbose (bool): If the results are printed, should skipped tasks be printed too?
     """
     paths = __playbook_paths_from_path(playbook_dir)
-    playbooks = populate_playbooks_from_paths(paths)
+    playbooks = populate_playbooks_from_filenames(paths)
     if extra_values is None:
         extra_values = {}
     __run_playbooks_on_selection(playbooks=playbooks, selection=selection,
@@ -1962,10 +2024,14 @@ def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool =
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_PREPARE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_PREPARE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_PREPARE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -1980,8 +2046,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
     """
     os_distro = identify_distro()
     selection = __selection_localhost()
-    playbooks = populate_playbooks_from_paths(cast(List[FilePath],
-                                              prepare_targets["localhost"]["playbooks"]))
+    playbooks = populate_playbooks_from_filenames(prepare_targets["localhost"]["playbooks"])
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
@@ -2039,8 +2104,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
         selection = __selection_control_planes()
     else:
         selection = control_planes + nodes
-    playbooks = populate_playbooks_from_paths(cast(List[FilePath],
-                                                   prepare_targets[k8s_distro]["playbooks"]))
+    playbooks = populate_playbooks_from_filenames(prepare_targets[k8s_distro]["playbooks"])
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
@@ -2092,10 +2156,14 @@ def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool 
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_PREPARE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_PREPARE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_PREPARE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -2128,10 +2196,14 @@ def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_SETUP_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_SETUP_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_SETUP_DIR not in str(e):
+            raise
 
 
 def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
@@ -2147,8 +2219,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
     os_distro = identify_distro()
     selection = __selection_localhost()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           setup_control_plane_targets["localhost"]["playbooks"]))
+        populate_playbooks_from_filenames(setup_control_plane_targets["localhost"]["playbooks"])
 
     if os_distro in ("debian",):
         packages = deep_get(setup_control_plane_targets, DictPath("localhost#deb_packages"), [])
@@ -2188,8 +2259,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict,
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           setup_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(setup_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
     extra_values_setup = \
@@ -2238,10 +2308,14 @@ def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = Fals
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_SETUP_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_SETUP_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_SETUP_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument,too-many-locals
@@ -2541,10 +2615,14 @@ def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = Fal
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_UPGRADE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_UPGRADE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_UPGRADE_DIR not in str(e):
+            raise
 
 
 # Run upgrade playbooks on control planes
@@ -2564,8 +2642,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict,
     requested_version = installation_info[cluster_name]["requested_version"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           upgrade_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(upgrade_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
     extra_values_upgrade = \
@@ -2618,10 +2695,14 @@ def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = Fa
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_UPGRADE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_UPGRADE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_UPGRADE_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument
@@ -2658,10 +2739,14 @@ def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = Fa
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_TEARDOWN_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_TEARDOWN_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_TEARDOWN_DIR not in str(e):
+            raise
 
 
 # Run teardown playbooks on control planes
@@ -2678,8 +2763,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict,
     k8s_distro = installation_info[cluster_name]["distro"]
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           teardown_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(teardown_control_plane_targets[k8s_distro]["playbooks"])
 
     __run_playbooks_on_selection(playbooks=playbooks, selection=selection,
                                  extra_values={}, verbose=verbose)
@@ -2697,10 +2781,14 @@ def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = F
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_TEARDOWN_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_TEARDOWN_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_TEARDOWN_DIR not in str(e):
+            raise
 
 
 # pylint: disable-next=unused-argument,too-many-branches
@@ -2787,10 +2875,14 @@ def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_PRE_PURGE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_PRE_PURGE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_PRE_PURGE_DIR not in str(e):
+            raise
 
 
 # Run purge playbooks on control planes
@@ -2808,8 +2900,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict,
     os_distro = identify_distro()
     selection = __selection_control_planes()
     playbooks = \
-        populate_playbooks_from_paths(cast(List[FilePath],
-                                           purge_control_plane_targets[k8s_distro]["playbooks"]))
+        populate_playbooks_from_filenames(purge_control_plane_targets[k8s_distro]["playbooks"])
 
     if os_distro in ("debian",):
         packages = \
@@ -2848,10 +2939,14 @@ def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = Fals
     # The default selection is control planes;
     # the playbooks need to explicitly specify if the play should be run on other hosts
     selection = __selection_control_planes()
-    __generic_task_run_playbooks_on_selection(selection=selection,
-                                              installation_info=installation_info,
-                                              playbook_dir=CMT_POST_PURGE_DIR,
-                                              extra_values={}, verbose=verbose)
+    try:
+        __generic_task_run_playbooks_on_selection(selection=selection,
+                                                  installation_info=installation_info,
+                                                  playbook_dir=CMT_POST_PURGE_DIR,
+                                                  extra_values={}, verbose=verbose)
+    except FileNotFoundError as e:
+        if CMT_POST_PURGE_DIR not in str(e):
+            raise
 
 
 def __validate_task_index(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
@@ -3562,7 +3657,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         install_ansible_posix()
 
         retval, ansible_results = \
-            run_playbook(ANSIBLE_PLAYBOOK_DIR.joinpath("prepare_passwordless_ansible.yaml"),
+            run_playbook(get_playbook_path(FilePath("prepare_passwordless_ansible.yaml")),
                          hosts=[controlplane], extra_values=extra_values, quiet=True)
         if retval != 0:
             break
@@ -3625,7 +3720,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     ansithemeprint([ANSIThemeStr("\nCluster import successful", "success")])
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=unused-argument,too-many-locals
 def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
     """
     Check whether there are newer versions of packages that are related to the cluster
@@ -3935,6 +4030,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     cordon_on_join = False
     cri = "containerd"
+    cri_version = None
 
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -3943,12 +4039,11 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     if k8s_distro == "kubeadm":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config", "join_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "join_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher",
-                                          "rke2", "config.agent.yaml.j2"),
+            FilePath("templates").joinpath("etc", "rancher", "rke2", "config.agent.yaml.j2"),
         ]
 
     for opt, optarg in options:
@@ -3962,6 +4057,8 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
             cordon_on_join = optarg
         elif opt == "--cri":
             cri = optarg
+        elif opt == "--cri-version":
+            cri_version = optarg
         elif opt == "--forks":
             ansible_configuration["ansible_forks"] = optarg
 
@@ -3987,33 +4084,48 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     # Add all nodes to the inventory
     ansible_add_hosts(inventory=ANSIBLE_INVENTORY, hosts=nodes, skip_all=False)
 
+    crio_major_version = None
+    crio_minor_version = None
+
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "containerd":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")]
+        add_playbooks = [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        add_playbooks = [ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")]
-        crio_major_version, crio_minor_version = \
-            get_crio_version((int(requested_major), int(requested_minor)))
+        add_playbooks = [FilePath("setup_cri-o.yaml")]
+        if cri_version is None:
+            tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
+            if tmp_crio_version is None:
+                check_and_print_status(False)
+            crio_major_version, crio_minor_version = tmp_crio_version
+        else:
+            tmp_crio_version = cri_version.split(".")
+            if len(tmp_crio_version) < 2:
+                check_and_print_status(False)
+            crio_major_version = tmp_crio_version[0]
+            crio_minor_version = tmp_crio_version[1]
 
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
     add_playbooks += [
         # cmtadm does not use run_before/run_after/add_to_groups/remove_from_groups,
         # so we have to do all of that explicitly
-        ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+        FilePath("add_kubernetes_repo.yaml"),
     ]
     if k8s_distro == "kubeadm":
         add_playbooks += [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_setup_node.yaml"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("kubeadm_join_node.yaml"),
+            FilePath("kubeadm_setup_node.yaml"),
+            FilePath("kubeadm_join_node.yaml"),
         ]
     elif k8s_distro == "rke2":
         add_playbooks += [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("rke2_setup_node.yaml"),
+            FilePath("rke2_setup_node.yaml"),
         ]
 
-    join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+    if int(requested_minor) < 31:
+        join_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+    else:
+        join_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
     minor_versions = []
     for minor_version in range(24, int(requested_minor) + 1):
@@ -4054,7 +4166,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     elif k8s_distro == "rke2":
         extra_values["requested_version"] = control_plane_version
 
-    playbooks = populate_playbooks_from_paths(add_playbooks)
+    playbooks = populate_playbooks_from_filenames(add_playbooks)
 
     retval = run_playbooks(playbooks=playbooks, hosts=nodes,
                            extra_values=extra_values, verbose=verbose)
@@ -4171,7 +4283,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                         ANSIThemeStr(" configuration; aborting.", "default")], stderr=True)
         sys.exit(errno.EINVAL)
 
-    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3"):
+    if cd_api_version not in ("v1alpha1", "v1alpha2", "v1alpha3", "v1alpha4"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
                         ANSIThemeStr(": ", "default"),
                         ANSIThemeStr("The apiVersion ", "default"),
@@ -4187,6 +4299,12 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     verbose = deep_get(cd, DictPath("options#verbose"), False)
     pod_network_cidr = deep_get(cd, DictPath("options#podNetworkCIDR"), "10.244.0.0/16")
     cni = deep_get(cd, DictPath("options#cni"), "cilium")
+    cni_version = deep_get(cd, DictPath("options#cni_version"))
+    if cni_version == "latest":
+        cni_version = None
+    cni_executable_version = deep_get(cd, DictPath("options#cni_executable_version"))
+    if cni_executable_version == "latest":
+        cni_executable_version = None
     no_password = not deep_get(cd, DictPath("options#promptForPassword"), True)
     save_ansible_logs = deep_get(cd, DictPath("options#saveAnsibleLogs"), False)
 
@@ -4201,6 +4319,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         sys.exit(errno.EINVAL)
 
     cri = deep_get(cd, DictPath("cluster#cri"), "containerd")
+    cri_version = deep_get(cd, DictPath("cluster#cri_version"))
+    if cri_version == "auto":
+        cri_version = None
 
     cluster_name = deep_get(cd, DictPath("cluster#clusterName"))
     if cluster_name is None or not cluster_name:
@@ -4275,6 +4396,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     setup_control_plane_options = [
         ("-Y", None),
         ("--cri", cri),
+        ("--cri-version", cri_version),
     ]
 
     if k8s_distro == "kubeadm":
@@ -4315,8 +4437,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     if state is None or state in ("<none>", "preparing", "torn_down"):
         # First prepare all hosts
         prepare_installation(prepare_options, prepare_args)
-    elif state not in ("adding_nodes", "installed", "<done>", "setup_cni", "deploy_workloads",
-                       "prepared"):
+    elif state not in ("adding_nodes", "installing", "installed", "deploying",
+                       "<done>", "setup_cni", "deploy_workloads", "deployed", "prepared",
+                       "upgraded"):
         ansithemeprint([ANSIThemeStr("\nError", "error"),
                         ANSIThemeStr(": Invalid installation state ", "default"),
                         ANSIThemeStr(f"{state}", "phase"),
@@ -4388,6 +4511,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
         "use_proxy": use_proxy,
     }
 
+    # pylint: disable-next=too-many-nested-blocks
     if state == "adding_nodes":
         i = 0
         # We (hopefully) don't need to check whether the nodes are part of the cluster already,
@@ -4418,7 +4542,10 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             else:
                 ansible_configuration["ansible_password"] = ansible_password
 
-        node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), "containerd")
+        node_global_cri = deep_get(cd, DictPath("nodes#options#cri"), cri)
+        node_global_cri_version = deep_get(cd, DictPath("nodes#options#cri_version"), cri_version)
+        if node_global_cri_version == "auto":
+            node_global_cri_version = None
         node_global_forks = deep_get(cd, DictPath("nodes#options#forks"), 5)
         node_global_cordon_on_join = deep_get(cd, DictPath("nodes#options#cordonOnJoin"), False)
         node_global_configuration = \
@@ -4503,6 +4630,10 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             hosts.append(nodename)
 
             node_cri = deep_get(cd, DictPath("options#cri"), node_global_cri)
+            node_cri_version = deep_get(cd, DictPath("options#cri_version"),
+                                        node_global_cri_version)
+            if node_cri_version == "auto":
+                node_cri_version = None
             node_forks = deep_get(cd, DictPath("options#forks"), node_global_forks)
             node_cordon_on_join = \
                 deep_get(cd, DictPath("options#cordonOnJoin"), node_global_cordon_on_join)
@@ -4525,6 +4656,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
             add_nodes_options = [
                 ("--cri", node_cri),
+                ("--cri-version", node_cri_version),
                 ("--configuration-paths", [
                     join_configuration_path,
                 ]),
@@ -4542,6 +4674,9 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                 # Group(s) to add the nodes to
                 [group],
             ]
+
+            if not nodes_tuple:
+                continue
 
             # Prepare nodes
             if virtualise:
@@ -4601,7 +4736,8 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
     context_name = f"{admin_name}@{cluster_name}"
 
     if state == "setup_cni":
-        __setup_cni(cni, context_name, cluster_name)
+        __setup_cni(cni, context_name, cluster_name,
+                    cni_version=cni_version, cni_executable_version=cni_executable_version)
         phase = 0
         state = "deploy_workloads"
         installation_info = \
@@ -5030,8 +5166,16 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                                                      "default")], stderr=True)
                         continue
 
-                    args = [helm_path, "install", hname, chart, "--namespace", namespace,
-                            "--version", version]
+                    # If redeploying workloads we might need to update the repo
+                    args = [helm_path, "repo", "update"]
+
+                    if verbose:
+                        check_and_print_status(execute_command(args, env=env))
+                    else:
+                        execute_command_with_response(args, env=env)
+
+                    args = [helm_path, "upgrade", hname, chart, "--namespace", namespace,
+                            "--version", version, "--install"]
                     if create_namespace:
                         args.append("--create-namespace")
 
@@ -5077,36 +5221,6 @@ def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
     return FilePath(tf.name)
 
 
-def get_crio_version(kubernetes_version: Tuple[int, int]) -> Tuple[str, str]:
-    """
-    Given a Kubernetes version, return the matching cri-o version
-
-        Parameters:
-            kubernetes_version ((int, int)): A version tuple (major, minor)
-        Returns:
-            (str, str): The cri-o version (major, minor)
-    """
-    # cri-o is built/distributed using OBS, hence we need to know the major.minor version
-    # Apparently cri-o tries to keep more or less in lock-step with Kubernetes, so don't jump ahead,
-    # and if Kubernetes gets ahead, use whatever is the most recent version of cri-o
-    requested_major, requested_minor = kubernetes_version
-
-    if (tmp := get_github_version("https://api.github.com/repos/cri-o/cri-o/releases",
-                                  r"^v(\d+)\.(\d+)\.\d+$")) is None:
-        check_and_print_status(False)
-
-    version_tmp, _release_date = tmp  # type: ignore
-    if requested_major < int(version_tmp[0]) \
-            or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
-        crio_major_version = str(requested_major)
-        crio_minor_version = str(requested_minor)
-    else:
-        crio_major_version = version_tmp[0]
-        crio_minor_version = version_tmp[1]
-
-    return crio_major_version, crio_minor_version
-
-
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> None:
     """
@@ -5128,20 +5242,15 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     if k8s_distro == "kubeadm":
         setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "cluster_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "init_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "kubelet_configuration.yaml.j2"),
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "config",
-                                          "kube_proxy_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "cluster_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "init_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "kubelet_configuration.yaml.j2"),
+            FilePath("templates").joinpath("config", "kube_proxy_configuration.yaml.j2"),
         ]
     elif k8s_distro == "rke2":
         setup_control_plane_tasks = __setup_rke2_control_plane_tasks
         configuration_paths = [
-            ANSIBLE_PLAYBOOK_DIR.joinpath("templates", "etc", "rancher", "rke2",
-                                          "config.yaml.j2"),
+            FilePath("templates").joinpath("etc", "rancher", "rke2", "config.yaml.j2"),
         ]
 
     if "--list-tasks" in (tmp[0] for tmp in options):
@@ -5175,6 +5284,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         phase = 0
 
     cri = None
+    cri_version = None
     enable_dra = False
     extra_values: Dict = {}
 
@@ -5206,6 +5316,8 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
                                 ANSIThemeStr(f"{optarg}", "argument"),
                                 ANSIThemeStr("“ specified; aborting.", "default")], stderr=True)
                 sys.exit(errno.EINVAL)
+        elif opt == "--cri-version":
+            cri_version = optarg
         elif opt == "--override-cni":
             override_cni = True
         elif opt == "--save-ansible-logs":
@@ -5274,10 +5386,23 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
         # First remove the distro revision
         major_minor_patchrev = requested_version.split("-")
         # Now split the version tuple
-        requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
+        split_tuple = major_minor_patchrev[0].split(".")
+        if len(split_tuple) < 2:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Could not parse version “", "default"),
+                            ANSIThemeStr(f"{major_minor_patchrev[0]}", "version"),
+                            ANSIThemeStr("“; aborting.",
+                                         "default")], stderr=True)
+            sys.exit(errno.EINVAL)
+        requested_major = split_tuple[0]
+        requested_minor = split_tuple[1]
 
-        cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-        init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        if int(requested_minor) < 31:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        else:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         setup_extras["cluster_configuration_api_version"] = cluster_configuration_api_version
         setup_extras["init_configuration_api_version"] = init_configuration_api_version
@@ -5336,13 +5461,22 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue
     if cri == "containerd":
-        cri_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("setup_containerd.yaml")
+        cri_playbook_path = FilePath("setup_containerd.yaml")
         setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, cri_playbook_path)
     elif cri == "cri-o":
-        cri_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("setup_cri-o.yaml")
+        cri_playbook_path = FilePath("setup_cri-o.yaml")
         setup_control_plane_targets[k8s_distro]["playbooks"].insert(0, cri_playbook_path)
-        crio_major_version, crio_minor_version = \
-            get_crio_version((int(requested_major), int(requested_minor)))
+        if cri_version is None:
+            tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
+            if tmp_crio_version is None:
+                check_and_print_status(False)
+            crio_major_version, crio_minor_version = tmp_crio_version
+        else:
+            tmp_crio_version = cri_version.split(".")
+            if len(tmp_crio_version) < 2:
+                check_and_print_status(False)
+            crio_major_version = tmp_crio_version[0]
+            crio_minor_version = tmp_crio_version[1]
         setup_extras["crio_major_version"] = crio_major_version
         setup_extras["crio_minor_version"] = crio_minor_version
 
@@ -5485,8 +5619,8 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     ansithemeprint([ANSIThemeStr("\nControl plane setup successful", "success")])
 
     if k8s_distro == "rke2":
-        ansithemeprint([ANSIThemeStr("\nNote", "note")])
-        ansithemeprint([ANSIThemeStr(": If this is an RKE2 installation you may need "
+        ansithemeprint([ANSIThemeStr("\nNote", "note"),
+                        ANSIThemeStr(": If this is an RKE2 installation you may need "
                                      "to substitute ", "default"),
                         ANSIThemeStr("127.0.0.1", "hostname")])
         ansithemeprint([ANSIThemeStr("in ", "default"),
@@ -5589,8 +5723,16 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
         # Only include control planes belonging to this cluster
         if controlplane not in clusterhosts_:
             continue
-        ip = socket.gethostbyname(controlplane)
-        controlplanes.append((controlplane, ip))
+        try:
+            ip = socket.gethostbyname(controlplane)
+            controlplanes.append((controlplane, ip))
+        except socket.gaierror as e:
+            if str(e) == "[Errno -5] No address associated with hostname":
+                ansithemeprint([ANSIThemeStr("Error", "error"),
+                                ANSIThemeStr(": No address associated with hostname “", "default"),
+                              ANSIThemeStr(f"{controlplane}", "hostname"),
+                                ANSIThemeStr("“. Aborting.", "default")], stderr=True)
+                sys.exit(errno.ENOENT)
     return controlplanes
 
 
@@ -5809,6 +5951,8 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
             options ([(str, str)]): Options to use when executing this action
             args ([str]): Arguments to use when executing this action
     """
+    global kh  # pylint: disable=global-statement
+
     confirm = True
 
     # default options
@@ -5836,7 +5980,18 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     # This is the cluster name according to .kube/config; this is what we care about when upgrading,
     # not whatever is currently set as the target in installation info
     cluster_name = get_cluster_name()
-    installation_info = get_installation_info()
+    installation_info = get_installation_info(ignore_non_existing=False)
+    if installation_info is None:
+        ansithemeprint([ANSIThemeStr("Error", "error"),
+                        ANSIThemeStr(": ", "default"),
+                        ANSIThemeStr(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
+                        ANSIThemeStr(" does not exist; ", "default"),
+                        ANSIThemeStr("most likely ", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("the cluster was not ", "default"),
+                        ANSIThemeStr("installed using ", "default"),
+                        ANSIThemeStr(f"{about.PROGRAM_SUITE_NAME}", "programname"),
+                        ANSIThemeStr("; aborting.", "default")], stderr=True)
+        sys.exit(errno.ENOENT)
     installation_info = update_installation_info(installation_target=cluster_name)
 
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
@@ -5848,6 +6003,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
+    ignore_feature_gates = False
 
     if state is None or state == "<none>":
         ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -5898,8 +6054,42 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
             verbose = True
         elif opt == "--save-ansible-logs":
             ansible_configuration["save_logs"] = True
+        elif opt == "--ignore-feature-gates":
+            ignore_feature_gates = True
         elif opt == "-Y":
             confirm = False
+
+    if kh is None:
+        kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME,
+                                                about.PROGRAM_SUITE_VERSION, None)
+    if kh is not None:
+        fg = kh.check_for_feature_gates()
+
+        has_fg = []
+
+        for config, feature_gates in fg.items():
+            if feature_gates is not None and feature_gates:
+                has_fg.append(config)
+        if has_fg:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": the following configurations have ", "default"),
+                            ANSIThemeStr("changes to feature gates:", "default")], stderr=True)
+            for key in has_fg:
+                ansithemeprint([ANSIThemeStr("• ", "separator"),
+                                ANSIThemeStr(f"{key}", "default")], stderr=True)
+            ansithemeprint([ANSIThemeStr("\nUpgrading is not supported when", "default"),
+                            ANSIThemeStr(" feature gates have been altered.", "default")],
+                           stderr=True)
+
+            if not ignore_feature_gates:
+                ansithemeprint([ANSIThemeStr("To override, pass “", "default"),
+                                ANSIThemeStr("--ignore-feature-gates", "option"),
+                                ANSIThemeStr("“. Aborting.", "default")], stderr=True)
+                sys.exit(errno.ENOTSUP)
+            ansithemeprint([ANSIThemeStr("Warning", "warning"),
+                            ANSIThemeStr(": “", "default"),
+                            ANSIThemeStr("--ignore-feature-gates", "option"),
+                            ANSIThemeStr("“ passed; continuing.", "default")], stderr=True)
 
     # XXX: How do we check that nodes are drained? We can check whether they are cordoned
     node_status = __get_node_info()
@@ -5942,7 +6132,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
                                      "and controlplane(s)", "action")])
         selection = __selection_control_planes() + ["localhost"]
         _retval, _ansible_results = \
-            run_playbook(ANSIBLE_PLAYBOOK_DIR.joinpath("add_kubernetes_repo.yaml"),
+            run_playbook(get_playbook_path(FilePath("add_kubernetes_repo.yaml")),
                          hosts=selection, extra_values=extra_values, quiet=True)
 
         if os_distro == "debian" and update_cache:
@@ -6095,12 +6285,19 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
         # Now split the version tuple
         requested_major, requested_minor, _rest = major_minor_patchrev[0].split(".")
 
-        cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
-        init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+        if int(requested_minor) < 31:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta3"
+            upgrade_configuration_api_version = "<unused>"
+        else:
+            cluster_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            init_configuration_api_version = "kubeadm.k8s.io/v1beta4"
+            upgrade_configuration_api_version = "kubeadm.k8s.io/v1beta4"
 
         upgrade_control_plane_targets[k8s_distro]["extra_values"] = {
             "cluster_configuration_api_version": cluster_configuration_api_version,
             "init_configuration_api_version": init_configuration_api_version,
+            "upgrade_configuration_api_version": upgrade_configuration_api_version,
             # Add major/minor to extra_values
             "kubernetes_major_minor_version": f"{requested_major}.{requested_minor}",
         }
@@ -6955,12 +7152,12 @@ COMMANDLINE = {
                     [ANSIThemeStr("containerd", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("rke2", "programname"),
-                     ANSIThemeStr("), ", "description")],
+                     ANSIThemeStr("),", "description")],
                     [ANSIThemeStr("containerd", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("kubeadm", "programname"),
                      ANSIThemeStr(")", "description"),
-                     ANSIThemeStr(", ", "separator")],
+                     ANSIThemeStr(",", "separator")],
                     [ANSIThemeStr("cri-o", "argument"),
                      ANSIThemeStr(" (", "description"),
                      ANSIThemeStr("kubeadm", "programname"),
@@ -7180,6 +7377,21 @@ COMMANDLINE = {
             [ANSIThemeStr("installed first; this applies to nodes too.", "description")],
         ],
         "options": {
+            "--ignore-feature-gates": {
+                "description": [
+                    ANSIThemeStr("Ignore the result of the feature gates check", "description")],
+                "extended_description": [
+                    [ANSIThemeStr("Upgrading a cluster may fail if the default", "description")],
+                    [ANSIThemeStr("set of feature gates has been altered; ", "description"),
+                     ANSIThemeStr("by default", "description")],
+                    [ANSIThemeStr("upgrades are aborted if such changes", "description"),
+                     ANSIThemeStr("are detected.", "description")],
+                    [ANSIThemeStr("This option makes the check non-aborting.", "description")],
+                    [ANSIThemeStr("Note", "note"),
+                     ANSIThemeStr(": this may yield a failed installation", "description")],
+                    [ANSIThemeStr("or non-operational cluster", "description")],
+                ],
+            },
             "--no-cache-update": {
                 "description": [
                     ANSIThemeStr("Do not update the APT cache", "description")],
@@ -7613,6 +7825,11 @@ def main() -> None:
     # Before doing anything else, make sure that the user is not running as root
     if os.geteuid() == 0:
         sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
+
+    # Now check if all necessary paths exist
+    if (violations := cmtlib.setup_paths()) != [SecurityStatus.OK]:
+        violations_joined = cmtio.join_securitystatus_set(",", set(violations))
+        sys.exit(f"Failed to create necessary directories; violated rules: {violations_joined}")
 
     # Then initialise the configuration file
     read_cmtconfig()

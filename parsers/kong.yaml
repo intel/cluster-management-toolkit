@@ -1,0 +1,22 @@
+- name: "kong"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "ingress-kong"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value"
+    options:
+      allow_bare_keys: true
+      versions:
+      - "release"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Error: "
+      loglevel: "error"
+- name: "kong"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "proxy-kong"
+  parser_rules:
+  - name: "http"

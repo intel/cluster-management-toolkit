@@ -19,10 +19,12 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-from cmtio import secure_read_string, secure_write_string
-from cmttypes import deep_get, DictPath, FilePath, FilePathAuditError, SecurityStatus
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import cni_data
+from clustermanagementtoolkit.cmtio import secure_read_string, secure_write_string
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, SecurityStatus
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+from clustermanagementtoolkit import cni_data
 
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 
@@ -70,7 +72,8 @@ def test___patch_cni_calico(verbose: bool = False) -> Tuple[str, bool]:
                 expected_retval, expected_result, expected_exception in testdata:
             secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
             try:
-                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                with mock.patch("clustermanagementtoolkit.cni_data.check_path",
+                                return_value=mock_check_path):
                     tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
                               pod_network_cidr=pod_network_cidr)
                 if tmp != expected_retval:
@@ -152,7 +155,8 @@ def test___patch_cni_canal(verbose: bool = False) -> Tuple[str, bool]:
                 expected_retval, expected_result, expected_exception in testdata:
             secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
             try:
-                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                with mock.patch("clustermanagementtoolkit.cni_data.check_path",
+                                return_value=mock_check_path):
                     tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
                               pod_network_cidr=pod_network_cidr)
                 if tmp != expected_retval:
@@ -232,7 +236,8 @@ def test___patch_cni_flannel(verbose: bool = False) -> Tuple[str, bool]:
                 expected_retval, expected_result, expected_exception in testdata:
             secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
             try:
-                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                with mock.patch("clustermanagementtoolkit.cni_data.check_path",
+                                return_value=mock_check_path):
                     tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
                               pod_network_cidr=pod_network_cidr)
                 if tmp != expected_retval:
@@ -317,7 +322,8 @@ def test___patch_cni_weave(verbose: bool = False) -> Tuple[str, bool]:
                 expected_retval, expected_result, expected_exception in testdata:
             secure_write_string(TEST_DIR.joinpath("cni_data.yaml"), file_content)
             try:
-                with mock.patch("cni_data.check_path", return_value=mock_check_path):
+                with mock.patch("clustermanagementtoolkit.cni_data.check_path",
+                                return_value=mock_check_path):
                     tmp = fun(cni_path=TEST_DIR.joinpath("cni_data.yaml"),
                               pod_network_cidr=pod_network_cidr)
                 if tmp != expected_retval:

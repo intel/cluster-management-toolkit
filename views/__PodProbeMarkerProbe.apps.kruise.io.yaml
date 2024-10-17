@@ -1,0 +1,96 @@
+kind: "__PodProbeMarkerProbe"
+api_family: "apps.kruise.io"
+default_command: "__"
+infoview:
+  name: "Pod Probe Markers Probe"
+  infopad:
+    name_path: "name"
+    creation_timestamp_path: null
+    row_indexes:
+      Normal:
+        fields: ["container_name", "pod_condition_type", "probe_header", "probe_initial_delay", "probe_timeout", "probe_period", "probe_threshold_success", "probe_threshold_failure", "probe_exec_header", "probe_exec_command_header", "probe_exec_command"]
+    rows:
+      container_name:
+        header: [["Container Name:", ["main", "infoheader"]]]
+        path: "containerName"
+        type: "str"
+      pod_condition_type:
+        header: [["Pod Condition Type:", ["main", "infoheader"]]]
+        path: "podConditionType"
+        type: "str"
+      probe_exec_header:
+        header: [["  Exec:", ["main", "infoheader"]]]
+      probe_exec_command_header:
+        header: [["    ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ommand:", ["main", "infoheader"]]]
+      probe_exec_command:
+        header: [["     ", ["main", "infoheader"]]]
+        path: "probe#exec#command"
+        type: "raw"
+        formatter: "list"
+      probe_header:
+        header: [["Probe:", ["main", "infoheader"]]]
+      probe_initial_delay:
+        header: [["  Initial Delay (seconds):", ["main", "infoheader"]]]
+        path: "probe#initialDelaySeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      probe_period:
+        header: [["  Period (seconds):", ["main", "infoheader"]]]
+        path: "probe#periodSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      probe_threshold_failure:
+        header: [["  Failure Threshold:", ["main", "infoheader"]]]
+        path: "probe#failureThreshold"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      probe_threshold_success:
+        header: [["  Success Threshold:", ["main", "infoheader"]]]
+        path: "probe#successThreshold"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      probe_timeout:
+        header: [["  Timeout (seconds):", ["main", "infoheader"]]]
+        path: "probe#timeoutSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Command":
+      key: "c"
+      modifier: "shift"
+      helptext: "Command"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Command"
+        _pass_obj: true
+        path: "probe#exec#command"
+        include_root: true
+    "Marker Policy":
+      key: "p"
+      modifier: "shift"
+      helptext: "Show marker policy"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Marker Policy"
+        _pass_obj: true
+        path: "markerPolicy"
+        include_root: true

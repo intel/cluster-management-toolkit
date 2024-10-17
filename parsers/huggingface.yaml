@@ -1,0 +1,15 @@
+- name: "huggingface"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/huggingface/text-embeddings-inference"
+  - image_name: "/huggingface/text-generation-inference"
+  parser_rules:
+  - name: "strip_ansicodes"
+  - name: "ts_8601"
+  - name: "custom_splitter"
+    options:
+      regex: '^ ([A-Z]+) (.*)'
+      severity:
+        field: 1
+      message:
+        field: 2

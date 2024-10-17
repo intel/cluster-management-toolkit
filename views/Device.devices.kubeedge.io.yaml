@@ -1,0 +1,52 @@
+kind: "Device"
+api_family: "devices.kubeedge.io"
+default_command: "devices"
+listview:
+  name: "Devices"
+  group: "KubeEdge"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "node_name", "device_model_ref", "age"]
+  fields:
+    device_model_ref:
+      header: "Device Model Reference:"
+      path: "spec#deviceModelRef#name"
+      type: "str"
+    node_name:
+      header: "Node:"
+      path: "spec#nodeName"
+      type: "host"
+      default: "<none>"
+      formatting:
+        field_colors:
+        - type: "host"
+infoview:
+  name: "Device Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "device_model_ref"]
+    rows:
+      device_model_ref:
+        header: [["Device Model Reference:", ["main", "infoheader"]]]
+        path: "spec#deviceModelRef#name"
+        type: "str"
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "status#nodeName"

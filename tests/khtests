@@ -20,10 +20,14 @@ from typing import Dict, Tuple
 from unittest import mock
 import yaml
 
-import cmtlib
-from cmttypes import deep_get, deep_set, DictPath, StatusGroup
-from ansithemeprint import ANSIThemeStr, ansithemeprint, init_ansithemeprint
-import kubernetes_helper
+from clustermanagementtoolkit import cmtlib
+
+from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath, StatusGroup
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
+from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
+
+from clustermanagementtoolkit import kubernetes_helper
 
 # unit-tests for kubernetes_helper.py
 
@@ -237,7 +241,7 @@ def test_kubectl_get_version(verbose: bool = False) -> Tuple[str, bool]:
             '  minor: "28"\n' \
             '  platform: linux/amd64'
 
-        with mock.patch("kubernetes_helper.execute_command_with_response",
+        with mock.patch("clustermanagementtoolkit.kubernetes_helper.execute_command_with_response",
                         return_value=mock_response):
             tmp = fun()
         if not (isinstance(tmp, tuple) and len(tmp) == 6
@@ -635,52 +639,6 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_make_selector(verbose: bool = False) -> Tuple[str, bool]:
-    message = ""
-    result = True
-
-    fun = kubernetes_helper.make_selector
-
-    if result:
-        # Indata format:
-        # (indata, expected_result, expected_exception)
-        testdata = (
-            ({"foo": "bar", "baz": "1", }, "foo=bar,baz=1", None),
-            (None, "", None),
-        )
-        for indata, expected_result, expected_exception in testdata:
-            try:
-                if (tmp := fun(indata)) != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
-                              f"          output: {tmp}\n" \
-                              f"        expected: {expected_result}"
-                    result = False
-                    break
-            except Exception as e:
-                if expected_exception is not None:
-                    if isinstance(e, expected_exception):
-                        pass
-                    else:
-                        message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  "           input:\n" \
-                                  f"{yaml_dump(indata, base_indent = 17)}\n" \
-                                  f"       exception: {type(e)}\n" \
-                                  f"        expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
-                              f"       exception: {type(e)}\n" \
-                              f"        expected: {expected_result}"
-                    result = False
-                    break
-    return message, result
-
-
 def test_get_image_version(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
@@ -937,7 +895,8 @@ def test_get_ref_by_kind_name_namespace(verbose: bool = False) -> Tuple[str, boo
         )
         for indata, kind, name, namespace, kwargs, expected_result, expected_exception in testdata:
             try:
-                with mock.patch("kubernetes_helper.secure_read_yaml", return_value=indata), \
+                with mock.patch("clustermanagementtoolkit.kubernetes_helper.secure_read_yaml",
+                                return_value=indata), \
                         mock.patch("pathlib.Path.is_file", return_value=True):
                     if (tmp := fun(kind, name, namespace, **kwargs)) != expected_result:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -986,10 +945,6 @@ tests: Dict = {
     },
     ("get_node_status()",): {
         "callable": test_get_node_status,
-        "result": None,
-    },
-    ("make_selector()",): {
-        "callable": test_make_selector,
         "result": None,
     },
     ("get_image_version()",): {

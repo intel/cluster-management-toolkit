@@ -61,82 +61,115 @@ except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import natsort; "
              "you may need to (re-)run `cmt-install` or `pip3 install natsort`; aborting.")
 
-from cmttypes import deep_get, deep_get_list, deep_get_with_fallback
-from cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
-from cmttypes import FilePath, Retval, SecurityPolicy, StatusGroup
-from cmttypes import ProgrammingError, FilePathAuditError
-from cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
-from cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR, VIEW_DIR
-from cmtpaths import DEFAULT_THEME_FILE, CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE
-from cmtpaths import CMT_CONFIG_FILENAME, SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
+from clustermanagementtoolkit.cmttypes import deep_get, deep_get_list, deep_get_with_fallback
+from clustermanagementtoolkit.cmttypes import deep_get_str_tuple_paths, deep_set, DictPath
+from clustermanagementtoolkit.cmttypes import FilePath, Retval
+from clustermanagementtoolkit.cmttypes import SecurityPolicy, SecurityStatus, StatusGroup
+from clustermanagementtoolkit.cmttypes import ProgrammingError, FilePathAuditError
 
-from cmtio import execute_command, execute_command_with_response
-from cmtio import expand_path, secure_read_string, secure_which, secure_write_string
-from cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit import cmtpaths
+from clustermanagementtoolkit.cmtpaths import BINDIR, KUBE_CONFIG_FILE, HOMEDIR, DEPLOYMENT_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIR, THEME_DIR
+from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
+from clustermanagementtoolkit.cmtpaths import ANSIBLE_PLAYBOOK_DIR, SYSTEM_ANSIBLE_PLAYBOOK_DIR
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILE_DIRNAME, CMT_CONFIG_FILE
+from clustermanagementtoolkit.cmtpaths import CMT_CONFIG_FILENAME
+from clustermanagementtoolkit.cmtpaths import SSH_ARGS_RELAXED, SSH_ARGS_STRICT, SSH_BIN_PATH
+
+from clustermanagementtoolkit import cmtio
+from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
+from clustermanagementtoolkit.cmtio import expand_path
+from clustermanagementtoolkit.cmtio import secure_read_string, secure_which, secure_write_string
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
 # from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 # from cmtlog import debuglog, CMTLogType, CMTLog
 
-from cmtvalidators import validate_name
+from clustermanagementtoolkit.cmtvalidators import validate_name
 
-from commandparser import parse_commandline
+from clustermanagementtoolkit.commandparser import parse_commandline
 
-import logparser as logparsers
-from logparser import logparser, logparser_initialised, LogLevel, LogparserConfiguration
-from logparser import lvl_to_letter_severity, lvl_to_4letter_severity, lvl_to_word_severity
-from logparser import loglevel_to_name, get_loglevel_names, name_to_loglevel, get_parser_list
-import curses_helper
-import cmtlib
-from cmtlib import decode_value
-from cmtlib import clamp, get_package_versions, identify_k8s_distro, make_set_expression_list
-from cmtlib import none_timestamp, timestamp_to_datetime, get_since
-from cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
-from cmtlib import normalise_cpu_usage_to_millicores
-from cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
-from curses_helper import CursesConfiguration, color_log_severity
-from curses_helper import format_helptext, get_mousemask, color_status_group
-from curses_helper import UIProps, WidgetLineAttrs, get_theme_ref, read_theme
-from curses_helper import themearray_wrap_line, themearray_to_string, themearray_len
-from curses_helper import themearray_truncate, ThemeAttr, ThemeRef, ThemeStr
+import clustermanagementtoolkit.logparser as logparsers
 
-import listgetters
-from listgetters import listgetter_allowlist
-import listgetters_async
-from listgetters_async import listgetter_async_allowlist
+from clustermanagementtoolkit.logparser import logparser, logparser_initialised
+from clustermanagementtoolkit.logparser import LogLevel, LogparserConfiguration
+from clustermanagementtoolkit.logparser import lvl_to_letter_severity, lvl_to_4letter_severity
+from clustermanagementtoolkit.logparser import lvl_to_word_severity
+from clustermanagementtoolkit.logparser import loglevel_to_name, get_loglevel_names
+from clustermanagementtoolkit.logparser import name_to_loglevel, get_parser_list
 
-import datagetters
-from datagetters import datagetter_allowlist
-import generators
-from generators import generator_allowlist, default_processor
-import infogetters
-import itemgetters
-from itemgetters import itemgetter_allowlist
-from objgetters import objgetter_allowlist
-import formatters
-from formatters import formatter_allowlist
-from fieldgetters import fieldgetter_allowlist
+from clustermanagementtoolkit import curses_helper
 
-from ansible_helper import ansible_configuration
-from ansible_helper import ansible_get_inventory_dict
-from ansible_helper import ansible_get_groups, ansible_get_groups_by_host
-from ansible_helper import ansible_add_hosts, ansible_remove_hosts, ansible_set_vars
-from ansible_helper import ansible_run_playbook_on_selection, ansible_get_logs, ansible_delete_log
-from ansible_helper import ansible_print_play_results, get_playbook_path
-from ansible_helper import ANSIBLE_PLAYBOOK_DIR, ANSIBLE_INVENTORY
-import helptexts
+from clustermanagementtoolkit import cmtlib
+from clustermanagementtoolkit.cmtlib import decode_value, clamp, get_package_versions
+from clustermanagementtoolkit.cmtlib import identify_k8s_distro, make_set_expression_list
+from clustermanagementtoolkit.cmtlib import make_label_selector
+from clustermanagementtoolkit.cmtlib import none_timestamp, timestamp_to_datetime, get_since
+from clustermanagementtoolkit.cmtlib import split_msg, versiontuple, read_cmtconfig, substitute_list
+from clustermanagementtoolkit.cmtlib import normalise_cpu_usage_to_millicores
+from clustermanagementtoolkit.cmtlib import normalise_mem_to_bytes, normalise_mem_bytes_to_str
+from clustermanagementtoolkit.cmtlib import check_allowlist
 
-from kubernetes_helper import KubernetesHelper, KubernetesResourceCache
-from kubernetes_helper import get_controller_from_owner_references, get_image_version
-from kubernetes_helper import kubectl_get_version, make_selector
-from kubernetes_helper import update_api_status as kh_update_api_status, guess_kind
+from clustermanagementtoolkit.curses_helper import CursesConfiguration, color_log_severity
+from clustermanagementtoolkit.curses_helper import format_helptext, get_mousemask
+from clustermanagementtoolkit.curses_helper import color_status_group
+from clustermanagementtoolkit.curses_helper import UIProps, WidgetLineAttrs
+from clustermanagementtoolkit.curses_helper import get_theme_ref, read_theme
+from clustermanagementtoolkit.curses_helper import themearray_wrap_line, themearray_to_string
+from clustermanagementtoolkit.curses_helper import themearray_len
+from clustermanagementtoolkit.curses_helper import themearray_truncate
+from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 
-import checks
+from clustermanagementtoolkit import listgetters
+from clustermanagementtoolkit.listgetters import listgetter_allowlist
 
-from ansithemeprint import ANSIThemeStr, ansithemestr_join_list
-from ansithemeprint import clear_screen, ansithemeinput, ansithemeprint
+from clustermanagementtoolkit import listgetters_async
+from clustermanagementtoolkit.listgetters_async import listgetter_async_allowlist
 
-import reexecutor
+from clustermanagementtoolkit import datagetters
+from clustermanagementtoolkit.datagetters import datagetter_allowlist
 
-import about
+from clustermanagementtoolkit import generators
+from clustermanagementtoolkit.generators import generator_allowlist, default_processor
+
+from clustermanagementtoolkit import infogetters
+
+from clustermanagementtoolkit import itemgetters
+from clustermanagementtoolkit.itemgetters import itemgetter_allowlist
+
+from clustermanagementtoolkit.objgetters import objgetter_allowlist
+
+from clustermanagementtoolkit import formatters
+from clustermanagementtoolkit.formatters import formatter_allowlist
+
+from clustermanagementtoolkit.fieldgetters import fieldgetter_allowlist
+
+from clustermanagementtoolkit.ansible_helper import ansible_configuration
+from clustermanagementtoolkit.ansible_helper import ansible_get_inventory_dict
+from clustermanagementtoolkit.ansible_helper import ansible_get_groups, ansible_get_groups_by_host
+from clustermanagementtoolkit.ansible_helper import ansible_add_hosts, ansible_remove_hosts
+from clustermanagementtoolkit.ansible_helper import ansible_set_vars
+from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
+from clustermanagementtoolkit.ansible_helper import ansible_get_logs, ansible_delete_log
+from clustermanagementtoolkit.ansible_helper import ansible_print_play_results, get_playbook_path
+from clustermanagementtoolkit.ansible_helper import ANSIBLE_INVENTORY
+
+from clustermanagementtoolkit import helptexts
+
+from clustermanagementtoolkit.kubernetes_helper import KubernetesHelper, KubernetesResourceCache
+from clustermanagementtoolkit.kubernetes_helper import get_controller_from_owner_references
+from clustermanagementtoolkit.kubernetes_helper import get_image_version
+from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version
+from clustermanagementtoolkit.kubernetes_helper import update_api_status as kh_update_api_status
+from clustermanagementtoolkit.kubernetes_helper import guess_kind
+
+from clustermanagementtoolkit import checks
+
+from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemestr_join_list
+from clustermanagementtoolkit.ansithemeprint import clear_screen, ansithemeinput, ansithemeprint
+
+from clustermanagementtoolkit import reexecutor
+
+from clustermanagementtoolkit import about
 
 PROGRAMDESCRIPTION = "UI for managing Kubernetes clusters"
 PROGRAMAUTHORS = "Written by David Weinehall."
@@ -342,7 +375,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
 
 def get_image_tuple(image: str) -> Tuple[str, str]:
     """
-    Given the name of a container, return the name and the version field
+    Given the name of a container, return the name and the version field.
 
         Paramters:
             image (str): The full container name
@@ -399,7 +432,7 @@ def __get_container_info(obj: Dict, container_type: str,
 # pylint: disable-next=unused-argument,too-many-locals
 def get_container_info(**kwargs: Any) -> List[Type]:
     """
-    Infogetter for Containers.
+    Infogetter for containers.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -604,34 +637,6 @@ def __process_sum_mem_usage(values: List[str]) -> str:
     return normalise_mem_bytes_to_str(mem_usage_sum)
 
 
-def __process_regex_to_sequence(values: Union[str, List[str]], match_regex: str,
-                                target_type: str) -> Union[Sequence[Union[str, Tuple]], str]:
-    new_values: List[Union[str, Tuple]] = []
-
-    compiled_regex = re.compile(match_regex)
-
-    if values:
-        if isinstance(values, str):
-            values = [values]
-        compiled_regex = re.compile(match_regex)
-        for item in values:
-            tmp_match = compiled_regex.match(item)
-            groups = []
-            if tmp_match is not None:
-                for group in tmp_match.groups():
-                    if group is not None:
-                        groups.append(group)
-                if target_type == "tuples":
-                    new_values.append(tuple(groups))
-                else:
-                    new_values += groups
-
-    if len(new_values) == 1:
-        return new_values[0]
-
-    return new_values
-
-
 def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: str,
                         formatter: str) -> Union[datetime, int]:
     if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
@@ -665,9 +670,31 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-def process_value(field_name: str, value: Any, vtype: str, view: str,
-                  field_index: str, action: str, formatter: str, replace_quotes: str,
-                  _regex: str) -> Union[int, float, str, List[str], datetime, None]:
+def process_value(value: Any, vtype: str, **kwargs: Any) -> \
+        Union[int, float, str, List[str], List[Tuple[str]], datetime, None]:
+    """
+    Reformat values; returns data in a format suitable for further processing.
+
+        Parameters:
+            value (Any): The value to process
+            vtype (str): The value-type
+            **kwargs (dict[str, Any]): Keyword arguments
+                action (str): Additional actions to perform when processing
+                field_index (str): The field index for formatting of a particular kind
+                field_name (str): The name of the field the data originates from
+                formatter (str): Formatter to use (specifically used when processing timestamps)
+                replace_quotes (str): Quote replacement policy (no, pretty, same)
+                view (str): The view being processed
+        Returns:
+            (int|float|str|[str]|datetime): The processed value
+    """
+    action: str = deep_get(kwargs, DictPath("action"))
+    field_index: str = deep_get(kwargs, DictPath("field_index"))
+    field_name: str = deep_get(kwargs, DictPath("field_name"))
+    formatter: str = deep_get(kwargs, DictPath("formatter"))
+    replace_quotes: str = deep_get(kwargs, DictPath("replace_quotes"))
+    view: str = deep_get(kwargs, DictPath("view"))
+
     override_kind = \
         deep_get_with_fallback(cmtlib.cmtconfig,
                                [DictPath(f"Views#{view}#kind_format_{field_index}"),
@@ -701,10 +728,8 @@ def process_value(field_name: str, value: Any, vtype: str, view: str,
         else:
             tmp_int = normalise_mem_to_bytes(value)
             new_value = normalise_mem_bytes_to_str(tmp_int)
-    elif vtype in ("regex_to_tuples", "regex_to_list"):
-        target_type = vtype[len("regex_to_"):]
-        new_value = __process_regex_to_sequence(cast(Union[List[str], str], value),
-                                                _regex, target_type)
+    elif vtype == "disk_usage":
+        new_value = cmtlib.disksize_to_human(value)
     elif vtype == "len":
         if value is None:
             new_value = "0"
@@ -1260,7 +1285,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             if isinstance(ls_value, list):
                                 ls_value = deep_get_with_fallback(obj, ls_value)
                             _lookup_selector[ls_key] = ls_value
-                        lookup_selector = make_selector(_lookup_selector)
+                        lookup_selector = make_label_selector(_lookup_selector)
 
                     try:
                         if not lookup_name:
@@ -1433,7 +1458,12 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     else:
                         timediff = \
                             timestamp_to_datetime(end_time) - timestamp_to_datetime(start_time)
-                        duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+                        if (duration := timediff.days * 24 * 60 * 60 + timediff.seconds) == 0:
+                            duration = 1
+                        # If the task completes so quickly that start_time == end_time
+                        # duration will end up as 0. The result of this would be that
+                        # it's represented as <unset>.
+                        # To work around this we set duration to 1 if duration == 0.
                     __values = []
                     for i, mpath in enumerate(mpaths):
                         if i == start_time_index:
@@ -1650,6 +1680,11 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                             value = (deep_get(_path, DictPath("lookup#messages#ok")),
                                      StatusGroup.NEUTRAL)
                     _values.append((value, "raw"))
+                elif ptype == "dictkeys":
+                    for mpath in mpaths:
+                        tmp = list(deep_get_with_fallback(obj, mpath, {}).keys())
+                        if tmp:
+                            _values.append((tmp, "raw"))
                 elif ptype == "dictfields":
                     subpaths = deep_get_with_fallback(_path, [DictPath("subpaths"),
                                                               DictPath("subpath")], [])
@@ -1673,25 +1708,30 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     value = deep_get_with_fallback(obj, path, default,
                                                    fallback_on_empty=fallback_on_empty)
                     _values.append((value, vtype))
-
             values = []
 
-            for value, _vtype in _values:
-                _regex = deep_get(_path, DictPath("regex"))
-                if isinstance(_vtype, list):
+            processor_args = {
+                "action": action,
+                "field_index": field_index,
+                "field_name": name,
+                "formatter": formatter,
+                "regex_": deep_get(_path, DictPath("regex")),
+                "replace_quotes": replace_quotes,
+                "view": view,
+            }
+            for value, vtype_ in _values:
+                if isinstance(vtype_, list):
                     if value is None or not value:
                         value = []
-                if isinstance(value, list) and _vtype == "raw":
+                if isinstance(value, list) and vtype_ == "raw":
                     values += value
                     continue
-                if isinstance(value, list) and isinstance(_vtype, list):
+                if isinstance(value, list) and isinstance(vtype_, list):
                     tmp = []
-                    for _value in value:
-                        tmp.append(process_value(name, _value, _vtype, view, field_index, action,
-                                                 formatter, replace_quotes, _regex))
+                    for value_ in value:
+                        tmp.append(process_value(value_, vtype_, **processor_args))
                 else:
-                    tmp = process_value(name, value, _vtype, view, field_index, action,
-                                        formatter, replace_quotes, _regex)
+                    tmp = process_value(value, vtype_, **processor_args)
                 values.append(tmp)
 
             if not values:
@@ -1799,12 +1839,28 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
     return info
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
-def get_journalctl_log(obj: Dict, **kwargs: Any):
-    timestamps = []
-    facilities = []
-    severities = []
-    messages = []
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from journalctl.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+                _show_raw (bool): Return unformatted entries?
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
+    timestamps: List[str] = []
+    messages: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
     objlist = deep_get(obj, DictPath("obj"))
@@ -1870,11 +1926,25 @@ def get_journalctl_log(obj: Dict, **kwargs: Any):
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_traceflow(obj: Dict, **kwargs: Any):
-    timestamps = []
-    facilities = []
-    severities = []
-    messages = []
+def get_traceflow(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from a traceflow.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
+    timestamps: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -1886,7 +1956,7 @@ def get_traceflow(obj: Dict, **kwargs: Any):
             saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
         else:
             saved_timestamp = ""
-        message = []
+        message: List[Union[ThemeRef, ThemeStr]] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp
@@ -1910,7 +1980,7 @@ def get_traceflow(obj: Dict, **kwargs: Any):
 
 
 # pylint: disable-next=unused-argument
-def get_task_log(obj: Dict, **kwargs: Any):
+def get_task_log(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
     field = []
 
     skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -1996,13 +2066,27 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, Them
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def get_cmt_log(obj: Dict, **kwargs: Any):
+def get_cmt_log(obj: Dict, **kwargs: Any) -> \
+        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+    """
+    Extract log entries from CMT log.
+
+        Parameters:
+            obj (dict): The object to extract log entries from
+            **kwargs (dict[str, Any]): Keyword arguments
+        Returns:
+            (([str], [str], [str], [str])):
+                ([str]): A list of timestamps
+                ([str]): A list of facilities
+                ([str]): A list of severities
+                ([ThemeArray]): A list of ThemeArrays
+    """
     filepath = deep_get(obj, DictPath("filepath"), "")
-    timestamps = []
-    messages = []
-    facilities = []
-    severities = []
-    messages = []
+    timestamps: List[str] = []
+    messages: List[str] = []
+    facilities: List[str] = []
+    severities: List[str] = []
+    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
 
     d = secure_read_yaml(filepath)
 
@@ -2083,12 +2167,19 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]
         Returns:
             ([themearray]): A list of themearrays
     """
+    path = deep_get(kwargs, DictPath("path"), "")
+    messages = []
 
     try:
-        tmp = yaml.dump(obj)
-        messages = formatters.format_yaml(tmp, **kwargs)
+        if path:
+            data = deep_get(obj, DictPath(path))
+        else:
+            data = obj
+        if data is not None:
+            tmp = yaml.dump(data, width=16384)
+            messages = formatters.format_yaml(tmp, **kwargs)
     except yaml.YAMLError:
-        messages = []
+        pass
 
     return messages
 
@@ -2113,7 +2204,7 @@ def get_name_by_kind_from_owner_references(owner_references: List[Dict], kind: s
     return name
 
 
-def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str):
+def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str) -> str:
     holder_kind = ""
 
     for owr in owner_references:
@@ -2155,7 +2246,7 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 
 
 # To make the failure case easier, return both the ref and the name of the control plane
-def get_control_plane() -> Tuple[Dict, str]:
+def get_control_plane() -> Tuple[Optional[Dict], str]:
     if not kubernetes_support:
         return None, ""
 
@@ -2194,7 +2285,7 @@ def get_control_plane() -> Tuple[Dict, str]:
 
 
 # pylint: disable-next=unused-argument
-def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
+def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
     global force_refresh_apis  # pylint: disable=global-statement
 
     selected = deep_get(kwargs, DictPath("selected"))
@@ -2206,6 +2297,7 @@ def set_cluster_context(stdscr: curses.window, **kwargs) -> None:
     # to a role that does not have access to a particular API)
     if retval:
         force_refresh_apis = True
+    return Retval.RETURNDONE
 
 
 # pylint: disable-next=too-many-locals
@@ -2531,7 +2623,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                  **listgetter_args)
             if listgetter_async in (listgetters_async.get_inventory_list,
                                     listgetters_async.get_context_list) and "pings" not in executor:
-                facts_ping_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("facts_ping.yaml")
+                facts_ping_playbook_path = get_playbook_path(FilePath("facts_ping.yaml"))
                 # But the hosts can change status more frequently than that
                 executor.trigger("pings", 5, run_ansible_play_async,
                                  playbook=facts_ping_playbook_path, selection=hosts, verbose=False)
@@ -3135,7 +3227,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     if deep_get(obj, DictPath("metadata#name")) not in itemlist:
                         continue
 
-                labelref = deep_get(obj, DictPath("metadata#labels"), {})
+                labelpath = deep_get(views, DictPath(f"{view}#labels"), "metadata#labels")
+                labelref = deep_get(obj, DictPath(labelpath), {})
                 for key in labelref:
                     if (key, labelref[key]) not in labels:
                         labels.append((key, labelref[key]))
@@ -3207,7 +3300,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 for i, label in enumerate(labels):
                     if i in tagged_labels:
                         selectors[label[0]] = label[1]
-                label_selector = make_selector(selectors)
+                label_selector = make_label_selector(selectors)
                 uip.force_update()
             tagged_items.clear()
             uip.update_info([])
@@ -3532,52 +3625,6 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
         shortcuts = deep_get(views, DictPath(f"{view}#shortcuts"), {})
 
-        # Always include the shortcuts for YAML dump and JSON dump, unless overridden
-        if deep_get(views, DictPath(f"{view}#shortcuts#View YAML dump")) is None:
-            shortcuts["View JSON dump of resource"] = {
-                "shortcut": ord("j"),
-                "read_only": True,
-                "helptext": ("J", "View JSON dump of resource"),
-                "action": "call",
-                "action_call": view_json,
-                "action_args": {
-                    "title": "JSON dump",
-                    "_named_title": True,
-                    "_pass_obj": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-            shortcuts["View YAML dump of resource"] = {
-                "shortcut": ord("y"),
-                "read_only": True,
-                "helptext": ("Y", "View YAML dump of resource"),
-                "action": "call",
-                "action_call": view_yaml,
-                "action_args": {
-                    "title": "YAML dump",
-                    "_named_title": True,
-                    "_pass_obj": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-        # Always include the shortcut for edit resource, unless overridden
-        if deep_get(views, DictPath(f"{view}#shortcuts#Edit resource")) is None:
-            shortcuts["Edit resource"] = {
-                "shortcut": ord("e"),
-                "read_only": False,
-                "helptext": ("E", "Edit resource"),
-                "action": "call",
-                "action_call": edit_resource,
-                "action_args": {
-                    "_pass_obj": True,
-                    "_pass_kind": True,
-                },
-                "force_update": False,
-                "force_refresh": True,
-            }
-
         for key, value in shortcuts.items():
             read_only = deep_get(value, DictPath("read_only"), False)
             if read_only_mode and not read_only:
@@ -3761,7 +3808,7 @@ def __resource_map_cursor(**kwargs: Any) -> Tuple[Retval, Dict]:
     }
 
 
-def __open_reference(**kwargs) -> Tuple[Retval, Dict]:
+def __open_reference(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     pod_name = deep_get(kwargs, DictPath("pod_name"))
@@ -3794,7 +3841,7 @@ def __open_reference(**kwargs) -> Tuple[Retval, Dict]:
     return Retval.MATCH, {}
 
 
-def __fetch_package_versions(**kwargs) -> Tuple[Retval, Dict]:
+def __fetch_package_versions(**kwargs: Any) -> Tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
@@ -3981,7 +4028,7 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[S
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def clusteroverviewloop(stdscr: curses.window, view):
+def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
     global executor  # pylint: disable=global-statement
 
     # Just in case there are leftover futures from other views
@@ -4070,7 +4117,7 @@ def clusteroverviewloop(stdscr: curses.window, view):
     events = []
 
     if not islocal:
-        ping_playbook_path = ANSIBLE_PLAYBOOK_DIR.joinpath("load_ping.yaml")
+        ping_playbook_path = get_playbook_path(FilePath("load_ping.yaml"))
         executor.trigger("sysinfo", 5, run_ansible_play_async,
                          playbook=ping_playbook_path, selection=[control_plane_name])
     executor.trigger("node", 5, listgetters_async.get_kubernetes_list, kind=("Node", ""),
@@ -4695,7 +4742,7 @@ def update_cni(stdscr: curses.window, cni: str, current_version: str, candidate_
     return retval
 
 
-def __update_cni(uip: UIProps, **kwargs):
+def __update_cni(uip: UIProps, **kwargs: Any) -> Retval:
     cni = deep_get(kwargs, DictPath("cni"))
     cni_version = deep_get(kwargs, DictPath("cni_version"))
     candidate_version = deep_get(kwargs, DictPath("candidate_version"))
@@ -4710,7 +4757,7 @@ def __update_cni(uip: UIProps, **kwargs):
         update_cni(uip.stdscr, cni, cni_version, candidate_version)
     uip.refresh_all()
 
-    return Retval.MATCH, {}
+    return Retval.MATCH
 
 
 cniloop_shortcuts = {
@@ -4869,7 +4916,7 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
             return retval
 
 
-def decode_and_view_data(stdscr: curses.window, **kwargs):
+def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     if "selected" in kwargs:
         bvalue = kwargs["selected"].value
         title = kwargs["selected"].key
@@ -4884,10 +4931,10 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
         title = deep_get(kwargs, DictPath("title"), "")
         vtype, value = decode_value(bvalue)
     else:
-        return None
+        return Retval.RETURNDONE
 
     if vtype == "empty" or vtype.startswith(("base64-binary", "gzip")):
-        return None
+        return Retval.RETURNDONE
 
     if vtype.startswith("string"):
         obj = value
@@ -4908,13 +4955,13 @@ def decode_and_view_data(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
+def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"), {})
     if not selection:
-        return None
+        return Retval.RETURNDONE
     obj = deep_get(kwargs, DictPath("obj"), {})
     if not obj:
-        return None
+        return Retval.RETURNDONE
     name_path = deep_get(kwargs, DictPath("name_path"))
     name = selection[1][name_path][0]
     file_path = deep_get(kwargs, DictPath("file_path"))
@@ -4923,7 +4970,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
         if deep_get(file, DictPath("path"), "") == name:
             break
     else:
-        return None
+        return Retval.RETURNDONE
     encoding = deep_get(file, DictPath("encoding"), "")
     content = deep_get(file, DictPath("content"))
     title = name
@@ -4938,19 +4985,19 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs):
     elif vtype.startswith("base64-utf-8"):
         obj = base64.b64decode(value).decode("utf-8")
     elif vtype.startswith(("base64-binary", "gzip")):
-        return None
+        return Retval.RETURNDONE
     formatter = formatters.map_dataformat(title)
     return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
 # pylint: disable-next=unused-argument
-def export_data(stdscr: curses.window, **kwargs):
+def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
     selected = deep_get(kwargs, DictPath("selected"))
     obj = deep_get(kwargs, DictPath("obj"))
 
     if selected is None and obj is None:
-        return
+        return Retval.RETURNDONE
 
     extra_args = deep_get(kwargs, DictPath("_extra_args"), {})
     base_path = deep_get(extra_args, DictPath("base_path"))
@@ -4984,6 +5031,7 @@ def export_data(stdscr: curses.window, **kwargs):
         secure_write_string(filename, tmp, write_mode="wb")
     else:
         raise TypeError(f"Trying to export unknown vtype: {vtype}")
+    return Retval.RETURNDONE
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
@@ -5037,15 +5085,6 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
         if viewref["kind"] in infoviews:
             helptext += helptexts.openresource
 
-        # Always include the shortcut for YAML dump, unless overridden
-        if "shortcuts" not in viewref or "View YAML dump" not in viewref["shortcuts"]:
-            helptext.append(("J", "View JSON dump of resource"))
-            helptext.append(("Y", "View YAML dump of resource"))
-
-        # Always include the shortcut for edit resource, unless overridden
-        if "shortcuts" not in viewref or "Edit resource" not in viewref["shortcuts"]:
-            helptext.append(("E", "Edit resource"))
-
         if "shortcuts" in viewref:
             for shortcut in deep_get(viewref, DictPath("shortcuts")):
                 read_only = deep_get(viewref, DictPath(f"shortcuts#{shortcut}#read_only"), False)
@@ -5059,7 +5098,7 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
         if deep_get(viewref, DictPath("is_taggable"), True):
             helptext += helptexts.tagactions
             helptext += helptexts.spacer
-            if deep_get(viewref, DictPath("labels"), True):
+            if deep_get(viewref, DictPath("labels")):
                 helptext += helptexts.selectoractions
                 helptext += helptexts.spacer
 
@@ -5091,10 +5130,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
         formatter = deep_get(obj, DictPath(formatter_path))
     elif formatter is not None:
         if isinstance(formatter, str):
-            _formatter = deep_get(formatter_allowlist, DictPath(formatter))
-            if _formatter is None:
-                raise ValueError(f"{formatter} is not in formatter_allowlist")
-            formatter = _formatter
+            formatter = check_allowlist(formatter_allowlist, "formatter_allowlist", formatter)
     obj_path = deep_get(kwargs, DictPath("obj_path"))
     title = None
     if obj_path is not None:
@@ -5156,8 +5192,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
     reversible = deep_get(viewref, DictPath("reversible"), True)
     activatedfun = deep_get(viewref, DictPath("activatedfun"))
     on_activation = deep_get(viewref, DictPath("listpad#on_activation"), {})
-    labels = deep_get(viewref, DictPath("labels"), "metadata#labels")
-    annotations = deep_get(viewref, DictPath("annotations"), "metadata#annotations")
+    labels = deep_get(viewref, DictPath("labels"))
+    annotations = deep_get(viewref, DictPath("annotations"))
     extraref = deep_get(viewref, DictPath("extraref"))
     data = deep_get(viewref, DictPath("data"), None)
     if data is not None:
@@ -5242,66 +5278,6 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             "title": "Conditions:",
             "headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
             "itemgetter": itemgetters.get_conditions,
-        }
-
-    # Always include the shortcut for events unless overriden
-    if deep_get(viewref, DictPath("shortcuts#Show Events")) is None:
-        shortcuts["Show Events"] = {
-            "shortcut": ord("e"),
-            "read_only": True,
-            "helptext": ("E", "Show events"),
-            "widget": "windowwidget",
-            "selectable": True,
-            "action": "call",
-            "action_call": resourceinfodispatch_with_lookup,
-            "action_args": {
-                "kind": "Event",
-                "namespace_path": 0,
-                "name_path": 1,
-            },
-            "title": "Events:",
-            "headers": ["Namespace:", "Name:", "Last Seen:", "Status:",
-                        "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
-            "itemgetter": itemgetters.get_events,
-        }
-
-    # Always include the shortcut for YAML dump, unless overridden
-    if deep_get(viewref, DictPath("shortcuts#YAML")) is None:
-        shortcuts["View JSON dump of resource"] = {
-            "shortcut": ord("j"),
-            "read_only": True,
-            "helptext": ("J", "View JSON dump of resource"),
-            "action": "call",
-            "action_call": view_json,
-            "action_args": {
-                "title": "JSON dump",
-                "_pass_obj": True,
-            },
-        }
-        shortcuts["View YAML dump of resource"] = {
-            "shortcut": ord("y"),
-            "read_only": True,
-            "helptext": ("Y", "View YAML dump of resource"),
-            "action": "call",
-            "action_call": view_yaml,
-            "action_args": {
-                "title": "YAML dump",
-                "_pass_obj": True,
-            },
-        }
-
-    # Always include the shortcut for last applied configuration, unless overridden
-    if deep_get(viewref, DictPath("shortcuts#Last Applied Configuration")) is None:
-        shortcuts["Last Applied Configuration"] = {
-            "shortcut": ord("L"),
-            "read_only": True,
-            "helptext": ("[Shift] + L", "Show last applied configuration"),
-            "action": "call",
-            "action_call": view_last_applied_configuration,
-            "action_args": {
-                "_pass_obj": True,
-                "title": "Last applied configuration",
-            }
         }
 
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
@@ -5536,7 +5512,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     deep_get(listgetter_args, DictPath("_label_selector_key_values"))
                 if _label_selector_path is not None:
                     listgetter_args["label_selector"] = \
-                        make_selector(deep_get(obj, DictPath(_label_selector_path)))
+                        make_label_selector(deep_get(obj, DictPath(_label_selector_path)))
                 elif _label_selector_key_values is not None:
                     label_selectors = {}
                     for label_key, label_value in _label_selector_key_values:
@@ -5544,7 +5520,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             label_selectors[label_key] = label_value
                         elif isinstance(label_value, list):
                             label_selectors[label_key] = deep_get_with_fallback(obj, label_value)
-                    listgetter_args["label_selector"] = make_selector(label_selectors)
+                    listgetter_args["label_selector"] = make_label_selector(label_selectors)
                 if not deep_get(listgetter_args, DictPath("label_selector"), "") \
                         and deep_get(listgetter_args, DictPath("_none_on_empty_selector"), False):
                     listgetter = listgetters.listgetter_noop
@@ -5556,7 +5532,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             field_selectors[field_key] = deep_get_with_fallback(obj, field_value)
                         else:
                             field_selectors[field_key] = field_value
-                    listgetter_args["field_selector"] = make_selector(field_selectors)
+                    listgetter_args["field_selector"] = make_label_selector(field_selectors)
                 if _kind is None:
                     _kind = deep_get(obj, DictPath(_kind_path))
                 if _api_family is None:
@@ -5652,7 +5628,8 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     decoded_obj = obj
 
                 if formatter is not None:
-                    formatted_obj = formatter(decoded_obj, raw=raw_output)
+                    formatter_args = deep_get(infoview_args, DictPath("formatter_args"), {})
+                    formatted_obj = formatter(decoded_obj, raw=raw_output, **formatter_args)
                 else:
                     formatted_obj = decoded_obj
 
@@ -5969,18 +5946,25 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     w_headers = deep_get(sc_value, DictPath("headers"))
                     if (w_itemgetter := deep_get(sc_value, DictPath("itemgetter"))) is None:
                         continue
-                    if isinstance(w_itemgetter, str):
-                        w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
                     w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
                     w_itemgetter_args["kubernetes_helper"] = kh
                     w_itemgetter_args["kh_cache"] = kh_cache
+                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "obj")
                     w_selectable = deep_get(sc_value, DictPath("selectable"), False)
                     # w_kind = deep_get(sc_value, DictPath("kind"), view)
                     if "_slow_task_msg" in w_itemgetter_args:
                         _w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
                                                       message=deep_get(w_itemgetter_args,
                                                                        DictPath("_slow_task_msg")))
-                    w_items = w_itemgetter(obj, **w_itemgetter_args)
+
+                    if w_itemgetter_src == "selected":
+                        selected = uip.get_selected()
+                        if selected is not None:
+                            w_ref = getattr(selected, "ref", None)
+                            if w_ref is not None:
+                                w_items = w_itemgetter(w_ref["ref"], **w_itemgetter_args)
+                    else:
+                        w_items = w_itemgetter(obj, **w_itemgetter_args)
 
                     # If the first element is an integer we assume that we've been provided
                     # a pre-formatted list. Otherwise we apply formatting if available.
@@ -6263,13 +6247,32 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 uip.force_update()
 
 
-def eventdispatch(stdscr: curses.window, **kwargs):
+def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch from an event to the infoview of an involved object;
+    this could probably be achieved using the regular dispatcher.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind_path (DictPath): The path to get the kind from
+                api_version_path (DictPath): The path to get the API-version from
+                name_path (DictPath): The path to get name from
+                namespace_path (DictPath): The path to get namespace from
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
     obj = deep_get(kwargs, DictPath("obj"))
     if obj is None:
         return Retval.RETURNDONE
 
     kind_path = deep_get(kwargs, DictPath("kind_path"))
     kind = deep_get_with_fallback(obj, kind_path)
+    # In some cases we don't get a kind from involvedObject/regarding;
+    # just return, otherwise we'll crash in guess_kind().
+    if kind is None:
+        return Retval.RETURNDONE
     api_version_path = deep_get(kwargs, DictPath("api_version_path"))
     api_version = deep_get_with_fallback(obj, api_version_path, "")
     # Is this a core API?
@@ -6492,10 +6495,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             uip.refresh_statusbar()
             curses.doupdate()
 
-            timestamps = []
-            facilities = []
-            severities = []
-            messages = []
+            timestamps: List[str] = []
+            facilities: List[str] = []
+            severities: List[str] = []
+            messages: Union[List[Union[ThemeRef, ThemeStr]], str] = []
             parser = None
             prev_timestamp = None
             prev_facility = ""
@@ -7626,7 +7629,7 @@ def executecommand(stdscr: curses.window,
 
 
 # pylint: disable-next=too-many-branches
-def listviewdispatch(stdscr: curses.window, **kwargs):
+def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     obj = deep_get(kwargs, DictPath("obj"))
     selection = deep_get(kwargs, DictPath("selection"))
     if obj is None and selection is None:
@@ -7679,7 +7682,7 @@ def listviewdispatch(stdscr: curses.window, **kwargs):
 
 
 # pylint: disable-next=unused-argument
-def patch_object(stdscr: curses.window, **kwargs):
+def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(kwargs, DictPath("name"))
     namespace = deep_get(kwargs, DictPath("namespace"))
@@ -7690,17 +7693,31 @@ def patch_object(stdscr: curses.window, **kwargs):
     _message, _status = kh.patch_obj_by_kind_name_namespace(kind, name, namespace, patch,
                                                             subresource=subresource,
                                                             strategic_merge=strategic_merge)
-
     return Retval.RETURNDONE
 
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
-def resourceinfodispatch(stdscr: curses.window, obj, kind, **kwargs: Any) -> Optional[Retval]:
+def resourceinfodispatch(stdscr: curses.window, obj: dict,
+                         kind: Union[str, Tuple[str, str]], **kwargs: Any) -> Retval:
+    """
+    Dispatch from an object to the infoview of another object.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind_path (DictPath): The path to get the kind from
+                api_version_path (DictPath): The path to get the API-version from
+                name_path (DictPath): The path to get name from
+                namespace_path (DictPath): The path to get namespace from
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
     info = deep_get(kwargs, DictPath("info"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
 
     if kind == ("", ""):
         kind = deep_get(obj, DictPath("kind"), "")
@@ -7720,14 +7737,14 @@ def resourceinfodispatch(stdscr: curses.window, obj, kind, **kwargs: Any) -> Opt
     if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
         # Do not try to open pending containers
         if deep_get(info, DictPath("status#phase")) in ("Pending", "Failed"):
-            return None
+            return Retval.RETURNDONE
         return containerinfoloop(stdscr, obj, kind, info)
 
-    return None
+    return Retval.RETURNDONE
 
 
 def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
-                                                kind=None, info=None, **kwargs) -> Optional[Retval]:
+                                                kind=None, info=None, **kwargs: Any) -> Retval:
     kind = deep_get(obj, DictPath("kind"))
     api_family = deep_get(obj, DictPath("api_group"), "")
     obj = deep_get(obj, DictPath("ref"))
@@ -7735,7 +7752,7 @@ def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optional[Retval]:
+def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Retval:
     # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("obj"))
     # pylint: disable-next=too-many-nested-blocks
@@ -7830,7 +7847,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optiona
 
     if obj is not None:
         kind = deep_get_with_fallback(obj, kind_path, kind)
-        if kind is not None and kind and isinstance(api_version_path, str):
+        if kind is not None and kind and isinstance(api_version_path, list):
             api_version = deep_get_with_fallback(obj, api_version_path)
             if api_version is not None:
                 if "/" in api_version:
@@ -7890,7 +7907,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optiona
                 name = str(name)
 
     if kind is None or isinstance(kind, tuple) and kind[0] is None:
-        return None
+        return Retval.RETURNDONE
 
     if name is None:
         if namespaced_name_path is not None:
@@ -7901,7 +7918,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs) -> Optiona
                 namespace, name = tmp
 
     if name is None or not name:
-        return None
+        return Retval.RETURNDONE
 
     if namespace is None and obj is not None:
         namespace = deep_get_with_fallback(obj, namespace_path)
@@ -7991,14 +8008,14 @@ def run_playbook(playbook: Dict, nodes: List[str],
     return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes, values=values)
 
 
-def view_obj(stdscr: curses.window, **kwargs):
+def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
     else:
         obj = deep_get(kwargs, DictPath("obj"))
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
     title_path = deep_get(kwargs, DictPath("title_path"))
     if title_path is not None:
@@ -8024,7 +8041,7 @@ def view_obj(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_yaml(stdscr: curses.window, **kwargs):
+def view_yaml(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8032,7 +8049,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
         obj = deep_get(kwargs, DictPath("obj"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     path = deep_get(kwargs, DictPath("path"))
     if path is not None:
         if deep_get(kwargs, DictPath("include_root"), False):
@@ -8040,7 +8057,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
         else:
             _obj = deep_get(obj, DictPath(path))
         if _obj is None:
-            return None
+            return Retval.RETURNDONE
         obj = [_obj]
     else:
         obj = [obj]
@@ -8050,7 +8067,7 @@ def view_yaml(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_json(stdscr: curses.window, **kwargs):
+def view_json(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection = deep_get(kwargs, DictPath("selection"))
     if selection is not None:
         obj = selection
@@ -8058,7 +8075,7 @@ def view_json(stdscr: curses.window, **kwargs):
         obj = deep_get(kwargs, DictPath("obj"))
 
     if obj is None:
-        return None
+        return Retval.RETURNDONE
     path = deep_get(kwargs, DictPath("path"))
     if path is not None:
         if deep_get(kwargs, DictPath("include_root"), False):
@@ -8066,7 +8083,7 @@ def view_json(stdscr: curses.window, **kwargs):
         else:
             _obj = deep_get(obj, DictPath(path))
         if _obj is None:
-            return None
+            return Retval.RETURNDONE
         obj = [_obj]
     else:
         obj = [obj]
@@ -8076,7 +8093,7 @@ def view_json(stdscr: curses.window, **kwargs):
                                 title=title, formatter=formatter)
 
 
-def view_pod_logs(stdscr: curses.window, **kwargs):
+def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
     containers = []
     containers_full = []
     items = deep_get(kwargs, DictPath("_tagged_items"), [])
@@ -8103,11 +8120,11 @@ def view_pod_logs(stdscr: curses.window, **kwargs):
 
 
 # pylint: disable=unused-argument
-def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs):
+def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     return view_pod_logs(uip.stdscr, **values)
 
 
-def view_last_applied_configuration(stdscr: curses.window, **kwargs):
+def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Retval:
     obj = deep_get(kwargs, DictPath("obj"))
 
     last_applied_configuration_path = \
@@ -8115,12 +8132,12 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs):
     last_applied_configuration = \
         deep_get(obj, last_applied_configuration_path, {})
     if last_applied_configuration is None or not last_applied_configuration:
-        return None
+        return Retval.RETURNDONE
 
     try:
         data = json.loads(last_applied_configuration)
     except DecodeException:
-        return None
+        return Retval.RETURNDONE
 
     title = deep_get(kwargs, DictPath("title"))
     # themearrays = formatters.format_yaml([data])
@@ -8130,7 +8147,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs):
 
 
 # pylint: disable=unused-argument,too-many-locals
-def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     success = True
     force = deep_get(values, DictPath("__force"), False)
 
@@ -8163,14 +8180,16 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
             del win
             break
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     values["__force"] = True
     return delete_resource(uip, items=items, action=action, values=values, kind=kind)
 
 
-def create_namespace(stdscr: curses.window, **kwargs):
+def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
     selection_vars = deep_get(kwargs, DictPath("selection_vars"))
     name = deep_get(selection_vars, DictPath("namespace"))
 
@@ -8204,6 +8223,8 @@ def create_namespace(stdscr: curses.window, **kwargs):
     if waitforkeypress:
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     stdscr.refresh()
+
+    return Retval.RETURNDONE
 
 
 # Valid kinds:
@@ -8341,6 +8362,14 @@ def perform_action_on_configuration(uip: UIProps, items, action,
 
     args.append(resource_path)
     result = subprocess.run(args, universal_newlines=True, check=False)
+
+    # waitforkeypress = deep_get(kwargs, DictPath("wait_for_keypress"), False)
+    waitforkeypress = True
+
+    if waitforkeypress:
+        ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
+    uip.stdscr.refresh()
+
     return result.returncode, args
 
 
@@ -8487,7 +8516,7 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
 
 
 # pylint: disable=unused-argument
-def patch_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
     action_str = deep_get(values, DictPath("action_str"))
@@ -8516,9 +8545,11 @@ def patch_resource(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
+def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8542,9 +8573,11 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs):
+def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8565,9 +8598,11 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
+def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8593,11 +8628,13 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # Valid kinds:
 # ("Deployment", "apps")
 # pylint: disable=unused-argument
-def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
+def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
 
@@ -8622,11 +8659,15 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs):
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
+    return Retval.RETURNDONE
+
 
 # pylint: disable=unused-argument
-def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for item in items:
         ansible_delete_log(item)
+
+    return Retval.RETURNDONE
 
 
 # pylint: disable=unused-argument,too-many-locals,too-many-branches
@@ -8751,22 +8792,24 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
 
 
 # pylint: disable=unused-argument
-def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.cordon_node(node)
+    return Retval.RETURNDONE
 
 
 # pylint: disable=unused-argument
-def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.uncordon_node(node)
+    return Retval.RETURNDONE
 
 
 nodeplaybooks = {}  # type: ignore
 
 
 # pylint: disable-next=too-many-locals
-def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
+def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     SSH to a host
 
@@ -8777,6 +8820,8 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
                 name_path (str): The path to the member of the object
                                  to fetch the name from (optional)
                 name (str): The name of the host (optional)
+        Returns:
+            (Retval): Retval.RETURNDONE
     """
     host = None
 
@@ -8794,11 +8839,11 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
                 kind = guess_kind((_kind, _api_group))
             except NameError:
                 # If we cannot guess the kind we return
-                return
+                return Retval.RETURNDONE
 
             if kind != ("Node", ""):
                 # If this is not a Node object, return
-                return
+                return Retval.RETURNDONE
             host = deep_get(ref, DictPath("name"), "")
     elif "obj" in kwargs:
         obj = deep_get(kwargs, DictPath("obj"), {})
@@ -8807,7 +8852,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
     host = deep_get(kwargs, DictPath("name"), host)
 
     if host is None or not host:
-        return
+        return Retval.RETURNDONE
 
     msg = [ANSIThemeStr("SSH:ing to ", "action"),
            ANSIThemeStr(host, "hostname"),
@@ -8851,6 +8896,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> None:
     subprocess.run(args, check=False)
 
     stdscr.refresh()
+    return Retval.RETURNDONE
 
 
 def list_configuration_files(basedir):
@@ -8961,7 +9007,7 @@ def populate_actionlist(**kwargs: Any) -> Tuple[List[Dict], List[Dict]]:
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Optional[Dict]:
     if not os.path.isdir(path):
-        return None
+        return action_list
 
     if action_list is None:
         action_list = {}
@@ -9113,6 +9159,7 @@ def populate_playbooklist(**kwargs: Any) -> Tuple[List[Dict], Dict]:
             continue
         action_list = __populate_playbooklist(playbook_path, action_list=action_list)
     action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_DIR, action_list=action_list)
+    action_list = __populate_playbooklist(SYSTEM_ANSIBLE_PLAYBOOK_DIR, action_list=action_list)
 
     order = []
     for item in action_list:
@@ -9189,7 +9236,7 @@ def populate_playbooklist(**kwargs: Any) -> Tuple[List[Dict], Dict]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def format_selection_list(uip: UIProps, refresh_apis: bool = False):
+def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> List[Dict[str, Any]]:
     global force_refresh_apis  # pylint: disable=global-statement
 
     if force_refresh_apis:
@@ -9485,7 +9532,7 @@ listviewactions = {
         },
     },
     "Diff resource creation (local)": {
-        "description": "Show what changes applying file or Kustomization would make (autodetect)",
+        "description": "Show what changes applying file or Kustomization would make (autodetected)",
         "actionfunc": diff_resource_configuration,
         "query": "Choose file or Kustomization to show difference against:",
         "queryval": "resource_path",
@@ -9545,6 +9592,7 @@ action_call_allowlist = {
     "create_namespace": create_namespace,
     "decode_and_view_data": decode_and_view_data,
     "decode_and_view_file_templates": decode_and_view_file_templates,
+    "edit_resource": edit_resource,
     "eventdispatch": eventdispatch,
     "export_data": export_data,
     "listviewdispatch": listviewdispatch,
@@ -9553,6 +9601,7 @@ action_call_allowlist = {
     "resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
     "set_cluster_context": set_cluster_context,
     "ssh_to_host": ssh_to_host,
+    "view_last_applied_configuration": view_last_applied_configuration,
     "view_obj": view_obj,
     "view_pod_logs": view_pod_logs,
     "view_json": view_json,
@@ -9739,6 +9788,12 @@ def map_key(view_file: str, shortcut: str, activatedfun,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def populate_views(force_refresh: bool = False) -> None:
+    """
+    Populate the list- and info-view data from view-files.
+
+        Parameters:
+            force_refresh (bool): Force fresh of the list of available APIs
+    """
     global views  # pylint: disable=global-statement
 
     if kubernetes_support:
@@ -9752,10 +9807,6 @@ def populate_views(force_refresh: bool = False) -> None:
         if deep_get(kind_data, DictPath("available"), False):
             available_api_families.add(kind)
 
-    viewdir = os.path.join(VIEW_DIR)
-    if not os.path.isdir(viewdir):
-        sys.exit(f"{viewdir} does not exist; please re-run {about.INSTALL_PROGRAM_NAME}")
-
     # Get a full list of views from all view directories
     # Start by adding files from the views directory
     view_dirs = []
@@ -9763,7 +9814,8 @@ def populate_views(force_refresh: bool = False) -> None:
 
     views = {**views_special}
 
-    view_dirs.append(viewdir)
+    view_dirs.append(cmtpaths.VIEW_DIR)
+    view_dirs.append(cmtpaths.SYSTEM_VIEWS_DIR)
 
     view_files = []
 
@@ -9845,11 +9897,11 @@ def populate_views(force_refresh: bool = False) -> None:
             name = deep_get(d, DictPath("listview#name"), "<missing>")
             group = deep_get(d, DictPath("listview#group"))
 
-            check_availability = deep_get(d, DictPath("listview#check_availability"), None)
-            if check_availability is not None:
-                if isinstance(check_availability, str):
-                    check_availability = deep_get(availability_checker_allowlist,
-                                                  DictPath(check_availability))
+            check_availability = \
+                check_allowlist(availability_checker_allowlist,
+                                "availability_checker_allowlist",
+                                deep_get(d, DictPath("listview#check_availability")),
+                                allow_none=True)
 
             sortcolumn = deep_get(d, DictPath("listview#sortcolumn"))
             reversible = deep_get(d, DictPath("listview#reversible"), True)
@@ -9914,20 +9966,20 @@ def populate_views(force_refresh: bool = False) -> None:
             # This complexity is required because if the key is missing we want to use the default,
             # but if the key is explicitly None we do not want any fallback
             if "infogetter" in deep_get(d, DictPath("listview")):
-                infogetter = deep_get(d, DictPath("listview#infogetter"))
-                if infogetter is not None:
-                    infogetter = \
-                        deep_get(infogetter_allowlist, DictPath(infogetter), generic_infogetter)
+                infogetter = check_allowlist(infogetter_allowlist, "infogetter_allowlist",
+                                             deep_get(d, DictPath("listview#infogetter")),
+                                             allow_none=True)
             else:
                 infogetter = generic_infogetter
 
-            listgetter_async = deep_get(d, DictPath("listview#listgetter_async"))
-            if listgetter_async is not None:
-                listgetter_async = deep_get(listgetter_async_allowlist, DictPath(listgetter_async))
+            listgetter_async = check_allowlist(listgetter_async_allowlist,
+                                               "listgetter_async_allowlist",
+                                               deep_get(d, DictPath("listview#listgetter_async")),
+                                               allow_none=True)
 
-            listgetter = deep_get(d, DictPath("listview#listgetter"))
-            if listgetter is not None:
-                listgetter = deep_get(listgetter_allowlist, DictPath(listgetter))
+            listgetter = check_allowlist(listgetter_allowlist, "listgetter_allowlist",
+                                         deep_get(d, DictPath("listview#listgetter")),
+                                         allow_none=True)
 
             # If both are unset we use the default asynchronous listgetter
             if "listgetter" not in deep_get(d, DictPath("listview")) and \
@@ -9940,13 +9992,14 @@ def populate_views(force_refresh: bool = False) -> None:
             if on_activation is None or "call" not in on_activation:
                 activatedfun = genericinfoloop
             else:
-                activatedfun = deep_get(on_activation, DictPath("call"))
-                if isinstance(activatedfun, str):
-                    _activatedfun = \
-                        deep_get(activatedfun_allowlist, DictPath(cast(str, activatedfun)))
-                    if _activatedfun is None:
-                        sys.exit(f"{activatedfun} is not in the activatedfun allow list")
-                    activatedfun = _activatedfun
+                activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
+                                               deep_get(on_activation, DictPath("call")),
+                                               allow_none=True)
+
+            if "labels" in deep_get(d, DictPath("listview"), {}):
+                labels = deep_get(d, DictPath("listview#labels"))
+            else:
+                labels = "metadata#labels"
 
             listview_entry = {
                 "kind": (kind, api_family),
@@ -9960,6 +10013,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 "listview_args": deep_get(d, DictPath("listview#listview_args"), {}),
                 "statusmsg": deep_get(d, DictPath("listview#statusmsg"), {}),
                 "is_taggable": deep_get(d, DictPath("listview#is_taggable"), True),
+                "labels": labels,
                 "listgetter": listgetter,
                 "listgetter_async": listgetter_async,
                 "listgetter_args": listgetter_args,
@@ -9972,6 +10026,54 @@ def populate_views(force_refresh: bool = False) -> None:
             shortcuts = {}
 
             _shortcuts = deep_get(d, DictPath("listview#shortcuts"), {})
+
+            # Always include the shortcuts for YAML dump and JSON dump, unless overridden
+            if "View YAML dump" not in _shortcuts:
+                _shortcuts["View JSON dump of resource"] = {
+                    "key": "j",
+                    "read_only": True,
+                    "helptext": "View JSON dump of resource",
+                    "action": "call",
+                    "action_call": "view_json",
+                    "action_args": {
+                        "title": "JSON dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+                _shortcuts["View YAML dump of resource"] = {
+                    "key": "y",
+                    "read_only": True,
+                    "helptext": "View YAML dump of resource",
+                    "action": "call",
+                    "action_call": "view_yaml",
+                    "action_args": {
+                        "title": "YAML dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+
+            # Always include the shortcut for edit resource, unless overridden
+            if "Edit resource" not in _shortcuts:
+                _shortcuts["Edit resource"] = {
+                    "key": "e",
+                    "read_only": False,
+                    "helptext": "Edit resource",
+                    "action": "call",
+                    "action_call": "edit_resource",
+                    "action_args": {
+                        "_pass_obj": True,
+                        "_pass_kind": True,
+                    },
+                    "force_update": False,
+                    "force_refresh": True,
+                }
+
             for shortcut in _shortcuts:
                 # If the shortcut is empty we are disabling a default shortcut
                 if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
@@ -9983,7 +10085,6 @@ def populate_views(force_refresh: bool = False) -> None:
                 helptext = deep_get(_shortcuts[shortcut], DictPath("helptext"), "<missing>")
                 action = deep_get(_shortcuts[shortcut], DictPath("action"), "<missing>")
                 action_args = deep_get(_shortcuts[shortcut], DictPath("action_args"), {})
-                action_call = deep_get(_shortcuts[shortcut], DictPath("action_call"))
                 queryfunc = deep_get(_shortcuts[shortcut], DictPath("queryfunc"))
                 queryval = deep_get(_shortcuts[shortcut], DictPath("queryval"))
                 query = deep_get(_shortcuts[shortcut], DictPath("query"))
@@ -10019,10 +10120,10 @@ def populate_views(force_refresh: bool = False) -> None:
                     "force_refresh": force_refresh,
                 }
                 if action == "call":
-                    _action_call = deep_get(action_call_allowlist, DictPath(action_call))
-                    if _action_call is None:
-                        sys.exit(f"{action_call} is not in the action_call allow list")
-                    shortcuts[shortcut]["action_call"] = _action_call
+                    shortcuts[shortcut]["action_call"] = \
+                        check_allowlist(action_call_allowlist, "action_call_allowlist",
+                                        deep_get(_shortcuts[shortcut], DictPath("action_call")),
+                                        allow_none=True)
 
             if shortcuts:
                 listview_entry["shortcuts"] = shortcuts
@@ -10091,12 +10192,9 @@ def populate_views(force_refresh: bool = False) -> None:
             listpad = deep_get(d, DictPath("infoview#listpad"), {})
 
             on_activation = deep_get(listpad, DictPath("on_activation"))
-            activatedfun = deep_get(on_activation, DictPath("call"))
-            if isinstance(activatedfun, str):
-                _activatedfun = deep_get(activatedfun_allowlist, DictPath(activatedfun))
-                if _activatedfun is None:
-                    sys.exit(f"{activatedfun} is not in the activatedfun allow list")
-                activatedfun = _activatedfun
+            activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
+                                           deep_get(on_activation, DictPath("call")),
+                                           allow_none=True)
             override_kind = deep_get(on_activation, DictPath("kind"))
             override_api_family = deep_get(on_activation, DictPath("api_family"), "")
             on_activation_extraref = deep_get(on_activation, DictPath("extraref"))
@@ -10108,7 +10206,14 @@ def populate_views(force_refresh: bool = False) -> None:
                 on_activation["kind"] = viewoverride
                 on_activation.pop("api_family", "")
 
-            annotations = deep_get(d, DictPath("infoview#annotations"))
+            if "labels" in deep_get(d, DictPath("listview"), {}):
+                labels = deep_get(d, DictPath("listview#labels"))
+            else:
+                labels = "metadata#labels"
+            if "annotations" in deep_get(d, DictPath("listview"), {}):
+                annotations = deep_get(d, DictPath("infoview#annotations"))
+            else:
+                annotations = "metadata#annotations"
 
             sortcolumn = deep_get(listpad, DictPath("sortcolumn"))
             reversible = deep_get(listpad, DictPath("reversible"), True)
@@ -10150,14 +10255,16 @@ def populate_views(force_refresh: bool = False) -> None:
                 "infopad": row_fields,
                 "listpad": {},
                 "reversible": reversible,
+                "labels": labels,
                 "annotations": annotations,
                 "shortcuts": {},
                 "no_reload_on_refresh": deep_get(d, DictPath("infoview#no_reload_on_refresh"),
                                                  False),
             }
-            objgetter = deep_get(infopad, DictPath("objgetter"))
-            if objgetter is not None:
-                infoview_entry["objgetter"] = deep_get(objgetter_allowlist, DictPath(objgetter))
+            infoview_entry["objgetter"] = \
+                check_allowlist(objgetter_allowlist, "objgetter_allowlist",
+                                deep_get(infopad, DictPath("objgetter")),
+                                allow_none=True)
 
             if listpad:
                 infoview_entry["listpad"]["on_activation"] = on_activation
@@ -10181,11 +10288,8 @@ def populate_views(force_refresh: bool = False) -> None:
                                      "listpad specified, but no infogetter is provided")
             else:
                 infoview_entry["listpad"]["infogetter"] = \
-                    deep_get(infogetter_allowlist, DictPath(list_infogetter))
-                if infoview_entry["listpad"]["infogetter"] is None:
-                    raise ValueError(f"View-file {view_file} is invalid: infogetter "
-                                     f"{list_infogetter} for listpad "
-                                     "is not in infogetter_allowlist")
+                    check_allowlist(infogetter_allowlist, "infogetter_allowlist",
+                                    list_infogetter)
                 infoview_entry["listpad"]["infogetter_args"] = list_infogetter_args
             if list_listgetter is None:
                 if listpad:
@@ -10193,16 +10297,77 @@ def populate_views(force_refresh: bool = False) -> None:
                                      "listpad specified, but no listgetter is provided")
             else:
                 infoview_entry["listpad"]["listgetter"] = \
-                    deep_get(listgetter_allowlist, DictPath(list_listgetter))
-                if infoview_entry["listpad"]["listgetter"] is None:
-                    raise ValueError(f"View-file {view_file} is invalid: listgetter "
-                                     f"{list_listgetter} for listpad "
-                                     "is not in listgetter_allowlist")
+                    check_allowlist(listgetter_allowlist, "listgetter_allowlist",
+                                    list_listgetter)
                 infoview_entry["listpad"]["listgetter_args"] = list_listgetter_args
 
             shortcuts = {}
 
             _shortcuts = deep_get(d, DictPath("infoview#shortcuts"), {})
+
+            # Always include the shortcuts for YAML dump and JSON dump, unless overridden
+            if "YAML" not in _shortcuts:
+                _shortcuts["View JSON dump of resource"] = {
+                    "key": "j",
+                    "read_only": True,
+                    "helptext": "View JSON dump of resource",
+                    "action": "call",
+                    "action_call": "view_json",
+                    "action_args": {
+                        "title": "JSON dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                }
+                _shortcuts["View YAML dump of resource"] = {
+                    "key": "y",
+                    "read_only": True,
+                    "helptext": "View YAML dump of resource",
+                    "action": "call",
+                    "action_call": "view_yaml",
+                    "action_args": {
+                        "title": "YAML dump",
+                        "_named_title": True,
+                        "_pass_obj": True,
+                    },
+                }
+
+            # Always include the shortcut for last applied configuration, unless overridden
+            if "Last Applied Configuration" not in _shortcuts:
+                _shortcuts["Last Applied Configuration"] = {
+                    "key": "l",
+                    "modifier": "shift",
+                    "read_only": True,
+                    "helptext": "Show last applied configuration",
+                    "action": "call",
+                    "action_call": "view_last_applied_configuration",
+                    "action_args": {
+                        "_pass_obj": True,
+                        "title": "Last applied configuration",
+                    }
+                }
+
+            # Always include the shortcut for events unless overriden
+            if "Show Events" not in _shortcuts:
+                _shortcuts["Show Events"] = {
+                    "key": "e",
+                    "read_only": True,
+                    "helptext": "Show events",
+                    "widget": "windowwidget",
+                    "selectable": True,
+                    "action": "call",
+                    "action_call": "resourceinfodispatch_with_lookup",
+                    "action_args": {
+                        "kind": "Event",
+                        "namespace_path": 0,
+                        "name_path": 1,
+                    },
+                    "title": "Events:",
+                    "headers": ["Namespace:", "Name:", "Last Seen:", "Status:",
+                                "Reason:", "Source:", "First Seen:", "Count:", "Message:"],
+                    "itemgetter": "get_events",
+                }
+
             for shortcut in _shortcuts:
                 # If the shortcut is empty we are disabling a default shortcut
                 if _shortcuts[shortcut] is None or not _shortcuts[shortcut]:
@@ -10214,7 +10379,6 @@ def populate_views(force_refresh: bool = False) -> None:
                 helptext = deep_get(_shortcuts[shortcut], DictPath("helptext"), "<missing>")
                 action = deep_get(_shortcuts[shortcut], DictPath("action"), "<missing>")
                 action_args = deep_get(_shortcuts[shortcut], DictPath("action_args"), {})
-                action_call = deep_get(_shortcuts[shortcut], DictPath("action_call"))
                 queryfunc = deep_get(_shortcuts[shortcut], DictPath("queryfunc"))
                 queryval = deep_get(_shortcuts[shortcut], DictPath("queryval"))
                 query = deep_get(_shortcuts[shortcut], DictPath("query"))
@@ -10226,10 +10390,10 @@ def populate_views(force_refresh: bool = False) -> None:
                 w_title = deep_get(_shortcuts[shortcut], DictPath("title"))
                 w_headers = deep_get(_shortcuts[shortcut], DictPath("headers"))
                 w_selectable = deep_get(_shortcuts[shortcut], DictPath("selectable"))
-                w_itemgetter = deep_get(_shortcuts[shortcut], DictPath("itemgetter"))
-                if w_itemgetter is not None:
-                    if isinstance(w_itemgetter, str):
-                        w_itemgetter = deep_get(itemgetter_allowlist, DictPath(w_itemgetter))
+                w_itemgetter = check_allowlist(itemgetter_allowlist, "itemgetter_allowlist",
+                                               deep_get(_shortcuts[shortcut],
+                                                        DictPath("itemgetter")),
+                                               allow_none=True)
                 w_itemgetter_args = deep_get(_shortcuts[shortcut], DictPath("itemgetter_args"), {})
                 _w_formatting = deep_get(_shortcuts[shortcut], DictPath("formatting"))
                 w_formatting = None
@@ -10262,7 +10426,7 @@ def populate_views(force_refresh: bool = False) -> None:
                     "helptext": (help_key, helptext),
                     "action": action,
                     "action_args": action_args,
-                    "action_call": action_args,
+                    "action_call": None,
                     "queryfunc": queryfunc,
                     "queryval": queryval,
                     "query": query,
@@ -10280,10 +10444,10 @@ def populate_views(force_refresh: bool = False) -> None:
                     "sortcolumn": w_sortcolumn,
                 }
                 if action == "call":
-                    _action_call = deep_get(action_call_allowlist, DictPath(action_call))
-                    if _action_call is None:
-                        sys.exit(f"{action_call} is not in the action_call allow list")
-                    shortcuts[shortcut]["action_call"] = _action_call
+                    shortcuts[shortcut]["action_call"] = \
+                        check_allowlist(action_call_allowlist, "action_call_allowlist",
+                                        deep_get(_shortcuts[shortcut], DictPath("action_call")),
+                                        allow_none=True)
 
             logpad = deep_get(d, DictPath("infoview#logpad"), {})
 
@@ -10734,7 +10898,7 @@ COMMANDLINE = {
         "extended_description": [
             [ANSIThemeStr("Sometimes ", "description"),
              ANSIThemeStr("OBJECT", "argument"),
-             ANSIThemeStr(" may need to be qualified by using ", "description")],
+             ANSIThemeStr(" may need to be qualified by using", "description")],
             [ANSIThemeStr("NAMESPACE", "argument"),
              ANSIThemeStr(", but if there's only one unique match", "description")],
             [ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
@@ -10762,7 +10926,7 @@ COMMANDLINE = {
                 "description":
                     [ANSIThemeStr("WHEN should the output use ANSI-colors", "description")],
                 "extended_description": [
-                    [ANSIThemeStr("Valid arguments are: ", "description")],
+                    [ANSIThemeStr("Valid arguments are:", "description")],
                     [ANSIThemeStr("always", "argument"),
                      ANSIThemeStr(" (always color the output)", "description")],
                     [ANSIThemeStr("auto", "argument"),
@@ -10786,7 +10950,7 @@ COMMANDLINE = {
                 "description": [ANSIThemeStr("Format the output as ", "description"),
                                 ANSIThemeStr("FORMAT", "description")],
                 "extended_description": [
-                    [ANSIThemeStr("Valid formats are: ", "description")],
+                    [ANSIThemeStr("Valid formats are:", "description")],
                     [ANSIThemeStr("default", "argument"),
                      ANSIThemeStr(" (default format)", "description")],
                     [ANSIThemeStr("csv", "argument"),
@@ -10833,7 +10997,7 @@ COMMANDLINE = {
         "extended_description": [
             [ANSIThemeStr("Sometimes ", "description"),
              ANSIThemeStr("OBJECT", "argument"),
-             ANSIThemeStr(" may need to be qualified by using ", "description")],
+             ANSIThemeStr(" may need to be qualified by using", "description")],
             [ANSIThemeStr("NAMESPACE", "argument"),
              ANSIThemeStr(", but if there's only one unique match", "description")],
             [ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
@@ -10942,7 +11106,7 @@ COMMANDLINE = {
             "--disable-kubernetes": {
                 "description": [ANSIThemeStr("disable Kubernetes support", "description")],
                 "extended_description": [
-                    [ANSIThemeStr("This option disables Kubernetes support; ", "description")],
+                    [ANSIThemeStr("This option disables Kubernetes support;", "description")],
                     [ANSIThemeStr("this is typically only useful if you use", "description")],
                     [ANSIThemeStr(about.UI_PROGRAM_NAME, "programname"),
                      ANSIThemeStr(" to manage an Ansible inventory", "description")],
@@ -10955,7 +11119,7 @@ COMMANDLINE = {
                 "extended_description": [
                     [ANSIThemeStr("Use ", "description"),
                      ANSIThemeStr("PATH", "argument"),
-                     ANSIThemeStr(" as kubeconfig; by default ", "description")],
+                     ANSIThemeStr(" as kubeconfig; by default", "description")],
                     [ANSIThemeStr(KUBE_CONFIG_FILE, "path"),
                      ANSIThemeStr(" is used", "description")],
                 ],
@@ -11005,6 +11169,11 @@ def main() -> None:
     if os.geteuid() == 0:
         sys.exit("CRITICAL: This program should not be run as the root user; aborting.")
 
+    # Now check if all necessary paths exist
+    if (violations := cmtlib.setup_paths()) != [SecurityStatus.OK]:
+        violations_joined = cmtio.join_securitystatus_set(",", set(violations))
+        sys.exit(f"Failed to create necessary directories; violated rules: {violations_joined}")
+
     # Now initialise the audit log and the debug log
     # auditlog = CMTLog(CMTLogType.AUDIT)
     # debuglog = CMTLog(CMTLogType.DEBUG)
@@ -11027,7 +11196,8 @@ def main() -> None:
     if themeindex is None:
         tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
     themefile, theme_path_found = \
-        expand_path(path=tmpthemefile, search_paths=[os.getcwd(), THEME_DIR],
+        expand_path(path=tmpthemefile,
+                    search_paths=[os.getcwd(), THEME_DIR, cmtpaths.SYSTEM_THEMES_DIR],
                     suffixes=[".yaml"], fallback=defaultthemefile)
 
     try:

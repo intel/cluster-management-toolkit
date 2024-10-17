@@ -91,7 +91,7 @@ listview:
       paths:
       - paths: [["status#startTime"], ["status#completionTime"]]
         pathtype: "timediff"
-      default: "<unset>"
+      default: 0
       formatter: "age"
       align: "right"
     state:
@@ -134,7 +134,7 @@ listview:
             Completed:
               field_colors:
               - context: "main"
-                type: "status_ok"
+                type: "status_done"
             __default:
               field_colors:
               - context: "main"
@@ -180,7 +180,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "completions", "completion_time_with_age", "completion_mode", "suspended", "parallelism", "backoff_limit", "pod_failure_policy", "state"]
+        fields: ["controller", "label_selector", "label_selector_is_manual", "completions", "completion_time_with_age", "completion_mode", "suspended", "parallelism", "backoff_limit", "pod_failure_policy", "pod_replacement_policy", "state"]
     rows:
       backoff_limit:
         header: [["Backoff Limit:", ["main", "infoheader"]]]
@@ -247,6 +247,11 @@ infoview:
           # This is a meta-type, indicating where the age goes
           - type: "age"
           - type: "generic"
+      label_selector_is_manual:
+        header: [["Manual Selector:", ["main", "infoheader"]]]
+        path: "spec#manualSelector"
+        default: false
+        type: "bool"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
@@ -271,6 +276,11 @@ infoview:
       pod_failure_policy:
         header: [["Pod Failure Policy:", ["main", "infoheader"]]]
         path: "spec#podFailurePolicy"
+        default: "<unset>"
+        type: "str"
+      pod_replacement_policy:
+        header: [["Pod Replacement Policy:", ["main", "infoheader"]]]
+        path: "spec#podReplacementPolicy"
         default: "<unset>"
         type: "str"
       state:
@@ -313,7 +323,7 @@ infoview:
               Completed:
                 field_colors:
                 - context: "main"
-                  type: "status_ok"
+                  type: "status_done"
               __default:
                 field_colors:
                 - context: "main"

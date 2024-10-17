@@ -1,0 +1,28 @@
+kind: "DockerMachineTemplate"
+api_family: "infrastructure.cluster.x-k8s.io"
+default_command: "dockermachinetemplates"
+command:
+- "dockermchtempls"
+- "dockermchtempl"
+listview:
+  name: "Docker Machine Templates"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Docker Machine Template Info"
+  infopad:
+  shortcuts:
+    "Machine template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Docker Machine template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Docker Machine template"
+        _pass_obj: true
+        path: "spec#template"

@@ -1,0 +1,74 @@
+kind: "VirtinkMachine"
+api_family: "infrastructure.cluster.x-k8s.io"
+default_command: "virtinkmachines"
+command:
+- "vimachs"
+- "vimach"
+listview:
+  name: "Virtink Machines"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "provider_id", "age"]
+  fields:
+    provider_id:
+      header: "Provider ID:"
+      path: "spec#providerID"
+      type: "str"
+infoview:
+  name: "Virtink Machine Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "provider_id"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      provider_id:
+        header: [["Provider ID:", ["main", "infoheader"]]]
+        path: "spec#providerID"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        namespace_path: "metadata#namespace"
+    "Virtual Cluster Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show virtual cluster template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Virtual Cluster Template"
+        _pass_obj: true
+        path: "spec#virtualMachineTemplate"

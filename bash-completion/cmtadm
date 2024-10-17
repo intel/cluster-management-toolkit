@@ -171,6 +171,7 @@ _cmtadm() {
 	upgrade-control-plane)
 		commands=$(add_option_if_not_in_list "--override" ${commands})
 		commands=$(add_option_if_not_in_list "--reinstall" ${commands})
+		commands=$(add_option_if_not_in_list "--ignore-feature-gates" ${commands})
 	esac
 
 	case "${COMP_WORDS[1]}" in

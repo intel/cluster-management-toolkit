@@ -5,3 +5,7 @@ crc:
     args:
       url: "https://api.github.com/repos/crc-org/crc/releases"
       version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)$'
+  changelog:
+    from_body: true
+    reformatter: "reformat_github_release_notes"
+    dest: "crc_changelog.md"

@@ -1,0 +1,27 @@
+- name: "Synchronise time"
+  hosts: "selection"
+  vars:
+    metadata:
+      description: "Synchronising time between localhost and hosts"
+      playbook_types:
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
+      category: "Administration"
+      summary:
+        "Other actions":
+          - description: "Executes sudo date -s <time> on all selected hosts"
+  gather_facts: false
+  become: true
+  become_user: "root"
+  tasks:
+    - name: "Get local time"
+      ansible.builtin.shell: |
+        /usr/bin/date --utc
+      changed_when: false
+      register: "localtime"
+      delegate_to: "localhost"
+    - name: "Synchronising time between localhost and hosts"
+      ansible.builtin.shell: |
+        /usr/bin/date --set '{{ localtime.stdout }}'
+      changed_when: false

@@ -1,0 +1,50 @@
+kind: "DeviceClass"
+api_family: "resource.k8s.io"
+default_command: "deviceclasses"
+command:
+- "devclasses"
+- "devclass"
+listview:
+  name: "Device Classes"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Device Class Info"
+  infopad:
+  shortcuts:
+    "Device class configuration":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show device class configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Device Class Configuration"
+        _pass_obj: true
+        path: "spec#config"
+    "Node Selectors":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show node selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Node Selectors"
+        _pass_obj: true
+        path: "spec#suitableNodes#nodeSelectorTerms"
+        include_root: true
+    "Selectors":
+      key: "s"
+      read_only: true
+      helptext: "Show selectors"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Device Selectors"
+        _pass_obj: true
+        path: "spec#selectors"
+        include_root: true

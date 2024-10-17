@@ -1,0 +1,75 @@
+kind: "Numatopology"
+api_family: "nodeinfo.volcano.sh"
+default_command: "numatopologies"
+command:
+- "numatopos"
+- "numatopo"
+listview:
+  name: "NUMA Topologies"
+  group: "Batch Scheduling"
+  field_indexes:
+    Wide:
+      fields: ["name", "age"]
+infoview:
+  name: "NUMA Topology Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["policy_header", "policy_cpu_topology", "policy_topology_manager", "numa_resources"]
+    rows:
+      numa_resources:
+        header: [["NMU Resources:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#numares"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      policy_header:
+        header: [["Policy:", ["main", "infoheader"]]]
+      policy_cpu_topology:
+        header: [["  CPU Topology:", ["main", "infoheader"]]]
+        path: "spec#policies#CPUManagerPolicy"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      policy_topology_manager:
+        header: [["  Topology Manager:", ["main", "infoheader"]]]
+        path: "spec#policies#TopologyManagerPolicy"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_dict_list"
+    listgetter_args:
+      path: "spec#cpuDetail"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["id", "numa_details"]
+        sortcolumn: "id"
+    fields:
+      id:
+        header: "ID:"
+        path: "key"
+        type: "raw"
+        formatter: "numerical"
+        align: "right"
+      numa_details:
+        header: "NUMA Details:"
+        paths:
+        - path: "value"
+          pathtype: "key_value"
+          default: ["<unset>"]
+        type: "str"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"

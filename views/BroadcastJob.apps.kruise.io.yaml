@@ -1,0 +1,268 @@
+kind: "BroadcastJob"
+api_family: "apps.kruise.io"
+default_command: "broadcastjobs"
+command:
+- "bcastjobs"
+- "bcastjob"
+listview:
+  name: "Broadcast Jobs"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "controller", "desired_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    active_replicas:
+      header: "Active:"
+      path: "status#active"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    controller:
+      header: "Controller:"
+      paths:
+      - path: "metadata#ownerReferences"
+        pathtype: "items"
+        subpaths:
+        - "kind"
+        - "apiVersion"
+        - "name"
+        when:
+        - key: "controller"
+          eq: true
+        type: ["kind", "api_group", "name"]
+      default: ["<none>"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+    desired_replicas:
+      header: "Desired:"
+      path: "status#desired"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    failed_replicas:
+      header: "Failed:"
+      path: "status#failed"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "completed":
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            "failed":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "paused":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "running":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+    succeeded_replicas:
+      header: "Succeeded:"
+      path: "status#succeeded"
+      default: 0
+      type: "int"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+      align: "right"
+infoview:
+  name: "Broadcast Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "completion_policy_header", "completion_policy_active_deadline_seconds", "completion_policy_ttl_seconds_after_finished", "completion_policy_type", "failure_policy_header", "failure_policy_restart_limit", "failure_policy_type", "parallelism", "replicas", "phase"]
+    rows:
+      completion_policy_active_deadline_seconds:
+        header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#activeDeadlineSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      completion_policy_header:
+        header: [["Completion Policy:", ["main", "infoheader"]]]
+      completion_policy_ttl_seconds_after_finished:
+        header: [["  TTL Seconds After Finished:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#ttlSecondsAfterFinished"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      completion_policy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#completionPolicy#type"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      failure_policy_header:
+        header: [["Failure Policy:", ["main", "infoheader"]]]
+      failure_policy_restart_limit:
+        header: [["  Restart Limit:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy#restartLimit"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      failure_policy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#failurePolicy#type"
+        type: "str"
+      parallelism:
+        header: [["Parallelism:", ["main", "infoheader"]]]
+        path: "spec#parallelism"
+        default: 1
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "completed":
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              "failed":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "paused":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"

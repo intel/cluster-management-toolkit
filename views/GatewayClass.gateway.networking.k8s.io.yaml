@@ -1,0 +1,28 @@
+kind: "GatewayClass"
+api_family: "gateway.networking.k8s.io"
+default_command: "gatewayclasses"
+command:
+- "gwclasses"
+- "gwclass"
+listview:
+  name: "Gateway Classes"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["name", "controller_name", "age"]
+  fields:
+    controller_name:
+      header: "Controller Name:"
+      path: "spec#controllerName"
+      type: "str"
+infoview:
+  name: "Gateway Class Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller_name"]
+    rows:
+      controller_name:
+        header: [["Controller Name:", ["main", "infoheader"]]]
+        path: "spec#controllerName"
+        type: "str"

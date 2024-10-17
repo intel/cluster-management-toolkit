@@ -1,5 +1,5 @@
-- hosts: "selection"
-  name: "Instantiate Virtual Machines"
+- name: "Instantiate Virtual Machines"
+  hosts: "selection"
   vars:
     metadata:
       description: "Instantiate Virtual Machines"
@@ -23,7 +23,7 @@
     - name: "Create meta-data for the VM image instances"
       ansible.builtin.template:
         dest: "/var/lib/libvirt/images/meta-data.{{ item.0 }}"
-        src: "templates/vmimages/meta-data.yaml"
+        src: "templates/vmimages/meta-data.yaml.j2"
         mode: "0640"
         owner: "{{ ansible_user }}"
         group: "libvirt-qemu"
@@ -33,7 +33,7 @@
     - name: "Create user-data for the VM image instances"
       ansible.builtin.template:
         dest: "/var/lib/libvirt/images/user-data.{{ item.0 }}"
-        src: "templates/vmimages/user-data.template.yaml"
+        src: "templates/vmimages/user-data.template.yaml.j2"
         mode: "0640"
         owner: "{{ ansible_user }}"
         group: "libvirt-qemu"
@@ -47,7 +47,7 @@
       register: "tempdir"
     - name: "Copy net-cmt.yaml to the vmhost"
       ansible.builtin.copy:
-        src: "templates/vmimages/net-cmt.xml"
+        src: "templates/vmimages/net-cmt.xml.j2"
         dest: "{{ tempdir.path }}"
         mode: "0640"
     - name: "Create and start the cmt network"  # noqa risky-shell-pipe

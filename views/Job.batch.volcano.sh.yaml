@@ -1,0 +1,208 @@
+kind: "Job"
+api_family: "batch.volcano.sh"
+default_command: "jobs"
+command:
+- "volcanojobs"
+- "volcanojob"
+- "volcjobs"
+- "volcjob"
+listview:
+  name: "Jobs"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "min_available", "running", "succeeded", "queue", "age"]
+      sortcolumn: "phase"
+  fields:
+    min_available:
+      header: "Min Available:"
+      path: "spec#minAvailable"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#state#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Completed:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_error"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+    queue:
+      header: "Queue:"
+      path: "spec#queue"
+      type: "str"
+    running:
+      header: "Running:"
+      path: "status#running"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    succeeded:
+      header: "Succeeded:"
+      path: "status#succeeded"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["queue", "scheduler", "policies", "max_retries", "min_available", "running", "succeeded", "running_duration", "phase"]
+    rows:
+      max_retries:
+        header: [["Max Retries:", ["main", "infoheader"]]]
+        path: "spec#maxRetry"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      min_available:
+        header: [["Min Available:", ["main", "infoheader"]]]
+        path: "spec#minAvailable"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#state#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Completed:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_error"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      policies:
+        header: [["P", ["main", "infoheader_shortcut"]], ["olicies:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#policies"
+          pathtype: "items"
+          subpaths:
+          - "event"
+          - "action"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      queue:
+        header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
+        path: "spec#queue"
+        type: "str"
+      running:
+        header: [["Running:", ["main", "infoheader"]]]
+        path: "status#running"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      running_duration:
+        header: [["Running Duration:", ["main", "infoheader"]]]
+        path: "status#runningDuration"
+        type: "str"
+        formatter: "numerical_with_units"
+      scheduler:
+        header: [["Scheduler:", ["main", "infoheader"]]]
+        path: "spec#schedulerName"
+        type: "str"
+      succeeded:
+        header: [["Succeeded:", ["main", "infoheader"]]]
+        path: "status#succeeded"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Open Queue":
+      key: "q"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#queue"
+        kind: "Queue"
+        api_family: "scheduling.volcano.sh"
+    "Show policies":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "List policies"
+      widget: "windowwidget"
+      title: "Policies:"
+      headers: ["Event:", "Action:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#policies"
+        fields:
+        - "event"
+        - "action"
+      # Not supported for now
+      sortcolumn: "event"
+    "Tasks":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show tasks"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Tasks"
+        _pass_obj: true
+        path: "spec#tasks"
+        include_root: true

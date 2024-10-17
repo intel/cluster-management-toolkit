@@ -8,7 +8,7 @@ listview:
   group: "Scheduling & Scaling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "max_replica_count", "triggers", "authentication", "ready", "active", "age"]
+      fields: ["namespace", "name", "max_replica_count", "triggers", "authentication", "condition_ready", "condition_ready_reason", "active", "age", "condition_ready_message"]
       sortcolumn: "namespace"
   fields:
     active:
@@ -38,16 +38,9 @@ listview:
       paths:
       - path: "spec#triggers"
         pathtype: "items"
-        subpath: "type"
+        subpath: "authenticationRef#name"
       formatter: "list"
-    max_replica_count:
-      header: "Max Replica Count:"
-      path: "spec#maxReplicaCount"
-      type: "int"
-      formatting:
-        field_colors:
-        - type: "numerical"
-    ready:
+    condition_ready:
       header: "Ready:"
       paths:
       - path: "status#conditions"
@@ -69,10 +62,234 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+    condition_ready_message:
+      header: "Message:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Ready"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    condition_ready_reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "reason"
+        when:
+        - key: "type"
+          eq: "Ready"
+        default: "<unknown>"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    max_replica_count:
+      header: "Max Replica Count:"
+      path: "spec#maxReplicaCount"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
     triggers:
       header: "Triggers:"
       paths:
       - path: "spec#triggers"
         pathtype: "items"
-        subpath: "authenticationRef#name"
+        subpath: "type"
       formatter: "list"
+infoview:
+  name: "Scaled Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["failed_jobs_history_limit", "max_replica_count", "polling_interval", "scaling_strategy_header", "scaling_strategy_queue_length_deduction", "scaling_strategy_running_job_percentage", "scaling_strategy_strategy", "condition_ready", "condition_ready_reason", "condition_ready_message"]
+    rows:
+      condition_ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      condition_ready_message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+          - key: "type"
+            eq: "Ready"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      condition_ready_reason:
+        header: [["Reason:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+          - key: "type"
+            eq: "Ready"
+          default: "<unknown>"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unknown>":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      failed_jobs_history_limit:
+        header: [["Failed Jobs History Limit:", ["main", "infoheader"]]]
+        path: "spec#failedJobsHistoryLimit"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      max_replica_count:
+        header: [["Max Replica Count:", ["main", "infoheader"]]]
+        path: "spec#maxReplicaCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      polling_interval:
+        header: [["Polling Interval:", ["main", "infoheader"]]]
+        path: "spec#pollingInterval"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      scaling_strategy_header:
+        header: [["Scheduling Strategy:", ["main", "infoheader"]]]
+      scaling_strategy_queue_length_deduction:
+        header: [["  Queue Length Deduction:", ["main", "infoheader"]]]
+        path: "spec#scalingStrategy#customScalingQueueLengthDeduction"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical_with_units"
+      scaling_strategy_running_job_percentage:
+        header: [["  Running Job Percentage:", ["main", "infoheader"]]]
+        path: "spec#scalingStrategy#customScalingRunningJobPercentage"
+        default: "<unset>"
+        type: "raw"
+        formatter: "numerical_with_units"
+      scaling_strategy_strategy:
+        header: [["  Strategy:", ["main", "infoheader"]]]
+        path: "spec#scalingStrategy#strategy"
+        default: "<unset>"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#triggers"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "host", "queue_name", "queue_length"]
+        sortcolumn: "type"
+    fields:
+      host:
+        header: "Host:"
+        path: "metadata#host"
+        type: "str"
+      queue_length:
+        header: "Queue Length:"
+        path: "metadata#queueLength"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      queue_name:
+        header: "Queue Name:"
+        path: "metadata#queueName"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
+  shortcuts:
+    "Job template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Job template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Job template"
+        _pass_obj: true
+        path: "spec#jobTargetRef#template"

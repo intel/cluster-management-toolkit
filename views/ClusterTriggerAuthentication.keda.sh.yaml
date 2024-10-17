@@ -35,3 +35,43 @@ listview:
       header: "Vault Address:"
       path: "spec#hashiCorpVault#address"
       type: "str"
+infoview:
+  name: "Cluster Trigger Authentications Info"
+  infopad:
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind: "Secret"
+      name_path: "name"
+      namespace_path: "_extra_data#namespace"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#secretTargetRef"
+    infogetter: "generic_infogetter"
+    infogetter_args:
+      _extra_data:
+        namespace: "keda"
+    field_indexes:
+      Normal:
+        fields: ["name", "key", "parameter"]
+        sortcolumn: "name"
+    fields:
+      key:
+        header: "Key:"
+        path: "key"
+        type: "str"
+      namespace:
+        header: "Namespace:"
+        path: "_extra_data#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      parameter:
+        header: "Parameter:"
+        path: "parameter"
+        type: "str"

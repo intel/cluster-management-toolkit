@@ -2,5 +2,5 @@ deb [signed-by=/etc/apt/keyrings/cri-o-keyring.asc] https://ftp.lysator.liu.se/p
 {% if crio_major_version == 1 and crio_minor_version < 28 %}
 deb [signed-by=/etc/apt/keyrings/cri-o-keyring.asc] https://ftp.lysator.liu.se/pub/opensuse/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ crio_major_version }}.{{ crio_minor_version }}/Debian_11/ /
 {% else %}
-deb [signed-by=/etc/apt/keyrings/cri-o-obs-keyring.asc] https://download.opensuse.org/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v{{ crio_major_version }}.{{ crio_minor_version }}/deb/ /
+deb [signed-by=/etc/apt/keyrings/cri-o-obs-keyring.asc] https://ftp.lysator.liu.se/pub/opensuse/repositories/isv:/kubernetes:/addons:/cri-o:/stable:/v{{ crio_major_version }}.{{ crio_minor_version }}/deb/ /
 {% endif %}

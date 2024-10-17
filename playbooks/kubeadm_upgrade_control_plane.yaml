@@ -1,5 +1,5 @@
-- hosts: "selection"
-  name: "Upgrade a Kubernetes control plane using kubeadm"
+- name: "Upgrade a Kubernetes control plane using kubeadm"
+  hosts: "selection"
   vars:
     metadata:
       description: "Upgrade a Kubernetes control plane using kubeadm"
@@ -111,9 +111,18 @@
         dest: "{{ cluster_config.path }}"
         src: "templates/config/initconfig.yaml.j2"
         mode: "0640"
+    - name: "The following cluster configuration will be used"
+      ansible.builtin.command: "cat {{ cluster_config.path }}"
+      changed_when: false
     - name: "Planning upgrade"
       ansible.builtin.shell: |
-        kubeadm upgrade plan {{ requested_control_plane_k8s_version.split("-")[0] }}
+        if [ -r /etc/kubernetes/super-admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/super-admin.conf upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        elif [ -r /etc/kubernetes/admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/admin.conf upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        else
+          kubeadm upgrade plan --ignore-preflight-errors=CreateJob --config {{ cluster_config.path }} {{ requested_control_plane_k8s_version.split('-')[0] }}
+        fi
       changed_when: false
     - name: "Pulling Kubernetes images"
       ansible.builtin.shell: |
@@ -122,12 +131,21 @@
         else
           export https_proxy=
         fi
-        kubeadm config --config {{ cluster_config.path }} images pull
+        kubeadm config images pull --config {{ cluster_config.path }}
       changed_when: false
     - name: "Upgrading control plane"
       ansible.builtin.shell: |
-        kubeadm upgrade --config {{ cluster_config.path }} apply -y {{ requested_control_plane_k8s_version.split("-")[0] }}
+        if [ -r /etc/kubernetes/super-admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/super-admin.conf upgrade apply --ignore-preflight-errors=CreateJob -f {{ requested_control_plane_k8s_version.split("-")[0] }}
+        elif [ -r /etc/kubernetes/admin.conf ]; then
+          kubeadm --kubeconfig /etc/kubernetes/admin.conf upgrade apply --ignore-preflight-errors=CreateJob -f {{ requested_control_plane_k8s_version.split("-")[0] }}
+        fi
       changed_when: false
+    - name: "Remove temporary cluster configuration file"
+      ansible.builtin.file:
+        path: "{{ cluster_config.path }}"
+        state: "absent"
+      when: "cluster_config.path is defined"
     - name: "Restarting kubelet"
       ansible.builtin.systemd:
         name: "kubelet"

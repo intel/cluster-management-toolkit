@@ -1,0 +1,71 @@
+kind: "ClusterStorageContainer"
+api_family: "serving.kserve.io"
+default_command: "clusterstoragecontainers"
+command:
+- "clrstoragecontainers"
+- "clrstoragecontainer"
+listview:
+  name: "Cluster Storage Containers"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Cluster Storage Container Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["container_header", "container_name", "container_image"]
+    rows:
+      container_header:
+        header: [["Container:", ["main", "infoheader"]]]
+      container_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "spec#container#name"
+        type: "str"
+      container_image:
+        header: [["  Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#container#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#supportedUriFormats"
+      flatten_dicts: true
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "format"]
+        sortcolumn: "type"
+    fields:
+      format:
+        header: "Format:"
+        path: "value"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "key"
+        type: "str"
+  shortcuts:
+    "Show container resources":
+      key: "r"
+      modifier: "shift"
+      read_only: false
+      helptext: "Show container resources"
+      title: "Resources:"
+      widget: "windowwidget"
+      headers: ["Requests:", "Limits:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#container#resources"
+      # This isn't supported for now
+      sortcolumn: "requests"

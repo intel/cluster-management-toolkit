@@ -15,10 +15,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["bpf_log_level", "log_severity_screen", "floating_ips", "reporting_interval", "ipip_enabled", "vxlan_enabled"]
+        fields: ["bpf_header", "bpf_enabled", "bpf_connect_time_load_balancing", "bpf_host_networked_nat_without_ctlb", "bpf_log_level", "log_severity_screen", "health_port", "floating_ips", "reporting_interval", "ipip_enabled", "vxlan_enabled", "vxlan_vni"]
     rows:
+      bpf_connect_time_load_balancing:
+        header: [["  Connect Time Load Balancing:", ["main", "infoheader"]]]
+        path: "spec#bpfConnectTimeLoadBalancing"
+        type: "str"
+      bpf_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#bpfEnabled"
+        type: "str"
+      bpf_header:
+        header: [["BPF:", ["main", "infoheader"]]]
+      bpf_host_networked_nat_without_ctlb:
+        header: [["  Host Networked NAT Without Connect Time Load Balancing:", ["main", "infoheader"]]]
+        path: "spec#bpfHostNetworkedNATWithoutCTLB"
+        type: "str"
       bpf_log_level:
-        header: [["BPF Log Level:", ["main", "infoheader"]]]
+        header: [["  Log Level:", ["main", "infoheader"]]]
         path: "spec#bpfLogLevel"
         type: "str"
         formatter: "value_mapper"
@@ -30,6 +44,14 @@ infoview:
         header: [["Floating IPs:", ["main", "infoheader"]]]
         path: "spec#floatingIPs"
         type: "bool"
+      health_port:
+        header: [["Health Port:", ["main", "infoheader"]]]
+        path: "spec#healthPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       log_severity_screen:
         header: [["Log Severity Screen:", ["main", "infoheader"]]]
         path: "spec#logSeverityScreen"
@@ -42,12 +64,18 @@ infoview:
       reporting_interval:
         header: [["Reporting Interval:", ["main", "infoheader"]]]
         path: "spec#reportingInterval"
-        type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
+        type: "raw"
+        formatter: "numerical_with_units"
       vxlan_enabled:
         header: [["VXLAN Enabled:", ["main", "infoheader"]]]
         path: "spec#vxlanEnabled"
         default: false
         type: "bool"
+      vxlan_vni:
+        header: [["VXLAN VNI:", ["main", "infoheader"]]]
+        path: "spec#vxlanVNI"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"

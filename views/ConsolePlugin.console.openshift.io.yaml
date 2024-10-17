@@ -6,4 +6,109 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "display_name", "age"]
+  fields:
+    display_name:
+      header: "Display Name:"
+      path: "spec#displayName"
+      type: "str"
+infoview:
+  name: "Console Plugin Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "backend_header","backend_service_header", "backend_service_name", "backend_service_namespace", "backend_service_base_path", "backend_service_port", "backend_type", "i18n_header", "i18n_load_type"]
+    rows:
+      backend_header:
+        header: [["Backend:", ["main", "infoheader"]]]
+      backend_service_header:
+        header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+      backend_service_base_path:
+        header: [["    Base Path:", ["main", "infoheader"]]]
+        path: "spec#backend#service#basePath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      backend_service_base_path:
+        header: [["    Base Path:", ["main", "infoheader"]]]
+        path: "spec#backend#service#basePath"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      backend_service_name:
+        header: [["    Name:", ["main", "infoheader"]]]
+        path: "spec#backend#service#name"
+        type: "str"
+      backend_service_namespace:
+        header: [["    Namespace:", ["main", "infoheader"]]]
+        path: "spec#backend#service#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      backend_service_port:
+        header: [["    Port:", ["main", "infoheader"]]]
+        path: "spec#backend#service#port"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      backend_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#backend#type"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      i18n_header:
+        header: [["Internationalization (i18n):", ["main", "infoheader"]]]
+      i18n_load_type:
+        header: [["  Load Type:", ["main", "infoheader"]]]
+        path: "spec#i18n#loadType"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Service":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        name_path: "spec#backend#service#name"
+        namespace_path: "spec#backend#service#namespace"

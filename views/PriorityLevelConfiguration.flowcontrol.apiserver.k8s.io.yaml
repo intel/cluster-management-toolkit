@@ -53,8 +53,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
+        fields: ["cluster_version", "priority_type", "nominal_concurrency_shares", "queues", "hand_size", "queue_length_limit", "queues"]
     rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
       hand_size:
         header: [["Hand Size:", ["main", "infoheader"]]]
         path: "spec#limited#limitResponse#queuing#handSize"
@@ -88,3 +99,16 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

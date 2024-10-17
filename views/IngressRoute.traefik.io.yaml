@@ -1,0 +1,63 @@
+kind: "IngressRoute"
+api_family: "traefik.io"
+default_command: "ingressroutes"
+command:
+- "ingroutes"
+- "ingroute"
+listview:
+  name: "Ingress Routes"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Ingress Route Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["entrypoints"]
+    rows:
+      entrypoints:
+        header: [["Entrypoints:", ["main", "infoheader"]]]
+        path: "spec#entryPoints"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#routes"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["kind", "match", "services"]
+        sortcolumn: "kind"
+    fields:
+      kind:
+        header: "Kind:"
+        path: "kind"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+      match:
+        header: "match:"
+        path: "match"
+        type: "str"
+      services:
+        header: "Services:"
+        paths:
+        - path: "services"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "name"
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "generic"
+          field_separators:
+          - type: "kind"

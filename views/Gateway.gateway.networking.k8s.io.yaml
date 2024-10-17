@@ -1,0 +1,110 @@
+kind: "Gateway"
+api_family: "gateway.networking.k8s.io"
+default_command: "gateways"
+command:
+- "gws"
+- "gw"
+listview:
+  name: "Gateways"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "gateway_class", "age"]
+      sortcolumn: "namespace"
+  fields:
+    gateway_class:
+      header: "Gateway Class:"
+      path: "spec#gatewayClassName"
+      type: "str"
+infoview:
+  name: "Gateway Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["gateway_class"]
+    rows:
+      gateway_class:
+        header: [["G", ["main", "infoheader_shortcut"]], ["ateway Class:", ["main", "infoheader"]]]
+        path: "spec#gatewayClassName"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#listeners"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "hostname", "port", "protocol", "allowed_namespaces_source", "allowed_namespaces_selector", "allowed_kinds"]
+    fields:
+      allowed_kinds:
+        header: "Allowed Kinds:"
+        paths:
+        - path: "allowedRoutes#kinds"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "group"
+          type: ["kind", "api_group"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+      allowed_namespaces_source:
+        header: "Allowed Namespaces (Source):"
+        path: "allowedRoutes#namespaces#from"
+        type: "str"
+      allowed_namespaces_selector:
+        header: "Allowed Namespaces (Selector):"
+        paths:
+        - path: "allowedRoutes#namespaces#selector"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      hostname:
+        header: "Hostname:"
+        path: "hostname"
+        type: "str"
+        default: "<unset>"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      port:
+        header: "Port:"
+        path: "port"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      protocol:
+        header: "Protocol:"
+        path: "protocol"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "protocol"
+  shortcuts:
+    "Open Gateway Class":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for GatewayClass"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#gatewayClassName"
+        kind: "GatewayClass"
+        api_family: "gateway.networking.k8s.io"

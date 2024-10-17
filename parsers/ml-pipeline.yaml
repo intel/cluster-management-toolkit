@@ -12,3 +12,22 @@
         - 1
       message:
         field: 2
+- name: "ml-pipeline"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/ml-pipeline/metadata-writer"
+  parser_rules:
+  - name: "python_traceback"
+- name: "ml-pipeline"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/ml-pipeline/api-server"
+  parser_rules:
+  - name: "glog"
+- name: "ml-pipeline"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/ml-pipeline/workflow-controller"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value"

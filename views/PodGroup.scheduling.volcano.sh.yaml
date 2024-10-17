@@ -1,0 +1,236 @@
+kind: "PodGroup"
+api_family: "scheduling.volcano.sh"
+default_command: "podgroups"
+command:
+- "volcanopodgroups"
+- "volcanopodgroup"
+- "volcpodgrps"
+- "volcpodgrp"
+listview:
+  name: "Pod Groups"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "min_members", "running", "queue", "phase", "age"]
+      sortcolumn: "phase"
+  fields:
+    min_members:
+      header: "Min Members:"
+      path: "spec#minMember"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Completed:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_error"
+            Inqueue:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    queue:
+      header: "Queue:"
+      path: "spec#queue"
+      type: "str"
+    running:
+      header: "Running:"
+      path: "status#running"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Pod Group Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "queue", "priority_class", "min_members", "min_task_members", "running", "phase"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      min_members:
+        header: [["Min Members:", ["main", "infoheader"]]]
+        path: "spec#minMember"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      min_task_members:
+        header: [["Min Task Members:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#minTaskMember"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Allocated:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Binding:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Bound:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_error"
+              Inqueue:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Pipelined:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Releasing:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Succeeded:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              Unknown:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      priority_class:
+        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
+        path: "spec#priorityClassName"
+        default: "<default>"
+        type: "str"
+      queue:
+        header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
+        path: "spec#queue"
+        type: "str"
+      running:
+        header: [["Running:", ["main", "infoheader"]]]
+        path: "status#running"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Open Queue":
+      key: "q"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "spec#queue"
+        kind: "Queue"
+        api_family: "scheduling.volcano.sh"
+    "Priority Class":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Priority Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PriorityClass"
+        api_family: "scheduling.k8s.io"
+        name_path: "spec#priorityClassName"
+    "Show minimum resources":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List minimum resources"
+      widget: "windowwidget"
+      title: "Minimum resources:"
+      headers: ["Resource:", "Amount:"]
+      itemgetter: "get_key_value"
+      itemgetter_args:
+        path: "spec#minResources"
+      # Not supported for now
+      sortcolumn: "key"

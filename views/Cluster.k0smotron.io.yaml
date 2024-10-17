@@ -1,0 +1,82 @@
+kind: "Cluster"
+api_family: "k0smotron.io"
+default_command: "clusters"
+command:
+- "k0sclrs"
+- "k0sclr"
+listview:
+  name: "Clusters"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "status"]
+  fields:
+    status:
+      header: "Status:"
+      path: "status#reconciliationStatus"
+      type: "str"
+infoview:
+  name: "Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "etcd_header", "etcd_image", "etcd_persistence_header", "etcd_persistence_size", "service_header", "service_api_port", "service_konnectivity_port", "service_type", "replicas", "status"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        path: "spec#image"
+        type: "str"
+      etcd_header:
+        header: [["etcd:", ["main", "infoheader"]]]
+      etcd_image:
+        header: [["  Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#etcd#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      etcd_persistence_header:
+        header: [["  Persistence:", ["main", "infoheader"]]]
+      etcd_persistence_size:
+        header: [["    Size:", ["main", "infoheader"]]]
+        path: "spec#etcd#persistence#size"
+        type: "str"
+        formatter: "numerical_with_units"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        path: "spec#replicas"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      service_header:
+        header: [["Service:", ["main", "infoheader"]]]
+      service_api_port:
+        header: [["  API-port:", ["main", "infoheader"]]]
+        path: "spec#service#apiPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      service_konnectivity_port:
+        header: [["  Konnectivity-port:", ["main", "infoheader"]]]
+        path: "spec#service#konnectivityPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      service_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#service#type"
+        type: "str"
+      status:
+        header: [["Status:", ["main", "infoheader"]]]
+        path: "status#reconciliationStatus"
+        type: "str"

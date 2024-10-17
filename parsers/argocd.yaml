@@ -8,6 +8,7 @@
   - pod_name: "argocd-repo-server"
   - pod_name: "argocd-server"
   parser_rules:
+  - name: "glog"
   - name: "key_value"
     options:
       versions:
@@ -16,4 +17,7 @@
     overrides:
     - matchtype: "startswith"
       matchkey: "Alloc="
+      loglevel: "debug"
+    - matchtype: "startswith"
+      matchkey: "Trace["
       loglevel: "debug"

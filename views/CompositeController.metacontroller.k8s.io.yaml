@@ -8,4 +8,77 @@ listview:
   group: "API & Extendability"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "parent_resource", "age"]
+  fields:
+    parent_resource:
+      header: "Parent Resource:"
+      paths:
+      - path: [["spec#parentResource#resource"], ["spec#parentResource#apiVersion"]]
+        pathtype: "tuple"
+        type: ["name", "name"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_version"
+infoview:
+  name: "Composite Controller Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["parent_resource", "generate_selector", "resync_period"]
+    rows:
+      generate_selector:
+        header: [["Generate Selector:", ["main", "infoheader"]]]
+        path: "spec#generateSelector"
+        type: "str"
+      parent_resource:
+        header: [["Parent Resource:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#parentResource#apiVersion"], ["spec#parentResource#resource"]]
+          pathtype: "tuple"
+          type: ["api_group", "kind"]
+        formatter: "list"
+      resync_period:
+        header: [["Resync Period:", ["main", "infoheader"]]]
+        path: "spec#resyncPeriod"
+        type: "str"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#childResources"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["resource", "api_version", "update_strategy"]
+        sortcolumn: "resource"
+    fields:
+      api_version:
+        header: "API-version:"
+        path: "apiVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "api_version"
+      resource:
+        header: "Resource:"
+        path: "resource"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+      update_strategy:
+        header: "Update Strategy:"
+        path: "updateStrategy#method"
+        type: "str"
+  shortcuts:
+    "Hooks":
+      key: "h"
+      helptext: "Show hooks"
+      read_only: true
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Hooks"
+        _pass_obj: true
+        path: "spec#hooks"

@@ -1,0 +1,162 @@
+kind: "AdvancedCronJob"
+api_family: "apps.kruise.io"
+default_command: "advancedcronjobs"
+command:
+- "advcronjobs"
+- "advcronjob"
+listview:
+  name: "Advanced Cron Jobs"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "schedule", "type", "concurrency_policy", "last_scheduled", "paused", "age"]
+      sortcolumn: "namespace"
+  fields:
+    concurrency_policy:
+      header: "Concurrency:"
+      path: "spec#concurrencyPolicy"
+      type: "raw"
+    last_scheduled:
+      header: "Last Scheduled:"
+      path: "status#lastScheduleTime"
+      default: -1
+      type: "timestamp"
+      formatter: "age"
+      align: "right"
+    paused:
+      header: "Paused:"
+      path: "spec#paused"
+      type: "str"
+      default: "False"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+    schedule:
+      header: "Schedule:"
+      path: "spec#schedule"
+      type: "raw"
+    type:
+      header: "Type:"
+      path: "status#type"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "kind"
+infoview:
+  name: "Advanced Cron Job Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["concurrency_policy", "successful_jobs_history_limit", "failed_jobs_history_limit", "schedule", "last_scheduled", "type", "paused"]
+    rows:
+      concurrency_policy:
+        header: [["Concurrency Policy:", ["main", "infoheader"]]]
+        path: "spec#concurrencyPolicy"
+        type: "raw"
+      failed_jobs_history_limit:
+        header: [["Failed Jobs History Limit:", ["main", "infoheader"]]]
+        path: "spec#failedJobsHistoryLimit"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      last_scheduled:
+        header: [["Last Scheduled:", ["main", "infoheader"]]]
+        path: "status#lastScheduleTime"
+        default: -1
+        type: "timestamp"
+        formatter: "age"
+      paused:
+        header: [["Paused:", ["main", "infoheader"]]]
+        path: "spec#paused"
+        type: "str"
+        default: "False"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      schedule:
+        header: [["Schedule:", ["main", "infoheader"]]]
+        path: "spec#schedule"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "str"
+      successful_jobs_history_limit:
+        header: [["Successful Jobs History Limit:", ["main", "infoheader"]]]
+        path: "spec#successfulJobsHistoryLimit"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "status#type"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#active"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch_with_lookup_on_activation"
+      kind_path: "kind"
+      api_version_path: "apiVersion"
+      name_path: "name"
+      namespace_path: "namespace"
+    field_indexes:
+      Normal:
+        fields: ["type", "namespace", "name"]
+    fields:
+      namespace:
+        header: "Namespace:"
+        path: "namespace"
+        type: "str"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      type:
+        header: "Type:"
+        paths:
+        - path: [["kind"], ["apiVersion"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          field_separators:
+          - type: "kind_api_group"
+  shortcuts:
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"

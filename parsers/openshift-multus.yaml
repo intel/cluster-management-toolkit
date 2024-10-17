@@ -8,11 +8,22 @@
     container_type: "init_container"
   parser_rules:
   - name: "ts_8601"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "[verbose]"
+      loglevel: "debug"
+  - name: "custom_splitter"
+    options:
+      regex: '^(\[verbose\] )?(.*)'
+      message:
+        field: 2
   - name: "glog"
   - name: "json"
     options:
       versions:
       - "cniVersion"
+  - name: "expand_event"
   - name: "custom_splitter"
     options:
       regex: '^\[(cnibincopy)\]\s(.*)'

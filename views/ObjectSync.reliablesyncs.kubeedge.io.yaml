@@ -1,0 +1,77 @@
+kind: "ObjectSync"
+api_family: "reliablesyncs.kubeedge.io"
+default_command: "objectsyncs"
+command:
+- "objsyncs"
+- "objsync"
+listview:
+  name: "Object Syncs"
+  group: "KubeEdge"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "object", "object_version", "age"]
+  fields:
+    object:
+      header: "Object:"
+      paths:
+      - path: [["spec#objectKind"], ["spec#objectAPIVersion"], ["spec#objectName"]]
+        pathtype: "tuple"
+        type: ["kind", "api_group", "name"]
+      default: "<none>"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+    object_version:
+      header: "Object Version:"
+      path: "status#objectResourceVersion"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Object Sync Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["object", "object_version"]
+    rows:
+      object:
+        header: [["O", ["main", "infoheader_shortcut"]], ["bject:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#objectKind"], ["spec#objectAPIVersion"], ["spec#objectName"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      object_version:
+        header: [["Object Version:", ["main", "infoheader"]]]
+        path: "status#objectResourceVersion"
+        type: "int"
+        formatter: "numerical"
+  shortcuts:
+    "Open object reference":
+      key: "o"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for object reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#objectKind"
+        api_version_path: "spec#objectAPIVersion"
+        name_path: "spec#objectName"
+        namespace_path: "metadata#namespace"

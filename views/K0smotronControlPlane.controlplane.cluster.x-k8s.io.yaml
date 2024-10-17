@@ -1,0 +1,87 @@
+kind: "K0smotronControlPlane"
+api_family: "controlplane.cluster.x-k8s.io"
+default_command: "k0smotroncontrolplanes"
+command:
+- "k0scps"
+- "k0scp"
+listview:
+  name: "K0smotron Control Planes"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "K0smotron Control Plane Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "etcd_header", "etcd_image", "etcd_persistence_header", "etcd_persistence_size", "persistence_header", "persistence_type", "service_header", "service_api_port", "service_konnectivity_port", "service_type", "replicas", "version"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        path: "spec#image"
+        type: "str"
+      etcd_header:
+        header: [["etcd:", ["main", "infoheader"]]]
+      etcd_image:
+        header: [["  Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#etcd#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      etcd_persistence_header:
+        header: [["  Persistence:", ["main", "infoheader"]]]
+      etcd_persistence_size:
+        header: [["    Size:", ["main", "infoheader"]]]
+        path: "spec#etcd#persistence#size"
+        type: "str"
+        formatter: "numerical_with_units"
+      persistence_header:
+        header: [["Persistence:", ["main", "infoheader"]]]
+      persistence_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#persistence#type"
+        type: "str"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        path: "spec#replicas"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      service_header:
+        header: [["Service:", ["main", "infoheader"]]]
+      service_api_port:
+        header: [["  API-port:", ["main", "infoheader"]]]
+        path: "spec#service#apiPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      service_konnectivity_port:
+        header: [["  Konnectivity-port:", ["main", "infoheader"]]]
+        path: "spec#service#konnectivityPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      service_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#service#type"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"

@@ -1,0 +1,146 @@
+kind: "ContainerRecreateRequest"
+api_family: "apps.kruise.io"
+default_command: "containerrecreaterequests"
+command:
+- "containerrecreatereqs"
+- "containerrecreatereq"
+listview:
+  name: "Container Recreate Requests"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "phase", "pod", "node_name", "age"]
+      sortcolumn: "namespace"
+  fields:
+    node_name:
+      header: "Node:"
+      path: "metadata#labels#crr.apps.kruise.io/node-name"
+      type: "host"
+      default: "<none>"
+      formatting:
+        field_colors:
+        - type: "host"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Completed":
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            "Recreating":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+    pod:
+      header: "Pod:"
+      path: "spec#podName"
+      type: "str"
+infoview:
+  name: "Container Recreate Request Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "pod", "phase", "strategy_header", "strategy_failure_policy", "strategy_min_started_seconds", "strategy_termination_grace_period_seconds", "strategy_unready_grace_period_seconds", "ttl_seconds_after_finished"]
+    rows:
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        path: "metadata#labels#crr.apps.kruise.io/node-name"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Completed":
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              "Failed":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "Pending":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "Recreating":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Succeeded":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      pod:
+        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        path: "spec#podName"
+        type: "str"
+      strategy_header:
+        header: [["Strategy:", ["main", "infoheader"]]]
+      strategy_failure_policy:
+        header: [["  Failure Policy:", ["main", "infoheader"]]]
+        path: "spec#strategy#failurePolicy"
+        type: "str"
+      strategy_min_started_seconds:
+        header: [["  Minimum Started Seconds:", ["main", "infoheader"]]]
+        path: "spec#strategy#minStartedSeconds"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      strategy_termination_grace_period_seconds:
+        header: [["  Termination Grace Period Seconds:", ["main", "infoheader"]]]
+        path: "spec#strategy#terminationGracePeriodSeconds"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      strategy_unready_grace_period_seconds:
+        header: [["  Unready Grace Period Seconds:", ["main", "infoheader"]]]
+        path: "spec#strategy#unreadyGracePeriodSeconds"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      ttl_seconds_after_finished:
+        header: [["TTL Seconds After Finished:", ["main", "infoheader"]]]
+        path: "spec#ttlSecondsAfterFinished"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "metadata#labels#crr.apps.kruise.io/node-name"
+    "Open Pod":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Pod"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Pod"
+        name_path: "spec#podName"
+        namespace_path: "metadata#namespace"

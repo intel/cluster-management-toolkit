@@ -1,90 +1,90 @@
-- hosts: "selection"
-  name: "List Network Adapters"
+- name: "List Network Adapters"
+  hosts: "selection"
   vars:
     metadata:
       description: "List Network Adapters"
       playbook_types:
-      - "cmtinv"
-      - "inventory"
-      - "nodes"
+        - "cmtinv"
+        - "inventory"
+        - "nodes"
       category: "Information"
       summary:
         "Information gathering":
-        - description: "Lists Network Adapters"
+          - description: "Lists Network Adapters"
       read_only: true
   gather_facts: false
   tasks:
-  - name: "Listing Network Adapters"  # noqa risky-shell-pipe jinja[spacing]
-    ansible.builtin.shell: |
-      get_speeds()
-      {
-        duplex=${1}
-        speeds=${2}
-        result=
-        for mode in ${speeds}; do
-          if [ x"${mode%%/${duplex}}" != x"${mode}" ]; then
-            if [ x"${result}" = x"" ]; then
-              result="{${mode%%/${duplex}}"
-            else
-              result="${result},${mode%%/${duplex}}"
+    - name: "Listing Network Adapters"  # noqa risky-shell-pipe jinja[spacing]
+      ansible.builtin.shell: |
+        get_speeds()
+        {
+          duplex=${1}
+          speeds=${2}
+          result=
+          for mode in ${speeds}; do
+            if [ x"${mode%%/${duplex}}" != x"${mode}" ]; then
+              if [ x"${result}" = x"" ]; then
+                result="{${mode%%/${duplex}}"
+              else
+                result="${result},${mode%%/${duplex}}"
+              fi
             fi
+          done
+          if [ x"${result}" != x"" ]; then
+            result="${result}}/${duplex}"
           fi
-        done
-        if [ x"${result}" != x"" ]; then
-          result="${result}}/${duplex}"
-        fi
-        if [ -n ${result} ]; then
-          printf -- "%s" "${result}"
-        fi
-      }
-      for dev in $(/bin/ls /sys/class/net | grep -E "^en|^wl"); do
-        driver=$(readlink /sys/class/net/${dev}/device/driver/module)
-        if [ x"${driver}" != x"" ]; then
-          driver="$(basename ${driver})"
-        else
-          driver="<unknown>"
-        fi
-        addr=$(cat /sys/class/net/${dev}/address)
-        operstate=$(cat /sys/class/net/${dev}/operstate)
-        ipaddrs=""
-        if [ -x /usr/sbin/ip ]; then
-          tmp="$(/usr/bin/ip addr show dev ${dev} | grep inet | tr -s ' ' | cut -f 2,3 -d' ' | sed -e 's/\/.*//' | tr '\n' ' ')"
-        else
-          tmp="$(/sbin/ifconfig ${dev} | grep "inet" | sed -e 's/.*\(inet .*\)netmask.*/\1/;s/.*\(inet6 .*\)prefixlen.*/\1/')"
-        fi
-        ipaddrs=$(echo ${tmp})
-        printf -- "%s [%s]: (%s) %s\n" "${dev}" "${addr}" "${operstate}" "${ipaddrs}"
-        printf -- "driver: %s\n" "${driver}"
-        # Is this a wireless adapter?
-        if [ x"${dev##wl}" != x"${dev}" ]; then
-          if [ ! -x /sbin/iw ]; then
-            printf -- "\n/sbin/iw not available; unable to display detailed information about wireless network interfaces\n" > /dev/stderr
+          if [ -n ${result} ]; then
+            printf -- "%s" "${result}"
+          fi
+        }
+        for dev in $(/bin/ls /sys/class/net | grep -E "^en|^wl"); do
+          driver=$(readlink /sys/class/net/${dev}/device/driver/module)
+          if [ x"${driver}" != x"" ]; then
+            driver="$(basename ${driver})"
           else
-            # If so ifconfig is of no use
-            receive=$(/sbin/iw "${dev}" link | grep "rx bitrate" | sed -e 's,.*rx bitrate: \(.*MBit/s\).*,\1,')
-            transmit=$(/sbin/iw "${dev}" link | grep "tx bitrate" | sed -e 's,.*tx bitrate: \(.*MBit/s\).*,\1,')
-            if [ -z "${transmit}" ]; then
-              transmit="[unknown]"
-            fi
-            if [ -z "${receive}" ]; then
-              receive="[unknown]"
-            fi
-            printf -- "transmit: %s\n" "${transmit}"
-            printf -- "receive: %s\n" "${receive}"
+            driver="<unknown>"
           fi
-        else
-          supported=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tSupported link modes/ { print }' | sed -e 's/Supported link modes: //')
-          advertised=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tAdvertised link modes/ { print }' | sed -e 's/Advertised link modes: //')
-          speed=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tSpeed/ { print }' | sed -e 's/\s*Speed: //')
-          speed=$(echo ${speed} | sed -e 's/Unknown!/[unknown]/')
-          supported_full=$(get_speeds Full "${supported}")
-          supported_half=$(get_speeds Half "${supported}")
-          advertised_full=$(get_speeds Full "${advertised}")
-          advertised_half=$(get_speeds Half "${advertised}")
-          printf -- "speed: %s\n" "${speed}"
-          printf -- "supported: %s\n" "${supported_full} ${supported_half}"
-          printf -- "advertised: %s\n" "${advertised_full} ${advertised_half}"
-        fi
-        printf -- "\n"
-      done
-    changed_when: false
+          addr=$(cat /sys/class/net/${dev}/address)
+          operstate=$(cat /sys/class/net/${dev}/operstate)
+          ipaddrs=""
+          if [ -x /usr/sbin/ip ]; then
+            tmp="$(/usr/bin/ip addr show dev ${dev} | grep inet | tr -s ' ' | cut -f 2,3 -d' ' | sed -e 's/\/.*//' | tr '\n' ' ')"
+          else
+            tmp="$(/sbin/ifconfig ${dev} | grep "inet" | sed -e 's/.*\(inet .*\)netmask.*/\1/;s/.*\(inet6 .*\)prefixlen.*/\1/')"
+          fi
+          ipaddrs=$(echo ${tmp})
+          printf -- "%s [%s]: (%s) %s\n" "${dev}" "${addr}" "${operstate}" "${ipaddrs}"
+          printf -- "driver: %s\n" "${driver}"
+          # Is this a wireless adapter?
+          if [ x"${dev##wl}" != x"${dev}" ]; then
+            if [ ! -x /sbin/iw ]; then
+              printf -- "\n/sbin/iw not available; unable to display detailed information about wireless network interfaces\n" > /dev/stderr
+            else
+              # If so ifconfig is of no use
+              receive=$(/sbin/iw "${dev}" link | grep "rx bitrate" | sed -e 's,.*rx bitrate: \(.*MBit/s\).*,\1,')
+              transmit=$(/sbin/iw "${dev}" link | grep "tx bitrate" | sed -e 's,.*tx bitrate: \(.*MBit/s\).*,\1,')
+              if [ -z "${transmit}" ]; then
+                transmit="[unknown]"
+              fi
+              if [ -z "${receive}" ]; then
+                receive="[unknown]"
+              fi
+              printf -- "transmit: %s\n" "${transmit}"
+              printf -- "receive: %s\n" "${receive}"
+            fi
+          else
+            supported=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tSupported link modes/ { print }' | sed -e 's/Supported link modes: //')
+            advertised=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tAdvertised link modes/ { print }' | sed -e 's/Advertised link modes: //')
+            speed=$(/sbin/ethtool ${dev} 2> /dev/null | sed -e 's/^\(\t[[:alpha:]]\)/\f\1/' | awk 'BEGIN { RS="\f" } /^\tSpeed/ { print }' | sed -e 's/\s*Speed: //')
+            speed=$(echo ${speed} | sed -e 's/Unknown!/[unknown]/')
+            supported_full=$(get_speeds Full "${supported}")
+            supported_half=$(get_speeds Half "${supported}")
+            advertised_full=$(get_speeds Full "${advertised}")
+            advertised_half=$(get_speeds Half "${advertised}")
+            printf -- "speed: %s\n" "${speed}"
+            printf -- "supported: %s\n" "${supported_full} ${supported_half}"
+            printf -- "advertised: %s\n" "${advertised_full} ${advertised_half}"
+          fi
+          printf -- "\n"
+        done
+      changed_when: false

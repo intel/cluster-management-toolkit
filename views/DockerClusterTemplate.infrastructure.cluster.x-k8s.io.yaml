@@ -1,0 +1,28 @@
+kind: "DockerClusterTemplate"
+api_family: "infrastructure.cluster.x-k8s.io"
+default_command: "dockerclustertemplates"
+command:
+- "dockerclrtempls"
+- "dockerclrtempl"
+listview:
+  name: "Docker Cluster Templates"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Docker Cluster Template Info"
+  infopad:
+  shortcuts:
+    "Cluster template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Docker Cluster template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Docker Cluster template"
+        _pass_obj: true
+        path: "spec#template"

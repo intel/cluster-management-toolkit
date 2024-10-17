@@ -11,3 +11,69 @@ listview:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Request Authentication Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector"]
+    rows:
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+  listpad:
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__JWTRule"
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#jwtRules"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["issuer", "timeout", "forward_original_token"]
+        sortcolumn: "issuer"
+    fields:
+      forward_original_token:
+        header: "Forward Original Token:"
+        path: "forwardOriginalToken"
+        default: false
+        type: "bool"
+      issuer:
+        header: "Issuer:"
+        path: "issuer"
+        type: "str"
+      timeout:
+        header: "Timeout:"
+        path: "timeout"
+        default: 5
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Target References":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show target references"
+      widget: "windowwidget"
+      headers: ["Kind:", "Group:", "Name:"]
+      sortcolumn: "group"
+      itemgetter: "get_list_fields"
+      # This isn't supported for now
+      itemgetter_args:
+        path: "spec#targetRefs"
+        fields:
+        - "kind"
+        - "group"
+        - "name"

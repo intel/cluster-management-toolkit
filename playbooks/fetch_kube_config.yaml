@@ -1,6 +1,6 @@
-# XXX: This won't work with multiple controlplanes; we need to fetch from the first controlplane
-- hosts: "selection:&controlplane"
-  name: "Copy kubeconfig from control plane to .kube on localhost"
+# XXX: This will not work with multiple controlplanes; we need to fetch from the first controlplane
+- name: "Copy kubeconfig from control plane to .kube on localhost"
+  hosts: "selection:&controlplane"
   vars:
     metadata:
       description: "Copy kubeconfig from control plane to .kube on localhost"

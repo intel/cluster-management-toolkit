@@ -36,7 +36,7 @@ listview:
         when:
         - key: "type"
           eq: "Available"
-        default: "<unknown>"
+        default: ["<unknown>"]
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -95,7 +95,7 @@ infoview:
           when:
           - key: "type"
             eq: "Available"
-          default: "<unknown>"
+          default: ["<unknown>"]
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -173,3 +173,14 @@ infoview:
         kind: "Service"
         name_path: "spec#service#name"
         namespace_path: "spec#service#namespace"
+    "View CA bundle":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "View CA bundle"
+      action: "call"
+      action_call: "decode_and_view_data"
+      action_args:
+        title: "CA bundle"
+        _pass_obj: true
+        path: "spec#caBundle"

@@ -46,8 +46,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
+        fields: ["cluster_version", "min_available", "max_unavailable", "label_selector", "set_based_selector", "status_header", "expected_pods", "current_healthy", "desired_healthy", "unhealthy_pod_eviction_policy", "disruptions_allowed"]
     rows:
+      cluster_version:
+        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ClusterVersion"
+        default: "<none>"
       current_healthy:
         header: [["  Current Healthy:", ["main", "infoheader"]]]
         path: "status#currentHealthy"
@@ -126,3 +137,16 @@ infoview:
         path: "status#unhealthyPodEvictionPolicy"
         type: "str"
         default: "<unset>"
+  shortcuts:
+    "Cluster Version":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Cluster Version"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        owner_reference_path: "metadata#ownerReferences"
+        kind: "ClusterVersion"
+        api_family: "config.openshift.io"

@@ -15,23 +15,30 @@ listview:
       header: "Provided:"
       paths:
       - path: "status#conditions"
-        subpath: "status"
         pathtype: "items"
+        subpath: "status"
         when:
         - key: "type"
           eq: "RecommendationProvided"
-        default: "Unknown"
+        default: ["<unknown>"]
       type: "str"
     update_mode:
       header: "Update Mode:"
       path: "spec#updatePolicy#updateMode"
       type: "str"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
 infoview:
   name: "Vertical Pod Autoscaler Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["target_reference"]
+        fields: ["target_reference", "update_mode", "provided"]
     rows:
       provided:
         header: [["Provided:", ["main", "infoheader"]]]
@@ -42,7 +49,7 @@ infoview:
           when:
           - key: "type"
             eq: "RecommendationProvided"
-          default: "Unknown"
+          default: ["<unknown>"]
         type: "str"
       target_reference:
         header: [["Target ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]

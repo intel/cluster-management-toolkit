@@ -1,0 +1,113 @@
+kind: "VirtinkCluster"
+api_family: "infrastructure.cluster.x-k8s.io"
+default_command: "virtinkclusters"
+command:
+- "viclrs"
+- "viclr"
+listview:
+  name: "Virtink Clusters"
+  group: "Virtualization"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "control_plane_endpoint", "ready", "age"]
+  fields:
+    control_plane_endpoint:
+      header: "Control Plane Endpoint:"
+      paths:
+      - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "ipaddress"
+        - type: "port"
+        field_separators:
+        - type: "port"
+    ready:
+      header: "Ready:"
+      path: "status#ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+infoview:
+  name: "Virtink Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "control_plane_endpoint_header", "control_plane_endpoint_host", "control_plane_endpoint_port", "ready"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      control_plane_endpoint_header:
+        header: [["Control Plane Endpoint:", ["main", "infoheader"]]]
+      control_plane_endpoint_host:
+        header: [["  Host:", ["main", "infoheader"]]]
+        path: "spec#controlPlaneEndpoint#host"
+        type: "raw"
+        formatter: "address"
+      control_plane_endpoint_port:
+        header: [["  Port:", ["main", "infoheader"]]]
+        path: "spec#controlPlaneEndpoint#port"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        path: "status#ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

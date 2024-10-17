@@ -1,0 +1,20 @@
+- name: "registry-aliases"
+  show_in_selector: false
+  matchkeys:
+  - pod_name: "registry-aliases"
+    container_name: "update"
+    container_type: "init_container"
+  parser_rules:
+  - name: "diff_line"
+    options:
+      block_start:
+      - matchtype: "startswith"
+        matchkey: "--- "
+        matchline: "any"
+        format_block_start: true
+      block_end:
+      - matchtype: "startswith"
+        matchkey: "Done."
+        process_block_end: false
+      diffspace: ""
+      indent: ""

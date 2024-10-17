@@ -1,0 +1,186 @@
+kind: "BalloonsPolicy"
+api_family: "config.nri"
+default_command: "balloonspolicies"
+command:
+- "balloonspols"
+- "balloonspol"
+- "balloonpols"
+- "balloonpol"
+- "ballpols"
+- "ballpol"
+listview:
+  name: "Balloons Policies"
+  group: "Policy"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Balloons Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields:
+        - "allocator_topology_balancing"
+        - "instrumentation_header"
+        - "instrumentation_http_endpoint"
+        - "instrumentation_prometheus_export"
+        - "instrumentation_report_period"
+        - "instrumentation_sampling_rate_per_million"
+        - "pin_cpu"
+        - "pin_memory"
+        - "log_header"
+        - "log_debug"
+        - "log_source"
+        - "reserved_pool_namespaces"
+        - "reserved_resources"
+    rows:
+      allocator_topology_balancing:
+        header: [["Allocator Topology Balancing:", ["main", "infoheader"]]]
+        path: "spec#allocatorTopologyBalancing"
+        type: "str"
+      instrumentation_header:
+        header: [["Instrumentation:", ["main", "infoheader"]]]
+      instrumentation_http_endpoint:
+        header: [["  HTTP Endpoint:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#httpEndpoint"
+        type: "str"
+        formatter: "numerical_with_units"
+      instrumentation_prometheus_export:
+        header: [["  Prometheus Export:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#prometheusExport"
+        type: "str"
+      instrumentation_report_period:
+        header: [["  Report Period:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#reportPeriod"
+        type: "str"
+        formatter: "numerical_with_units"
+      instrumentation_sampling_rate_per_million:
+        header: [["  Sampling Rate Per Million:", ["main", "infoheader"]]]
+        path: "spec#instrumentation#samplingRatePerMillion"
+        type: "str"
+        formatter: "numerical_with_units"
+      log_debug:
+        header: [["  Debug:", ["main", "infoheader"]]]
+        path: "spec#log#debug"
+        type: "raw"
+        formatter: "list"
+      log_header:
+        header: [["Log:", ["main", "infoheader"]]]
+      log_source:
+        header: [["  Source:", ["main", "infoheader"]]]
+        path: "spec#log#source"
+        type: "str"
+      pin_cpu:
+        header: [["Pin CPU:", ["main", "infoheader"]]]
+        path: "spec#pinCPU"
+        type: "str"
+      pin_memory:
+        header: [["Pin Memory:", ["main", "infoheader"]]]
+        path: "spec#pinMemory"
+        type: "str"
+      reserved_pool_namespaces:
+        header: [["Reserved Pool Namespaces:", ["main", "infoheader"]]]
+        path: "spec#reservedPoolNamespaces"
+        type: "raw"
+        default: "<none>"
+        formatter: "list"
+      reserved_resources:
+        header: [["Reserved Resources:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#reservedResources"
+          pathtype: "key_value"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "numerical"
+          field_separators:
+          - type: "keyvalue"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#balloonTypes"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "priority", "hide_hyperthreads", "match_expressions", "min_balloons", "min_cpus", "prefer_new_balloons", "share_idle_cpus_in_same", "namespaces"]
+    fields:
+      hide_hyperthreads:
+        header: "Hide Hyperthreads:"
+        path: "hideHyperthreads"
+        type: "str"
+      match_expressions:
+        header: "Match Expressions:"
+        paths:
+        - path: "matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      min_balloons:
+        header: "Min Balloons:"
+        path: "minBalloons"
+        type: "str"
+        default: "<unset>"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      min_cpus:
+        header: "Min CPUs:"
+        path: "minCPUs"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      namespaces:
+        header: "Namespaces:"
+        path: "namespaces"
+        type: "raw"
+        default: "<none>"
+        formatter: "list"
+      prefer_new_balloons:
+        header: "Prefer New Ballons:"
+        path: "preferNewBalloons"
+        type: "str"
+        default: "<unset>"
+      priority:
+        header: "Priority:"
+        path: "allocatorPriority"
+        type: "str"
+      share_idle_cpus_in_same:
+        header: "Share Idle CPUs in Same:"
+        path: "shareIdleCPUsInSame"
+        type: "str"
+        default: "<unset>"
+  shortcuts:
+    "Show status":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Balloon Policy Status"
+      widget: "windowwidget"
+      title: "Balloon Policy Status:"
+      headers: ["Node:", "Status:", "Timestamp:", "Errors:"]
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "status#nodes"
+        fields:
+        - "key"
+        - "value#status"
+        - "value#timestamp"
+        - "value#errors"
+      sortcolumn: "status"

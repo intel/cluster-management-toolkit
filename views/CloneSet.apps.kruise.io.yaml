@@ -1,0 +1,302 @@
+kind: "CloneSet"
+api_family: "apps.kruise.io"
+default_command: "clonesets"
+listview:
+  name: "Clone Sets"
+  group: "Kruise"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "containers", "images", "age"]
+    Normal:
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "age"]
+  fields:
+    containers:
+      header: "Containers:"
+      paths:
+      - paths:
+        - "spec#template#spec#initContainers"
+        - "spec#template#spec#containers"
+        pathtype: "items"
+        subpaths:
+        - "name"
+        type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "version"
+        field_separators:
+        - type: "version"
+    current_replicas:
+      header: "Current:"
+      path: "status#replicas"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    desired_replicas:
+      header: "Desired:"
+      path: "spec#replicas"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    ready_replicas:
+      header: "Ready:"
+      paths:
+      - path: ["status#readyReplicas", "status#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - min: -1
+            max: 0
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_not_ok"
+      align: "right"
+    images:
+      header: "Images:"
+      paths:
+      - paths:
+        - "spec#template#spec#initContainers"
+        - "spec#template#spec#containers"
+        pathtype: "items"
+        subpaths:
+        - subpath: "image"
+          regex: ["^([^:]+):(.+)"]
+        type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "generic"
+        - type: "generic"
+        field_separators:
+        - type: "field"
+        - type: "field"
+    uptodate_replicas:
+      header: "Up to Date:"
+      paths:
+      - path: ["status#updatedReplicas", "status#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+      align: "right"
+    uptodate_ready_replicas:
+      header: "Up to Date Ready:"
+      paths:
+      - path: ["status#updatedReadyReplicas", "status#replicas"]
+        pathtype: "comparison"
+        default: [0, 0]
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          ranges:
+          - min: 0
+            max: 1
+            field_colors:
+            - context: "main"
+              type: "status_ok"
+          - default: true
+            field_colors:
+            - context: "main"
+              type: "status_pending"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+      "Rescale resource":
+        description: "Rescale resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "rescale_resource"
+        query: "New scale"
+        queryval: "scale"
+        queryfunc: "string"
+      "Restart resource (Rollout)":
+        description: "Restart resource"
+        category: "Resource Level"
+        metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
+        confirm: true
+        actionfunc: "restart_resource_rollout"
+infoview:
+  name: "Clone Set Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector", "set_based_selector", "update_strategy", "replicas", "revision_history_limit", "collision_count"]
+    rows:
+      collision_count:
+        header: [["Collision Count:", ["main", "infoheader"]]]
+        path: "status#collisionCount"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Updated", ["status#updatedReadyReplicas"], " Updated Ready"]
+          pathtype: "tuple"
+          default: [0, "", 0, "", 0, "", 0, ""]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          - type: "numerical"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+          - type: "fraction_spaced"
+          - type: "no_pad"
+      revision_history_limit:
+        header: [["Revision History Limit:", ["main", "infoheader"]]]
+        path: "spec#revisionHistoryLimit"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      set_based_selector:
+        header: [["Set-based Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#selector#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      update_strategy:
+        header: [["Update Strategy:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#updateStrategy#type"],
+                 " (", "Partition: ", ["spec#updateStrategy#rollingUpdate#partition"], ", ",
+                 "Max Unavailable: ", ["spec#updateStrategy#rollingUpdate#maxUnavailable"], ", ",
+                 "Min Ready Seconds: ", ["spec#updateStrategy#rollingUpdate#minReadySeconds"], ", ",
+                 "Pod Update Policy: ", ["spec#updateStrategy#rollingUpdate#podUpdatePolicy"],
+                 ")"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#updateStrategy#type"
+            eq: "RollingUpdate"
+          default: ["RollingUpdate", "", "", "1", "", "", "<unset>", "", "", "<unset>", "", "", "<unset>", ""]
+        - path: [["spec#updateStrategy#type"],
+                 " (", "Partition: ", ["spec#updateStrategy#partition"], ", ",
+                 "Max Unavailable: ", ["spec#updateStrategy#maxUnavailable"], ", ",
+                 "Max Surge: ", ["spec#updateStrategy#maxSurge"],
+                 ")"]
+          pathtype: "tuple"
+          when:
+          - key: "spec#updateStrategy#type"
+            eq: "ReCreate"
+        - path: [["spec#updateStrategy#type"]]
+          pathtype: "tuple"
+          when:
+          - key: "spec#updateStrategy#type"
+            eq: "OnDelete"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          - type: "numerical"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          - type: "numerical"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          - type: "numerical"
+          - type: "generic"
+          - context: "main"
+            type: "infoheader"
+          - type: "generic"
+          field_separators:
+          - type: "no_pad"
+  shortcuts:
+    "Volume Claim template":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show volume claim template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Volume Claim template"
+        _pass_obj: true
+        path: "spec#volumeClaimTemplates"
+        include_root: true
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#template"

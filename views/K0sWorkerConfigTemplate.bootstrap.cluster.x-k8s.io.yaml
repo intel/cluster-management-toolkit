@@ -1,0 +1,55 @@
+kind: "K0sWorkerConfigTemplate"
+api_family: "bootstrap.cluster.x-k8s.io"
+default_command: "k0sworkerconfigtemplates"
+command:
+- "k0sworkerconftempls"
+- "k0sworkerconftempl"
+listview:
+  name: "K0s Worker Config Templates"
+  group: "Cluster Configuration"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "K0s Worker Config Template Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster"]
+    rows:
+      cluster:
+        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Cluster"
+        default: "<none>"
+  shortcuts:
+    "Open Cluster":
+      key: "u"
+      read_only: true
+      helptext: "Open info page for Cluster"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Cluster"
+        api_family: "cluster.x-k8s.io"
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Worker template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show K0s Worker template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "K0s Worker template"
+        _pass_obj: true
+        path: "spec#template"

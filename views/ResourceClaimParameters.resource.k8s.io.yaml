@@ -1,0 +1,70 @@
+kind: "ResourceClaimParameters"
+api_family: "resource.k8s.io"
+default_command: "resourceclaimparameters"
+command:
+- "resclaimparams"
+- "resclaimparam"
+listview:
+  name: "Resource Claim Parameters"
+  group: "Dynamic Resource Allocation"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "generated_from", "age"]
+  fields:
+    generated_from:
+      header: "Generated From:"
+      paths:
+      - path:
+        - ["generatedFrom#kind"]
+        - ["generatedFrom#apiGroup"]
+        - ["generatedFrom#name"]
+        pathtype: "tuple"
+      type: "raw"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+infoview:
+  name: "Resource Claim Parameters Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["generated_from"]
+    rows:
+      generated_from:
+        header: [["G", ["main", "infoheader_shortcut"]], ["enerated From:", ["main", "infoheader"]]]
+        paths:
+        - path:
+          - ["generatedFrom#kind"]
+          - ["generatedFrom#apiGroup"]
+          - ["generatedFrom#name"]
+          pathtype: "tuple"
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+  shortcuts:
+    "Open source parameters":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for source parameters"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        api_version_path: "generatedFrom#apiGroup"
+        kind_path: "generatedFrom#kind"
+        namespace_path: "metadata#namespace"
+        name_path: "generatedFrom#name"

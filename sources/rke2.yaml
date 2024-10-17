@@ -1,0 +1,11 @@
+rke2:
+  description: "RKE2"
+  candidate_version:
+    function: "get_github_version"
+    args:
+      url: "https://api.github.com/repos/rancher/rke2/releases"
+      version_regex: 'v(\d+)(\.)(\d+)(\.)(\d+)\+([a-z0-9]+)$'
+  changelog:
+    from_body: true
+    reformatter: "reformat_github_release_notes"
+    dest: "rke2_changelog.md"

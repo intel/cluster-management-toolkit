@@ -75,7 +75,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity_header", "session_affinity", "session_affinity_timeout"]
+        fields: ["controller", "external_name", "selector", "endpoints", "endpoint_slices", "type", "cluster_ips", "internal_traffic_policy", "ip_families", "ip_family_policy", "external_ips", "ports", "topology_keys", "session_affinity_header", "session_affinity", "session_affinity_timeout"]
     rows:
       cluster_ips:
         header: [["Cluster IPs:", ["main", "infoheader"]]]
@@ -85,6 +85,29 @@ infoview:
           default: "<none>"
           none_str_as_none: true
         formatter: "address"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       endpoints:
         header: [["E", ["main", "infoheader_shortcut"]], ["ndpoints:", ["main", "infoheader"]]]
         paths:
@@ -320,7 +343,15 @@ infoview:
       widget: "windowwidget"
       title: "Endpoint Slices:"
       headers: ["Namespace:", "Name:"]
-      itemgetter: "get_endpoint_slices"
+      itemgetter: "get_kubernetes_objects"
+      itemgetter_args:
+        kind: "EndpointSlice"
+        api_family: "discovery.k8s.io"
+        selector: "kubernetes.io/service-name"
+        selector_type: "label"
+        name_path: "metadata#name"
+        namespace_path: "metadata#namespace"
+        field_paths: ["metadata#namespace", "metadata#name"]
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
@@ -331,6 +362,17 @@ infoview:
         namespace_path: 0
       # This isn't supported for now
       sortcolumn: "namespace"
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
     "Ports":
       key: "p"
       modifier: "shift"
