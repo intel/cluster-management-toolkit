@@ -5949,7 +5949,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
                     w_itemgetter_args["kubernetes_helper"] = kh
                     w_itemgetter_args["kh_cache"] = kh_cache
-                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "obj")
+                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "object")
                     w_selectable = deep_get(sc_value, DictPath("selectable"), False)
                     # w_kind = deep_get(sc_value, DictPath("kind"), view)
                     if "_slow_task_msg" in w_itemgetter_args:
