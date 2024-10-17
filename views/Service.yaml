@@ -352,6 +352,8 @@ infoview:
         name_path: "metadata#name"
         namespace_path: "metadata#namespace"
         field_paths: ["metadata#namespace", "metadata#name"]
+      # This isn't supported for now
+      sortcolumn: "namespace"
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
@@ -360,8 +362,6 @@ infoview:
         api_family: "discovery.k8s.io"
         name_path: 1
         namespace_path: 0
-      # This isn't supported for now
-      sortcolumn: "namespace"
     "Open controller":
       key: "c"
       modifier: "shift"
