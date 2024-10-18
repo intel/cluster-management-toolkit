@@ -110,13 +110,14 @@ infoview:
       itemgetter: "get_list_as_list"
       itemgetter_args:
         path: "spec#gateways"
-        regex: "^(.*?)/(.*)$"
+        regex: "^(.*?)/(.*)$|^()(.*)$"
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"
       action_args:
         kind: "Gateway"
         api_family: "networking.istio.io"
+        _parent_namespace_path: "metadata#namespace"
         name_path: 1
         namespace_path: 0
       # This isn't supported for now
