@@ -2689,6 +2689,95 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
         "api": "outputs",
     },
+    # longhorn.io
+    ("BackingImageDataSource", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backingimagedatasources",
+    },
+    ("BackingImageManager", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backingimagemanagers",
+    },
+    ("BackingImage", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backingimages",
+    },
+    ("BackupBackingImage", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backupbackingimages",
+    },
+    ("Backup", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backups",
+    },
+    ("BackupTarget", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backuptargets",
+    },
+    ("BackupVolume", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "backupvolumes",
+    },
+    ("EngineImage", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "engineimages",
+    },
+    ("Engine", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "engines",
+    },
+    ("InstanceManager", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "instancemanagers",
+    },
+    ("Node", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "nodes",
+    },
+    ("Orphan", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "orphans",
+    },
+    ("RecurringJob", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "recurringjobs",
+    },
+    ("Replica", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "replicas",
+    },
+    ("Setting", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "settings",
+    },
+    ("ShareManager", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "sharemanagers",
+    },
+    ("Snapshot", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "snapshots",
+    },
+    ("SupportBundle", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "supportbundles",
+    },
+    ("SystemBackup", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "systembackups",
+    },
+    ("SystemRestore", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "systemrestores",
+    },
+    ("VolumeAttachment", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "volumeattachments",
+    },
+    ("Volume", "longhorn.io"): {
+        "api_paths": ["apis/longhorn.io/v1beta2/"],
+        "api": "volumes",
+    },
     # lvm.topolvm.io
     ("LVMCluster", "lvm.topolvm.io"): {
         "api_paths": ["apis/lvm.topolvm.io/v1alpha1/"],
