@@ -1,0 +1,34 @@
+kind: "EngineImage"
+api_family: "longhorn.io"
+default_command: "engineimages.longhorn.io"
+command:
+- "lhengineimages"
+- "lhengineimage"
+- "lhengineimgs"
+- "lhengineimg"
+listview:
+  name: "Engine Images"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Engine Image Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"

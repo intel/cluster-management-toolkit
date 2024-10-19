@@ -91,7 +91,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "storage_class", "reclaim_policy", "volume_mode"]
+        fields: ["status", "reason", "capacity", "persistent_volume_claim", "access_modes", "csi_driver", "storage_class", "reclaim_policy", "volume_mode"]
     rows:
       access_modes:
         header: [["Access Modes:", ["main", "infoheader"]]]
@@ -292,6 +292,18 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Open CSI Driver":
+      key: "d"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for CSI Driver"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "CSIDriver"
+        api_family: "storage.k8s.io"
+        name_path: "spec#csi#driver"
     "Open Storage Class":
       key: "s"
       modifier: "shift"
