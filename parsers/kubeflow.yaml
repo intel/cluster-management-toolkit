@@ -80,6 +80,12 @@
   matchkeys:
   - image_name: "/kubeflowkatib/katib-controller"
   - image_name: "/kubeflowkatib/katib-db-manager"
+  - image_name: "/kubeflownotebookswg/poddefaults-webhook"
   parser_rules:
   - name: "glog"
   - name: "json"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
