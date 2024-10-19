@@ -1,0 +1,96 @@
+kind: "VolumeAttachment"
+api_family: "storage.k8s.io"
+default_command: "volumeattachments"
+command:
+- "volattachments"
+- "volattachment"
+- "volattachs"
+- "volattach"
+listview:
+  name: "Volume Attachments"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["name", "attacher", "pv", "node_name", "attached", "age"]
+  fields:
+    attached:
+      header: "Attached:"
+      path: "status#attached"
+      type: "bool"
+    attacher:
+      header: "Attacher:"
+      path: "spec#attacher"
+      type: "str"
+    node_name:
+      header: "Node:"
+      path: "spec#nodeName"
+      type: "host"
+      default: "<none>"
+      formatting:
+        field_colors:
+        - type: "host"
+    pv:
+      header: "PV:"
+      path: "spec#source#persistentVolumeName"
+      type: "str"
+infoview:
+  name: "Volume Attachment Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["attacher", "pv", "node_name", "attached"]
+    rows:
+      attached:
+        header: [["Attached:", ["main", "infoheader"]]]
+        path: "status#attached"
+        type: "bool"
+      attacher:
+        header: [["A", ["main", "infoheader_shortcut"]], ["ttacher:", ["main", "infoheader"]]]
+        path: "spec#attacher"
+        type: "str"
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      pv:
+        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume:", ["main", "infoheader"]]]
+        path: "spec#source#persistentVolumeName"
+        type: "str"
+  shortcuts:
+    "Open CSI Driver":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for attacher (CSI Driver)"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "CSIDriver"
+        api_family: "storage.k8s.io"
+        name_path: "spec#attacher"
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        name_path: "spec#nodeName"
+    "Open Persistent Volume":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Persistent Volume"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PersistentVolume"
+        name_path: "spec#source#persistentVolumeName"
