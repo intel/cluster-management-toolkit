@@ -2317,8 +2317,7 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
             if isinstance(remnants, tuple):
                 severity_name = f"severity_{loglevel_to_name(remnants[1]).lower()}"
                 for remnant in remnants[0]:
-                    _remnants.append(([ThemeStr(remnant, ThemeAttr("logview", severity_name))],
-                                      remnants[1]))
+                    _remnants.append((remnant, remnants[1]))
                 remnants = _remnants
             elif isinstance(remnants, list):
                 remnants = _remnants + remnants
