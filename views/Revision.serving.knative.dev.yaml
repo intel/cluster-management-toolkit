@@ -12,6 +12,7 @@ listview:
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age", "ready", "reason"]
+      sortcolumn: "namespace"
   fields:
     ready:
       header: "Ready:"
@@ -45,18 +46,6 @@ listview:
         - key: "type"
           eq: "Ready"
       type: "str"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          mappings:
-            "True":
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            "False":
-              field_colors:
-              - context: "main"
-                type: "status_not_ok"
 infoview:
   name: "Revision Info"
   infopad:

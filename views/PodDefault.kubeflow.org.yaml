@@ -1,0 +1,67 @@
+kind: "PodDefault"
+api_family: "kubeflow.org"
+default_command: "poddefaults"
+listview:
+  name: "Pod Defaults"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Pod Default Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["description", "label_selector", "service_account"]
+    rows:
+      description:
+        header: [["Description:", ["main", "infoheader"]]]
+        path: "spec#desc"
+        type: "str"
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      service_account:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        path: "spec#serviceAccountName"
+        type: "str"
+  shortcuts:
+    "Environment Variables":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "List environment variables"
+      widget: "windowwidget"
+      title: "Environment Variables:"
+      headers: ["Key:", "Value:"]
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#env"
+        fields:
+        - "name"
+        - "value"
+      # Not supported for now
+      sortcolumn: "name"
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#serviceAccountName"
+        namespace_path: "metadata#namespace"

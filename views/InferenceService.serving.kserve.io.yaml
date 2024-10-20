@@ -1,0 +1,42 @@
+kind: "InferenceService"
+api_family: "serving.kserve.io"
+default_command: "inferenceservices"
+command:
+- "inferencesvcs"
+- "inferencesvc"
+- "infsvcs"
+- "infsvc"
+listview:
+  name: "Inference Services"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Inference Service Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["url", "model_header", "model_format", "model_storage_uri"]
+    rows:
+      model_format:
+        header: [["  Format:", ["main", "infoheader"]]]
+        path: "spec#predictor#model#modelFormat#name"
+        type: "str"
+      model_header:
+        header: [["Model:", ["main", "infoheader"]]]
+      model_storage_uri:
+        header: [["  URI:", ["main", "infoheader"]]]
+        path: "spec#predictor#model#storageUri"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "status#address#url"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"

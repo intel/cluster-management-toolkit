@@ -1,0 +1,26 @@
+kind: "ClusterDomainClaim"
+api_family: "networking.internal.knative.dev"
+default_command: "clusterdomainclaims"
+command:
+- "clrdomclaims"
+- "clrdomclaim"
+listview:
+  name: "Cluster Domain Claims"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Cluster Domain Claim Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["cluster_domain_claim_namespace"]
+    rows:
+      cluster_domain_claim_namespace:
+        header: [["Cluster Domain Claim Namespace:", ["main", "infoheader"]]]
+        path: "spec#namespace"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"

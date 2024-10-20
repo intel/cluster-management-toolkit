@@ -6,8 +6,35 @@ listview:
   group: "Workloads"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "progress", "status", "age"]
       sortcolumn: "namespace"
+  fields:
+    progress:
+      header: "Progress:"
+      paths:
+      - path: "status#progress"
+        pathtype: "regex"
+        regex: "^(.+)/(.+)"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+        field_separators:
+        - type: "fraction"
+      align: "right"
+    status:
+      header: "Status:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Error:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
 infoview:
   name: "Workflow Info"
   infopad:
@@ -27,6 +54,14 @@ infoview:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#phase"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Error:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
   shortcuts:
     "Service Account":
       key: "s"

@@ -1,0 +1,50 @@
+kind: "Certificate"
+api_family: "networking.internal.knative.dev"
+default_command: "certificates"
+command:
+- "kncertificates"
+- "kncerts"
+- "kncert"
+listview:
+  name: "Certificates"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age", "ready", "reason"]
+      sortcolumn: "namespace"
+  fields:
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+    reason:
+      header: "Reason:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+infoview:
+  name: "Certificates Info"
+  infopad:

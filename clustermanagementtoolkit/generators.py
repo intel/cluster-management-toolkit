@@ -230,7 +230,7 @@ def map_value(value: Any,
             value (Any): The value to map
             references (Any): The references to map against (unsupported for now)
             selected (bool): Is the string selected?
-            default_field_color (ThemeAttr): The default colour to use if  no mapping occurs
+            default_field_color (ThemeAttr): The default colour to use if no mapping occurs
             mapping (dict): The mapping rules
         Returns:
             (ThemeArray, str):
