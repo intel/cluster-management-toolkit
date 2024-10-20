@@ -36,12 +36,19 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image", "active", "state"]
+        fields: ["image", "data_engine", "active", "state"]
     rows:
       active:
         header: [["Active:", ["main", "infoheader"]]]
         path: "spec#active"
         type: "bool"
+      data_engine:
+        header: [["Data Engine:", ["main", "infoheader"]]]
+        path: "spec#dataEngine"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:

@@ -9,7 +9,150 @@ listview:
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "auto_evicting", "schedulable", "ready", "age", "message"]
+  fields:
+    auto_evicting:
+      header: "Auto-Evicting:"
+      path: "status#autoEvicting"
+      type: "bool"
+    message:
+      header: "Message:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+    schedulable:
+      header: "Schedulable:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Schedulable"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
 infoview:
   name: "Node Info"
   infopad:
+    row_indexes:
+      Normal:
+        fields: ["eviction_requested", "auto_evicting", "region", "zone", "allow_scheduling", "schedulable", "ready", "message"]
+    rows:
+      allow_scheduling:
+        header: [["Allow Scheduling:", ["main", "infoheader"]]]
+        path: "spec#allowScheduling"
+        type: "bool"
+      auto_evicting:
+        header: [["Auto-Evicting:", ["main", "infoheader"]]]
+        path: "status#autoEvicting"
+        type: "bool"
+      eviction_requested:
+        header: [["Eviction Requested:", ["main", "infoheader"]]]
+        path: "status#evictionRequested"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "bool"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      region:
+        header: [["Region:", ["main", "infoheader"]]]
+        path: "status#region"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"
+      schedulable:
+        header: [["Schedulable:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Schedulable"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      zone:
+        header: [["Zone:", ["main", "infoheader"]]]
+        path: "status#zone"
+        fallback_on_empty: true
+        default: "<unset>"
+        type: "str"

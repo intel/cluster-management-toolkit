@@ -9,19 +9,68 @@ listview:
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "active", "age"]
+      fields: ["namespace", "name", "active", "state", "age"]
   fields:
     active:
       header: "Active:"
       path: "spec#active"
       type: "bool"
+    state:
+      header: "State:"
+      path: "status#currentState"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "running":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
 infoview:
   name: "Engine Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["volume"]
+        fields: ["image", "data_engine", "volume", "ip_address", "state"]
     rows:
+      data_engine:
+        header: [["Data Engine:", ["main", "infoheader"]]]
+        path: "spec#dataEngine"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      ip_address:
+        header: [["IP-address:", ["main", "infoheader"]]]
+        path: "status#ip"
+        type: "raw"
+        formatter: "address"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#currentState"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
       volume:
         header: [["V", ["main", "infoheader_shortcut"]], ["olume:", ["main", "infoheader"]]]
         path: "spec#volumeName"

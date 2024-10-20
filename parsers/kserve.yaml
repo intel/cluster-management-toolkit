@@ -2,5 +2,69 @@
   show_in_selector: false
   matchkeys:
   - image_name: "/kserve/kserve-controller"
+  - image_name: "/knative-releases/knative.dev/serving/cmd/queue"
   parser_rules:
   - name: "json"
+    options:
+      severities:
+      - "severity"
+- name: "kserve"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kserve/sklearnserver"
+  - image_name: "/kserve/storage-initializer"
+    container_type: "init_container"
+  parser_rules:
+  - name: "ts_8601"
+  - name: "custom_splitter"
+    options:
+      regex: '^\d+ ([^\s]+) ([A-Z]+) \[([^]]+)] (.*)'
+      severity:
+        field: 2
+        transform: "str"
+      facility:
+        fields:
+        - 1
+        - 3
+        separators:
+        - "|"
+      message:
+        field: 4
+  - name: "custom_splitter"
+    options:
+      regex: '^\d+ ([^\s]+) ([A-Z]+) \[([^]]+)] (.*)'
+      severity:
+        field: 2
+        transform: "str"
+      facility:
+        fields:
+        - 1
+        - 3
+        separators:
+        - "|"
+      message:
+        field: 4
+  - name: "custom_splitter"
+    options:
+      regex: '^([^\s]+) ([A-Z]+): (.*)'
+      severity:
+        field: 2
+        transform: "str"
+      facility:
+        fields:
+        - 1
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^(/[^:]+?:\d+): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "InconsistentVersionWarning"
+      loglevel: "warning"
