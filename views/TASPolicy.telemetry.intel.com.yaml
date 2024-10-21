@@ -20,7 +20,7 @@ infoview:
     infogetter: "get_strategy_info"
     field_indexes:
       Normal:
-        fields: ["strategy", "name", "operator", "target"]
+        fields: ["strategy", "name", "operator", "target", "labels"]
         sortcolumn: "strategy"
     reversible: false
     fields:
@@ -28,6 +28,20 @@ infoview:
         header: "Name:"
         path: "name"
         type: "str"
+      labels:
+        header: "Labels:"
+        path:
+        - path: "labels"
+          pathtype: "key_value"
+          default: ["<unset>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
       operator:
         header: "Operator:"
         path: "operator"
@@ -43,3 +57,4 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
+        align: "right"
