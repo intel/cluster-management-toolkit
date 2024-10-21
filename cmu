@@ -5949,7 +5949,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
                     w_itemgetter_args["kubernetes_helper"] = kh
                     w_itemgetter_args["kh_cache"] = kh_cache
-                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "obj")
+                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "object")
                     w_selectable = deep_get(sc_value, DictPath("selectable"), False)
                     # w_kind = deep_get(sc_value, DictPath("kind"), view)
                     if "_slow_task_msg" in w_itemgetter_args:
@@ -7736,7 +7736,17 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
     # Exceptions
     if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
         # Do not try to open pending containers
-        if deep_get(info, DictPath("status#phase")) in ("Pending", "Failed"):
+        containername = deep_get(obj, DictPath("name"), "")
+        src_statuses = {}
+        if kind == ("InitContainer", ""):
+            src_statuses = deep_get(info, DictPath("status#initContainerStatuses"))
+        else:
+            src_statuses = deep_get(info, DictPath("status#containerStatuses"))
+        # Get the status of the container
+        status, _status_group, _restarts, _message, _age = \
+            datagetters.get_container_status(src_statuses, containername)
+        if status in ("ContainerCreating", "ErrImagePull",
+                      "ImagePullBackOff", "Pending", "UNKNOWN"):
             return Retval.RETURNDONE
         return containerinfoloop(stdscr, obj, kind, info)
 
@@ -7934,7 +7944,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     except NameError:
         obj = None
 
-        # If the kind is unknown we will get NameError;
+    # If the kind is unknown we will get NameError;
     # in this case we probably do not want to crash
     try:
         obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)

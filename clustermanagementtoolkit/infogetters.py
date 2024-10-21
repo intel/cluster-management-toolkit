@@ -772,6 +772,7 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
     if obj is None:
         return []
 
+    labeling_rules = deep_get(obj, DictPath("spec#strategies#labeling#rules"), [])
     deschedule_rules = deep_get(obj, DictPath("spec#strategies#deschedule#rules"), [])
     dontschedule_rules = deep_get(obj, DictPath("spec#strategies#dontschedule#rules"), [])
     scheduleonmetric_rules = deep_get(obj, DictPath("spec#strategies#scheduleonmetric#rules"), [])
@@ -788,7 +789,8 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
             "strategy": strategy,
             "name": name,
             "operator": operator,
-            "target": target
+            "target": target,
+            "labels": [],
         }))
 
     if dontschedule_rules:
@@ -800,6 +802,7 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
                 "name": "",
                 "operator": "",
                 "target": -1,
+                "labels": [],
             }))
             for rule in dontschedule_rules:
                 name = rule.get("metricname", "")
@@ -810,6 +813,7 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
                     "name": rule.get("metricname", ""),
                     "operator": rule.get("operator", ""),
                     "target": rule.get("target", -1),
+                    "labels": [],
                 }))
         else:
             rule = dontschedule_rules[0]
@@ -821,6 +825,7 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
                 "name": name,
                 "operator": operator,
                 "target": target,
+                "labels": [],
             }))
 
     if scheduleonmetric_rules:
@@ -836,6 +841,23 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
             "name": name,
             "operator": operator,
             "target": target,
+            "labels": [],
+        }))
+
+    for rule in labeling_rules:
+        strategy = "labeling"
+
+        # Even though this is an array there's only one rule
+        name = rule.get("metricname", "")
+        operator = rule.get("operator", "")
+        target = rule.get("target", -1)
+        labels = rule.get("labels", [])
+        info.append(type("InfoClass", (), {
+            "strategy": strategy,
+            "name": name,
+            "operator": operator,
+            "target": target,
+            "labels": labels,
         }))
 
     return info

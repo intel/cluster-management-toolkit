@@ -1,0 +1,175 @@
+kind: "SeldonDeployment"
+api_family: "machinelearning.seldon.io"
+default_command: "seldondeployments"
+command:
+- "seldondeploys"
+- "seldondeploy"
+- "seldondeps"
+- "seldondep"
+listview:
+  name: "Seldon Deployments"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "state", "age"]
+  fields:
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            Creating:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Available:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Seldon Deployment Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["model_name", "protocol", "url", "replicas", "state"]
+    rows:
+      model_name:
+        header: [["Model Name:", ["main", "infoheader"]]]
+        path: "spec#name"
+        type: "str"
+      protocol:
+        header: [["Protocol:", ["main", "infoheader"]]]
+        path: "spec#protocol"
+        default: "v1"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
+        path: "status#replicas"
+        type: "int"
+        default: 0
+        formatter: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              Creating:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Available:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "status#address#url"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "spec#predictors"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "graph_name", "graph_implementation", "graph_model_uri", "replicas", "graph_parameters"]
+        sortcolumn: "name"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      graph_implementation:
+        header: "Graph Implementation:"
+        path: "graph#implementation"
+        type: "str"
+      graph_name:
+        header: "Graph Name:"
+        path: "graph#name"
+        type: "str"
+      graph_model_uri:
+        header: "Graph Model URI:"
+        path: "graph#modelUri"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      graph_parameters:
+        header: "Graph Parameters:"
+        paths:
+        - path: "graph#parameters"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          - "type"
+          - "value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+          - type: "selector"
+      replicas:
+        header: "Replicas:"
+        path: "replicas"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Service Status":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Services"
+      widget: "windowwidget"
+      title: "Services:"
+      headers: ["Name:", "HTTP Endpoint:", "gRPC Endpoint:"]
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "status#serviceStatus"
+        fields:
+        - "value#svcName"
+        - "value#httpEndpoint"
+        - "value#grpcEndpoint"
+      # This isn't supported for now
+      sortcolumn: "name"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _parent_namespace_path: "metadata#namespace"
+        kind: "Service"
+        name_path: 0
+        # Use parent namespace
+        namespace_path: null

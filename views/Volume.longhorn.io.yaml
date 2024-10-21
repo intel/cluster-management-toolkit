@@ -1,0 +1,83 @@
+kind: "Volume"
+api_family: "longhorn.io"
+default_command: "volume.longhorn.io"
+command:
+- "lhvolumes"
+- "lhvolume"
+- "lhvols"
+- "lhvol"
+listview:
+  name: "Volumes"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "robustness", "state", "age"]
+  fields:
+    robustness:
+      header: "Robustness:"
+      path: "status#robustness"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "degraded":
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "attached":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Volume Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "robustness", "state"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      robustness:
+        header: [["Robustness:", ["main", "infoheader"]]]
+        path: "status#robustness"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "degraded":
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "attached":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"

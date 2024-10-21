@@ -166,8 +166,12 @@ def format_list(items: Any, fieldlen: int, pad: int,
 
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
-                if isinstance(field_prefixes[i], (tuple, ThemeRef)):
+                if isinstance(field_prefixes[i], tuple):
                     array.append(field_prefixes[i])
+                elif isinstance(field_prefixes[i], ThemeRef):
+                    tmp = field_prefixes[i]
+                    tmp.selected = selected
+                    array.append(tmp)
                 elif isinstance(field_prefixes[i], list):
                     for fix in field_prefixes[i]:
                         if isinstance(fix, dict):
@@ -184,8 +188,12 @@ def format_list(items: Any, fieldlen: int, pad: int,
             array.append(formatted_string)
             # And now the suffix
             if field_suffixes is not None and i < len(field_suffixes):
-                if isinstance(field_prefixes[i], (tuple, ThemeRef)):
+                if isinstance(field_suffixes[i], tuple):
                     array.append(field_suffixes[i])
+                elif isinstance(field_suffixes[i], ThemeRef):
+                    tmp = field_suffixes[i]
+                    tmp.selected = selected
+                    array.append(tmp)
                 elif isinstance(field_suffixes[i], list):
                     for fix in field_suffixes[i]:
                         if isinstance(fix, dict):
@@ -222,7 +230,7 @@ def map_value(value: Any,
             value (Any): The value to map
             references (Any): The references to map against (unsupported for now)
             selected (bool): Is the string selected?
-            default_field_color (ThemeAttr): The default colour to use if  no mapping occurs
+            default_field_color (ThemeAttr): The default colour to use if no mapping occurs
             mapping (dict): The mapping rules
         Returns:
             (ThemeArray, str):

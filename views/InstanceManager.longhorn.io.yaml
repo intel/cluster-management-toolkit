@@ -1,0 +1,102 @@
+kind: "InstanceManager"
+api_family: "longhorn.io"
+default_command: "instancemanagers.longhorn.io"
+command:
+- "lhinstancemanagers"
+- "lhinstancemanager"
+- "lhinstmgrs"
+- "lhinstmgr"
+listview:
+  name: "Instance Managers"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "state", "age"]
+  fields:
+    state:
+      header: "State:"
+      path: "status#currentState"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "running":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Instance Manager Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["node_name", "image", "data_engine", "type", "ip_address", "state"]
+    rows:
+      data_engine:
+        header: [["Data Engine:", ["main", "infoheader"]]]
+        path: "spec#dataEngine"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      ip_address:
+        header: [["IP-address:", ["main", "infoheader"]]]
+        path: "status#ip"
+        type: "raw"
+        formatter: "address"
+      node_name:
+        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          when:
+          - key: "kind"
+            eq: "Node"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "host"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#currentState"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"
+  shortcuts:
+    "Open Node":
+      key: "d"
+      read_only: true
+      helptext: "Open info page for Node"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Node"
+        api_family: "longhorn.io"
+        name_path: "spec#nodeID"
+        namespace_path: "metadata#namespace"

@@ -1,0 +1,80 @@
+kind: "Replica"
+api_family: "longhorn.io"
+default_command: "replicas.longhorn.io"
+command:
+- "lhreplicas"
+- "lhreplica"
+listview:
+  name: "Replicas"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "active", "state", "age"]
+  fields:
+    active:
+      header: "Active:"
+      path: "spec#active"
+      type: "bool"
+    state:
+      header: "State:"
+      path: "status#currentState"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "stopped":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "running":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Replica Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "data_engine", "active", "state"]
+    rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "spec#active"
+        type: "bool"
+      data_engine:
+        header: [["Data Engine:", ["main", "infoheader"]]]
+        path: "spec#dataEngine"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#currentState"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "stopped":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"

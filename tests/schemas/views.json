@@ -2242,10 +2242,10 @@
 																}
 															]
 														},
-														"fields": {
+														"field_paths": {
 															"type": "array"
 														},
-														"field_paths": {
+														"fields": {
 															"type": "array"
 														},
 														"items": {
@@ -2288,21 +2288,6 @@
 															"description": "Path to get the kind of the object from (used with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
 														},
-														"override_types": {
-															"description": "Override the type of the object",
-															"type": "array",
-															"items": {
-																"enum": [
-																	"list",
-																	"dict",
-																	"str",
-																	"timestamp",
-																	"age",
-																	""
-																]
-															},
-															"minItems": 1
-														},
 														"name": {
 															"description": "The name of the object (used for selectors with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
@@ -2319,12 +2304,27 @@
 															"description": "Path to get the namespace of the objects from (used with get_kubernetes_objects)",
 															"$ref": "#/definitions/path"
 														},
-														"path": {
-															"$ref": "#/definitions/path"
+														"override_types": {
+															"description": "Override the type of the object",
+															"type": "array",
+															"items": {
+																"enum": [
+																	"list",
+																	"dict",
+																	"str",
+																	"timestamp",
+																	"age",
+																	""
+																]
+															},
+															"minItems": 1
 														},
 														"pass_ref": {
 															"description": "Pass a reference to the list entry along with its elements",
 															"type": "boolean"
+														},
+														"path": {
+															"$ref": "#/definitions/path"
 														},
 														"pod_name": {
 															"description": "Pod name or pod name paths for the ConfigMap",
@@ -2349,6 +2349,13 @@
 															"enum": [
 																"field",
 																"label"
+															]
+														},
+														"source": {
+															"description": "Is the data source the selected object or the parent object",
+															"enum": [
+																"selected",
+																"object"
 															]
 														}
 													},

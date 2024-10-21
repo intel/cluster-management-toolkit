@@ -1,0 +1,67 @@
+kind: "DomainMapping"
+api_family: "serving.knative.dev"
+default_command: "domainmappings"
+command:
+- "dommappings"
+- "dommapping"
+- "dommaps"
+- "dommap"
+listview:
+  name: "Domain Mappings"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Domain Mappings Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["reference", "address", "url"]
+    rows:
+      address:
+        header: [["Address:", ["main", "infoheader"]]]
+        path: "status#address#url"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      reference:
+        header: [["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#ref#kind"], ["spec#ref#apiVersion"], ["spec#ref#namespace"], ["spec#ref#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
+      url:
+        header: [["URL:", ["main", "infoheader"]]]
+        path: "status#url"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+  shortcuts:
+    "Open reference":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#ref#kind"
+        api_version_path: "spec#ref#apiVersion"
+        name_path: "spec#ref#name"
+        namespace_path: "spec#ref#namespace"

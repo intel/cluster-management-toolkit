@@ -1,0 +1,28 @@
+kind: "InferenceGraph"
+api_family: "serving.kserve.io"
+default_command: "inferencegraphs"
+command:
+- "infgraphs"
+- "infgraph"
+listview:
+  name: "Inference Graphs"
+  group: "Machine Learning"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Inference Graph Info"
+  infopad:
+  shortcuts:
+    "Graph Nodes":
+      key: "g"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Inference Graph nodes"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Inference Graph Nodes"
+        _pass_obj: true
+        path: "spec#nodes"

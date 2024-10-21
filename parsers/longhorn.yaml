@@ -1,0 +1,37 @@
+- name: "longhorn"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/longhornio/longhorn-manager"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "CSI Driver: driver.longhorn.io version:"
+      loglevel: "notice"
+- name: "longhorn"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/longhornio/longhorn-instance-manager"
+  parser_rules:
+  - name: "custom_splitter"
+    options:
+      regex: '^\[([^]]+)\] (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "key_value"
+- name: "longhorn"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/longhornio/csi-node-driver-registrar"
+  - image_name: "/longhornio/livenessprobe"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value_with_leading_message"
+    options:
+      versions:
+      - "version"

@@ -1,0 +1,64 @@
+kind: "BackupTarget"
+api_family: "longhorn.io"
+default_command: "backuptargets.longhorn.io"
+command:
+- "lhbackuptargets"
+- "lhbackuptarget"
+- "lhbaktgts"
+- "lhbaktgt"
+listview:
+  name: "Backup Targets"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "available", "age"]
+  fields:
+    available:
+      header: "Available:"
+      path: "status#available"
+      type: "bool"
+infoview:
+  name: "Backup Target Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["owner_id", "available", "backup_target_url", "credential_secret", "poll_interval", "sync_requested_at", "last_synced_at"]
+    rows:
+      available:
+        header: [["Available:", ["main", "infoheader"]]]
+        path: "status#available"
+        type: "bool"
+      backup_target_url:
+        header: [["Backup Target URL:", ["main", "infoheader"]]]
+        path: "spec#backupTargetURL"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      credential_secret:
+        header: [["Credential Secret:", ["main", "infoheader"]]]
+        path: "spec#credentialSecret"
+        default: "<unset>"
+        fallback_on_empty: true
+        type: "str"
+      last_synced_at:
+        header: [["Last Synced At:", ["main", "infoheader"]]]
+        path: "spec#lastSyncedAt"
+        default: "<unset>"
+        type: "str"
+      owner_id:
+        header: [["Owner ID:", ["main", "infoheader"]]]
+        path: "status#ownerID"
+        type: "str"
+      poll_interval:
+        header: [["Poll Interval:", ["main", "infoheader"]]]
+        path: "spec#pollInterval"
+        type: "raw"
+        formatter: "numerical_with_units"
+      sync_requested_at:
+        header: [["Sync Requested At:", ["main", "infoheader"]]]
+        path: "spec#syncRequestedAt"
+        default: "<unset>"
+        type: "str"

@@ -313,7 +313,11 @@ def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
             if _regex is not None:
                 tmp = compiled_regex.match(item)
                 if tmp is not None:
-                    vlist.append(tmp.groups())
+                    tmp2 = []
+                    for group in tmp.groups():
+                        if group is not None:
+                            tmp2.append(group)
+                    vlist.append(tmp2)
             else:
                 vlist.append([item])
     elif "paths" in kwargs:

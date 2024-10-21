@@ -1,0 +1,132 @@
+kind: "EngineImage"
+api_family: "longhorn.io"
+default_command: "engineimages.longhorn.io"
+command:
+- "lhengineimages"
+- "lhengineimage"
+- "lhengineimgs"
+- "lhengineimg"
+listview:
+  name: "Engine Images"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "state", "ready", "age", "message"]
+  fields:
+    message:
+      header: "Message:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "message"
+        when:
+        - key: "type"
+          eq: "ready"
+      type: "str"
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "ready"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "deployed":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "Engine Image Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["image", "reference_count", "incompatible", "state", "ready", "message"]
+    rows:
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      incompatible:
+        header: [["Incompatible:", ["main", "infoheader"]]]
+        path: "status#incompatible"
+        type: "bool"
+      message:
+        header: [["Message:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+          - key: "type"
+            eq: "ready"
+        type: "str"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "ready"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+      reference_count:
+        header: [["Reference Count:", ["main", "infoheader"]]]
+        path: "status#refCount"
+        type: "int"
+        formatter: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "deployed":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"

@@ -1,0 +1,42 @@
+kind: "VolumeAttachment"
+api_family: "longhorn.io"
+default_command: "volumeattachments.longhorn.io"
+command:
+- "lhvolumeattachments"
+- "lhvolumeattachment"
+- "lhvolattachments"
+- "lhvolattachment"
+- "lhvolattachs"
+- "lhvolattach"
+listview:
+  name: "Volume Attachments"
+  group: "Storage & Backups"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Volume Attachment Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["volume"]
+    rows:
+      volume:
+        header: [["V", ["main", "infoheader_shortcut"]], ["olume:", ["main", "infoheader"]]]
+        path: "spec#volume"
+        default: "<none>"
+        type: "str"
+  shortcuts:
+    "Open Volume":
+      key: "v"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Volume"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Volume"
+        api_family: "longhorn.io"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#volume"
