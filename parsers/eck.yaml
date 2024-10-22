@@ -2,9 +2,16 @@
   show_in_selector: false
   matchkeys:
   - image_name: "/eck/eck-operator"
+  - image_name: "/apm/apm-server"
+  - image_name: "/elasticsearch/elasticsearch"
   parser_rules:
   - name: "glog"
   - name: "json"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "WARNING:"
+      loglevel: "warning"
 - name: "eck"
   show_in_selector: false
   matchkeys:
