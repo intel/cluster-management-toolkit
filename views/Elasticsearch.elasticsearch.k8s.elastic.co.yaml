@@ -1,0 +1,76 @@
+kind: "Elasticsearch"
+api_family: "elasticsearch.k8s.elastic.co"
+default_command: "elasticsearches"
+command:
+- "elsearches"
+- "elsearch"
+listview:
+  name: "Elastic Searches"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "version", "phase", "health", "age"]
+      sortcolumn: "namespace"
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            ApplyingChanges:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+    health:
+      header: "Health:"
+      path: "status#health"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            green:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Elastic Search Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["version", "phase"]
+    rows:
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              ApplyingChanges:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"

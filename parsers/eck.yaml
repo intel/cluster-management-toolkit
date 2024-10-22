@@ -5,3 +5,21 @@
   parser_rules:
   - name: "glog"
   - name: "json"
+- name: "eck"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kibana/kibana"
+  parser_rules:
+  - name: "glog"
+  - name: "json"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d{4}-\d\d-\d[^]]+\]\[([A-Z]+)\s*\]\[([^]]+)\] (.*)'
+      facility:
+        fields:
+        - 2
+      severity:
+        field: 1
+        transform: "str"
+      message:
+        field: 3
