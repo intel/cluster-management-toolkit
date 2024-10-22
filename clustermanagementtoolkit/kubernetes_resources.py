@@ -430,11 +430,21 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/addons.cluster.x-k8s.io/v1beta1/"],
         "api": "clusterresourcesets",
     },
+    # agent.k8s.elastic.co
+    ("Agent", "agent.k8s.elastic.co"): {
+        "api_paths": ["apis/agent.k8s.elastic.co/v1alpha1/"],
+        "api": "agents",
+    },
     # apiserver.openshift.io
     ("APIRequestCount", "apiserver.openshift.io"): {
         "api_paths": ["apis/apiserver.openshift.io/v1/"],
         "api": "apirequestcounts",
         "namespaced": False,
+    },
+    # apm.k8s.elastic.co
+    ("ApmServer", "apm.k8s.elastic.co"): {
+        "api_paths": ["apis/apm.k8s.elastic.co/v1/"],
+        "api": "apmservers",
     },
     # apps.kubeedge.io
     ("EdgeApplication", "apps.kubeedge.io"): {
@@ -683,6 +693,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/authorization.openshift.io/v1/"],
         "api": "rolebindingrestrictions",
     },
+    # autoscaling.k8s.elastic.co
+    ("ElasticsearchAutoscaler", "autoscaling.k8s.elastic.co"): {
+        "api_paths": ["apis/autoscaling.k8s.elastic.co/v1alpha1/"],
+        "api": "elasticsearchautoscalers",
+    },
     # autoscaling.openshift.io
     ("ClusterAutoscaler", "autoscaling.openshift.io"): {
         "api_paths": ["apis/autoscaling.openshift.io/v1/"],
@@ -706,6 +721,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("Job", "batch.volcano.sh"): {
         "api_paths": ["apis/batch.volcano.sh/v1alpha1/"],
         "api": "jobs",
+    },
+    # beat.k8s.elastic.co
+    ("Beat", "beat.k8s.elastic.co"): {
+        "api_paths": ["apis/beat.k8s.elastic.co/v1beta1/"],
+        "api": "beats",
     },
     # bmc.tinkerbell.org
     ("Job", "bmc.tinkerbell.org"): {
@@ -1661,6 +1681,16 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/dist.kio.kasten.io/v1alpha1/"],
         "api": "distributions",
     },
+    # elasticsearch.k8s.elastic.co
+    ("Elasticsearch", "elasticsearch.k8s.elastic.co"): {
+        "api_paths": ["apis/elasticsearch.k8s.elastic.co/v1/"],
+        "api": "elasticsearches",
+    },
+    # enterprisesearch.k8s.elastic.co
+    ("EnterpriseSearch", "enterprisesearch.k8s.elastic.co"): {
+        "api_paths": ["apis/enterprisesearch.k8s.elastic.co/v1/"],
+        "api": "enterprisesearches",
+    },
     # etcd.database.coreos.com
     ("EtcdCluster", "etcd.database.coreos.com"): {
         "api_paths": ["apis/etcd.database.coreos.com/v1beta2/"],
@@ -2340,6 +2370,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "keplers",
         "namespaced": False,
     },
+    # kibana.k8s.elastic.co
+    ("Kibana", "kibana.k8s.elastic.co"): {
+        "api_paths": ["apis/kibana.k8s.elastic.co/v1/"],
+        "api": "kibanas",
+    },
     # kilo.squat.ai
     ("Peer", "kilo.squat.ai"): {
         "api_paths": ["apis/kilo.squat.ai/v1alpha1/"],
@@ -2689,6 +2724,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/logging.banzaicloud.io/v1beta1/"],
         "api": "outputs",
     },
+    # logstash.k8s.elastic.co
+    ("Logstash", "logstash.k8s.elastic.co"): {
+        "api_paths": ["apis/logstash.k8s.elastic.co/v1alpha1/"],
+        "api": "logstashes",
+    },
     # longhorn.io
     ("BackingImageDataSource", "longhorn.io"): {
         "api_paths": ["apis/longhorn.io/v1beta2/"],
@@ -2952,6 +2992,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/management.loft.sh/v1/"],
         "api": "virtualclustertemplates",
         "namespaced": False,
+    },
+    # maps.k8s.elastic.co
+    ("ElasticMapsServer", "maps.k8s.elastic.co"): {
+        "api_paths": ["apis/maps.k8s.elastic.co/v1alpha1/"],
+        "api": "elasticmapsservers",
     },
     # messaging.knative.dev
     ("Channel", "messaging.knative.dev"): {
@@ -3954,6 +3999,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("SSP", "ssp.kubevirt.io"): {
         "api_paths": ["apis/ssp.kubevirt.io/v1beta2/"],
         "api": "ssps",
+    },
+    # stackconfigpolicy.k8s.elastic.co
+    ("StackConfigPolicy", "stackconfigpolicy.k8s.elastic.co"): {
+        "api_paths": ["apis/stackconfigpolicy.k8s.elastic.co/v1alpha1/"],
+        "api": "stackconfigpolicies",
     },
     # stats.antrea.io
     ("AntreaClusterNetworkPolicyStats", "stats.antrea.io"): {
