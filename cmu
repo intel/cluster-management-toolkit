@@ -7750,7 +7750,7 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
         status, _status_group, _restarts, _message, _age = \
             datagetters.get_container_status(src_statuses, containername)
         if status in ("ContainerCreating", "ErrImagePull",
-                      "ImagePullBackOff", "Pending", "UNKNOWN"):
+                      "ImagePullBackOff", "Pending", "PodInitializing", "UNKNOWN"):
             return Retval.RETURNDONE
         return containerinfoloop(stdscr, obj, kind, info)
 
