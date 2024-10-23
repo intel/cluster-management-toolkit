@@ -24,6 +24,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            Ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
     health:
       header: "Health:"
       path: "status#health"
@@ -41,6 +45,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
+            yellow:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
     version:
       header: "Version:"
       path: "spec#version"
@@ -53,8 +61,29 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["version", "phase"]
+        fields: ["version", "phase", "health"]
     rows:
+      health:
+        header: [["Health:", ["main", "infoheader"]]]
+        path: "status#health"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              green:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              unknown:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              yellow:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -67,6 +96,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              Ready:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"

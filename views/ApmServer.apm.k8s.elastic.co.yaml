@@ -9,7 +9,7 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "status", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "available_nodes", "kibana_status", "elasticsearch_status", "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
@@ -64,24 +64,12 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
-    elasticsearch_status:
-      header: "Elasticsearch Status:"
-      path: "status#elasticsearchAssociationStatus"
-      type: "str"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          mappings:
-            Established:
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            Pending:
+            yellow:
               field_colors:
               - context: "main"
                 type: "status_pending"
-    status:
-      header: "Status:"
+    kibana_status:
+      header: "Kibana Status:"
       path: "status#kibanaAssociationStatus"
       type: "str"
       formatter: "value_mapper"
@@ -108,7 +96,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["kibana_ref", "label_selector", "secret", "version", "count", "status", "service", "available_nodes", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "kibana_ref", "label_selector", "secret", "version", "count", "service", "available_nodes", "kibana_status", "elasticsearch_status", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
@@ -138,6 +126,10 @@ infoview:
         header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
         path: "spec#elasticsearchRef#name"
         default: "<unset>"
+        type: "str"
+      elasticsearch_ref:
+        header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
+        path: "spec#elasticsearchRef#name"
         type: "str"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
@@ -172,20 +164,12 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_unknown"
-      label_selector:
-        header: [["Label Selector:", ["main", "infoheader"]]]
-        path: "status#selector"
-        type: "str"
-      secret:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
-        path: "status#secretTokenSecret"
-        type: "str"
-      service:
-        header: [["Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
-        path: "status#service"
-        type: "str"
-      status:
-        header: [["Status:", ["main", "infoheader"]]]
+              yellow:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      kibana_status:
+        header: [["Kibana Status:", ["main", "infoheader"]]]
         path: "status#kibanaAssociationStatus"
         type: "str"
         formatter: "value_mapper"
@@ -200,6 +184,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        path: "status#selector"
+        type: "str"
+      secret:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        path: "status#secretTokenSecret"
+        type: "str"
+      service:
+        header: [["Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
+        path: "status#service"
+        type: "str"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
@@ -310,6 +306,19 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Open Elasticsearch":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Elasticsearch"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Elasticsearch"
+        api_family: "elasticsearch.k8s.elastic.co"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#elasticsearchRef#name"
     "Open Kibana":
       key: "k"
       modifier: "shift"
