@@ -69,6 +69,7 @@ listview:
     requested_duration:
       header: "Requested Duration:"
       path: "spec#expirationSeconds"
+      default: -1
       type: "age"
       formatter: "age"
       align: "right"
@@ -88,12 +89,14 @@ listview:
         action: "execute"
         action_args:
           command: ["kubectl", "certificate", "approve", "<<<items>>>"]
+          iterate: true
       "Deny Request":
         description: "Deny signing request"
         confirm: true
         action: "execute"
         action_args:
           command: ["kubectl", "certificate", "deny", "<<<items>>>"]
+          iterate: true
 infoview:
   name: "Certificate Signing Request Info"
   infopad:
@@ -162,6 +165,7 @@ infoview:
       requested_duration:
         header: [["Requested Duration:", ["main", "infoheader"]]]
         path: "spec#expirationSeconds"
+        default: -1
         type: "age"
         formatter: "age"
         align: "right"
