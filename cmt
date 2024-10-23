@@ -1329,49 +1329,52 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         if not ca_cert_path:
             ca_cert_path = "/etc/kubernetes/pki/ca.crt"
 
-        input_retval = ansithemeinput([ANSIThemeStr("Warning", "warning"),
-                                       ANSIThemeStr(": Could not find ", "default"),
-                                       ANSIThemeStr("ca.crt", "path"),
-                                       ANSIThemeStr(" or a certificate-controller-token secret; "
-                                                    "try to use ", "default"),
-                                       ANSIThemeStr(ca_cert_path, "path"),
-                                       ANSIThemeStr("? No will abort the installation) [y/",
-                                                    "default"),
-                                       ANSIThemeStr("N", "emphasis"),
-                                       ANSIThemeStr("]: ", "default")])
-        if input_retval.lower() not in ("y", "yes"):
-            ansithemeprint([ANSIThemeStr("\nAborting", "error"),
-                            ANSIThemeStr(": No CA certificate available.", "default")], stderr=True)
-            sys.exit(errno.ENOENT)
+        if not ca_cert_hash:
+            input_retval = ansithemeinput([ANSIThemeStr("Warning", "warning"),
+                                           ANSIThemeStr(": Could not find ", "default"),
+                                           ANSIThemeStr("ca.crt", "path"),
+                                           ANSIThemeStr(" or a certificate-controller-token "
+                                                        "secret; try to use ", "default"),
+                                           ANSIThemeStr(ca_cert_path, "path"),
+                                           ANSIThemeStr("? No will abort the installation) [y/",
+                                                        "default"),
+                                           ANSIThemeStr("N", "emphasis"),
+                                           ANSIThemeStr("]: ", "default")])
+            if input_retval.lower() not in ("y", "yes"):
+                ansithemeprint([ANSIThemeStr("\nAborting", "error"),
+                                ANSIThemeStr(": No CA certificate available.",
+                                             "default")], stderr=True)
+                sys.exit(errno.ENOENT)
 
-        ca_cert = ""
-        ca_cert_hash = ""
+            ca_cert = ""
 
-        try:
-            if (ca_cert := secure_read_string(FilePath(ca_cert_path))):
-                try:
-                    x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
-                except TypeError as e:
-                    if "load_pem_x509_certificate() missing 1 required positional argument: " \
-                            "'backend'" in str(e):
-                        # This is to handle systems that doesn't have the latest version
-                        # of cryptography
-                        # pylint: disable-next=import-outside-toplevel,no-name-in-module
-                        from cryptography.hazmat.primitives import default_backend  # type: ignore
-                        x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"),
-                                                                 backend=default_backend)
-                    else:
-                        raise
-                pubkeybytes_fun = x509obj.public_key().public_bytes
-                pubkeyder = pubkeybytes_fun(encoding=serialization.Encoding.DER,
-                                            format=serialization.PublicFormat.SubjectPublicKeyInfo)
-                ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
-        except FileNotFoundError:
-            pass
-        except FilePathAuditError as e:
-            # This typically means that /etc/kubernetes or /etc/kubernetes/pki doesn't exist
-            if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+            try:
+                if (ca_cert := secure_read_string(FilePath(ca_cert_path))):
+                    try:
+                        x509obj = x509.load_pem_x509_certificate(ca_cert.encode("utf-8"))
+                    except TypeError as e:
+                        if "load_pem_x509_certificate() missing 1 required positional argument: " \
+                                "'backend'" in str(e):
+                            # This is to handle systems that doesn't have the latest version
+                            # of cryptography
+                            # pylint: disable-next=import-outside-toplevel,no-name-in-module
+                            from cryptography.hazmat import primitives  # type: ignore
+                            x509obj = \
+                                x509.load_pem_x509_certificate(ca_cert.encode("utf-8"),
+                                                               backend=primitives.default_backend)
+                        else:
+                            raise
+                    pubkeybytes_fun = x509obj.public_key().public_bytes
+                    pubkeyder = \
+                        pubkeybytes_fun(encoding=serialization.Encoding.DER,
+                                        format=serialization.PublicFormat.SubjectPublicKeyInfo)
+                    ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
+            except FileNotFoundError:
                 pass
+            except FilePathAuditError as e:
+                # This typically means that /etc/kubernetes or /etc/kubernetes/pki doesn't exist
+                if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+                    pass
 
         if not ca_cert_hash:
             ansithemeprint([ANSIThemeStr("\nAborting", "error"),
