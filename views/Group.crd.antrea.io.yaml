@@ -1,12 +1,14 @@
-kind: "ExternalEntity"
+kind: "Group"
 api_family: "crd.antrea.io"
-default_command: "externalentities"
+default_command: "groups"
 command:
-- "ee"
+- "grp"
 listview:
-  name: "External Entities"
+  name: "Groups"
   group: "Antrea"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age"]
-      sortcolumn: "namespace"
+infoview:
+  name: "Group Info"
+  infopad:

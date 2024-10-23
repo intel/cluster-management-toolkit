@@ -1,0 +1,38 @@
+kind: "NodeLatencyMonitor"
+api_family: "crd.antrea.io"
+default_command: "nodelatencymonitors"
+command:
+- "nodelatencymons"
+- "nodelatencymon"
+- "nodelatmons"
+- "nodelatmon"
+- "nlmons"
+- "nlmon"
+listview:
+  name: "Node Latency Monitors"
+  group: "Antrea"
+  field_indexes:
+    Normal:
+      fields: ["name", "ping_interval", "age"]
+  fields:
+    ping_interval:
+      header: "Ping Interval:"
+      path: "spec#pingIntervalSeconds"
+      default: "<unset>"
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Node Latency Monitor Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ping_interval"]
+    rows:
+      ping_interval:
+        header: [["Ping Interval:", ["main", "infoheader"]]]
+        path: "spec#pingIntervalSeconds"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
