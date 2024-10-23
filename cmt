@@ -1368,6 +1368,10 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
                 ca_cert_hash = hashlib.sha256(pubkeyder).hexdigest()
         except FileNotFoundError:
             pass
+        except FilePathAuditError as e:
+            # This typically means that /etc/kubernetes or /etc/kubernetes/pki doesn't exist
+            if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e):
+                pass
 
         if not ca_cert_hash:
             ansithemeprint([ANSIThemeStr("\nAborting", "error"),
