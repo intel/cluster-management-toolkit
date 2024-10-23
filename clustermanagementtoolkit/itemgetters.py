@@ -377,11 +377,21 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
     for item in tmp_vlist:
         newobj: List[Tuple] = []
         for field in fields:
-            tmp = deep_get(item, DictPath(field))
-            if tmp is not None:
-                tmp = str(tmp)
+            if isinstance(field, dict):
+                field_ = deep_get(field, DictPath("field"), "")
+                field_regex = deep_get(field, DictPath("regex"), "")
+                if (tmp := deep_get(item, DictPath(field_))) is not None:
+                    tmp = str(tmp)
+                    if field_regex:
+                        tmp2 = re.match(field_regex, tmp)
+                        tmp = tmp2.group(1)
+                else:
+                    tmp = "<none>"
             else:
-                tmp = "<none>"
+                if (tmp := deep_get(item, DictPath(field))) is not None:
+                    tmp = str(tmp)
+                else:
+                    tmp = "<none>"
             newobj.append(tmp)
         vlist.append(tuple(newobj))
     return vlist

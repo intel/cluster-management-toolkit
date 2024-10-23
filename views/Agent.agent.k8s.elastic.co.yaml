@@ -1,0 +1,159 @@
+kind: "Agent"
+api_family: "agent.k8s.elastic.co"
+default_command: "agents"
+listview:
+  name: "Agents"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "version", "available_nodes", "health", "age"]
+      sortcolumn: "namespace"
+  fields:
+    available_nodes:
+      header: "Available Nodes:"
+      paths:
+      - path: [["status#availableNodes"], ["status#expectedNodes"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+        item_separator:
+          type: "fraction"
+      align: "right"
+    health:
+      header: "Health:"
+      path: "status#health"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            green:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Agent Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["kibana_ref", "version", "available_nodes", "health"]
+    rows:
+      available_nodes:
+        header: [["Available Nodes:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#availableNodes"], ["status#expectedNodes"]]
+          pathtype: "tuple"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "numerical"
+          item_separator:
+            type: "fraction"
+      health:
+        header: [["Health:", ["main", "infoheader"]]]
+        path: "status#health"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              green:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              unknown:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      kibana_ref:
+        header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
+        path: "spec#elasticsearchRef#name"
+        default: "<unset>"
+        type: "str"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Configuration":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show configuration"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Configuration"
+        _pass_obj: true
+        path: "spec#config"
+    "List Elasticsearch statuses":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Elasticsearch statuses"
+      widget: "windowwidget"
+      title: "Elasticsearch Statuses:"
+      headers: ["Namespace:", "Name:", "Status:"]
+      itemgetter: "get_dict_list"
+      itemgetter_args:
+        path: "status#elasticsearchAssociationsStatus"
+        fields:
+        - field: "key"
+          regex: "^([^/]+)/.+"
+        - field: "key"
+          regex: "^[^/]+/(.+)"
+        - "value"
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Elasticsearch"
+        api_family: "elasticsearch.k8s.elastic.co"
+        name_path: 1
+        namespace_path: 0
+    "Open Kibana":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Kibana"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Kibana"
+        api_family: "kibana.k8s.elastic.co"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#kibanaRef#name"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#daemonSet#podTemplate"
