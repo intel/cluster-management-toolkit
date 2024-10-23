@@ -847,9 +847,9 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
                 if expected_exception is not None:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"   kwargs_spec:\n" \
-                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                              f"{yaml_dump(kwargs_spec, base_indent=17)}\n" \
                               f"         kwargs:\n" \
-                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                              f"{yaml_dump(kwargs, base_indent=17)}\n" \
                               f"       expected: {expected_exception}\n"
                     result = False
                     break
@@ -860,18 +860,18 @@ def test_validate_args(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"    kwargs_spec:\n" \
-                                  f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                                  f"{yaml_dump(kwargs_spec, base_indent=17)}\n" \
                                   f"         kwargs:\n" \
-                                  f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                                  f"{yaml_dump(kwargs, base_indent=17)}\n" \
                                   f"       expected: {expected_exception}\n"
                         result = False
                         break
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"   kwargs_spec:\n" \
-                              f"{yaml_dump(kwargs_spec, base_indent = 17)}\n" \
+                              f"{yaml_dump(kwargs_spec, base_indent=17)}\n" \
                               f"         kwargs:\n" \
-                              f"{yaml_dump(kwargs, base_indent = 17)}\n" \
+                              f"{yaml_dump(kwargs, base_indent=17)}\n" \
                               f"      exception: {repr(e).split('(')[0]}\n"
                     result = False
                     break

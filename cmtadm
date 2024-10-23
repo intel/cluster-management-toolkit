@@ -5730,7 +5730,7 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
             if str(e) == "[Errno -5] No address associated with hostname":
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": No address associated with hostname “", "default"),
-                              ANSIThemeStr(f"{controlplane}", "hostname"),
+                                ANSIThemeStr(f"{controlplane}", "hostname"),
                                 ANSIThemeStr("“. Aborting.", "default")], stderr=True)
                 sys.exit(errno.ENOENT)
     return controlplanes

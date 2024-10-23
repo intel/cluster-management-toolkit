@@ -79,7 +79,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               " cmtconfig_dict:\n" \
-                              f"{yaml_dump(cmtconfig_dict, base_indent = 17)}\n" \
+                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
                               f"         result: {tmp}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -91,7 +91,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   " cmtconfig_dict:\n" \
-                                  f"{yaml_dump(cmtconfig_dict, base_indent = 17)}\n" \
+                                  f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
@@ -99,7 +99,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               " cmtconfig_dict:\n" \
-                              f"{yaml_dump(cmtconfig_dict, base_indent = 17)}\n" \
+                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False

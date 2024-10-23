@@ -439,7 +439,7 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
                     field = [DictPath(field)]
 
                 value_ = deep_get_with_fallback(item, field, default)
-                if value_type ==  "key":
+                if value_type == "key":
                     for key in field:
                         if key in item:
                             value = key
@@ -547,7 +547,7 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
                         weight = f"/{weight}"
                     topology = deep_get_with_fallback(selector,
                                                       [DictPath("podAffinityTerm#topologyKey"),
-                                                                DictPath("topologyKey")], "")
+                                                       DictPath("topologyKey")], "")
                     # We are combining a few different policies,
                     # so the expressions can be in various places; not simultaneously though
                     # hence += should be OK.

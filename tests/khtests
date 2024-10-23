@@ -611,7 +611,7 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "           input:\n" \
-                              f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                              f"{yaml_dump(node_data, base_indent=17)}\n" \
                               f"          output: {tmp}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -623,7 +623,7 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   "           input:\n" \
-                                  f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                                  f"{yaml_dump(node_data, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -631,7 +631,7 @@ def test_get_node_status(verbose: bool = False) -> Tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "           input:\n" \
-                              f"{yaml_dump(node_data, base_indent = 17)}\n" \
+                              f"{yaml_dump(node_data, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False

@@ -106,7 +106,7 @@ def test_json_dumps(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "          output:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -223,7 +223,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"          output: {repr(tmp)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -236,7 +236,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata_quoted}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -245,7 +245,7 @@ def test_format_markdown(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -301,7 +301,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
                               f"{dump_themearray(tmp)}\n" \
                               f"        expected: {expected_result}"
@@ -316,7 +316,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -325,7 +325,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -359,7 +359,7 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
                               f"{dump_themearray(tmp)}\n" \
                               f"        expected: {expected_result}"
@@ -373,7 +373,7 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -382,7 +382,7 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -537,7 +537,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
                               f"{dump_themearray(tmp)}\n" \
                               f"        expected: {expected_result}"
@@ -551,7 +551,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -560,7 +560,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -612,7 +612,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
                               f"{dump_themearray(tmp)}\n" \
                               f"        expected: {expected_result}"
@@ -626,7 +626,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -635,7 +635,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -702,9 +702,9 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -716,7 +716,7 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata_quoted}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -725,7 +725,7 @@ def test_format_ini(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -931,9 +931,9 @@ def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -945,7 +945,7 @@ def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__indata__}() did not yield expected result:\n" \
                                   f"           input: \"{indata_quoted}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -954,7 +954,7 @@ def test_format_caddyfile(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__indata__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -1032,9 +1032,9 @@ def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -1046,7 +1046,7 @@ def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"           input: \"{indata_quoted}\"\n" \
                                   "         options:\n" \
-                                  f"{yaml_dump(options, base_indent = 17)}\n" \
+                                  f"{yaml_dump(options, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -1055,7 +1055,7 @@ def test_format_python_traceback(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata_quoted}\"\n" \
                               "         options:\n" \
-                              f"{yaml_dump(options, base_indent = 17)}\n" \
+                              f"{yaml_dump(options, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False

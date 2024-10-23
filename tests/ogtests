@@ -203,13 +203,13 @@ def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               "      mock data:\n" \
-                              f"{yaml_dump(mockdata, base_indent = 17)}\n" \
+                              f"{yaml_dump(mockdata, base_indent=17)}\n" \
                               "         result:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               "       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
                     break
             except Exception as e:
@@ -314,11 +314,11 @@ def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               "         result:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               "       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
                     break
             except Exception as e:
@@ -510,13 +510,13 @@ def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"            obj: {obj}\n" \
                               f"       metadata:\n" \
-                              f"{yaml_dump(metadata, base_indent = 17)}\n" \
+                              f"{yaml_dump(metadata, base_indent=17)}\n" \
                               f"        logfile:\n" \
-                              f"{yaml_dump(logfile, base_indent = 17)}\n" \
+                              f"{yaml_dump(logfile, base_indent=17)}\n" \
                               "         result:\n" \
-                              f"{yaml_dump(tmp, base_indent = 17)}\n" \
+                              f"{yaml_dump(tmp, base_indent=17)}\n" \
                               "       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
                     break
             except Exception as e:

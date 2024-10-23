@@ -555,7 +555,7 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               f"         device: {device}\n" \
                               f"         result: {tmp}\n" \
                               f"       expected: {expected_result}"
@@ -568,7 +568,7 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   "            obj:\n" \
-                                  f"{yaml_dump(obj, base_indent = 17)}\n" \
+                                  f"{yaml_dump(obj, base_indent=17)}\n" \
                                   f"         device: {device}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
@@ -577,7 +577,7 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               f"         device: {device}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
@@ -844,7 +844,7 @@ def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               f"         result: {tmp}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -856,7 +856,7 @@ def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   "            obj:\n" \
-                                  f"{yaml_dump(obj, base_indent = 17)}\n" \
+                                  f"{yaml_dump(obj, base_indent=17)}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
@@ -864,7 +864,7 @@ def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
-                              f"{yaml_dump(obj, base_indent = 17)}\n" \
+                              f"{yaml_dump(obj, base_indent=17)}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False

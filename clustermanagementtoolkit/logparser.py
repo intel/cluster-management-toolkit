@@ -1986,17 +1986,17 @@ def format_key_value(key: str, value: str,
     separator = [ThemeRef("separators", "keyvalue_log")]
     if key in error_keys:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key_error"))] \
-              + separator \
-              + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+            + separator \
+            + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     elif force_severity:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))] \
-              + separator \
-              + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
+            + separator \
+            + [ThemeStr(f"{value}", ThemeAttr("logview", severity_name))]
     else:
         tmp = [ThemeStr(f"{key}", ThemeAttr("types", "key"))]
         if value is not None:
             tmp += separator \
-                   + [ThemeStr(f"{value}", ThemeAttr("types", "value"))]
+                + [ThemeStr(f"{value}", ThemeAttr("types", "value"))]
     return tmp
 
 
@@ -3639,7 +3639,7 @@ def custom_parser(message: str, filters: List[Union[str, Tuple]],
                     _parser_options = {**_filter[1], **options}
                     message, remnants = \
                         custom_line(message, fold_msg=fold_msg, severity=severity,
-                                  options=_parser_options)
+                                    options=_parser_options)
                 elif _filter[0] == "tab_separated":
                     _parser_options = _filter[1]
                     message, severity, facility, remnants = \

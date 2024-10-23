@@ -67,7 +67,7 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {string}\n" \
                               f"  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"{yaml_dump(substitutions, base_indent=17)}\n" \
                               f"         output: {tmp}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -80,7 +80,7 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {string}\n" \
                                   f"  substitutions:\n" \
-                                  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                                  f"{yaml_dump(substitutions, base_indent=17)}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
@@ -89,7 +89,7 @@ def test_substitute_string(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {string}\n" \
                               f"  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"{yaml_dump(substitutions, base_indent=17)}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -125,7 +125,7 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
                 if (tmp := fun(strings, substitutions)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {strings}\n  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"{yaml_dump(substitutions, base_indent=17)}\n" \
                               f"         output: {tmp}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -138,7 +138,7 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   f"          input: {strings}\n" \
                                   f"  substitutions:\n" \
-                                  f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                                  f"{yaml_dump(substitutions, base_indent=17)}\n" \
                                   f"      exception: {type(e)}\n" \
                                   f"       expected: {expected_exception}"
                         result = False
@@ -147,7 +147,7 @@ def test_substitute_list(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {strings}\n" \
                               f"  substitutions:\n" \
-                              f"{yaml_dump(substitutions, base_indent = 17)}\n" \
+                              f"{yaml_dump(substitutions, base_indent=17)}\n" \
                               f"      exception: {type(e)}\n" \
                               f"       expected: {expected_result}"
                     result = False
@@ -841,8 +841,8 @@ def test_age_to_seconds(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (age, expected_result, expected_exception)
         testdata = (
-            ("6d5h43m21s", int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
-            ("5h43m", int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
+            ("6d5h43m21s", int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), None),
+            ("5h43m", int(f"{0 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 0}"), None),
             ("", -1, None),
             ("notanumber", None, ValueError),
             (None, None, TypeError),
@@ -887,14 +887,15 @@ def test_seconds_to_age(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (age, negative_is_skew, expected_result, expected_exception)
         testdata = (
-            (int(f"{8*24*60*60+7*60*60+43*60+21}"), False, "8d", None),
-            (int(f"{6*24*60*60+5*60*60+43*60+21}"), False, "6d5h", None),
-            (int(f"{0*24*60*60+13*60*60+43*60+0}"), False, "13h", None),
-            (int(f"{0*24*60*60+5*60*60+43*60+0}"), False, "5h43m", None),
-            (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
-            (int(f"{0*24*60*60+0*60*60+43*60+1}"), False, "43m1s", None),
+            (int(f"{8 * 24 * 60 * 60 + 7 * 60 * 60 + 43 * 60 + 21}"), False, "8d", None),
+            (int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), False, "6d5h", None),
+            (int(f"{0 * 24 * 60 * 60 + 13 * 60 * 60 + 43 * 60 + 0}"), False, "13h", None),
+            (int(f"{0 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 0}"), False, "5h43m", None),
+            (int(f"{0 * 24 * 60 * 60 + 0 * 60 * 60 + 43 * 60 + 1}"), False, "43m1s", None),
+            (int(f"{0 * 24 * 60 * 60 + 0 * 60 * 60 + 43 * 60 + 1}"), False, "43m1s", None),
             (int("0"), False, "<unset>", None),
-            (int(f"-{0*24*60*60+0*60*60+43*60+1}"), True, "<clock skew detected>", None),
+            (int(f"-{0 * 24 * 60 * 60 + 0 * 60 * 60 + 43 * 60 + 1}"), True,
+             "<clock skew detected>", None),
             (None, False, None, TypeError),
         )
         for indata, negative_is_skew, expected_result, expected_exception in testdata:
@@ -941,9 +942,9 @@ def test_get_since(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (timestamp, expected_exception)
         testdata = (
-            (int(f"{6*24*60*60+5*60*60+43*60+21}"), None),
-            (int(f"{0*24*60*60+5*60*60+43*60+0}"), None),
-            (int(f"{0*24*60*60+0*60*60+43*60+1}"), None),
+            (int(f"{6 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 21}"), None),
+            (int(f"{0 * 24 * 60 * 60 + 5 * 60 * 60 + 43 * 60 + 0}"), None),
+            (int(f"{0 * 24 * 60 * 60 + 0 * 60 * 60 + 43 * 60 + 1}"), None),
             (datetime.now(timezone.utc), None),
             (cmtlib.none_timestamp(), None),
             (None, None),
@@ -1143,7 +1144,7 @@ def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
                 if (tmp := fun(indata)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
+                              f"{yaml_dump(indata, base_indent=17)}\n" \
                               f"          output: {tmp}\n" \
                               f"        expected: {expected_result}"
                     result = False
@@ -1155,7 +1156,7 @@ def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
                     else:
                         message = f"{fun.__name__}() did not yield expected result:\n" \
                                   "           input:\n" \
-                                  f"{yaml_dump(indata, base_indent = 17)}\n" \
+                                  f"{yaml_dump(indata, base_indent=17)}\n" \
                                   f"       exception: {type(e)}\n" \
                                   f"        expected: {expected_exception}"
                         result = False
@@ -1163,7 +1164,7 @@ def test_make_label_selector(verbose: bool = False) -> Tuple[str, bool]:
                 else:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "           input:\n" \
-                              f"{yaml_dump(indata, base_indent = 17)}\n" \
+                              f"{yaml_dump(indata, base_indent=17)}\n" \
                               f"       exception: {type(e)}\n" \
                               f"        expected: {expected_result}"
                     result = False

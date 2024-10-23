@@ -974,7 +974,7 @@ def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, b
                     message = f"{fun.__name__}() did not yield expected status:\n" \
                               f"       input: {arg}\n" \
                               f"     options:\n" \
-                              f"{yaml_dump(options, base_indent = 14)}\n" \
+                              f"{yaml_dump(options, base_indent=14)}\n" \
                               f"      output: {status}\n" \
                               f"    expected: {expected_status}"
                     result = False
@@ -987,7 +987,7 @@ def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, b
                         message = f"{fun.__name__}() did not yield expected status:\n" \
                                   f"       input: {arg}\n" \
                                   f"     options:\n" \
-                                  f"{yaml_dump(options, base_indent = 14)}\n" \
+                                  f"{yaml_dump(options, base_indent=14)}\n" \
                                   f"   exception: {type(e)}\n" \
                                   f"    expected: {expected_exception}"
                         result = False
@@ -996,7 +996,7 @@ def test_validate_argument(verbose: bool = False, **kwargs: Any) -> Tuple[str, b
                     message = f"{fun.__name__}() did not yield expected status:\n" \
                               f"       input: {arg}\n" \
                               f"     options:\n" \
-                              f"{yaml_dump(options, base_indent = 14)}\n" \
+                              f"{yaml_dump(options, base_indent=14)}\n" \
                               f"   exception: {type(e)}\n" \
                               f"    expected: {expected_status}"
                     result = False

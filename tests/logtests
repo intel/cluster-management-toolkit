@@ -354,7 +354,7 @@ def generic_split_severity(valid_indata: Tuple[str], fun: Callable,
             result = False
         else:
             if verbose:
-                print(f"<{indata}, default = {default}>: {fun(indata, default = default)}")
+                print(f"<{indata}, default = {default}>: {fun(indata, default=default)}")
 
     if result:
         indata = "NOT A VALID PREFIX"
@@ -1366,9 +1366,9 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"         output:\n" \
-                              f"{yaml_dump(themearray, base_indent = 17)}\n" \
+                              f"{yaml_dump(themearray, base_indent=17)}\n" \
                               f"       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
             except Exception as e:  # pylint: disable=broad-except
                 if expected_exception is not None:
@@ -1387,7 +1387,7 @@ def test_modinfo(verbose: bool = False) -> Tuple[str, bool]:
                               f"{indata}" \
                               f"      exception: {type(e)}\n" \
                               f"       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
 
     return message, result
@@ -1704,7 +1704,7 @@ def test_directory(verbose: bool = False) -> Tuple[str, bool]:
                               f"{indata}" \
                               f"      exception: {type(e)}\n" \
                               f"       expected:\n" \
-                              f"{yaml_dump(expected_result, base_indent = 17)}"
+                              f"{yaml_dump(expected_result, base_indent=17)}"
                     result = False
 
     return message, result
