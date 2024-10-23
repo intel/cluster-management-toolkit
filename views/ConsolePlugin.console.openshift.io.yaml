@@ -17,19 +17,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "backend_header","backend_service_header", "backend_service_name", "backend_service_namespace", "backend_service_base_path", "backend_service_port", "backend_type", "i18n_header", "i18n_load_type"]
+        fields: ["controller", "backend_header", "backend_service_header", "backend_service_name", "backend_service_namespace", "backend_service_base_path", "backend_service_port", "backend_type", "i18n_header", "i18n_load_type"]
     rows:
       backend_header:
         header: [["Backend:", ["main", "infoheader"]]]
       backend_service_header:
         header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
-      backend_service_base_path:
-        header: [["    Base Path:", ["main", "infoheader"]]]
-        path: "spec#backend#service#basePath"
-        type: "str"
-        formatting:
-          field_colors:
-          - type: "path"
       backend_service_base_path:
         header: [["    Base Path:", ["main", "infoheader"]]]
         path: "spec#backend#service#basePath"
