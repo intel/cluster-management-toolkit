@@ -8,21 +8,131 @@ listview:
   group: "Antrea"
   field_indexes:
     Normal:
-      fields: ["name", "tier", "priority", "desired_nodes", "current_nodes", "age"]
+      fields: ["name", "tier", "priority", "nodes", "phase", "age"]
   fields:
-    current_nodes:
-      header: "Current Nodes:"
-      path: "spec#currentNodesRealized"
-      type: "int"
-    desired_nodes:
-      header: "Desired Nodes:"
-      path: "spec#desiredNodesRealized"
-      type: "int"
+    nodes:
+      header: "Nodes:"
+      paths:
+      - path: [["status#currentNodesRealized"], ["status#desiredNodesRealized"]]
+        pathtype: "tuple"
+        default: [0, 0]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+        field_separators:
+        - type: "fraction"
+      align: "right"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Realized:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
     priority:
       header: "Priority:"
       path: "spec#priority"
       type: "float"
+      formatter: "numerical"
+      align: "right"
     tier:
       header: "Tier:"
       path: "spec#tier"
       type: "str"
+infoview:
+  name: "Cluster Network Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["tier", "priority", "nodes", "phase"]
+    rows:
+      nodes:
+        header: [["Nodes:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#currentNodesRealized"], ["status#desiredNodesRealized"]]
+          pathtype: "tuple"
+          default: [0, 0]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "numerical"
+          field_separators:
+          - type: "fraction"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Realized:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "spec#priority"
+        type: "float"
+        formatter: "numerical"
+      tier:
+        header: [["T", ["main", "infoheader_shortcut"]], ["ier:", ["main", "infoheader"]]]
+        path: "spec#tier"
+        type: "str"
+  shortcuts:
+    "View Ingress rules":
+      key: "i"
+      modifier: "shift"
+      read_only: true
+      helptext: "View ingress rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_obj: true
+        title: "Ingress rules"
+        path: "spec#ingress"
+        include_root: true
+    "View Egress rules":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "View egress rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_obj: true
+        title: "Egress rules"
+        path: "spec#egress"
+        include_root: true
+    "View Applied To rules":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "View applied to rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        _pass_obj: true
+        title: "Applied To rules"
+        path: "spec#appliedTo"
+        include_root: true
+    "Tier":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Tier"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Tier"
+        api_family: "crd.antrea.io"
+        name_path: "spec#tier"

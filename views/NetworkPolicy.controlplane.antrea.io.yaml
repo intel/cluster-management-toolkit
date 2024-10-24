@@ -1,0 +1,124 @@
+kind: "NetworkPolicy"
+api_family: "controlplane.antrea.io"
+default_command: "networkpolicies.controlplane.antrea.io"
+command:
+- "controlplanenetworkpolicies"
+- "controlplanenetworkpolicy"
+- "cpnetworkpolicies"
+- "cpnetworkpolicy"
+- "cpnetpolicies"
+- "cpnetpolicy"
+- "cpnetpols"
+- "cpnetpol"
+listview:
+  name: "Network Policy Infos"
+  group: "Antrea"
+  field_indexes:
+    Normal:
+      fields: ["name", "source_type", "source", "age"]
+  fields:
+    source:
+      header: "Source:"
+      paths:
+      - path: [["sourceRef#namespace"], ["sourceRef#name"]]
+        default: ["<global>", "<unset>"]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "namespace"
+        - type: "generic"
+        field_separators:
+        - type: "namespace"
+    source_type:
+      header: "Source Type:"
+      path: "sourceRef#type"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "kind"
+infoview:
+  name: "Network Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["source_header", "source_type", "source_namespace", "source_name"]
+    rows:
+      source_header:
+        header: [["S", ["main", "infoheader_shortcut"]], ["ource:", ["main", "infoheader"]]]
+      source_name:
+        header: [["  Name:", ["main", "infoheader"]]]
+        path: "sourceRef#name"
+        type: "str"
+      source_namespace:
+        header: [["  Namespace:", ["main", "infoheader"]]]
+        path: "sourceRef#namespace"
+        default: "<global>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      source_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "sourceRef#type"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "kind"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "rules"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "__NetworkPolicyRule"
+      api_family: "controlplane.antrea.io"
+    field_indexes:
+      Normal:
+        fields: ["name", "action", "direction", "enable_logging", "priority"]
+    fields:
+      action:
+        header: "Action:"
+        path: "action"
+        type: "str"
+      direction:
+        header: "Direction:"
+        path: "direction"
+        type: "str"
+      enable_logging:
+        header: "Enable Logging:"
+        path: "enableLogging"
+        type: "bool"
+      name:
+        header: "Name:"
+        path: "name"
+        default: "<unset>"
+        type: "str"
+      priority:
+        header: "Priority:"
+        path: "priority"
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Source":
+      key: "s"
+      modifier: "shift"
+      helptext: "Open info page for source"
+      read_only: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind:
+          path: "sourceRef#type"
+          substitutions:
+            AntreaClusterNetworkPolicy:
+              kind: "ClusterNetworkPolicy"
+              api_family: "crd.antrea.io"
+            K8sNetworkPolicy:
+              kind: "NetworkPolicy"
+              api_family: "networking.k8s.io"
+        name_path: "sourceRef#name"
+        namespace_path: "sourceRef#namespace"

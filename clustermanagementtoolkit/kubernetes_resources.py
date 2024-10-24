@@ -4144,7 +4144,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "namespaced": False,
     },
     # system.antrea.io
-    ("ControllerInfo", "system.antrea.io"): {
+    ("AntreaControllerInfo", "system.antrea.io"): {
         "api_paths": ["apis/system.antrea.io/v1beta1/"],
         "api": "controllerinfos",
         "namespaced": False,

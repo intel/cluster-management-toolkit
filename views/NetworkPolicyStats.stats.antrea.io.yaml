@@ -1,0 +1,36 @@
+kind: "NetworkPolicyStats"
+api_family: "stats.antrea.io"
+default_command: "antreanetworkpolicystats"
+command:
+- "netpolstats"
+listview:
+  name: "Network Policy Stats"
+  group: "Antrea"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "sessions", "packets", "bytes", "age"]
+  fields:
+    bytes:
+      header: "Bytes:"
+      path: "status#bytes"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    packets:
+      header: "Packets:"
+      path: "status#packets"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+    sessions:
+      header: "Sessions:"
+      path: "status#sessions"
+      default: 0
+      type: "int"
+      formatter: "numerical"
+      align: "right"
+infoview:
+  name: "Network Policy Stats Info"
+  infopad:

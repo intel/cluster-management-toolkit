@@ -1,0 +1,100 @@
+kind: "__NetworkPolicyRule"
+api_family: "controlplane.antrea.io"
+default_command: "__"
+infoview:
+  name: "Network Policy Info"
+  infopad:
+    name_path: null
+    row_indexes:
+      Normal:
+        fields: ["name", "action", "direction", "enable_logging", "priority", "from_header", "from_address_groups", "to_header", "to_ipblocks_header", "to_ipblocks_cidr", "services"]
+    rows:
+      action:
+        header: [["Action:", ["main", "infoheader"]]]
+        path: "action"
+        type: "str"
+      direction:
+        header: [["Direction:", ["main", "infoheader"]]]
+        path: "direction"
+        type: "str"
+      enable_logging:
+        header: [["Enable Logging:", ["main", "infoheader"]]]
+        path: "enableLogging"
+        type: "bool"
+      from_address_groups:
+        header: [["  Address Groups:", ["main", "infoheader"]]]
+        path: "from#addressGroups"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+        formatting:
+          ellipsise: 3
+      from_header:
+        header: [["F", ["main", "infoheader_shortcut"]], ["rom:", ["main", "infoheader"]]]
+      name:
+        header: [["Name:", ["main", "infoheader"]]]
+        path: "name"
+        default: "<unset>"
+        type: "str"
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "priority"
+        type: "int"
+        formatter: "numerical"
+      services:
+        header: [["Service:", ["main", "infoheader"]]]
+        paths:
+        - path: "services"
+          pathtype: "items"
+          subpaths:
+          - "port"
+          - "endPort"
+          - "protocol"
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "port"
+          - type: "port"
+          - type: "protocol"
+          field_separators:
+          - type: "range"
+          - type: "service"
+      to_header:
+        header: [["To:", ["main", "infoheader"]]]
+      to_ipblocks_header:
+        header: [["  IP-blocks:", ["main", "infoheader"]]]
+      to_ipblocks_cidr:
+        header: [["    CIDR:", ["main", "infoheader"]]]
+        paths:
+        - path: "to#ipBlocks"
+          pathtype: "items"
+          subpaths:
+          - "cidr#ip"
+          - "cidr#prefixLength"
+          default: ["<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "address"
+          - type: "ipmask"
+  shortcuts:
+    "List Address Groups (From)":
+      key: "f"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Address Groups (From)"
+      widget: "windowwidget"
+      title: "Address Groups (From):"
+      selectable: true
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "from#addressGroups"
+      # Not supported for now
+      sortcolumn: "name"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "AddressGroup"
+        api_family: "controlplane.antrea.io"
+        name_path: 0
