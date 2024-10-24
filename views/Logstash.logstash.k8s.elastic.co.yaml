@@ -1,0 +1,62 @@
+kind: "Logstash"
+api_family: "logstash.k8s.elastic.co"
+default_command: "logstashes"
+listview:
+  name: "Logstashes"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "version", "count", "available_nodes", "health", "age"]
+      sortcolumn: "namespace"
+  fields:
+    available_nodes:
+      header: "Available Nodes:"
+      path: "status#availableNodes"
+      default: 0
+      type: "str"
+      formatter: "numerical"
+      align: "right"
+    count:
+      header: "Count:"
+      paths:
+      - path: [["status#count"], ["spec#count"]]
+        pathtype: "tuple"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+        item_separator:
+          type: "fraction"
+      align: "right"
+    health:
+      header: "Health:"
+      path: "status#health"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            green:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            red:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Logstash Info"
+  infopad:

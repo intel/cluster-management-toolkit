@@ -1,0 +1,148 @@
+kind: "Beat"
+api_family: "beat.k8s.elastic.co"
+default_command: "beats"
+listview:
+  name: "Beats"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "version", "elasticsearch_status", "health", "age"]
+      sortcolumn: "namespace"
+  fields:
+    elasticsearch_status:
+      header: "Elasticsearch Status:"
+      path: "status#elasticsearchAssociationStatus"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Established:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+    health:
+      header: "Health:"
+      path: "status#health"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            green:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            red:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            unknown:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    version:
+      header: "Version:"
+      path: "spec#version"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+infoview:
+  name: "Beat Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["elasticsearch_ref", "version", "elasticsearch_status", "health"]
+    rows:
+      elasticsearch_ref:
+        header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
+      elasticsearch_status:
+        header: [["Elasticsearch Status:", ["main", "infoheader"]]]
+        path: "status#elasticsearchAssociationStatus"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Established:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      health:
+        header: [["Health:", ["main", "infoheader"]]]
+        path: "status#health"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              green:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              red:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              unknown:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+              yellow:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+      version:
+        header: [["Version:", ["main", "infoheader"]]]
+        path: "spec#version"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Open Elasticsearch":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Elasticsearch"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Elasticsearch"
+        api_family: "elasticsearch.k8s.elastic.co"
+        namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
+        name_path: "spec#elasticsearchRef#name"
+    "Pod template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Pod template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Pod template"
+        _pass_obj: true
+        path: "spec#podTemplate"

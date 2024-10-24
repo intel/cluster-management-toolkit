@@ -60,6 +60,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            red:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
             unknown:
               field_colors:
               - context: "main"
@@ -124,13 +128,30 @@ infoview:
             type: "fraction"
       kibana_ref:
         header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
-        path: "spec#elasticsearchRef#name"
-        default: "<unset>"
-        type: "str"
+        paths:
+        - path: [["spec#kibanaRef#namespace", "metadata#namespace"], ["spec#kibanaRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
       elasticsearch_ref:
         header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
-        path: "spec#elasticsearchRef#name"
-        type: "str"
+        paths:
+        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
@@ -160,6 +181,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              red:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
               unknown:
                 field_colors:
                 - context: "main"
@@ -317,7 +342,7 @@ infoview:
         _pass_obj: true
         kind: "Elasticsearch"
         api_family: "elasticsearch.k8s.elastic.co"
-        namespace_path: "metadata#namespace"
+        namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
     "Open Kibana":
       key: "k"
@@ -330,7 +355,7 @@ infoview:
         _pass_obj: true
         kind: "Kibana"
         api_family: "kibana.k8s.elastic.co"
-        namespace_path: "metadata#namespace"
+        namespace_path: ["spec#kibanaRef#namespace", "metadata#namespace"]
         name_path: "spec#kibanaRef#name"
     "Open Secret":
       key: "s"

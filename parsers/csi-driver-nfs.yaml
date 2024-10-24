@@ -12,6 +12,20 @@
 - name: "csi-driver-nfs"
   show_in_selector: false
   matchkeys:
+  - image_name: "/sig-storage/csi-provisioner"
+  parser_rules:
+  - name: "glog"
+  parser_rules:
+  - name: "glog"
+  - name: "key_value_with_leading_message"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Version: "
+      loglevel: "notice"
+- name: "csi-driver-nfs"
+  show_in_selector: false
+  matchkeys:
   - pod_name: "csi-nfs"
   parser_rules:
   - name: "glog"

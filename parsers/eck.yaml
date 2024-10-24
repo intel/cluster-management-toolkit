@@ -83,3 +83,14 @@
         matchline: "any"
         format_block_end: true
       loglevel: "notice"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "WARNING:"
+      loglevel: "warning"
+    - matchtype: "startswith"
+      matchkey: "Error:"
+      loglevel: "error"
+    - matchtype: "startswith"
+      matchkey: "Elastic Enterprise Search version="
+      loglevel: "notice"

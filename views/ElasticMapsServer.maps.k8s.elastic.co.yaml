@@ -1,20 +1,17 @@
-kind: "Kibana"
-api_family: "kibana.k8s.elastic.co"
-default_command: "kibanas"
+kind: "ElasticMapsServer"
+api_family: "maps.k8s.elastic.co"
+default_command: "elasticmapsservers"
+command:
+- "elmapsrvs"
+- "elmapsrv"
 listview:
-  name: "Kibanas"
+  name: "Elastic Maps Servers"
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "status", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "status", "health", "age"]
       sortcolumn: "namespace"
   fields:
-    available_nodes:
-      header: "Available Nodes:"
-      path: "status#availableNodes"
-      type: "str"
-      formatter: "numerical"
-      align: "right"
     count:
       header: "Count:"
       paths:
@@ -49,22 +46,6 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
-    elasticsearch_status:
-      header: "Elasticsearch Status:"
-      path: "status#elasticsearchAssociationStatus"
-      type: "str"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          mappings:
-            Established:
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            Pending:
-              field_colors:
-              - context: "main"
-                type: "status_pending"
     status:
       header: "Status:"
       path: "status#associationStatus"
@@ -89,11 +70,11 @@ listview:
         field_colors:
         - type: "version"
 infoview:
-  name: "Kibana Info"
+  name: "Elastic Maps Server Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "label_selector", "version", "count", "status", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "version", "count", "status", "health"]
     rows:
       count:
         header: [["Count:", ["main", "infoheader"]]]
@@ -109,20 +90,17 @@ infoview:
             type: "fraction"
       elasticsearch_ref:
         header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
-        path: "status#elasticsearchAssociationStatus"
-        type: "str"
-        formatter: "value_mapper"
+        paths:
+        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
         formatting:
-          mapping:
-            mappings:
-              Established:
-                field_colors:
-                - context: "main"
-                  type: "status_ok"
-              Pending:
-                field_colors:
-                - context: "main"
-                  type: "status_pending"
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
@@ -164,10 +142,6 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
-      label_selector:
-        header: [["Label Selector:", ["main", "infoheader"]]]
-        path: "status#selector"
-        type: "str"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#associationStatus"
@@ -191,108 +165,6 @@ infoview:
         formatting:
           field_colors:
           - type: "version"
-  listpad:
-    listgetter: "generic_listgetter"
-    listgetter_args:
-      _kind: "Pod"
-      _label_selector_path: "status#selector"
-    infogetter: "generic_infogetter"
-    on_activation:
-      call: "resourceinfodispatch"
-      kind: "Pod"
-    field_indexes:
-      Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
-        sortcolumn: "pod_status"
-      Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
-        sortcolumn: "pod_status"
-      Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
-        sortcolumn: "pod_status"
-    fields:
-      containers:
-        header: "Containers:"
-        paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "generic"
-          - type: "version"
-          field_separators:
-          - type: "version"
-      controller:
-        header: "Controller:"
-        paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
-          field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-      last_restart:
-        header: "Latest Restart:"
-        paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
-        default: -1
-        formatter: "age"
-        align: "right"
-      node_name:
-        header: "Node:"
-        path: "spec#nodeName"
-        type: "host"
-        default: "<none>"
-        formatting:
-          field_colors:
-          - type: "host"
-      pod_ip:
-        header: "Pod IP:"
-        path: "status#podIP"
-        default: "<unset>"
-        type: "address"
-        formatter: "address"
-      restarts:
-        header: "Restarts:"
-        paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
-        formatting:
-          field_colors:
-          - type: "numerical"
-        align: "right"
-        default: 0
   shortcuts:
     "Open Elasticsearch":
       key: "e"

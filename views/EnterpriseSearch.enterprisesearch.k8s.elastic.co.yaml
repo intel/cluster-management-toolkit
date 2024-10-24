@@ -1,20 +1,14 @@
-kind: "Kibana"
-api_family: "kibana.k8s.elastic.co"
-default_command: "kibanas"
+kind: "EnterpriseSearch"
+api_family: "enterprisesearch.k8s.elastic.co"
+default_command: "enterprisesearches"
 listview:
-  name: "Kibanas"
+  name: "Enterprise Searches"
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "status", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "status", "health", "age"]
       sortcolumn: "namespace"
   fields:
-    available_nodes:
-      header: "Available Nodes:"
-      path: "status#availableNodes"
-      type: "str"
-      formatter: "numerical"
-      align: "right"
     count:
       header: "Count:"
       paths:
@@ -49,22 +43,6 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
-    elasticsearch_status:
-      header: "Elasticsearch Status:"
-      path: "status#elasticsearchAssociationStatus"
-      type: "str"
-      formatter: "value_mapper"
-      formatting:
-        mapping:
-          mappings:
-            Established:
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            Pending:
-              field_colors:
-              - context: "main"
-                type: "status_pending"
     status:
       header: "Status:"
       path: "status#associationStatus"
@@ -89,11 +67,11 @@ listview:
         field_colors:
         - type: "version"
 infoview:
-  name: "Kibana Info"
+  name: "Enterprise Search Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "label_selector", "version", "count", "status", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "label_selector", "version", "count", "service", "status", "health"]
     rows:
       count:
         header: [["Count:", ["main", "infoheader"]]]
@@ -167,6 +145,10 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         path: "status#selector"
+        type: "str"
+      service:
+        header: [["Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
+        path: "status#service"
         type: "str"
       status:
         header: [["Status:", ["main", "infoheader"]]]
@@ -307,6 +289,17 @@ infoview:
         api_family: "elasticsearch.k8s.elastic.co"
         namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
+    "Open Service":
+      key: "v"
+      read_only: true
+      helptext: "Open info page for Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        namespace_path: "metadata#namespace"
+        name_path: "status#service"
     "Pod template":
       key: "t"
       modifier: "shift"
