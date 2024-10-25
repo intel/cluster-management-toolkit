@@ -9,9 +9,16 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "phase", "health", "age"]
+      fields: ["namespace", "name", "version", "available_nodes", "phase", "health", "age"]
       sortcolumn: "namespace"
   fields:
+    available_nodes:
+      header: "Available Nodes:"
+      path: "status#availableNodes"
+      default: 0
+      type: "str"
+      formatter: "numerical"
+      align: "right"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -52,7 +59,7 @@ listview:
             yellow:
               field_colors:
               - context: "main"
-                type: "status_pending"
+                type: "status_degraded"
     version:
       header: "Version:"
       path: "spec#version"
@@ -65,8 +72,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["version", "phase", "health"]
+        fields: ["version", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "update_strategy_header", "update_strategy_max_surge", "update_strategy_max_unavailable", "available_nodes", "phase", "health"]
     rows:
+      available_nodes:
+        header: [["Available Nodes:", ["main", "infoheader"]]]
+        path: "status#availableNodes"
+        default: 0
+        type: "str"
+        formatter: "numerical"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -91,7 +104,36 @@ infoview:
               yellow:
                 field_colors:
                 - context: "main"
-                  type: "status_pending"
+                  type: "status_degraded"
+      http_header:
+        header: [["HTTP:", ["main", "infoheader"]]]
+      http_service_header:
+        header: [["  Service:", ["main", "infoheader"]]]
+      http_service_type:
+        header: [["    Type:", ["main", "infoheader"]]]
+        path: "spec#http#service#spec#type"
+        type: "str"
+      http_tls_header:
+        header: [["  TLS:", ["main", "infoheader"]]]
+      http_tls_self_signed_alt_names:
+        header: [["      Alt Names:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      http_tls_self_signed_enabled:
+        header: [["      Disabled:", ["main", "infoheader"]]]
+        path: "spec#http#tls#selfSignedCertificate#disabled"
+        type: "str"
+      http_tls_self_signed_header:
+        header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -108,6 +150,20 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+      update_strategy_header:
+        header: [["Update Strategy:", ["main", "infoheader"]]]
+      update_strategy_max_surge:
+        header: [["  Max Surge:", ["main", "infoheader"]]]
+        path: "spec#updateStrategy#changeBudget#maxSurge"
+        type: "int"
+        default: 1
+        formatter: "numerical"
+      update_strategy_max_unavailable:
+        header: [["  Max Unavailable:", ["main", "infoheader"]]]
+        path: "spec#updateStrategy#changeBudget#maxUnavailable"
+        type: "int"
+        default: -1
+        formatter: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"

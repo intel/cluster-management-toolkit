@@ -46,6 +46,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
+            yellow:
+              field_colors:
+              - context: "main"
+                type: "status_degraded"
     version:
       header: "Version:"
       path: "spec#version"
@@ -58,7 +62,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "version", "elasticsearch_status", "health"]
+        fields: ["type", "elasticsearch_ref", "kibana_ref", "version", "elasticsearch_status", "health"]
     rows:
       elasticsearch_ref:
         header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
@@ -113,7 +117,24 @@ infoview:
               yellow:
                 field_colors:
                 - context: "main"
-                  type: "status_pending"
+                  type: "status_degraded"
+      kibana_ref:
+        header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#kibanaRef#namespace", "metadata#namespace"], ["spec#kibanaRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
@@ -121,6 +142,35 @@ infoview:
         formatting:
           field_colors:
           - type: "version"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      multipath: "spec#config"
+      subpaths:
+      - "heartbeat.monitors"
+      - "filebeat.inputs"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["type", "schedule", "hosts_or_paths"]
+        sortcolumn: "type"
+    fields:
+      hosts_or_paths:
+        header: "Hosts/Paths:"
+        paths:
+        - path: ["hosts", "paths"]
+          pathtype: "list"
+        type: "raw"
+        formatter: "list"
+      schedule:
+        header: "Schedule:"
+        path: "schedule"
+        default: "<unset>"
+        type: "str"
+      type:
+        header: "Type:"
+        path: "type"
+        type: "str"
   shortcuts:
     "Open Elasticsearch":
       key: "e"
@@ -135,6 +185,19 @@ infoview:
         api_family: "elasticsearch.k8s.elastic.co"
         namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
+    "Open Kibana":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Kibana"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Kibana"
+        api_family: "kibana.k8s.elastic.co"
+        namespace_path: ["spec#kibanaRef#namespace", "metadata#namespace"]
+        name_path: "spec#kibanaRef#name"
     "Pod template":
       key: "t"
       modifier: "shift"
@@ -145,4 +208,4 @@ infoview:
       action_args:
         title: "Pod template"
         _pass_obj: true
-        path: "spec#podTemplate"
+        path: "spec#deployment#podTemplate"

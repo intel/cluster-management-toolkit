@@ -219,6 +219,9 @@ color_pairs_curses:
   status_ok:
     unselected: [["green", "normal"], ["black", "normal"]]
     selected: [["green", "normal"], ["white", "normal"]]
+  status_degraded:
+    unselected: [["yellow", "bright"], ["black", "normal"]]
+    selected: [["yellow", "normal"], ["white", "normal"]]
   status_pending:
     unselected: [["cyan", "bright"], ["black", "normal"]]
     selected: [["cyan", "normal"], ["white", "normal"]]
@@ -709,6 +712,9 @@ main:
   status_ok:
     unselected: ["status_ok", "bold"]
     selected: "status_ok"
+  status_degraded:
+    unselected: ["status_degraded", "bold"]
+    selected: "status_degraded"
   status_pending: "status_pending"
   status_done: "status_done"
   format_ok: ["log_format_ok", "bold"]

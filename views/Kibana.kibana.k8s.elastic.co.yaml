@@ -49,6 +49,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
+            yellow:
+              field_colors:
+              - context: "main"
+                type: "status_degraded"
     elasticsearch_status:
       header: "Elasticsearch Status:"
       path: "status#elasticsearchAssociationStatus"
@@ -93,8 +97,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "label_selector", "version", "count", "status", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "label_selector", "version", "count", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "available_nodes", "status", "elasticsearch_status", "health"]
     rows:
+      available_nodes:
+        header: [["Available Nodes:", ["main", "infoheader"]]]
+        path: "status#availableNodes"
+        default: 0
+        type: "str"
+        formatter: "numerical"
+        align: "right"
       count:
         header: [["Count:", ["main", "infoheader"]]]
         paths:
@@ -163,7 +174,36 @@ infoview:
               yellow:
                 field_colors:
                 - context: "main"
-                  type: "status_pending"
+                  type: "status_degraded"
+      http_header:
+        header: [["HTTP:", ["main", "infoheader"]]]
+      http_service_header:
+        header: [["  Service:", ["main", "infoheader"]]]
+      http_service_type:
+        header: [["    Type:", ["main", "infoheader"]]]
+        path: "spec#http#service#spec#type"
+        type: "str"
+      http_tls_header:
+        header: [["  TLS:", ["main", "infoheader"]]]
+      http_tls_self_signed_alt_names:
+        header: [["      Alt Names:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "keyvalue"
+      http_tls_self_signed_enabled:
+        header: [["      Disabled:", ["main", "infoheader"]]]
+        path: "spec#http#tls#selfSignedCertificate#disabled"
+        type: "str"
+      http_tls_self_signed_header:
+        header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         path: "status#selector"

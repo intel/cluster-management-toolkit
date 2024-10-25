@@ -2091,7 +2091,19 @@ def listgetter_path(obj: Dict, **kwargs: Any) -> Tuple[Union[Dict, List[Dict]], 
     rename_bare = deep_get(kwargs, DictPath("rename_bare"), None)
     flatten_dicts = deep_get(kwargs, DictPath("flatten_dicts"), False)
     paths = deep_get(kwargs, DictPath("paths"))
+    multipath = deep_get(kwargs, DictPath("multipath"))
     join_key = deep_get(kwargs, DictPath("join_key"))
+
+    # A multipath is a path to a dict that in turn contains lists, where you'd want the name
+    # of the path containing the lists as a newly created key
+    if multipath is not None:
+        subpaths = deep_get(kwargs, DictPath("subpaths"))
+        for path in subpaths:
+            for item in deep_get(obj, DictPath(f"{multipath}#{path}"), []):
+                tmp = copy.deepcopy(item)
+                tmp["_key"] = path
+                vlist.append(tmp)
+        return vlist, 200
 
     # pylint: disable-next=too-many-nested-blocks
     if paths is not None:

@@ -1186,7 +1186,15 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     _values.append((rangevals, "raw"))
                 elif ptype == "key_value":
                     value = []
-                    for _key, _value in deep_get_with_fallback(obj, path, {}).items():
+                    tmp = deep_get_with_fallback(obj, path, {})
+                    if isinstance(tmp, list):
+                        tmp2 = {}
+                        for item in tmp:
+                            if not isinstance(item, dict):
+                                break
+                            tmp2 = {**tmp2, **item}
+                        tmp = tmp2
+                    for _key, _value in tmp.items():
                         subpaths = deep_get(_path, DictPath("subpaths"), [])
                         if subpaths:
                             _value = deep_get_with_fallback(_value, subpaths)
