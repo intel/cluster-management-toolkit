@@ -1606,13 +1606,16 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                     _regexes = deep_get(_path, DictPath("regex"), [])
                     if isinstance(_regexes, str):
                         _regexes = [_regexes]
-                    for _regex in _regexes:
-                        _tmp = re.match(_regex, _raw)
-                        if _tmp is not None:
-                            for group in _tmp.groups():
-                                if group is not None:
-                                    value.append(group)
-                            break
+                    if _raw is not None and _raw:
+                        for _regex in _regexes:
+                            _tmp = re.match(_regex, _raw)
+                            if _tmp is not None:
+                                for group in _tmp.groups():
+                                    if group is not None:
+                                        value.append(group)
+                                break
+                    elif default:
+                        value = default
                     value = tuple(value)
                     _values.append((value, "raw"))
                 elif ptype == "tuple":
