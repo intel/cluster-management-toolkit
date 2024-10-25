@@ -176,6 +176,12 @@ unhack_sources:
 # --exclude-rule generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980
 # is necessary since it triggers on every single mention of the word secret
 # (which occurs a lot in various Kubernetes API names).
+# --exclude-rule python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2
+# is needed since it flags the risk of cross-site scripting in a file that is:
+# a.) Not used to template HTML (it's templating YAML)
+# b.) Not accepting external input (it's used by the build-system)
+semgrep_flags := --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980"
+semgrep_flags += --exclude-rule "python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2"
 semgrep: unhack_sources
 	@cmd=semgrep ;\
 	if ! command -v $$cmd > /dev/null 2> /dev/null; then \
@@ -186,7 +192,7 @@ semgrep: unhack_sources
 	printf -- "Note: if this is taking a very long time you might be behind a proxy;\n" ;\
 	printf -- "if that's the case you need to set the environment variable https_proxy\n\n" ;\
 	(cd tests/modified_repo ;\
-	 $$cmd scan --exclude-rule "generic.secrets.security.detected-generic-secret.detected-generic-secret.semgrep-legacy.30980" --timeout=0 --no-git-ignore)
+	 $$cmd scan $(semgrep_flags) --timeout=0 --no-git-ignore)
 
 bandit:
 	@cmd=bandit ;\
