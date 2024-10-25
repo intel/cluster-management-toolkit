@@ -47,9 +47,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_degraded"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     status:
       header: "Status:"
       path: "status#associationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -63,6 +68,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -108,6 +117,7 @@ infoview:
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -121,6 +131,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -146,9 +160,14 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         path: "status#selector"
+        default: "<unset>"
         type: "str"
       service:
         header: [["Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
@@ -182,6 +201,7 @@ infoview:
     listgetter_args:
       _kind: "Pod"
       _label_selector_path: "status#selector"
+      _none_on_empty_selector: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"

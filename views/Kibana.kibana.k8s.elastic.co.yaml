@@ -53,9 +53,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_degraded"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     elasticsearch_status:
       header: "Elasticsearch Status:"
       path: "status#elasticsearchAssociationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -69,9 +74,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     status:
       header: "Status:"
       path: "status#associationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -85,6 +95,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -120,23 +134,21 @@ infoview:
             type: "fraction"
       elasticsearch_ref:
         header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
-        path: "status#elasticsearchAssociationStatus"
-        type: "str"
-        formatter: "value_mapper"
+        paths:
+        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>", "<unset>"]
+        formatter: "list"
         formatting:
-          mapping:
-            mappings:
-              Established:
-                field_colors:
-                - context: "main"
-                  type: "status_ok"
-              Pending:
-                field_colors:
-                - context: "main"
-                  type: "status_pending"
+          field_colors:
+          - type: "namespace"
+          - type: "generic"
+          field_separators:
+          - type: "namespace"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -150,6 +162,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -175,6 +191,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -182,6 +202,7 @@ infoview:
       http_service_type:
         header: [["    Type:", ["main", "infoheader"]]]
         path: "spec#http#service#spec#type"
+        default: "<unset>"
         type: "str"
       http_tls_header:
         header: [["  TLS:", ["main", "infoheader"]]]
@@ -201,6 +222,7 @@ infoview:
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
+        default: "<unset>"
         type: "str"
       http_tls_self_signed_header:
         header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
@@ -236,6 +258,7 @@ infoview:
     listgetter_args:
       _kind: "Pod"
       _label_selector_path: "status#selector"
+      _none_on_empty_selector: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
@@ -334,6 +357,17 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Config":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Config"
+        _pass_obj: true
+        path: "spec#config"
     "Open Elasticsearch":
       key: "e"
       modifier: "shift"

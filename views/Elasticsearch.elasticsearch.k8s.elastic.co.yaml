@@ -60,6 +60,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_degraded"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -105,6 +109,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -112,6 +120,7 @@ infoview:
       http_service_type:
         header: [["    Type:", ["main", "infoheader"]]]
         path: "spec#http#service#spec#type"
+        default: "<unset>"
         type: "str"
       http_tls_header:
         header: [["  TLS:", ["main", "infoheader"]]]
@@ -131,6 +140,7 @@ infoview:
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
+        default: "<unset>"
         type: "str"
       http_tls_self_signed_header:
         header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]

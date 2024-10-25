@@ -50,9 +50,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_degraded"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     status:
       header: "Status:"
       path: "status#associationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -66,6 +71,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -108,6 +117,7 @@ infoview:
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -121,6 +131,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -146,9 +160,14 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#associationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -162,6 +181,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"

@@ -34,6 +34,7 @@ listview:
     elasticsearch_status:
       header: "Elasticsearch Status:"
       path: "status#elasticsearchAssociationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -47,6 +48,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -72,9 +77,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_degraded"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     kibana_status:
       header: "Kibana Status:"
       path: "status#kibanaAssociationStatus"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -88,6 +98,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -142,6 +156,7 @@ infoview:
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -155,6 +170,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -180,6 +199,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -187,6 +210,7 @@ infoview:
       http_service_type:
         header: [["    Type:", ["main", "infoheader"]]]
         path: "spec#http#service#spec#type"
+        default: "<unset>"
         type: "str"
       http_tls_header:
         header: [["  TLS:", ["main", "infoheader"]]]
@@ -206,6 +230,7 @@ infoview:
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
+        default: "<unset>"
         type: "str"
       http_tls_self_signed_header:
         header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
@@ -225,6 +250,7 @@ infoview:
       kibana_status:
         header: [["Kibana Status:", ["main", "infoheader"]]]
         path: "status#kibanaAssociationStatus"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -238,6 +264,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         path: "status#selector"
@@ -262,6 +292,7 @@ infoview:
     listgetter_args:
       _kind: "Pod"
       _label_selector_path: "status#selector"
+      _none_on_empty_selector: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"

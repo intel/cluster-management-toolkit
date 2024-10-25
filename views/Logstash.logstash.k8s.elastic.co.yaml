@@ -50,6 +50,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_unknown"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
@@ -63,7 +67,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["version", "count", "update_strategy_header", "update_strategy_max_surge", "update_strategy_max_unavailable", "available_nodes", "health"]
+        fields: ["version", "count", "loglevel", "pipeline_workers", "update_strategy_header", "update_strategy_max_surge", "update_strategy_max_unavailable", "available_nodes", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
@@ -110,6 +114,21 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_degraded"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+      loglevel:
+        header: [["Loglevel:", ["main", "infoheader"]]]
+        path: "spec#config#log.level"
+        default: "<unset>"
+        type: "str"
+      pipeline_workers:
+        header: [["Pipeline Workers:", ["main", "infoheader"]]]
+        path: "spec#config#pipeline.workers"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
       update_strategy_header:
         header: [["Update Strategy:", ["main", "infoheader"]]]
       update_strategy_max_surge:
