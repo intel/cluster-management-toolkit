@@ -22,6 +22,7 @@ listview:
     phase:
       header: "Phase:"
       path: "status#phase"
+      default: "<unset>"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -31,10 +32,18 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            Error:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
             Ready:
               field_colors:
               - context: "main"
                 type: "status_ok"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -71,6 +80,13 @@ listview:
       formatting:
         field_colors:
         - type: "version"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
 infoview:
   name: "Elastic Search Info"
   infopad:
@@ -147,6 +163,7 @@ infoview:
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -156,10 +173,18 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              Error:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
               Ready:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       update_strategy_header:
         header: [["Update Strategy:", ["main", "infoheader"]]]
       update_strategy_max_surge:

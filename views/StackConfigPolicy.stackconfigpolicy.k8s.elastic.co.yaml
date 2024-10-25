@@ -1,0 +1,143 @@
+kind: "StackConfigPolicy"
+api_family: "stackconfigpolicy.k8s.elastic.co"
+default_command: "stackconfigpolicies"
+command:
+- "stackconfpols"
+- "stackconfpol"
+listview:
+  name: "Stack Config Policies"
+  group: "Logging"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "ready", "phase", "age"]
+      sortcolumn: "namespace"
+  fields:
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      default: "<unset>"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            ApplyingChanges:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Error:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            Ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
+    ready:
+      header: "Ready:"
+      paths:
+      - path: "status#ready"
+        pathtype: "regex"
+        regex: "^(\\d+):(\\d+)"
+        default: ["0", "0"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+        field_separators:
+        - type: "fraction"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Stack Config Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector", "ready", "phase"]
+    rows:
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#resourceSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        default: "<unset>"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              ApplyingChanges:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Error:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              Ready:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+      ready:
+        header: [["Ready:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#ready"
+          pathtype: "regex"
+          regex: "^(\\d+):(\\d+)"
+          default: ["0", "0"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "numerical"
+          field_separators:
+          - type: "fraction"
+  shortcuts:
+    "Elasticsearch Config":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Elasticsearch config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Elasticsearch config"
+        _pass_obj: true
+        path: "spec#elasticsearch"
+    "Kibana Config":
+      key: "k"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Kibana config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Kibana config"
+        _pass_obj: true
+        path: "spec#kibana"
