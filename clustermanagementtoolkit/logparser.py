@@ -2075,8 +2075,8 @@ def key_value(message: str, **kwargs: Any) -> Tuple[str, LogLevel, str,
     collector_bullets = deep_get(options, DictPath("collector_bullets"), False)
     is_event: bool = deep_get(options, DictPath("is_event"), False)
 
-    # Split all key=value pairs.
-    key_value_regex = re.compile(r"^(.*?)=(.*)")
+    # Split all key=value pairs. Make sure not to process "=="
+    key_value_regex = re.compile(r"^(.*?[^=])=($|[^=].*$)")
     tmp = re.findall(r"(?:\".*?\"|\S)+", message.replace("\\\"", "<<<quote>>>"))
     # pylint: disable-next=too-many-nested-blocks
     if tmp is not None:

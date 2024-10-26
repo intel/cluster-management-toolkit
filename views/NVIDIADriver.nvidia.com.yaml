@@ -1,0 +1,43 @@
+kind: "NVIDIADriver"
+api_family: "nvidia.com"
+default_command: "nvidiadrivers"
+command:
+- "nvidiadrvs"
+- "nvidiadrv"
+- "nvdrvs"
+- "nvdrv"
+listview:
+  name: "NVIDIA Drivers"
+  group: "Accelerators"
+  field_indexes:
+    Normal:
+      fields: ["name", "driver_type", "state", "age"]
+  fields:
+    driver_type:
+      header: "Driver Type:"
+      path: "spec#driverType"
+      default: "gpu"
+      type: "str"
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            ignored:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            notReady:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+infoview:
+  name: "NVIDIA Driver Info"
+  infopad:

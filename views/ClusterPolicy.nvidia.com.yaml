@@ -11,7 +11,7 @@ command:
 - "nvclrpol"
 listview:
   name: "Cluster Policies"
-  group: "API & Extendability"
+  group: "Accelerators"
   field_indexes:
     Normal:
       fields: ["name", "state", "age"]
@@ -24,10 +24,18 @@ listview:
       formatting:
         mapping:
           mappings:
+            ignored:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
             notReady:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+            ready:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
 infoview:
   name: "Cluster Policy Info"
   infopad:

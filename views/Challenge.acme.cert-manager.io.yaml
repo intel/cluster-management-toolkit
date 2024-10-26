@@ -6,5 +6,46 @@ listview:
   group: "Certificate Management"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "age"]
+      fields: ["namespace", "name", "state", "age"]
       sortcolumn: "namespace"
+  fields:
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            errored:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            expired:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            invalid:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+            pending:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            processing:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            ready:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            valid:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            __default:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
