@@ -1,0 +1,207 @@
+kind: "TLSContext"
+api_family: "getambassador.io"
+default_command: "tlscontexts"
+listview:
+  name: "TLS Contexts"
+  group: "Network"
+  field_indexes:
+    Wide:
+      fields: ["namespace", "name", "secret", "min_tls_version", "max_tls_version", "hosts", "age"]
+    Normal:
+      fields: ["namespace", "name", "secret", "min_tls_version", "max_tls_version", "age"]
+  fields:
+    hosts:
+      header: "Hosts:"
+      path: "spec#hosts"
+      type: "raw"
+      formatter: "list"
+    max_tls_version:
+      header: "Max TLS Version:"
+      path: "spec#max_tls_version"
+      default: "v1.3"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+    min_tls_version:
+      header: "Min TLS Version:"
+      path: "spec#min_tls_version"
+      default: "v1.0"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "version"
+    secret:
+      header: "Secret:"
+      path: "spec#secret"
+      type: "str"
+infoview:
+  name: "TLS Context Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ambassador_id", "hosts", "sni", "min_tls_version", "max_tls_version", "tls_secret", "ca_secret", "cert_revocation_list_secret", "secret_namespacing", "cert_required", "alpn_protocols", "tls_cipher_suites", "tls_ecdh_curves", "cert_chain_file", "cacert_chain_file", "private_key_file"]
+    rows:
+      alpn_protocols:
+        header: [["ALPN Protocols:", ["main", "infoheader"]]]
+        path: "spec#alpn_protocols"
+        default: "<unset>"
+        type: "str"
+      ambassador_id:
+        header: [["Ambassador ID:", ["main", "infoheader"]]]
+        path: "spec#ambassador_id"
+        type: "raw"
+        formatter: "list"
+      cacert_chain_file:
+        header: [["CA Cert Chain File:", ["main", "infoheader"]]]
+        path: "spec#cacert_chain_file"
+        default: "<unset>"
+        type: "str"
+      ca_secret:
+        header: [["C", ["main", "infoheader_shortcut"]], ["A Secret:", ["main", "infoheader"]]]
+        path: "spec#ca_secret"
+        default: "<unset>"
+        type: "str"
+      cert_chain_file:
+        header: [["Cert Chain File:", ["main", "infoheader"]]]
+        path: "spec#cert_chain_file"
+        default: "<unset>"
+        type: "str"
+      cert_required:
+        header: [["Cert Required:", ["main", "infoheader"]]]
+        path: "spec#cert_required"
+        default: false
+        type: "bool"
+      cert_revocation_list_secret:
+        header: [["Cert ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["evocation List Secret:", ["main", "infoheader"]]]
+        path: "spec#v3CRLSecret"
+        default: "<unset>"
+        type: "str"
+      hosts:
+        header: [["H", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["sts:", ["main", "infoheader"]]]
+        path: "spec#hosts"
+        type: "raw"
+        formatter: "list"
+      max_tls_version:
+        header: [["Max TLS Version:", ["main", "infoheader"]]]
+        path: "spec#max_tls_version"
+        default: "v1.3"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      min_tls_version:
+        header: [["Min TLS Version:", ["main", "infoheader"]]]
+        path: "spec#min_tls_version"
+        default: "v1.0"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+      private_key_file:
+        header: [["Private Key File:", ["main", "infoheader"]]]
+        path: "spec#private_key_file"
+        default: "<unset>"
+        type: "str"
+      secret_namespacing:
+        header: [["Secret Namespacing:", ["main", "infoheader"]]]
+        path: "spec#secret_namespacing"
+        default: false
+        type: "bool"
+      sni:
+        header: [["SNI:", ["main", "infoheader"]]]
+        path: "spec#sni"
+        default: "<unset>"
+        type: "str"
+      tls_cipher_suites:
+        header: [["T", ["main", "infoheader_shortcut"]], ["LS Ciphers:", ["main", "infoheader"]]]
+        path: "spec#cipher_suites"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      tls_ecdh_curves:
+        header: [["TLS ", ["main", "infoheader"]], ["E", ["main", "infoheader_shortcut"]], ["CDH Curves:", ["main", "infoheader"]]]
+        path: "spec#ecdh_curves"
+        default: "<unset>"
+        type: "raw"
+        formatter: "list"
+      tls_secret:
+        header: [["TLS ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        path: "spec#secret"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open CA Secret":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for CA Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#ca_secret"
+    "Open Cert Revocation List Secret":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for cert revocation list Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#v3CRLSecret"
+    "Open TLS Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for TLS Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#secret"
+        namespaced_name_path: "spec#secret"
+        namespaced_name_separator: "."
+        namespaced_name_enabled_path: "spec#secret_namespacing"
+    "List Hosts":
+      key: "o"
+      read_only: true
+      helptext: "List hosts"
+      widget: "windowwidget"
+      title: "Hosts:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#hosts"
+      # This isn't supported for now
+      sortcolumn: "name"
+    "Show TLS cipher list":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "List TLS ciphers"
+      widget: "windowwidget"
+      title: "TLS Ciphers:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#cipher_suites"]
+      # Not supported for now
+      sortcolumn: "cipher"
+    "Show TLS ecdh list":
+      key: "e"
+      modifier: "shift"
+      read_only: true
+      helptext: "List TLS ecdh curves"
+      widget: "windowwidget"
+      title: "ECDH Curves:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        paths: ["spec#ecdh_curves"]
+      # Not supported for now
+      sortcolumn: "curve"

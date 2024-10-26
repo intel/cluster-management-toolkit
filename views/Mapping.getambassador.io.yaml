@@ -1,0 +1,42 @@
+kind: "Mapping"
+api_family: "getambassador.io"
+default_command: "mappings"
+listview:
+  name: "Mappings"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "service", "prefix", "age"]
+  fields:
+    prefix:
+      header: "Prefix:"
+      path: "spec#prefix"
+      type: "str"
+    service:
+      header: "Service:"
+      path: "spec#service"
+      type: "str"
+infoview:
+  name: "Mapping Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["service", "prefix", "ambassador_id", "docs"]
+    rows:
+      ambassador_id:
+        header: [["Ambassador ID:", ["main", "infoheader"]]]
+        path: "spec#ambassador_id"
+        type: "raw"
+        formatter: "list"
+      docs:
+        header: [["Docs:", ["main", "infoheader"]]]
+        path: "spec#docs#path"
+        type: "str"
+      prefix:
+        header: [["Prefix:", ["main", "infoheader"]]]
+        path: "spec#prefix"
+        type: "str"
+      service:
+        header: [["Service:", ["main", "infoheader"]]]
+        path: "spec#service"
+        type: "str"

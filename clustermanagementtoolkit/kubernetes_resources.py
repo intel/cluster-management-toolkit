@@ -1824,6 +1824,63 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/gateway.networking.k8s.io/v1alpha2/"],
         "api": "udproutes",
     },
+    # getambassador.io
+    ("AuthService", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "authservices",
+    },
+    ("ConsulResolver", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "consulresolvers",
+    },
+    ("DevPortal", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "devportals",
+    },
+    ("Host", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "hosts",
+    },
+    ("KubernetesEndpointResolver", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "kubernetesendpointresolvers",
+    },
+    ("KubernetesServiceResolver", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "kubernetesserviceresolvers",
+    },
+    ("LogService", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "logservices",
+    },
+    ("Mapping", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "mappings",
+    },
+    ("Module", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "modules",
+    },
+    ("RateLimitService", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "ratelimitservices",
+    },
+    ("TCPMapping", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "tcpmappings",
+    },
+    ("TLSContext", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "tlscontexts",
+    },
+    ("TracingService", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v2/"],
+        "api": "tracingservices",
+    },
+    ("Listener", "getambassador.io"): {
+        "api_paths": ["apis/getambassador.io/v3alpha1/"],
+        "api": "listeners",
+    },
     # gpu.resource.intel.com
     ("DeviceClassParameters", "gpu.resource.intel.com"): {
         "api_paths": ["apis/gpu.resource.intel.com/v1alpha2/"],

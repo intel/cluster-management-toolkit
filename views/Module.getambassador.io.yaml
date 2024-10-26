@@ -1,0 +1,91 @@
+kind: "Module"
+api_family: "getambassador.io"
+default_command: "modules"
+listview:
+  name: "Modules"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+infoview:
+  name: "Module Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ambassador_id", "load_balancer_header", "load_balancer_policy", "retry_policy", "diagnostics_header", "diagnostics_enabled", "diagnostics_allow_non_local", "liveness_probe_header", "liveness_probe_enabled", "liveness_probe_rewrite", "liveness_probe_service", "readiness_probe_header", "readiness_probe_enabled", "readiness_probe_rewrite", "readiness_probe_service"]
+    rows:
+      ambassador_id:
+        header: [["Ambassador ID:", ["main", "infoheader"]]]
+        path: "spec#ambassador_id"
+        type: "raw"
+        formatter: "list"
+      diagnostics_allow_non_local:
+        header: [["  Allow Non-Local:", ["main", "infoheader"]]]
+        path: "spec#config#diagnostics#allow_non_local"
+        default: false
+        type: "bool"
+      diagnostics_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#config#diagnostics#enabled"
+        default: false
+        type: "bool"
+      diagnostics_header:
+        header: [["Diagnostics:", ["main", "infoheader"]]]
+      load_balancer_header:
+        header: [["L", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["ad Balancer:", ["main", "infoheader"]]]
+      load_balancer_policy:
+        header: [["  Policy:", ["main", "infoheader"]]]
+        path: "spec#config#load_balancer#policy"
+        default: "<unset>"
+        type: "str"
+      liveness_probe_header:
+        header: [["Liveness Probe:", ["main", "infoheader"]]]
+      liveness_probe_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#config#liveness_probe#enabled"
+        default: false
+        type: "bool"
+      liveness_probe_rewrite:
+        header: [["  Rewrite:", ["main", "infoheader"]]]
+        path: "spec#config#liveness_probe#rewrite"
+        default: "<unset>"
+        type: "str"
+      liveness_probe_service:
+        header: [["  Service:", ["main", "infoheader"]]]
+        path: "spec#config#liveness_probe#service"
+        default: "<unset>"
+        type: "str"
+      readiness_probe_header:
+        header: [["Readiness Probe:", ["main", "infoheader"]]]
+      readiness_probe_enabled:
+        header: [["  Enabled:", ["main", "infoheader"]]]
+        path: "spec#config#readiness_probe#enabled"
+        default: false
+        type: "bool"
+      readiness_probe_rewrite:
+        header: [["  Rewrite:", ["main", "infoheader"]]]
+        path: "spec#config#readiness_probe#rewrite"
+        default: "<unset>"
+        type: "str"
+      readiness_probe_service:
+        header: [["  Service:", ["main", "infoheader"]]]
+        path: "spec#config#readiness_probe#service"
+        default: "<unset>"
+        type: "str"
+      retry_policy:
+        header: [["Retry Policy:", ["main", "infoheader"]]]
+        path: "spec#config#retry_policy#retry_on"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Config":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show config"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Config"
+        _pass_obj: true
+        path: "spec#config"

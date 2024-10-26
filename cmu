@@ -7805,6 +7805,10 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     name = deep_get(kwargs, DictPath("name"))
     namespace = deep_get(kwargs, DictPath("namespace"))
     namespaced_name = deep_get(obj, DictPath("namespacedName"))
+    namespaced_name_separator = deep_get(kwargs, DictPath("namespaced_name_separator"), "/")
+    namespaced_name_enabled_path = deep_get(kwargs, DictPath("namespaced_name_enabled_path"))
+    namespaced_name_enabled = True
+    namespaced_name_path = None
 
     name_path = deep_get(kwargs, DictPath("name_path"))
     if name_path is not None and isinstance(name_path, str):
@@ -7815,6 +7819,10 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     namespaced_name_path = deep_get(kwargs, DictPath("namespaced_name_path"), "")
     if namespaced_name_path is not None and isinstance(namespaced_name_path, str):
         namespaced_name_path = [namespaced_name_path]
+        if namespaced_name_enabled_path is not None:
+            namespaced_name_enabled = deep_get(obj, DictPath(namespaced_name_enabled_path), True)
+    else:
+        namespaced_name_enabled = False
 
     kind = deep_get(kwargs, DictPath("kind"))
     api_family = ""
@@ -7944,13 +7952,12 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     if kind is None or isinstance(kind, tuple) and kind[0] is None:
         return Retval.RETURNDONE
 
-    if name is None:
-        if namespaced_name_path is not None:
-            namespaced_name = deep_get_with_fallback(obj, DictPath(namespaced_name_path))
-        if namespaced_name is not None:
-            tmp = namespaced_name.split("/")
-            if len(tmp) == 2:
-                namespace, name = tmp
+    if namespaced_name_path is not None:
+        namespaced_name = deep_get_with_fallback(obj, DictPath(namespaced_name_path))
+    if namespaced_name is not None and namespaced_name_enabled:
+        tmp = namespaced_name.split(namespaced_name_separator)
+        if len(tmp) == 2:
+            namespace, name = tmp
 
     if name is None or not name:
         return Retval.RETURNDONE

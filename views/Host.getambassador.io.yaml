@@ -1,0 +1,100 @@
+kind: "Host"
+api_family: "getambassador.io"
+default_command: "hosts"
+listview:
+  name: "Hosts"
+  group: "Network"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "hostname", "request_policy", "age"]
+  fields:
+    hostname:
+      header: "Hostname:"
+      path: "spec#hostname"
+      type: "str"
+      formatting:
+        field_colors:
+        - type: "hostname"
+    request_policy:
+      header: "Request Policy:"
+      path: "spec#requestPolicy#insecure#action"
+      type: "str"
+infoview:
+  name: "Host Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["acme_provider_header", "acme_provider_authority", "acme_provider_email", "ambassador_id", "hostname", "request_policy_header", "request_policy_action", "request_policy_additional_port", "tls_secret", "tls_context"]
+    rows:
+      acme_provider_authority:
+        header: [["  Authority:", ["main", "infoheader"]]]
+        path: "spec#acmeProvider#authority"
+        default: "<unset>"
+        type: "str"
+      acme_provider_header:
+        header: [["ACME Provider:", ["main", "infoheader"]]]
+      acme_provider_email:
+        header: [["  E-mail:", ["main", "infoheader"]]]
+        path: "spec#acmeProvider#email"
+        default: "<unset>"
+        type: "str"
+      ambassador_id:
+        header: [["Ambassador ID:", ["main", "infoheader"]]]
+        path: "spec#ambassador_id"
+        type: "raw"
+        formatter: "list"
+      hostname:
+        header: [["Hostname:", ["main", "infoheader"]]]
+        path: "spec#hostname"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "hostname"
+      request_policy_header:
+        header: [["Request Policy:", ["main", "infoheader"]]]
+      request_policy_action:
+        header: [["  Action:", ["main", "infoheader"]]]
+        path: "spec#requestPolicy#insecure#action"
+        type: "str"
+      request_policy_additional_port:
+        header: [["  Additional Port:", ["main", "infoheader"]]]
+        path: "spec#requestPolicy#insecure#additionalPort"
+        default: "<unset>"
+        type: "int"
+        formatter: "numerical"
+      tls_context:
+        header: [["TLS ", ["main", "infoheader"]], ["C", ["main", "infoheader_shortcut"]], ["ontext:", ["main", "infoheader"]]]
+        path: "spec#tlsContext#name"
+        default: "<unset>"
+        type: "str"
+      tls_secret:
+        header: [["TLS ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        path: "spec#tlsSecret#name"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Open TLS Context":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for TLS Context"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "TLSContext"
+        api_family: "getambassador.io"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#tlsContext#name"
+    "Open TLS Secret":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for TLS Secret"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Secret"
+        namespace_path: "metadata#namespace"
+        name_path: "spec#tlsSecret#name"
