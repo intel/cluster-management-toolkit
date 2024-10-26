@@ -3378,6 +3378,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "clusterpolicies",
         "namespaced": False,
     },
+    ("NVIDIADriver", "nvidia.com"): {
+        "api_paths": ["apis/nvidia.com/v1alpha1/"],
+        "api": "nvidiadrivers",
+        "namespaced": False,
+    },
     # oauth.openshift.io
     ("OAuthAccessToken", "oauth.openshift.io"): {
         "api_paths": ["apis/oauth.openshift.io/v1/"],

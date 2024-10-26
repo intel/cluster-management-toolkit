@@ -14,4 +14,195 @@ listview:
   group: "API & Extendability"
   field_indexes:
     Normal:
-      fields: ["name", "age"]
+      fields: ["name", "state", "age"]
+  fields:
+    state:
+      header: "State:"
+      path: "status#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            notReady:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+infoview:
+  name: "Cluster Policy Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["daemon_sets_header", "daemon_sets_labels", "priority_class", "state"]
+    rows:
+      daemon_sets_header:
+        header: [["Daemon Sets:", ["main", "infoheader"]]]
+      daemon_sets_labels:
+        header: [["La", ["main", "infoheader"]], ["b", ["main", "infoheader_shortcut"]], ["el:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#daemonsets#labels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      priority_class:
+        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
+        path: "spec#daemonsets#priorityClassName"
+        type: "str"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              notReady:
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "DaemonSet"
+      _api_family: "apps"
+      _label_selector_path: "spec#daemonsets#labels"
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "DaemonSet"
+      api_family: "apps"
+    field_indexes:
+      Normal:
+        fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "age"]
+        sortcolumn: "namespace"
+    fields:
+      available_replicas:
+        header: "Available:"
+        paths:
+        - path: ["status#numberAvailable", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
+        align: "right"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+      current_replicas:
+        header: "Current:"
+        paths:
+        - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
+        align: "right"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+      desired_replicas:
+        header: "Desired:"
+        path: "status#desiredNumberScheduled"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+        align: "right"
+      misscheduled_replicas:
+        header: "Misscheduled:"
+        path: "status#numberMisscheduled"
+        default: 0
+        type: "raw"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+        align: "right"
+      ready_replicas:
+        header: "Ready:"
+        paths:
+        - path: ["status#numberReady", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+        align: "right"
+      uptodate_replicas:
+        header: "Up to Date:"
+        paths:
+        - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
+          pathtype: "comparison"
+          default: [0, 0]
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+        align: "right"
+  shortcuts:
+    "Priority Class":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Priority Class"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "PriorityClass"
+        api_family: "scheduling.k8s.io"
+        name_path: "spec#daemonsets#priorityClassName"
