@@ -41,8 +41,12 @@ infoview:
         formatter: "list"
       resync_period:
         header: [["Resync Period:", ["main", "infoheader"]]]
-        path: "spec#resyncPeriod"
-        type: "str"
+        path: "spec#resyncPeriodSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:

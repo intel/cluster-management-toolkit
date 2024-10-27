@@ -1,0 +1,120 @@
+kind: "Experiment"
+api_family: "kubeflow.org"
+default_command: "experiments"
+listview:
+  name: "Experiments"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "trials_running", "age", "running_trials"]
+      sortcolumn: "namespace"
+  fields:
+    running_trials:
+      header: "Running Trials:"
+      path: "status#runningTrialList"
+      default: ["<none>"]
+      type: "raw"
+      formatter: "list"
+    trials_running:
+      header: "Trials Running:"
+      paths:
+      - path: [["status#trialsRunning"], ["status#trials"]]
+        pathtype: "tuple"
+        default: [0, 0]
+      align: "right"
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "numerical"
+        - type: "numerical"
+infoview:
+  name: "Experiment Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["algorithm", "resume_policy", "max_trials", "max_failed_trials", "parallel_trials", "trials_running", "running_trials"]
+    rows:
+      algorithm:
+        header: [["Algorithm:", ["main", "infoheader"]]]
+        path: "spec#algorithm#algorithmName"
+        default: "<unset>"
+        type: "str"
+      max_failed_trials:
+        header: [["Max Failed Trials:", ["main", "infoheader"]]]
+        path: "spec#maxFailedTrialCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      max_trials:
+        header: [["Max Trials:", ["main", "infoheader"]]]
+        path: "spec#maxTrialCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      parallel_trials:
+        header: [["Paralllel Trials:", ["main", "infoheader"]]]
+        path: "spec#parallelTrialCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      resume_policy:
+        header: [["Resume Policy:", ["main", "infoheader"]]]
+        path: "spec#resumePolicy"
+        default: "<unset>"
+        type: "str"
+      running_trials:
+        header: [["R", ["main", "infoheader_shortcut"]], ["unning Trials:", ["main", "infoheader"]]]
+        path: "status#runningTrialList"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      trials_running:
+        header: [["Trials Running:", ["main", "infoheader"]]]
+        paths:
+        - path: [["status#trialsRunning"], ["status#trials"]]
+          pathtype: "tuple"
+          default: [0, 0]
+        align: "right"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "numerical"
+          - type: "numerical"
+  shortcuts:
+    "Running Trials":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List running Trials"
+      widget: "windowwidget"
+      title: "Running Trials:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "status#runningTrialList"
+      # This isn't supported for now
+      sortcolumn: "name"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        kind: "Trial"
+        api_family: "kubeflow.org"
+        name_path: 0
+        _parent_namespace_path: "metadata#namespace"
+    "View Trial Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show Trial template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Trial template"
+        _pass_obj: true
+        path: "spec#trialTemplate"

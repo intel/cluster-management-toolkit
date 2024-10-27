@@ -1,11 +1,8 @@
-kind: "PyTorchJob"
+kind: "PaddleJob"
 api_family: "kubeflow.org"
-default_command: "pytorchjobs"
-command:
-- "ptjobs"
-- "ptjob"
+default_command: "paddlejobs"
 listview:
-  name: "PyTorch Jobs"
+  name: "Paddle Jobs"
   group: "Kubeflow"
   field_indexes:
     Normal:
@@ -46,6 +43,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            PaddleJobCreated:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
             Running:
               field_colors:
               - context: "main"
@@ -54,16 +55,19 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_done"
-            PyTorchJobCreated:
-              field_colors:
-              - context: "main"
-                type: "status_pending"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
 infoview:
-  name: "PyTorch Job Info"
+  name: "Paddle Job Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "masters_header", "masters_replicas", "masters_restart_policy", "masters_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
+        fields: ["controller", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
     rows:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
@@ -104,38 +108,6 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
-      masters_header:
-        header: [["Masters:", ["main", "infoheader"]]]
-      masters_replicas:
-        header: [["  Replicas:", ["main", "infoheader"]]]
-        path: "spec#pytorchReplicaSpecs#Master#replicas"
-        type: "int"
-        formatter: "numerical"
-      masters_restart_policy:
-        header: [["  Restart Policy:", ["main", "infoheader"]]]
-        path: "spec#pytorchReplicaSpecs#Master#restartPolicy"
-        type: "str"
-      masters_status:
-        header: [["  Status:", ["main", "infoheader"]]]
-        paths:
-        - path: ["Succeeded: ", ["status#replicaStatuses#Master#succeeded"], "Active: ", ["status#replicaStatuses#Master#active"], "Failed: ", ["status#replicaStatuses#Master#failed"]]
-          pathtype: "tuple"
-          default: ["", 0, "", 0, "", 0]
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          field_separators:
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
-          - type: "list"
-          - type: "no_pad"
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
@@ -163,7 +135,7 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_done"
-              PyTorchJobCreated:
+              PaddleJobCreated:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
@@ -171,12 +143,12 @@ infoview:
         header: [["Workers:", ["main", "infoheader"]]]
       workers_replicas:
         header: [["  Replicas:", ["main", "infoheader"]]]
-        path: "spec#pytorchReplicaSpecs#Worker#replicas"
+        path: "spec#paddleReplicaSpecs#Worker#replicas"
         type: "int"
         formatter: "numerical"
       workers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
-        path: "spec#pytorchReplicaSpecs#Worker#restartPolicy"
+        path: "spec#paddleReplicaSpecs#Worker#restartPolicy"
         type: "str"
       workers_status:
         header: [["  Status:", ["main", "infoheader"]]]
@@ -314,16 +286,6 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
-    "View Master Replica Template":
-      key: "s"
-      read_only: true
-      helptext: "Show master replica template"
-      action: "call"
-      action_call: "view_yaml"
-      action_args:
-        title: "Master replica template"
-        _pass_obj: true
-        path: "spec#pytorchReplicaSpecs#Master"
     "View Worker Replica Template":
       key: "w"
       read_only: true
@@ -333,4 +295,4 @@ infoview:
       action_args:
         title: "Worker replica template"
         _pass_obj: true
-        path: "spec#pytorchReplicaSpecs#Worker"
+        path: "spec#paddleReplicaSpecs#Worker"

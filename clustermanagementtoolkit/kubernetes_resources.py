@@ -1725,15 +1725,21 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # eventing.knative.dev
     ("Broker", "eventing.knative.dev"): {
-        "api_paths": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],
+        "api_paths": ["apis/eventing.knative.dev/v1/",
+                      "apis/eventing.knative.dev/v1beta2/",
+                      "apis/eventing.knative.dev/v1beta1/"],
         "api": "brokers",
     },
     ("EventType", "eventing.knative.dev"): {
-        "api_paths": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],
+        "api_paths": ["apis/eventing.knative.dev/v1/",
+                      "apis/eventing.knative.dev/v1beta2/",
+                      "apis/eventing.knative.dev/v1beta1/"],
         "api": "eventtypes",
     },
     ("Trigger", "eventing.knative.dev"): {
-        "api_paths": ["apis/eventing.knative.dev/v1/", "apis/eventing.knative.dev/v1beta1/"],
+        "api_paths": ["apis/eventing.knative.dev/v1/",
+                      "apis/eventing.knative.dev/v1beta2/",
+                      "apis/eventing.knative.dev/v1beta1/"],
         "api": "triggers",
     },
     # flavor.kubevirt.io

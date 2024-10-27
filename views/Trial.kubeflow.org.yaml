@@ -1,0 +1,60 @@
+kind: "Trial"
+api_family: "kubeflow.org"
+default_command: "trials"
+listview:
+  name: "Trials"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Trial Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "success_condition", "failure_condition"]
+    rows:
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      failure_condition:
+        header: [["Failure Condition:", ["main", "infoheader"]]]
+        path: "spec#failureCondition"
+        type: "str"
+      success_condition:
+        header: [["Success Condition:", ["main", "infoheader"]]]
+        path: "spec#successCondition"
+        type: "str"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

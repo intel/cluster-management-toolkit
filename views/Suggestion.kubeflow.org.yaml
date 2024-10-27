@@ -1,0 +1,105 @@
+kind: "Suggestion"
+api_family: "kubeflow.org"
+default_command: "suggestions"
+listview:
+  name: "Suggestions"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "age"]
+      sortcolumn: "namespace"
+infoview:
+  name: "Suggestion Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller", "algorithm", "resume_policy", "requests", "suggestions"]
+    rows:
+      algorithm:
+        header: [["Algorithm:", ["main", "infoheader"]]]
+        path: "spec#algorithm#algorithmName"
+        default: "<unset>"
+        type: "str"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      requests:
+        header: [["Requests:", ["main", "infoheader"]]]
+        path: "spec#requests"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      resume_policy:
+        header: [["Resume Policy:", ["main", "infoheader"]]]
+        path: "spec#resumePolicy"
+        default: "<unset>"
+        type: "str"
+      suggestions:
+        header: [["Suggestions:", ["main", "infoheader"]]]
+        path: "status#suggestionCount"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      path: "status#suggestions"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "parameters"]
+        sortcolumn: "priority"
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      parameters:
+        header: "Parameters:"
+        paths:
+        - path: "parameterAssignments"
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+  shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"

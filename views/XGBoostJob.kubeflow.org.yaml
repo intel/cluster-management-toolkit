@@ -1,11 +1,8 @@
-kind: "PyTorchJob"
+kind: "XGBoostJob"
 api_family: "kubeflow.org"
-default_command: "pytorchjobs"
-command:
-- "ptjobs"
-- "ptjob"
+default_command: "xgboostjobs"
 listview:
-  name: "PyTorch Jobs"
+  name: "XGBoost Jobs"
   group: "Kubeflow"
   field_indexes:
     Normal:
@@ -46,6 +43,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_warning"
+            XGBoostJobCreated:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
             Running:
               field_colors:
               - context: "main"
@@ -54,12 +55,15 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_done"
-            PyTorchJobCreated:
-              field_colors:
-              - context: "main"
-                type: "status_pending"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
 infoview:
-  name: "PyTorch Job Info"
+  name: "XGBoost Job Info"
   infopad:
     row_indexes:
       Normal:
@@ -163,7 +167,7 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_done"
-              PyTorchJobCreated:
+              XGBoostJobCreated:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
@@ -323,7 +327,7 @@ infoview:
       action_args:
         title: "Master replica template"
         _pass_obj: true
-        path: "spec#pytorchReplicaSpecs#Master"
+        path: "spec#xgbReplicaSpecs#Master"
     "View Worker Replica Template":
       key: "w"
       read_only: true
@@ -333,4 +337,4 @@ infoview:
       action_args:
         title: "Worker replica template"
         _pass_obj: true
-        path: "spec#pytorchReplicaSpecs#Worker"
+        path: "spec#xgbReplicaSpecs#Worker"

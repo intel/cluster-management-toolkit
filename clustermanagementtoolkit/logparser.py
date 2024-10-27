@@ -2722,6 +2722,13 @@ def python_traceback_scanner_nested_exception(message: str, **kwargs: Any) \
         ThemeStr(message, ThemeAttr("logview", "severity_info"))
     ]
 
+    tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\] (.*)", message)
+    if tmp is not None:
+        message = tmp[4]
+        remnants = [
+            ThemeStr(message, ThemeAttr("logview", "severity_info"))
+        ]
+
     if (tmp := re.match(r"^(\s+\+ )"
                         r"(Exception Group Traceback "
                         r"\(most recent call last\):)", message)) is not None:
@@ -2793,6 +2800,13 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
         ThemeStr(message, ThemeAttr("logview", "severity_info"))
     ]
 
+    tmp = re.match(r"^([A-Z])\d\d\d\d \d\d:\d\d:\d\d\.\d+\s+(\d+)\s(.+?:\d+)\] (.*)", message)
+    if tmp is not None:
+        message = tmp[4]
+        remnants = [
+            ThemeStr(message, ThemeAttr("logview", "severity_info"))
+        ]
+
     if (tmp := re.match(r"^(\s+File \")(.+?)(\", line )(\d+)(, in )(.*)", message)) is not None:
         remnants = [
             ThemeStr(tmp[1], ThemeAttr("logview", "severity_info")),
@@ -2816,6 +2830,8 @@ def python_traceback_scanner(message: str, **kwargs: Any) \
                 ThemeStr(tmp[1], ThemeAttr("logview", "severity_error")),
                 ThemeStr(tmp[2], ThemeAttr("logview", "severity_info")),
             ]
+            # This doesn't handle the stack trace that may follow the traceback,
+            # but we cannot support that unless we have a forward-looking scanner.
             if not tmp[2].startswith(" <") or tmp[2].endswith(">"):
                 processor = ("end_block", None, {})
         elif message == ">":
@@ -2832,7 +2848,8 @@ def python_traceback(message: str, **kwargs: Any) \
                  List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]]]:
     remnants: List[Tuple[List[Union[ThemeRef, ThemeStr]], LogLevel]] = []
 
-    if message == "Traceback (most recent call last):":
+    if message.startswith(("Traceback (most recent call last):",
+                           "Exception in thread ")):
         remnants = [ThemeStr(message, ThemeAttr("logview", "severity_error"))]
         processor: Tuple[str, Optional[Callable], Dict] = \
             ("start_block", python_traceback_scanner, {})

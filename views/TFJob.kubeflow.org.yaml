@@ -7,7 +7,7 @@ listview:
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age", "state", "completion_time_with_age"]
-      sortcolumn: "namespace"
+      sortcolumn: "state"
   fields:
     completion_time_with_age:
       header: "Completion Time:"
@@ -67,11 +67,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        # fields: ["chief_header", "evaluators_header", "parameter_servers_header", "workers_header", "state"]
-        fields: ["parameter_servers_header", "parameter_servers_replicas", "parameter_servers_restart_policy", "parameter_servers_status", "workers_header", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
+        fields: ["controller", "parameter_servers_header", "parameter_servers_replicas", "parameter_servers_restart_policy", "parameter_servers_status", "workers_header", "workers_enable_dynamic_workers", "workers_replicas", "workers_restart_policy", "workers_status", "completion_time_with_age", "state"]
     rows:
-    # chief_header:
-    #   header: [["Chief:", ["main", "infoheader"]]]
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
@@ -88,18 +85,43 @@ infoview:
           # This is a meta-type, indicating where the age goes
           - type: "age"
           - type: "generic"
-    # evaluators_header:
-    #   header: [["Evaluators:", ["main", "infoheader"]]]
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       parameter_servers_header:
         header: [["Parameter Servers:", ["main", "infoheader"]]]
       parameter_servers_replicas:
         header: [["  Replicas:", ["main", "infoheader"]]]
         path: "spec#tfReplicaSpecs#PS#replicas"
+        default: "<unset>"
         type: "int"
-        formatter: "numerical"
+        formatting:
+          field_colors:
+          - type: "numerical"
       parameter_servers_restart_policy:
         header: [["  Restart Policy:", ["main", "infoheader"]]]
         path: "spec#tfReplicaSpecs#PS#restartPolicy"
+        default: "<unset>"
         type: "str"
       parameter_servers_status:
         header: [["  Status:", ["main", "infoheader"]]]
@@ -153,6 +175,11 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+      workers_enable_dynamic_workers:
+        header: [["  Enable Dynamic Workers:", ["main", "infoheader"]]]
+        path: "spec#enableDynamicWorker"
+        default: false
+        type: "bool"
       workers_header:
         header: [["Workers:", ["main", "infoheader"]]]
       workers_replicas:
@@ -289,6 +316,17 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
     "View Parameter Server Replica Template":
       key: "p"
       modifier: "shift"

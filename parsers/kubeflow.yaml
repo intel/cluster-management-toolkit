@@ -89,3 +89,68 @@
     - matchtype: "startswith"
       matchkey: "Trace["
       loglevel: "debug"
+- name: "kubeflow"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/horovod/horovod"
+  - image_name: "/kubeflow/tf-mnist-with-summaries"
+  parser_rules:
+  - name: "custom_splitter"
+    options:
+      regex: '^[A-Za-z]{3} [A-Za-z]{3} \d+ \d\d:\d\d:\d\d \d{4}\[\d+\]<([^>]+?)>:(.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+?: ([A-Z]) ([^:]+:\d+)\] (.*)'
+      severity:
+        field: 1
+        transform: "letter"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+  - name: "custom_splitter"
+    options:
+      regex: '^([A-Z]+):(.+?):(.+)'
+      severity:
+        field: 1
+        transform: "str"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+- name: "kubeflow"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kubeflowkatib/pytorch-mnist"
+  - image_name: "/kubeflowkatib/suggestion-hyperopt"
+  - image_name: "/kubeflowkatib/file-metrics-collector"
+  - image_name: "/bytepsimage/mxnet"
+  parser_rules:
+  - name: "glog"
+  - name: "custom_splitter"
+    options:
+      regex: '^\[\d\d:\d\d:\d\d\] ([^:]+?:\d+?): (.*)'
+      facility:
+        fields:
+        - 1
+      message:
+        field: 2
+  - name: "custom_splitter"
+    options:
+      regex: '^([A-Z]+):([^:]+?):(.*)'
+      severity:
+        field: 1
+        transform: "str"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+  - name: "python_traceback"

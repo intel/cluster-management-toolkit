@@ -67,7 +67,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["launchers_header", "launchers_replicas", "launchers_status", "workers_header", "workers_replicas", "workers_slots_per_worker", "workers_status", "run_policy_header", "run_policy_clean_pod_policy", "run_policy_suspend", "completion_time_with_age", "state"]
+        fields: ["controller", "launchers_header", "launchers_replicas", "launchers_status", "workers_header", "workers_replicas", "workers_slots_per_worker", "workers_status", "run_policy_header", "run_policy_clean_pod_policy", "run_policy_suspend", "completion_time_with_age", "state"]
     rows:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
@@ -85,6 +85,29 @@ infoview:
           # This is a meta-type, indicating where the age goes
           - type: "age"
           - type: "generic"
+      controller:
+        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "controller"
+            eq: true
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
       launchers_header:
         header: [["Launchers:", ["main", "infoheader"]]]
       launchers_replicas:
@@ -115,13 +138,16 @@ infoview:
           - type: "no_pad"
       run_policy_clean_pod_policy:
         header: [["  Clean Pod Policy:", ["main", "infoheader"]]]
-        path: "spec#runPolicy#cleanPodPolicy"
+        paths:
+        - path: ["spec#runPolicy#cleanPodPolicy", "spec#cleanPodPolicy"]
+          pathtype: "str"
         type: "str"
       run_policy_header:
         header: [["Run Policy:", ["main", "infoheader"]]]
       run_policy_suspend:
         header: [["  Suspend:", ["main", "infoheader"]]]
         path: "spec#runPolicy#suspend"
+        default: false
         type: "bool"
       state:
         header: [["State:", ["main", "infoheader"]]]
@@ -192,7 +218,7 @@ infoview:
     listgetter_args:
       _kind: "Pod"
       _label_selector_key_values:
-      - ["mpi-job-name", ["metadata#name"]]
+      - ["training.kubeflow.org/job-name", ["metadata#name"]]
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
@@ -291,6 +317,17 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
+    "Open controller":
+      key: "c"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for controller"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
     "View Launcher Replica Template":
       key: "l"
       read_only: true
