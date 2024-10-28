@@ -2,11 +2,12 @@
   show_in_selector: false
   matchkeys:
   - pod_name: "nri-resource-policy-balloons"
+  - image_name: "/containers/nri-plugins/nri-resource-policy-topology-aware"
   parser_rules:
   - name: "glog"
   - name: "custom_splitter"
     options:
-      regex: '^([A-Z]): \[\s*(\S+)\s*\] (.*)'
+      regex: '^([A-Z]): \[(\s*\S+\s*)\] (.*)'
       severity:
         field: 1
         transform: "letter"
