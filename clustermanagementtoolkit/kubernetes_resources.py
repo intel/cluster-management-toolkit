@@ -2479,6 +2479,10 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/kubeflow.org/v1beta1/"],
         "api": "experiments",
     },
+    ("JAXJob", "kubeflow.org"): {
+        "api_paths": ["apis/kubeflow.org/v1/"],
+        "api": "jaxjobs",
+    },
     ("MPIJob", "kubeflow.org"): {
         "api_paths": ["apis/kubeflow.org/v2beta1/",
                       "apis/kubeflow.org/v1/",
