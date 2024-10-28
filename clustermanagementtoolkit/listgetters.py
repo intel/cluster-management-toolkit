@@ -1172,7 +1172,9 @@ def get_pod_resource_list(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[Dict
     if "runtimeclass" not in filter_resources:
         kind = ("RuntimeClass", "node.k8s.io")
         name = deep_get(obj, DictPath("spec#runtimeClassName"))
-        ref = kh.get_ref_by_kind_name_namespace(kind, name, "", resource_cache=kh_cache)
+        ref = None
+        if name is not None:
+            ref = kh.get_ref_by_kind_name_namespace(kind, name, "", resource_cache=kh_cache)
         if ref is not None and ref:
             rtype = resource_kind_to_rtype(kind)
             resource_tuple = ("", "", name)
