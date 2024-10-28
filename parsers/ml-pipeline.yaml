@@ -31,6 +31,13 @@
   - image_name: "/ml-pipeline/persistenceagent"
   - image_name: "/ml-pipeline/scheduledworkflow"
   - image_name: "/ml-pipeline/viewer-crd-controller"
+  - image_name: "/ml-pipeline/argoexec"
+  - image_name: "/ml-pipeline/kfp-driver"
+  - image_name: "/ml-pipeline/argoexec"
+    container_type: "init_container"
   parser_rules:
   - name: "glog"
   - name: "key_value"
+    options:
+      versions:
+      - "version"

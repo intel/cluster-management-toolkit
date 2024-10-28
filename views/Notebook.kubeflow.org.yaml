@@ -1,0 +1,116 @@
+kind: "Notebook"
+api_family: "kubeflow.org"
+default_command: "notebooks"
+listview:
+  name: "Notebooks"
+  group: "Kubeflow"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "ready_replicas", "state", "age"]
+      sortcolumn: "state"
+  fields:
+    ready_replicas:
+      header: "Ready:"
+      path: "status#readyReplicas"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    state:
+      header: "State:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "type"
+        index: -1
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            Created:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Failed:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            PodScheduled:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Succeeded:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Notebook Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["ready_replicas", "state"]
+    rows:
+      ready_replicas:
+        header: [["Ready Replicas:", ["main", "infoheader"]]]
+        path: "status#readyReplicas"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Created:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Failed:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              PodScheduled:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Succeeded:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+  shortcuts:
+    "Template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Template"
+        _pass_obj: true
+        path: "spec#template"
