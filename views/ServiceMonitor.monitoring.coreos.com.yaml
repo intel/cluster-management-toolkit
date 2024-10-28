@@ -16,8 +16,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "job_label", "selector", "namespace_selector"]
+        fields: ["cluster_version", "job_label", "selector", "namespace_selector", "attach_metadata_header", "attach_metadata_node"]
     rows:
+      attach_metadata_header:
+        header: [["Attach Metadata:", ["main", "infoheader"]]]
+      attach_metadata_node:
+        header: [["  Node:", ["main", "infoheader"]]]
+        path: "spec#attachMetadata#node"
+        default: "<unset>"
+        type: "bool"
       cluster_version:
         header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
         paths:
@@ -53,49 +60,83 @@ infoview:
           field_separators:
           - type: "selector"
   listpad:
-    listgetter: "listgetter_path"
+    listgetter: "generic_listgetter"
     listgetter_args:
-      path: "spec#endpoints"
+      _kind: "Pod"
+      _label_selector_path: "spec#selector#matchLabels"
     infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
     field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
       Normal:
-        fields: ["bearer_token_file", "port", "target_port", "interval", "scheme", "path", "honor_labels", "proxy_url"]
-        sortcolumn: "bearer_token_file"
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
     fields:
-      bearer_token_file:
-        header: "Bearer Token File:"
-        path: "bearerTokenFile"
-        type: "str"
-      honor_labels:
-        header: "Honor Labels:"
-        path: "honorLabels"
-        type: "str"
-      interval:
-        header: "Interval:"
-        path: "interval"
-        type: "str"
-        formatter: "numerical_with_units"
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          - subpath: "image"
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+          - key: "restartCount"
+            gt: 0
+          action: "latest"
+          type: "timestamp"
+        default: -1
+        formatter: "age"
         align: "right"
-      path:
-        header: "Path:"
-        path: "path"
-        type: "str"
-      port:
-        header: "Port:"
-        path: "port"
-        type: "str"
-      proxy_url:
-        header: "Proxy URL:"
-        path: "proxyUrl"
-        type: "str"
-      scheme:
-        header: "Scheme:"
-        path: "scheme"
-        type: "str"
-      target_port:
-        header: "Target Port:"
-        path: "targetPort"
-        type: "str"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: "restartCount"
+          action: "sum"
+          type: "int"
+        default: 0
+        formatter: "numerical"
+        align: "right"
   shortcuts:
     "Cluster Version":
       key: "v"
@@ -109,3 +150,26 @@ infoview:
         owner_reference_path: "metadata#ownerReferences"
         kind: "ClusterVersion"
         api_family: "config.openshift.io"
+  shortcuts:
+    "Service Monitor Endpoints":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "List Service Monitor endpoints"
+      widget: "windowwidget"
+      title: "Service Monitor Endpoints:"
+      itemgetter: "get_list_fields"
+      itemgetter_args:
+        path: "spec#endpoints"
+        fields:
+        - value: "index"
+          index_template: "endpoint-<<<index>>>"
+        pass_ref: true
+      # This isn't supported for now
+      sortcolumn: "namespace"
+      selectable: true
+      action: "call"
+      action_call: "resourceinfodispatch_from_selection"
+      action_args:
+        kind: "__ServiceMonitorEndpoint"
+        api_family: "monitoring.coreos.com"

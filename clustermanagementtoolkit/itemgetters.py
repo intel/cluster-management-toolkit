@@ -422,7 +422,7 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
         fields = deep_get(kwargs, DictPath("fields"), [])
         pass_ref = deep_get(kwargs, DictPath("pass_ref"), False)
         override_types = deep_get(kwargs, DictPath("override_types"), [])
-        for item in deep_get_with_fallback(obj, paths, []):
+        for item_index, item in enumerate(deep_get_with_fallback(obj, paths, [])):
             tmp = []
             for i, field in enumerate(fields):
                 default = ""
@@ -430,10 +430,17 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
                 quote = False
                 if isinstance(field, dict):
                     default = deep_get(field, DictPath("default"), "")
+                    index_template = deep_get(field, DictPath("index_template"), "<<<index>>>")
                     value_type = deep_get(field, DictPath("value"), "value")
                     quote = deep_get(field, DictPath("quote"), False)
                     # Needs to be last here, since it overwrites field
                     field = deep_get(field, DictPath("name"), "")
+
+                # Instead of inserting a field here we insert a field containing list index
+                if value_type == "index":
+                    index_str = cmtlib.substitute_string(index_template, {"<<<index>>>": str(item_index)})
+                    tmp.append(index_str)
+                    continue
 
                 if isinstance(field, str):
                     field = [DictPath(field)]

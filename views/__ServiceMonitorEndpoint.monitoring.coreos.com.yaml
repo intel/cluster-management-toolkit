@@ -1,0 +1,135 @@
+kind: "__ServiceMonitorEndpoint"
+api_family: "monitoring.coreos.com"
+default_command: "__"
+infoview:
+  name: "Service Monitor Info"
+  infopad:
+    name_path: null
+    row_indexes:
+      Normal:
+        fields: ["enable_http2", "honor_labels", "honor_timestamps", "bearer_token_file", "path", "port", "scheme", "scrape_timeout", "interval", "tls_config_header", "tls_config_insecure_skip_verify",  "tls_config_server_name", "tls_config_ca_header", "tls_config_ca_file", "tls_config_ca_secret_header", "tls_config_ca_secret_name", "tls_config_ca_secret_key", "tls_config_ca_secret_optional"]
+    rows:
+      bearer_token_file:
+        header: [["Bearer Token File:", ["main", "infoheader"]]]
+        path: "bearerTokenFile"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      enable_http2:
+        header: [["Enable HTTP2:", ["main", "infoheader"]]]
+        path: "enableHttp2"
+        default: "<unset>"
+        type: "bool"
+      honor_labels:
+        header: [["Honor Labels:", ["main", "infoheader"]]]
+        path: "honorLabels"
+        default: "<unset>"
+        type: "bool"
+      honor_timestamps:
+        header: [["Honor Timestamps:", ["main", "infoheader"]]]
+        path: "honorLabels"
+        default: "<unset>"
+        type: "bool"
+      interval:
+        header: [["Interval:", ["main", "infoheader"]]]
+        path: "interval"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      path:
+        header: [["Path:", ["main", "infoheader"]]]
+        path: "path"
+        default: "<unset>"
+        type: "str"
+      port:
+        header: [["Port:", ["main", "infoheader"]]]
+        path: "port"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      port:
+        header: [["Port:", ["main", "infoheader"]]]
+        path: "port"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "service"
+      scheme:
+        header: [["Scheme:", ["main", "infoheader"]]]
+        path: "scheme"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "service"
+      scrape_timeout:
+        header: [["Scrape Timeout:", ["main", "infoheader"]]]
+        path: "scrapeTimeout"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      tls_config_header:
+        header: [["TLS Config:", ["main", "infoheader"]]]
+      tls_config_ca_file:
+        header: [["    File:", ["main", "infoheader"]]]
+        path: "tlsConfig#caFile"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      tls_config_ca_header:
+        header: [["  CA:", ["main", "infoheader"]]]
+      tls_config_ca_secret_header:
+        header: [["    Secret:", ["main", "infoheader"]]]
+      tls_config_ca_secret_key:
+        header: [["      Key:", ["main", "infoheader"]]]
+        path: "tlsConfig#ca#secret#key"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      tls_config_ca_secret_name:
+        header: [["      Name:", ["main", "infoheader"]]]
+        path: "tlsConfig#ca#secret#name"
+        default: "<unset>"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      tls_config_ca_secret_optional:
+        header: [["      Optional:", ["main", "infoheader"]]]
+        path: "tlsConfig#ca#secret#optional"
+        default: "<unset>"
+        type: "bool"
+      tls_config_insecure_skip_verify:
+        header: [["  Insecure Skip Verify:", ["main", "infoheader"]]]
+        path: "tlsConfig#insecureSkipVerify"
+        default: "<unset>"
+        type: "bool"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
+      tls_config_server_name:
+        header: [["  Server Name:", ["main", "infoheader"]]]
+        path: "tlsConfig#serverName"
+        default: "<unset>"
+        type: "str"

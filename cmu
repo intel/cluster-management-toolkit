@@ -7777,6 +7777,16 @@ def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+def resourceinfodispatch_from_selection(stdscr: curses.window, **kwargs: Any) -> Retval:
+    # Do not pass both direct and _path versions at the same time
+    obj = deep_get(kwargs, DictPath("selection"))
+    kind = deep_get(kwargs, DictPath("kind"))
+    api_family = deep_get(kwargs, DictPath("api_family"), "")
+    kwargs.pop("kind", None)
+    kwargs.pop("api_family", None)
+    return resourceinfodispatch(stdscr, obj, (kind, api_family), **kwargs)
+
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Retval:
     # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("obj"))
@@ -9641,6 +9651,7 @@ action_call_allowlist = {
     "patch_object": patch_object,
     "resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
     "resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
+    "resourceinfodispatch_from_selection": resourceinfodispatch_from_selection,
     "set_cluster_context": set_cluster_context,
     "ssh_to_host": ssh_to_host,
     "view_last_applied_configuration": view_last_applied_configuration,
