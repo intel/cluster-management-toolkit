@@ -17,7 +17,7 @@ import sys
 import yaml
 
 try:  # pragma: no cover
-    from jinja2 import Environment, FileSystemLoader
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
 except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import jinja2; "
              "you may need to (re-)run `cmt-install` or `pip3 install jinja2`; aborting.")
@@ -66,7 +66,9 @@ def main() -> None:
         context[filepath.name[:-len(".var")]] = tmp[:-1]
 
     # Initialise Jinja2
-    environment = Environment(loader=FileSystemLoader(template_path), keep_trailing_newline=True)
+    environment = Environment(loader=FileSystemLoader(template_path),
+                              keep_trailing_newline=True,
+                              autoescape=select_autoescape())
 
     for filepath in template_entry.iterdir():
         if not filepath.name.endswith(".j2"):
