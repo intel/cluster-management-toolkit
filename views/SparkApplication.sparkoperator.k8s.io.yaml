@@ -1,0 +1,407 @@
+kind: "SparkApplication"
+api_family: "sparkoperator.k8s.io"
+default_command: "sparkapplications"
+command:
+- "sparkapps"
+- "sparkapp"
+listview:
+  name: "Spark Applications"
+  group: "Workloads"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "execution_attempts", "submission_attempts", "state", "age", "completion_time_with_age"]
+      sortcolumn: "status"
+  fields:
+    completion_time_with_age:
+      header: "Completion Time:"
+      paths:
+      - paths: [["status#lastSubmissionAttemptTime"], " (", "Duration: ", ["status#terminationTime"], ")"]
+        pathtype: "timestamp_with_age"
+      formatter: "timestamp_with_age"
+      formatting:
+        field_colors:
+        # This is a meta-type, indicating where the timestamp goes
+        - type: "timestamp"
+        - type: "generic"
+        - type: "generic"
+        # This is a meta-type, indicating where the age goes
+        - type: "age"
+        - type: "generic"
+    execution_attempts:
+      header: "Execution Attempts:"
+      path: "status#executionAttempts"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    state:
+      header: "State:"
+      path: "status#applicationState#state"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            COMPLETED:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+            FAILED:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            FAILING:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            INVALIDATING:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            PENDING_RERUN:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            RUNNING:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            SUBMISSION_FAILED:
+              field_colors:
+              - context: "main"
+                type: "status_warning"
+            SUBMITTED:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            SUCCEEDING:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            UNKNOWN:
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    submission_attempts:
+      header: "Submission Attempts:"
+      path: "status#submissionAttempts"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+infoview:
+  name: "Spark Application Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["scheduled_spark_application", "type", "mode", "restart_policy", "image", "image_pull_policy", "main_application_file", "main_class", "arguments", "version", "driver_header", "driver_pod_name", "driver_service_account", "driver_core", "driver_memory", "driver_labels", "driver_web_ui_header", "driver_web_ui_service", "driver_web_ui_address", "driver_web_ui_port", "executor_header", "executor_instances", "executor_core", "executor_memory", "executor_labels", "execution_attempts", "submission_attempts", "completion_time_with_age", "state"]
+    rows:
+      arguments:
+        header: [["Arguments:", ["main", "infoheader"]]]
+        path: "spec#arguments"
+        type: "raw"
+        formatter: "list"
+      completion_time_with_age:
+        header: [["Completion Time:", ["main", "infoheader"]]]
+        paths:
+        - paths: [["status#lastSubmissionAttemptTime"], " (", "Duration: ", ["status#terminationTime"], ")"]
+          pathtype: "timestamp_with_age"
+        formatter: "timestamp_with_age"
+        formatting:
+          field_colors:
+          # This is a meta-type, indicating where the timestamp goes
+          - type: "timestamp"
+          - type: "generic"
+          - type: "generic"
+          # This is a meta-type, indicating where the age goes
+          - type: "age"
+          - type: "generic"
+      scheduled_spark_application:
+        header: [["Scheduled Spark ", ["main", "infoheader"]], ["A", ["main", "infoheader_shortcut"]], ["pplication:", ["main", "infoheader"]]]
+        paths:
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+          - "kind"
+          - "apiVersion"
+          - "name"
+          when:
+          - key: "kind"
+            eq: "ScheduledSparkApplication"
+          type: ["kind", "api_group", "name"]
+        default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      driver_core:
+        header: [["  Cores:", ["main", "infoheader"]]]
+        path: "spec#driver#cores"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      driver_labels:
+        header: [["  Labels:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#driver#labels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      driver_memory:
+        header: [["  Memory:", ["main", "infoheader"]]]
+        path: "spec#driver#memory"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      driver_header:
+        header: [["Driver:", ["main", "infoheader"]]]
+      driver_pod_name:
+        header: [["  ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["od Name:", ["main", "infoheader"]]]
+        path: "status#driverInfo#podName"
+        type: "str"
+      driver_service_account:
+        header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        path: "status#driverInfo#webUIServiceName"
+        type: "str"
+      driver_web_ui_address:
+        header: [["    Address:", ["main", "infoheader"]]]
+        path: "status#driverInfo#webUIAddress"
+        type: "str"
+        formatter: "address"
+      driver_web_ui_header:
+        header: [["  Web UI:", ["main", "infoheader"]]]
+      driver_web_ui_port:
+        header: [["    Port:", ["main", "infoheader"]]]
+        path: "status#driverInfo#webUIPort"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "port"
+      driver_web_ui_service:
+        header: [["    Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
+        path: "status#driverInfo#webUIServiceName"
+        type: "str"
+      execution_attempts:
+        header: [["Execution Attempts:", ["main", "infoheader"]]]
+        path: "status#executionAttempts"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      executor_core:
+        header: [["  Cores:", ["main", "infoheader"]]]
+        path: "spec#executor#cores"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      executor_header:
+        header: [["Executor:", ["main", "infoheader"]]]
+      executor_instances:
+        header: [["  Instances:", ["main", "infoheader"]]]
+        path: "spec#executor#instances"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      executor_labels:
+        header: [["  Labels:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#executor#labels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+      executor_memory:
+        header: [["  Memory:", ["main", "infoheader"]]]
+        path: "spec#executor#memory"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      image:
+        header: [["Image:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#image"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      image_pull_policy:
+        header: [["Image Pull Policy:", ["main", "infoheader"]]]
+        path: "spec#imagePullPolicy"
+        type: "str"
+      main_application_file:
+        header: [["Main Application File:", ["main", "infoheader"]]]
+        path: "spec#mainApplicationFile"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "path"
+      main_class:
+        header: [["Main Class:", ["main", "infoheader"]]]
+        path: "spec#mainClass"
+        type: "str"
+      mode:
+        header: [["Mode:", ["main", "infoheader"]]]
+        path: "spec#mode"
+        type: "str"
+      restart_policy:
+        header: [["Restart Policy:", ["main", "infoheader"]]]
+        path: "spec#restartPolicy#type"
+        type: "str"
+      state:
+        header: [["State:", ["main", "infoheader"]]]
+        path: "status#applicationState#state"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              COMPLETED:
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              FAILED:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              FAILING:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              INVALIDATING:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              PENDING_RERUN:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              RUNNING:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              SUBMISSION_FAILED:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              SUBMITTED:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              SUCCEEDING:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              UNKNOWN:
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      submission_attempts:
+        header: [["Submission Attempts:", ["main", "infoheader"]]]
+        path: "status#submissionAttempts"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      type:
+        header: [["Type:", ["main", "infoheader"]]]
+        path: "spec#type"
+        type: "str"
+      version:
+        header: [["Spark Version:", ["main", "infoheader"]]]
+        path: "spec#sparkVersion"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "version"
+  shortcuts:
+    "Open Scheduled Spark Application":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Scheduled Spark Application"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ScheduledSparkApplication"
+        api_family: "sparkoperator.k8s.io"
+        namespace_path: "metadata#namespace"
+        owner_reference_path: "metadata#ownerReferences"
+    "Pod":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Pod"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Pod"
+        name_path: "status#driverInfo#podName"
+        namespace_path: "metadata#namespace"
+    "Service":
+      key: "v"
+      read_only: true
+      helptext: "Open info page for Service"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Service"
+        name_path: "status#driverInfo#webUIServiceName"
+        namespace_path: "metadata#namespace"
+    "Service Account":
+      key: "s"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for Service Account"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "ServiceAccount"
+        name_path: "spec#driver#serviceAccount"
+        namespace_path: "metadata#namespace"

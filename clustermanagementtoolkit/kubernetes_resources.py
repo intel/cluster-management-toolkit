@@ -358,6 +358,15 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "volumesnapshotcontents",
         "namespaced": False,
     },
+    # sparkoperator.k8s.io
+    ("ScheduledSparkApplication", "sparkoperator.k8s.io"): {
+        "api_paths": ["apis/sparkoperator.k8s.io/v1beta2/"],
+        "api": "scheduledsparkapplications",
+    },
+    ("SparkApplication", "sparkoperator.k8s.io"): {
+        "api_paths": ["apis/sparkoperator.k8s.io/v1beta2/"],
+        "api": "sparkapplications",
+    },
     # storage.k8s.io
     ("CSIDriver", "storage.k8s.io"): {
         "api_paths": ["apis/storage.k8s.io/v1/"],

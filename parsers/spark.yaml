@@ -1,0 +1,29 @@
+- name: "spark"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/library/spark"
+  parser_rules:
+  - name: "custom_splitter"
+    options:
+      regex: '^\d\d.\d\d.\d\d \d\d:\d\d:\d\d ([A-Z]{4}) ([^:]+?): (.*)'
+      severity:
+        field: 1
+        transform: "4letter"
+      facility:
+        fields:
+        - 2
+      message:
+        field: 3
+- name: "spark"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kubeflow/spark-operator"
+  parser_rules:
+  - name: "glog"
+  - name: "strip_ansicodes"
+  - name: "tab_separated"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Spark Operator Version:"
+      loglevel: "notice"
