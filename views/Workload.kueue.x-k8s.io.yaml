@@ -6,15 +6,22 @@ listview:
   group: "Batch Scheduling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "queue", "priority", "admitted_by", "age"]
+      fields: ["namespace", "name", "queue", "priority", "admitted_by", "active", "age"]
   fields:
+    active:
+      header: "Active:"
+      path: "spec#active"
+      default: "<unset>"
+      type: "bool"
     admitted_by:
       header: "Admitted By:"
       path: "status#admittedBy"
+      default: "<unset>"
       type: "str"
     priority:
       header: "Priority:"
       path: "spec#priority"
+      default: "<unset>"
       type: "int"
       formatting:
         field_colors:
@@ -24,16 +31,85 @@ listview:
       header: "Queue:"
       path: "spec#queueName"
       type: "str"
+  actions:
+    actionlist:
+      "Delete resource":
+        description: "Delete resource"
+        category: "Resource Level"
+        confirm: true
+        actionfunc: "delete_resource"
+      "Resume resource":
+        # Requires Kubernetes 1.22+
+        description: "Resume resource"
+        category: "Resource Level"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Resuming"
+          args:
+            patch:
+              spec:
+                active: true
+            strategic_merge: false
+      "Suspend resource":
+        # Requires Kubernetes 1.22+
+        description: "Suspend resource"
+        category: "Resource Level"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Suspending"
+          args:
+            patch:
+              spec:
+                active: false
+            strategic_merge: false
 infoview:
   name: "Workload Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "queue", "priority", "admitted_by"]
+        fields: ["controller", "cluster_queue", "queue", "priority", "admitted_by", "active", "admission_check_state"]
     rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        path: "spec#active"
+        default: "<unset>"
+        type: "bool"
+      admission_check_state:
+        header: [["Admission Check State:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#admissionCheckStates"
+          pathtype: "items"
+          subpath: "type"
+          index: -1
+          default: ["<unset>"]
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              Pending:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              Ready:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Rejected:
+                field_colors:
+                - context: "main"
+                  type: "status_warning"
+              Retry:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       admitted_by:
         header: [["Admitted By:", ["main", "infoheader"]]]
         path: "status#admittedBy"
+        default: "<unset>"
         type: "str"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -61,10 +137,16 @@ infoview:
       priority:
         header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
+        default: "<unset>"
         type: "int"
         formatting:
           field_colors:
           - type: "numerical"
+      cluster_queue:
+        header: [["Cluster Q", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["eue:", ["main", "infoheader"]]]
+        path: "status#admission#clusterQueue"
+        default: "<unset>"
+        type: "str"
       queue:
         header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
         path: "spec#queueName"
@@ -81,6 +163,17 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
+    "Open Cluster Queue":
+      key: "u"
+      read_only: true
+      helptext: "Open info page for Cluster Queue"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        name_path: "status#admission#clusterQueue"
+        kind: "ClusterQueue"
+        api_family: "kueue.x-k8s.io"
     "Open Queue":
       key: "q"
       modifier: "shift"

@@ -1,0 +1,45 @@
+kind: "ProvisioningRequestConfig"
+api_family: "kueue.x-k8s.io"
+default_command: "provisioningrequestconfigs"
+command:
+- "provreqconfigs"
+- "provreqconfig"
+- "provreqconfs"
+- "provreqconf"
+listview:
+  name: "Provisioning Request Configs"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Provisioning Request Config Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["provisioning_class_name", "managed_resources"]
+    rows:
+      managed_resources:
+        header: [["Managed ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["esources:", ["main", "infoheader"]]]
+        path: "spec#managedResources"
+        default: ["<none>"]
+        type: "raw"
+        formatter: "list"
+      provisioning_class_name:
+        header: [["Provisioning Class Name:", ["main", "infoheader"]]]
+        path: "spec#provisioningClassName"
+        default: "<unset>"
+        type: "str"
+  shortcuts:
+    "Managed Resources":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "List managed resources"
+      widget: "windowwidget"
+      title: "Managed resources:"
+      itemgetter: "get_list_as_list"
+      itemgetter_args:
+        path: "spec#managedResources"
+      # This isn't supported for now
+      sortcolumn: "resource"

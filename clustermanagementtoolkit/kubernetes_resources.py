@@ -1779,6 +1779,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api_paths": ["apis/flow.volcano.sh/v1alpha1/"],
         "api": "jobtemplates",
     },
+    # flux-framework.org
+    ("MiniCluster", "flux-framework.org"): {
+        "api_paths": ["apis/flux-framework.org/v1alpha2/"],
+        "api": "miniclusters",
+    },
     # forecastle.stakater.com
     ("ForecastleApp", "forecastle.stakater.com"): {
         "api_paths": ["apis/forecastle.stakater.com/v1alpha1/"],
@@ -2685,6 +2690,11 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "virtualmachines",
     },
     # kueue.x-k8s.io
+    ("AdmissionCheck", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+        "api": "admissionchecks",
+        "namespaced": False,
+    },
     ("ClusterQueue", "kueue.x-k8s.io"): {
         "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
         "api": "clusterqueues",
@@ -2698,6 +2708,26 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     ("LocalQueue", "kueue.x-k8s.io"): {
         "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
         "api": "localqueues",
+    },
+    ("MultiKueueCluster", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api": "multikueueclusters",
+        "namespaced": False,
+    },
+    ("MultiKueueConfig", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1alpha1/"],
+        "api": "multikueueconfigs",
+        "namespaced": False,
+    },
+    ("ProvisioningRequestConfig", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+        "api": "provisioningrequestconfigs",
+        "namespaced": False,
+    },
+    ("WorkloadPriorityClass", "kueue.x-k8s.io"): {
+        "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],
+        "api": "workloadpriorityclasses",
+        "namespaced": False,
     },
     ("Workload", "kueue.x-k8s.io"): {
         "api_paths": ["apis/kueue.x-k8s.io/v1beta1/"],

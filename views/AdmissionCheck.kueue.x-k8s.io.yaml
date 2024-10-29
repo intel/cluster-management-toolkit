@@ -1,0 +1,60 @@
+kind: "AdmissionCheck"
+api_family: "kueue.x-k8s.io"
+default_command: "admissionchecks"
+command:
+- "admchecks"
+- "admcheck"
+listview:
+  name: "Admission Checks"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["name", "age"]
+infoview:
+  name: "Admission Check Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["controller_name", "retry_delay", "parameters"]
+    rows:
+      controller_name:
+        header: [["Controller Name:", ["main", "infoheader"]]]
+        path: "spec#controllerName"
+        default: "<unset>"
+        type: "str"
+      parameters:
+        header: [["P", ["main", "infoheader_shortcut"]], ["arameters:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
+          pathtype: "tuple"
+          kind: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+      retry_delay:
+        header: [["Retry Delay (minutes):", ["main", "infoheader"]]]
+        path: "spec#retryDelayMinutes"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+  shortcuts:
+    "Open Parameters":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for parameters"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#parameters#kind"
+        api_family_path: "spec#parameters#apiGroup"
+        name_path: "spec#parameters#name"

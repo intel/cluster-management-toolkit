@@ -9,8 +9,30 @@ listview:
   group: "Batch Scheduling"
   field_indexes:
     Normal:
-      fields: ["name", "cohort", "strategy", "pending_workloads", "admitted_workloads", "age"]
+      fields: ["name", "cohort", "strategy", "admitted_workloads", "pending_workloads", "active", "age"]
   fields:
+    active:
+      header: "Active:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "status"
+        when:
+        - key: "type"
+          eq: "Active"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
     admitted_workloads:
       header: "Admitted Workloads:"
       path: "status#admittedWorkloads"
@@ -53,8 +75,30 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["namespace_selector", "cohort", "strategy", "workloads_header", "workloads_pending", "workloads_admitted", "preemption_header", "preemption_reclaim_within_cohort", "preemption_within_cluster_queue"]
+        fields: ["namespace_selector", "cohort", "strategy", "flavor_fungibility_header", "flavor_fungibility_when_can_borrow", "flavor_fungibility_when_can_preempt", "preemption_header", "preemption_borrow_within_cohort_header", "preemption_borrow_within_cohort_policy", "preemption_borrow_within_cohort_max_priority_threshold", "preemption_reclaim_within_cohort", "preemption_within_cluster_queue", "stop_policy", "workloads_header", "workloads_admitted", "workloads_pending", "workloads_reserving", "active"]
     rows:
+      active:
+        header: [["Active:", ["main", "infoheader"]]]
+        paths:
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+          - key: "type"
+            eq: "Active"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "True":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "False":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       cohort:
         header: [["Cohort:", ["main", "infoheader"]]]
         path: "spec#cohort"
@@ -72,12 +116,36 @@ infoview:
                 field_colors:
                 - context: "types"
                   type: "generic"
+      flavor_fungibility_header:
+        header: [["Flavor Fungibility:", ["main", "infoheader"]]]
+      flavor_fungibility_when_can_borrow:
+        header: [["  When Can Borrow:", ["main", "infoheader"]]]
+        path: "spec#flavorFungibility#whenCanBorrow"
+        type: "str"
+      flavor_fungibility_when_can_preempt:
+        header: [["  When Can Preempt:", ["main", "infoheader"]]]
+        path: "spec#flavorFungibility#whenCanPreempt"
+        type: "str"
       namespace_selector:
         header: [["Namespace Selector:", ["main", "infoheader"]]]
         path: "spec#namespaceSelector#matchNames"
         default: ["<unset>"]
         type: "raw"
         formatter: "list"
+      preemption_borrow_within_cohort_header:
+        header: [["  Borrow Within Cohort:", ["main", "infoheader"]]]
+      preemption_borrow_within_cohort_policy:
+        header: [["    Policy:", ["main", "infoheader"]]]
+        path: "spec#preemption#borrowWithinCohort#policy"
+        type: "str"
+      preemption_borrow_within_cohort_max_priority_threshold:
+        header: [["    Max Priority Threshold:", ["main", "infoheader"]]]
+        path: "spec#preemption#borrowWithinCohort#maxPriorityThreshold"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       preemption_header:
         header: [["Preemption:", ["main", "infoheader"]]]
       preemption_reclaim_within_cohort:
@@ -87,6 +155,10 @@ infoview:
       preemption_within_cluster_queue:
         header: [["  Within Cluster Queue:", ["main", "infoheader"]]]
         path: "spec#preemption#withinClusterQueue"
+        type: "str"
+      stop_policy:
+        header: [["Stop Policy:", ["main", "infoheader"]]]
+        path: "spec#stopPolicy"
         type: "str"
       strategy:
         header: [["Strategy:", ["main", "infoheader"]]]
@@ -101,7 +173,6 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
-        align: "right"
       workloads_pending:
         header: [["  Pending:", ["main", "infoheader"]]]
         path: "status#pendingWorkloads"
@@ -109,7 +180,13 @@ infoview:
         formatting:
           field_colors:
           - type: "numerical"
-        align: "right"
+      workloads_reserving:
+        header: [["  Reserving:", ["main", "infoheader"]]]
+        path: "status#reservingWorkloads"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -154,6 +231,17 @@ infoview:
           - type: "numerical"
         align: "right"
   shortcuts:
+    "Flavors Reservations":
+      key: "f"
+      read_only: true
+      helptext: "Show flavors reservations"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Flavors Reservations"
+        _pass_obj: true
+        path: "status#flavorsReservation"
+        include_root: true
     "Flavors Usage":
       key: "f"
       modifier: "shift"

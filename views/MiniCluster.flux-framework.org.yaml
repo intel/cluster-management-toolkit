@@ -1,0 +1,41 @@
+kind: "MiniCluster"
+api_family: "flux-framework.org"
+default_command: "miniclusters"
+command:
+- "miniclrs"
+- "miniclr"
+listview:
+  name: "Mini Clusters"
+  group: "API & Extendability"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "state", "age"]
+      sortcolumn: "namespace"
+  fields:
+    state:
+      header: "State:"
+      paths:
+      - path: "status#conditions"
+        pathtype: "items"
+        subpath: "type"
+        index: -1
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            JobFinished:
+              field_colors:
+              - context: "main"
+                type: "status_done"
+infoview:
+  name: "Mini Cluster Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["algorithm"]
+    rows:
+      algorithm:
+        header: [["Algorithm:", ["main", "infoheader"]]]
+        path: "spec#algorithm#algorithmName"
+        default: "<unset>"
+        type: "str"

@@ -1,0 +1,39 @@
+kind: "WorkloadPriorityClass"
+api_family: "kueue.x-k8s.io"
+default_command: "workloadpriorityclasses"
+command:
+- "wlprioclasses"
+- "wlprioclass"
+- "wlpcs"
+- "wlpc"
+listview:
+  name: "Workload Priority Classes"
+  group: "Batch Scheduling"
+  field_indexes:
+    Normal:
+      fields: ["name", "priority", "age"]
+  fields:
+    priority:
+      header: "Priority:"
+      path: "value"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Workload Priority Classe Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["priority"]
+    rows:
+      priority:
+        header: [["Priority:", ["main", "infoheader"]]]
+        path: "value"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
