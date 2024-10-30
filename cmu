@@ -5527,7 +5527,9 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 _label_selector_key_values = \
                     deep_get(listgetter_args, DictPath("_label_selector_key_values"))
                 if _label_selector_path is not None:
-                    _label_selector_data = deep_get(obj, DictPath(_label_selector_path))
+                    if isinstance(_label_selector_path, str):
+                        _label_selector_path = [DictPath(_label_selector_path)]
+                    _label_selector_data = deep_get_with_fallback(obj, _label_selector_path)
                     if isinstance(_label_selector_data, str):
                         listgetter_args["label_selector"] = _label_selector_data
                     else:

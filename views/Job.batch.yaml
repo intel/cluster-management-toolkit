@@ -123,6 +123,7 @@ listview:
         - key: "type"
           eq: "Complete"
         substitute: "Completed"
+      default: "<unset>"
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -135,6 +136,14 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_done"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "<unset>":
+              field_colors:
+              - context: "types"
+                type: "unset"
             __default:
               field_colors:
               - context: "main"
@@ -312,6 +321,7 @@ infoview:
           - key: "type"
             eq: "Complete"
           substitute: "Completed"
+        default: "<unset>"
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -324,6 +334,14 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_done"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
               __default:
                 field_colors:
                 - context: "main"

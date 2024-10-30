@@ -153,7 +153,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "qos_class", "host_ips", "pod_ips", "termination_grace_period", "enable_service_links"]
+        fields: ["phase", "conditions", "scheduler", "priority", "priority_class", "preemption_policy", "qos_class", "host_ips", "pod_ips", "termination_grace_period", "enable_service_links"]
     rows:
       conditions:
         header: [["Conditions:", ["main", "infoheader"]]]
@@ -317,9 +317,15 @@ infoview:
           subpath: "ip"
         unique: true
         formatter: "address"
+      preemption_policy:
+        header: [["Preemption Policy:", ["main", "infoheader"]]]
+        path: "spec#preemptionPolicy"
+        default: "<unset>"
+        type: "str"
       priority:
         header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
+        default: "<unset>"
         type: "int"
         formatting:
           field_colors:
