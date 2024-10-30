@@ -1,0 +1,36 @@
+kind: "Repository"
+api_family: "kuik.enix.io"
+default_command: "repositories"
+command:
+- "repos"
+- "repo"
+listview:
+  name: "Repositories"
+  group: "Caches / Mirrors"
+  field_indexes:
+    Normal:
+      fields: ["name", "images", "phase", "age"]
+  fields:
+    images:
+      header: "Images:"
+      path: "status#images"
+      type: "str"
+    phase:
+      header: "Phase:"
+      path: "status#phase"
+      type: "str"
+infoview:
+  name: "Repository Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["images", "phase"]
+    rows:
+      images:
+        header: [["Images:", ["main", "infoheader"]]]
+        path: "status#images"
+        type: "str"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        type: "str"

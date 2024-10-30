@@ -40,22 +40,23 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["expiration", "cached", "retain", "pull_secret_namespace", "source_image"]
+        fields: ["expiration", "retain", "pull_secret_namespace", "source_image", "status_header", "status_available_upstream", "status_cached", "status_digest", "status_upstream_digest", "status_up_to_date", "status_last_sync", "status_last_successful_pull", "status_last_seen_upstream", "status_use_count", "phase"]
     rows:
-      cached:
-        header: [["Cached:", ["main", "infoheader"]]]
-        path: "status#isCached"
-        default: "<unset>"
-        type: "bool"
       expiration:
         header: [["Expiration:", ["main", "infoheader"]]]
         path: "spec#expiresAt"
         default: "<unset>"
         type: "timestamp"
         formatter: "timestamp"
+      phase:
+        header: [["Phase:", ["main", "infoheader"]]]
+        path: "status#phase"
+        default: "<unset>"
+        type: "str"
       pull_secret_namespace:
         header: [["Pull Secrets ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
         path: "spec#pullSecretsNamespace"
+        default: "<unset>"
         type: "str"
         formatting:
           field_colors:
@@ -67,8 +68,66 @@ infoview:
         type: "bool"
       source_image:
         header: [["Source Image:", ["main", "infoheader"]]]
-        path: "spec#sourceImage"
+        paths:
+        - path: "spec#sourceImage"
+          pathtype: "regex"
+          regex: "^([^:]+):(.*)"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      status_available_upstream:
+        header: [["  Available Upstream:", ["main", "infoheader"]]]
+        path: "status#availableUpstream"
+        default: "<unset>"
+        type: "bool"
+      status_cached:
+        header: [["  Cached:", ["main", "infoheader"]]]
+        path: "status#isCached"
+        default: "<unset>"
+        type: "bool"
+      status_digest:
+        header: [["  Digest:", ["main", "infoheader"]]]
+        path: "status#digest"
+        default: "<unset>"
         type: "str"
+      status_header:
+        header: [["Status:", ["main", "infoheader"]]]
+      status_last_seen_upstream:
+        header: [["  Last Stream Upstream:", ["main", "infoheader"]]]
+        path: "status#lastSeenUpstream"
+        default: "<unset>"
+        type: "str"
+      status_last_successful_pull:
+        header: [["  Last Successful Pull:", ["main", "infoheader"]]]
+        path: "status#lastSuccessfulPull"
+        default: "<unset>"
+        type: "str"
+      status_last_sync:
+        header: [["  Last Sync:", ["main", "infoheader"]]]
+        path: "status#lastSync"
+        default: "<unset>"
+        type: "str"
+      status_up_to_date:
+        header: [["  Up to Date:", ["main", "infoheader"]]]
+        path: "status#upToDate"
+        default: "<unset>"
+        type: "bool"
+      status_upstream_digest:
+        header: [["  Upstream Digest:", ["main", "infoheader"]]]
+        path: "status#upstreamDigest"
+        default: "<unset>"
+        type: "str"
+      status_use_count:
+        header: [["  Use Count:", ["main", "infoheader"]]]
+        path: "status#usedBy#count"
+        default: 0
+        type: "int"
+        formatter: "numerical"
+        align: "right"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
