@@ -1,6 +1,20 @@
 - name: "kuberay"
   show_in_selector: false
   matchkeys:
+  - image_name: "/kuberay/apiserver"
+  - image_name: "/kuberay/security-proxy"
+  parser_rules:
+  - name: "glog"
+- name: "kuberay"
+  show_in_selector: false
+  matchkeys:
+  - image_name: "/kuberay/operator"
+  parser_rules:
+  - name: "glog"
+  - name: "json"
+- name: "kuberay"
+  show_in_selector: false
+  matchkeys:
   - container_name: "kuberay-operator"
   parser_rules:
   - name: "glog"

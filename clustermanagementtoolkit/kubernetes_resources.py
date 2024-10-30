@@ -3805,15 +3805,18 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # ray.io
     ("RayCluster", "ray.io"): {
-        "api_paths": ["apis/ray.io/v1alpha1/"],
+        "api_paths": ["apis/ray.io/v1/",
+                      "apis/ray.io/v1alpha1/"],
         "api": "rayclusters",
     },
     ("RayJob", "ray.io"): {
-        "api_paths": ["apis/ray.io/v1alpha1/"],
+        "api_paths": ["apis/ray.io/v1/",
+                      "apis/ray.io/v1alpha1/"],
         "api": "rayjobs",
     },
     ("RayService", "ray.io"): {
-        "api_paths": ["apis/ray.io/v1alpha1/"],
+        "api_paths": ["apis/ray.io/v1/",
+                      "apis/ray.io/v1alpha1/"],
         "api": "rayservices",
     },
     # reaper.cassandra-reaper.io
