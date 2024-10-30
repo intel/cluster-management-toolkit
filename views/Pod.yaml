@@ -262,9 +262,12 @@ infoview:
       host_ips:
         header: [["Host IPs:", ["main", "infoheader"]]]
         paths:
+        - path: "status#hostIP"
+          pathtype: "str"
         - path: "status#hostIPs"
           pathtype: "items"
           subpath: "ip"
+        unique: true
         formatter: "address"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
@@ -307,9 +310,12 @@ infoview:
       pod_ips:
         header: [["Pod IPs:", ["main", "infoheader"]]]
         paths:
+        - path: "status#podIP"
+          pathtype: "str"
         - path: "status#podIPs"
           pathtype: "items"
           subpath: "ip"
+        unique: true
         formatter: "address"
       priority:
         header: [["Priority:", ["main", "infoheader"]]]

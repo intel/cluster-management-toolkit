@@ -1049,6 +1049,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
         path = deep_get(field, DictPath("path"))
         paths = deep_get(field, DictPath("paths"), [])
         path_substitutions = deep_get(field, DictPath("path_substitutions"), {})
+        unique_values = deep_get(field, DictPath("unique"), False)
         if caller_obj and path_substitutions:
             substitutions = {}
             for subst, subst_with in path_substitutions.items():
@@ -1730,6 +1731,10 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
                 "replace_quotes": replace_quotes,
                 "view": view,
             }
+            if unique_values:
+                unique = []
+                _values = [unique.append(x) for x in _values if x not in unique]
+                _values = unique
             for value, vtype_ in _values:
                 if isinstance(vtype_, list):
                     if value is None or not value:
