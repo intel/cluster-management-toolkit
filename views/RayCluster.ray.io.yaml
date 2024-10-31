@@ -35,14 +35,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ray_version", "available_workers", "desired_workers"]
+        fields: ["controller", "ray_version", "available_workers", "desired_workers", "desired_resources_header", "desired_cpus", "desired_gpus", "desired_tpus", "desired_mem", "endpoints_header", "endpoint_client", "endpoint_dashboard", "endpoint_gcs", "endpoint_metrics", "endpoint_serve"]
     rows:
       available_workers:
         header: [["Available Workers:", ["main", "infoheader"]]]
         path: "status#availableWorkerReplicas"
         default: 0
         type: "int"
-        align: "right"
         formatting:
           field_colors:
           - type: "numerical"
@@ -69,15 +68,83 @@ infoview:
           field_separators:
           - type: "kind_api_group"
           - type: "kind"
+      desired_cpus:
+        header: [["  CPUs:", ["main", "infoheader"]]]
+        path: "status#desiredCPU"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      desired_gpus:
+        header: [["  GPUs:", ["main", "infoheader"]]]
+        path: "status#desiredGPU"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      desired_mem:
+        header: [["  Memory:", ["main", "infoheader"]]]
+        path: "status#desiredMemory"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      desired_resources_header:
+        header: [["Desired Resources:", ["main", "infoheader"]]]
+      desired_tpus:
+        header: [["  TPUs:", ["main", "infoheader"]]]
+        path: "status#desiredTPU"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       desired_workers:
         header: [["Desired Workers:", ["main", "infoheader"]]]
         path: "status#desiredWorkerReplicas"
         default: 0
         type: "int"
-        align: "right"
         formatting:
           field_colors:
           - type: "numerical"
+      endpoint_client:
+        header: [["  Client:", ["main", "infoheader"]]]
+        path: "status#endpoints#client"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      endpoint_dashboard:
+        header: [["  Dashboard:", ["main", "infoheader"]]]
+        path: "status#endpoints#dashboard"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      endpoint_gcs:
+        header: [["  GCS:", ["main", "infoheader"]]]
+        path: "status#endpoints#gcs"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      endpoint_metrics:
+        header: [["  Metrics:", ["main", "infoheader"]]]
+        path: "status#endpoints#metrics"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      endpoint_serve:
+        header: [["  Serve:", ["main", "infoheader"]]]
+        path: "status#endpoints#serve"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "port"
+      endpoints_header:
+        header: [["Endpoints:", ["main", "infoheader"]]]
       ray_version:
         header: [["Ray Version:", ["main", "infoheader"]]]
         path: "spec#rayVersion"

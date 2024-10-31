@@ -88,6 +88,7 @@ infoview:
       status_dashboard_is_healthy:
         header: [["    Healthy:", ["main", "infoheader"]]]
         path: "status#activeServiceStatus#dashboardStatus#isHealthy"
+        default: "<unset>"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -101,9 +102,14 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       status_dashboard_last_update:
         header: [["    Last Update:", ["main", "infoheader"]]]
         path: "status#activeServiceStatus#dashboardStatus#lastUpdateTime"
+        default: "<unset>"
         type: "timestamp"
         formatter: "timestamp"
       status_dashboard_header:
@@ -114,7 +120,9 @@ infoview:
         header: [["  ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["ay Cluster:", ["main", "infoheader"]]]
       status_raycluster_name:
         header: [["    Name:", ["main", "infoheader"]]]
-        path: "status#activeServiceStatus#rayClusterName"
+        paths:
+        - path: ["status#activeServiceStatus#rayClusterName", "status#pendingServiceStatus#rayClusterName"]
+          pathtype: "str"
         type: "str"
       status_raycluster_last_update:
         header: [["    Last Update:", ["main", "infoheader"]]]
@@ -172,10 +180,6 @@ infoview:
         formatting:
           mapping:
             mappings:
-              "<unset>":
-                field_colors:
-                - context: "types"
-                  type: "unset"
               "HEALTHY":
                 field_colors:
                 - context: "main"
@@ -188,6 +192,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_pending"
+              "<unset>":
+                field_colors:
+                - context: "types"
+                  type: "unset"
       status:
         header: "Status:"
         path: "status"
@@ -246,7 +254,7 @@ infoview:
         _pass_obj: true
         kind: "RayCluster"
         api_family: "ray.io"
-        name_path: "status#activeServiceStatus#rayClusterName"
+        name_path: ["status#activeServiceStatus#rayClusterName", "status#pendingServiceStatus#rayClusterName"]
         namespace_path: "metadata#namespace"
     "View Head Group Specs":
       key: "h"

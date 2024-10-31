@@ -3,8 +3,143 @@ api_family: "telemetry.istio.io"
 default_command: "telemetries"
 listview:
   name: "Telemetries"
-  group: "Monitoring"
+  group: "Istio"
   field_indexes:
     Normal:
       fields: ["namespace", "name", "age"]
       sortcolumn: "namespace"
+infoview:
+  name: "Telemetry Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["label_selector"]
+    rows:
+      label_selector:
+        header: [["Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+  listpad:
+    listgetter: "generic_listgetter"
+    listgetter_args:
+      _kind: "Pod"
+      _label_selector_path: "spec#selector#matchLabels"
+      _none_on_empty_selector: true
+    infogetter: "generic_infogetter"
+    on_activation:
+      call: "resourceinfodispatch"
+      kind: "Pod"
+    field_indexes:
+      Wide:
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        sortcolumn: "pod_status"
+      Normal:
+        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+      Compact:
+        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        sortcolumn: "pod_status"
+    fields:
+      containers:
+        header: "Containers:"
+        paths:
+        - paths:
+          - "spec#initContainers"
+          - "spec#containers"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          - subpath: "image"
+            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+          type: "raw"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "generic"
+          - type: "version"
+          field_separators:
+          - type: "version"
+      last_restart:
+        header: "Latest Restart:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+          when:
+          - key: "restartCount"
+            gt: 0
+          action: "latest"
+          type: "timestamp"
+        default: -1
+        formatter: "age"
+        align: "right"
+      node_name:
+        header: "Node:"
+        path: "spec#nodeName"
+        type: "host"
+        default: "<none>"
+        formatting:
+          field_colors:
+          - type: "host"
+      pod_ip:
+        header: "Pod IP:"
+        path: "status#podIP"
+        default: "<unset>"
+        type: "address"
+        formatter: "address"
+      restarts:
+        header: "Restarts:"
+        paths:
+        - path: "status#containerStatuses"
+          pathtype: "items"
+          subpath: "restartCount"
+          action: "sum"
+          type: "int"
+        default: 0
+        formatter: "numerical"
+        align: "right"
+  shortcuts:
+    "Show access logging rules":
+      key: "a"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show access logging rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Access Logging Rules"
+        _pass_obj: true
+        path: "spec#accessLogging"
+        include_root: true
+    "Show metrics rules":
+      key: "m"
+      read_only: true
+      helptext: "Show metrics rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Metrics Rules"
+        _pass_obj: true
+        path: "spec#metrics"
+        include_root: true
+    "Show tracing rules":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show tracing rules"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Tracing Rules"
+        _pass_obj: true
+        path: "spec#tracing"
+        include_root: true
