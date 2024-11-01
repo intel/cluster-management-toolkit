@@ -1434,5 +1434,6 @@ def check_allowlist(allowlist: Dict, allowlist_name: str, value: Optional[Any],
         allowed_values = ""
         if allowlist.keys():
             allowed_values = "\n- " + "\n- ".join(allowlist.keys())
-        sys.exit(f"“{value}“ is not in “{allowlist_name}“; allowed values:{allowed_values}\nAborting.")
+        sys.exit(f"“{value}“ is not in “{allowlist_name}“; "
+                 f"allowed values:{allowed_values}\nAborting.")
     return allowlist.get(value, default)
