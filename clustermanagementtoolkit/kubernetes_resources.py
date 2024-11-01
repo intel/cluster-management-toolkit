@@ -256,12 +256,14 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
     # networking.k8s.io
     ("ClusterCIDR", "networking.k8s.io"): {
-        "api_paths": ["apis/networking.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/networking.k8s.io/v1beta1/",
+                      "apis/networking.k8s.io/v1alpha1/"],
         "api": "clustercidrs",
         "namespaced": False,
     },
     ("IPAddress", "networking.k8s.io"): {
-        "api_paths": ["apis/networking.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/networking.k8s.io/v1beta1/",
+                      "apis/networking.k8s.io/v1alpha1/"],
         "api": "ipaddresses",
         "namespaced": False,
     },
@@ -282,7 +284,8 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
         "api": "networkpolicies",
     },
     ("ServiceCIDR", "networking.k8s.io"): {
-        "api_paths": ["apis/networking.k8s.io/v1alpha1/"],
+        "api_paths": ["apis/networking.k8s.io/v1beta1/",
+                      "apis/networking.k8s.io/v1alpha1/"],
         "api": "servicecidrs",
         "namespaced": False,
     },
