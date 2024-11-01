@@ -988,6 +988,10 @@
 								"description": "Exact match against this value",
 								"type": [ "number", "string", "boolean", "object", "array", "null" ]
 							},
+							"in": {
+								"description": "in",
+								"type": "array"
+							},
 							"ne": {
 								"description": "Negative exact match against this value",
 								"type": [ "number", "string", "boolean", "object", "array", "null" ]
@@ -1390,9 +1394,10 @@
 					"$ref": "#/definitions/on_activation"
 				},
 				"shortcuts": {
+					"description": "Shortcuts for the list view",
 					"type": "object",
 					"patternProperties": {
-						"^[A-Za-z0-9 -]*[A-Za-z0-9]$": {
+						"^[A-Za-z0-9 ()-]*[A-Za-z0-9)]$": {
 							"oneOf": [
 								{
 									"type": "object",
@@ -1745,6 +1750,10 @@
 												},
 												"type": {
 													"$ref": "#/definitions/processed_data_type"
+												},
+												"unique": {
+													"description": "Should items in the list of data be unique",
+													"type": "boolean"
 												}
 											},
 											"required": [ "header" ],
@@ -1874,9 +1883,10 @@
 					"additionalProperties": false
 				},
 				"shortcuts": {
+					"description": "Shortcuts for the info view",
 					"type": "object",
 					"patternProperties": {
-						"^[A-Za-z0-9 -]*[A-Za-z0-9]$": {
+						"^[A-Za-z0-9 ()-]*[A-Za-z0-9)]$": {
 							"oneOf": [
 								{
 									"type": "object",
@@ -1987,7 +1997,20 @@
 													"type": "boolean"
 												},
 												"kind": {
-													"$ref": "#/definitions/kind"
+													"anyof": [
+														{
+															"$ref": "#/definitions/kind"
+														}, {
+															"type": "object",
+															"path": {
+																"$ref": "#/definitions/simple_path"
+															},
+															"substitutions": {
+																"description": "A dict of substitutions",
+																"type": "object"
+															}
+														}
+													]
 												},
 												"kind_path": {
 													"description": "Path to get the kind of the object from, optionally with fallback(s)",
@@ -2015,6 +2038,15 @@
 												},
 												"namespace": {
 													"description": "The namespace of the object",
+													"type": "string"
+												},
+												"namespaced_name_enabled_path": {
+													"$ref": "#/definitions/simple_path"
+												},
+												"namespaced_name_path": {
+													"$ref": "#/definitions/simple_path"
+												},
+												"namespaced_name_separator": {
 													"type": "string"
 												},
 												"namespace_path": {

@@ -1459,12 +1459,14 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     if cri is None:
         cri = "containerd"
 
+    add_playbooks = []
+
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue.
     if cri == "containerd":
-        add_playbooks = [FilePath("setup_containerd.yaml")]
+        add_playbooks += [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        add_playbooks = [FilePath("setup_cri-o.yaml")]
+        add_playbooks += [FilePath("setup_cri-o.yaml")]
     cri_socket = deep_get(cri_data[cri], DictPath("socket"))
 
     cluster_name = get_cluster_name()
@@ -1473,6 +1475,8 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
                         ANSIThemeStr(": Could not get the cluster name", "default"),
                         ANSIThemeStr("; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
+
+    extra_values = {}
 
     if k8s_distro == "kubeadm":
         add_playbooks += [
@@ -1675,13 +1679,15 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                     ANSIThemeStr("Tearing down Kubernetes on the nodes", "action")])
 
+    teardown_playbooks = []
+
     if k8s_distro == "kubeadm":
-        teardown_playbooks = [
+        teardown_playbooks += [
             FilePath("kubeadm_teardown_node.yaml"),
             FilePath("teardown_cni.yaml"),
         ]
     elif k8s_distro == "rke2":
-        teardown_playbooks = [
+        teardown_playbooks += [
             FilePath("rke2_teardown_node.yaml"),
             FilePath("teardown_cni.yaml"),
         ]
@@ -1823,12 +1829,14 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
     ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                     ANSIThemeStr("Purging Kubernetes from the hosts", "action")])
 
+    purge_playbooks = []
+
     if k8s_distro == "kubeadm":
-        purge_playbooks = [
+        purge_playbooks += [
             FilePath("kubeadm_purge.yaml"),
         ]
     elif k8s_distro == "rke2":
-        purge_playbooks = [
+        purge_playbooks += [
             FilePath("rke2_purge.yaml"),
         ]
     playbooks = populate_playbooks_from_filenames(purge_playbooks)

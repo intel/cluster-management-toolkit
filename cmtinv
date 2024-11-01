@@ -936,6 +936,7 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
     # ssv = Space-separated values
     # tsv = Tab-separated values
     output_format = "default"
+    separator = ""
 
     for opt, optarg in options:
         if opt == "--color":
@@ -944,7 +945,6 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
             output_format = optarg
 
     if output_format != "default":
-        separator = ""
         if output_format == "csv":
             separator = ","
         elif output_format == "ssv":

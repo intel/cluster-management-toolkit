@@ -438,7 +438,8 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
 
                 # Instead of inserting a field here we insert a field containing list index
                 if value_type == "index":
-                    index_str = cmtlib.substitute_string(index_template, {"<<<index>>>": str(item_index)})
+                    index_str = cmtlib.substitute_string(index_template,
+                                                         {"<<<index>>>": str(item_index)})
                     tmp.append(index_str)
                     continue
 

@@ -413,6 +413,7 @@ def read_cmtconfig() -> Dict:
     system_config_dir = Path(cmtpaths.SYSTEM_CMT_CONFIG_FILE_DIR)
     if system_config_dir.is_dir():
         for path in natsorted(system_config_dir.iterdir()):
+            path = cast(str, path)
             filename = PurePath(str(path)).name
 
             # Skip tempfiles and only read entries that end with .y{,a}ml
@@ -430,6 +431,7 @@ def read_cmtconfig() -> Dict:
     config_dir = Path(cmtpaths.CMT_CONFIG_FILE_DIR)
     if config_dir.is_dir():
         for path in natsorted(Path(cmtpaths.CMT_CONFIG_FILE_DIR).iterdir()):
+            path = cast(str, path)
             filename = PurePath(str(path)).name
 
             # Skip tempfiles and only read entries that end with .y{,a}ml
@@ -1408,6 +1410,7 @@ def setup_paths() -> List[SecurityStatus]:
     return [SecurityStatus.OK]
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 def check_allowlist(allowlist: Dict, allowlist_name: str, value: Optional[Any],
                     default: Optional[Any] = None, exit_on_fail: bool = True,
                     allow_none: bool = False) -> Optional[Any]:
@@ -1429,7 +1432,7 @@ def check_allowlist(allowlist: Dict, allowlist_name: str, value: Optional[Any],
         return None
     if value not in allowlist.keys() and exit_on_fail:
         allowed_values = ""
-        for key in allowlist.keys():
-            allowed_values += f"\n- {key}"
-        sys.exit(f"{value} is not in {allowlist_name}; allowed values:{allowed_values}\nAborting.")
+        if allowlist.keys():
+            allowed_values = "\n- " + "\n- ".join(allowlist.keys())
+        sys.exit(f"“{value}“ is not in “{allowlist_name}“; allowed values:{allowed_values}\nAborting.")
     return allowlist.get(value, default)

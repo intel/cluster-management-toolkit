@@ -59,7 +59,7 @@ except ModuleNotFoundError:  # pragma: no cover
              "you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 
-def get_playbook_path(playbook: FilePath) -> FilePath:
+def get_playbook_path(playbook: Union[FilePath, str]) -> FilePath:
     """
     Pass in the name of a playbook that exists in either
     {SYSTEM_PLAYBOOK_DIR} or {ANSIBLE_PLAYBOOK_DIR};
@@ -1715,7 +1715,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
         validate_args(kwargs_spec={"__allof": ("selection",), "selection": {"types": (list,)}},
                       kwargs={"selection": selection})
 
-    playbook_path = FilePath(get_playbook_path("ping.yaml"))
+    playbook_path = get_playbook_path("ping.yaml")
     _retval, ansible_results = ansible_run_playbook_on_selection(playbook_path,
                                                                  selection=selection, quiet=False)
 

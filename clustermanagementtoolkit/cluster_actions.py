@@ -388,10 +388,11 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
 
     # Add the CRI to the setup playbooks for the control plane;
     # the list is short enough that doing prepend isn't a performance issue.
+    setup_playbooks_with_cri = []
     if cri == "containerd":
-        setup_playbooks_with_cri = [FilePath("setup_containerd.yaml")]
+        setup_playbooks_with_cri += [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
-        setup_playbooks_with_cri = [FilePath("setup_cri-o.yaml")]
+        setup_playbooks_with_cri += [FilePath("setup_cri-o.yaml")]
     setup_playbooks_with_cri += setup_playbooks
 
     playbooks = populate_playbooks_from_filenames(setup_playbooks_with_cri)

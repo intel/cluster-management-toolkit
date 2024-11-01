@@ -50,7 +50,7 @@ def test_fieldgetter_api_server_version(verbose: bool = False) -> Tuple[str, boo
     if result:
         # Indata format:
         # (mock_return_value, fields, expected_result, expected_exception)
-        testdata = (
+        testdata: Tuple = (
             (FakeKH((1, 29, "v1.29.1")), [0, 1, 2], [1, 29, "v1.29.1"], None),
             (FakeKH((1, 29, "v1.29.1")), [0], [1], None),
             (FakeKH((1, 29, "v1.29.1")), [1], [29], None),

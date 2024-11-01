@@ -74,7 +74,7 @@ FLAKE8_IGNORE := F841,W503
 PYLINT_IGNORE := W0511
 
 code-checks-weak: flake8 ruff
-code-checks: flake8 mypy pylint
+code-checks: mypy pylint
 
 checks: bandit regexploit semgrep yamllint validate_playbooks validate_yaml ruff
 
@@ -306,7 +306,7 @@ mypy:
 	fi; \
 	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
 	for file in $(python_executables) $(python_test_executables) clustermanagementtoolkit/*.py; do \
-		$$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file || true; \
+		$$cmd --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file || true; \
 	done
 
 # Note: we know that the code does not have complete type-hinting,
