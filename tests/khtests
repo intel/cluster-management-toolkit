@@ -16,7 +16,7 @@
 # pylint: disable=too-many-lines
 
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 from unittest import mock
 import yaml
 
@@ -35,7 +35,7 @@ kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 kh_cache: kubernetes_helper.KubernetesResourceCache = None  # type: ignore
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

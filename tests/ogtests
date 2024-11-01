@@ -16,7 +16,7 @@
 from datetime import datetime
 import sys
 from pathlib import PurePath
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 from unittest import mock
 import yaml
 
@@ -37,7 +37,7 @@ from clustermanagementtoolkit import objgetters
 TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testlogs")
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():
@@ -54,7 +54,7 @@ def test_objgetter_ansible_facts(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         # Indata format:
         # (input, mockdata, expected_result, expected_exception)
-        testdata = (
+        testdata: Tuple = (
             # Should succeed
             (
                 {
@@ -239,6 +239,7 @@ def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
     result = True
 
     fun = objgetters.objgetter_journalctl_log
+    tmp: Any = None
 
     if result:
         # Indata format:
@@ -310,7 +311,7 @@ def test_objgetter_journalctl_log(verbose: bool = False) -> Tuple[str, bool]:
 
         for obj, expected_result, expected_exception in testdata:
             try:
-                tmp = fun(obj)
+                tmp = fun(obj)  # type: ignore
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               "            obj:\n" \
@@ -495,8 +496,8 @@ def test_objgetter_ansible_log(verbose: bool = False) -> Tuple[str, bool]:
 
         for obj, metadata, logfile, mock_check_path, \
                 expected_result, expected_exception in testdata:
-            secure_rm(obj.joinpath("metadata.yaml"), metadata)
-            secure_rm(obj.joinpath("01-myhost_Checking_uptime.yaml"), metadata)
+            secure_rm(obj.joinpath("metadata.yaml"), ignore_non_existing=True)
+            secure_rm(obj.joinpath("01-myhost_Checking_uptime.yaml"), ignore_non_existing=True)
             secure_write_yaml(obj.joinpath("metadata.yaml"), metadata)
             secure_write_yaml(obj.joinpath("01-myhost_Checking_uptime.yaml"), logfile)
             try:

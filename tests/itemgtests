@@ -16,7 +16,7 @@
 from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 import yaml
 
 from clustermanagementtoolkit.cmtpaths import DEFAULT_THEME_FILE
@@ -33,7 +33,7 @@ TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 # unit-tests for itemgetters.py
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

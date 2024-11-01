@@ -16,7 +16,7 @@
 from datetime import datetime, timezone
 from pathlib import PurePath
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 from unittest import mock
 import yaml
 
@@ -33,7 +33,7 @@ kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 TEST_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testpaths")))
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

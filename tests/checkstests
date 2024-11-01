@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 import yaml
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
@@ -25,7 +25,7 @@ from clustermanagementtoolkit import checks
 # unit-tests for checks.py
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():
@@ -42,7 +42,7 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
     if result:
         # Indata format:
         # (cmtconfig_dict, (abort, critical, error, warning, note), expected_exception)
-        testdata = (
+        testdata: Tuple = (
             # disablestricthostkeychecking = False
             (
                 {

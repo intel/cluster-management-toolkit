@@ -44,7 +44,7 @@ TEST_PLAYBOOKS_DIR = FilePath(str(PurePath(__file__).parent.joinpath("testplaybo
 # unit-tests for ansible_helper.py
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

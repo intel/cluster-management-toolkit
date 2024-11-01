@@ -18,7 +18,7 @@ import curses
 from pathlib import PurePath
 import os
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 import yaml
 
 from clustermanagementtoolkit import cmtlib
@@ -40,7 +40,7 @@ from clustermanagementtoolkit.curses_helper import ThemeArray, WidgetLineAttrs
 TEST_DIR = str(PurePath(__file__).parent.joinpath("testthemes"))
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

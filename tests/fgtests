@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 import yaml
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, ProgrammingError
@@ -25,7 +25,7 @@ from clustermanagementtoolkit import fieldgetters
 # unit-tests for fieldgetters.py
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

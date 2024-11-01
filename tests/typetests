@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, date
 from pathlib import Path, PurePath
 import os
 import sys
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 import yaml
 
 from clustermanagementtoolkit import cmttypes
@@ -37,7 +37,7 @@ from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithe
 none_timestamp = (datetime.combine(date.min, datetime.min.time()) + timedelta(days=1)).astimezone()
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

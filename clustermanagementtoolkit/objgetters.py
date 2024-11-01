@@ -59,7 +59,7 @@ def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
     Format a journalctl log message
 
         Parameters:
-            obj (dict): The obj to get data from
+            obj ([dict]): The obj to get data from
         Returns:
             (dict): A journalctl facts object
     """
@@ -78,7 +78,7 @@ def objgetter_ansible_log(obj: FilePath) -> Dict:
     Get an obj from an ansible log entry
 
         Parameters:
-            obj (dict): The obj to use as reference
+            obj (FilePath): The obj to use as reference
         Returns:
             (dict): An ansible log entry
     """
@@ -133,7 +133,7 @@ def objgetter_ansible_log(obj: FilePath) -> Dict:
     for path in natsorted(Path(str(obj)).iterdir()):
         if (filename := PurePath(str(path)).name) == "metadata.yaml":
             continue
-        log = secure_read_yaml(FilePath(path))
+        log = secure_read_yaml(FilePath(str(path)))
         logs.append({
             "index": filename.split("-", maxsplit=1)[0],
             "log": log

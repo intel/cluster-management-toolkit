@@ -44,7 +44,7 @@ def override_import(name: str, *args: List[Any], **kwargs: Any):
     return real_import(name, *args, **kwargs)
 
 
-def yaml_dump(data: Dict, base_indent: int = 4) -> str:
+def yaml_dump(data: Any, base_indent: int = 4) -> str:
     result = ""
     dump = yaml.dump(data)
     for line in dump.splitlines():

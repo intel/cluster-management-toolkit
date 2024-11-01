@@ -18,7 +18,7 @@ import errno
 import importlib
 import os
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, cast, Dict, List, Tuple
 from unittest import mock
 
 from clustermanagementtoolkit import ansithemeprint
@@ -30,15 +30,17 @@ from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError, Prog
 
 real_import = None
 
-import_override = {}
+import_override: Dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any):
+def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
     if retval:
         return retval
+    if real_import is None:
+        return None
     return real_import(name, *args, **kwargs)
 
 
@@ -47,7 +49,7 @@ def test_uninitialized_ansithemeprint_functions(verbose: bool = False) -> Tuple[
     message = ""
     result = True
 
-    fun = ansithemeprint.ansithemearray_to_str
+    fun: Callable = ansithemeprint.ansithemearray_to_str
 
     try:
         fun([ANSIThemeStr("foo", "default")])
@@ -98,7 +100,7 @@ def test_init_ansithemeprint_use_fallback_theme(verbose: bool = False) -> Tuple[
 
     importlib.reload(ansithemeprint)
     global ANSIThemeStr
-    ANSIThemeStr = importlib.reload(ansithemeprint).ANSIThemeStr
+    ANSIThemeStr = importlib.reload(ansithemeprint).ANSIThemeStr  # type: ignore
 
     return message, result
 
@@ -189,7 +191,7 @@ def test_tuplelist_to_ansithemearray(verbose: bool = False) -> Tuple[str, bool]:
 
         for indata, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata)) != expected_result:
+                if (tmp := fun(indata)) != expected_result:  # type: ignore
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
@@ -244,7 +246,7 @@ def test_format_error_msg(verbose: bool = False) -> Tuple[str, bool]:
 
         for indata, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata)) != expected_result:
+                if (tmp := fun(indata)) != expected_result:  # type: ignore
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"          input: {indata}\n" \
                               f"         output: {tmp}\n" \
@@ -362,11 +364,13 @@ def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool
     result = True
 
     fun = ANSIThemeStr
+    indata: Any = None
+    tmp: Any = None
 
     # Initialise ANSIThemeStrs with invalid string type
     try:
         indata = 1
-        tmp = fun(indata, "warning")
+        tmp = fun(indata, "warning")  # type: ignore
         message = f"{fun.__name__}() silently accepted wrong type for themeref:\n" \
                   f"       input: {repr(indata)}\n" \
                   f"      output: {repr(tmp)}\n    expected: TypeError"
@@ -377,7 +381,7 @@ def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool
     # Initialise ANSIThemeStrs with invalid themeref type
     try:
         indata = 1
-        tmp = fun("test", indata)
+        tmp = fun("test", indata)  # type: ignore
         message = f"{fun.__name__}().__init__() silently accepted wrong type for themeref:\n" \
                   f"       input: {repr(indata)}\n" \
                   f"      output: {repr(tmp)}\n" \
@@ -429,6 +433,27 @@ def test_ansithemestr_basic_operations(verbose: bool = False) -> Tuple[str, bool
                       f"      output: {repr(tmp)}\n" \
                       f"    expected: {repr(expected_result_len)}"
             result = False
+    if result:
+        indata = fun("12345", "warning")
+        expected_result = ANSIThemeStr("12345", "info")
+        if (tmp := indata.format("info")) != expected_result:
+            message = f"{fun.__name__}.get_themeref() did not yield expected result:\n" \
+                      f"       input: {repr(indata)}\n" \
+                      f"      output: {repr(tmp)}\n" \
+                      f"    expected: {repr(expected_result_len)}"
+            result = False
+    if result:
+        indata = fun("12345", "warning")
+        expected_exception = TypeError
+        try:
+            tmp = indata.format(42)
+            message = f"{fun.__name__}.get_themeref() did not yield expected result:\n" \
+                      f"       input: {repr(indata)}\n" \
+                      f"      output: {repr(tmp)}\n" \
+                      f"    expected: {expected_exception}"
+            result = False
+        except TypeError:
+            pass
 
     return message, result
 
@@ -528,7 +553,7 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeStr("1", "default"),
+    indata: Any = [ANSIThemeStr("1", "default"),
               ANSIThemeStr("2", "ok"),
               ANSIThemeStr("3", "ok")]
     expected_result = "123"
@@ -562,9 +587,9 @@ def test_ansithemearray_to_str(verbose: bool = False) -> Tuple[str, bool]:
     message = ""
     result = True
 
-    indata = [ANSIThemeStr("1", "default"),
-              ANSIThemeStr("2", "ok"),
-              ANSIThemeStr("3", "ok")]
+    indata: Any = [ANSIThemeStr("1", "default"),
+                   ANSIThemeStr("2", "ok"),
+                   ANSIThemeStr("3", "ok")]
 
     fun = ansithemeprint.ansithemearray_to_str
 
@@ -818,9 +843,9 @@ def main() -> int:
     failed_testcases = []
 
     start_at_task = 0
-    tmp_start_at_task = "0"
+    tmp_start_at_task: Any = "0"
     end_at_task = -1
-    tmp_end_at_task = "-1"
+    tmp_end_at_task: Any = "-1"
 
     i = 1
 

@@ -34,14 +34,14 @@ faulthandler.enable()
 kh: KubernetesHelper = None  # type: ignore
 
 
-def get_kubernetes_list_async(*args, **kwargs) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
+def get_kubernetes_list_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
     kind = deep_get(kwargs, DictPath("kind"))
     namespace = deep_get(kwargs, DictPath("namespace"), "")
     fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
     sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
     sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
     limit = deep_get(fetch_args, DictPath("limit"))
-    extra_data = []
+    extra_data: Union[int, List[StatusGroup]] = []
 
     vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
     if sort_key:
