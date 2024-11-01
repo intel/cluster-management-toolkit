@@ -37,3 +37,16 @@
     - matchtype: "startswith"
       matchkey: "Driver: nfs.csi.k8s.io version: "
       loglevel: "notice"
+  - name: "custom_line"
+    options:
+      block_start:
+      - matchtype: "startswith"
+        matchkey: "DRIVER INFORMATION:"
+        matchline: "any"
+        format_block_start: true
+      block_end:
+      - matchtype: "empty"
+        matchkey: ""
+        matchline: "any"
+        format_block_end: true
+      loglevel: "notice"
