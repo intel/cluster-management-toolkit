@@ -10,8 +10,11 @@ listview:
   name: "Jobs"
   group: "Batch Scheduling"
   field_indexes:
+    Wide:
+      fields: ["namespace", "name", "min_available", "running", "succeeded", "scheduler", "queue", "phase", "age"]
+      sortcolumn: "phase"
     Normal:
-      fields: ["namespace", "name", "phase", "min_available", "running", "succeeded", "queue", "age"]
+      fields: ["namespace", "name", "min_available", "running", "succeeded", "phase", "age"]
       sortcolumn: "phase"
   fields:
     min_available:
@@ -59,6 +62,10 @@ listview:
         field_colors:
         - type: "numerical"
       align: "right"
+    scheduler:
+      header: "Scheduler:"
+      path: "spec#schedulerName"
+      type: "str"
     succeeded:
       header: "Succeeded:"
       path: "status#succeeded"

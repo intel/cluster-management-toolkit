@@ -1668,6 +1668,8 @@ cmdata_format: List[Tuple[str, str, str, str, str]] = [
     ("", "trivy-operator", "nodeCollector.volumeMounts", "", "JSON"),
     ("", "trivy-operator", "nodeCollector.volumes", "", "JSON"),
     ("", "trivy-operator", "scanJob.podTemplateContainerSecurityContext", "", "JSON"),
+    ("", "", "volcano-admission.conf", "volcano-admission.conf", "YAML"),
+    ("", "", "volcano-scheduler.conf", "volcano-scheduler.conf", "YAML"),
     ("", "", "", ".py", "Python"),
     # Openshift
     ("", "dns-default", "Corefile", "", "CaddyFile"),
