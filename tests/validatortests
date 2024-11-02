@@ -33,15 +33,17 @@ from clustermanagementtoolkit import cmtvalidators
 
 real_import = None
 
-import_override = {}
+import_override: Dict = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any):
+def override_import(name: str, *args: List[Any], **kwargs: Any) -> Any:
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
     if retval:
         return retval
+    if real_import is None:
+        return None
     return real_import(name, *args, **kwargs)
 
 
@@ -86,6 +88,7 @@ def test_validator_bool(verbose: bool = False) -> Tuple[str, bool]:
     result = True
 
     fun = cmtvalidators.validator_bool
+    indata: Any = None
 
     if result:
         valid_indata = (True, 1, "1", "y", "yes", "true")
@@ -168,8 +171,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
         for indata, range_min, range_max, \
                 error_on_failure, expected_status, expected_exception in testdata:
             try:
-                status = fun(range_min, range_max, indata,
-                             error_on_failure=error_on_failure, exit_on_failure=False)
+                status = fun(range_min, range_max, indata, error_on_failure=error_on_failure, exit_on_failure=False)  # type: ignore
                 if status != expected_status:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
                               f"       input: {indata}\n" \
@@ -1009,6 +1011,7 @@ def test_validate_name(verbose: bool = False) -> Tuple[str, bool]:
     result = True
 
     fun = cmtvalidators.validate_name
+    indata: Any = None
 
     if result:
         # Indata format:
@@ -1079,6 +1082,7 @@ def test_validate_fqdn(verbose: bool = False) -> Tuple[str, bool]:
     result = True
 
     fun = cmtvalidators.validate_fqdn
+    indata: Any = None
 
     if result:
         # Indata format:
