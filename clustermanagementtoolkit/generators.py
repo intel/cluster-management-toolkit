@@ -1221,7 +1221,7 @@ def get_formatting(field: Dict[str, Any],
             context = deep_get(item, DictPath("context"), default_context)
             key = deep_get(item, DictPath("type"))
             if formatting in ("field_separators", "ellipsis"):
-                result.append(ThemeRef(context, key, selected=None))
+                result.append(ThemeRef(context, key))
             elif formatting == "field_colors":
                 result.append(ThemeAttr(context, key))
             else:
