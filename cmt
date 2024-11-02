@@ -1360,8 +1360,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
                             # pylint: disable-next=import-outside-toplevel,no-name-in-module
                             from cryptography.hazmat import primitives  # type: ignore
                             x509obj = \
-                                x509.load_pem_x509_certificate(ca_cert.encode("utf-8"),
-                                                               backend=primitives.default_backend)
+                                x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend=primitives.default_backend)  # type: ignore # noqa: E501
                         else:
                             raise
                     pubkeybytes_fun = x509obj.public_key().public_bytes

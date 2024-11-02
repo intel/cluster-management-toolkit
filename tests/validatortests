@@ -171,7 +171,7 @@ def test_validator_int(verbose: bool = False) -> Tuple[str, bool]:
         for indata, range_min, range_max, \
                 error_on_failure, expected_status, expected_exception in testdata:
             try:
-                status = fun(range_min, range_max, indata, error_on_failure=error_on_failure, exit_on_failure=False)  # type: ignore
+                status = fun(range_min, range_max, indata, error_on_failure=error_on_failure, exit_on_failure=False)  # type: ignore # noqa: E501
                 if status != expected_status:
                     message = f"{fun.__name__}() did not yield expected status:\n" \
                               f"       input: {indata}\n" \

@@ -23,7 +23,7 @@ import os
 from pathlib import Path, PurePath
 import sys
 from typing import Any, Callable, cast, Dict, List, Optional
-from typing import NamedTuple, NoReturn, Set, Tuple, Type, Union
+from typing import NamedTuple, NoReturn, Sequence, Set, Tuple, Type, Union
 
 try:
     from natsort import natsorted
@@ -78,7 +78,7 @@ class ThemeStr:
             selected (Optional[bool]): Selected or unselected formatting
     """
 
-    def __init__(self, string: str, themeattr: ThemeAttr, selected: bool = False) -> None:
+    def __init__(self, string: str, themeattr: ThemeAttr, selected: Optional[bool] = False) -> None:
         if not (isinstance(string, str)
                 and isinstance(themeattr, ThemeAttr)
                 and (selected is None or isinstance(selected, bool))):
@@ -146,7 +146,7 @@ class ThemeStr:
         """
         self.themeattr = themeattr
 
-    def get_selected(self) -> bool:
+    def get_selected(self) -> Optional[bool]:
         """
         Return the selected attribute of the ThemeStr
 
@@ -173,7 +173,7 @@ class ThemeRef:
             selected (Optional[bool]): Should the selected or unselected formatting be used
     """
 
-    def __init__(self, context: str, key: str, selected: bool = False) -> None:
+    def __init__(self, context: str, key: str, selected: Optional[bool] = False) -> None:
         if not (isinstance(context, str)
                 and isinstance(key, str)
                 and (selected is None or isinstance(selected, bool))):
@@ -282,16 +282,16 @@ class ThemeRef:
                                    formatted_msg=formatted_msg)
         for string, themeattr in array:
             themearray.append(ThemeStr(string,
-                              ThemeAttr(themeattr[0], themeattr[1]),
-                              self.selected))
+                                       ThemeAttr(themeattr[0], themeattr[1]),
+                                       self.selected))
         return themearray
 
-    def get_selected(self) -> bool:
+    def get_selected(self) -> Optional[bool]:
         """
         Return the selected attribute of the ThemeRef
 
             Returns:
-                (bool): The selected attribute of the ThemeRef
+                (bool): The selected attribute of the ThemeRef, None if unset
         """
         return self.selected
 
@@ -1645,7 +1645,7 @@ def addthemearray(win: curses.window,
 
 # This extracts the string without formatting;
 # once everything uses proper ThemeArray this wo not be necessary anymore
-def themearray_to_string(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]) -> str:
+def themearray_to_string(themearray: Union[ThemeArray, Sequence[Union[ThemeRef, ThemeStr]]]) -> str:
     """
     Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeStr]],
     return an unformatted string
@@ -1707,7 +1707,7 @@ def themearray_truncate(themearray: Union[ThemeArray, List[Union[ThemeRef, Theme
     return truncated_themearray
 
 
-def themearray_len(themearray: Union[ThemeArray, List[Union[ThemeRef, ThemeStr]]]) -> int:
+def themearray_len(themearray: Union[ThemeArray, Sequence[Union[ThemeRef, ThemeStr]]]) -> int:
     """
     Given a themearray (either a true ThemeArray or List[Union[ThemeRef, ThemeStr]],
     return its length
@@ -1867,6 +1867,53 @@ def themestring_to_cursestuple(themestring: ThemeStr,
             selected = False
 
     return (string, themeattr_to_curses_merged(themeattr, selected))
+
+
+def themearray_select(themearray: Sequence[Union[ThemeRef, ThemeStr]],
+                      selected: bool = False,
+                      force: bool = False) -> Sequence[Union[ThemeRef, ThemeStr]]:
+    """
+    Iterate through the themearray and set all selected fields that are currently None
+
+        Parameters:
+            themearray (ThemeArray): The themearray to select/unselect
+            selected (bool): True is selected, False otherwise
+            force (bool): True to set selected=selected even if item.seleected isn't None
+        Returns:
+            (ThemeArray): The (un)seleected themearray
+        Raises:
+            ProgrammingError: themearray is not a themearray
+    """
+    themearray_selected: List[Union[ThemeRef, ThemeStr]] = []
+
+    for item in themearray:
+        if not isinstance(item, (ThemeRef, ThemeStr)):
+            msg = [
+                [("themearray_select_none()", "emphasis"),
+                 (" called with invalid argument(s):", "error")],
+                [("item = ", "default"),
+                 (f"{item}", "argument"),
+                 (" (type: ", "default"),
+                 (f"{type(item)}", "argument"),
+                 (", expected: ", "default"),
+                 ("ThemeRef", "argument"),
+                 (" or ", "default"),
+                 ("ThemeStr", "argument"),
+                 (")", "default")],
+            ]
+
+            unformatted_msg, formatted_msg = ANSIThemeStr.format_error_msg(msg)
+
+            raise ProgrammingError(unformatted_msg,
+                                   severity=LogLevel.ERR,
+                                   facility=str(themefile),
+                                   formatted_msg=formatted_msg)
+
+        if item.selected is None or force:
+            item.selected = selected
+        themearray_selected.append(item)
+
+    return themearray_selected
 
 
 def themearray_flatten(themearray: List[Union[ThemeRef, ThemeStr]],

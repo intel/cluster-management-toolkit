@@ -109,7 +109,7 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     return condition_list
 
 
-def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
+def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, ...]]:
     """
     Get a list of fields from Kubernetes objects
 
@@ -178,7 +178,7 @@ def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
                                       field_selector=field_selector,
                                       resource_cache=kh_cache)
 
-    tmp: List[Tuple[str, str]] = []
+    tmp: List[Tuple[str, ...]] = []
     if vlist is None or _status != 200:
         return tmp
 
@@ -186,7 +186,7 @@ def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
         entry = []
         for field_path in field_paths:
             entry.append(deep_get(item, DictPath(field_path)))
-        tmp.append(entry)
+        tmp.append(tuple(entry))
 
     return tmp
 
@@ -384,7 +384,8 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
                     tmp = str(tmp)
                     if field_regex:
                         tmp2 = re.match(field_regex, tmp)
-                        tmp = tmp2.group(1)
+                        if tmp2 is not None:
+                            tmp = tmp2.group(1)
                 else:
                     tmp = "<none>"
             else:

@@ -574,7 +574,11 @@ def get_installation_info(cluster_name: Optional[str] = None,
         info = secure_read_yaml(CMT_INSTALLATION_INFO_FILE, checks=security_checks)
     except FileNotFoundError:
         if not ignore_non_existing:
-            return None
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Could not open ", "default"),
+                            ANSIThemeStr(f"{CMT_INSTALLATION_INFO_FILE}", "path"),
+                            ANSIThemeStr("; aborting.", "default")], stderr=True)
+            sys.exit(errno.ENOENT)
 
     if info is None or info.get("installation_target") is None \
             or (info.get("installation_target") is not None
@@ -815,19 +819,20 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                                           version_command_regex)
     candidate_version = []
     if cni_version is not None:
-        tmp_candidate_version = re.match(manual_candidate_version_regex, cni_version)
-        if tmp_candidate_version is None:
+        if (tmp_candidate_version := re.match(manual_candidate_version_regex, cni_version)) is None:
             check_and_print_status(False)
-        candidate_version = list(tmp_candidate_version.groups())
+        # The type ignore below is necessary because mypy doesn't recognise that
+        # check_and_print_status always aborts with sys.exit() when called with False
+        candidate_version = list(tmp_candidate_version.groups())  # type: ignore
     elif candidate_version_url is not None:
         ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                         ANSIThemeStr(f"Checking {upgradetype} candidate version", "action")])
         if candidate_version_function is not None:
-            tmp_candidate_version = candidate_version_function(candidate_version_url,
-                                                               candidate_version_regex)
-            if tmp_candidate_version is None:
+            tmp_candidate_version_fun = candidate_version_function(candidate_version_url,
+                                                                   candidate_version_regex)
+            if tmp_candidate_version_fun is None:
                 check_and_print_status(False)
-            candidate_version, _release_data, _body = tmp_candidate_version
+            candidate_version, _release_data, _body = tmp_candidate_version_fun
         else:
             candidate_version = \
                 check_version_from_url(substitute_string(candidate_version_url,
@@ -1772,7 +1777,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
                         ANSIThemeStr(f"{crc_upstream_version}", "version")])
 
     for software, installed_version, candidate_version, _ in \
-            cast(Tuple[str, str, str, List[str]], natsorted(pkg_versions)):
+            cast(List[Tuple[str, str, str, List[str]]], natsorted(pkg_versions)):
         iformat = __get_theme(installed_version, "version")
         cformat = __get_theme(candidate_version, "version")
         ansithemeprint([ANSIThemeStr(f"{software.ljust(slen + 2)}", "default"),
@@ -1780,7 +1785,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
                         ANSIThemeStr(f"{candidate_version}", cformat)])
     print()
     for software, installed_version, candidate_version, _ in \
-            cast(Tuple[str, str, str, List[str]], natsorted(other_versions)):
+            cast(List[Tuple[str, str, str, List[str]]], natsorted(other_versions)):
         iformat = __get_theme(installed_version, "version")
         cformat = __get_theme(candidate_version, "version")
         ansithemeprint([ANSIThemeStr(f"{software.ljust(slen + 2)}", "default"),
@@ -4097,9 +4102,13 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
             tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
             if tmp_crio_version is None:
                 check_and_print_status(False)
-            crio_major_version, crio_minor_version = tmp_crio_version
+            # The type ignore below is necessary because mypy doesn't recognise that
+            # check_and_print_status always aborts with sys.exit() when called with False
+            crio_major_version, crio_minor_version = tmp_crio_version  # type: ignore
         else:
-            tmp_crio_version = cri_version.split(".")
+            # This case shouldn't be necessary; mypy should recognise that we're doing
+            # a None-check first.
+            tmp_crio_version = cast(tuple, cri_version.split("."))
             if len(tmp_crio_version) < 2:
                 check_and_print_status(False)
             crio_major_version = tmp_crio_version[0]
@@ -5470,9 +5479,13 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
             tmp_crio_version = get_crio_version((int(requested_major), int(requested_minor)))
             if tmp_crio_version is None:
                 check_and_print_status(False)
-            crio_major_version, crio_minor_version = tmp_crio_version
+            # The type ignore below is necessary because mypy doesn't recognise that
+            # check_and_print_status always aborts with sys.exit() when called with False
+            crio_major_version, crio_minor_version = tmp_crio_version  # type: ignore
         else:
-            tmp_crio_version = cri_version.split(".")
+            # This case shouldn't be necessary; mypy should recognise that we're doing
+            # a None-check first.
+            tmp_crio_version = cast(tuple, cri_version.split("."))
             if len(tmp_crio_version) < 2:
                 check_and_print_status(False)
             crio_major_version = tmp_crio_version[0]

@@ -328,8 +328,8 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
             field_dict[field_name].get("field_separators", [ThemeRef("separators", "field")])
         ellipsise = field_dict[field_name].get("ellipsise", -1)
         ellipsis = field_dict[field_name].get("ellipsis", ThemeRef("separators", "ellipsis"))
-        field_prefixes = field_dict[field_name].get("field_prefixes", None)
-        field_suffixes = field_dict[field_name].get("field_suffixes", None)
+        field_prefixes = field_dict[field_name].get("field_prefixes", [])
+        field_suffixes = field_dict[field_name].get("field_suffixes", [])
         formatting = deep_get(field_dict, DictPath(f"{field_name}#formatting"), {})
 
         tmplen = 0
@@ -2437,8 +2437,8 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
             "field_colors": field_list[field].get("field_colors", [ThemeAttr("types", "field")]),
             "ellipsise": field_list[field].get("ellipsise", -1),
             "ellipsis": field_list[field].get("ellipsis", ThemeRef("separators", "ellipsis")),
-            "field_prefixes": field_list[field].get("field_prefixes", None),
-            "field_suffixes": field_list[field].get("field_suffixes", None),
+            "field_prefixes": field_list[field].get("field_prefixes", []),
+            "field_suffixes": field_list[field].get("field_suffixes", []),
             "mapping": field_list[field].get("mapping", {}),
         }
 

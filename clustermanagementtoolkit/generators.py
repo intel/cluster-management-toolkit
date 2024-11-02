@@ -13,13 +13,15 @@ This generates and post-processes elements for various more complex types
 import copy
 from datetime import datetime
 import re
-from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, cast, Dict, List, Optional
+from typing import Sequence, Set, Tuple, Type, Union
 import yaml
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 
 from clustermanagementtoolkit.curses_helper import color_status_group
 from clustermanagementtoolkit.curses_helper import themearray_len, themearray_to_string
+from clustermanagementtoolkit.curses_helper import themearray_select
 from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr, get_theme_ref
 
 from clustermanagementtoolkit import cmtlib
@@ -76,8 +78,8 @@ def format_list(items: Any, fieldlen: int, pad: int,
                 field_separators ([ThemeRef]): The separators between each field
                 ellipsise (int): Ellipsise after this many elements (-1 == disabled)
                 ellipsis (ThemeRef): The marker to use when ellipsising the list
-                field_prefixes ([ThemeRef]): Prefixes for each element
-                field_suffixes ([ThemeRef]): Suffixes for each element
+                field_prefixes ([[ThemeRef]]): Prefixes for each element
+                field_suffixes ([[ThemeRef]]): Suffixes for each element
                 mapping (dict): Mappings passed to map_value()
         Returns:
             (ThemeArray): The formatted themearray
@@ -89,8 +91,8 @@ def format_list(items: Any, fieldlen: int, pad: int,
     field_colors: Optional[List[ThemeAttr]] = deep_get(kwargs, DictPath("field_colors"))
     ellipsise: int = deep_get(kwargs, DictPath("ellipsise"), -1)
     ellipsis: Optional[ThemeRef] = deep_get(kwargs, DictPath("ellipsis"))
-    field_prefixes: Optional[List[ThemeRef]] = deep_get(kwargs, DictPath("field_prefixes"))
-    field_suffixes: Optional[List[ThemeRef]] = deep_get(kwargs, DictPath("field_suffixes"))
+    field_prefixes: List[List[ThemeRef]] = deep_get(kwargs, DictPath("field_prefixes"))
+    field_suffixes: List[List[ThemeRef]] = deep_get(kwargs, DictPath("field_suffixes"))
     mapping: Optional[Dict] = deep_get(kwargs, DictPath("mapping"))
 
     array: List[Union[ThemeRef, ThemeStr]] = []
@@ -166,48 +168,11 @@ def format_list(items: Any, fieldlen: int, pad: int,
 
             # OK, we know now that we will be appending the field, so do the prefix
             if field_prefixes is not None and i < len(field_prefixes):
-                if isinstance(field_prefixes[i], tuple):
-                    array.append(field_prefixes[i])
-                elif isinstance(field_prefixes[i], ThemeRef):
-                    tmp = field_prefixes[i]
-                    tmp.selected = selected
-                    array.append(tmp)
-                elif isinstance(field_prefixes[i], list):
-                    for fix in field_prefixes[i]:
-                        if isinstance(fix, dict):
-                            context = deep_get(fix, DictPath("context"), "separators")
-                            key = deep_get(fix, DictPath("type"))
-                            array.append(ThemeRef(context, key, selected))
-                        else:
-                            array.append(fix)
-                else:
-                    for prefix in field_prefixes:
-                        pref = prefix
-                        pref.selected = selected
-                        array.append(pref)
+                array += themearray_select(field_prefixes[i], selected=selected, force=True)
             array.append(formatted_string)
             # And now the suffix
             if field_suffixes is not None and i < len(field_suffixes):
-                if isinstance(field_suffixes[i], tuple):
-                    array.append(field_suffixes[i])
-                elif isinstance(field_suffixes[i], ThemeRef):
-                    tmp = field_suffixes[i]
-                    tmp.selected = selected
-                    array.append(tmp)
-                elif isinstance(field_suffixes[i], list):
-                    for fix in field_suffixes[i]:
-                        if isinstance(fix, dict):
-                            context = deep_get(fix, DictPath("context"), "separators")
-                            key = deep_get(fix, DictPath("type"))
-                            array.append(ThemeRef(context, key, selected))
-                        else:
-                            array.append(fix)
-                else:
-                    for suffix in field_suffixes:
-                        suff = suffix
-                        suff.selected = selected
-                        array.append(suff)
-                # RequestPrincipals[*@example.com]
+                array += themearray_select(field_suffixes[i], selected=selected, force=True)
             skip_separator = False
 
     return align_and_pad(array, pad, fieldlen, ralign, selected)
@@ -322,8 +287,9 @@ def map_value(value: Any,
     return ThemeStr(string, fmt, selected), string
 
 
-def align_and_pad(array: List[Union[ThemeRef, ThemeStr]], pad: int,
-                  fieldlen: int, ralign: bool, selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
+def align_and_pad(array: Sequence[Union[ThemeRef, ThemeStr]], pad: int,
+                  fieldlen: int, ralign: bool,
+                  selected: bool) -> List[Union[ThemeRef, ThemeStr]]:
     """
     Given a field, align to the left or right, and pad it to the field length.
 
@@ -466,7 +432,7 @@ def generator_age(obj: Dict, field: str, fieldlen: int, pad: int,
 # pylint: disable=unused-argument,too-many-arguments,too-many-locals,too-many-branches
 def generator_address(obj: Dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
-                      **formatting: Dict) -> List[Union[ThemeRef, ThemeStr]]:
+                      **formatting: Dict) -> Sequence[Union[ThemeRef, ThemeStr]]:
     item_separator = deep_get(formatting, DictPath("item_separator"))
 
     items = getattr(obj, field, [])
@@ -1026,7 +992,7 @@ def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
         items = getattr(obj, field)
     except AttributeError:
         import sys
-        sys.exit(dir(obj))
+        sys.exit(str(dir(obj)))
 
     strings: List[str] = []
 
@@ -1242,13 +1208,20 @@ def get_formatting(field: Dict[str, Any],
         # field_prefixes/suffixes can be either list[Union[ThemeRef, ThemeStr]],
         # list[list[Union[ThemeRef, ThemeStr]]],
         # or Union[ThemeRef, ThemeStr]; in the latter case turn it into a list
-        if isinstance(item, (ThemeAttr, ThemeRef, ThemeStr, list)):
+        if isinstance(item, (ThemeAttr, ThemeRef, ThemeStr)):
             result.append(item)
+        elif isinstance(item, list):
+            new_item = []
+            for subitem in item:
+                context = deep_get(subitem, DictPath("context"), default_context)
+                key = deep_get(subitem, DictPath("type"))
+                new_item.append(ThemeRef(context, key, selected=None))
+            result.append(new_item)
         elif isinstance(item, dict):
             context = deep_get(item, DictPath("context"), default_context)
             key = deep_get(item, DictPath("type"))
-            if formatting in ("field_separators", "field_prefixes", "field_suffixes", "ellipsis"):
-                result.append(ThemeRef(context, key))
+            if formatting in ("field_separators", "ellipsis"):
+                result.append(ThemeRef(context, key, selected=None))
             elif formatting == "field_colors":
                 result.append(ThemeAttr(context, key))
             else:

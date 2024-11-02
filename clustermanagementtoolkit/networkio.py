@@ -179,14 +179,14 @@ checksum_functions: Dict[str, Callable] = {
 
 
 def verify_checksum(checksum: bytes,
-                    checksum_type: str, data: bytearray, filename: Optional[str] = None) -> bool:
+                    checksum_type: str, data: bytes, filename: Optional[str] = None) -> bool:
     """
     Checksum data against a checksum file
 
         Parameters:
             checksum (bytes): The downloaded checksum file
             checksum_type (str): What hash should be used when calculating the checksum?
-            data (bytearray): The data to calculate the checksum of
+            data (bytes): The data to calculate the checksum of
             filename (str): Used to identify the correct checksum entry
                             in a file with multiple checksums (optional)
         Returns:
@@ -443,7 +443,7 @@ def download_files(directory: str,
                     # Here we atomically move it in place
                     shutil.move(f.name, f"{directory}/{filename}")
         else:
-            reason = ""
+            reason = []
             if r1.reason is not None:
                 reason = [ANSIThemeStr(" (reason: ", "default"),
                           ANSIThemeStr(f"{r1.reason}", "emphasis"),

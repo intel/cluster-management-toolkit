@@ -34,7 +34,8 @@ faulthandler.enable()
 kh: KubernetesHelper = None  # type: ignore
 
 
-def get_kubernetes_list_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
+def get_kubernetes_list_async(*args: Any,
+                              **kwargs: Any) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
     kind = deep_get(kwargs, DictPath("kind"))
     namespace = deep_get(kwargs, DictPath("namespace"), "")
     fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})

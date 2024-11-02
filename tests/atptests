@@ -18,7 +18,7 @@ import errno
 import importlib
 import os
 import sys
-from typing import Any, Callable, cast, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 from unittest import mock
 
 from clustermanagementtoolkit import ansithemeprint
@@ -554,8 +554,8 @@ def test___themearray_to_raw_string(verbose: bool = False) -> Tuple[str, bool]:
     result = True
 
     indata: Any = [ANSIThemeStr("1", "default"),
-              ANSIThemeStr("2", "ok"),
-              ANSIThemeStr("3", "ok")]
+                   ANSIThemeStr("2", "ok"),
+                   ANSIThemeStr("3", "ok")]
     expected_result = "123"
 
     fun = ansithemeprint.__themearray_to_raw_string  # pylint: disable=protected-access
