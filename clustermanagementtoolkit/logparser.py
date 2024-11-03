@@ -493,21 +493,6 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
     # This while loop is merely to allow for breaking out anywhere
     while True:
-        # 2020-02-07 13:12:24.224
-        # 2020-02-07 13:12:24,224
-        # [2020-02-07 13:12:24.224]
-        # [2020-02-07 13:12:24,224]
-        tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
-        if tmp is not None:
-            ymd = tmp[1]
-            hms = tmp[2]
-            # This just matches the separator; we don't use it
-            # _sep = tmp[3]
-            ms = tmp[4]
-            tmp_timestamp = f"{ymd} {hms}.{ms}+0000"
-            message = tmp[5]
-            break
-
         # 2020-02-07T13:12:24.224Z (Z = UTC)
         tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+)Z ?(.*)", message)
         if tmp is not None:
@@ -519,7 +504,8 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
 
         # 2020-02-13T12:06:18.011345 [+-]00:00 (+timezone)
         # 2020-09-23T17:12:32.183967091[+-]03:00
-        tmp = re.match(r"^(\d{4}-\d\d-\d\d)T(\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):(\d\d) ?(.*)",
+        # 2024-11-02 23:20:35.121725861 +0000
+        tmp = re.match(r"^(\d{4}-\d\d-\d\d)[ T](\d\d:\d\d:\d\d\.\d+) ?([\+-])(\d\d):?(\d\d) ?(.*)",
                        message)
         if tmp is not None:
             ymd = tmp[1]
@@ -579,6 +565,21 @@ def split_iso_timestamp(message: str, timestamp: datetime) -> Tuple[str, datetim
             day = tmp[3]
             hms = tmp[4]
             tmp_timestamp = f"{year}-{month}-{day} {hms}.000+0000"
+            message = tmp[5]
+            break
+
+        # 2020-02-07 13:12:24.224
+        # 2020-02-07 13:12:24,224
+        # [2020-02-07 13:12:24.224]
+        # [2020-02-07 13:12:24,224]
+        tmp = re.match(r"^\[?(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)(,|\.)(\d+)\]? ?(.*)", message)
+        if tmp is not None:
+            ymd = tmp[1]
+            hms = tmp[2]
+            # This just matches the separator; we don't use it
+            # _sep = tmp[3]
+            ms = tmp[4]
+            tmp_timestamp = f"{ymd} {hms}.{ms}+0000"
             message = tmp[5]
             break
 
