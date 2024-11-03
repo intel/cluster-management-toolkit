@@ -1,0 +1,122 @@
+kind: "ResourceDistribution"
+api_family: "apps.kruise.io"
+default_command: "resourcedistributions"
+command:
+- "kruiserds"
+- "kruiserd"
+listview:
+  name: "Resource Distributions"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["name", "succeeded", "failed", "desired", "age"]
+  fields:
+    desired:
+      header: "Desired:"
+      path: "status#desired"
+      default: "<unset>"
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    failed:
+      header: "Failed:"
+      path: "status#failed"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+    succeeded:
+      header: "Succeeded:"
+      path: "status#succeeded"
+      default: 0
+      type: "int"
+      formatting:
+        field_colors:
+        - type: "numerical"
+      align: "right"
+infoview:
+  name: "Resource Distributions Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["succeeded", "failed", "desired", "targets_header", "targets_included_namespaces", "targets_excluded_namespaces", "targets_namespace_selector"]
+    rows:
+      desired:
+        header: [["Desired:", ["main", "infoheader"]]]
+        path: "status#desired"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      failed:
+        header: [["Failed:", ["main", "infoheader"]]]
+        path: "status#failed"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      succeeded:
+        header: [["Succeeded:", ["main", "infoheader"]]]
+        path: "status#succeeded"
+        default: 0
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      targets_header:
+        header: [["Targets:", ["main", "infoheader"]]]
+      targets_excluded_namespaces:
+        header: [["  Excluded Namespaces:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#targets#excludedNamespaces#list"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      targets_included_namespaces:
+        header: [["  Included Namespaces:", ["main", "infoheader"]]]
+        paths:
+        - path: "spec#targets#includedNamespaces#list"
+          pathtype: "items"
+          subpaths:
+          - "name"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "namespace"
+      targets_namespace_selector:
+        header: [["  Namespace Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#targets#namespaceLabelSelector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
+  shortcuts:
+    "Resource":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show resource"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Resource"
+        _pass_obj: true
+        path: "spec#resource"
