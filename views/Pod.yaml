@@ -689,3 +689,15 @@ infoview:
         - name: ["configMap", "downwardAPI", "emptyDir", "fc", "hostPath", "image", "nfs", "projected", "secret"]
       # This isn't supported for now
       sortcolumn: "name"
+    "Topology spread constraints":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show topology spread constraints"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "Topology spread constraints"
+        _pass_obj: true
+        path: "spec#topologySpreadConstraints"
+        include_root: true
