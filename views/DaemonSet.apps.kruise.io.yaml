@@ -187,7 +187,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "burst_replicas", "update_strategy", "rolling_update_label_selector"]
+        fields: ["controller", "label_selector", "set_based_selector", "replicas", "burst_replicas", "update_strategy", "rolling_update_label_selector"]
     rows:
       burst_replicas:
         header: [["Burst Replicas:", ["main", "infoheader"]]]
@@ -239,8 +239,8 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
-      nodes:
-        header: [["Nodes:", ["main", "infoheader"]]]
+      replicas:
+        header: [["Replicas:", ["main", "infoheader"]]]
         paths:
         - path: [["status#currentNumberScheduled"], " Current", ["status#desiredNumberScheduled"], " Desired", ["status#updatedNumberScheduled"], " Up to Date", ["status#numberAvailable"], " Available", ["status#numberMisscheduled"], " Misscheduled"]
           pathtype: "tuple"
