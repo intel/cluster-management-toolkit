@@ -206,7 +206,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "node_selector", "priority_class", "update_strategy", "replicas", "available", "paused"]
+        fields: ["label_selector", "set_based_selector", "update_strategy", "replicas", "available", "paused"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]
@@ -242,19 +242,6 @@ infoview:
           - type: "value"
           field_separators:
           - type: "selector"
-      node_selector:
-        header: [["Node Selector:", ["main", "infoheader"]]]
-        paths:
-        - path: ["spec#template#spec#nodeSelector"]
-          pathtype: "key_value"
-          default: ["<none>"]
-        formatter: "list"
-        formatting:
-          field_colors:
-          - type: "key"
-          - type: "value"
-          field_separators:
-          - type: "selector"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         path: "spec#paused"
@@ -272,10 +259,6 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_ok"
-      priority_class:
-        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
-        path: "spec#template#spec#priorityClassName"
-        type: "str"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
@@ -461,18 +444,6 @@ infoview:
         align: "right"
         default: 0
   shortcuts:
-    "Priority Class":
-      key: "p"
-      modifier: "shift"
-      read_only: true
-      helptext: "Open info page for Priority Class"
-      action: "call"
-      action_call: "resourceinfodispatch_with_lookup"
-      action_args:
-        _pass_obj: true
-        kind: "PriorityClass"
-        api_family: "scheduling.k8s.io"
-        name_path: "spec#template#spec#priorityClassName"
     "Pod template":
       key: "t"
       modifier: "shift"

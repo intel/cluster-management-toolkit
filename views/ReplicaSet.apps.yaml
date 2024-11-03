@@ -85,7 +85,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "priority_class", "minimum_ready_seconds", "replicas"]
+        fields: ["controller", "label_selector", "set_based_selector", "minimum_ready_seconds", "replicas"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -129,10 +129,6 @@ infoview:
         default: 0
         type: "int"
         formatter: "numerical"
-      priority_class:
-        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
-        path: "spec#template#spec#priorityClassName"
-        type: "str"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
@@ -265,18 +261,6 @@ infoview:
         _pass_obj: true
         namespace_path: "metadata#namespace"
         owner_reference_path: "metadata#ownerReferences"
-    "Priority Class":
-      key: "p"
-      modifier: "shift"
-      read_only: true
-      helptext: "Open info page for Priority Class"
-      action: "call"
-      action_call: "resourceinfodispatch_with_lookup"
-      action_args:
-        _pass_obj: true
-        kind: "PriorityClass"
-        api_family: "scheduling.k8s.io"
-        name_path: "spec#template#spec#priorityClassName"
     "Pod template":
       key: "t"
       modifier: "shift"

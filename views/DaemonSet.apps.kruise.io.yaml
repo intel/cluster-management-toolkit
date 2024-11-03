@@ -1,14 +1,14 @@
 kind: "DaemonSet"
-api_family: "apps"
+api_family: "apps.kruise.io"
 default_command: "daemonsets"
 command:
-- "ds"
+- "kruiseds"
 listview:
   name: "Daemon Sets"
-  group: "Workloads"
+  group: "Kruise"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "age"]
+      fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "paused", "age"]
       sortcolumn: "namespace"
   fields:
     available_replicas:
@@ -77,6 +77,23 @@ listview:
             - context: "main"
               type: "status_warning"
       align: "right"
+    paused:
+      header: "Paused:"
+      path: "spec#updateStrategy#rollingUpdate#paused"
+      type: "str"
+      default: "False"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "True":
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            "False":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
     ready_replicas:
       header: "Ready:"
       paths:
@@ -129,6 +146,36 @@ listview:
         category: "Resource Level"
         confirm: true
         actionfunc: "delete_resource"
+      "Pause resource (Rollout)":
+        description: "Pause resource"
+        category: "Resource Level"
+        metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
+        confirm: true
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Pausing rollout"
+          args:
+            patch:
+              spec:
+                updateStrategy:
+                  rollingUpdate:
+                    paused: true
+            strategic_merge: false
+      "Resume resource (Rollout)":
+        description: "Resume resource"
+        category: "Resource Level"
+        metadata: [["Strategy: Rollout", ["windowwidget", "description"]]]
+        confirm: true
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Resuming rollout"
+          args:
+            patch:
+              spec:
+                updateStrategy:
+                  rollingUpdate:
+                    paused: false
+            strategic_merge: false
       "Restart resource (Rollout)":
         description: "Restart resource"
         category: "Resource Level"
@@ -140,8 +187,16 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "set_based_selector", "nodes", "update_strategy"]
+        fields: ["controller", "label_selector", "set_based_selector", "burst_replicas", "update_strategy", "rolling_update_label_selector"]
     rows:
+      burst_replicas:
+        header: [["Burst Replicas:", ["main", "infoheader"]]]
+        path: "spec#burstReplicas"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
         paths:
@@ -213,6 +268,19 @@ infoview:
           - type: "no_pad"
           - type: "fraction_spaced"
           - type: "no_pad"
+      rolling_update_label_selector:
+        header: [["Rolling Update Label Selector:", ["main", "infoheader"]]]
+        paths:
+        - path: ["spec#updateStrategy#rollingUpdate#selector#matchLabels"]
+          pathtype: "key_value"
+          default: ["<none>"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "value"
+          field_separators:
+          - type: "selector"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
@@ -231,11 +299,12 @@ infoview:
       update_strategy:
         header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#updateStrategy#type"], " (", "Max Surge: ", ["spec#updateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#updateStrategy#rollingUpdate#maxUnavailable"], ")"]
+        - path: [["spec#updateStrategy#type"], ":", ["spec#updateStrategy#rollingUpdate#rollingUpdateType"], " (", "Max Surge: ", ["spec#updateStrategy#rollingUpdate#maxSurge"], "Max Unavailable: ", ["spec#updateStrategy#rollingUpdate#maxUnavailable"], "Partition: ", ["spec#updateStrategy#rollingUpdate#partition"], "Paused: ", ["spec#updateStrategy#rollingUpdate#paused"], ")"]
           pathtype: "tuple"
           when:
           - key: "spec#updateStrategy#type"
             eq: "RollingUpdate"
+          default: ["RollingUpdate", ":", "Standard", " (", "Max Surge: ", "<unset>", "Max Unavailable: ", "<unset>", "Partition: ", "<unset>", "Paused: ", false, ")"]
         - path: [["spec#updateStrategy#type"]]
           pathtype: "tuple"
           when:
@@ -246,6 +315,8 @@ infoview:
           field_colors:
           - type: "generic"
           - type: "generic"
+          - type: "generic"
+          - type: "generic"
           - context: "main"
             type: "infoheader"
           # Ideally we want to achieve numerical with unit here
@@ -254,10 +325,22 @@ infoview:
             type: "infoheader"
           # Ideally we want to achieve numerical with unit here
           - type: "numerical"
+          - context: "main"
+            type: "infoheader"
+          - type: "numerical"
+          - context: "main"
+            type: "infoheader"
+          - type: "generic"
           - type: "generic"
           field_separators:
           - type: "no_pad"
           - type: "no_pad"
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "no_pad"
+          - type: "list"
+          - type: "no_pad"
+          - type: "list"
           - type: "no_pad"
           - type: "list"
           - type: "no_pad"
