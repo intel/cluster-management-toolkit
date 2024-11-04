@@ -88,7 +88,3 @@ logparser:
   this way we know the real line length (due to facility etc. we might not have the same starting point
   for every line, so expanding tabs into spaces won't work properly).
   | Currently we strip tabs; if we want to handle them we need to modify cmtlib.py:split_msg()
-
-kubernetes_helper:
-* Replace playbooks/drain_node.yaml with cordon_node() + post evictions
-  (or delete if PodDisruptionBudget causes issues) for all non-DaemonSet pods.

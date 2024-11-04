@@ -2152,13 +2152,22 @@ class KubernetesHelper:
                             f"method: {method}, URL: {url}; header_params: {header_params}, "
                             f"body: {body}")
         elif status == 422:
-            # Unprocessable entity
+            # Unprocessable Entity
             # The content and syntax is correct, but the request cannot be processed
             msg = result.data.decode("utf-8", errors="replace")
             message = f"422: Unprocessable Entity; method: {method}, URL: {url}; " \
                       f"header_params: {header_params}; message: {msg}"
+        elif status == 429:
+            # Too Many Requests
+            # This may, for instance, be the response when attempting to evict a pod
+            # isn't allowed due to the PodDisruptionBudget.
+            msg = result.data.decode("utf-8", errors="replace")
+            message = f"429: Too Many Requests; method: {method}, URL: {url}; " \
+                      f"header_params: {header_params}; message: {msg}"
         elif status == 500:
             # Internal Server Error
+            # This may, for instance, be the response when attempting to evict a pod
+            # with multiple PodDisruptionBudgets referencing the pod.
             msg = result.data.decode("utf-8", errors="replace")
             message = f"500: Internal Server Error; method: {method}, URL: {url}; " \
                       f"header_params: {header_params}; message: {msg}"
@@ -2204,6 +2213,7 @@ class KubernetesHelper:
         name: str = deep_get(kwargs, DictPath("name"), "")
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
         body: Optional[bytes] = deep_get(kwargs, DictPath("body"))
+        subresource: str = deep_get(kwargs, DictPath("subresource"), "")
         method = "POST"
 
         if body is None or not body:
@@ -2241,6 +2251,10 @@ class KubernetesHelper:
         if not namespaced:
             namespace_part = ""
 
+        subresource_part = ""
+        if subresource is not None and subresource:
+            subresource_part = f"/{subresource}"
+
         status = 42503
 
         # Try the newest API first and iterate backwards
@@ -2249,12 +2263,13 @@ class KubernetesHelper:
                                 insecuretlsskipverify=self.insecuretlsskipverify) as pool_manager:
             for api_path in api_paths:
                 url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
-                      f"{self.control_plane_path}/{api_path}{namespace_part}{api}{name}"
+                      f"{self.control_plane_path}/{api_path}" \
+                      f"{namespace_part}{api}{name}{subresource_part}"
                 _data, message, status = \
                     self.__rest_helper_generic_json(pool_manager=pool_manager, method=method,
                                                     url=url, header_params=header_params,
                                                     body=body)
-                if status in (200, 201, 204, 42503):
+                if status in (200, 201, 202, 204, 42503):
                     break
 
         return message, status
@@ -2647,6 +2662,69 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_patch(kind=kind, name=node, body=body)
 
+    def drain_node(self, node: str, **kwargs: Any) -> Tuple[str, int]:
+        """
+        Drain a Node
+
+            Parameters:
+                node (str): The node to drain
+                force (bool): Evict pods that lack a controller
+            Returns:
+                ((str, int)): the return value from cordon_node or
+                              evict_pod_by_name_namespace
+        """
+        force = deep_get(kwargs, DictPath("force"), False)
+        grace_period = deep_get(kwargs, DictPath("grace_period"), None)
+        if force:
+            grace_period = 0
+
+        # Draining a node is equivalent to first cordoning the node,
+        # then iterating over all pods running on the node,
+        # and evicting all pods that are not controlled by daemonsets or lack a controller.
+        # Force draining also evicts pods that lack a controller.
+        retstr, status = self.cordon_node(node)
+        if status != 200:
+                return retstr, retval
+
+        field_selector = cmtlib.make_label_selector({"spec.nodeName": node})
+        pods, status = self.get_list_by_kind_namespace(("Pod", ""), namespace="",
+                                                       field_selector=field_selector)
+        if status != 200:
+                return pods, retval
+
+        error_message = ""
+        first_error_status = 200
+        for pod in pods:
+            name = deep_get(pod, DictPath("metadata#name"), "")
+            namespace = deep_get(pod, DictPath("metadata#namespace"), "")
+            owr = deep_get(pod, DictPath("metadata#ownerReferences"), [])
+            controller = get_controller_from_owner_references(owr)
+            if controller is not None:
+                controller_kind, controller_name = controller
+                # Don't check the API-group; this way we allow
+                # for other types of DaemonSets.
+                if controller_kind[0] == "DaemonSet":
+                    continue
+                if controller == (("", ""), "") and not force:
+                    continue
+                retstr, status = self.evict_pod_by_name_namespace(name, namespace,
+                                                                  grace_period=grace_period)
+                if status in (200, 201):
+                    # Successfully created an eviction
+                    continue
+                elif status in (429, 500):
+                    # PodDisruptionBudget messed up one or several evictions
+                    if not error_message:
+                        first_error_status = status
+                        error_message = "The following pod(s) failed to evict:\n"
+                    error_message += f"{namespace}/{name} (Error: {status}\n"
+                else:
+                    # We don't know why things went wrong; let's abort.
+                    return retstr, status
+            if error_message:
+                error_message += "\nThis is most likely caused by a PodDisruptionBudget"
+        return error_message, first_error_status
+
     def uncordon_node(self, node: str) -> Tuple[str, int]:
         """
         Uncordon a Node
@@ -2684,6 +2762,40 @@ class KubernetesHelper:
         body = json.dumps(patch).encode("utf-8")
         return self.__rest_helper_patch(kind=kind, name=name, namespace=namespace, body=body,
                                         subresource=subresource, strategic_merge=strategic_merge)
+
+    def evict_pod_by_name_namespace(self, name: str, namespace: str,
+                                    **kwargs: Any) -> Tuple[str, int]:
+        """
+        Evict a pod
+
+            Parameters:
+                name (str): The name of the object
+                namespace (str): The namespace of the object (or "")
+                grace_period (int): The number of seconds to wait before deleting an object;
+                                    None: use default
+                                    0: delete immediately
+            Returns:
+                ((str, int)): the return value from __rest_helper_post
+        """
+        kind = ("Pod", "")
+        subresource = "eviction"
+        grace_period = deep_get(kwargs, DictPath("grace_period"), None)
+
+        data = {
+            "apiVersion": "policy/v1",
+            "kind": "Eviction",
+            "deleteOptions": {
+                "gracePeriodSeconds": grace_period,
+            },
+            "metadata": {
+                "name": name,
+                "namespace": namespace,
+            }
+        }
+
+        body = json.dumps(data).encode("utf-8")
+        return self.__rest_helper_post(kind=kind, name=name, namespace=namespace,
+                                       body=body, subresource=subresource)
 
     def delete_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
                                           namespace: str, force: bool = False) -> Tuple[str, int]:

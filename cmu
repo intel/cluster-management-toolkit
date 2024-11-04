@@ -7767,7 +7767,7 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
         # Get the status of the container
         status, _status_group, _restarts, _message, _age = \
             datagetters.get_container_status(src_statuses, containername)
-        if status in ("ContainerCreating", "ErrImagePull",
+        if status in ("ContainerCreating", "CreateContainerError", "ErrImagePull",
                       "ImagePullBackOff", "Pending", "PodInitializing", "UNKNOWN"):
             return Retval.RETURNDONE
         return containerinfoloop(stdscr, obj, kind, info)
@@ -8860,6 +8860,19 @@ def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Ret
 
 
 # pylint: disable=unused-argument
+def drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+    force = deep_get(kwargs, DictPath("force"), False)
+    for node in items:
+        kh.drain_node(node, force=force)
+    return Retval.RETURNDONE
+
+
+# pylint: disable=unused-argument
+def force_drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+    return drain_node(uip, items, action, values, kind, **{"force": True})
+
+
+# pylint: disable=unused-argument
 def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.uncordon_node(node)
@@ -9677,7 +9690,9 @@ actionfunc_allowlist = {
     "cordon_node": cordon_node,
     "delete_logs": delete_logs,
     "delete_resource": delete_resource,
+    "drain_node": drain_node,
     "force_delete_resource": force_delete_resource,
+    "force_drain_node": force_drain_node,
     "patch_resource": patch_resource,
     "rescale_resource": rescale_resource,
     "restart_resource_rescale": restart_resource_rescale,
