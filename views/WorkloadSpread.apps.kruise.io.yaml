@@ -1,0 +1,171 @@
+kind: "WorkloadSpread"
+api_family: "apps.kruise.io"
+default_command: "workloadspreads"
+command:
+- "kruiseds"
+listview:
+  name: "Workload Spreads"
+  group: "Kruise"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "target_reference", "age"]
+      sortcolumn: "namespace"
+  fields:
+    target_reference:
+      header: "Target Reference:"
+      paths:
+      - path: [["spec#targetRef#kind"], ["spec#targetRef#apiVersion"], ["spec#targetRef#name"]]
+        pathtype: "tuple"
+        default: ["<unset>"]
+        type: ["kind", "api_group", "name"]
+      formatter: "list"
+      formatting:
+        field_colors:
+        - type: "kind"
+        - type: "api_group"
+        - type: "generic"
+        field_separators:
+        - type: "kind_api_group"
+        - type: "kind"
+infoview:
+  name: "Workload Spread Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["target_reference", "schedule_strategy_header", "schedule_strategy_type", "schedule_strategy_reschedule_critical_seconds"]
+    rows:
+      schedule_strategy_header:
+        header: [["Schedule Strategy:", ["main", "infoheader"]]]
+      schedule_strategy_reschedule_critical_seconds:
+        header: [["  Reschedule Critical Seconds:", ["main", "infoheader"]]]
+        path: "spec#scheduleStrategy#adaptive#rescheduleCriticalSeconds"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+      schedule_strategy_type:
+        header: [["  Type:", ["main", "infoheader"]]]
+        path: "spec#scheduleStrategy#type"
+        type: "str"
+      target_reference:
+        header: [["Target ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
+        paths:
+        - path: [["spec#targetRef#kind"], ["spec#targetRef#apiVersion"], ["spec#targetRef#name"]]
+          pathtype: "tuple"
+          default: ["<unset>"]
+          type: ["kind", "api_group", "name"]
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
+          field_separators:
+          - type: "kind_api_group"
+          - type: "kind"
+  listpad:
+    listgetter: "listgetter_path"
+    listgetter_args:
+      join_key: "name"
+      paths:
+      - path: "spec#subsets"
+        type: "list"
+        key_name: "name"
+      - path: "status#subsetStatuses"
+        type: "list"
+        key_name: "name"
+    infogetter: "generic_infogetter"
+    field_indexes:
+      Normal:
+        fields: ["name", "replicas", "max_replicas", "missing_replicas", "required_node_selector"]
+    fields:
+      name:
+        header: "Name:"
+        path: "name"
+        type: "str"
+      max_replicas:
+        header: "Max Replicas:"
+        path: "maxReplicas"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      missing_replicas:
+        header: "Missing Replicas:"
+        path: "missingReplicas"
+        type: "raw"
+        default: 0
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            ranges:
+            - max: 0
+              field_colors:
+              - context: "main"
+                type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            - default: true
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
+        align: "right"
+      required_node_selector:
+        header: "Required Node Selector:"
+        paths:
+        - path: "requiredNodeSelectorTerm#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+      replicas:
+        header: "Replicas:"
+        path: "replicas"
+        default: "<unset>"
+        type: "int"
+        formatting:
+          field_colors:
+          - type: "numerical"
+        align: "right"
+      required_node_selector:
+        header: "Required Node Selector:"
+        paths:
+        - path: "requiredNodeSelectorTerm#matchExpressions"
+          pathtype: "match_expression"
+          default: "<none>"
+        formatter: "list"
+        formatting:
+          field_colors:
+          - type: "key"
+          - type: "operator"
+          - type: "value"
+          field_separators:
+          - type: "space"
+          - type: "no_pad"
+  shortcuts:
+    "Open target reference":
+      key: "r"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open info page for target reference"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind_path: "spec#targetRef#kind"
+        api_version_path: "spec#targetRef#apiVersion"
+        name_path: "spec#targetRef#name"
+        namespace_path: "metadata#namespace"
