@@ -77,7 +77,7 @@ infoview:
       helptext: "Show device requests"
       widget: "windowwidget"
       title: "Device requests:"
-      headers: ["Request:"]
+      headers: ["Name:", "Device Class:", "Allocation Mode:", "Count:"]
       selectable: true
       itemgetter: "get_list_fields"
       itemgetter_args:
@@ -85,6 +85,9 @@ infoview:
         pass_ref: true
         fields:
         - "name"
+        - "deviceClassName"
+        - "allocationMode"
+        - "count"
       # Not supported for now
       sortcolumn: "name"
       action: "call"
