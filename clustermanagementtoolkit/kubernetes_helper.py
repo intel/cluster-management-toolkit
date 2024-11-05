@@ -669,7 +669,7 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
                 taints.append(("control-plane", effect))
                 continue
 
-            key.removeprefix("node.kubernetes.io/")
+            key = key.removeprefix("node.kubernetes.io/")
             taints.append((key, effect))
 
             # If status is already "worse" than OK,
@@ -679,7 +679,7 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
             if status_group == StatusGroup.OK:
                 status_group = StatusGroup.ADMIN
         else:
-            key.removeprefix("node.kubernetes.io/")
+            key = key.removeprefix("node.kubernetes.io/")
             taints.append((key, effect))
 
     return status, status_group, taints, full_taints
@@ -1600,9 +1600,9 @@ class KubernetesHelper:
                              f"kind {kind} not found in kubernetes_resources")
 
         latest_api = deep_get(kubernetes_resources[kind], DictPath("api_paths"))[0]
-        latest_api.removeprefix("api/")
-        latest_api.removeprefix("apis/")
-        latest_api.removesuffix("/")
+        latest_api = latest_api.removeprefix("api/")
+        latest_api = latest_api.removeprefix("apis/")
+        latest_api = latest_api.removesuffix("/")
         return latest_api
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
