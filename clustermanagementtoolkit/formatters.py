@@ -160,15 +160,15 @@ def format_markdown(lines: Union[str, List[str]],
         # Level 1 header
         if line.startswith("# "):
             tformat = ThemeAttr("types", "markdown_header_1")
-            line = line[len("# "):]
+            line = line.removeprefix("# ")
         # Level 2 header
         elif line.startswith("## "):
             tformat = ThemeAttr("types", "markdown_header_2")
-            line = line[len("## "):]
+            line = line.removeprefix("## ")
         # Level 3 header
         elif line.startswith("### "):
             tformat = ThemeAttr("types", "markdown_header_3")
-            line = line[len("### "):]
+            line = line.removeprefix("### ")
         else:
             tmpline: List[Union[ThemeRef, ThemeStr]] = []
             if line.startswith("    ") and not codeblock:
@@ -207,7 +207,7 @@ def format_markdown(lines: Union[str, List[str]],
 
                 for _j, section in enumerate(bold_sections):
                     if section.startswith("#### "):
-                        section = section[len("#### "):]
+                        section = section.removeprefix("#### ")
                         bold = True
                     else:
                         bold = not bold

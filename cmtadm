@@ -4,7 +4,7 @@
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
-    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    [ ${version} -ge 9 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
     exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
@@ -1398,7 +1398,7 @@ def check_for_ssh_key() -> bool:
     retval = False
     files = [file for file in glob(os.path.join(HOMEDIR, ".ssh", "*.pub")) if os.path.isfile(file)]
     for file in files:
-        if os.path.isfile(file) and os.path.isfile(file[:-len(".pub")]):
+        if os.path.isfile(file) and os.path.isfile(file.removesuffix(".pub")):
             retval = True
             break
     return retval
@@ -2287,7 +2287,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict,
                      DictPath(f"{k8s_distro}#fedora_packages_held"), [])
 
     if k8s_distro == "rke2":
-        cri_socket = cri_socket[len("unix://"):]
+        cri_socket = cri_socket.removeprefix("unix://")
 
     extra_values = {
         "cluster_name": cluster_name,
@@ -5079,7 +5079,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
                             sys.exit(errno.EINVAL)
 
                         if uri.startswith("file://"):
-                            uri = uri[len("file://"):]
+                            uri = uri.removeprefix("file://")
                             if uri.startswith("{HOME}"):
                                 uri = uri.replace("{HOME}", HOMEDIR, 1)
                             _uri_type = "file"

@@ -4,7 +4,7 @@
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
-    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    [ ${version} -ge 9 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
     exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
@@ -63,7 +63,7 @@ def main() -> None:
         string: str = ""
         with open(filepath, "r", encoding="utf-8", errors="replace") as f:
             tmp = f.read()
-        context[filepath.name[:-len(".var")]] = tmp[:-1]
+        context[filepath.name.removesuffix(".var")] = tmp[:-1]
 
     # Initialise Jinja2
     environment = Environment(loader=FileSystemLoader(template_path),
@@ -74,7 +74,7 @@ def main() -> None:
         if not filepath.name.endswith(".j2"):
             continue
         template = environment.get_template(filepath.name)
-        dest_filename = filepath.name[:-len(".j2")]
+        dest_filename = filepath.name.removesuffix(".j2")
         with open(str(PosixPath(output_path).joinpath(dest_filename)),
                   mode="w", encoding="utf-8") as f:
             f.write(template.render(context))

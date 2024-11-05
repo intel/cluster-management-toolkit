@@ -17,11 +17,11 @@
 In most cases it's simply because it hasn't been tested on those distributions or versions.
 But for enterprise distros it's usually because the depencies are either missing or too old.
 
-__CMT__ is written in Python3 and requires version 3.8 or newer.
+__CMT__ is written in Python3 and requires version 3.9 or newer.
 This rules out installer & tool support for Debian 10 (Python 3.7).
 
-On openSUSE/SLES 15 and RHEL 8 you should be able to install python38
-and python38-pip or newer to get a recent version of Python3.
+On openSUSE/SLES 15 and RHEL 8 you should be able to install python39
+and python39-pip or newer to get a recent version of Python3.
 
 ## Limitations
 

@@ -298,13 +298,13 @@ def datagetter_latest_version(obj: Dict[str, Any],
             elif tmp[2].startswith("beta"):
                 minor = -1
                 try:
-                    patch = int(tmp[2][len("beta"):])
+                    patch = int(tmp[2].removeprefix("beta"))
                 except ValueError as e:
                     raise ValueError(f"Failed to parse version number {version}") from e
             elif tmp[2].startswith("alpha"):
                 minor = -2
                 try:
-                    patch = int(tmp[2][len("alpha"):])
+                    patch = int(tmp[2].removeprefix("alpha"))
                 except ValueError as e:
                     raise ValueError(f"Failed to parse version number {version}") from e
             else:

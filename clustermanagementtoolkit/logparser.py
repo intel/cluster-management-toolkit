@@ -1067,7 +1067,7 @@ def split_glog(message: str, **kwargs: Any) \
     # we separate it from the warning about glog use; this way we can get the proper severity
     if message.startswith("ERROR: logging before flag.Parse: "):
         loggingerror = message[0:len("ERROR: logging before flag.Parse")]
-        message = message[len("ERROR: logging before flag.Parse: "):]
+        message = message.removeprefix("ERROR: logging before flag.Parse: ")
 
     tmp = re.match(r"^([A-Z]\d{4} \d\d:\d\d:\d\d\.\d)\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{9}Z (.*)",
                    message)
@@ -2391,7 +2391,7 @@ def key_value_with_leading_message(message: str,
             # we could not parse this as "msg key=value"; give up
             if "=" not in item and (item.endswith(":") or not allow_bare_keys):
                 return facility, severity, message, remnants
-        rest = message[len(tmp[0]):].lstrip()
+        rest = message.removeprefix(tmp[0]).lstrip()
         new_message = tmp[0]
         tmp_msg_extract = LogparserConfiguration.msg_extract
         LogparserConfiguration.msg_extract = False
@@ -2703,7 +2703,7 @@ def substitute_bullets(message: str, prefix: str) -> str:
     """
     if message.startswith(prefix) and LogparserConfiguration.msg_realbullets:
         # We do not want to replace all "*" in the message with bullet, just prefixes
-        message = message[0:len(prefix)].replace("*", "•", 1) + message[len(prefix):]
+        message = message[0:len(prefix)].replace("*", "•", 1) + message.removeprefix(prefix)
     return message
 
 
@@ -4026,8 +4026,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
         return (timestamp, facility, severity,
                 rmessage, remnants, ("<override>", str(override_parser)), parser)
 
-    if image_name.startswith("docker-pullable://"):
-        image_name = image_name[len("docker-pullable://"):]
+    image_name = image_name.removeprefix("docker-pullable://")
 
     for parser in parsers:
         uparser = None

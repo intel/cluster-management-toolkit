@@ -4,7 +4,7 @@
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
-    [ ${version} -ge 8 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
+    [ ${version} -ge 9 ] && exec /usr/bin/python3.${version} "$0" "$@" || \
     exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide

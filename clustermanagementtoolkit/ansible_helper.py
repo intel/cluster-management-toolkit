@@ -1179,7 +1179,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
         if not retval_:
             retval_ = None
         else:
-            task = task[len("hide_on_ok: "):]
+            task = task.removeprefix("hide_on_ok: ")
     elif task == "Gathering Facts" and not retval_:
         retval_ = None
 

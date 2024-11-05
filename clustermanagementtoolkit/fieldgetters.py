@@ -124,11 +124,11 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
         if result is not None:
             for line in result.splitlines():
                 if line.startswith("CRC version: "):
-                    versions[0] = line[len("CRC version: "):]
+                    versions[0] = line.removeprefix("CRC version: ")
                 elif line.startswith("OpenShift version: "):
-                    versions[1] = line[len("OpenShift version: "):]
+                    versions[1] = line.removeprefix("OpenShift version: ")
                 elif line.startswith("Podman version: "):
-                    versions[2] = line[len("Podman version: "):]
+                    versions[2] = line.removeprefix("Podman version: ")
 
     version_strings = []
     for field in fields:

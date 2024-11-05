@@ -669,9 +669,7 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
                 taints.append(("control-plane", effect))
                 continue
 
-            if key.startswith("node.kubernetes.io/"):
-                key = key[len("node.kubernetes.io/"):]
-
+            key.removeprefix("node.kubernetes.io/")
             taints.append((key, effect))
 
             # If status is already "worse" than OK,
@@ -681,9 +679,7 @@ def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]]
             if status_group == StatusGroup.OK:
                 status_group = StatusGroup.ADMIN
         else:
-            if key.startswith("node.kubernetes.io/"):
-                key = key[len("node.kubernetes.io/"):]
-
+            key.removeprefix("node.kubernetes.io/")
             taints.append((key, effect))
 
     return status, status_group, taints, full_taints
@@ -1604,12 +1600,9 @@ class KubernetesHelper:
                              f"kind {kind} not found in kubernetes_resources")
 
         latest_api = deep_get(kubernetes_resources[kind], DictPath("api_paths"))[0]
-        if latest_api.startswith("api/"):
-            latest_api = latest_api[len("api/"):]
-        elif latest_api.startswith("apis/"):
-            latest_api = latest_api[len("apis/"):]
-        if latest_api.endswith("/"):
-            latest_api = latest_api[:-len("/")]
+        latest_api.removeprefix("api/")
+        latest_api.removeprefix("apis/")
+        latest_api.removesuffix("/")
         return latest_api
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
@@ -1844,7 +1837,7 @@ class KubernetesHelper:
                 for path in Path(f"{HOMEDIR}/testdata").iterdir():
                     if not path.name.endswith(".yaml"):
                         continue
-                    tmp = path.name[:-len(".yaml")]
+                    tmp = path.name.removesuffix(".yaml")
                     tmp_split = tmp.split(".", maxsplit=1)
                     if len(tmp_split) == 1:
                         kind = (tmp_split[0], "")
