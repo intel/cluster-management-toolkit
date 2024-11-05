@@ -2,15 +2,15 @@
 
 ## Platform support (cluster installation)
 
-| Functionality: | Distribution:            | Version:       |
-| -------------- | ------------------------ | -------------- |
-| kubeadm/RKE2   | Debian                   | 11+            |
-| kubeadm/RKE2   | Ubuntu                   | 20.04+         |
-| kubeadm/RKE2   | Ubuntu Server            | 20.04+         |
-| kubeadm        | Red Hat Enterprise Linux | 8*             |
-| kubeadm        | Red Hat Enterprise Linux | 9+             |
-| kubeadm/RKE2   | SUSE Enterprise Linux    | SLES 15.4*     |
-| kubeadm/RKE2   | openSUSE                 | openSUSE 15.4* |
+| Functionality: | Distribution:            | Version:        |
+| -------------- | ------------------------ | --------------- |
+| kubeadm/RKE2   | Debian                   | 11+             |
+| kubeadm/RKE2   | Ubuntu                   | 22.04+          |
+| kubeadm/RKE2   | Ubuntu Server            | 22.04+          |
+| kubeadm        | Red Hat Enterprise Linux | 8*              |
+| kubeadm        | Red Hat Enterprise Linux | 9+              |
+| kubeadm/RKE2   | SUSE Enterprise Linux    | SLES 15.4+*     |
+| kubeadm/RKE2   | openSUSE                 | openSUSE 15.4+* |
 
 ## What prevents __CMT__ from being support on other Distributions / Older versions
 
