@@ -1141,7 +1141,7 @@ testcases = {
         "security_policy": SecurityPolicy.STRICT,
         "expect": FileNotFoundError,
     },
-    "/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\"], " \
+    "/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\"], "
     "ALLOWLIST_STRICT] (secure_which)": {
         "path": FilePath("/usr/local/bin/ssh"),
         "test": test_secure_which,
@@ -1156,7 +1156,7 @@ testcases = {
         "security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
         "expect": FileNotFoundError,
     },
-    "/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", " \
+    "/usr/local/bin/ssh [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", \"/usr/sbin\", "
     "\"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
         "path": FilePath("/usr/local/bin/ssh"),
         "test": test_secure_which,
@@ -1164,7 +1164,7 @@ testcases = {
         "security_policy": SecurityPolicy.ALLOWLIST_RELAXED,
         "expect": "string",
     },
-    "/usr/local/bin/doesnotexist [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", " \
+    "/usr/local/bin/doesnotexist [fallback=[\"/bin\", \"/sbin\", \"/usr/bin\", "
     "\"/usr/sbin\", \"testpaths/ssh\"], ALLOWLIST_RELAXED] (secure_which)": {
         "path": FilePath("/usr/local/bin/doesnotexist"),
         "test": test_secure_which,
@@ -1784,7 +1784,7 @@ testcases = {
         "status_set": {SecurityStatus.PERMISSIONS, SecurityStatus.IS_NOT_FILE},
         "separator": ":",
         "test": test_join_securitystatus_set,
-        "expect": f"<SecurityStatus.PERMISSIONS: {SecurityStatus.PERMISSIONS}>:" \
+        "expect": f"<SecurityStatus.PERMISSIONS: {SecurityStatus.PERMISSIONS}>:"
                   f"<SecurityStatus.IS_NOT_FILE: {SecurityStatus.IS_NOT_FILE}>",
     },
 }

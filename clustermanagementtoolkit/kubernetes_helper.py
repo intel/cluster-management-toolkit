@@ -2677,13 +2677,13 @@ class KubernetesHelper:
         # Force draining also evicts pods that lack a controller.
         retstr, status = self.cordon_node(node)
         if status != 200:
-                return retstr, retval
+            return retstr, status
 
         field_selector = cmtlib.make_label_selector({"spec.nodeName": node})
         pods, status = self.get_list_by_kind_namespace(("Pod", ""), namespace="",
                                                        field_selector=field_selector)
         if status != 200:
-                return pods, retval
+            return pods, status
 
         error_message = ""
         first_error_status = 200
