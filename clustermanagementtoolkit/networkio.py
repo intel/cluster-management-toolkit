@@ -57,7 +57,7 @@ def reformat_github_release_notes(changelog: str = "") -> str:
     """
     Given a release message from GitHub reformat it as rudimentary Markdown.
 
-        Parametres:
+        Parameters:
             changelog (str): The changelog to reformat
         Returns:
             (str): The reformatted changelog
