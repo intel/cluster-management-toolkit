@@ -58,7 +58,7 @@ the roadmap has, for now, been pushed back one quarter, but further slips are li
       the containerinfoloop log viewer) should be merged. Having two implementation
       that mostly do the same thing doesn't make any sense.
     * [ ] Use __python3-pygments__ for syntax highlighting.
-    * [ ] Use __python3-jinja2__ for view-file templating.
+    * [x] Use __python3-jinja2__ for view-file templating.
 
 ## Q4 roadmap
 * _General_:

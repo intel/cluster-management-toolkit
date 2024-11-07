@@ -31,7 +31,7 @@ import ssl
 import sys
 import tempfile
 import threading
-from typing import Any, AnyStr, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Optional
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -79,7 +79,7 @@ CIPHERS = [
 renew_lock = threading.Lock()
 
 
-def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetime]]:
+def get_pod_restarts_total(pod: dict[str, Any]) -> tuple[int, int | datetime]:
     """
     Given a Pod object, return the total number of restarts for all containers
     as well as the timestamp of the latest restart
@@ -93,7 +93,7 @@ def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetim
                         or -1 if number of restarts = 0
     """
     restarts = 0
-    restarted_at: Union[int, datetime] = -1
+    restarted_at: int | datetime = -1
 
     # for status in deep_get(pod, DictPath("status#initContainerStatuses"), []) \
     #               + deep_get(pod, DictPath("status#containerStatuses"), []):
@@ -114,8 +114,8 @@ def get_pod_restarts_total(pod: Dict[str, Any]) -> Tuple[int, Union[int, datetim
     return restarts, restarted_at
 
 
-def get_containers(containers: List[Dict[str, Any]],
-                   container_statuses: List[Dict[str, Any]]) -> List[Tuple[str, str]]:
+def get_containers(containers: list[dict[str, Any]],
+                   container_statuses: list[dict[str, Any]]) -> list[tuple[str, str]]:
     """
     Given a list of containers and a list of container statuses,
     create a joined list with both pieces of information
@@ -147,8 +147,8 @@ def get_containers(containers: List[Dict[str, Any]],
     return container_list
 
 
-def get_controller_from_owner_references(owner_references: List[Dict]) \
-        -> Tuple[Tuple[str, str], str]:
+def get_controller_from_owner_references(owner_references: list[dict]) \
+        -> tuple[tuple[str, str], str]:
     """
     Given an owner reference list, extract the controller (if any)
 
@@ -177,7 +177,7 @@ def get_controller_from_owner_references(owner_references: List[Dict]) \
     return controller
 
 
-def get_node_roles(node: Dict) -> List[str]:
+def get_node_roles(node: dict) -> list[str]:
     """
     Get a list of the roles that the node belongs to
 
@@ -186,7 +186,7 @@ def get_node_roles(node: Dict) -> List[str]:
         Returns:
             ([str]): THe roles that the node belongs to
     """
-    roles: List[str] = []
+    roles: list[str] = []
 
     node_role_regex = re.compile(r"^node-role\.kubernetes\.io/(.*)")
 
@@ -205,7 +205,7 @@ def get_node_roles(node: Dict) -> List[str]:
 
 
 # We could probably merge this into kubernetes_resources?
-def resource_kind_to_rtype(resource: Tuple[str, str]) -> str:
+def resource_kind_to_rtype(resource: tuple[str, str]) -> str:
     """
     Given a kind return a resource type (basically a summary of what type is).
 
@@ -227,9 +227,9 @@ class KubernetesResourceCache:
         """
         Initialize the resource cache
         """
-        self.resource_cache: Dict = {}
+        self.resource_cache: dict = {}
 
-    def update_resource(self, kind: Tuple[str, str], resource: Dict) -> None:
+    def update_resource(self, kind: tuple[str, str], resource: dict) -> None:
         """
         Add or update the cache entry for a resource
 
@@ -268,7 +268,7 @@ class KubernetesResourceCache:
             self.resource_cache[kind]["resources"][uid] = copy.deepcopy(resource)
             self.updated = True
 
-    def update_resources(self, kind: Tuple[str, str], resources: List[Dict]) -> None:
+    def update_resources(self, kind: tuple[str, str], resources: list[dict]) -> None:
         """
         Add or update the cache entries for a resource kind
 
@@ -283,8 +283,8 @@ class KubernetesResourceCache:
         for resource in resources:
             self.update_resource(kind, resource=resource)
 
-    def get_resources(self, kind: Tuple[str, str], namespace: str = "",
-                      label_selector: str = "", field_selector: str = "") -> List[Dict[str, Any]]:
+    def get_resources(self, kind: tuple[str, str], namespace: str = "",
+                      label_selector: str = "", field_selector: str = "") -> list[dict[str, Any]]:
         """
         Return a list with all resources of the specified kind
 
@@ -331,7 +331,7 @@ class KubernetesResourceCache:
         return [resource for uid, resource in deep_get(self.resource_cache[kind],
                                                        DictPath("resources"), {}).items()]
 
-    def index(self) -> List[str]:
+    def index(self) -> list[str]:
         """
         Return a list of all cached kinds
 
@@ -353,7 +353,7 @@ class KubernetesResourceCache:
             return 0
         return len(self.resource_cache)
 
-    def len(self, kind: Tuple[str, str]) -> int:
+    def len(self, kind: tuple[str, str]) -> int:
         """
         Return the number of resources of the specified kind
 
@@ -377,14 +377,14 @@ class PoolManagerContext:
     def __init__(self, cert_file: Optional[str] = None, key_file: Optional[str] = None,
                  ca_certs_file: Optional[str] = None, token: Optional[str] = None,
                  insecuretlsskipverify: bool = False) -> None:
-        self.pool_manager = None
+        self.pool_manager: Optional[urllib3.ProxyManager | urllib3.PoolManager] = None
         self.cert_file = cert_file
         self.key_file = key_file
         self.ca_certs_file = ca_certs_file
         self.token = token
         self.insecuretlsskipverify = insecuretlsskipverify
 
-    def __enter__(self) -> Union[urllib3.ProxyManager, urllib3.PoolManager]:
+    def __enter__(self) -> urllib3.ProxyManager | urllib3.PoolManager:
         # Only permit a limited set of acceptable ciphers
         ssl_context = urllib3.util.ssl_.create_urllib3_context(ciphers=":".join(CIPHERS))
         # Disable anything older than TLSv1.2
@@ -421,20 +421,25 @@ class PoolManagerContext:
                     "ca_certs": None,
                 }
 
+        # The type ignores are necessary because mypy cannot handle
+        # def foo(a: int = 5, **kwargs)
+        # foo(**kwarg_dict)
+        # properly; it'll try to map kwarg_dict positionally
         if pool_manager_proxy:
-            self.pool_manager = urllib3.ProxyManager(pool_manager_proxy, **pool_manager_args)
+            self.pool_manager = urllib3.ProxyManager(pool_manager_proxy,
+                                                     **pool_manager_args)  # type: ignore
         else:
-            self.pool_manager = urllib3.PoolManager(**pool_manager_args)
+            self.pool_manager = urllib3.PoolManager(**pool_manager_args)  # type: ignore
 
         return self.pool_manager
 
-    def __exit__(self, *args: List, **kwargs: Any) -> None:
+    def __exit__(self, *args: list, **kwargs: Any) -> None:
         if self.pool_manager is not None:
             self.pool_manager.clear()
         self.pool_manager = None
 
 
-def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
+def kind_tuple_to_name(kind: tuple[str, str]) -> str:
     """
     Given a kind tuple, return a string representation
 
@@ -455,7 +460,7 @@ def kind_tuple_to_name(kind: Tuple[str, str]) -> str:
 
 
 # pylint: disable-next=too-many-branches
-def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
+def guess_kind(kind: str | tuple[str, str]) -> tuple[str, str]:
     """
     Given a Kind without API-group, or (API-name, API-group)
     return the (Kind, API-group) tuple
@@ -536,7 +541,7 @@ def guess_kind(kind: Union[str, Tuple[str, str]]) -> Tuple[str, str]:
     raise NameError(f"Could not guess kubernetes resource for kind: {kind}")
 
 
-def update_api_status(kind: Tuple[str, str], listview: bool = False,
+def update_api_status(kind: tuple[str, str], listview: bool = False,
                       infoview: bool = False, local: bool = False) -> None:
     """
     Update kubernetes_resources for a kind to indicate
@@ -566,7 +571,7 @@ def update_api_status(kind: Tuple[str, str], listview: bool = False,
     kubernetes_resources[kind]["local"] = local
 
 
-def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str,
+def kubectl_get_version() -> tuple[Optional[int], Optional[int], str,
                                    Optional[int], Optional[int], str]:
     """
     Get kubectl & API-server version
@@ -624,7 +629,7 @@ def kubectl_get_version() -> Tuple[Optional[int], Optional[int], str,
 
 
 # pylint: disable-next=too-many-branches
-def get_node_status(node: Dict) -> Tuple[str, StatusGroup, List[Tuple[str, str]], List[Dict]]:
+def get_node_status(node: dict) -> tuple[str, StatusGroup, list[tuple[str, str]], list[dict]]:
     """
     Given a node dict, extract the node status
 
@@ -707,7 +712,7 @@ def get_image_version(image: str, default: str = "<undefined>") -> str:
 
 
 def list_contexts(config_path: Optional[FilePath] = None) \
-        -> List[Tuple[bool, str, str, str, str, str]]:
+        -> list[tuple[bool, str, str, str, str, str]]:
     """
     Given the path to a kubeconfig file, returns the available contexts
 
@@ -835,7 +840,7 @@ class KubernetesHelper:
     key_file: Optional[str] = None
     token: Optional[str] = None
 
-    pool_manager_args: Dict = {}
+    pool_manager_args: dict = {}
     pool_manager_proxy = ""
 
     programname = ""
@@ -851,7 +856,7 @@ class KubernetesHelper:
     control_plane_path: Optional[str] = None
 
     def list_contexts(self, config_path: Optional[FilePath] = None) \
-            -> List[Tuple[bool, str, str, str, str, str]]:
+            -> list[tuple[bool, str, str, str, str, str]]:
         """
         Given the path to a kubeconfig file, returns the available contexts
 
@@ -871,12 +876,12 @@ class KubernetesHelper:
         if config_path is None:
             config_path = self.config_path
         # This should never be needed, but just in case
-        elif config_path is None:
+        if config_path is None:
             config_path = KUBE_CONFIG_FILE
 
         return list_contexts(config_path)
 
-    def list_clusters(self, config_path: Optional[FilePath] = None) -> List[Tuple[str, str]]:
+    def list_clusters(self, config_path: Optional[FilePath] = None) -> list[tuple[str, str]]:
         """
         Returns a list of (cluster, context)
         with only one context per cluster, priority given to contexts with admin in the username
@@ -893,11 +898,11 @@ class KubernetesHelper:
         if config_path is None:
             config_path = self.config_path
         # This should never be needed, but just in case
-        elif config_path is None:
+        if config_path is None:
             config_path = KUBE_CONFIG_FILE
 
         contexts = self.list_contexts(config_path=config_path)
-        __clusters: Dict = {}
+        __clusters: dict = {}
         clusters = []
 
         for context in contexts:
@@ -1033,7 +1038,7 @@ class KubernetesHelper:
         if config_path is None:
             config_path = self.config_path
         # This should never be needed, but just in case
-        elif config_path is None:
+        if config_path is None:
             config_path = KUBE_CONFIG_FILE
 
         config_path = FilePath(config_path)
@@ -1254,10 +1259,10 @@ class KubernetesHelper:
 
     # CNI detection helpers
     # pylint: disable-next=too-many-locals,too-many-branches
-    def __identify_cni(self, cni_name: str, controller_kind: Tuple[str, str],
+    def __identify_cni(self, cni_name: str, controller_kind: tuple[str, str],
                        controller_selector: str,
-                       container_name: str) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
-        cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
+                       container_name: str) -> list[tuple[str, str, tuple[str, StatusGroup, str]]]:
+        cni: list[tuple[str, str, tuple[str, StatusGroup, str]]] = []
 
         # Is there a controller matching the kind we are looking for?
         vlist, _status = \
@@ -1332,7 +1337,7 @@ class KubernetesHelper:
 
         return cni
 
-    def identify_cni(self) -> List[Tuple[str, str, Tuple[str, StatusGroup, str]]]:
+    def identify_cni(self) -> list[tuple[str, str, tuple[str, StatusGroup, str]]]:
         """
         Attempt to identify what CNI the cluster is using;
         if there are multiple possible matches all are returned
@@ -1346,7 +1351,7 @@ class KubernetesHelper:
                         (StatusGroup): An enum representation of the CNI status
                         (str): The reason for the status, if known
         """
-        cni: List[Tuple[str, str, Tuple[str, StatusGroup, str]]] = []
+        cni: list[tuple[str, str, tuple[str, StatusGroup, str]]] = []
 
         # We have to do some sleuthing here
         # Antrea:
@@ -1435,7 +1440,7 @@ class KubernetesHelper:
         """
         return not self.cluster_unreachable
 
-    def get_control_plane_address(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def get_control_plane_address(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """
         Returns the IP-address and port of the control plane
 
@@ -1552,7 +1557,7 @@ class KubernetesHelper:
 
         return ca_cert_hash
 
-    def is_kind_namespaced(self, kind: Tuple[str, str]) -> bool:
+    def is_kind_namespaced(self, kind: tuple[str, str]) -> bool:
         """
         Is this kind namespaced?
 
@@ -1566,7 +1571,7 @@ class KubernetesHelper:
                              "this is likely a programming error (possibly a typo)")
         return deep_get(kubernetes_resources[kind], DictPath("namespaced"), True)
 
-    def kind_api_version_to_kind(self, kind: str, api_version: str) -> Tuple[str, str]:
+    def kind_api_version_to_kind(self, kind: str, api_version: str) -> tuple[str, str]:
         """
         Given a Kubernetes API as (kind, api_version) return (kind, api_group)
 
@@ -1586,7 +1591,7 @@ class KubernetesHelper:
             api_group = ""
         return kind, api_group
 
-    def get_latest_api(self, kind: Tuple[str, str]) -> str:
+    def get_latest_api(self, kind: tuple[str, str]) -> str:
         """
         Given a Kubernetes API as (kind, api_group), returns the latest API-version
 
@@ -1606,7 +1611,7 @@ class KubernetesHelper:
         return latest_api
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-    def get_api_resources(self) -> Tuple[int, List[Tuple]]:
+    def get_api_resources(self) -> tuple[int, list[tuple]]:
         """
         Return information about all API-resources available in the cluster
 
@@ -1619,7 +1624,7 @@ class KubernetesHelper:
         if self.cluster_unreachable:
             return 42503, []
 
-        api_resources: List[Tuple] = []
+        api_resources: list[tuple] = []
         core_apis = {}
 
         # First get all core APIs
@@ -1776,7 +1781,7 @@ class KubernetesHelper:
 
     # TODO: This should ideally be modified to use get_api_resources()
     # pylint: disable-next=too-many-locals,too-many-return-statements,too-many-branches,too-many-statements  # noqa: E501
-    def get_available_kinds(self, force_refresh: bool = False) -> Tuple[Dict, int, bool]:
+    def get_available_kinds(self, force_refresh: bool = False) -> tuple[dict, int, bool]:
         """
         Return a dict of Kinds known by both kubernetes_helper and the API-server
 
@@ -1905,7 +1910,7 @@ class KubernetesHelper:
                                 continue
                             if (kind_, name) in kubernetes_resources \
                                     and f"apis/{name}/{version_}/" in \
-                                    cast(List[str],
+                                    cast(list[str],
                                          kubernetes_resources[(kind_, name)].get("api_paths", [])):
                                 kubernetes_resources[(kind_, name)]["available"] = True
                                 continue
@@ -1950,7 +1955,7 @@ class KubernetesHelper:
                             continue
                         if (kind_, name) in kubernetes_resources \
                                 and f"apis/{version_}/" in \
-                                cast(List[str],
+                                cast(list[str],
                                      kubernetes_resources[(kind_, name)].get("api_paths", [])):
                             if (kind_, name) in kubernetes_resources:
                                 kubernetes_resources[(kind_, name)]["available"] = True
@@ -1959,7 +1964,7 @@ class KubernetesHelper:
         modified = True
         return kubernetes_resources, status, modified
 
-    def is_kind_available(self, kind: Tuple[str, str]) -> bool:
+    def is_kind_available(self, kind: tuple[str, str]) -> bool:
         """
         Checks whether a kind tuple is available or not
 
@@ -1974,12 +1979,12 @@ class KubernetesHelper:
             available = False
         return available
 
-    def get_list_of_namespaced_resources(self) -> List[Tuple[str, str]]:
+    def get_list_of_namespaced_resources(self) -> list[tuple[str, str]]:
         """
         Returns a list of all namespaced resources that are available in the cluster
 
             Returns:
-                vlist (List[(kind, api_group)]): A list of namespaced kinds
+                vlist ([(kind, api_group)]): A list of namespaced kinds
         """
         vlist = []
 
@@ -1991,13 +1996,13 @@ class KubernetesHelper:
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
     def __rest_helper_generic_json(self, *,
-                                   pool_manager: Union[urllib3.PoolManager, urllib3.ProxyManager],
-                                   **kwargs: Any) -> Tuple[Union[AnyStr, None], str, int]:
+                                   pool_manager: urllib3.PoolManager | urllib3.ProxyManager,
+                                   **kwargs: Any) -> tuple[str | bytes | None, str, int]:
         method: Optional[str] = deep_get(kwargs, DictPath("method"))
         url: Optional[str] = deep_get(kwargs, DictPath("url"))
-        header_params: Optional[Dict] = deep_get(kwargs, DictPath("header_params"))
-        query_params: Optional[List[Optional[Tuple[str, Any]]]] = \
-            deep_get(kwargs, DictPath("query_params"))
+        header_params: Optional[dict] = deep_get(kwargs, DictPath("header_params"))
+        query_params: list[tuple[str, Any]] = \
+            deep_get(kwargs, DictPath("query_params"), [])
         body: Optional[bytes] = deep_get(kwargs, DictPath("body"))
         retries: int = deep_get(kwargs, DictPath("retries"), 3)
         connect_timeout: float = deep_get(kwargs, DictPath("connect_timeout"), 3.0)
@@ -2141,9 +2146,12 @@ class KubernetesHelper:
             # The server refused to accept the request because the payload
             # was in an unsupported format;
             # check Content-Type, Content-Encoding, and the data itself.
+            decoded_body = None
+            if body is not None:
+                decoded_body = body.decode("utf-8", errors="replace")
             raise TypeError("415: Unsupported Media Type; this is probably a programming error; "
                             f"method: {method}, URL: {url}; header_params: {header_params}, "
-                            f"body: {body}")
+                            f"body: {decoded_body}")
         elif status == 422:
             # Unprocessable Entity
             # The content and syntax is correct, but the request cannot be processed
@@ -2202,7 +2210,7 @@ class KubernetesHelper:
         return data, message, status
 
     # pylint: disable-next=too-many-locals
-    def __rest_helper_post(self, kind: Tuple[str, str], **kwargs: Any) -> Tuple[str, int]:
+    def __rest_helper_post(self, kind: tuple[str, str], **kwargs: Any) -> tuple[str, int]:
         name: str = deep_get(kwargs, DictPath("name"), "")
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
         body: Optional[bytes] = deep_get(kwargs, DictPath("body"))
@@ -2268,8 +2276,8 @@ class KubernetesHelper:
         return message, status
 
     # pylint: disable-next=too-many-locals
-    def __rest_helper_patch(self, kind: Tuple[str, str], *, name: str,
-                            **kwargs: Any) -> Tuple[str, int]:
+    def __rest_helper_patch(self, kind: tuple[str, str], *, name: str,
+                            **kwargs: Any) -> tuple[str, int]:
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
         strategic_merge: bool = deep_get(kwargs, DictPath("strategic_merge"), True)
         subresource: str = deep_get(kwargs, DictPath("subresource"), "")
@@ -2340,10 +2348,10 @@ class KubernetesHelper:
         return message, status
 
     # pylint: disable-next=too-many-locals
-    def __rest_helper_delete(self, kind: Tuple[str, str], *,
-                             name: str, **kwargs: Any) -> Tuple[str, int]:
+    def __rest_helper_delete(self, kind: tuple[str, str], *,
+                             name: str, **kwargs: Any) -> tuple[str, int]:
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
-        query_params: Optional[List[Optional[Tuple[str, Any]]]] = \
+        query_params: Optional[list[Optional[tuple[str, Any]]]] = \
             deep_get(kwargs, DictPath("query_params"))
         method = "DELETE"
 
@@ -2398,9 +2406,8 @@ class KubernetesHelper:
     # unconditionally in for loops
 
     # pylint: disable-next=too-many-locals,too-many-branches
-    def __rest_helper_get(self, **kwargs: Any) -> Tuple[Union[Optional[Dict], List[Optional[Dict]]],
-                                                        int]:
-        kind: Optional[Tuple[str, str]] = deep_get(kwargs, DictPath("kind"))
+    def __rest_helper_get(self, **kwargs: Any) -> tuple[Optional[dict] | list[Optional[dict]], int]:
+        kind: Optional[tuple[str, str]] = deep_get(kwargs, DictPath("kind"))
         raw_path: Optional[str] = deep_get(kwargs, DictPath("raw_path"))
         name: str = deep_get(kwargs, DictPath("name"), "")
         namespace: str = deep_get(kwargs, DictPath("namespace"), "")
@@ -2420,7 +2427,7 @@ class KubernetesHelper:
                 return [], status
             return None, status
 
-        query_params: List[Optional[Tuple[str, Any]]] = []
+        query_params: list[Optional[tuple[str, Any]]] = []
         if field_selector != "":
             query_params.append(("fieldSelector", field_selector))
         if label_selector != "":
@@ -2433,7 +2440,7 @@ class KubernetesHelper:
             namespace_part = f"namespaces/{namespace}/"
 
         if raw_path is None:
-            kind = guess_kind(cast(Tuple[str, str], kind))
+            kind = guess_kind(cast(tuple[str, str], kind))
             if kind in kubernetes_resources:
                 api_paths = deep_get(kubernetes_resources[kind], DictPath("api_paths"))
                 api = deep_get(kubernetes_resources[kind], DictPath("api"))
@@ -2503,7 +2510,7 @@ class KubernetesHelper:
 
         return None, status
 
-    def get_api_server_version(self) -> Tuple[int, int, str]:
+    def get_api_server_version(self) -> tuple[int, int, str]:
         """
         Get API-server version
 
@@ -2514,7 +2521,7 @@ class KubernetesHelper:
                     (str): API-server GIT version
         """
         ref, _status = self.__rest_helper_get(raw_path="version")
-        ref = cast(Dict, ref)
+        ref = cast(dict, ref)
         server_major_version = deep_get(ref, DictPath("major"), "")
         server_minor_version = deep_get(ref, DictPath("minor"), "")
         server_git_version = deep_get(ref, DictPath("gitVersion"), "")
@@ -2523,7 +2530,7 @@ class KubernetesHelper:
 
         return server_major_version, server_minor_version, server_git_version
 
-    def create_namespace(self, name: str) -> Tuple[str, int]:
+    def create_namespace(self, name: str) -> tuple[str, int]:
         """
         Create a new namespace
 
@@ -2554,9 +2561,9 @@ class KubernetesHelper:
         return self.__rest_helper_post(kind=kind, body=body)
 
     # pylint: disable-next=too-many-locals
-    def taint_node(self, node: str, taints: List[Dict],
-                   new_taint: Tuple[str, Optional[str], Optional[str], Optional[str]],
-                   overwrite: bool = False) -> Tuple[str, int]:
+    def taint_node(self, node: str, taints: list[dict],
+                   new_taint: tuple[str, Optional[str], Optional[str], Optional[str]],
+                   overwrite: bool = False) -> tuple[str, int]:
         """
         Apply a new taint, replace an existing taint, or remove a taint for a node
 
@@ -2637,7 +2644,7 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_patch(kind=kind, name=node, body=body)
 
-    def cordon_node(self, node: str) -> Tuple[str, int]:
+    def cordon_node(self, node: str) -> tuple[str, int]:
         """
         Cordon a Node
 
@@ -2655,7 +2662,7 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_patch(kind=kind, name=node, body=body)
 
-    def drain_node(self, node: str, **kwargs: Any) -> Tuple[str, int]:
+    def drain_node(self, node: str, **kwargs: Any) -> tuple[str, int]:
         """
         Drain a Node
 
@@ -2683,7 +2690,7 @@ class KubernetesHelper:
         pods, status = self.get_list_by_kind_namespace(("Pod", ""), namespace="",
                                                        field_selector=field_selector)
         if status != 200:
-            return pods, status
+            return "", status
 
         error_message = ""
         first_error_status = 200
@@ -2718,7 +2725,7 @@ class KubernetesHelper:
                 error_message += "\nThis is most likely caused by a PodDisruptionBudget"
         return error_message, first_error_status
 
-    def uncordon_node(self, node: str) -> Tuple[str, int]:
+    def uncordon_node(self, node: str) -> tuple[str, int]:
         """
         Uncordon a Node
 
@@ -2737,9 +2744,9 @@ class KubernetesHelper:
         return self.__rest_helper_patch(kind, name=node, body=body)
 
     # pylint: disable-next=too-many-arguments
-    def patch_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
-                                         namespace: str, patch: Dict, subresource: str = "",
-                                         strategic_merge: bool = True) -> Tuple[str, int]:
+    def patch_obj_by_kind_name_namespace(self, kind: tuple[str, str], name: str,
+                                         namespace: str, patch: dict, subresource: str = "",
+                                         strategic_merge: bool = True) -> tuple[str, int]:
         """
         Patch an object
 
@@ -2757,7 +2764,7 @@ class KubernetesHelper:
                                         subresource=subresource, strategic_merge=strategic_merge)
 
     def evict_pod_by_name_namespace(self, name: str, namespace: str,
-                                    **kwargs: Any) -> Tuple[str, int]:
+                                    **kwargs: Any) -> tuple[str, int]:
         """
         Evict a pod
 
@@ -2790,8 +2797,8 @@ class KubernetesHelper:
         return self.__rest_helper_post(kind=kind, name=name, namespace=namespace,
                                        body=body, subresource=subresource)
 
-    def delete_obj_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
-                                          namespace: str, force: bool = False) -> Tuple[str, int]:
+    def delete_obj_by_kind_name_namespace(self, kind: tuple[str, str], name: str,
+                                          namespace: str, force: bool = False) -> tuple[str, int]:
         """
         Delete an object
 
@@ -2803,7 +2810,7 @@ class KubernetesHelper:
             Returns:
                 ((str, int)): the return value from __rest_helper_delete
         """
-        query_params: List[Optional[Tuple[str, Any]]] = []
+        query_params: list[Optional[tuple[str, Any]]] = []
 
         if force:
             query_params.append(("gracePeriodSeconds", 0))
@@ -2811,7 +2818,7 @@ class KubernetesHelper:
         return self.__rest_helper_delete(kind=kind, name=name,
                                          namespace=namespace, query_params=query_params)
 
-    def get_metrics(self) -> Tuple[List[str], int]:
+    def get_metrics(self) -> tuple[list[str], int]:
         """
         Get cluster metrics
 
@@ -2820,13 +2827,13 @@ class KubernetesHelper:
                     metrics (list[str]): The metrics
                     status (int): The HTTP response
         """
-        msg: List[str] = []
+        msg: list[str] = []
         status = 42503
 
         if self.cluster_unreachable:
             return msg, status
 
-        query_params: List[Optional[Tuple[str, Any]]] = []
+        query_params: list[Optional[tuple[str, Any]]] = []
         url = f"https://{self.control_plane_ip}:{self.control_plane_port}" \
               f"{self.control_plane_path}/metrics"
         with PoolManagerContext(cert_file=self.cert_file, key_file=self.key_file,
@@ -2848,8 +2855,8 @@ class KubernetesHelper:
                 msg = []
         return msg, status
 
-    def get_list_by_kind_namespace(self, kind: Tuple[str, str], namespace: str,
-                                   **kwargs: Any) -> Tuple[List[Dict[str, Any]], int]:
+    def get_list_by_kind_namespace(self, kind: tuple[str, str], namespace: str,
+                                   **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
         """
         Given kind, namespace and optionally label and/or field selectors,
         return all matching resources
@@ -2872,7 +2879,7 @@ class KubernetesHelper:
         resource_cache: Optional[KubernetesResourceCache] = deep_get(kwargs,
                                                                      DictPath("resource_cache"))
 
-        vlist: List[Dict[str, Any]] = []
+        vlist: list[dict[str, Any]] = []
 
         if deep_get(cmtlib.cmtconfig, DictPath("Debug#developer_mode")) \
                 and deep_get(cmtlib.cmtconfig, DictPath("Debug#use_testdata")):
@@ -2907,11 +2914,11 @@ class KubernetesHelper:
         tmp, status = self.__rest_helper_get(kind=kind, namespace=namespace,
                                              label_selector=label_selector,
                                              field_selector=field_selector)
-        vlist = cast(List[Dict[str, Any]], tmp)
+        vlist = cast(list[dict[str, Any]], tmp)
         return vlist, status
 
-    def get_ref_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
-                                       namespace: str, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def get_ref_by_kind_name_namespace(self, kind: tuple[str, str], name: str,
+                                       namespace: str, **kwargs: Any) -> Optional[dict[str, Any]]:
         """
         Given kind, name, namespace return a resource
 
@@ -2955,12 +2962,12 @@ class KubernetesHelper:
             return None
 
         ref, _status = self.__rest_helper_get(kind=kind, name=name, namespace=namespace)
-        ref = cast(Dict, ref)
+        ref = cast(dict, ref)
         return ref
 
     def read_namespaced_pod_log(self, name: str, namespace: str,
                                 container: Optional[str] = None,
-                                tail_lines: int = 0) -> Tuple[str, int]:
+                                tail_lines: int = 0) -> tuple[str, int]:
         """
         Read a pod log
 
@@ -2977,7 +2984,7 @@ class KubernetesHelper:
         msg = ""
         status = 42503
 
-        query_params: List[Optional[Tuple[str, Any]]] = []
+        query_params: list[Optional[tuple[str, Any]]] = []
         if container is not None:
             query_params.append(("container", container))
         if tail_lines is not None:
@@ -3009,7 +3016,7 @@ class KubernetesHelper:
 
     # Namespace must be the namespace of the resource; the owner reference itself lacks namespace
     # since owners have to reside in the same namespace as their owned resources
-    def get_ref_from_owr(self, owr: Dict, namespace: str) -> Dict:
+    def get_ref_from_owr(self, owr: dict, namespace: str) -> dict:
         """
         Given an Owner Reference (OWR), returns resource of the owner
 
@@ -3026,9 +3033,9 @@ class KubernetesHelper:
         return ref
 
     # pylint: disable-next=too-many-locals
-    def get_events_by_kind_name_namespace(self, kind: Tuple[str, str], name: str,
+    def get_events_by_kind_name_namespace(self, kind: tuple[str, str], name: str,
                                           namespace: str, **kwargs: Any) \
-            -> List[Tuple[str, str, str, str, str, str, str, str, str]]:
+            -> list[tuple[str, str, str, str, str, str, str, str, str]]:
         """
         Given kind, name, and namespace, returns all matching events
 
@@ -3053,14 +3060,14 @@ class KubernetesHelper:
         resource_cache: Optional[KubernetesResourceCache] = \
             deep_get(kwargs, DictPath("resource_cache"))
 
-        events: List[Tuple[str, str, str, str, str, str, str, str, str]] = []
+        events: list[tuple[str, str, str, str, str, str, str, str, str]] = []
         vlist, _status = self.get_list_by_kind_namespace(("Event", "events.k8s.io"), "",
                                                          resource_cache=resource_cache)
         if vlist is None or not vlist or _status != 200:
             return events
 
         for obj in vlist:
-            obj = cast(Dict, obj)
+            obj = cast(dict, obj)
 
             __involved_kind = deep_get_with_fallback(obj, [DictPath("regarding#kind"),
                                                            DictPath("involvedObject#kind")])
@@ -3118,7 +3125,7 @@ class KubernetesHelper:
                 events.append(event)
         return events
 
-    def check_for_feature_gates(self, **kwargs: Any) -> Dict[str, Dict[str, Any]]:
+    def check_for_feature_gates(self, **kwargs: Any) -> dict[str, dict[str, Any]]:
         """
         Upgrading typically isn't supported when feature gates are enabled;
         this provides a quick way to check whether there are feature gates enabled.
@@ -3129,7 +3136,7 @@ class KubernetesHelper:
                 **kwargs (dict[str, Any]): Keyword arguments
                     resource_cache (KubernetesResourceCache): A KubernetesResourceCache
             Returns:
-                (Dict): A dict with that contains the set feature gates, if any
+                (dict): A dict with that contains the set feature gates, if any
         """
         resource_cache: Optional[KubernetesResourceCache] = \
             deep_get(kwargs, DictPath("resource_cache"))

@@ -323,7 +323,7 @@ mypy-markdown:
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
-		result=$$($$cmd --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
+		result=$$($$cmd --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
 		row="| $$file | $$result |\n" ;\
 		printf -- "$$row" ;\
 	done
