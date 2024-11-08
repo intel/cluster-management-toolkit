@@ -394,6 +394,7 @@ setup_tests: create_test_symlinks
 	 test -f 11-valid_yaml_but_single.yaml || printf -- "valid_yaml:\n  but_only_when_using_load: true\n  this_wont_work_with_load_all: true\n" > 11-valid_yaml_but_single.yaml ;\
 	 test -f 12-valid_yaml_followed_by_invalid_yaml.yaml || printf -- "---\nvalid_yaml:\n  this_should_load_with_load_all: true\n---\ninvalid_yaml:\n  : this is not valid yaml\n" > 12-valid_yaml_followed_by_invalid_yaml.yaml ;\
 	 test -d 13-correct_directory || mkdir 13-correct_directory ;\
+	 test -d 16-dir_no_permissions || mkdir 16-dir_no_permissions && chmod a= 16-dir_no_permissions ;\
 	 test -f 03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory || touch 03-wrong_dir_permissions/14-correct_file_in_wrong_permission_directory ;\
 	 test -L 15-symlink_directory || ln -s 13-correct_directory 15-symlink_directory ;\
 	 test -f 13-correct_directory/16-correct_file_in_correct_permission_directory || touch 13-correct_directory/16-correct_file_in_correct_permission_directory ;\

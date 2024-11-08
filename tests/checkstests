@@ -13,14 +13,19 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
+from pathlib import PurePath
+from getpass import getuser
 import sys
 from typing import Any, Dict, Tuple
+from unittest import mock
 import yaml
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
 from clustermanagementtoolkit import checks
+
+TEST_DIR = FilePath(PurePath(__file__).parent).joinpath("testpaths")
 
 # unit-tests for checks.py
 
@@ -31,6 +36,155 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
+
+def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_ansible_dir_permissions
+    user = getuser()
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_response, mock_exit, expected_result, expected_exception)
+        testdata = (
+            # Existing directory with correct permissions is OK; verbose
+            (
+                {
+                    "verbose": True,
+                    "user": user,
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Existing directory with correct permissions is OK; quiet
+            (
+                {
+                    "verbose": False,
+                    "user": user,
+                    "quiet_on_ok": True,
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Non-existing directory is OK; verbose
+            (
+                {
+                    "verbose": True,
+                    "user": user,
+                },
+                f"{TEST_DIR}/nonexistingdir/testdir",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Non-existing directory is OK; quiet
+            (
+                {
+                    "verbose": False,
+                    "user": user,
+                    "quiet_on_ok": True,
+                },
+                f"{TEST_DIR}/nonexistingdir/testdir",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Existing directory with incorrect permissions is not OK
+            (
+                {
+                    "verbose": True,
+                    "user": user,
+                },
+                f"{TEST_DIR}/16-dir_no_permissions",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Existing directory with incorrect permissions is not OK; exit on error
+            (
+                {
+                    "verbose": True,
+                    "user": user,
+                    "exit_on_error": True,
+                },
+                f"{TEST_DIR}/16-dir_no_permissions",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                Exception,
+                "errno.EPERM",
+            ),
+            # Directory owned by the incorrect user is not OK
+            (
+                {
+                    "verbose": True,
+                    "user": "NONEXISTINGUSER",
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Directory owned by the incorrect user is not OK; exit on error
+            (
+                {
+                    "verbose": True,
+                    "user": "NONEXISTINGUSER",
+                    "exit_on_error": True,
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                Exception,
+                "errno.EPERM",
+            ),
+        )
+
+        for kwargs, mock_response, \
+                expected_result, expected_exception, expected_exception_msg in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.checks.DOT_ANSIBLE_PATH",
+                                mock_response), \
+                     mock.patch("sys.exit", side_effect=Exception("errno.EPERM")):
+                    tmp = fun(**kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 
 def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[str, bool]:
@@ -108,6 +262,10 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
 
 
 tests: Dict = {
+    ("check_ansible_dir_permissions()",): {
+        "callable": test_check_ansible_dir_permissions,
+        "result": None,
+    },
     ("check_disable_strict_host_key_checking()",): {
         "callable": test_check_disable_strict_host_key_checking,
         "result": None,
