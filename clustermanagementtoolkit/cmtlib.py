@@ -17,7 +17,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, cast, Generator, Optional
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 
@@ -36,7 +36,7 @@ from clustermanagementtoolkit import kubernetes_helper
 cmtconfig = {}
 
 
-def decode_value(value: Union[str, bytes]) -> Tuple[str, Union[str, bytes]]:
+def decode_value(value: str | bytes) -> tuple[str, str | bytes]:
     """
     Given a value attempt to decode it from base64
 
@@ -83,7 +83,7 @@ def decode_value(value: Union[str, bytes]) -> Tuple[str, Union[str, bytes]]:
     return vtype, value
 
 
-def substitute_string(string: str, substitutions: Dict) -> str:
+def substitute_string(string: str, substitutions: dict) -> str:
     """
     Substitutes substrings in a string
 
@@ -101,7 +101,7 @@ def substitute_string(string: str, substitutions: Dict) -> str:
     return string
 
 
-def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
+def substitute_list(strlist: list[str], substitutions: dict) -> list[str]:
     """
     Substitutes substrings in all strings in a list
 
@@ -120,7 +120,7 @@ def substitute_list(strlist: List[str], substitutions: Dict) -> List[str]:
     return strlist
 
 
-def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
+def lstrip_count(string: str, prefix: str) -> tuple[str, int]:
     """
     Given a string remove prefix and return the stripped string and the count of stripped characters
 
@@ -134,7 +134,7 @@ def lstrip_count(string: str, prefix: str) -> Tuple[str, int]:
     return stripped, len(string) - len(stripped)
 
 
-def rstrip_count(string: str, suffix: str) -> Tuple[str, int]:
+def rstrip_count(string: str, suffix: str) -> tuple[str, int]:
     """
     Given a string remove suffix and return the stripped string and the count of stripped characters
 
@@ -149,7 +149,7 @@ def rstrip_count(string: str, suffix: str) -> Tuple[str, int]:
     return stripped, len(string) - len(stripped)
 
 
-def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
+def chunk_list(items: list[Any], chunksize: int) -> Generator[list, None, None]:
     """
     Split a list into sublists, each up to chunksize elements long
 
@@ -172,17 +172,16 @@ def chunk_list(items: List[Any], chunksize: int) -> Generator[List, None, None]:
         yield items[i:i + chunksize]
 
 
-def clamp(value: Union[int, float],
-          minval: Union[int, float], maxval: Union[int, float]) -> Union[int, float]:
+def clamp(value: int | float, minval: int | float, maxval: int | float) -> int | float:
     """
     Clamp value inside the range minval, maxval
 
         Parameters:
-            value (int): The value to clamp
-            minval (int): The minimum allowed value
-            maxval (int): The maximum allowed value
+            value (int | float): The value to clamp
+            minval (int | float): The minimum allowed value
+            maxval (int | float): The maximum allowed value
         Returns:
-            (int): The clamped value
+            (int | float): The clamped value
     """
     if not isinstance(value, (int, float)):
         raise TypeError("value must be an integer or float")
@@ -334,7 +333,7 @@ def disksize_to_human(size: int) -> str:
     return tmp
 
 
-def split_msg(rawmsg: str) -> List[str]:
+def split_msg(rawmsg: str) -> list[str]:
     """
     Split a string into a list of strings, strip NUL-bytes, and convert newlines
 
@@ -382,12 +381,12 @@ def strip_ansicodes(message: str) -> str:
     return message
 
 
-def read_cmtconfig() -> Dict:
+def read_cmtconfig() -> dict:
     """
     Read cmt.yaml and cmt.yaml.d/*.yaml and update the global cmtconfig dict
 
         Returns:
-            (Dict): A reference to the global cmtconfig dict
+            (dict): A reference to the global cmtconfig dict
     """
     try:
         # This is for the benefit of avoiding dependency cycles
@@ -449,7 +448,7 @@ def read_cmtconfig() -> Dict:
 
 
 # Helper functions
-def versiontuple(ver: str) -> Tuple[str, ...]:
+def versiontuple(ver: str) -> tuple[str, ...]:
     """
     Split a version string into a tuple
 
@@ -559,13 +558,13 @@ def seconds_to_age(seconds: int, negative_is_skew: bool = False) -> str:
     return f"{sign}{age}"
 
 
-def get_since(timestamp: Optional[Union[int, datetime]]) -> int:
+def get_since(timestamp: Optional[int | datetime]) -> int:
     """
     Given either a datetime, or an integer, returns how old that
     timestamp is in seconds
 
         Parameters:
-            timestamp (Union[datetime, int]): A time in the past
+            timestamp ([int | datetime]): A time in the past
         Returns:
             (int): The number of seconds, 0 if timestamp is None,
                    or -1 if the none_timestamp() was provided
@@ -708,8 +707,8 @@ def timestamp_to_datetime(timestamp: str, default: datetime = none_timestamp()) 
 
 
 # pylint: disable-next=too-many-branches
-def make_set_expression_list(expression_list: List[Dict],
-                             key: str = "") -> List[Tuple[str, str, str]]:
+def make_set_expression_list(expression_list: list[dict],
+                             key: str = "") -> list[tuple[str, str, str]]:
     """
     Create a list of set expressions (key, operator, values)
 
@@ -776,7 +775,7 @@ def make_set_expression_list(expression_list: List[Dict],
     return expressions
 
 
-def make_set_expression(expression_list: List[Dict]) -> str:
+def make_set_expression(expression_list: list[dict]) -> str:
     """
     Join set expressions data into one single string
 
@@ -792,7 +791,7 @@ def make_set_expression(expression_list: List[Dict]) -> str:
     return ", ".join(xlist)
 
 
-def make_label_selector(selector_dict: Dict) -> str:
+def make_label_selector(selector_dict: dict) -> str:
     """
     Given a label selector dict entry, create a selector list string
 
@@ -810,7 +809,7 @@ def make_label_selector(selector_dict: Dict) -> str:
     return ",".join(selectors)
 
 
-def get_package_versions(hostname: str) -> List[Tuple[str, str]]:
+def get_package_versions(hostname: str) -> list[tuple[str, str]]:
     """
     Returns a list of predefined packages for a host
 
@@ -880,7 +879,7 @@ def __extract_version(line: str) -> str:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+def check_versions_apt(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
     Given a list of packages, return installed, candidate, and all available versions
 
@@ -953,7 +952,7 @@ def check_versions_apt(packages: List[str]) -> List[Tuple[str, str, str, List[st
     return versions
 
 
-def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+def check_versions_yum(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
     Given a list of packages, return installed, candidate, and all available versions
 
@@ -963,7 +962,7 @@ def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[st
             ([(str, str, str, [str])]): A list of package versions
     """
     versions = []
-    versions_dict: Dict[str, Dict] = {}
+    versions_dict: dict[str, dict] = {}
 
     yum_path = cmtio.secure_which(FilePath("/usr/bin/yum"), fallback_allowlist=["/usr/bin"],
                                   security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
@@ -1013,7 +1012,7 @@ def check_versions_yum(packages: List[str]) -> List[Tuple[str, str, str, List[st
 
 
 # pylint: disable-next=too-many-locals
-def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List[str]]]:
+def check_versions_zypper(packages: list[str]) -> list[tuple[str, str, str, list[str]]]:
     """
     Given a list of packages, return installed, candidate, and all available versions
 
@@ -1023,7 +1022,7 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
             ([(str, str, str, [str])]): A list of package versions
     """
     versions = []
-    versions_dict: Dict[str, Dict] = {}
+    versions_dict: dict[str, dict] = {}
 
     zypper_path = cmtio.secure_which(FilePath("/usr/bin/zypper"), fallback_allowlist=["/usr/bin"],
                                      security_policy=SecurityPolicy.ALLOWLIST_RELAXED)
@@ -1067,7 +1066,7 @@ def check_versions_zypper(packages: List[str]) -> List[Tuple[str, str, str, List
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
+def identify_k8s_distro(**kwargs: Any) -> tuple[str, int]:
     """
     Identify what Kubernetes distro (kubeadm, minikube, OpenShift, etc.) is in use
 
@@ -1106,7 +1105,7 @@ def identify_k8s_distro(**kwargs: Any) -> Tuple[str, int]:
 
     tmp_k8s_distro = None
     for node in vlist:
-        node_roles = kubernetes_helper.get_node_roles(cast(Dict, node))
+        node_roles = kubernetes_helper.get_node_roles(cast(dict, node))
         labels = deep_get(node, DictPath("metadata#labels"), {})
         if "control-plane" in node_roles or "master" in node_roles:
             cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
@@ -1341,7 +1340,7 @@ def get_cluster_name() -> Optional[str]:
 #     ├── version-cache (version data cache)
 #     └── views (view files; symlink if cmt-install, dir when system path)
 #
-required_dir_paths: List[Tuple[FilePath, int]] = [
+required_dir_paths: list[tuple[FilePath, int]] = [
     (cmtpaths.CMTDIR, 0o755),
     (cmtpaths.ANSIBLE_DIR, 0o755),
     (cmtpaths.ANSIBLE_LOG_DIR, 0o700),
@@ -1362,7 +1361,7 @@ required_dir_paths: List[Tuple[FilePath, int]] = [
     (cmtpaths.VERSION_CACHE_DIR, 0o700),
 ]
 
-required_dir_or_symlink_paths: List[Tuple[FilePath, int]] = [
+required_dir_or_symlink_paths: list[tuple[FilePath, int]] = [
     (cmtpaths.ANSIBLE_PLAYBOOK_DIR, 0o755),
     (cmtpaths.PARSER_DIR, 0o755),
     (cmtpaths.SOFTWARE_SOURCES_DIR, 0o755),
@@ -1371,7 +1370,7 @@ required_dir_or_symlink_paths: List[Tuple[FilePath, int]] = [
 ]
 
 
-def setup_paths() -> List[SecurityStatus]:
+def setup_paths() -> list[SecurityStatus]:
     """
     Create all directories & files that need to be present
     for CMT to work properly; this should've been handled by .cmt-install
@@ -1411,7 +1410,7 @@ def setup_paths() -> List[SecurityStatus]:
 
 
 # pylint: disable=too-many-arguments,too-many-positional-arguments
-def check_allowlist(allowlist: Dict, allowlist_name: str, value: Optional[Any],
+def check_allowlist(allowlist: dict, allowlist_name: str, value: Optional[Any],
                     default: Optional[Any] = None, exit_on_fail: bool = True,
                     allow_none: bool = False) -> Optional[Any]:
     """

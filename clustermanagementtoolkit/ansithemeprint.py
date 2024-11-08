@@ -15,7 +15,7 @@ import copy
 from pathlib import Path, PurePath
 import subprocess  # nosec
 import sys
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Sequence
 
 try:
     # python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
@@ -142,7 +142,7 @@ class ANSIThemeStr:
         return self.string == themestring.string and self.themeref == themestring.themeref
 
     @classmethod
-    def tuplelist_to_ansithemearray(cls, msg: List[Tuple[str, str]]) -> List["ANSIThemeStr"]:
+    def tuplelist_to_ansithemearray(cls, msg: list[tuple[str, str]]) -> list["ANSIThemeStr"]:
         """
         Given a structured message return its ANSIThemeArray representation
 
@@ -195,8 +195,8 @@ class ANSIThemeStr:
         return themearray
 
     @classmethod
-    def format_error_msg(cls, msg: List[List[Tuple[str, str]]]) -> \
-            Tuple[str, List[List["ANSIThemeStr"]]]:
+    def format_error_msg(cls, msg: list[list[tuple[str, str]]]) -> \
+            tuple[str, list[list["ANSIThemeStr"]]]:
         """
         Given a structured error message return both its string and ANSIThemeArray representations;
         the main use-case for this is to feed into enhanced exceptions that accept
@@ -281,7 +281,7 @@ class ANSIThemeStr:
         return "\n".join(joined_strings), themearray_list
 
 
-theme: Optional[Dict] = None
+theme: Optional[dict] = None
 themepath: Optional[FilePath] = None
 
 
@@ -343,9 +343,9 @@ def clear_screen() -> int:
     return subprocess.run([cpath], check=False).returncode
 
 
-def __themearray_to_raw_string(themearray: List[ANSIThemeStr]) -> str:
+def __themearray_to_raw_string(themearray: list[ANSIThemeStr]) -> str:
     """
-    Strip the formatting from an ANSIThemeArray (List[ANSIThemeStr])
+    Strip the formatting from an ANSIThemeArray (list[ANSIThemeStr])
 
         Parameters:
             themearray ([ANSIThemeStr]): The array to strip formatting from
@@ -364,9 +364,9 @@ def __themearray_to_raw_string(themearray: List[ANSIThemeStr]) -> str:
     return string
 
 
-def ansithemearray_to_str(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
+def ansithemearray_to_str(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     """
-    Convert an ANSIThemeArray (List[ANSIThemeStr]) to a string,
+    Convert an ANSIThemeArray (list[ANSIThemeStr]) to a string,
     conditionally with ANSI-formatting
 
         Parameters:
@@ -409,10 +409,10 @@ def ansithemearray_to_str(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
     return string
 
 
-def themearray_override_formatting(themearray: List[ANSIThemeStr],
-                                   formatting: Optional[str]) -> List[ANSIThemeStr]:
+def themearray_override_formatting(themearray: list[ANSIThemeStr],
+                                   formatting: Optional[str]) -> list[ANSIThemeStr]:
     """
-    Override the formatting of an ANSIThemeArray (List[ANSIThemeStr])
+    Override the formatting of an ANSIThemeArray (list[ANSIThemeStr])
 
         Parameters:
             themearray ([ANSIThemeStr]): The themearray to reformat
@@ -431,7 +431,7 @@ def themearray_override_formatting(themearray: List[ANSIThemeStr],
     return new_themearray
 
 
-def themearray_len(themearray: List[ANSIThemeStr]) -> int:
+def themearray_len(themearray: list[ANSIThemeStr]) -> int:
     """
     Return the length of a themearray
 
@@ -443,7 +443,7 @@ def themearray_len(themearray: List[ANSIThemeStr]) -> int:
     return sum(map(len, themearray))
 
 
-def themearray_ljust(themearray: List[ANSIThemeStr], width: int) -> List[ANSIThemeStr]:
+def themearray_ljust(themearray: list[ANSIThemeStr], width: int) -> list[ANSIThemeStr]:
     """
     Return a ljust:ed themearray (will always pad with ANSIThemeStr("", "default"))
 
@@ -458,13 +458,13 @@ def themearray_ljust(themearray: List[ANSIThemeStr], width: int) -> List[ANSIThe
     return themearray
 
 
-def ansithemestr_join_list(items: Sequence[Union[str, ANSIThemeStr]],
-                           **kwargs: Any) -> List[ANSIThemeStr]:
+def ansithemestr_join_list(items: Sequence[str | ANSIThemeStr],
+                           **kwargs: Any) -> list[ANSIThemeStr]:
     """
     Given a list of ANSIThemeStrs or strings + formatting, join them separated by a separator
 
         Parameters:
-            items ([Union(str, ANSIThemeStr)]): The items to join into an ANSIThemeStr list
+            items ([str | ANSIThemeStr]): The items to join into an ANSIThemeStr list
             **kwargs (dict[str, Any]): Keyword arguments
                 formatting (str): The formatting to use if the list is a string-list
                 separator (ANSIThemeStr): The list separator to use
@@ -496,7 +496,7 @@ def ansithemestr_join_list(items: Sequence[Union[str, ANSIThemeStr]],
     return themearray
 
 
-def ansithemeinput(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
+def ansithemeinput(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Print a themearray and input a string;
     a themearray is a list of format strings of the format:
@@ -545,7 +545,7 @@ def ansithemeinput(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
     return tmp.replace("\x00", "<NUL>")
 
 
-def ansithemeinput_password(themearray: List[ANSIThemeStr], **kwargs: Any) -> str:
+def ansithemeinput_password(themearray: list[ANSIThemeStr], **kwargs: Any) -> str:
     """
     Print a themearray and input a password;
     a themearray is a list of format strings of the format:
@@ -594,7 +594,7 @@ def ansithemeinput_password(themearray: List[ANSIThemeStr], **kwargs: Any) -> st
     return tmp.replace("\x00", "<NUL>")
 
 
-def ansithemeprint(themearray: List[ANSIThemeStr], **kwargs: Any) -> None:
+def ansithemeprint(themearray: list[ANSIThemeStr], **kwargs: Any) -> None:
     """
     Print a themearray;
     a themearray is a list of format strings of the format:

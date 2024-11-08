@@ -12,7 +12,7 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Optional
 
 try:
     from natsort import natsorted
@@ -36,7 +36,7 @@ from clustermanagementtoolkit.pvtypes import KNOWN_PV_TYPES
 
 
 # pylint: disable-next=unused-argument
-def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
+def get_allowed_ips(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a list of allowed IP-addresses.
 
@@ -72,7 +72,7 @@ def get_allowed_ips(obj: Dict, **kwargs: Any) -> List[Dict]:
     return allowed_ips
 
 
-def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
+def get_conditions(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a list of conditions.
 
@@ -85,7 +85,7 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
     condition_list = []
 
-    path: Union[str, DictPath] = deep_get(kwargs, DictPath("path"), DictPath("status#conditions"))
+    path: str | DictPath = deep_get(kwargs, DictPath("path"), DictPath("status#conditions"))
 
     for condition in deep_get(obj, DictPath(path), []):
         ctype = deep_get(condition, DictPath("type"), "")
@@ -109,7 +109,7 @@ def get_conditions(obj: Dict, **kwargs: Any) -> List[Dict]:
     return condition_list
 
 
-def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, ...]]:
+def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     """
     Get a list of fields from Kubernetes objects
 
@@ -178,7 +178,7 @@ def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, ...]]:
                                       field_selector=field_selector,
                                       resource_cache=kh_cache)
 
-    tmp: List[Tuple[str, ...]] = []
+    tmp: list[tuple[str, ...]] = []
     if vlist is None or _status != 200:
         return tmp
 
@@ -191,7 +191,7 @@ def get_kubernetes_objects(obj: Dict, **kwargs: Any) -> List[Tuple[str, ...]]:
     return tmp
 
 
-def get_events(obj: Dict, **kwargs: Any) -> List[Dict]:
+def get_events(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a list of events.
 
@@ -223,7 +223,7 @@ def get_events(obj: Dict, **kwargs: Any) -> List[Dict]:
     return event_list
 
 
-def get_image_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
+def get_image_list(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
     """
     Get a list of container images.
 
@@ -248,10 +248,10 @@ def get_image_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
             continue
         size = disksize_to_human(deep_get(image, DictPath("sizeBytes"), "0"))
         vlist.append((name, size))
-    return cast(List[Tuple[str, str]], natsorted(vlist))
+    return cast(list[tuple[str, str]], natsorted(vlist))
 
 
-def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
+def get_key_value(obj: dict, **kwargs: Any) -> list[tuple[str, Any]]:
     """
     Get a list of key/value data.
 
@@ -285,7 +285,7 @@ def get_key_value(obj: Dict, **kwargs: Any) -> List[Tuple[str, Any]]:
 
 
 # pylint: disable-next=too-many-branches
-def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
+def get_list_as_list(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Get data in list format.
 
@@ -296,7 +296,7 @@ def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
         Returns:
             ([dict]): A list of data
     """
-    vlist: List[Any] = []
+    vlist: list[Any] = []
     if "path" in kwargs:
         raw_path = deep_get(kwargs, DictPath("path"))
         if isinstance(raw_path, str):
@@ -344,7 +344,7 @@ def get_list_as_list(obj: Dict, **kwargs: Any) -> List[Any]:
     return vlist
 
 
-def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
+def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Given a path to a dict (or a list of dicts), generate a list with all items
     as a list of dicts with the key and the value in the fields as "key" and "value",
@@ -359,13 +359,13 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
         Returns:
             list[dict]: A list of data
     """
-    vlist: List[Any] = []
+    vlist: list[Any] = []
     tmp_vlist = []
 
-    path = deep_get(kwargs, DictPath("path"))
+    path: str | DictPath = deep_get(kwargs, DictPath("path"))
     fields = deep_get(kwargs, DictPath("fields"))
 
-    data: Union[Dict, List[Dict]] = deep_get(obj, DictPath(path), {})
+    data: dict | list[dict] = deep_get(obj, DictPath(path), {})
 
     if isinstance(data, dict):
         data = [data]
@@ -375,7 +375,7 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
             tmp_vlist.append({"key": key, "value": value})
 
     for item in tmp_vlist:
-        newobj: List[Tuple] = []
+        newobj: list[tuple] = []
         for field in fields:
             if isinstance(field, dict):
                 field_ = deep_get(field, DictPath("field"), "")
@@ -399,7 +399,7 @@ def get_dict_list(obj: Dict, **kwargs: Any) -> List[Any]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
+def get_list_fields(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Get the specified fields from a dict list in list format.
 
@@ -410,7 +410,7 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
         Returns:
             list[dict]: A list of data
     """
-    vlist: List[Any] = []
+    vlist: list[Any] = []
 
     # pylint: disable-next=too-many-nested-blocks
     if "path" in kwargs and "fields" in kwargs:
@@ -494,7 +494,7 @@ def get_list_fields(obj: Dict, **kwargs: Any) -> List[Any]:
     return vlist
 
 
-def get_package_version_list(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
+def get_package_version_list(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str]]]:
     """
     Get the package version list.
 
@@ -516,7 +516,7 @@ def get_package_version_list(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[st
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
+def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str, str]]:
     """
     Get a list of pod affinities.
 
@@ -526,7 +526,7 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
         Returns:
             ([dict]): A list of conditions
     """
-    affinities: List[Tuple[str, str, str, str, str]] = []
+    affinities: list[tuple[str, str, str, str, str]] = []
 
     for affinity in deep_get(obj, DictPath("spec#affinity"), []):
         atype = affinity
@@ -590,7 +590,7 @@ def get_pod_affinity(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str,
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str]]]:
+def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str]]]:
     """
     Get a list of all pods referencing a configmap.
 
@@ -631,7 +631,7 @@ def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str
                                                    field_selector=field_selector,
                                                    resource_cache=kh_cache)
 
-    plist = cast(List, plist)
+    plist = cast(list, plist)
 
     for item in plist:
         pod_name = deep_get(item, DictPath("metadata#name"), "")
@@ -670,7 +670,7 @@ def get_pod_configmaps(obj: Dict, **kwargs: Any) -> Optional[List[Tuple[str, str
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
+def get_prepopulated_list(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a prepopulated list of actions;
     this itemgetter can be used, for instance, to populate
@@ -685,7 +685,7 @@ def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
     """
     items = deep_get(kwargs, DictPath("items"), [])
 
-    vlist: List[Dict] = []
+    vlist: list[dict] = []
 
     for item in items:
         action = deep_get(item, DictPath("action"))
@@ -723,7 +723,7 @@ def get_prepopulated_list(obj: Dict, **kwargs: Any) -> List[Dict]:
 
 
 # pylint: disable-next=unused-argument
-def get_pod_tolerations(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str, str]]:
+def get_pod_tolerations(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str, str]]:
     """
     Get a list of pod tolerations.
 
@@ -738,7 +738,7 @@ def get_pod_tolerations(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, s
                 (str): effect
                 (str): timeout
     """
-    tolerations: List[Tuple[str, str, str, str, str]] = []
+    tolerations: list[tuple[str, str, str, str, str]] = []
 
     for toleration in deep_get_with_fallback(obj, [DictPath("spec#tolerations"),
                                                    DictPath("scheduling#tolerations")], []):
@@ -762,7 +762,7 @@ def get_pod_tolerations(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, s
 
 
 # pylint: disable-next=unused-argument
-def get_resource_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
+def get_resource_list(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
     """
     Get a list of resources.
 
@@ -775,7 +775,7 @@ def get_resource_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
                 (str): Allocatable
                 (str): Capacity
     """
-    vlist: List[Tuple[str, str, str]] = []
+    vlist: list[tuple[str, str, str]] = []
 
     for res in deep_get(obj, DictPath("status#capacity"), {}):
         capacity = deep_get(obj, DictPath(f"status#capacity#{res}"), "")
@@ -785,7 +785,7 @@ def get_resource_list(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 
 
 # pylint: disable-next=unused-argument
-def get_resources(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
+def get_resources(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
     """
     Get a list of Prometheus resources.
 
@@ -798,7 +798,7 @@ def get_resources(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
                 (str): Type
                 (str): Capacity
     """
-    resources: List[Tuple[str, str, str]] = []
+    resources: list[tuple[str, str, str]] = []
 
     for limit in list(deep_get(obj, DictPath("spec#resources#limits"), {})):
         if limit == "cpu":
@@ -825,7 +825,7 @@ def get_resources(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str]]:
 
 
 # pylint: disable-next=unused-argument
-def get_strings_from_string(obj: Dict, **kwargs: Any) -> List[List[str]]:
+def get_strings_from_string(obj: dict, **kwargs: Any) -> list[list[str]]:
     """
     Get a list of strings from a string with embedded newlines.
 
@@ -846,7 +846,7 @@ def get_strings_from_string(obj: Dict, **kwargs: Any) -> List[List[str]]:
     return vlist
 
 
-def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
+def get_endpoint_ips(subsets: list[dict]) -> list[str]:
     """
     Get a list of endpoint IPs.
 
@@ -881,7 +881,7 @@ def get_endpoint_ips(subsets: List[Dict]) -> List[str]:
     return endpoints
 
 
-security_context_values: Dict = {
+security_context_values: dict[str, list[DictPath]] = {
     "Run as User": [
         DictPath("spec#securityContext#runAsUser"),
         DictPath("spec#template#spec#securityContext#runAsUser")],
@@ -925,7 +925,7 @@ security_context_values: Dict = {
 
 
 # pylint: disable-next=unused-argument
-def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
+def get_security_context(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
     """
     Get security context information.
 
@@ -945,7 +945,7 @@ def get_security_context(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_svc_port_target_endpoints(obj: Dict, **kwargs: Any) -> List[Tuple[str, str, str, str]]:
+def get_svc_port_target_endpoints(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str]]:
     """
     Get the Service port target endpoints.
 
@@ -996,7 +996,7 @@ def get_svc_port_target_endpoints(obj: Dict, **kwargs: Any) -> List[Tuple[str, s
     return port_target_endpoints
 
 
-def get_pv_type(obj: Dict) -> Optional[str]:
+def get_pv_type(obj: dict) -> Optional[str]:
     """
     Given a volume object, return its type.
 
@@ -1012,7 +1012,7 @@ def get_pv_type(obj: Dict) -> Optional[str]:
 
 
 # pylint: disable-next=unused-argument
-def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
+def get_volume_properties(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
     """
     Get the properties for a persistent volume.
 
@@ -1022,7 +1022,7 @@ def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
         Returns:
             ([(str, str)]): A list of volume properties
     """
-    volume_properties: List[Tuple[str, str]] = []
+    volume_properties: list[tuple[str, str]] = []
 
     # First find out what kind of volume we are dealing with
     pv_type = get_pv_type(obj)
@@ -1049,7 +1049,7 @@ def get_volume_properties(obj: Dict, **kwargs: Any) -> List[Tuple[str, str]]:
 
 
 # Itemgetters acceptable for direct use in view files
-itemgetter_allowlist: Dict[str, Callable] = {
+itemgetter_allowlist: dict[str, Callable] = {
     "get_allowed_ips": get_allowed_ips,
     "get_kubernetes_objects": get_kubernetes_objects,
     "get_events": get_events,

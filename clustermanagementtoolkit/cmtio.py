@@ -19,7 +19,7 @@ from pathlib import Path, PurePath
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, cast, Optional
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
@@ -29,9 +29,9 @@ from clustermanagementtoolkit.cmtpaths import HOMEDIR
 
 
 # pylint: disable-next=too-many-branches
-def expand_path(path: str, search_paths: Optional[List[str]] = None,
-                suffixes: Optional[List[str]] = None,
-                fallback: str = "") -> Tuple[FilePath, bool]:
+def expand_path(path: str, search_paths: Optional[list[str]] = None,
+                suffixes: Optional[list[str]] = None,
+                fallback: str = "") -> tuple[FilePath, bool]:
     """
     Given a path, filename or partial filename, expand it to its full path
 
@@ -83,7 +83,7 @@ def expand_path(path: str, search_paths: Optional[List[str]] = None,
     return FilePath(full_path), True
 
 
-def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus]) -> str:
+def join_securitystatus_set(separator: str, securitystatuses: set[SecurityStatus]) -> str:
     """
     Given a set of violations, join it to a sorted string
 
@@ -104,7 +104,7 @@ def join_securitystatus_set(separator: str, securitystatuses: Set[SecurityStatus
 
 
 # pylint: disable=too-many-statements,too-many-locals,too-many-branches
-def check_path(path: FilePath, **kwargs: Any) -> List[SecurityStatus]:
+def check_path(path: FilePath, **kwargs: Any) -> list[SecurityStatus]:
     """
     Verifies that a path meets certain security criteria;
     if the path fails to meet the criteria the function returns False and optionally
@@ -128,11 +128,11 @@ def check_path(path: FilePath, **kwargs: Any) -> List[SecurityStatus]:
             ([SecurityStatus]): [SecurityStatus.OK] if all criteria are met,
                                 otherwise a list of all violated policies
     """
-    parent_owner_allowlist: Optional[List[str]] = \
+    parent_owner_allowlist: Optional[list[str]] = \
         deep_get(kwargs, DictPath("parent_owner_allowlist"), None)
-    owner_allowlist: Optional[List[str]] = \
+    owner_allowlist: Optional[list[str]] = \
         deep_get(kwargs, DictPath("owner_allowlist"), None)
-    checks: Optional[List[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
+    checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     exit_on_critical: bool = deep_get(kwargs, DictPath("exit_on_critical"), False)
     message_on_error: bool = deep_get(kwargs, DictPath("message_on_error"), False)
 
@@ -537,9 +537,9 @@ def secure_write_string(path: FilePath, string: str, **kwargs: Any) -> None:
 
 
 def secure_read(path: FilePath,
-                checks: Optional[List[SecurityChecks]] = None,
+                checks: Optional[list[SecurityChecks]] = None,
                 directory_is_symlink: bool = False,
-                read_mode: str = "r", temporary: bool = False) -> Union[str, bytes]:
+                read_mode: str = "r", temporary: bool = False) -> str | bytes:
     """
     Read the content of a file in a safe manner
 
@@ -623,7 +623,7 @@ def secure_read(path: FilePath,
     # they have to capture the exception
     if read_mode == "r":
         with open(path, "r", encoding="utf-8", errors="replace") as f:
-            string: Union[str, bytes] = f.read()
+            string: str | bytes = f.read()
     else:
         with open(path, "rb") as bf:
             string = bf.read()
@@ -631,7 +631,7 @@ def secure_read(path: FilePath,
     return string
 
 
-def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = None,
+def secure_read_string(path: FilePath, checks: Optional[list[SecurityChecks]] = None,
                        directory_is_symlink: bool = False, temporary: bool = False) -> str:
     """
     Read a string from a file in a safe manner
@@ -652,7 +652,7 @@ def secure_read_string(path: FilePath, checks: Optional[List[SecurityChecks]] = 
                                  read_mode="r", temporary=temporary))
 
 
-def secure_which(path: FilePath, fallback_allowlist: List[str],
+def secure_which(path: FilePath, fallback_allowlist: list[str],
                  security_policy: SecurityPolicy = SecurityPolicy.STRICT,
                  executable: bool = True) -> FilePath:
     """
@@ -762,7 +762,7 @@ def secure_which(path: FilePath, fallback_allowlist: List[str],
 
 
 def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = False,
-                 exist_ok: bool = True, exit_on_failure: bool = False) -> List[SecurityStatus]:
+                 exist_ok: bool = True, exit_on_failure: bool = False) -> list[SecurityStatus]:
     """
     Create a directory if it does not already exist
         Parameters:
@@ -824,7 +824,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
 
 def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
                 exit_on_failure: bool = False,
-                permissions: Optional[int] = None) -> List[SecurityStatus]:
+                permissions: Optional[int] = None) -> list[SecurityStatus]:
     """
     Copy a file
         Parameters:
@@ -926,7 +926,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
 # pylint: disable-next=too-many-return-statements,too-many-statements
 def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
                    exit_on_failure: bool = False,
-                   replace_existing: bool = False) -> List[SecurityStatus]:
+                   replace_existing: bool = False) -> list[SecurityStatus]:
     """
     Create or replace a symlink
         Parameters:
@@ -1056,8 +1056,8 @@ def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
 
 
 # This executes a command without capturing the output
-def execute_command(args: List[Union[FilePath, str]],
-                    env: Optional[Dict] = None, comparison: int = 0) -> bool:
+def execute_command(args: list[FilePath | str],
+                    env: Optional[dict] = None, comparison: int = 0) -> bool:
     """
     Executes a command
 
@@ -1076,7 +1076,7 @@ def execute_command(args: List[Union[FilePath, str]],
 
 
 # This executes a command with the output captured
-def execute_command_with_response(args: List[str], env: Optional[Dict] = None) -> str:
+def execute_command_with_response(args: list[str], env: Optional[dict] = None) -> str:
     """
     Executes a command and returns stdout
 

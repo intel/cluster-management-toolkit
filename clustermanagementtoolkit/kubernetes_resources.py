@@ -10,10 +10,8 @@ List of Kubernetes resources known by CMT.
 
 # pylint: disable=too-many-lines
 
-from typing import Dict, List, Tuple, Union
-
 # A list of all K8s resources we have some knowledge about
-kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool]]] = {
+kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] = {
     # core API
     # ComponentStatus is deprecated
     ("ComponentStatus", ""): {
@@ -4623,7 +4621,7 @@ kubernetes_resources: Dict[Tuple[str, str], Dict[str, Union[List[str], str, bool
     },
 }
 
-kubernetes_resource_types: Dict[Tuple[str, str], str] = {
+kubernetes_resource_types: dict[tuple[str, str], str] = {
     ("AntreaAgentInfo", "crd.antrea.io"): "[antrea_agent_info]",
     ("AntreaControllerInfo", "crd.antrea.io"): "[antrea_controller_info]",
     ("CiliumEndpoint", "cilium.io"): "[cilium_endpoint]",

@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Dict, Generator, List, Tuple, Union
+from typing import Any, cast, Generator
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
@@ -48,7 +48,7 @@ from clustermanagementtoolkit.kubernetes_helper import kubectl_get_version
 from clustermanagementtoolkit import about
 
 
-def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether or not strict host key checking has been disabled in cmtconfig
 
@@ -67,7 +67,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, in
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    cmtconfig_dict: Dict = deep_get(kwargs, DictPath("cmtconfig_dict"), {})
+    cmtconfig_dict: dict = deep_get(kwargs, DictPath("cmtconfig_dict"), {})
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
@@ -103,7 +103,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> Tuple[bool, int, in
     return abort, critical, error, warning, note
 
 
-def check_sudo_configuration(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
     and whether the user can sudo without a password
@@ -199,7 +199,7 @@ def check_sudo_configuration(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-def check_ansible_dir_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether .ansible is owned and accessible by the user
 
@@ -294,7 +294,7 @@ def check_ansible_dir_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, i
     return abort, critical, error, warning, note
 
 
-def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_netrc_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
 
@@ -374,7 +374,7 @@ def check_netrc_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-def check_known_hosts_hashing(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_known_hosts_hashing(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether ssh known_hosts hashing is enabled
 
@@ -434,7 +434,7 @@ def check_known_hosts_hashing(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-def check_insecure_kube_config_options(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether .kube/config has insecure options
 
@@ -502,7 +502,7 @@ def check_insecure_kube_config_options(**kwargs: Any) -> Tuple[bool, int, int, i
 
 
 # pylint: disable-next=too-many-statements
-def check_client_server_version_match(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the versions of the various Kubernetes match properly
 
@@ -666,7 +666,7 @@ def check_client_server_version_match(**kwargs: Any) -> Tuple[bool, int, int, in
 
 
 # pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
-def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the versions of kubelet and kube-proxy are acceptable
 
@@ -899,7 +899,7 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> Tuple[bool, int, int
     return abort, critical, error, warning, note
 
 
-required_pods: Dict[str, List[Dict[str, List]]] = {
+required_pods: dict[str, list[dict[str, list]]] = {
     "api-server": [
         {
             "any_of": [("kube-system", "kube-apiserver")],
@@ -993,10 +993,10 @@ required_pods: Dict[str, List[Dict[str, List]]] = {
 }
 
 
-def get_pod_set(pods: List[Dict],
-                any_of: List[Tuple[str, str]],
-                all_of: List[Tuple[str, str]]) -> Tuple[List[Dict],
-                                                        Dict[Tuple[str, str], List[Dict]]]:
+def get_pod_set(pods: list[dict],
+                any_of: list[tuple[str, str]],
+                all_of: list[tuple[str, str]]) -> tuple[list[dict],
+                                                        dict[tuple[str, str], list[dict]]]:
     """
     Given an any_of list (namespace, pod_prefix), and an all_of list (namespace, pod_prefix),
     returns all pod objects (if any)
@@ -1012,8 +1012,8 @@ def get_pod_set(pods: List[Dict],
                 ([(str, str)]): A dict indexed by (namespace, name-prefix)
                                 of list of (namespace, name) for pods matching the all_of criteria
     """
-    any_of_matches: List[Dict] = []
-    all_of_matches: Dict[Tuple[str, str], List[Dict]] = {}
+    any_of_matches: list[dict] = []
+    all_of_matches: dict[tuple[str, str], list[dict]] = {}
 
     for obj in pods:
         pod_name = deep_get(obj, DictPath("metadata#name"), "")
@@ -1047,7 +1047,7 @@ def get_pod_set(pods: List[Dict],
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def check_running_pods(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_running_pods(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks what pods are running and their status
 
@@ -1091,7 +1091,7 @@ def check_running_pods(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
             any_of = deep_get(rp_match, DictPath("any_of"), [])
             all_of = deep_get(rp_match, DictPath("all_of"), [])
             additional_info = deep_get(rp_match, DictPath("note"), [])
-            any_of_matches, all_of_matches = get_pod_set(cast(List[Dict], pods), any_of, all_of)
+            any_of_matches, all_of_matches = get_pod_set(cast(list[dict], pods), any_of, all_of)
 
             if any_of_matches or all_of_matches:
                 matches.append((any_of_matches, all_of_matches))
@@ -1194,8 +1194,8 @@ def check_running_pods(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
 
 # pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
-def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
-                        **kwargs: Any) -> Tuple[bool, bool, int, int, int, int]:
+def __check_permissions(recommended_permissions: list[dict], pathtype: str,
+                        **kwargs: Any) -> tuple[bool, bool, int, int, int, int]:
     """
     Check permissions for a path
         Parameters:
@@ -1261,7 +1261,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
         if path_entry.exists():
             # If this is a directory, but we operate on files we should apply these tests
             # for every matching file in this directory
-            paths: Union[List[Path], Generator[Path, None, None]] = []
+            paths: list[Path] | Generator[Path, None, None] = []
 
             if pathtype == "file" and path_entry.is_dir():
                 paths = path_entry.iterdir()
@@ -1395,7 +1395,7 @@ def __check_permissions(recommended_permissions: List[Dict], pathtype: str,
 
 
 # pylint: disable-next=too-many-arguments,unused-argument
-def check_file_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether any files or directories have insecure permissions
 
@@ -1445,7 +1445,7 @@ def check_file_permissions(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
 
 
 # pylint: disable-next=unused-argument
-def run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook
 
@@ -1501,7 +1501,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> Tup
 
 
 # pylint: disable-next=too-many-locals
-def check_control_plane(**kwargs: Any) -> Tuple[bool, int, int, int, int]:
+def check_control_plane(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether a host is suitable to be used as a control plane
 

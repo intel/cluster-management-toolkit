@@ -32,7 +32,7 @@ from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithe
 from clustermanagementtoolkit import formatters
 
 from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
-from clustermanagementtoolkit.curses_helper import read_theme, dump_themearray
+from clustermanagementtoolkit.curses_helper import read_theme, themearray_to_string
 
 real_import = None
 
@@ -265,7 +265,7 @@ def test_format_binary(verbose: bool = False) -> Tuple[str, bool]:
             message = f"{fun.__name__}() did not yield expected result:\n" \
                       f"           input: <binary>\n" \
                       "          output:\n" \
-                      f"{dump_themearray(tmp)}"
+                      f"{themearray_to_string(tmp)}"
             result = False
     except Exception as e:
         message = f"{fun.__name__}() did not yield expected result:\n" \
@@ -290,7 +290,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                  ThemeStr("Some random output from Ansible", ThemeAttr("types", "generic"))],
              None),
             ("Another random output from Ansible",
-             {"override_formatting": ThemeAttr("types", "value")},
+             {"override_formatting": {"__all": ThemeAttr("types", "value")}},
              [
                  ThemeStr("Another random output from Ansible", ThemeAttr("types", "value"))],
              None),
@@ -303,7 +303,7 @@ def test_format_ansible_line(verbose: bool = False) -> Tuple[str, bool]:
                               "         options:\n" \
                               f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
-                              f"{dump_themearray(tmp)}\n" \
+                              f"{themearray_to_string(tmp)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -343,25 +343,44 @@ def test_format_diff_line(verbose: bool = False) -> Tuple[str, bool]:
         # Indata format:
         # (lines, options, expected_result, expected_exception)
         testdata = (
+            ("+++ a", {}, [
+                ThemeStr("+++ a",
+                         ThemeAttr("logview", "severity_diffheader"))],
+             None),
+            ("--- b", {}, [
+                ThemeStr("--- b",
+                         ThemeAttr("logview", "severity_diffheader"))],
+             None),
+            ("@@ -16,7 +16,7 @@ import errno", {}, [
+                ThemeStr("@@ -16,7 +16,7 @@ import errno",
+                         ThemeAttr("logview", "severity_diffatat"))],
+             None),
             ("+ formatter_mapping = (", {}, [
-                ThemeStr("+ formatter_mapping = (", ThemeAttr("logview", "severity_diffplus"))],
+                ThemeStr("+ formatter_mapping = (",
+                         ThemeAttr("logview", "severity_diffplus"))],
              None),
             ("- formatter_mapping = (", {}, [
-                ThemeStr("- formatter_mapping = (", ThemeAttr("logview", "severity_diffminus"))],
+                ThemeStr("- formatter_mapping = (",
+                         ThemeAttr("logview", "severity_diffminus"))],
              None),
             ("  formatter_mapping = (", {}, [
-                ThemeStr("  formatter_mapping = (", ThemeAttr("logview", "severity_diffsame"))],
+                ThemeStr("  formatter_mapping = (",
+                         ThemeAttr("logview", "severity_diffsame"))],
+             None),
+            ("  overridden formatting",
+             {"override_formatting": {"__all": ThemeAttr("types", "generic")}}, [
+                ThemeStr("  overridden formatting",
+                         ThemeAttr("types", "generic"))],
              None),
         )
         for indata, options, expected_result, expected_exception in testdata:
             try:
-                if (tmp := fun(indata)) != expected_result:
+                if (tmp := fun(indata, **options)) != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
                               f"{yaml_dump(options, base_indent=17)}\n" \
-                              "          output:\n" \
-                              f"{dump_themearray(tmp)}\n" \
+                              f"          output: {tmp}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -403,7 +422,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
             ("# A comment", {}, ([
                 ThemeStr("# A comment", ThemeAttr("types", "yaml_comment"))],
              []), None),
-            ("# A comment", {"override_formatting": ThemeAttr("types", "generic")}, ([
+            ("# A comment", {"override_formatting": {"__all": ThemeAttr("types", "generic")}}, ([
                 ThemeStr("# A comment", ThemeAttr("types", "generic"))],
              []), None),
             ("    # Indented comment", {}, ([
@@ -538,8 +557,7 @@ def test_format_yaml_line(verbose: bool = False) -> Tuple[str, bool]:
                               f"           input: \"{indata}\"\n" \
                               "         options:\n" \
                               f"{yaml_dump(options, base_indent=17)}\n" \
-                              "          output:\n" \
-                              f"{dump_themearray(tmp)}\n" \
+                              f"          output: {tmp}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break
@@ -614,7 +632,7 @@ def test_format_crt(verbose: bool = False) -> Tuple[str, bool]:
                               "         options:\n" \
                               f"{yaml_dump(options, base_indent=17)}\n" \
                               "          output:\n" \
-                              f"{dump_themearray(tmp)}\n" \
+                              f"{themearray_to_string(tmp)}\n" \
                               f"        expected: {expected_result}"
                     result = False
                     break

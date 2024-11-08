@@ -10,7 +10,7 @@ YAML I/O helpers
 """
 
 import sys
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Iterator, Optional
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -22,7 +22,7 @@ from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityChecks
 
 
-def secure_write_yaml(path: FilePath, data: Union[Dict, List[Dict]], **kwargs: Any) -> None:
+def secure_write_yaml(path: FilePath, data: dict | list[dict], **kwargs: Any) -> None:
     """
     Dump a dict to a file in YAML-format in a safe manner
 
@@ -78,7 +78,7 @@ def secure_read_yaml(path: FilePath, **kwargs: Any) -> Any:
             FileNotFoundError
             cmttypes.FilePathAuditError
     """
-    checks: Optional[List[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
+    checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 
@@ -108,7 +108,7 @@ def secure_read_yaml_all(path: FilePath, **kwargs: Any) -> Iterator[Any]:
             FileNotFoundError
             cmttypes.FilePathAuditError
     """
-    checks: Optional[List[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
+    checks: Optional[list[SecurityChecks]] = deep_get(kwargs, DictPath("checks"), None)
     directory_is_symlink: bool = deep_get(kwargs, DictPath("directory_is_symlink"), False)
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
 

@@ -10,7 +10,7 @@ Get list data asynchronously
 
 import re
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 try:
     from natsort import natsorted
@@ -25,7 +25,7 @@ from clustermanagementtoolkit import infogetters
 
 # pylint: disable-next=unused-argument,disable-next=too-many-locals
 def get_kubernetes_list(*args: Any,
-                        **kwargs: Any) -> Tuple[List[Any], Union[int, str, List[StatusGroup]]]:
+                        **kwargs: Any) -> tuple[list[Any], int | str | list[StatusGroup]]:
     """
     Fetch a list of Kubernetes objects, optionally with postprocessing.
 
@@ -65,7 +65,7 @@ def get_kubernetes_list(*args: Any,
     sort_key: str = deep_get(fetch_args, DictPath("sort_key"), "")
     sort_reverse: bool = deep_get(fetch_args, DictPath("sort_reverse"), False)
     postprocess: str = deep_get(fetch_args, DictPath("postprocess"), "")
-    postprocessor: Union[str, Callable] = deep_get(kwargs, DictPath("postprocessor"), "")
+    postprocessor: str | Callable = deep_get(kwargs, DictPath("postprocessor"), "")
     limit = deep_get(fetch_args, DictPath("limit"))
     extra_data = []
 
@@ -168,9 +168,9 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
 
 
 # pylint: disable-next=too-many-branches
-def add_resource(key: str, units: Dict[str, List[str]],
-                 resources: Union[int, float, List[str]],
-                 resource: Optional[Union[str, int, float]]) -> Union[int, float, List[str]]:
+def add_resource(key: str, units: dict[str, list[str]],
+                 resources: int | float | list[str],
+                 resource: Optional[str | int | float]) -> int | float | list[str]:
     """
     Add a resource to the node resource list.
 
@@ -221,7 +221,7 @@ def add_resource(key: str, units: Dict[str, List[str]],
 
 
 # pylint: disable-next=too-many-locals
-def postprocessor_node_resources(**kwargs: Any) -> Tuple[List[Dict], Union[int, str]]:
+def postprocessor_node_resources(**kwargs: Any) -> tuple[list[dict], int | str]:
     """
     Postprocessor for node resources. Extracts the node resources
     from the list of all nodes and sums them up and groups them by type.

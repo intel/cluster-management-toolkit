@@ -31,7 +31,7 @@ import socket
 from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
-from typing import Any, Callable, cast, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 
 try:
     from natsort import natsorted
@@ -638,7 +638,7 @@ def update_installation_info(**kwargs: Any) -> Dict:
     version: Optional[str] = deep_get(kwargs, DictPath("version"))
     requested_version: Optional[str] = deep_get(kwargs, DictPath("requested_version"))
     state: Optional[str] = deep_get(kwargs, DictPath("state"))
-    phase: Optional[Union[int, str]] = deep_get(kwargs, DictPath("phase"))
+    phase: Optional[int | str] = deep_get(kwargs, DictPath("phase"))
     phase_skiplist: Optional[List[str]] = deep_get(kwargs, DictPath("phase_skiplist"))
     cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
     pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))
@@ -2955,7 +2955,7 @@ def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = Fals
 
 
 def __validate_task_index(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
-                          phase: Union[str, int]) -> int:
+                          phase: str | int) -> int:
     """
     Helper that validates the installer task index
         Parameters:
@@ -3005,7 +3005,7 @@ def __list_phases(phases: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
         ansithemeprint(tmp)
 
 
-def __expand_index_list(index_list: str) -> Set[int]:
+def __expand_index_list(index_list: str) -> set[int]:
     indexes = set()
 
     for index in index_list.split(","):
@@ -3037,7 +3037,7 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeStr:
     return __string
 
 
-prepare_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+prepare_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Check for ssh host key and create if needed", "action")],
      __task_check_and_create_ssh_key),
     ([ANSIThemeStr("Add ssh keys for localhost, control plane(s) and nodes to ", "action"),
@@ -3152,7 +3152,7 @@ purge_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] 
 
 
 def run_tasks(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
-              phase: int, phase_skiplist: Set[int],
+              phase: int, phase_skiplist: set[int],
               final_state: str, verbose: bool = False) -> None:
     """
     Run tasks
@@ -3324,7 +3324,7 @@ def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> Non
     os_distro = identify_distro()
     requested_version = installation_info[cluster_name]["requested_version"]
     state = installation_info[cluster_name]["state"]
-    phase: Union[str, int] = installation_info[cluster_name]["phase"]
+    phase: str | int = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
     hide_next_step = False
@@ -4092,8 +4092,9 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     crio_major_version = None
     crio_minor_version = None
 
-    # Add the CRI to the setup playbooks for the control plane;
-    # the list is short enough that doing prepend isn't a performance issue
+    add_playbooks: List[FilePath] = []
+
+    # Add the CRI to the setup playbooks for the control plane
     if cri == "containerd":
         add_playbooks = [FilePath("setup_containerd.yaml")]
     elif cri == "cri-o":
@@ -5268,7 +5269,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
 
     requested_version = installation_info[cluster_name]["requested_version"]
     state = installation_info[cluster_name]["state"]
-    phase: Union[str, int] = installation_info[cluster_name]["phase"]
+    phase: str | int = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     cni = installation_info[cluster_name]["cni"]
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
@@ -5775,7 +5776,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
     k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#distro"))
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
-    phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
+    phase: str | int = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
 
@@ -5877,7 +5878,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
     installation_info = get_installation_info()
     cluster_name = installation_info["installation_target"]
     state = installation_info[cluster_name]["state"]
-    phase: Union[str, int] = installation_info[cluster_name]["phase"]
+    phase: str | int = installation_info[cluster_name]["phase"]
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
 
@@ -6013,7 +6014,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
     version = deep_get(installation_info, DictPath(f"{cluster_name}#version"))
     requested_version = deep_get(installation_info, DictPath(f"{cluster_name}#requested_version"))
     state = deep_get(installation_info, DictPath(f"{cluster_name}#state"))
-    phase: Union[str, int] = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
+    phase: str | int = deep_get(installation_info, DictPath(f"{cluster_name}#phase"))
     phase_skiplist = set(deep_get(installation_info, DictPath(f"{cluster_name}#phase_skiplist")))
     verbose = False
     ignore_feature_gates = False

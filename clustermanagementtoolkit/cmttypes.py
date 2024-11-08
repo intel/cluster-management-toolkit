@@ -18,7 +18,7 @@ import os
 from pathlib import Path, PurePath
 import sys
 import traceback
-from typing import Any, Dict, List, NewType, Optional, Tuple, Union
+from typing import Any, NewType, Optional, Union
 
 DictPath = NewType("DictPath", str)
 
@@ -59,7 +59,7 @@ class FilePath(str):
         a list of strings, or a tuple of strings.
 
             Parameters:
-                paths (str|FilePath|PurePath|List|Tuple): The path(s) to append
+                paths (str|FilePath|PurePath|list|tuple): The path(s) to append
             Returns:
                 (FilePath): The new FilePath
             Raises:
@@ -70,7 +70,7 @@ class FilePath(str):
         return FilePath(PurePath(self.path).joinpath(*paths))
 
 
-def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
+def reformat_msg(msg: list[list[tuple[str, str]]]) -> str:
     """
     Given a structured error message return a plaintext representation.
 
@@ -90,7 +90,7 @@ def reformat_msg(msg: List[List[Tuple[str, str]]]) -> str:
 
 
 # Keep this first so we can use it in the exceptions
-def deep_get(dictionary: Optional[Dict], path: DictPath, default: Any = None) -> Any:
+def deep_get(dictionary: Optional[dict], path: DictPath, default: Any = None) -> Any:
     """
     Given a dictionary and a path into that dictionary, get the value.
 
@@ -118,7 +118,7 @@ class UnknownError(Exception):
     """
     Exception raised when an error occurs that we have no further information about
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeStr], respectively.
+    but they are typically LogLevel and list[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 
@@ -191,7 +191,7 @@ class UnknownError(Exception):
 
         return message
 
-    def exception_dict(self) -> Dict:
+    def exception_dict(self) -> dict:
         """
         Return a dictionary containing structured information about the exception.
 
@@ -241,7 +241,7 @@ class ArgumentValidationError(Exception):
         subexception: Optional[Exception] = deep_get(kwargs, DictPath("subexception"))
         severity: Optional[Any] = deep_get(kwargs, DictPath("severity"))
         facility: Optional[str] = deep_get(kwargs, DictPath("facility"))
-        formatted_msg: Optional[List[List[Tuple[str, str]]]] = deep_get(kwargs,
+        formatted_msg: Optional[list[list[tuple[str, str]]]] = deep_get(kwargs,
                                                                         DictPath("formatted_msg"))
         timestamp: Optional[datetime] = deep_get(kwargs, DictPath("timestamp"))
         file: Optional[str] = deep_get(kwargs, DictPath("file"))
@@ -303,7 +303,7 @@ class ArgumentValidationError(Exception):
 
         return message
 
-    def exception_dict(self) -> Dict:
+    def exception_dict(self) -> dict:
         """
         Return a dictionary containing structured information about the exception.
 
@@ -331,7 +331,7 @@ class ProgrammingError(Exception):
     """
     Exception raised when a condition occured that is most likely caused by a programming error
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeStr], respectively.
+    but they are typically LogLevel and list[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 
@@ -411,7 +411,7 @@ class ProgrammingError(Exception):
 
         return message
 
-    def exception_dict(self) -> Dict:
+    def exception_dict(self) -> dict:
         """
         Return a dictionary containing structured information about the exception.
 
@@ -439,7 +439,7 @@ class FilePathAuditError(Exception):
     """
     Exception raised when a security check fails on a FilePath
     Note: severity and formatted_msg use Any as type to avoid recursive imports,
-    but they are typically LogLevel and List[ANSIThemeStr], respectively.
+    but they are typically LogLevel and list[ANSIThemeStr], respectively.
 
     Optional arguments are normally deduced; overriding them is only necessary in special cases.
 
@@ -520,7 +520,7 @@ class FilePathAuditError(Exception):
 
         return msg
 
-    def exception_dict(self) -> Dict:
+    def exception_dict(self) -> dict:
         """
         Return a dictionary containing structured information about the exception.
 
@@ -544,7 +544,7 @@ class FilePathAuditError(Exception):
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
+def validate_args(kwargs_spec: dict[str, Any], kwargs: Any) -> None:
     """
     Validates that the kwargs against the requirements in kwargs_spec.
 
@@ -554,8 +554,8 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
         Raises:
             ArgumentValidationError (with subexception)
     """
-    results: Dict = {}
-    msg: List[List[Tuple[str, str]]] = []
+    results: dict = {}
+    msg: list[list[tuple[str, str]]] = []
     function = "<unknown>"  # This is just to make pylint happy
 
     try:
@@ -708,7 +708,7 @@ def validate_args(kwargs_spec: Dict[str, Any], kwargs: Any) -> None:
         results[key] = {}
 
     # Check if we got all the arguments we asked for
-    missing: List[str] = []
+    missing: list[str] = []
     anyexists: bool = False
 
     for key in anyof:
@@ -913,7 +913,7 @@ stgroup_mapping = {
 }
 
 
-def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = False) -> None:
+def deep_set(dictionary: dict, path: DictPath, value: Any, create_path: bool = False) -> None:
     """
     Given a dictionary, a path into that dictionary, and a value, set the path to that value.
 
@@ -946,9 +946,9 @@ def deep_set(dictionary: Dict, path: DictPath, value: Any, create_path: bool = F
         ref = deep_get(ref, DictPath(pathsegment))
 
 
-def __deep_get_recursive(dictionary: Dict,
-                         path_fragments: List[str],
-                         result: Union[List, None] = None) -> Optional[List[Any]]:
+def __deep_get_recursive(dictionary: dict,
+                         path_fragments: list[str],
+                         result: list | None = None) -> Optional[list[Any]]:
     if result is None:
         result = []
 
@@ -971,10 +971,10 @@ def __deep_get_recursive(dictionary: Dict,
     return result
 
 
-def deep_get_list(dictionary: Dict,
-                  paths: List[DictPath],
-                  default: Optional[List[Any]] = None,
-                  fallback_on_empty: bool = False) -> Optional[List[Any]]:
+def deep_get_list(dictionary: dict,
+                  paths: list[DictPath],
+                  default: Optional[list[Any]] = None,
+                  fallback_on_empty: bool = False) -> Optional[list[Any]]:
     """
     Given a dictionary and a list of paths into that dictionary, get all values.
 
@@ -1003,8 +1003,8 @@ def deep_get_list(dictionary: Dict,
     return result
 
 
-def deep_get_with_fallback(obj: Dict,
-                           paths: List[DictPath],
+def deep_get_with_fallback(obj: dict,
+                           paths: list[DictPath],
                            default: Optional[Any] = None, fallback_on_empty: bool = False) -> Any:
     """
     Given a dictionary and a list of paths into that dictionary,
@@ -1032,8 +1032,8 @@ def deep_get_with_fallback(obj: Dict,
     return result
 
 
-def deep_get_str_tuple_paths(obj: Dict,
-                             paths: List[Union[str, List[DictPath]]],
+def deep_get_str_tuple_paths(obj: dict,
+                             paths: list[str | list[DictPath]],
                              default: str = "", fallback_on_empty: bool = False) -> str:
     """
     Given a dictionary and a list of strings or paths into that dictionary,
@@ -1048,8 +1048,8 @@ def deep_get_str_tuple_paths(obj: Dict,
         Returns:
             (str): The joined string
     """
-    string = ""
-    prev: Union[List, str] = ""
+    string: str = ""
+    prev: list | str = ""
 
     for fragment in paths:
         # This isn't a path, it's a verbatim string

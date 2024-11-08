@@ -16,7 +16,7 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, cast, Optional, Sequence
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -42,7 +42,7 @@ from clustermanagementtoolkit.cmttypes import deep_get, deep_set, DictPath
 from clustermanagementtoolkit.cmttypes import FilePath, FilePathAuditError
 from clustermanagementtoolkit.cmttypes import SecurityChecks, SecurityStatus, validate_args
 
-ansible_configuration: Dict = {
+ansible_configuration: dict = {
     "ansible_forks": 10,
     "ansible_password": None,
     "ansible_user": None,
@@ -59,7 +59,7 @@ except ModuleNotFoundError:  # pragma: no cover
              "you may need to (re-)run `cmt-install` or `pip3 install ansible-runner`; aborting.")
 
 
-def get_playbook_path(playbook: Union[FilePath, str]) -> FilePath:
+def get_playbook_path(playbook: FilePath | str) -> FilePath:
     """
     Pass in the name of a playbook that exists in either
     {SYSTEM_PLAYBOOK_DIR} or {ANSIBLE_PLAYBOOK_DIR};
@@ -105,7 +105,7 @@ def get_playbook_path(playbook: Union[FilePath, str]) -> FilePath:
 
 
 # Add all playbooks in the array
-def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSIThemeStr],
+def populate_playbooks_from_paths(paths: list[FilePath]) -> list[tuple[list[ANSIThemeStr],
                                                                        FilePath]]:
     """
     Populate a list of playbook paths.
@@ -184,7 +184,7 @@ def populate_playbooks_from_paths(paths: List[FilePath]) -> List[Tuple[List[ANSI
 
 
 # Add all playbooks in the array
-def populate_playbooks_from_filenames(playbooks: List[FilePath]) -> List[Tuple[List[ANSIThemeStr],
+def populate_playbooks_from_filenames(playbooks: list[FilePath]) -> list[tuple[list[ANSIThemeStr],
                                                                                FilePath]]:
     """
     Given a list of playbook names, populate a list of playbook paths.
@@ -207,7 +207,7 @@ def populate_playbooks_from_filenames(playbooks: List[FilePath]) -> List[Tuple[L
 
 
 # pylint: disable-next=unused-argument
-def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]]) -> None:
+def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FilePath]]) -> None:
     """
     Given a list of playbook paths, print a summary of the actions that will be performed
 
@@ -262,7 +262,7 @@ def ansible_print_action_summary(playbooks: List[Tuple[List[ANSIThemeStr], FileP
                 ansithemeprint([ANSIThemeStr(f"        {description}", "default")])
 
 
-def ansible_get_inventory_dict() -> Dict:
+def ansible_get_inventory_dict() -> dict:
     """
         Get the Ansible inventory and return it as a dict
 
@@ -292,7 +292,7 @@ def ansible_get_inventory_dict() -> Dict:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr], str]]:
+def ansible_get_inventory_pretty(**kwargs: Any) -> list[list[ANSIThemeStr] | str]:
     """
         Get the Ansible inventory and return it neatly formatted
 
@@ -307,7 +307,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr]
             ([str|[ANSIThemeStr]]): An unformatted list of strings
                                        or a formatted list of themearrays
     """
-    groups: List[str] = deep_get(kwargs, DictPath("groups"), [])
+    groups: list[str] = deep_get(kwargs, DictPath("groups"), [])
     highlight: bool = deep_get(kwargs, DictPath("highlight"), False)
     include_groupvars: bool = deep_get(kwargs, DictPath("include_groupvars"), False)
     include_hostvars: bool = deep_get(kwargs, DictPath("include_hostvars"), False)
@@ -360,8 +360,8 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr]
 
     tmp_dump = yaml.safe_dump(tmp, default_flow_style=False)
     tmp_dump = tmp_dump.replace(r"''", "").replace("null", "").replace("{}", "")
-    dump: List[Union[List[ANSIThemeStr], str]] = []
-    cast(List[Union[List[ANSIThemeStr], str]], tmp_dump.splitlines())
+    dump: list[list[ANSIThemeStr] | str] = []
+    cast(list[list[ANSIThemeStr] | str], tmp_dump.splitlines())
 
     if highlight and tmp_dump:
         list_regex = re.compile(r"^(\s*)((- )+)(.*)")
@@ -397,7 +397,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> List[Union[List[ANSIThemeStr]
     return dump
 
 
-def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> List[str]:
+def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> list[str]:
     """
     Get the list of hosts belonging to a group
 
@@ -421,7 +421,7 @@ def ansible_get_hosts_by_group(inventory: FilePath, group: str) -> List[str]:
     return hosts
 
 
-def ansible_get_groups(inventory: FilePath) -> List[str]:
+def ansible_get_groups(inventory: FilePath) -> list[str]:
     """
     Get the list of groups in the inventory
 
@@ -437,7 +437,7 @@ def ansible_get_groups(inventory: FilePath) -> List[str]:
     return list(d.keys())
 
 
-def ansible_get_groups_by_host(inventory_dict: Dict, host: str) -> List[str]:
+def ansible_get_groups_by_host(inventory_dict: dict, host: str) -> list[str]:
     """
     Given an inventory, returns the groups a host belongs to
 
@@ -492,7 +492,7 @@ def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
     secure_mkdir(ANSIBLE_DIR, permissions=0o755, exit_on_failure=True)
 
     # Create the basic yaml structure that we will write later on
-    d: Dict = {
+    d: dict = {
         "all": {
             "hosts": {},
             # Workaround for Ubuntu 18.04 and various other older operating systems
@@ -519,7 +519,7 @@ def __ansible_create_inventory(inventory: FilePath, **kwargs: Any) -> bool:
     return True
 
 
-def ansible_create_groups(inventory: FilePath, groups: List[str], **kwargs: Any) -> bool:
+def ansible_create_groups(inventory: FilePath, groups: list[str], **kwargs: Any) -> bool:
     """
     Create new groups
 
@@ -565,7 +565,7 @@ def ansible_create_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
     return True
 
 
-def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: Any) -> bool:
+def ansible_set_vars(inventory: FilePath, group: str, values: dict, **kwargs: Any) -> bool:
     """
     Set one or several values for a group
 
@@ -581,8 +581,7 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: An
             ArgumentValidationError: At least one of the arguments failed validation
     """
     temporary: bool = deep_get(kwargs, DictPath("temporary"), False)
-
-    changed = False
+    changed: bool = False
 
     validate_args(kwargs_spec={"__allof": ("inventory", "group", "values", "temporary"),
                                "inventory": {"types": (str,), "range": (1, None)},
@@ -622,8 +621,8 @@ def ansible_set_vars(inventory: FilePath, group: str, values: Dict, **kwargs: An
 
 
 def ansible_set_groupvars(inventory: FilePath,
-                          groups: List[str],
-                          groupvars: Sequence[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
+                          groups: list[str],
+                          groupvars: Sequence[tuple[str, str | int]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified groups
 
@@ -679,8 +678,8 @@ def ansible_set_groupvars(inventory: FilePath,
 
 # Set one or several vars for hosts in the group all
 def ansible_set_hostvars(inventory: FilePath,
-                         hosts: List[str],
-                         hostvars: Sequence[Tuple[str, Union[str, int]]], **kwargs: Any) -> bool:
+                         hosts: list[str],
+                         hostvars: Sequence[tuple[str, str | int]], **kwargs: Any) -> bool:
     """
     Set one or several vars for the specified hosts
 
@@ -733,7 +732,7 @@ def ansible_set_hostvars(inventory: FilePath,
 
 # Unset one or several vars in the specified groups
 def ansible_unset_groupvars(inventory: FilePath,
-                            groups: List[str], groupvars: List[str], **kwargs: Any) -> bool:
+                            groups: list[str], groupvars: list[str], **kwargs: Any) -> bool:
     """
     Unset one or several vars for the specified groups
 
@@ -794,7 +793,7 @@ def ansible_unset_groupvars(inventory: FilePath,
 
 # Unset one or several vars for the specified host in the group all
 def ansible_unset_hostvars(inventory: FilePath,
-                           hosts: List[str], hostvars: List[str], **kwargs: Any) -> bool:
+                           hosts: list[str], hostvars: list[str], **kwargs: Any) -> bool:
     """
     Unset one or several vars for the specified hosts
 
@@ -849,7 +848,7 @@ def ansible_unset_hostvars(inventory: FilePath,
 
 
 # pylint: disable-next=too-many-branches
-def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> bool:
+def ansible_add_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> bool:
     """
     Add hosts to the ansible inventory; if the inventory does not exist, create it
 
@@ -883,7 +882,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> b
                           "skip_all": skip_all,
                           "temporary": temporary})
 
-    d: Dict[str, Any] = {}
+    d: dict[str, Any] = {}
 
     # The inventory does not exist; if the user specified skip_all
     # we do not mind, otherwise we need to create it
@@ -910,8 +909,8 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> b
         if not skip_all and group != "all":
             if d["all"]["hosts"] is None:
                 d["all"]["hosts"] = {}
-            if host not in cast(List, d["all"]["hosts"]):
-                d = cast(Dict, d)
+            if host not in cast(list, d["all"]["hosts"]):
+                d = cast(dict, d)
                 d["all"]["hosts"][host] = {}
                 changed = True
 
@@ -941,7 +940,7 @@ def ansible_add_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> b
 
 
 # Remove hosts from ansible groups
-def ansible_remove_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -> bool:
+def ansible_remove_hosts(inventory: FilePath, hosts: list[str], **kwargs: Any) -> bool:
     """
     Remove hosts from the inventory
 
@@ -986,7 +985,7 @@ def ansible_remove_hosts(inventory: FilePath, hosts: List[str], **kwargs: Any) -
     return True
 
 
-def ansible_remove_groups(inventory: FilePath, groups: List[str], **kwargs: Any) -> bool:
+def ansible_remove_groups(inventory: FilePath, groups: list[str], **kwargs: Any) -> bool:
     """
     Remove groups from the inventory
 
@@ -1038,7 +1037,7 @@ def ansible_remove_groups(inventory: FilePath, groups: List[str], **kwargs: Any)
     return True
 
 
-def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
+def ansible_get_logs() -> list[tuple[str, str, FilePath, datetime]]:
     """
     Returns a list of all available logs
 
@@ -1066,7 +1065,7 @@ def ansible_get_logs() -> List[Tuple[str, str, FilePath, datetime]]:
 
 
 # pylint: disable-next=too-many-branches
-def ansible_extract_failure(retval: int, error_msg_lines: List[str], **kwargs: Any) -> str:
+def ansible_extract_failure(retval: int, error_msg_lines: list[str], **kwargs: Any) -> str:
     """
     Given error information from an ansible run, return a suitable error message
 
@@ -1123,7 +1122,7 @@ def ansible_extract_failure(retval: int, error_msg_lines: List[str], **kwargs: A
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
+def ansible_results_extract(event: dict) -> tuple[int, dict]:
     """
     Extract a result from an Ansible play
 
@@ -1138,7 +1137,7 @@ def ansible_results_extract(event: Dict) -> Tuple[int, Dict]:
 
     # Special events
     if deep_get(event, DictPath("event"), "") == "playbook_on_no_hosts_matched":
-        d: Dict = {
+        d: dict = {
             "task": "",
             "start_date": "",
             "end_date": "",
@@ -1260,7 +1259,7 @@ def ansible_delete_log(log: str) -> None:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_write_log(start_date: datetime, playbook: FilePath, events: List[Dict]) -> None:
+def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dict]) -> None:
     """
     Save an Ansible log entry to a file
 
@@ -1380,9 +1379,9 @@ def ansible_write_log(start_date: datetime, playbook: FilePath, events: List[Dic
 
 # pylint: disable-next=too-many-branches,too-many-arguments
 def ansible_print_task_results(task: str,
-                               msg_lines: List[str],
-                               stdout_lines: List[str],
-                               stderr_lines: List[str], retval: int, **kwargs: Any) -> None:
+                               msg_lines: list[str],
+                               stdout_lines: list[str],
+                               stderr_lines: list[str], retval: int, **kwargs: Any) -> None:
     """
     Pretty-print the result of an Ansible task run
 
@@ -1446,7 +1445,7 @@ def ansible_print_task_results(task: str,
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any) -> None:
+def ansible_print_play_results(retval: int, ansible_results: dict, **kwargs: Any) -> None:
     """
     Pretty-print the result of an Ansible play
 
@@ -1567,7 +1566,7 @@ def ansible_print_play_results(retval: int, ansible_results: Dict, **kwargs: Any
 
 
 # pylint: disable-next=too-many-locals
-def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> Tuple[int, Dict]:
+def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook
 
@@ -1582,15 +1581,15 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> Tuple[int, Dict]:
                 (int): The return value
                 (dict): The results of the run
     """
-    inventory: Optional[Dict] = deep_get(kwargs, DictPath("inventory"), None)
+    inventory: Optional[dict] = deep_get(kwargs, DictPath("inventory"), None)
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
     forks = deep_get(ansible_configuration, DictPath("ansible_forks"))
 
-    ansible_results: Dict = {}
+    ansible_results: dict = {}
 
-    inventories: Union[Dict, List[FilePath]] = []
+    inventories: dict | list[FilePath] = []
 
     if inventory is None:
         inventories = [ANSIBLE_INVENTORY]
@@ -1634,7 +1633,7 @@ def ansible_run_playbook(playbook: FilePath, **kwargs: Any) -> Tuple[int, Dict]:
 
 
 def ansible_run_playbook_on_selection(playbook: FilePath,
-                                      selection: List[str], **kwargs: Any) -> Tuple[int, Dict]:
+                                      selection: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook on selected nodes
 
@@ -1668,7 +1667,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     if not d:
         return -errno.ENOENT, {}
 
-    values: Dict[str, Any] = deep_get(kwargs, DictPath("values"), {})
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"), {})
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     quiet: bool = deep_get(kwargs, DictPath("quiet"), True)
 
@@ -1695,7 +1694,7 @@ def ansible_run_playbook_on_selection(playbook: FilePath,
     return ansible_run_playbook(playbook, inventory=d, verbose=verbose, quiet=quiet)
 
 
-def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
+def ansible_ping(selection: list[str]) -> list[tuple[str, str]]:
     """
     Ping all selected hosts
 
@@ -1734,7 +1733,7 @@ def ansible_ping(selection: List[str]) -> List[Tuple[str, str]]:
     return host_status
 
 
-def __ansible_run_event_handler_cb(data: Dict) -> bool:
+def __ansible_run_event_handler_cb(data: dict) -> bool:
     if deep_get(data, DictPath("event"), "") in ("runner_on_failed", "runner_on_async_failed"):
         host = deep_get(data, DictPath("event_data#host"), "<unset>")
         task = deep_get(data, DictPath("event_data#task"), "<unset>")
@@ -1769,7 +1768,7 @@ def __ansible_run_event_handler_cb(data: Dict) -> bool:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def __ansible_run_event_handler_verbose_cb(data: Dict) -> bool:
+def __ansible_run_event_handler_verbose_cb(data: dict) -> bool:
     if deep_get(data, DictPath("event"), "") == "verbose":
         print(deep_get(data, DictPath("stdout"), ""))
     if deep_get(data, DictPath("event"), "") == "runner_on_start":

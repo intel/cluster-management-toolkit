@@ -23,7 +23,6 @@ import re
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Dict, List, Set, Tuple, Union
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 
@@ -242,7 +241,7 @@ CONFIGURATION_FILES = [
 ]
 
 
-def create_directories(directories: List[Tuple[FilePath, int]], verbose: bool = False) -> None:
+def create_directories(directories: list[tuple[FilePath, int]], verbose: bool = False) -> None:
     """
     Batch create directories
     If a directory already exists it is silently ignored
@@ -255,7 +254,7 @@ def create_directories(directories: List[Tuple[FilePath, int]], verbose: bool = 
         secure_mkdir(directory, permissions=permissions, verbose=verbose)
 
 
-def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = False) -> None:
+def create_symlinks(symlinks: list[tuple[FilePath, FilePath]], verbose: bool = False) -> None:
     """
     Batch create symlinks
     If a symlink already exists it is *replaced*
@@ -278,7 +277,7 @@ def create_symlinks(symlinks: List[Tuple[FilePath, FilePath]], verbose: bool = F
             sys.exit(errno.EPERM)
 
 
-def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
+def copy_files(files: list[tuple[FilePath, FilePath, int]], verbose: bool = False) -> None:
     """
     Batch copy files
     If a file already exists it is silently ignored
@@ -293,7 +292,7 @@ def copy_files(files: List[Tuple[FilePath, FilePath, int]], verbose: bool = Fals
 
 
 # pylint: disable-next=unused-argument
-def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> None:
+def install_software_suse(packages: dict | set, verbose: bool = False) -> None:
     """
     Batch install SUSE packages
 
@@ -364,7 +363,7 @@ def install_software_suse(packages: Union[Dict, Set], verbose: bool = False) -> 
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -> None:
+def install_software_fedora(packages: dict | set, verbose: bool = False) -> None:
     """
     Batch install Red Hat (Fedora) packages
 
@@ -449,7 +448,7 @@ def install_software_fedora(packages: Union[Dict, Set], verbose: bool = False) -
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def install_software_deb(packages: Dict, verbose: bool = False) -> None:
+def install_software_deb(packages: dict, verbose: bool = False) -> None:
     """
     Batch install Debian packages
 
@@ -538,7 +537,7 @@ def install_software_deb(packages: Dict, verbose: bool = False) -> None:
                                 ANSIThemeStr(f" {reason}\n", "default")], stderr=True)
 
 
-def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) -> Dict:
+def trim_package_list(packages: dict, distro: str = "", fallback: bool = False) -> dict:
     """
     Given a dict of packages, remove any that shouldn't be installed
 
@@ -549,7 +548,7 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
         Returns:
             trimmed_packages (dict): The trimmed dict of packages
     """
-    trimmed_packages: Dict = {}
+    trimmed_packages: dict = {}
 
     for pkg, data in packages.items():
         distros = deep_get(data, DictPath("distros"), [])
@@ -565,7 +564,7 @@ def trim_package_list(packages: Dict, distro: str = "", fallback: bool = False) 
 
 
 # pylint: disable-next=unused-argument
-def install_software(packages: Dict, verbose: bool = False, distro: str = "") -> None:
+def install_software(packages: dict, verbose: bool = False, distro: str = "") -> None:
     """
     Batch install packages
 
@@ -582,7 +581,7 @@ def install_software(packages: Dict, verbose: bool = False, distro: str = "") ->
         install_software_fedora(packages=packages, verbose=verbose)
 
 
-def install_software_with_pip(packages: List[str],
+def install_software_with_pip(packages: list[str],
                               pip_proxy: str = "",
                               verbose: bool = False) -> None:  # pylint: disable=unused-argument
     """
@@ -611,10 +610,10 @@ def install_software_with_pip(packages: List[str],
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-statements,too-many-branches
-def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
+def install_software_with_pip_fallback(packages: dict, pip_proxy: str = "",
                                        verbose: bool = False,
                                        dryrun: bool = False,
-                                       distro: str = "") -> Tuple[List[str], List[str]]:
+                                       distro: str = "") -> tuple[list[str], list[str]]:
     """
     Batch install packages with pip fallback
     This function tries to install a Python module from a package;
@@ -631,8 +630,8 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
                 ([str]): Packages that were, or would be, installed as packages
                 ([str]): Packages that were, or would be, installed using pip
     """
-    pkgs: Dict = {}
-    fallbacks: Set[str] = set()
+    pkgs: dict = {}
+    fallbacks: set[str] = set()
 
     if distro == "debian":
         try:
@@ -745,7 +744,7 @@ def install_software_with_pip_fallback(packages: Dict, pip_proxy: str = "",
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-statements,too-many-branches
-def install(options: List[Tuple[str, str]], args: List[str]) -> int:
+def install(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Create directories, install configuration files, create symlinks,
     and optionally install packages necessary to run CMT
@@ -858,17 +857,17 @@ def install(options: List[Tuple[str, str]], args: List[str]) -> int:
                         ANSIThemeStr("update-alternatives", "programname"),
                         ANSIThemeStr(").\n", "default")])
 
-    pkgs_without_fallback: Dict = trim_package_list(packages=PACKAGES_WITHOUT_FALLBACK,
+    pkgs_without_fallback: dict = trim_package_list(packages=PACKAGES_WITHOUT_FALLBACK,
                                                     distro=distro)
-    pkgs_with_pip_fallback: Dict = trim_package_list(packages=PACKAGES_WITH_PIP_FALLBACK,
+    pkgs_with_pip_fallback: dict = trim_package_list(packages=PACKAGES_WITH_PIP_FALLBACK,
                                                      distro=distro, fallback=True)
 
     if confirm:
         ansithemeprint([ANSIThemeStr("Important:", "warning"),
                         ANSIThemeStr(" The following actions will be taken "
                                      "that will modify the system:", "default")])
-        pkgs: List[str] = []
-        pkgs_fallback: List[str] = []
+        pkgs: list[str] = []
+        pkgs_fallback: list[str] = []
 
         if install_dependencies:
             pkgs, pkgs_fallback = install_software_with_pip_fallback(pkgs_with_pip_fallback,

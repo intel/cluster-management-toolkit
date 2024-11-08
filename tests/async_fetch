@@ -16,7 +16,7 @@ from datetime import datetime
 import faulthandler
 import sys
 import time
-from typing import Any, List, Tuple, Union
+from typing import Any
 
 try:
     from natsort import natsorted
@@ -35,14 +35,14 @@ kh: KubernetesHelper = None  # type: ignore
 
 
 def get_kubernetes_list_async(*args: Any,
-                              **kwargs: Any) -> Tuple[List[Any], Union[int, List[StatusGroup]]]:
+                              **kwargs: Any) -> tuple[list[Any], int | list[StatusGroup]]:
     kind = deep_get(kwargs, DictPath("kind"))
     namespace = deep_get(kwargs, DictPath("namespace"), "")
     fetch_args = deep_get(kwargs, DictPath("fetch_args"), {})
     sort_key = deep_get(fetch_args, DictPath("sort_key"), "")
     sort_reverse = deep_get(fetch_args, DictPath("sort_reverse"), False)
     limit = deep_get(fetch_args, DictPath("limit"))
-    extra_data: Union[int, List[StatusGroup]] = []
+    extra_data: int | list[StatusGroup] = []
 
     vlist, _status = kh.get_list_by_kind_namespace(kind, namespace)
     if sort_key:
