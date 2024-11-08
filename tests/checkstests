@@ -119,7 +119,7 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
                     "exit_on_error": True,
                 },
                 f"{TEST_DIR}/16-dir_no_permissions",
-                # We shouldn't exit; 1 new critical
+                # Exit
                 (False, 1, 0, 0, 0),
                 Exception,
                 "errno.EPERM",
@@ -144,7 +144,7 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
                     "exit_on_error": True,
                 },
                 f"{TEST_DIR}/13-correct_directory",
-                # We shouldn't exit; 1 new critical
+                # Exit
                 (False, 1, 0, 0, 0),
                 Exception,
                 "errno.EPERM",
@@ -184,6 +184,261 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
                               f"  expected result: {expected_result}"
                     result = False
                     break
+    return message, result
+
+
+def test_check_netrc_permissions(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_netrc_permissions
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_response, mock_exit, expected_result, expected_exception)
+        testdata = (
+            # Existing file with correct permissions is OK; verbose
+            (
+                {
+                    "verbose": True,
+                },
+                f"{TEST_DIR}/testfile.txt",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Existing file with correct permissions is OK; quiet
+            (
+                {
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                f"{TEST_DIR}/testfile.txt",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Non-existing file is not OK; verbose
+            (
+                {
+                    "verbose": True,
+                },
+                f"{TEST_DIR}/nonexistingdir/nonexistingentry",
+                # We shouldn't exit; 1 new note
+                (False, 0, 0, 0, 1),
+                None,
+                "",
+            ),
+            # Non-existing file is not OK; quiet
+            (
+                {
+                    "verbose": False,
+                },
+                f"{TEST_DIR}/nonexistingdir/nonexistingentry",
+                # We shouldn't exit; 1 new note
+                (False, 0, 0, 0, 1),
+                None,
+                "",
+            ),
+            # Existing file with incorrect permissions is not OK
+            (
+                {
+                    "verbose": True,
+                },
+                f"{TEST_DIR}/01-wrong_permissions",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Existing file with incorrect permissions is not OK; exit on error
+            (
+                {
+                    "verbose": True,
+                    "exit_on_error": True,
+                },
+                f"{TEST_DIR}/01-wrong_permissions",
+                # Exit
+                (False, 1, 0, 0, 0),
+                Exception,
+                "errno.EPERM",
+            ),
+            # Directory owned by the incorrect user is not OK
+            (
+                {
+                    "verbose": True,
+                    "user": "NONEXISTINGUSER",
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+        )
+
+        for kwargs, mock_response, \
+                expected_result, expected_exception, expected_exception_msg in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.checks.NETRC_PATH",
+                                mock_response), \
+                     mock.patch("sys.exit", side_effect=Exception("errno.EPERM")):
+                    tmp = fun(**kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_insecure_kube_config_options
+
+    if result:
+        # Indata format:
+        # (kwargs, expected_result)
+        testdata = (
+            # Insecure skip TLS verify is False; verbose
+            (
+                {
+                    "cluster_name": "test",
+                    "kubeconfig": {
+                        "clusters": [
+                            {
+                                "name": "test",
+                                "insecure-skip-tls-verify": False,
+                            },
+                        ]
+                    },
+                    "verbose": True,
+                    "quiet_on_ok": True,
+                },
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+            ),
+            # Insecure skip TLS verify is False; quiet
+            (
+                {
+                    "cluster_name": "test",
+                    "kubeconfig": {
+                        "clusters": [
+                            {
+                                "name": "test",
+                                "insecure-skip-tls-verify": False,
+                            },
+                        ]
+                    },
+                    "verbose": False,
+                    "quiet_on_ok": False,
+                },
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+            ),
+            # Insecure skip TLS verify is True; verbose
+            (
+                {
+                    "cluster_name": "test",
+                    "kubeconfig": {
+                        "clusters": [
+                            {
+                                "name": "test",
+                                "insecure-skip-tls-verify": True,
+                            },
+                        ]
+                    },
+                    "verbose": True,
+                    "quiet_on_ok": True,
+                },
+                # We shouldn't exit; 1 new critical
+                (False, 1, 0, 0, 0),
+            ),
+        )
+
+        for kwargs, expected_result in testdata:
+            tmp = fun(**kwargs)
+            if tmp != expected_result:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           result: {tmp}\n" \
+                          f"  expected result: {expected_result}"
+                result = False
+                break
+    return message, result
+
+
+def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_known_hosts_hashing
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_response, expected_result)
+        testdata = (
+            # Known hosts hashing disabled; verbose
+            (
+                {
+                    "verbose": True,
+                },
+                "hashknownhosts no",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+            ),
+            # Known hosts hashing disabled; quiet
+            (
+                {
+                    "verbose": False,
+                },
+                "hashknownhosts no",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+            ),
+            # Known hosts hashing enabled
+            (
+                {},
+                "hashknownhosts yes",
+                # We shouldn't exit; 1 new warning
+                (False, 0, 0, 1, 0),
+            ),
+        )
+
+        for kwargs, mock_response, expected_result in testdata:
+            with mock.patch("clustermanagementtoolkit.checks.execute_command_with_response",
+                            return_value=mock_response):
+                tmp = fun(**kwargs)
+            if tmp != expected_result:
+                message = f"{fun.__name__}() did not yield expected result:\n" \
+                          f"           result: {tmp}\n" \
+                          f"  expected result: {expected_result}"
+                result = False
+                break
     return message, result
 
 
@@ -264,6 +519,18 @@ def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[
 tests: Dict = {
     ("check_ansible_dir_permissions()",): {
         "callable": test_check_ansible_dir_permissions,
+        "result": None,
+    },
+    ("check_netrc_permissions()",): {
+        "callable": test_check_netrc_permissions,
+        "result": None,
+    },
+    ("check_known_hosts_hashing()",): {
+        "callable": test_check_known_hosts_hashing,
+        "result": None,
+    },
+    ("check_insecure_kube_config_options()",): {
+        "callable": test_check_insecure_kube_config_options,
         "result": None,
     },
     ("check_disable_strict_host_key_checking()",): {

@@ -384,6 +384,7 @@ def check_known_hosts_hashing(**kwargs: Any) -> tuple[bool, int, int, int, int]:
                 error (int): The current count of error severity security issues
                 warning (int): The current count of warning severity security issues
                 note (int): The current count of note severity security issues
+                verbose (bool): True for verbose output about actions
         Returns:
             (bool, int, int, int, int):
                 (bool): Is this error severe enough that we should abort immediately?
@@ -396,21 +397,23 @@ def check_known_hosts_hashing(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
     note: int = deep_get(kwargs, DictPath("note"), 0)
+    verbose = deep_get(kwargs, DictPath("verbose"), True)
 
     abort = False
 
-    ansithemeprint([ANSIThemeStr("[Checking whether hashing of ", "phase"),
-                    ANSIThemeStr(".ssh/known_hosts", "path"),
-                    ANSIThemeStr(" is enabled on ", "phase"),
-                    ANSIThemeStr("localhost", "hostname"),
-                    ANSIThemeStr("]", "phase")])
-    ansithemeprint([ANSIThemeStr("  ", "default"),
-                    ANSIThemeStr("Note", "note"),
-                    ANSIThemeStr(":", "default")])
-    ansithemeprint([ANSIThemeStr("    Since ", "default"),
-                    ANSIThemeStr("ssh", "programname"),
-                    ANSIThemeStr(" settings can vary per host this test "
-                                 "is not 100% reliable.\n", "default")])
+    if verbose:
+        ansithemeprint([ANSIThemeStr("[Checking whether hashing of ", "phase"),
+                        ANSIThemeStr(".ssh/known_hosts", "path"),
+                        ANSIThemeStr(" is enabled on ", "phase"),
+                        ANSIThemeStr("localhost", "hostname"),
+                        ANSIThemeStr("]", "phase")])
+        ansithemeprint([ANSIThemeStr("  ", "default"),
+                        ANSIThemeStr("Note", "note"),
+                        ANSIThemeStr(":", "default")])
+        ansithemeprint([ANSIThemeStr("    Since ", "default"),
+                        ANSIThemeStr("ssh", "programname"),
+                        ANSIThemeStr(" settings can vary per host this test "
+                                     "is not 100% reliable.\n", "default")])
     args = [SSH_BIN_PATH, "-G", "localhost"]
     result = execute_command_with_response(args)
 
@@ -446,6 +449,8 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
                 error (int): The current count of error severity security issues
                 warning (int): The current count of warning severity security issues
                 note (int): The current count of note severity security issues
+                verbose (bool): True for verbose output about actions
+                quiet_on_ok (bool): Only output messages when issues are found?
         Returns:
             (bool, int, int, int, int):
                 (bool): Is this error severe enough that we should abort immediately?
@@ -460,12 +465,15 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
     note: int = deep_get(kwargs, DictPath("note"), 0)
+    verbose = deep_get(kwargs, DictPath("verbose"), True)
+    quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
     abort = False
 
-    ansithemeprint([ANSIThemeStr("[Checking for insecure ", "phase"),
-                    ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
-                    ANSIThemeStr(" options]", "phase")])
+    if verbose:
+        ansithemeprint([ANSIThemeStr("[Checking for insecure ", "phase"),
+                        ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
+                        ANSIThemeStr(" options]", "phase")])
 
     insecureskiptlsverify = False
 
@@ -475,7 +483,8 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
             break
 
     if not insecureskiptlsverify:
-        ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])
+        if not quiet_on_ok:
+            ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])
     else:
         # Use critical for highlighting warning here, since the warning is so important
         ansithemeprint([ANSIThemeStr("  ", "default"),
@@ -494,7 +503,9 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
                         ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
                         ANSIThemeStr(",", "default")], stderr=True)
         ansithemeprint([ANSIThemeStr("    unless you are absolutely certain that your "
-                                     "network environment is safe.\n", "default")],
+                                     "network environment is safe", "default")],
+                       stderr=True)
+        ansithemeprint([ANSIThemeStr("    and this is a development cluster.\n", "default")],
                        stderr=True)
         critical += 1
 
