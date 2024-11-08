@@ -173,8 +173,6 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
                         ANSIThemeStr(" on ", "phase"),
                         ANSIThemeStr("localhost", "hostname"),
                         ANSIThemeStr("]", "phase")])
-        args = ["/usr/bin/sudo", "-l"]
-        result = execute_command_with_response(args)
         passwordless_sudo = False
 
         sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
