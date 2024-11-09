@@ -34,15 +34,15 @@ ADMIN_PROGRAM_VERSION = "0.9.3"
 INVENTORY_PROGRAM_NAME = "cmtinv"
 INVENTORY_PROGRAM_VERSION = "0.4.6"
 
-# We don't support Python-versions older than 3.8
+# We don't support Python-versions older than 3.9
 version_info = sys.version_info
-if version_info.major < 3 or version_info.minor < 8:  # pragma: no cover
+if version_info.major < 3 or version_info.minor < 9:  # pragma: no cover
     # pylint: disable-next=invalid-name
     installed_version = str(version_info.major)
     installed_version += "." + str(version_info.minor)
     installed_version += "." + str(version_info.micro)
     # pylint: disable-next=invalid-name
-    msg = "Critical: Minimum supported Python-version is 3.8.0.\n"
+    msg = "Critical: Minimum supported Python-version is 3.9.0.\n"
     msg += "Installed version is " + installed_version
     msg += "; aborting."
     sys.exit(msg)

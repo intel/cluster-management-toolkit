@@ -9,7 +9,7 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 # Requires: python3-natsort
 # Requires: python3-paramiko
 #
@@ -31,7 +31,7 @@ import socket
 from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Any, Callable, cast, Optional
 
 try:
     from natsort import natsorted
@@ -113,7 +113,7 @@ no_password = False  # pylint: disable=invalid-name
 
 kh: kubernetes_helper.KubernetesHelper = None  # type: ignore
 
-cri_data: Dict = {
+cri_data: dict = {
     "containerd": {
         "socket": "unix:///run/containerd/containerd.sock",
     },
@@ -122,7 +122,7 @@ cri_data: Dict = {
     },
 }
 
-prepare_targets: Dict = {
+prepare_targets: dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
@@ -171,7 +171,7 @@ prepare_targets: Dict = {
     },
 }
 
-setup_control_plane_targets: Dict = {
+setup_control_plane_targets: dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
@@ -254,7 +254,7 @@ setup_control_plane_targets: Dict = {
     },
 }
 
-upgrade_control_plane_targets: Dict = {
+upgrade_control_plane_targets: dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
@@ -289,7 +289,7 @@ upgrade_control_plane_targets: Dict = {
     },
 }
 
-teardown_control_plane_targets: Dict = {
+teardown_control_plane_targets: dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
@@ -305,7 +305,7 @@ teardown_control_plane_targets: Dict = {
     },
 }
 
-purge_control_plane_targets: Dict = {
+purge_control_plane_targets: dict = {
     "kubeadm": {
         "pretty_name": [("kubeadm", "programname"), (" (default)", "default")],
         "playbooks": [
@@ -405,7 +405,7 @@ def get_control_plane_version(controlplane: str, k8s_distro: str) -> str:
             raise ValueError(f"Error: Received empty version data from {controlplane} "
                              f"(retval: {retval}); aborting.")
 
-        package_version_regex = re.compile(r"^(.*?): (.*)")
+        package_version_regex: re.Pattern[str] = re.compile(r"^(.*?): (.*)")
 
         for line in tmp:
             tmp2 = package_version_regex.match(line)
@@ -458,7 +458,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 
     for node in vlist:
         name = deep_get(node, DictPath("metadata#name"))
-        node_roles = get_node_roles(cast(Dict, node))
+        node_roles = get_node_roles(cast(dict, node))
         if "control-plane" in node_roles or "master" in node_roles:
             controlplane = name
             cri = deep_get(node, DictPath("status#nodeInfo#containerRuntimeVersion"), "")
@@ -547,7 +547,7 @@ def rebuild_installation_info(state: Optional[str] = None) -> None:
 
 
 def get_installation_info(cluster_name: Optional[str] = None,
-                          ignore_non_existing: bool = True) -> Dict:
+                          ignore_non_existing: bool = True) -> dict:
     """
     Return installation info for a cluster, or prepares a new entry if no entry exists yet
 
@@ -609,7 +609,7 @@ def get_installation_info(cluster_name: Optional[str] = None,
 
 
 # pylint: disable-next=too-many-branches
-def update_installation_info(**kwargs: Any) -> Dict:
+def update_installation_info(**kwargs: Any) -> dict:
     """
     Update installation info for a cluster
 
@@ -639,12 +639,12 @@ def update_installation_info(**kwargs: Any) -> Dict:
     requested_version: Optional[str] = deep_get(kwargs, DictPath("requested_version"))
     state: Optional[str] = deep_get(kwargs, DictPath("state"))
     phase: Optional[int | str] = deep_get(kwargs, DictPath("phase"))
-    phase_skiplist: Optional[List[str]] = deep_get(kwargs, DictPath("phase_skiplist"))
+    phase_skiplist: Optional[list[str]] = deep_get(kwargs, DictPath("phase_skiplist"))
     cni: Optional[str] = deep_get(kwargs, DictPath("cni"))
     pod_network_cidr: Optional[str] = deep_get(kwargs, DictPath("pod_network_cidr"))
     cri: Optional[str] = deep_get(kwargs, DictPath("cri"))
-    control_planes: Optional[List[str]] = deep_get(kwargs, DictPath("control_planes"))
-    nodes: Optional[List[str]] = deep_get(kwargs, DictPath("nodes"))
+    control_planes: Optional[list[str]] = deep_get(kwargs, DictPath("control_planes"))
+    nodes: Optional[list[str]] = deep_get(kwargs, DictPath("nodes"))
 
     info = get_installation_info(cluster_name=cluster_name)
 
@@ -699,7 +699,7 @@ def check_and_print_status(retval: bool) -> None:
         sys.exit(errno.EINVAL)
 
 
-def check_version_from_url(url: str, version_regex: str) -> List[str]:
+def check_version_from_url(url: str, version_regex: str) -> list[str]:
     """
     Given a URL download a text file and treat the first line
     that matches version_regex as a version number
@@ -710,7 +710,7 @@ def check_version_from_url(url: str, version_regex: str) -> List[str]:
         Returns:
             (str): The version number, or None in case of failure
     """
-    version: List[str] = []
+    version: list[str] = []
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
@@ -718,7 +718,7 @@ def check_version_from_url(url: str, version_regex: str) -> List[str]:
                                                   permissions=0o600))
             tmp = secure_read_string(FilePath(f"{td}/version.txt"))
             versionoutput = tmp.splitlines()
-            _version_regex = re.compile(version_regex)
+            _version_regex: re.Pattern[str] = re.compile(version_regex)
             for line in versionoutput:
                 tmp_match = _version_regex.match(cast(str, line))
                 if tmp_match is not None:
@@ -727,8 +727,8 @@ def check_version_from_url(url: str, version_regex: str) -> List[str]:
     return version
 
 
-def check_version_from_executable(command: FilePath, args: List[str],
-                                  version_regex: str) -> List[str]:
+def check_version_from_executable(command: FilePath, args: list[str],
+                                  version_regex: str) -> list[str]:
     """
     Given a path to an executable, the arguments needed to show version information,
     and a version_regex, return the executable version
@@ -740,7 +740,7 @@ def check_version_from_executable(command: FilePath, args: List[str],
         Returns:
             ([str]): A list of version number elements, or None in case of failure
     """
-    version: List[str] = []
+    version: list[str] = []
 
     security_policy = SecurityPolicy.ALLOWLIST_RELAXED
     fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
@@ -757,7 +757,7 @@ def check_version_from_executable(command: FilePath, args: List[str],
 
         if result is not None:
             versionoutput = result.splitlines()
-            _version_regex = re.compile(version_regex)
+            _version_regex: re.Pattern[str] = re.compile(version_regex)
             for line in versionoutput:
                 tmp = _version_regex.match(line)
                 if tmp is not None:
@@ -859,10 +859,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
                         is_new_version = v1 < v2
                     break
             if is_new_version is None:
-                if len(candidate_version) > len(version):
-                    is_new_version = True
-                else:
-                    is_new_version = False
+                is_new_version = len(candidate_version) > len(version)
 
         # pylint: disable-next=too-many-boolean-expressions
         if (version is None or not version) \
@@ -979,7 +976,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
 
 
 # pylint: disable-next=unused-argument,too-many-branches
-def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
+def setup_cni(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Install and configure the specified CNI
 
@@ -1053,7 +1050,7 @@ def setup_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
+def teardown_cni(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Teardown the CNI
 
@@ -1218,7 +1215,7 @@ def teardown_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 
 # pylint: disable-next=unused-argument,too-many-branches,too-many-statements
-def upgrade_cni(options: List[Tuple[str, str]], args: List[str]) -> None:
+def upgrade_cni(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Upgrade the specified CNI to the latest version
 
@@ -1466,7 +1463,7 @@ def add_ssh_keys_to_authorized_keys() -> bool:
 
 
 # pylint: disable-next=unused-argument
-def __task_check_and_create_ssh_key(installation_info: Dict, verbose: bool = False) -> None:
+def __task_check_and_create_ssh_key(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that checks whether the system has an ssh-key,
     and creates one if not
@@ -1495,7 +1492,7 @@ def __task_check_and_create_ssh_key(installation_info: Dict, verbose: bool = Fal
 
 
 # pylint: disable-next=unused-argument
-def __task_scan_and_add_ssh_keys(installation_info: Dict, verbose: bool = False) -> None:
+def __task_scan_and_add_ssh_keys(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that scans all specified control planes for public ssh keys
     and adds them to known hosts
@@ -1518,7 +1515,7 @@ def __task_scan_and_add_ssh_keys(installation_info: Dict, verbose: bool = False)
 
 
 # pylint: disable-next=unused-argument
-def __task_add_ssh_keys_to_inventory(installation_info: Dict, verbose: bool = False) -> None:
+def __task_add_ssh_keys_to_inventory(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that adds SSH keys to the Ansible inventory
 
@@ -1603,7 +1600,7 @@ def install_ansible_posix() -> bool:
 
 
 # pylint: disable-next=unused-argument
-def __task_check_and_install_ansible_posix(installation_info: Dict, verbose: bool = False) -> None:
+def __task_check_and_install_ansible_posix(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that installs ansible-posix
 
@@ -1672,9 +1669,9 @@ def __get_theme(string: str, default: str) -> str:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List[str], str]],
-                   verbose: bool = False) -> Tuple[List[Tuple[str, str, str, List[str]]],
-                                                   List[Tuple[str, str, str, List[str]]]]:
+def check_versions(pkg_packages: list[str], version_checks: list[tuple[str, list[str], str]],
+                   verbose: bool = False) -> tuple[list[tuple[str, str, str, list[str]]],
+                                                   list[tuple[str, str, str, list[str]]]]:
     """
     Check versions for all relevant software
 
@@ -1695,7 +1692,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
     os_distro = identify_distro()
 
-    other_versions: List[Tuple[str, str, str, List[str]]] = []
+    other_versions: list[tuple[str, str, str, list[str]]] = []
 
     if os_distro in ("debian",):
         pkg_versions = check_versions_apt(pkg_packages)
@@ -1777,7 +1774,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
                         ANSIThemeStr(f"{crc_upstream_version}", "version")])
 
     for software, installed_version, candidate_version, _ in \
-            cast(List[Tuple[str, str, str, List[str]]], natsorted(pkg_versions)):
+            cast(list[tuple[str, str, str, list[str]]], natsorted(pkg_versions)):
         iformat = __get_theme(installed_version, "version")
         cformat = __get_theme(candidate_version, "version")
         ansithemeprint([ANSIThemeStr(f"{software.ljust(slen + 2)}", "default"),
@@ -1785,7 +1782,7 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
                         ANSIThemeStr(f"{candidate_version}", cformat)])
     print()
     for software, installed_version, candidate_version, _ in \
-            cast(List[Tuple[str, str, str, List[str]]], natsorted(other_versions)):
+            cast(list[tuple[str, str, str, list[str]]], natsorted(other_versions)):
         iformat = __get_theme(installed_version, "version")
         cformat = __get_theme(candidate_version, "version")
         ansithemeprint([ANSIThemeStr(f"{software.ljust(slen + 2)}", "default"),
@@ -1796,35 +1793,32 @@ def check_versions(pkg_packages: List[str], version_checks: List[Tuple[str, List
 
 
 # pylint: disable-next=unused-argument
-def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None,
-                 quiet: bool = False, verbose: bool = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook
 
         Parameters:
             playbookpath (FilePath): A path to the playbook to run
             hosts (list[str]): A list of hosts to run the playbook on
-            extra_values (dict): A dict of values to set before running the playbook
-            quiet (bool): Should the results of the run be printed?
-            verbose (bool): If the results are printed, should skipped tasks be printed too?
+            **kwargs (dict[str, Any]): Keyword arguments
+                extra_values (dict): A dict of values to set before running the playbook
+                quiet (bool): Should the results of the run be printed?
+                verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
             ((int, dict)):
                 (int): The return value from ansible_run_playbook_on_selection()
                 (dict): A dict with the results from the run
     """
+    extra_values: Optional[dict] = deep_get(kwargs, DictPath("extra_values"))
+    quiet: bool = deep_get(kwargs, DictPath("quiet"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+
     # Set necessary Ansible keys before running playbooks
     http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
-    if http_proxy is None:
-        http_proxy = ""
     https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
-    if https_proxy is None:
-        https_proxy = ""
     no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
-    if no_proxy is None:
-        no_proxy = ""
     insecure_registries = deep_get(cmtlib.cmtconfig, DictPath("Docker#insecure_registries"), [])
     registry_mirrors = deep_get(cmtlib.cmtconfig, DictPath("Containerd#registry_mirrors"), [])
-    retval = 0
 
     use_proxy = "no"
     if http_proxy or https_proxy:
@@ -1853,9 +1847,9 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     return retval, ansible_results
 
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]],
-                  hosts: Optional[List[str]] = None,
-                  extra_values: Optional[Dict] = None, verbose: bool = False) -> bool:
+def run_playbooks(playbooks: list[tuple[list[ANSIThemeStr], FilePath]],
+                  hosts: Optional[list[str]] = None,
+                  extra_values: Optional[dict] = None, verbose: bool = False) -> bool:
     """
     Run a set of playbooks
 
@@ -1882,7 +1876,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]],
     return retval == 0
 
 
-def __playbook_paths_from_path(playbook_path: FilePath) -> List[FilePath]:
+def __playbook_paths_from_path(playbook_path: FilePath) -> list[FilePath]:
     """
     Scan a directory and return a list of playbook paths
 
@@ -1910,7 +1904,7 @@ def __playbook_paths_from_path(playbook_path: FilePath) -> List[FilePath]:
 
 
 # Add all playbooks in the directory
-def populate_playbooks_from_dir(path: FilePath) -> List[Tuple[List[ANSIThemeStr], FilePath]]:
+def populate_playbooks_from_dir(path: FilePath) -> list[tuple[list[ANSIThemeStr], FilePath]]:
     """
     Populate a playbook list from path
 
@@ -1925,7 +1919,7 @@ def populate_playbooks_from_dir(path: FilePath) -> List[Tuple[List[ANSIThemeStr]
 
 
 # pylint: disable-next=unused-argument
-def __task_request_ansible_password(installation_info: Dict, verbose: bool = False) -> None:
+def __task_request_ansible_password(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that requests the ansible password
 
@@ -1957,8 +1951,8 @@ def __task_request_ansible_password(installation_info: Dict, verbose: bool = Fal
             ansible_configuration["ansible_password"] = ansible_password
 
 
-def __run_playbooks_on_selection(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]],
-                                 selection: List[str], extra_values: Optional[Dict] = None,
+def __run_playbooks_on_selection(playbooks: list[tuple[list[ANSIThemeStr], FilePath]],
+                                 selection: list[str], extra_values: Optional[dict] = None,
                                  verbose: bool = False) -> None:
     """
     A helper that runs a playbook list on a selection
@@ -1973,7 +1967,7 @@ def __run_playbooks_on_selection(playbooks: List[Tuple[List[ANSIThemeStr], FileP
                                          extra_values=extra_values, verbose=verbose))
 
 
-def __selection_control_planes() -> List[str]:
+def __selection_control_planes() -> list[str]:
     """
     Return a selection with all control planes
 
@@ -1984,7 +1978,7 @@ def __selection_control_planes() -> List[str]:
     return [controlplane[0] for controlplane in controlplanes_]
 
 
-def __selection_localhost() -> List[str]:
+def __selection_localhost() -> list[str]:
     """
     Returns a list with the hostname of localhost
 
@@ -1995,9 +1989,9 @@ def __selection_localhost() -> List[str]:
 
 
 # pylint: disable-next=unused-argument
-def __generic_task_run_playbooks_on_selection(selection: List[str], installation_info: Dict,
+def __generic_task_run_playbooks_on_selection(selection: list[str], installation_info: dict,
                                               playbook_dir: FilePath,
-                                              extra_values: Optional[Dict] = None,
+                                              extra_values: Optional[dict] = None,
                                               verbose: bool = False) -> None:
     """
     A generic helper to run playbooks on selection
@@ -2018,7 +2012,7 @@ def __generic_task_run_playbooks_on_selection(selection: List[str], installation
 
 
 # pylint: disable-next=unused-argument
-def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_prepreparation_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-preparation playbooks
 
@@ -2040,7 +2034,7 @@ def __task_run_prepreparation_playbooks(installation_info: Dict, verbose: bool =
 
 
 # pylint: disable-next=unused-argument
-def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
+def __task_run_preparation_playbooks_on_localhost(installation_info: dict,
                                                   verbose: bool = False) -> None:
     """
     An installer task that runs preparation playbooks on localhost
@@ -2091,7 +2085,7 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: Dict,
 
 
 # pylint: disable-next=too-many-locals
-def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
+def __task_run_preparation_playbooks_on_hosts(installation_info: dict,
                                               verbose: bool = False) -> None:
     """
     An installer task that runs preparation playbooks on hosts
@@ -2150,7 +2144,7 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: Dict,
 
 
 # pylint: disable-next=unused-argument
-def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postpreparation_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-preparation playbooks
 
@@ -2172,7 +2166,7 @@ def __task_run_postpreparation_playbooks(installation_info: Dict, verbose: bool 
 
 
 # pylint: disable-next=unused-argument
-def __task_setup_bash_completion(installation_info: Dict, verbose: bool = False) -> None:
+def __task_setup_bash_completion(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that sets up bash completion
 
@@ -2190,7 +2184,7 @@ def __task_setup_bash_completion(installation_info: Dict, verbose: bool = False)
 
 
 # pylint: disable-next=unused-argument
-def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_presetup_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-setup playbooks
 
@@ -2211,7 +2205,7 @@ def __task_run_presetup_playbooks(installation_info: Dict, verbose: bool = False
             raise
 
 
-def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_setup_playbooks_on_localhost(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that runs playbooks on localhost
 
@@ -2249,7 +2243,7 @@ def __task_run_setup_playbooks_on_localhost(installation_info: Dict, verbose: bo
                                  extra_values=extra_values, verbose=verbose)
 
 
-def __task_run_setup_playbooks_on_control_planes(installation_info: Dict,
+def __task_run_setup_playbooks_on_control_planes(installation_info: dict,
                                                  verbose: bool = False) -> None:
     """
     An installer task that runs playbooks on control planes
@@ -2302,7 +2296,7 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: Dict,
 
 
 # pylint: disable-next=unused-argument
-def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postsetup_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-setup playbooks
 
@@ -2324,7 +2318,7 @@ def __task_run_postsetup_playbooks(installation_info: Dict, verbose: bool = Fals
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
+def __task_import_kubeconfig(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that merges a Kube config into ~/.kube/config
 
@@ -2439,7 +2433,7 @@ def __task_import_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bool = False) -> None:
+def __task_adjust_kubeconfig_server_address(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that replaces localhost for the real IP-address of the API-server
 
@@ -2509,7 +2503,7 @@ def __task_adjust_kubeconfig_server_address(installation_info: Dict, verbose: bo
 
 
 # pylint: disable-next=unused-argument
-def __task_setup_cni(installation_info: Dict, verbose: bool = False) -> None:
+def __task_setup_cni(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that sets up a CNI
 
@@ -2526,7 +2520,7 @@ def __task_setup_cni(installation_info: Dict, verbose: bool = False) -> None:
 
 
 # pylint: disable-next=unused-argument
-def __task_drain_control_planes(installation_info: Dict, verbose: bool = False) -> None:
+def __task_drain_control_planes(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that drains control plains
 
@@ -2572,7 +2566,7 @@ def __task_drain_control_planes(installation_info: Dict, verbose: bool = False) 
 
 
 # pylint: disable-next=unused-argument
-def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = False) -> None:
+def __task_uncordon_control_planes(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that uncordons control planes
 
@@ -2609,7 +2603,7 @@ def __task_uncordon_control_planes(installation_info: Dict, verbose: bool = Fals
 
 
 # pylint: disable-next=unused-argument
-def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_preupgrade_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-upgrade playbooks
 
@@ -2631,7 +2625,7 @@ def __task_run_preupgrade_playbooks(installation_info: Dict, verbose: bool = Fal
 
 
 # Run upgrade playbooks on control planes
-def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict,
+def __task_run_upgrade_playbooks_on_control_planes(installation_info: dict,
                                                    verbose: bool = False) -> None:
     """
     A task that runs upgrade playbooks on control planes
@@ -2689,7 +2683,7 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: Dict,
 
 
 # pylint: disable-next=unused-argument
-def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postupgrade_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-upgrade playbooks
 
@@ -2711,7 +2705,7 @@ def __task_run_postupgrade_playbooks(installation_info: Dict, verbose: bool = Fa
 
 
 # pylint: disable-next=unused-argument
-def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bool = False) -> None:
+def __task_verify_that_cluster_has_no_nodes(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that verifies that no non-control plane nodes remain in the cluster
 
@@ -2733,7 +2727,7 @@ def __task_verify_that_cluster_has_no_nodes(installation_info: Dict, verbose: bo
 
 
 # pylint: disable-next=unused-argument
-def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_preteardown_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-teardown playbooks
 
@@ -2755,7 +2749,7 @@ def __task_run_preteardown_playbooks(installation_info: Dict, verbose: bool = Fa
 
 
 # Run teardown playbooks on control planes
-def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict,
+def __task_run_teardown_playbooks_on_control_planes(installation_info: dict,
                                                     verbose: bool = False) -> None:
     """
     A task that runs teardown playbooks on control planes
@@ -2775,7 +2769,7 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: Dict,
 
 
 # pylint: disable-next=unused-argument
-def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postteardown_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-teardown playbooks
 
@@ -2797,7 +2791,7 @@ def __task_run_postteardown_playbooks(installation_info: Dict, verbose: bool = F
 
 
 # pylint: disable-next=unused-argument,too-many-branches
-def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> None:
+def __task_remove_kubeconfig(installation_info: dict, verbose: bool = False) -> None:
     """
     An installer task that removes a cluster configuration from ~/.kube/config
 
@@ -2869,7 +2863,7 @@ def __task_remove_kubeconfig(installation_info: Dict, verbose: bool = False) -> 
 
 
 # pylint: disable-next=unused-argument
-def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_prepurge_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-purge playbooks
 
@@ -2891,7 +2885,7 @@ def __task_run_prepurge_playbooks(installation_info: Dict, verbose: bool = False
 
 
 # Run purge playbooks on control planes
-def __task_run_purge_playbooks_on_control_planes(installation_info: Dict,
+def __task_run_purge_playbooks_on_control_planes(installation_info: dict,
                                                  verbose: bool = False) -> None:
     """
     An installer task that runs purge playbooks on control planes
@@ -2933,7 +2927,7 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: Dict,
 
 
 # pylint: disable-next=unused-argument
-def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = False) -> None:
+def __task_run_postpurge_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-purge playbooks
 
@@ -2954,7 +2948,7 @@ def __task_run_postpurge_playbooks(installation_info: Dict, verbose: bool = Fals
             raise
 
 
-def __validate_task_index(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
+def __validate_task_index(tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]],
                           phase: str | int) -> int:
     """
     Helper that validates the installer task index
@@ -2984,8 +2978,8 @@ def __validate_task_index(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., No
     return phase
 
 
-def __list_phases(phases: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
-                  start_phase: Optional[int] = 0, phase_skiplist: Optional[List] = None) -> None:
+def __list_phases(phases: list[tuple[list[ANSIThemeStr], Callable[..., None]]],
+                  start_phase: Optional[int] = 0, phase_skiplist: Optional[list] = None) -> None:
     """
     Helper that lists installation phases
     """
@@ -3067,7 +3061,7 @@ prepare_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
 ]
 
 
-__setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+__setup_kubeadm_control_plane_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Run pre-setup playbooks", "action")],
      __task_run_presetup_playbooks),
     ([ANSIThemeStr("Run playbooks on ", "action"),
@@ -3091,7 +3085,7 @@ __setup_kubeadm_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[...
 ]
 
 
-__setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+__setup_rke2_control_plane_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Run pre-setup playbooks", "action")],
      __task_run_presetup_playbooks),
     ([ANSIThemeStr("Run playbooks on ", "action"),
@@ -3119,7 +3113,7 @@ __setup_rke2_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., N
 
 setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
 
-upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+upgrade_control_plane_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Drain the ", "action"),
       ANSIThemeStr("control planes", "hostname")], __task_drain_control_planes),
     ([ANSIThemeStr("Run pre-upgrade playbooks", "action")], __task_run_preupgrade_playbooks),
@@ -3130,7 +3124,7 @@ upgrade_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]
       ANSIThemeStr("control planes", "hostname")], __task_uncordon_control_planes),
 ]
 
-teardown_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+teardown_control_plane_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Verify that only ", "action"),
       ANSIThemeStr("control planes", "hostname"),
       ANSIThemeStr(" remain in the cluster", "action")], __task_verify_that_cluster_has_no_nodes),
@@ -3143,7 +3137,7 @@ teardown_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]
     ([ANSIThemeStr("Run post-teardown playbooks", "action")], __task_run_postteardown_playbooks),
 ]
 
-purge_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] = [
+purge_control_plane_tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]] = [
     ([ANSIThemeStr("Run pre-purge playbooks", "action")], __task_run_prepurge_playbooks),
     ([ANSIThemeStr("Run purge playbooks on ", "action"),
       ANSIThemeStr("control planes", "hostname")], __task_run_purge_playbooks_on_control_planes),
@@ -3151,7 +3145,7 @@ purge_control_plane_tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]] 
 ]
 
 
-def run_tasks(tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]],
+def run_tasks(tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]],
               phase: int, phase_skiplist: set[int],
               final_state: str, verbose: bool = False) -> None:
     """
@@ -3288,7 +3282,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> None:
+def prepare_installation(options: list[tuple[str, Any]], args: list[str]) -> None:
     """
     Install and configure pre-requisites for a control plane
 
@@ -3328,7 +3322,7 @@ def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> Non
     phase_skiplist = set(installation_info[cluster_name]["phase_skiplist"])
     verbose = False
     hide_next_step = False
-    nodes: List[str] = []
+    nodes: list[str] = []
 
     if state is not None and state not in ("<none>", "preparing", "prepared", "torn_down"):
         ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -3518,7 +3512,7 @@ def prepare_installation(options: List[Tuple[str, Any]], args: List[str]) -> Non
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
+def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Import an existing cluster to the CMT Ansible inventory
 
@@ -3634,7 +3628,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
         for node in vlist:
             node_name = deep_get(node, DictPath("metadata#name"))
-            node_roles = get_node_roles(cast(Dict, node))
+            node_roles = get_node_roles(cast(dict, node))
             if "control-plane" in node_roles:
                 controlplanes.append(node_name)
                 if controlplane is None:
@@ -3698,7 +3692,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             raise ValueError(f"Error: Received empty version data from {controlplane} "
                              f"(retval: {retval}); aborting.")
 
-        package_version_regex = re.compile(r"^(.*?): (.*)")
+        package_version_regex: re.Pattern[str] = re.compile(r"^(.*?): (.*)")
 
         for line in tmp:
             tmp2 = package_version_regex.match(line)
@@ -3726,7 +3720,7 @@ def import_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
+def check_for_updates(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Check whether there are newer versions of packages that are related to the cluster
 
@@ -3797,9 +3791,9 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
                 for i in range(17, int(upstream_minor) + 1):
                     pkg_packages.append(f"kubernetes1.{i}-{package}")
 
-    pkg_packages = cast(List[str], natsorted(pkg_packages))
+    pkg_packages = cast(list[str], natsorted(pkg_packages))
 
-    version_checks: List = []
+    version_checks: list = []
 
     print()
     check_versions(pkg_packages, version_checks, verbose=verbose)
@@ -3808,7 +3802,7 @@ def check_for_updates(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def show_configuration(action: str,
-                       tasks: List[Tuple[List[ANSIThemeStr], Callable[..., None]]]) -> None:
+                       tasks: list[tuple[list[ANSIThemeStr], Callable[..., None]]]) -> None:
     """
     Show cluster configuration
 
@@ -3827,7 +3821,7 @@ def show_configuration(action: str,
     controlplanes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"), [])
     nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
 
-    failures: Dict = {}
+    failures: dict = {}
 
     control_plane_info = []
     for controlplane in controlplanes:
@@ -3980,7 +3974,7 @@ def show_configuration(action: str,
 
 
 def __get_configuration_data(configuration_file: FilePath, configuration_type: str,
-                             configuration: Dict, default: FilePath) -> FilePath:
+                             configuration: dict, default: FilePath) -> FilePath:
     """
     Given a configuration dict, make sure that it doesn't contains both data and a path.
     If given data write it to a temporary file. Returns the path on success, exists on failure.
@@ -4019,7 +4013,7 @@ def __get_configuration_data(configuration_file: FilePath, configuration_type: s
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
+def add_nodes(options: list[tuple[str, Any]], args: list[Any]) -> None:
     """
     Add nodes to the cluster
 
@@ -4069,7 +4063,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
 
     configuration_path = merge_configurations(configuration_paths)
 
-    nodes: List[str] = args[0]
+    nodes: list[str] = args[0]
     groups = args[1]
 
     control_plane_version = get_control_plane_version(control_planes[0], k8s_distro)
@@ -4092,7 +4086,7 @@ def add_nodes(options: List[Tuple[str, Any]], args: List[Any]) -> None:
     crio_major_version = None
     crio_minor_version = None
 
-    add_playbooks: List[FilePath] = []
+    add_playbooks: list[FilePath] = []
 
     # Add the CRI to the setup playbooks for the control plane
     if cri == "containerd":
@@ -4217,7 +4211,7 @@ def set_context(cluster_name: str, context_name: str) -> None:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
+def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Create a cluster based on a ClusterDeployment template
 
@@ -4567,11 +4561,11 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             # Don't add node groups again
             if i < phase:
                 continue
-            tmp_nodes: List[str] = deep_get(data, DictPath("nodes"), [])
+            tmp_nodes: list[str] = deep_get(data, DictPath("nodes"), [])
             hosts = []
             hostname_template: str = deep_get(data, DictPath("vmNameTemplate"),
                                               "vmnode-<<<item.0>>>-<<<item.1>>>")
-            ranges: List = deep_get(data, DictPath("ranges"), [])
+            ranges: list = deep_get(data, DictPath("ranges"), [])
             virtualise: bool = deep_get(data, DictPath("virtualise"), False)
             vmhost: str = deep_get(data, DictPath("vmHost"), "")
             if virtualise:
@@ -4596,7 +4590,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             template_name: str = deep_get(data, DictPath("vmTemplateImageName"), "template")
             template_mac: str = ""
             template_ip: str = ""
-            nodes_tuple: List[Tuple[str, str, str]] = []
+            nodes_tuple: list[tuple[str, str, str]] = []
             if tmp_nodes:
                 for node in tmp_nodes:
                     nodes_tuple.append((node, "", ""))
@@ -5201,7 +5195,7 @@ def create_cluster(options: List[Tuple[str, str]], args: List[str]) -> None:
             update_installation_info(cluster_name=cluster_name, state="deployed", phase="<done>")
 
 
-def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
+def merge_configurations(configuration_paths: list[FilePath]) -> FilePath:
     """
     Given a list of configurations in YAML-format,
     load them all and write them out to a single, temporary, file
@@ -5232,7 +5226,7 @@ def merge_configurations(configuration_paths: List[FilePath]) -> FilePath:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> None:
+def setup_control_planes(options: list[tuple[str, Any]], args: list[str]) -> None:
     """
     Setup a control plane
 
@@ -5296,7 +5290,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
     cri = None
     cri_version = None
     enable_dra = False
-    extra_values: Dict = {}
+    extra_values: dict = {}
 
     for opt, optarg in options:
         if opt == "--start-at-task":
@@ -5642,7 +5636,7 @@ def setup_control_planes(options: List[Tuple[str, Any]], args: List[str]) -> Non
                         ANSIThemeStr(" with the real IP-address of this host.\n", "default")])
 
 
-def __get_node_info() -> List[Dict]:
+def __get_node_info() -> list[dict]:
     global kh  # pylint: disable=global-statement
 
     if not Path(KUBE_CONFIG_FILE).is_file():
@@ -5682,7 +5676,7 @@ def __get_node_info() -> List[Dict]:
     for node in vlist:
         node_name = deep_get(node, DictPath("metadata#name"))
         node_schedulable = not deep_get(node, DictPath("spec#unschedulable"), False)
-        node_roles = get_node_roles(cast(Dict, node))
+        node_roles = get_node_roles(cast(dict, node))
         node_taints = deep_get(node, DictPath("spec#taints"), [])
         node_statuses.append({
             "name": node_name,
@@ -5694,7 +5688,7 @@ def __get_node_info() -> List[Dict]:
     return node_statuses
 
 
-def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
+def get_control_planes(fail_on_empty: bool = True) -> list[tuple[str, str]]:
     """
     Get a list of control planes defined in the inventory
 
@@ -5751,7 +5745,7 @@ def get_control_planes(fail_on_empty: bool = True) -> List[Tuple[str, str]]:
 
 
 # pylint: disable-next=unused-argument,too-many-branches,too-many-statements
-def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def teardown_control_plane(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Teardown an existing control plane
 
@@ -5854,7 +5848,7 @@ def teardown_control_plane(options: List[Tuple[str, str]], args: List[str]) -> N
 
 
 # pylint: disable-next=unused-argument,too-many-branches,too-many-statements
-def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def purge_control_plane(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Purge an existing control plane
 
@@ -5957,7 +5951,7 @@ def purge_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Upgrade a control plane
 
@@ -6244,7 +6238,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
                                 ANSIThemeStr(" versions is not supported, please perform the "
                                              "following upgrades sequentially:",
                                              "default")], stderr=True)
-                minor_versions_dict: Dict = {}
+                minor_versions_dict: dict = {}
                 for version in reversed(pkg_versions[0][3]):
                     version_tuple = version.split(".")
                     major_minor = f"{version_tuple[0]}.{version_tuple[1]}"
@@ -6361,7 +6355,7 @@ def upgrade_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 
 # pylint: disable-next=unused-argument,too-many-branches
-def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def taint_control_plane(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Taint a control plane
 
@@ -6428,7 +6422,7 @@ def taint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None
 
 
 # pylint: disable-next=unused-argument,too-many-branches
-def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> None:
+def untaint_control_plane(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Untaint a control plane
 
@@ -6495,7 +6489,7 @@ def untaint_control_plane(options: List[Tuple[str, str]], args: List[str]) -> No
 
 
 # pylint: disable=redefined-outer-name
-def run_checks(checks: List[Dict], **kwargs: Any) -> bool:
+def run_checks(checks: list[dict], **kwargs: Any) -> bool:
     """
     Run a batch of checks, and output the result.
     The checks can return 4 different severities; critical, error, warning, and note.
@@ -6514,7 +6508,7 @@ def run_checks(checks: List[Dict], **kwargs: Any) -> bool:
 
     user = ""
     cluster_name = ""
-    kubeconfig: Dict = {}
+    kubeconfig: dict = {}
 
     for check in checks:
         preconditions = deep_get(check, DictPath("preconditions"), [])
@@ -6597,7 +6591,7 @@ security_audit_checks = [
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
+def audit(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Run security audit checks
 
@@ -6625,7 +6619,7 @@ def audit(options: List[Tuple[str, str]], args: List[str]) -> None:
 
     if len(usergroup) == 0 and usergroup_autodetect:
         logindefs = secure_read_string(FilePath("/etc/login.defs"))
-        usergroups_regex = re.compile(r"^USERGROUPS_ENAB\s+yes")
+        usergroups_regex: re.Pattern[str] = re.compile(r"^USERGROUPS_ENAB\s+yes")
         for line in logindefs.splitlines():
             tmp = usergroups_regex.match(line)
             if tmp is not None:
@@ -6699,7 +6693,7 @@ preflight_checks = [
 ]
 
 
-def preflight_check(options: List[Tuple[str, str]], args: List[str]) -> None:
+def preflight_check(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Run preflight checks before creating a new cluster
 
@@ -6762,7 +6756,7 @@ troubleshoot_checks = [
 
 
 # pylint: disable-next=unused-argument
-def troubleshoot(options: List[Tuple[str, str]], args: List[str]) -> None:
+def troubleshoot(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Troubleshoot issues in the cluster
 

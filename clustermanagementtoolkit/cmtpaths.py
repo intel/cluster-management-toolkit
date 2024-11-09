@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-# Requires: python3 (>= 3.8)
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -10,7 +11,6 @@ This file contains paths used by CMT
 
 import os
 from pathlib import Path
-from typing import List
 
 from clustermanagementtoolkit.cmttypes import FilePath
 
@@ -178,7 +178,7 @@ SSH_ARGS_RELAXED_PUB_KEY_TYPES = \
     "sk-ssh-ed25519-cert-v01@openssh.com"
 
 # Strict SSH configuration
-SSH_ARGS_STRICT: List[str] = [
+SSH_ARGS_STRICT: list[str] = [
     # Accepted cryptos
     "-c", SSH_ARGS_STRICT_CRYPTOS,
     # Accepted CA signature algorithms
@@ -194,7 +194,7 @@ SSH_ARGS_STRICT: List[str] = [
 ]
 
 # Relaxed SSH configuration
-SSH_ARGS_RELAXED: List[str] = [
+SSH_ARGS_RELAXED: list[str] = [
     # Accepted cryptos
     "-c", SSH_ARGS_RELAXED_CRYPTOS,
     # Accepted CA signature algorithms
@@ -210,7 +210,7 @@ SSH_ARGS_RELAXED: List[str] = [
 ]
 
 SSH_KEYGEN_BIN_PATH = FilePath("/usr/bin/ssh-keygen")
-SSH_KEYGEN_ARGS = ["-t", "ecdsa", "-b", "521", "-N", ""]
+SSH_KEYGEN_ARGS: list[str] = ["-t", "ecdsa", "-b", "521", "-N", ""]
 
 BASH_COMPLETION_DIRNAME = "bash-completion"
 BASH_COMPLETION_BASE_DIR = HOMEDIR.joinpath(f".local/share/{BASH_COMPLETION_DIRNAME}")

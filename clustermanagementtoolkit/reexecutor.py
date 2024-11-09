@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-# Requires: python3 (>= 3.8)
+# vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -13,7 +14,7 @@ import concurrent.futures
 from datetime import datetime
 import sys
 import threading
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Optional, Type
 
 
 class ReExecutor:
@@ -31,7 +32,7 @@ class ReExecutor:
             self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
         else:
             self.executor = concurrent.futures.ThreadPoolExecutor()
-        self.futures: Dict = {}
+        self.futures: dict = {}
         self.lock = threading.Lock()
 
     def __trigger(self, key: str) -> None:
@@ -49,7 +50,7 @@ class ReExecutor:
         self.futures[key] = data
 
     def trigger(self, key: str, interval: int,
-                fn: Callable, /, *args: List[Any], **kwargs: Any) -> None:
+                fn: Callable, /, *args: list[Any], **kwargs: Any) -> None:
         """
         Trigger a callable
 
@@ -99,7 +100,7 @@ class ReExecutor:
                     self.futures[key]["kwargs"][kwarg] = value
                 self.__trigger(key)
 
-    def get_parameters(self, key: str) -> Tuple[List[Any], Dict[str, Any]]:
+    def get_parameters(self, key: str) -> tuple[list[Any], dict[str, Any]]:
         """
         Get the parameters for a callable
 
@@ -111,7 +112,7 @@ class ReExecutor:
             return self.futures[key]["args"], self.futures[key]["kwargs"]
         return [], {}
 
-    def get(self, key: str) -> Tuple[List[Type], List[Any]]:
+    def get(self, key: str) -> tuple[list[Type], list[Any]]:
         """
         Check if there's available data from a callable; if there is, return it
 

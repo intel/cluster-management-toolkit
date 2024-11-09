@@ -9,7 +9,7 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 # Requires: python3-natsort
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import cast, Dict, List, Optional, Tuple
+from typing import cast, Optional
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -82,7 +82,7 @@ PROGRAMAUTHORS = "Written by David Weinehall."
 
 
 # pylint: disable-next=unused-argument
-def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def set_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Set host-specific variables
 
@@ -94,9 +94,9 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
         Returns:
             (int): 0
     """
-    hostvars: List[Tuple[str, str | int]] = []
-    keyvals: List[str] = args[0].split(",")
-    hosts: List[str] = args[1].split(",")
+    hostvars: list[tuple[str, str | int]] = []
+    keyvals: list[str] = args[0].split(",")
+    hosts: list[str] = args[1].split(",")
 
     for keyval in keyvals:
         try:
@@ -127,7 +127,7 @@ def set_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def set_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Set group-specific variables
 
@@ -172,7 +172,7 @@ def set_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def set_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def set_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Set global variables
 
@@ -186,7 +186,7 @@ def set_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def unset_host_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Unset host-specific variables
 
@@ -212,7 +212,7 @@ def unset_host_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def unset_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Unset group-specific variables
 
@@ -237,7 +237,7 @@ def unset_group_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
-def unset_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
+def unset_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Unset global variables
 
@@ -250,7 +250,7 @@ def unset_global_vars(options: List[Tuple[str, str]], args: List[str]) -> int:
     return unset_group_vars(options=options, args=[args[0], "all"])
 
 
-def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
+def add_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Add groups
 
@@ -297,7 +297,7 @@ def add_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-branches
-def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
+def add_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Add hosts
 
@@ -366,7 +366,7 @@ def add_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
-def format_members(group: str, members: List[str]) -> List[ANSIThemeStr]:
+def format_members(group: str, members: list[str]) -> list[ANSIThemeStr]:
     """
     Format a list of group members as a themearray
 
@@ -388,7 +388,7 @@ def format_members(group: str, members: List[str]) -> List[ANSIThemeStr]:
     return formatted
 
 
-def remove_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
+def remove_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Remove groups
 
@@ -479,7 +479,7 @@ def get_cluster_name() -> Optional[str]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
+def rebuild_inventory(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Build an inventory based on information from Kubernetes
 
@@ -535,7 +535,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
         sys.exit(errno.EINVAL)
 
     for node in vlist:
-        roles = kubernetes_helper.get_node_roles(cast(Dict, node))
+        roles = kubernetes_helper.get_node_roles(cast(dict, node))
         if "control-plane" in roles:
             groups = ["all", "controlplane", cluster_name]
         else:
@@ -580,7 +580,7 @@ def rebuild_inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
-def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
+def remove_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Remove hosts
 
@@ -664,7 +664,7 @@ def remove_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
-def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
+def inventory(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Show the inventory
 
@@ -700,7 +700,7 @@ def inventory(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
+def list_groups(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     List groups
 
@@ -739,7 +739,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
             separator = "\t"
 
         d = ansible_get_inventory_dict()
-        sorted_groups = cast(List[str], natsorted(d.keys()))
+        sorted_groups = cast(list[str], natsorted(d.keys()))
         ansithemeprint(ansithemestr_join_list(sorted_groups, formatting="hostname",
                                               separator=ANSIThemeStr(separator, "separator")),
                        color=color)
@@ -753,7 +753,7 @@ def list_groups(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
+def list_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     List hosts
 
@@ -798,7 +798,7 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
         for group in groups:
             for host in deep_get(d, DictPath(f"{group}#hosts"), []):
                 hosts.add(host)
-        sorted_hosts = cast(List[str], natsorted(list(hosts)))
+        sorted_hosts = cast(list[str], natsorted(list(hosts)))
         ansithemeprint(ansithemestr_join_list(sorted_hosts, formatting="hostname",
                        separator=ANSIThemeStr(separator, "separator")), color=color)
     else:
@@ -810,17 +810,17 @@ def list_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-branches
-def populate_playbooks() -> Dict:
+def populate_playbooks() -> dict:
     """
     Populate the list of playbooks runnable from the command line
 
         Returns:
             (dict): The dict of playbooks
     """
-    playbook_dirs = []
-    playbooks = {}
+    playbook_dirs: list = []
+    playbooks: dict = {}
 
-    local_playbook_dirs = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
+    local_playbook_dirs: list = deep_get(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [])
     for playbook_dir in local_playbook_dirs:
         # Substitute {HOME}/ for {HOMEDIR}
         if playbook_dir.startswith(("{HOME}/", "{HOME}\\")):
@@ -832,7 +832,7 @@ def populate_playbooks() -> Dict:
     playbook_dirs.append(ANSIBLE_PLAYBOOK_DIR)
     playbook_dirs.append(SYSTEM_ANSIBLE_PLAYBOOK_DIR)
 
-    yaml_regex = re.compile(r"^(.*)\.ya?ml$")
+    yaml_regex: re.Pattern[str] = re.compile(r"^(.*)\.ya?ml$")
 
     # This should be moved to ansible_helper and generalised to be usable both in cmu and cmtinv
     for playbook_dir in playbook_dirs:
@@ -918,7 +918,7 @@ def populate_playbooks() -> Dict:
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
+def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     List playbooks
 
@@ -993,7 +993,7 @@ def list_playbooks(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
+def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Run playbook on host(s) or group(s)
     A well-formed inventory should not have groups with the same name as any of the hosts,
@@ -1006,7 +1006,7 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
         Returns:
             (int): 0
     """
-    verbose = False
+    verbose: bool = False
 
     for opt, _optarg in options:
         if opt == "--verbose":
@@ -1073,7 +1073,7 @@ def run_playbook(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument,too-many-branches
-def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
+def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Ping hosts or groups of hosts
     Default: ping all hosts
@@ -1131,7 +1131,7 @@ def ping(options: List[Tuple[str, str]], args: List[str]) -> int:
 
     # This needs to be improved; if there's a message we need to tell the difference
     # between "Permission denied" and "No route to host"
-    for (host, status) in cast(List[Tuple[str, str]], natsorted(output)):
+    for (host, status) in cast(list[tuple[str, str]], natsorted(output)):
         maxlen = max(len(host), maxlen)
         status_group = "error"
 

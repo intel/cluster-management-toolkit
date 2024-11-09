@@ -9,7 +9,7 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -338,7 +338,7 @@ def install_software_suse(packages: dict | set, verbose: bool = False) -> None:
         args = [zypper_path, "info"] + [pkg]
         result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
         pkg_version = None
-        compiled_regex = re.compile(r"^.*Version: (.+?)")
+        compiled_regex: re.Pattern[str] = re.compile(r"^.*Version: (.+?)")
         for line in result.stdout.decode("utf-8").splitlines():
             tmp = compiled_regex.match(line)
             if tmp is None:
@@ -422,7 +422,7 @@ def install_software_fedora(packages: dict | set, verbose: bool = False) -> None
         args = [yum_path, "info"] + [pkg]
         result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
         pkg_version = None
-        compiled_regex = re.compile(r"^.*Version: (.+?)")
+        compiled_regex: re.Pattern[str] = re.compile(r"^.*Version: (.+?)")
         for line in result.stdout.decode("utf-8").splitlines():
             tmp = compiled_regex.match(line)
             if tmp is None:
@@ -513,7 +513,7 @@ def install_software_deb(packages: dict, verbose: bool = False) -> None:
         args = [apt_cache_path, "policy"] + [pkg]
         result = subprocess.run(args, stdout=PIPE, stderr=STDOUT, check=False)
         pkg_version = None
-        compiled_regex = re.compile(r"^  Installed: (.+)")
+        compiled_regex: re.Pattern[str] = re.compile(r"^  Installed: (.+)")
         for line in result.stdout.decode("utf-8").splitlines():
             tmp = compiled_regex.match(line)
             if tmp is None:
@@ -679,8 +679,8 @@ def install_software_with_pip_fallback(packages: dict, pip_proxy: str = "",
         response = execute_command_with_response(args)
         split_response = response.splitlines()
 
-        information_for_regex = re.compile(r"^Information for package (.+):$")
-        not_found_regex = re.compile(r"^package '([^']+)' not found\.$")
+        information_for_regex: re.Pattern[str] = re.compile(r"^Information for package (.+):$")
+        not_found_regex: re.Pattern[str] = re.compile(r"^package '([^']+)' not found\.$")
 
         for line in split_response:
             tmp = information_for_regex.match(line)

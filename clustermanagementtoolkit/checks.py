@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -103,6 +103,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, in
     return abort, critical, error, warning, note
 
 
+# pylint: disable-next=too-many-locals
 def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
@@ -115,6 +116,8 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
                 error (int): The current count of error severity security issues
                 warning (int): The current count of warning severity security issues
                 note (int): The current count of note severity security issues
+                verbose (bool): True for verbose output about actions
+                quiet_on_ok (bool): Only output messages when issues are found?
         Returns:
             (bool, int, int, int, int):
                 (bool): Is this error severe enough that we should abort immediately?
@@ -128,18 +131,24 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
     note: int = deep_get(kwargs, DictPath("note"), 0)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), True)
+    quiet_on_ok: bool = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
     abort = False
 
-    ansithemeprint([ANSIThemeStr("[Checking whether ", "phase"),
-                    ANSIThemeStr(f"{user}", "path"),
-                    ANSIThemeStr(" is in ", "phase"),
-                    ANSIThemeStr("/etc/sudoers", "path"),
-                    ANSIThemeStr(" or ", "phase"),
-                    ANSIThemeStr("/etc/sudoers.d", "path"),
-                    ANSIThemeStr(" on ", "phase"),
-                    ANSIThemeStr("localhost", "hostname"),
-                    ANSIThemeStr("]", "phase")])
+    if user is None:
+        raise ProgrammingError(f"{__name__}() called without user")
+
+    if verbose:
+        ansithemeprint([ANSIThemeStr("[Checking whether ", "phase"),
+                        ANSIThemeStr(f"{user}", "path"),
+                        ANSIThemeStr(" is in ", "phase"),
+                        ANSIThemeStr("/etc/sudoers", "path"),
+                        ANSIThemeStr(" or ", "phase"),
+                        ANSIThemeStr("/etc/sudoers.d", "path"),
+                        ANSIThemeStr(" on ", "phase"),
+                        ANSIThemeStr("localhost", "hostname"),
+                        ANSIThemeStr("]", "phase")])
     args = ["/usr/bin/sudo", "-l"]
     result = execute_command_with_response(args)
 
@@ -165,14 +174,16 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
             break
 
     if sudoer:
-        ansithemeprint([ANSIThemeStr("  OK\n", "ok")])
+        if not quiet_on_ok:
+            ansithemeprint([ANSIThemeStr("  OK\n", "ok")])
 
-        ansithemeprint([ANSIThemeStr("[Checking whether", "phase"),
-                        ANSIThemeStr(f" {user} ", "path"),
-                        ANSIThemeStr("can perform passwordless sudo", "phase"),
-                        ANSIThemeStr(" on ", "phase"),
-                        ANSIThemeStr("localhost", "hostname"),
-                        ANSIThemeStr("]", "phase")])
+        if verbose:
+            ansithemeprint([ANSIThemeStr("[Checking whether", "phase"),
+                            ANSIThemeStr(f" {user} ", "path"),
+                            ANSIThemeStr("can perform passwordless sudo", "phase"),
+                            ANSIThemeStr(" on ", "phase"),
+                            ANSIThemeStr("localhost", "hostname"),
+                            ANSIThemeStr("]", "phase")])
         passwordless_sudo = False
 
         sudo_permissions_regex = re.compile(r"^\s*\(ALL(\s*:\s*ALL)?\)\s*NOPASSWD:\s*ALL\s*$")
@@ -180,7 +191,8 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
         for line in result.splitlines():
             tmp = sudo_permissions_regex.match(line)
             if tmp is not None:
-                ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])
+                if not quiet_on_ok:
+                    ansithemeprint([ANSIThemeStr("  OK\n", "emphasis")])
                 passwordless_sudo = True
                 break
 
@@ -219,8 +231,6 @@ def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, i
                 (int): The new count of warning severity security issues
                 (int): The new count of note severity security issues
     """
-    abort = False
-
     user: str = deep_get(kwargs, DictPath("user"))
     critical: int = deep_get(kwargs, DictPath("critical"), 0)
     error: int = deep_get(kwargs, DictPath("error"), 0)
@@ -229,6 +239,11 @@ def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, i
     verbose: bool = deep_get(kwargs, DictPath("verbose"), True)
     exit_on_error: bool = deep_get(kwargs, DictPath("exit_on_error"), False)
     quiet_on_ok: bool = deep_get(kwargs, DictPath("quiet_on_ok"), False)
+
+    abort = False
+
+    if user is None:
+        raise ProgrammingError(f"{__name__}() called without user")
 
     if verbose:
         ansithemeprint([ANSIThemeStr("[Checking whether ownership for ", "phase"),
@@ -1245,7 +1260,7 @@ def __check_permissions(recommended_permissions: list[dict], pathtype: str,
     abort = False
 
     if not user or not usergroup:
-        raise ProgrammingError("__check_permissions() called without user and/or usergroup")
+        raise ProgrammingError(f"{__name__}() called without user and/or usergroup")
 
     for permissions in recommended_permissions:
         path = deep_get(permissions, DictPath("path"))
@@ -1436,6 +1451,9 @@ def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 
     abort = False
 
+    if not user or not usergroup:
+        raise ProgrammingError(f"{__name__}() called without user and/or usergroup")
+
     ansithemeprint([ANSIThemeStr("[Checking directory and file permissions]", "phase")])
 
     abort, issue, critical, error, warning, note = \
@@ -1453,7 +1471,7 @@ def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=too-many-locals
 def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook
@@ -1463,48 +1481,40 @@ def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tup
             hosts (list[str]): A list of hosts to run the playbook on
             **kwargs (dict[str, Any]): Keyword arguments
                 extra_values (dict): A dict of values to set before running the playbook
+                quiet (bool): Should the results of the run be printed?
+                verbose (bool): If the results are printed, should skipped tasks be printed too?
         Returns:
-            (int, dict):
+            ((int, dict)):
                 (int): The return value from ansible_run_playbook_on_selection()
                 (dict): A dict with the results from the run
     """
-    extra_values = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
+    quiet: bool = deep_get(kwargs, DictPath("quiet"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     # Set necessary Ansible keys before running playbooks
-    http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
-    if http_proxy is None:
-        http_proxy = ""
-    https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
-    if https_proxy is None:
-        https_proxy = ""
-    no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
-    if no_proxy is None:
-        no_proxy = ""
-    insecure_registries = deep_get(cmtlib.cmtconfig, DictPath("Docker#insecure_registries"), [])
-    registry_mirrors = deep_get(cmtlib.cmtconfig, DictPath("Containerd#registry_mirrors"), [])
-    retval = 0
+    http_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
+    https_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
+    no_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
 
     use_proxy = "no"
     if http_proxy or https_proxy:
         use_proxy = "yes"
 
-    if extra_values is None:
-        extra_values = {}
-
     values = {
         "http_proxy": http_proxy,
         "https_proxy": https_proxy,
         "no_proxy": no_proxy,
-        "insecure_registries": insecure_registries,
-        "registry_mirrors": registry_mirrors,
         "use_proxy": use_proxy,
     }
     merged_values = {**values, **extra_values}
 
-    retval, ansible_results = ansible_run_playbook_on_selection(playbookpath, selection=hosts,
-                                                                values=merged_values, quiet=False)
+    retval, ansible_results = \
+        ansible_run_playbook_on_selection(playbookpath, selection=hosts, values=merged_values,
+                                          verbose=verbose, quiet=quiet)
 
-    ansible_print_play_results(retval, ansible_results)
+    if not quiet:
+        ansible_print_play_results(retval, ansible_results, verbose=verbose)
 
     return retval, ansible_results
 

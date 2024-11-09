@@ -13,7 +13,7 @@
 # SPDX-License-Identifier: MIT
 
 # Requires: ansible
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 # Requires: python3-natsort
 # Requires: python3-openssl
 # Recommends: python3-ujson
@@ -31,7 +31,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
+from typing import Any, cast, Optional, Sequence
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -117,8 +117,8 @@ def request_ansible_password() -> None:
 
 
 # pylint: disable-next=too-many-locals
-def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None,
-                 quiet: bool = False, verbose: bool = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optional[dict] = None,
+                 quiet: bool = False, verbose: bool = False) -> tuple[int, dict]:
     """
     Run an Ansible playbook.
 
@@ -206,7 +206,7 @@ def __format_none(string: Optional[str], fmt: str) -> ANSIThemeStr:
     return __string
 
 
-def get_control_planes() -> List[Tuple[str, List[str]]]:
+def get_control_planes() -> list[tuple[str, list[str]]]:
     """
     Get the list of control planes.
 
@@ -238,7 +238,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
 
     for node in vlist:
         name = deep_get(node, DictPath("metadata#name"))
-        node_roles = get_node_roles(cast(Dict, node))
+        node_roles = get_node_roles(cast(dict, node))
         if "control-plane" in node_roles or "master" in node_roles:
             ipaddresses = []
             for address in deep_get(node, DictPath("status#addresses")):
@@ -249,7 +249,7 @@ def get_control_planes() -> List[Tuple[str, List[str]]]:
     return controlplanes
 
 
-def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
+def show_configuration(hosts: list[str], cri: Optional[str] = None) -> None:
     """
     Show cluster configuration.
 
@@ -330,7 +330,7 @@ def show_configuration(hosts: List[str], cri: Optional[str] = None) -> None:
                         ANSIThemeStr(host, "hostname")])
 
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs: Any) -> bool:
+def run_playbooks(playbooks: list[tuple[list[ANSIThemeStr], FilePath]], **kwargs: Any) -> bool:
     """
     Run a set of Ansible playbooks.
 
@@ -343,8 +343,8 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
         Returns:
             (bool): True on success, False on failure
     """
-    hosts: Optional[List[str]] = deep_get(kwargs, DictPath("hosts"))
-    extra_values: Optional[Dict] = deep_get(kwargs, DictPath("extra_values"))
+    hosts: Optional[list[str]] = deep_get(kwargs, DictPath("hosts"))
+    extra_values: Optional[dict] = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     if not playbooks or hosts is None:
@@ -353,7 +353,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
     for string, playbookpath in playbooks:
         ansithemeprint(string)
         retval, _ansible_results = \
-            run_playbook(playbookpath, hosts=cast(List[str], hosts),
+            run_playbook(playbookpath, hosts=cast(list[str], hosts),
                          extra_values=extra_values, verbose=verbose)
 
         # We do not want to continue executing playbooks if the first one failed
@@ -364,8 +364,8 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
 
 
 # pylint: disable-next=too-many-branches
-def get_selection(selection: List[str],
-                  kind: Optional[Tuple[str, str]] = None) -> Tuple[List[str], List[str], List[str]]:
+def get_selection(selection: list[str],
+                  kind: Optional[tuple[str, str]] = None) -> tuple[list[str], list[str], list[str]]:
     """
     Based on input parameters, split the node list into nodes,
     non-existing nodes, and control planes.
@@ -428,7 +428,7 @@ def get_selection(selection: List[str],
             if not all_items and name not in selection:
                 continue
 
-            node_roles = get_node_roles(cast(Dict, node))
+            node_roles = get_node_roles(cast(dict, node))
             if "control-plane" in node_roles or "master" in node_roles:
                 items2.append(name)
                 continue
@@ -446,7 +446,7 @@ def get_selection(selection: List[str],
 
 
 # pylint: disable-next=too-many-branches
-def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def cordon_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Cordon nodes.
 
@@ -521,7 +521,7 @@ def cordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-branches,too-many-locals
-def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -> int:
+def drain_nodes(options: Sequence[tuple[str, Optional[str]]], args: list[str]) -> int:
     """
     Drain nodes.
 
@@ -597,7 +597,7 @@ def drain_nodes(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
 
 
 # pylint: disable-next=too-many-branches
-def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def uncordon_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Uncordon nodes.
 
@@ -672,7 +672,7 @@ def uncordon_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def taint_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Taint nodes.
 
@@ -747,7 +747,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
         if node is None:
             continue
         node_status, _status_group, _taints, full_taints = \
-            get_node_status(cast(Dict[str, Any], node_info))
+            get_node_status(cast(dict[str, Any], node_info))
         if node_status == "Unknown":
             ansithemeprint([ANSIThemeStr("Critical", "critical"),
                             ANSIThemeStr(": Failed to get node information; do you have a "
@@ -777,7 +777,7 @@ def taint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def untaint_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Untaint nodes.
 
@@ -870,7 +870,7 @@ def untaint_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
+def prepare_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Install and configure pre-requisites for use as a node.
 
@@ -919,7 +919,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
             sys.exit(errno.ENOENT)
 
         hosts_raw = secure_read_string(FilePath(hostfile))
-        hosts_raw_split = cast(List[str], hosts_raw.splitlines())
+        hosts_raw_split = cast(list[str], hosts_raw.splitlines())
 
         if len(hosts_raw_split) == 1 and "," in hosts_raw_split[0]:
             selection = hosts_raw_split[0].split(",")
@@ -1048,7 +1048,7 @@ def prepare_hosts(options: List[Tuple[str, str]], args: List[str]) -> int:
     return 0
 
 
-cri_data: Dict = {
+cri_data: dict = {
     "containerd": {
         "socket": "unix:///run/containerd/containerd.sock",
     },
@@ -1059,7 +1059,7 @@ cri_data: Dict = {
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def add_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Add nodes to the cluster.
 
@@ -1418,7 +1418,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
             sys.exit(errno.EBADMSG)
 
         kubeadm_version = ""
-        kubeadm_version_regex = re.compile(r"^(.*?): (.*)")
+        kubeadm_version_regex: re.Pattern[str] = re.compile(r"^(.*?): (.*)")
 
         for line in tmp:
             match_tmp = kubeadm_version_regex.match(line)
@@ -1545,7 +1545,7 @@ def add_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def remove_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Remove nodes from the cluster.
 
@@ -1660,7 +1660,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     ]
     playbooks = populate_playbooks_from_filenames(delete_playbooks)
 
-    extra_values: Dict = {}
+    extra_values: dict = {}
     retval = run_playbooks(playbooks=playbooks, hosts=nodes,
                            extra_values=extra_values, verbose=verbose)
     if retval:
@@ -1719,7 +1719,7 @@ def remove_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=too-many-statements,too-many-branches,too-many-locals
-def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -> int:
+def purge_hosts(options: Sequence[tuple[str, Optional[str]]], args: list[str]) -> int:
     """
     Purge nodes from the cluster.
 
@@ -1868,7 +1868,7 @@ def purge_hosts(options: Sequence[Tuple[str, Optional[str]]], args: List[str]) -
     return 0
 
 
-def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
+def upgrade_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Upgrade nodes in the cluster.
 
@@ -1934,7 +1934,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
     ]
     playbooks = populate_playbooks_from_filenames(upgrade_playbooks)
 
-    extra_values: Dict = {}
+    extra_values: dict = {}
     retval = run_playbooks(playbooks=playbooks, hosts=nodes,
                            extra_values=extra_values, verbose=verbose)
     if retval:
@@ -1953,7 +1953,7 @@ def upgrade_nodes(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_contexts(options: List[Tuple[str, str]], args: List[str]) -> int:
+def get_contexts(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Get the list of available contexts.
 
@@ -2032,7 +2032,7 @@ def get_contexts(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
+def use_context(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Get the list of available contexts.
 
@@ -2089,7 +2089,7 @@ def use_context(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument,too-many-branches,too-many-statements,too-many-locals
-def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
+def list_api_resources(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     List available API-resources.
 
@@ -2110,7 +2110,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
     header = True
     api_version_selector = None
     has_data = False
-    known_filter: Dict[str, Any] = {
+    known_filter: dict[str, Any] = {
         "known": None,
         "updated": None,
         "list": None,
@@ -2600,7 +2600,7 @@ def list_api_resources(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 # pylint: disable-next=pointless-string-statement
 """
-def get_resource(options: List[Tuple[str, str]], args: List[str]) -> None:
+def get_resource(options: list[tuple[str, str]], args: list[str]) -> None:
     namespaces = ["default"]
 
     for opt, optarg in options:
@@ -3902,7 +3902,7 @@ CMT_COMMANDLINE = {
 }
 
 
-def get_programname(callname: str) -> Tuple[str, Dict]:
+def get_programname(callname: str) -> tuple[str, dict]:
     """
     Return the name that the program was called with;
     the eventual intention here is that the behaviour can be different

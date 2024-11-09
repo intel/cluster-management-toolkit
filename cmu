@@ -10,7 +10,7 @@
 # doesn't point to the latest version of python3 they provide
 
 # Requires: ansible
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 # Requires: python3-natsort
 # Requires: python3-openssl
 # Recommends: python3-ujson
@@ -48,7 +48,7 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, cast, Dict, List, Optional, Sequence, Type
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -198,7 +198,7 @@ kh: KubernetesHelper = None  # type: ignore
 kh_cache: KubernetesResourceCache = None  # type: ignore
 
 executor = reexecutor.ReExecutor()
-async_data: Dict = {}
+async_data: dict = {}
 
 override_tail_lines = None  # pylint: disable=invalid-name
 DEFAULT_TAIL_LINES = 4000
@@ -276,7 +276,7 @@ def gather_cluster_info(**kwargs: Any) -> None:
 
 
 def format_timestamp(timestamp: datetime,
-                     localtimezone: bool = False) -> List[Union[ThemeRef, ThemeStr]]:
+                     localtimezone: bool = False) -> List[ThemeRef | ThemeStr]:
     """
     Takes datetime and formats it as a YYYY-MM-DD HH:MM:SS themearray.
 
@@ -301,7 +301,7 @@ def format_timestamp(timestamp: datetime,
 
 
 # pylint: disable-next=too-many-locals
-def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[Type]) -> int:
+def update_field_widths(field_dict: dict, field_names: list[str], objects: list[Type]) -> int:
     """
     Process the fields for a line; calcute how wide each field should be,
     then return the total line length.
@@ -373,7 +373,7 @@ def update_field_widths(field_dict: Dict, field_names: List[str], objects: List[
     return linelen
 
 
-def get_image_tuple(image: str) -> Tuple[str, str]:
+def get_image_tuple(image: str) -> tuple[str, str]:
     """
     Given the name of a container, return the name and the version field.
 
@@ -395,8 +395,8 @@ def get_image_tuple(image: str) -> Tuple[str, str]:
 
 
 # We should probably have a real type for container_type here
-def __get_container_info(obj: Dict, container_type: str,
-                         spec_path: DictPath, status_path: DictPath) -> Dict:
+def __get_container_info(obj: dict, container_type: str,
+                         spec_path: DictPath, status_path: DictPath) -> dict:
     containers: Dict = {}
 
     for container in deep_get(obj, spec_path, []):
@@ -612,7 +612,7 @@ def __process_string(value: str, replace_quotes: str) -> str:
     return value
 
 
-def __process_sum_numerical(value: Sequence[Union[int, float]]) -> Union[float, int]:
+def __process_sum_numerical(value: Sequence[int | float]) -> float | int:
     return sum(value)
 
 
@@ -637,8 +637,8 @@ def __process_sum_mem_usage(values: List[str]) -> str:
     return normalise_mem_bytes_to_str(mem_usage_sum)
 
 
-def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: str,
-                        formatter: str) -> Union[datetime, int]:
+def __process_timestamp(value: Sequence[int | str] | str,
+                        action: str, formatter: str) -> datetime | int:
     if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
         tmp_timestamp: datetime = none_timestamp()
         for tmp1 in value:
@@ -671,7 +671,7 @@ def __process_timestamp(value: Union[Sequence[Union[int, str]], str], action: st
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
 def process_value(value: Any, vtype: str, **kwargs: Any) -> \
-        Union[int, float, str, List[str], List[Tuple[str]], datetime, None]:
+        int | float | str | list[str] | list[tuple[str]] | datetime | None:
     """
     Reformat values; returns data in a format suitable for further processing.
 
@@ -702,7 +702,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
                                 DictPath(f"Global#kind_format_{field_index}"),
                                 DictPath("Global#kind_format")], "mixed")
 
-    new_value: Union[int, float, str, List[str], datetime, None] = None
+    new_value: int | float | str | list[str] | datetime | None = None
 
     if vtype == "str":
         new_value = __process_string(value, replace_quotes)
@@ -734,7 +734,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
         if value is None:
             new_value = "0"
         else:
-            new_value = str(len(cast(Union[str, Sequence], value)))
+            new_value = str(len(cast(str | Sequence, value)))
     elif vtype == "unix_timestamp":
         new_value = datetime.fromtimestamp(value)
     elif vtype == "timestamp":
@@ -917,19 +917,19 @@ def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: A
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def transform_list(vlist: Union[List, Dict], transform: Dict) -> List:
+def transform_list(vlist: list | dict, transform: dict) -> list:
     sort: bool = deep_get(transform, DictPath("sorted"), False)
-    key_regexes: List[str] = deep_get(transform, DictPath("key#regex"), [])
-    key_groups: List[int] = deep_get(transform, DictPath("key#groups"), [])
+    key_regexes: list[str] = deep_get(transform, DictPath("key#regex"), [])
+    key_groups: list[int] = deep_get(transform, DictPath("key#groups"), [])
     key_join = deep_get(transform, DictPath("key#join"))
-    key_defaults: List = deep_get(transform, DictPath("key#default"), [])
-    value_regexes: List[str] = deep_get(transform, DictPath("value#regex"), [])
-    value_groups: List[int] = deep_get(transform, DictPath("value#groups"), [])
+    key_defaults: list = deep_get(transform, DictPath("key#default"), [])
+    value_regexes: list[str] = deep_get(transform, DictPath("value#regex"), [])
+    value_groups: list[int] = deep_get(transform, DictPath("value#groups"), [])
     value_join = deep_get(transform, DictPath("value#join"))
-    value_defaults: List = deep_get(transform, DictPath("value#default"), [])
-    output: List[str] = deep_get(transform, DictPath("output"), ["key", "value"])
+    value_defaults: list = deep_get(transform, DictPath("value#default"), [])
+    output: list[str] = deep_get(transform, DictPath("output"), ["key", "value"])
 
-    result: List = []
+    result: list = []
 
     # This handles both lists and dicts
     # pylint: disable-next=too-many-nested-blocks
@@ -1857,7 +1857,7 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
-        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from journalctl.
 
@@ -1876,7 +1876,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
     messages: List[str] = []
     facilities: List[str] = []
     severities: List[str] = []
-    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
+    messages: List[List[ThemeRef | ThemeStr]] = []
 
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
     objlist = deep_get(obj, DictPath("obj"))
@@ -1943,7 +1943,7 @@ def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
 
 # pylint: disable-next=unused-argument,too-many-locals
 def get_traceflow(obj: Dict, **kwargs: Any) -> \
-        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from a traceflow.
 
@@ -1960,7 +1960,7 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
     timestamps: List[str] = []
     facilities: List[str] = []
     severities: List[str] = []
-    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
+    messages: List[List[ThemeRef | ThemeStr]] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -1972,7 +1972,7 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
             saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
         else:
             saved_timestamp = ""
-        message: List[Union[ThemeRef, ThemeStr]] = []
+        message: List[ThemeRef | ThemeStr] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp
@@ -1996,7 +1996,7 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
 
 
 # pylint: disable-next=unused-argument
-def get_task_log(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
+def get_task_log(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     field = []
 
     skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2031,7 +2031,7 @@ def get_task_log(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr
     return field
 
 
-def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
+def logpad_files(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     # This is essentially just a wrapper around listgetter_files
     show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
     extra_values_lookup = deep_get(kwargs, DictPath("extra_values_lookup"), {})
@@ -2060,7 +2060,7 @@ def logpad_files(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr
     return formatters.format_none(vlist[0], **formatter_args)
 
 
-def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
+def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     """
     Takes an object and dumps it using the specified format (if possible).
 
@@ -2083,7 +2083,7 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, Them
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: Dict, **kwargs: Any) -> \
-        Tuple[List[str], List[str], List[str], List[List[Union[ThemeRef, ThemeStr]]]]:
+        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from CMT log.
 
@@ -2102,7 +2102,7 @@ def get_cmt_log(obj: Dict, **kwargs: Any) -> \
     messages: List[str] = []
     facilities: List[str] = []
     severities: List[str] = []
-    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
+    messages: List[List[ThemeRef | ThemeStr]] = []
 
     d = secure_read_yaml(filepath)
 
@@ -2173,7 +2173,7 @@ def get_cmt_log(obj: Dict, **kwargs: Any) -> \
     return (timestamps, facilities, severities, messages)
 
 
-def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
+def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     """
     Takes an object and dumps it as formatted YAML.
 
@@ -2200,8 +2200,8 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]
     return messages
 
 
-def logpad_msg_getter(obj: Dict, **kwargs: Any) -> List[List[Union[ThemeRef, ThemeStr]]]:
-    messages: List[List[Union[ThemeRef, ThemeStr]]] = []
+def logpad_msg_getter(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
+    messages: List[List[ThemeRef | ThemeStr]] = []
 
     path = deep_get(kwargs, DictPath("path"))
     tmp = deep_get(obj, DictPath(path), "")
@@ -2233,7 +2233,7 @@ def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_n
 
 def get_pod_log_by_name_namespace_container(name: str, namespace: str, container: str,
                                             tail_lines: int = DEFAULT_TAIL_LINES) \
-        -> Tuple[str, bool]:
+        -> tuple[str, bool]:
     internal_error = False
 
     rawmsg, status = \
@@ -2262,7 +2262,7 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 
 
 # To make the failure case easier, return both the ref and the name of the control plane
-def get_control_plane() -> Tuple[Optional[Dict], str]:
+def get_control_plane() -> tuple[Optional[Dict], str]:
     if not kubernetes_support:
         return None, ""
 
@@ -2319,7 +2319,7 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
 # pylint: disable-next=too-many-locals
 def generate_list_header(uip: UIProps, headerpad: curses.window,
                          field_dict: Dict, is_taggable: bool = False) -> None:
-    headerarray: List[Union[ThemeRef, ThemeStr]] = []
+    headerarray: List[ThemeRef | ThemeStr] = []
     first = True
 
     tabstops = []
@@ -2407,7 +2407,7 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
             tagprefixlen = len(ThemeRef("separators", "tag"))
 
             if is_tagged:
-                tagprefix: List[Union[ThemeRef, ThemeStr]] = [ThemeRef("separators", "tag")]
+                tagprefix: List[ThemeRef | ThemeStr] = [ThemeRef("separators", "tag")]
             else:
                 tagprefix = [ThemeStr("".ljust(tagprefixlen), ThemeAttr("types", "generic"))]
         else:
@@ -2784,7 +2784,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             # The data in some fields might become shorter, so we need to trigger a clear
             uip.statusbar.erase()
 
-            statusarray1: List[Union[ThemeRef, ThemeStr]] = []
+            statusarray1: List[ThemeRef | ThemeStr] = []
 
             if view != "Contexts" and selected_namespace:
                 statusarray1 += \
@@ -2806,7 +2806,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     ThemeStr("Label selector: ", ThemeAttr("statusbar", "infoheader")),
                     ThemeStr(f"{label_selector}", ThemeAttr("statusbar", "highlight"))
                 ]
-            statusarray2: List[Union[ThemeRef, ThemeStr]] = []
+            statusarray2: List[ThemeRef | ThemeStr] = []
             if read_only_mode:
                 statusarray2 += [ThemeStr("Read Only Mode", ThemeAttr("statusbar", "highlight"))]
 
@@ -3184,7 +3184,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             tag_title = f"Tag “{uip.sortcolumn.rstrip().lower()}“ matching: "
             if not (pattern := curses_helper.inputbox(uip.stdscr, title=tag_title)):
                 continue
-            compiled_pattern = re.compile(pattern)
+            compiled_pattern: re.Pattern[str] = re.compile(pattern)
 
             # XXX: This should search the specified sortcolumn, not always in name
             for item in uip.sorted_list:
@@ -3741,7 +3741,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 uip.force_update()
 
 
-def __switch_resource_map(**kwargs: Any) -> Tuple[Retval, Dict]:
+def __switch_resource_map(**kwargs: Any) -> tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     uip.refresh_all()
     return Retval.MATCH, {
@@ -3750,7 +3750,7 @@ def __switch_resource_map(**kwargs: Any) -> Tuple[Retval, Dict]:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def __resource_map_cursor(**kwargs: Any) -> Tuple[Retval, Dict]:
+def __resource_map_cursor(**kwargs: Any) -> tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     selected = deep_get(kwargs, DictPath("selected"))
@@ -3824,7 +3824,7 @@ def __resource_map_cursor(**kwargs: Any) -> Tuple[Retval, Dict]:
     }
 
 
-def __open_reference(**kwargs: Any) -> Tuple[Retval, Dict]:
+def __open_reference(**kwargs: Any) -> tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     pod_name = deep_get(kwargs, DictPath("pod_name"))
@@ -3857,7 +3857,7 @@ def __open_reference(**kwargs: Any) -> Tuple[Retval, Dict]:
     return Retval.MATCH, {}
 
 
-def __fetch_package_versions(**kwargs: Any) -> Tuple[Retval, Dict]:
+def __fetch_package_versions(**kwargs: Any) -> tuple[Retval, Dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
@@ -4009,7 +4009,7 @@ clusteroverview_shortcuts = {
 
 
 # pylint: disable-next=unused-argument
-def read_file_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[StatusGroup]]:
+def read_file_async(*args: Any, **kwargs: Any) -> tuple[List[Any], List[StatusGroup]]:
     file_not_found_status: str = deep_get(kwargs,
                                           DictPath("file_not_found_status"), "File not found")
     path: str = deep_get(kwargs, DictPath("path"))
@@ -4034,7 +4034,7 @@ def read_file_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[StatusGr
 
 
 # pylint: disable-next=unused-argument
-def run_ansible_play_async(*args: Any, **kwargs: Any) -> Tuple[List[Any], List[StatusGroup]]:
+def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[List[Any], List[StatusGroup]]:
     playbook = deep_get(kwargs, DictPath("playbook"))
     selection = deep_get(kwargs, DictPath("selection"))
     verbose = deep_get(kwargs, DictPath("verbose"), False)
@@ -4092,8 +4092,8 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
     hostname = socket.gethostname()
     islocal = hostname == name
 
-    stat_regex = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) "
-                            r"(\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
+    stat_regex: re.Pattern[str] = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) "
+                                             r"(\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
     loadavg_raw = []
     meminfo_raw = []
@@ -4267,7 +4267,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         internal_ips_array = generators.format_list(iips, 0, 0)
         external_ips_array = generators.format_list(eips, 0, 0)
 
-        infoarrays: List[List[Union[ThemeRef, ThemeStr]]] = [
+        infoarrays: List[List[ThemeRef | ThemeStr]] = [
             [
                 ThemeStr("Control Plane: ", ThemeAttr("main", "infoheader")),
                 ThemeStr(f"{name}", ThemeAttr("types", "generic"))
@@ -4300,7 +4300,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         # cpu usage:
         # low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
         # This is aggregate over all CPUs
-        percentagebar_cpu: List[Union[ThemeRef, ThemeStr]] = \
+        percentagebar_cpu: List[ThemeRef | ThemeStr] = \
             curses_helper.percentagebar(7, uip.infopadwidth - 10, cputimetotal, [
                 (cputimeusernice, ThemeRef("strings", "cputime_user_nice")),
                 (cputimeuser, ThemeRef("strings", "cputime_user")),
@@ -4310,7 +4310,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
 
         # memory usage:
         # used (green) / buffers (bold blue) / cache (yellow)
-        percentagebar_mem: List[Union[ThemeRef, ThemeStr]] = \
+        percentagebar_mem: List[ThemeRef | ThemeStr] = \
             curses_helper.percentagebar(7, uip.infopadwidth - 10, memtotal, [
                 (memused - memcached - buffers, ThemeRef("strings", "mem")),
                 (buffers, ThemeRef("strings", "buffers")),
@@ -4320,7 +4320,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         # swap usage:
         # used (red)
         if swaptotal:
-            percentagebar_or_string_swap: List[Union[ThemeRef, ThemeStr]] = \
+            percentagebar_or_string_swap: List[ThemeRef | ThemeStr] = \
                 curses_helper.percentagebar(6, uip.infopadwidth - 10, swaptotal, [
                     (swapused, ThemeRef("strings", "swap_used"))])
             percentagebar_or_string_swap += [
@@ -4330,7 +4330,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         else:
             percentagebar_or_string_swap = [ThemeStr("Disabled", ThemeAttr("types", "none"))]
 
-        tasksarrays: List[List[Union[ThemeRef, ThemeStr]]] = [
+        tasksarrays: List[List[ThemeRef | ThemeStr]] = [
             [
                 ThemeStr("Tasks: ", ThemeAttr("main", "infoheader")),
                 ThemeStr(f"{running}", ThemeAttr("types", "numerical")),
@@ -4405,7 +4405,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                     evlens[i] = max(evlens[i], len(val))
 
         # Draw the events over the bottom of the visible area of the listpad
-        eventarrays: List[Union[ThemeRef, ThemeStr]] = [
+        eventarrays: List[ThemeRef | ThemeStr] = [
             [ThemeStr("Events:", ThemeAttr("main", "listheader_compact"))],
         ]
 
@@ -4472,7 +4472,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                                                      ThemeAttr("types", "value")],
                                        field_separators=[ThemeRef("separators", "keyvalue_taint")])
 
-            nodearrays: List[List[Union[ThemeRef, ThemeStr]]] = [
+            nodearrays: List[List[ThemeRef | ThemeStr]] = [
                 [
                     ThemeStr(f"Node ({selected_node + 1}/{len(nodeinfo)}):",
                              ThemeAttr("main", "listheader"),
@@ -4506,7 +4506,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                 curses_helper.generate_heatmap(node_heatmap_width, node_statuses, selected_node)
             nodearrays += node_heatmap
 
-            podarrays: List[List[Union[ThemeRef, ThemeStr]]] = [
+            podarrays: List[List[ThemeRef | ThemeStr]] = [
                 [
                     ThemeStr(f"Pod ({selected_pod + 1}/{len(podinfo)}):",
                              ThemeAttr("main", "listheader"),
@@ -4691,7 +4691,7 @@ def check_cni_updates(cni: str, current_version: str) -> str:
                                     universal_newlines=True, check=False)
             if result is not None:
                 versionoutput = result.stdout.splitlines()
-                version_regex = re.compile(r"^cilium image \(default\): (.*)")
+                version_regex: re.Pattern[str] = re.compile(r"^cilium image \(default\): (.*)")
                 for line in versionoutput:
                     tmp = version_regex.match(line)
                     if tmp is not None:
@@ -4838,7 +4838,7 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
 
             if not _cnis:
                 cni = "<unknown>"
-                cnistr: List[Union[ThemeRef, ThemeStr]] = [
+                cnistr: List[ThemeRef | ThemeStr] = [
                     ThemeStr(f"{cni}", color_status_group(StatusGroup.UNKNOWN))
                 ]
                 cni_version = "N/A"
@@ -4881,11 +4881,11 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
                 ThemeStr(f"{cni_status[0]}", color_status_group(cni_status[1]))
             ]
 
-            versionarray: List[Union[ThemeRef, ThemeStr]] = [
+            versionarray: List[ThemeRef | ThemeStr] = [
                 ThemeStr("Version: ", ThemeAttr("main", "infoheader")),
             ]
             versionarray += cni_version_str
-            candidateversionarray: List[Union[ThemeRef, ThemeStr]] = [
+            candidateversionarray: List[ThemeRef | ThemeStr] = [
                 ThemeStr("Candidate version: ", ThemeAttr("main", "infoheader")),
             ]
 
@@ -4893,11 +4893,11 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
             candidateversionarray.append(ThemeStr(f"{candidate_version}",
                                                   ThemeAttr("types", "version")))
 
-            namearray: List[Union[ThemeRef, ThemeStr]] = [
+            namearray: List[ThemeRef | ThemeStr] = [
                 ThemeStr("Container Network Interface: ", ThemeAttr("main", "infoheader")),
             ]
             namearray += cnistr
-            statusarray: List[Union[ThemeRef, ThemeStr]] = [
+            statusarray: List[ThemeRef | ThemeStr] = [
                 ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
             ]
             statusarray += cni_status_str
@@ -5052,7 +5052,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 # pylint: disable-next=too-many-branches,too-many-statements
 def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> List[Dict]:
-    helptext: List[Tuple[str, str]] = []
+    helptext: List[tuple[str, str]] = []
 
     if viewtype == "infoview":
         helptext += helptexts.infoviewheader_part1
@@ -5384,11 +5384,11 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 uip.infopad.erase()
             uip.statusbar.erase()
 
-            statusarray1: List[Union[ThemeRef, ThemeStr]] = [
+            statusarray1: List[ThemeRef | ThemeStr] = [
                 ThemeStr("Fields: ", ThemeAttr("statusbar", "infoheader")),
                 ThemeStr(field_index, ThemeAttr("statusbar", "highlight"))
             ]
-            statusarray2: List[Union[ThemeRef, ThemeStr]] = []
+            statusarray2: List[ThemeRef | ThemeStr] = []
 
             for status_data in deep_get(viewref, DictPath("statusmsg"), []):
                 if len(status_data) == 2:
@@ -5449,7 +5449,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             if infopad is not None:
                 y = 0
                 if name_path is not None and name_path:
-                    fieldarray: List[Union[ThemeRef, ThemeStr]] = [
+                    fieldarray: List[ThemeRef | ThemeStr] = [
                         ThemeStr("Name:", ThemeAttr("main", "infoheader")),
                         ThemeStr(f" {deep_get(obj, DictPath(name_path))}",
                                  ThemeAttr("types", "generic"))
@@ -5747,7 +5747,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     timestamp = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
-                    tsthemearray: List[Union[ThemeRef, ThemeStr]] = \
+                    tsthemearray: List[ThemeRef | ThemeStr] = \
                         [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
 
                 if severities is None or uip.yoffset + y >= len(severities):
@@ -5758,7 +5758,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 message = messages[uip.yoffset + y]
                 if uip.search_matches:
                     line_match = uip.yoffset + y in uip.search_matches
-                    match_prefix: List[Union[ThemeRef, ThemeStr]] = \
+                    match_prefix: List[ThemeRef | ThemeStr] = \
                         [ThemeRef("separators", "matchbullet")]
                     if not line_match:
                         match_prefix = \
@@ -6411,7 +6411,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
     uip.refresh_statusbar()
     curses.doupdate()
 
-    facility_regex = re.compile(r"^.*/(.*)")
+    facility_regex: re.Pattern[str] = re.compile(r"^.*/(.*)")
 
     # pylint: disable-next=too-many-nested-blocks
     while True:
@@ -6517,10 +6517,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             uip.refresh_statusbar()
             curses.doupdate()
 
-            timestamps: List[str] = []
-            facilities: List[str] = []
-            severities: List[str] = []
-            messages: Union[List[Union[ThemeRef, ThemeStr]], str] = []
+            timestamps: list[str] = []
+            facilities: list[str] = []
+            severities: list[str] = []
+            messages: list[ThemeRef | ThemeStr] | str = []
             parser = None
             prev_timestamp = None
             prev_facility = ""
@@ -6748,39 +6748,39 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
                 status, status_group, restarts, message, _age = \
                     datagetters.get_container_status(src_statuses, containername)
-                containerarray: List[Union[ThemeRef, ThemeStr]] = [
+                containerarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Container: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{containername}{containertypearray}", ThemeAttr("types", "generic"))
                 ]
-                statusarray: List[Union[ThemeRef, ThemeStr]] = [
+                statusarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{status}", color_status_group(status_group))
                 ]
                 if message != "":
                     statusarray.append(ThemeStr(f" ({message})", ThemeAttr("types", "generic")))
-                restartsarray: List[Union[ThemeRef, ThemeStr]] = [
+                restartsarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Restarts: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{restarts}", ThemeAttr("types", "numerical"))
                 ]
-                podarray: List[Union[ThemeRef, ThemeStr]] = [
+                podarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Pod: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{pod_info.name}", ThemeAttr("types", "generic")),
                 ]
-                containeridarray: List[Union[ThemeRef, ThemeStr]] = [
+                containeridarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Container ID: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{deep_get(container_status, DictPath('containerID'))}",
                              ThemeAttr("types", "generic")),
                 ]
                 image_name, image_version = \
                     get_image_tuple(deep_get(container_status, DictPath("image")))
-                imagearray: List[Union[ThemeRef, ThemeStr]] = [
+                imagearray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Image: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{image_name}", ThemeAttr("types", "generic")),
                     ThemeRef("separators", "version"),
                     ThemeStr(f"{image_version}", ThemeAttr("types", "version")),
                 ]
                 image_id = deep_get(container_status, DictPath("imageID"))
-                imageidarray: List[Union[ThemeRef, ThemeStr]] = [
+                imageidarray: List[ThemeRef | ThemeStr] = [
                     ThemeStr("I", ThemeAttr("main", "infoheader_shortcut")),
                     ThemeStr("mage ID: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{image_id}", ThemeAttr("types", "generic")),
@@ -6802,7 +6802,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                         ThemeStr("Pod: ", ThemeAttr("main", "infoheader")),
                         ThemeStr(f"{podname}", ThemeAttr("types", "generic")),
                     ]
-                    namespacearray: List[Union[ThemeRef, ThemeStr]] = [
+                    namespacearray: List[ThemeRef | ThemeStr] = [
                         ThemeStr("Namespace: ", ThemeAttr("main", "infoheader")),
                         ThemeStr(f"{namespace}", ThemeAttr("types", "namespace")),
                     ]
@@ -6859,7 +6859,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             # We have two different widths of the statusbar
             if uip.maxx - uip.minx > 108:
                 # Wide version
-                statusarray1: List[Union[ThemeRef, ThemeStr]] = [
+                statusarray1: List[ThemeRef | ThemeStr] = [
                     ThemeStr("Updates: ", ThemeAttr("statusbar", "infoheader")),
                     ThemeStr(f"{interval}", ThemeAttr("statusbar", "highlight")),
                     ThemeRef("separators", "statusbar"),
@@ -6881,7 +6881,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     ThemeStr(f"{loglimit}", ThemeAttr("statusbar", "highlight")),
                     ThemeStr(")", ThemeAttr("statusbar", "default")),
                 ]
-                statusarray2: List[Union[ThemeRef, ThemeStr]] = []
+                statusarray2: List[ThemeRef | ThemeStr] = []
                 if not fold_msg:
                     statusarray2 += [
                         ThemeStr("Unfolding messages", ThemeAttr("statusbar", "highlight")),
@@ -7013,7 +7013,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 # FIXME
                 if only_new_dates:
                     if new_date:
-                        tsthemearray: List[Union[ThemeRef, ThemeStr]] = \
+                        tsthemearray: List[ThemeRef | ThemeStr] = \
                             [ThemeStr(datestamp, ThemeAttr("logview", datetype))]
                         new_date = False
                         # If we do empty lines for new dates we need something like this
@@ -7087,7 +7087,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     msgstrarray += facility_extended
 
                 if facility != "":
-                    facilitystr: List[Union[ThemeRef, ThemeStr]] = [
+                    facilitystr: List[ThemeRef | ThemeStr] = [
                         ThemeRef("separators", "facility_prefix"),
                         ThemeStr(facility, ThemeAttr("logview", "facility")),
                         ThemeRef("separators", "facility_suffix"),
@@ -7721,7 +7721,7 @@ def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
 def resourceinfodispatch(stdscr: curses.window, obj: dict,
-                         kind: Union[str, Tuple[str, str]], **kwargs: Any) -> Retval:
+                         kind: str | tuple[str, str], **kwargs: Any) -> Retval:
     """
     Dispatch from an object to the infoview of another object.
 
@@ -8039,34 +8039,45 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
     stdscr.refresh()
 
 
-def __run_playbook(playbookpath: FilePath, nodes: List[str], values: Optional[Dict] = None) -> int:
-    http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
-    https_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
-    no_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
-    verbose = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
+def __run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> int:
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
+    quiet: bool = deep_get(kwargs, DictPath("quiet"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
+
+    # Set necessary Ansible keys before running playbooks
+    http_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
+    https_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#https_proxy"), "")
+    no_proxy: str = deep_get(cmtlib.cmtconfig, DictPath("Network#no_proxy"), "")
 
     use_proxy = "no"
-    if http_proxy is not None and http_proxy or https_proxy is not None and https_proxy:
+    if http_proxy or https_proxy:
         use_proxy = "yes"
-    values["use_proxy"] = use_proxy
-    values["http_proxy"] = http_proxy
-    values["https_proxy"] = https_proxy
-    values["no_proxy"] = no_proxy
+
+    values = {
+        "http_proxy": http_proxy,
+        "https_proxy": https_proxy,
+        "no_proxy": no_proxy,
+        "use_proxy": use_proxy,
+    }
+    merged_values = {**values, **extra_values}
 
     retval, ansible_results = \
-        ansible_run_playbook_on_selection(playbookpath, selection=nodes,
-                                          values=values, verbose=verbose)
+        ansible_run_playbook_on_selection(playbookpath, selection=hosts, values=merged_values,
+                                          verbose=verbose, quiet=quiet)
     if verbose:
         ansithemeprint([ANSIThemeStr("", "default")])
 
-    ansible_print_play_results(retval, ansible_results, verbose=verbose)
+    if not quiet:
+        ansible_print_play_results(retval, ansible_results, verbose=verbose)
 
     return retval
 
 
 def run_playbook(playbook: Dict, nodes: List[str],
-                 values: Optional[Dict] = None) -> Tuple[int, Dict]:
-    return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes, values=values)
+                 values: Optional[Dict] = None) -> tuple[int, Dict]:
+    verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
+    return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes,
+                          extra_values=values, verbose=verbose)
 
 
 def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
@@ -8488,7 +8499,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
     if not result.stdout:
         return Retval.MATCH
 
-    diff_regex = re.compile(r"^(\s*)(.*)")
+    diff_regex: re.Pattern[str] = re.compile(r"^(\s*)(.*)")
 
     for line in result.stdout.splitlines():
         if line.startswith("+"):
@@ -8793,6 +8804,9 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: 
 
 # pylint: disable=unused-argument,too-many-locals,too-many-branches
 def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+    verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
+    verbose = deep_get(kwargs, DictPath("verbose"), verbose)
+
     values.pop("_tagged_items", None)
     msg = \
         [ANSIThemeStr("Executing playbook “", "action"),
@@ -8818,7 +8832,8 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
 
     for preplaybook in runbefore:
         preplaybookpath = get_playbook_path(FilePath(f"{preplaybook}.yaml"))
-        if (tmpretval := __run_playbook(preplaybookpath, items, values=values)):
+        if (tmpretval := __run_playbook(preplaybookpath, items,
+                                        extra_values=values, verbose=verbose)):
             if retval == 0:
                 retval = tmpretval
             break
@@ -8833,7 +8848,8 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
 
         for postplaybook in runafter:
             postplaybookpath = get_playbook_path(FilePath(f"{postplaybook}.yaml"))
-            if (tmpretval := __run_playbook(postplaybookpath, items, values=values)):
+            if (tmpretval := __run_playbook(postplaybookpath, items,
+                                            extra_values=values, verbose=verbose)):
                 if retval == 0:
                     retval = tmpretval
                 break
@@ -9005,7 +9021,7 @@ def list_configuration_files(basedir):
 
 
 # pylint: disable-next=too-many-locals
-def populate_actionlist(**kwargs: Any) -> Tuple[List[Dict], List[Dict]]:
+def populate_actionlist(**kwargs: Any) -> tuple[List[Dict], List[Dict]]:
     """
     Populate the list of actions based on context and policy.
 
@@ -9086,7 +9102,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
     if action_list is None:
         action_list = {}
 
-    yaml_regex = re.compile(r"^(.*)\.ya?ml$")
+    yaml_regex: re.Pattern[str] = re.compile(r"^(.*)\.ya?ml$")
 
     for playbookpath in Path(path).iterdir():
         if playbookpath.name.startswith(("~", ".")):
@@ -9203,7 +9219,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def populate_playbooklist(**kwargs: Any) -> Tuple[List[Dict], Dict]:
+def populate_playbooklist(**kwargs: Any) -> tuple[List[Dict], Dict]:
     """
     Populate the list of playbooks based on context and policy.
 
@@ -9817,7 +9833,7 @@ key_mappings = {
 
 
 def map_key(view_file: str, shortcut: str, activatedfun,
-            key: str, modifier: str) -> Tuple[Union[int, List[int]], str]:
+            key: str, modifier: str) -> tuple[int | list[int], str]:
     if modifier and modifier not in ("ctrl", "shift"):
         sys.exit(f"View-file {view_file} is invalid: "
                  f"unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
@@ -9896,7 +9912,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
     view_files = []
 
-    yaml_regex = re.compile(r"^(.*)\.ya?ml$")
+    yaml_regex: re.Pattern[str] = re.compile(r"^(.*)\.ya?ml$")
 
     for view_dir in view_dirs:
         if view_dir.startswith("{HOME}"):
@@ -9906,12 +9922,13 @@ def populate_views(force_refresh: bool = False) -> None:
             continue
 
         for filename in natsorted(os.listdir(view_dir)):
+            filename = cast(str, filename)
             if filename.startswith(("~", ".")):
                 continue
             if not filename.endswith((".yaml", ".yml")):
                 continue
 
-            match_tmp = yaml_regex.match(filename)
+            match_tmp: re.Match[str] = yaml_regex.match(filename)
             tmp = match_tmp[1]
             if "." in tmp:
                 kind, api_family = tmp.split(".", 1)
@@ -10254,7 +10271,7 @@ def populate_views(force_refresh: bool = False) -> None:
                     _header = deep_get(infopad_rows,
                                        DictPath(f"{row}#header"),
                                        [["<unset>", ["types", "unset"]]])
-                    header: List[Union[ThemeRef, ThemeStr]] = []
+                    header: List[ThemeRef | ThemeStr] = []
                     try:
                         for string, formatting in _header:
                             header.append(ThemeStr(string,
@@ -10606,7 +10623,7 @@ def setupui(stdscr: curses.window) -> None:
 
 
 # pylint: disable-next=unused-argument
-def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
+def list_namespaces(options: List[tuple[str, str]], args: List[str]) -> None:
     """
     List all available namespaces.
 
@@ -10662,7 +10679,7 @@ def list_namespaces(options: List[Tuple[str, str]], args: List[str]) -> None:
 
 
 # pylint: disable-next=unused-argument,disable-next=too-many-branches,too-many-statements
-def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
+def list_views(options: List[tuple[str, str]], args: List[str]) -> None:
     """
     List available views and their supported fields and default sort column.
 
@@ -10763,7 +10780,7 @@ def list_views(options: List[Tuple[str, str]], args: List[str]) -> None:
                                  "of the field names.", "default")])
 
 
-def checkforview(arg: Union[str, Tuple[str, str]]) -> Optional[str]:
+def checkforview(arg: str | tuple[str, str]) -> Optional[str]:
     """
     Check whether a view exists.
 
@@ -10843,7 +10860,7 @@ def customise_listviews() -> None:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def open_view(options: List[Tuple[str, str]], args: List[str]) -> None:
+def open_view(options: List[tuple[str, str]], args: List[str]) -> None:
     """
     Open the specified view.
 

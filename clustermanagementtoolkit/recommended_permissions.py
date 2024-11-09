@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -10,7 +11,6 @@ used when auditing the local system.
 """
 
 import os
-from typing import Dict, List
 
 from clustermanagementtoolkit.cmttypes import FilePath
 
@@ -32,7 +32,7 @@ from clustermanagementtoolkit.cmtpaths import KUBE_CREDENTIALS_FILE
 # .ssh/id_*.pub should be 644, 640, or 600
 # .ssh/id_* should be 600
 
-recommended_directory_permissions: List[Dict] = [
+recommended_directory_permissions: list[dict] = [
     {
         "path": BINDIR,
         "alertmask": 0o022,
@@ -188,7 +188,7 @@ recommended_directory_permissions: List[Dict] = [
     },
 ]
 
-recommended_file_permissions: List[Dict] = [
+recommended_file_permissions: list[dict] = [
     {
         "path": FilePath(os.path.join(BINDIR, "cmtadm")),
         "alertmask": 0o022,

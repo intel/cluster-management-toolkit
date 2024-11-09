@@ -9,7 +9,7 @@
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
 
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 # Requires: python3-jinja2
 import os
 from pathlib import Path, PosixPath

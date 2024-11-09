@@ -8,7 +8,7 @@
     exec /usr/bin/env python3 "$0" "$@"' #'''
 # The above hack is to handle distros where /usr/bin/python3
 # doesn't point to the latest version of python3 they provide
-# Requires: python3 (>= 3.8)
+# Requires: python3 (>= 3.9)
 #
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
@@ -20,7 +20,7 @@ from typing import Any, Dict, Tuple
 from unittest import mock
 import yaml
 
-from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
+from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, ProgrammingError
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
 from clustermanagementtoolkit.ansithemeprint import ansithemeprint, init_ansithemeprint
 from clustermanagementtoolkit import checks
@@ -36,6 +36,206 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
     for line in dump.splitlines():
         result += f"{' '.ljust(base_indent)}{line}\n"
     return result
+
+
+def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_disable_strict_host_key_checking
+
+    if result:
+        # Indata format:
+        # (cmtconfig_dict, (abort, critical, error, warning, note), expected_exception)
+        testdata: Tuple = (
+            # disablestricthostkeychecking = False
+            (
+                {
+                    "Nodes": {
+                        "disablestricthostkeychecking": False,
+                    }
+                },
+                (False, 0, 0, 0, 0),
+                None,
+            ),
+            # disablestricthostkeychecking unset; default is False
+            (
+                {
+                    "Nodes": {}
+                },
+                (False, 0, 0, 0, 0),
+                None,
+            ),
+            # disablestricthostkeychecking = True
+            (
+                {
+                    "Nodes": {
+                        "disablestricthostkeychecking": True,
+                    }
+                },
+                (False, 0, 1, 0, 0),
+                None,
+            ),
+        )
+
+        for cmtconfig_dict, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(cmtconfig_dict=cmtconfig_dict)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              " cmtconfig_dict:\n" \
+                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
+                              f"         result: {tmp}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  " cmtconfig_dict:\n" \
+                                  f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              " cmtconfig_dict:\n" \
+                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_check_sudo_configuration(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_sudo_configuration
+    user = getuser()
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_response, expected_result)
+        testdata = (
+            # User can sudo without password; verbose
+            (
+                {
+                    "user": user,
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                "    (ALL) NOPASSWD: ALL",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+            ),
+            # User can sudo without password; quiet
+            (
+                {
+                    "user": user,
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                "    (ALL) NOPASSWD: ALL",
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+            ),
+            # User can sudo with password; verbose
+            (
+                {
+                    "user": user,
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                "    (ALL : ALL) ALL",
+                # We shouldn't exit; 1 new error
+                (False, 0, 1, 0, 0),
+                None,
+            ),
+            # User can sudo with password; quiet
+            (
+                {
+                    "user": user,
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                "    (ALL : ALL) ALL",
+                # We shouldn't exit; 1 new error
+                (False, 0, 1, 0, 0),
+                None,
+            ),
+            # User cannot sudo at all; verbose
+            (
+                {
+                    "user": user,
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                "User foobar is not allowed to run sudo on baz",
+                # We shouldn't exit; 1 new error
+                (False, 0, 1, 0, 0),
+                None,
+            ),
+            # User cannot sudo at all; quiet
+            (
+                {
+                    "user": user,
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                "User foobar is not allowed to run sudo on baz",
+                # We shouldn't exit; 1 new error
+                (False, 0, 1, 0, 0),
+                None,
+            ),
+            # No user provided; verbose
+            (
+                {
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                "",
+                # We should get an Exception
+                None,
+                ProgrammingError,
+            ),
+        )
+
+        for kwargs, mock_response, expected_result, expected_exception in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.checks.execute_command_with_response",
+                                return_value=mock_response):
+                    tmp = fun(**kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"      exception: {type(e)}\n" \
+                                  f"       expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"      exception: {type(e)}\n" \
+                              f"       expected: {expected_result}"
+                    result = False
+                    break
+    return message, result
 
 
 def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool]:
@@ -148,6 +348,18 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
                 (False, 1, 0, 0, 0),
                 Exception,
                 "errno.EPERM",
+            ),
+            # No user provided; verbose
+            (
+                {
+                    "verbose": True,
+                    "exit_on_error": True,
+                },
+                f"{TEST_DIR}/13-correct_directory",
+                # We should get an Exception
+                None,
+                ProgrammingError,
+                None,
             ),
         )
 
@@ -338,7 +550,7 @@ def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str,
                         ]
                     },
                     "verbose": True,
-                    "quiet_on_ok": True,
+                    "quiet_on_ok": False,
                 },
                 # We shouldn't exit and no new errors
                 (False, 0, 0, 0, 0),
@@ -356,7 +568,7 @@ def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str,
                         ]
                     },
                     "verbose": False,
-                    "quiet_on_ok": False,
+                    "quiet_on_ok": True,
                 },
                 # We shouldn't exit and no new errors
                 (False, 0, 0, 0, 0),
@@ -374,10 +586,41 @@ def test_check_insecure_kube_config_options(verbose: bool = False) -> Tuple[str,
                         ]
                     },
                     "verbose": True,
-                    "quiet_on_ok": True,
+                    "quiet_on_ok": False,
                 },
                 # We shouldn't exit; 1 new critical
                 (False, 1, 0, 0, 0),
+            ),
+            # No matching cluster; quiet
+            (
+                {
+                    "cluster_name": "test",
+                    "kubeconfig": {
+                        "clusters": [
+                            {
+                                "name": "test2",
+                                "insecure-skip-tls-verify": True,
+                            },
+                        ]
+                    },
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+            ),
+            # No configured clusters; quiet
+            (
+                {
+                    "cluster_name": "test",
+                    "kubeconfig": {
+                        "clusters": []
+                    },
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
             ),
         )
 
@@ -442,81 +685,15 @@ def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_disable_strict_host_key_checking(verbose: bool = False) -> Tuple[str, bool]:
-    message = ""
-    result = True
-
-    fun = checks.check_disable_strict_host_key_checking
-
-    if result:
-        # Indata format:
-        # (cmtconfig_dict, (abort, critical, error, warning, note), expected_exception)
-        testdata: Tuple = (
-            # disablestricthostkeychecking = False
-            (
-                {
-                    "Nodes": {
-                        "disablestricthostkeychecking": False,
-                    }
-                },
-                (False, 0, 0, 0, 0),
-                None,
-            ),
-            # disablestricthostkeychecking unset; default is False
-            (
-                {
-                    "Nodes": {}
-                },
-                (False, 0, 0, 0, 0),
-                None,
-            ),
-            # disablestricthostkeychecking = True
-            (
-                {
-                    "Nodes": {
-                        "disablestricthostkeychecking": True,
-                    }
-                },
-                (False, 0, 1, 0, 0),
-                None,
-            ),
-        )
-
-        for cmtconfig_dict, expected_result, expected_exception in testdata:
-            try:
-                tmp = fun(cmtconfig_dict=cmtconfig_dict)
-                if tmp != expected_result:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              " cmtconfig_dict:\n" \
-                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
-                              f"         result: {tmp}\n" \
-                              f"       expected: {expected_result}"
-                    result = False
-                    break
-            except Exception as e:
-                if expected_exception is not None:
-                    if isinstance(e, expected_exception):
-                        pass
-                    else:
-                        message = f"{fun.__name__}() did not yield expected result:\n" \
-                                  " cmtconfig_dict:\n" \
-                                  f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
-                                  f"      exception: {type(e)}\n" \
-                                  f"       expected: {expected_exception}"
-                        result = False
-                        break
-                else:
-                    message = f"{fun.__name__}() did not yield expected result:\n" \
-                              " cmtconfig_dict:\n" \
-                              f"{yaml_dump(cmtconfig_dict, base_indent=17)}\n" \
-                              f"      exception: {type(e)}\n" \
-                              f"       expected: {expected_result}"
-                    result = False
-                    break
-    return message, result
-
-
 tests: Dict = {
+    ("check_disable_strict_host_key_checking()",): {
+        "callable": test_check_disable_strict_host_key_checking,
+        "result": None,
+    },
+    ("check_sudo_configuration()",): {
+        "callable": test_check_sudo_configuration,
+        "result": None,
+    },
     ("check_ansible_dir_permissions()",): {
         "callable": test_check_ansible_dir_permissions,
         "result": None,
@@ -531,10 +708,6 @@ tests: Dict = {
     },
     ("check_insecure_kube_config_options()",): {
         "callable": test_check_insecure_kube_config_options,
-        "result": None,
-    },
-    ("check_disable_strict_host_key_checking()",): {
-        "callable": test_check_disable_strict_host_key_checking,
         "result": None,
     },
 }

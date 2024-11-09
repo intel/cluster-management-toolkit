@@ -54,7 +54,7 @@ or ask for help.
 | `logparser.py`        | `tests/logtests`       |                                      |
 | `objgetters.py`       | `tests/ogtests`        |                                      |
 | `networkio.py`        | `tests/iotests`        |                                      |
-| `reexecutor.py`       | `tests/fetch_async`    | Cluster setup mandatory              |
+| `reexecutor.py`       | `tests/async_fetch`    | Cluster setup mandatory              |
 
 _Note_:
 
@@ -181,7 +181,7 @@ parameters, returns). Code SHOULD be documented if it's not immediately obvious 
 
 ### Python Version
 
-__CMT__ uses Python 3.8 to allow for compatibility with some (not all) older enterprise distros.
+__CMT__ uses Python 3.9 to allow for compatibility with some (not all) older enterprise distros.
 This means that type annotations and the features used MUST NOT require newer versions of Python.
 In some corner cases this means using Any for type hints, and being very generic about the definitions
 for dicts.
