@@ -241,16 +241,17 @@ pylint-markdown:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n" ;\
 		exit 0 ;\
 	fi ;\
-	printf -- "\n\nRunning pylint to generate Pylint Markdown output\n\n" ;\
+	tmpfile=$$(mktemp); \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
 		result=$$($$cmd --disable $(PYLINT_IGNORE) $$file | grep "Your code" | sed -e 's/Your code has been rated at //;s/ (previous run.*//') ;\
-		row="| $$file | $$result |\n" ;\
-		printf -- "$$row" ;\
-	done
+		row="$$file | $$result\n" ;\
+		printf -- "$$row" >> $${tmpfile} ;\
+	done && \
+	./mdtable.py $${tmpfile} "Source file" "Score" && rm $${tmpfile}
 
 pylint-tests:
 	@cmd=pylint ;\
@@ -317,16 +318,17 @@ mypy-markdown:
 		printf -- "\n\n$$cmd not installed; skipping.\n\n\n"; \
 		exit 0; \
 	fi; \
-	printf -- "\n\nRunning mypy to check Python typing\n\n"; \
+	tmpfile=$$(mktemp); \
 	for file in $(python_executables) clustermanagementtoolkit/*.py; do \
 		case $$file in \
 		'cmtlog.py'|'noxfile.py') \
 			continue;; \
 		esac ;\
 		result=$$($$cmd --explicit-package-bases --ignore-missing --disallow-untyped-calls --disallow-untyped-defs --disallow-incomplete-defs --check-untyped-defs --disallow-untyped-decorators $$file | grep -E "^Found|^Success") ;\
-		row="| $$file | $$result |\n" ;\
-		printf -- "$$row" ;\
-	done
+		row="$$file | $$result\n" ;\
+		printf -- "$$row" >> $${tmpfile} ;\
+	done && \
+	./mdtable.py $${tmpfile} "Source file" "Score" && rm $${tmpfile}
 
 nox: create_test_symlinks
 	@cmd=nox ;\
