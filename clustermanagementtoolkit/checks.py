@@ -524,7 +524,7 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-statements
+# pylint: disable-next=too-many-statements,too-many-locals
 def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the versions of the various Kubernetes match properly
@@ -549,11 +549,11 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
     note: int = deep_get(kwargs, DictPath("note"), 0)
-    verbose = deep_get(kwargs, DictPath("verbose"), True)
-    quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
+    verbose: bool = deep_get(kwargs, DictPath("verbose"), True)
+    quiet_on_ok: bool = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
-    mismatch = False
-    abort = False
+    mismatch: bool = False
+    abort: bool = False
 
     # Is the version of kubectl within one version of the cluster version?
     if verbose:
@@ -570,7 +570,7 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                         ANSIThemeStr(" version; will abort.\n", "default")], stderr=True)
         abort = True
         critical += 1
-    elif verbose == True:
+    elif verbose:
         ansithemeprint([ANSIThemeStr("         kubectl ", "programname"),
                         ANSIThemeStr("version: ", "default"),
                         ANSIThemeStr(f"{kubectl_git_version}", "version")])

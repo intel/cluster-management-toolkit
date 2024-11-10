@@ -533,7 +533,7 @@ def format_yaml_line(line: str, **kwargs: Any) -> tuple[list[ThemeRef | ThemeStr
     return tmpline, remnants
 
 
-# pylint: disable-next=too-many-branches,too-many-locals
+# pylint: disable-next=too-many-branches,too-many-locals,too-many-statements
 def format_yaml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
     YAML formatter; returns the text with syntax highlighting for YAML
@@ -1348,6 +1348,7 @@ def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
 
         tmp = key_value_regex.match(line)
         if tmp is not None:
+            comment = ""
             indentation = tmp[1]
             key = tmp[2]
             separator = tmp[3]
@@ -1362,8 +1363,6 @@ def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
                 if tmp is not None:
                     value = tmp[1]
                     comment = tmp[2]
-                else:
-                    comment = ""
             tmpline += [
                 ThemeStr(f"{indentation}", ThemeAttr("types", "generic")),
                 ThemeStr(f"{key}", ThemeAttr("types", "toml_key")),
@@ -1403,8 +1402,10 @@ def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
     key_value_regex = re.compile(r"^(\s*)(\S*)(\s*)(.*)")
 
     for line in lines:
+        tmpline: list[ThemeRef | ThemeStr] = []
+
         if line.lstrip().startswith("#"):
-            tmpline: list[ThemeRef | ThemeStr] = [
+            tmpline = [
                 ThemeStr(line, ThemeAttr("types", "ini_comment")),
             ]
         elif line.lstrip().startswith("[") and line.rstrip().endswith("]"):
@@ -1429,7 +1430,8 @@ def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
                     ThemeStr(f"{separator}", ThemeAttr("types", "ini_key_separator")),
                     ThemeStr(f"{value}", ThemeAttr("types", "ini_value")),
                 ]
-        dumps.append(tmpline)
+        if tmpline:
+            dumps.append(tmpline)
     return dumps
 
 

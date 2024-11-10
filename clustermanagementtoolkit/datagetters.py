@@ -312,6 +312,7 @@ def datagetter_latest_version(obj: dict[str, Any],
             tmp_versions.append((major, minor, patch))
         sorted_versions = sorted(tmp_versions, reverse=True)
         latest_major = f"v{sorted_versions[0][0]}"
+        latest_minor = ""
         if sorted_versions[0][1] == 0:
             latest_minor = ""
         elif sorted_versions[0][1] == -1:

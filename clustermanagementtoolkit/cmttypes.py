@@ -556,7 +556,8 @@ def validate_args(kwargs_spec: dict[str, Any], kwargs: Any) -> None:
     """
     results: dict = {}
     msg: list[list[tuple[str, str]]] = []
-    function = "<unknown>"  # This is just to make pylint happy
+    function: str = "<unknown>"  # This is just to make pylint happy
+    subexception = None
 
     try:
         # This is to get the necessary stack info
