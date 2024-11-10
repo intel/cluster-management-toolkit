@@ -110,9 +110,10 @@ def get_conditions(obj: dict, **kwargs: Any) -> list[dict]:
     return condition_list
 
 
+# pylint: disable-next=too-many-locals
 def get_kubernetes_objects(obj: dict, **kwargs: Any) -> list[tuple[str, ...]]:
     """
-    Get a list of fields from Kubernetes objects
+    Get a list of fields from Kubernetes objects.
 
         Parameters:
             obj (dict): The object to get data from
@@ -298,6 +299,7 @@ def get_list_as_list(obj: dict, **kwargs: Any) -> list[Any]:
             ([dict]): A list of data
     """
     vlist: list[Any] = []
+    # pylint: disable-next=too-many-nested-blocks
     if "path" in kwargs:
         raw_path = deep_get(kwargs, DictPath("path"))
         if isinstance(raw_path, str):
@@ -345,6 +347,7 @@ def get_list_as_list(obj: dict, **kwargs: Any) -> list[Any]:
     return vlist
 
 
+# pylint: disable-next=too-many-locals
 def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Given a path to a dict (or a list of dicts), generate a list with all items
@@ -375,6 +378,7 @@ def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
         for key, value in item.items():
             tmp_vlist.append({"key": key, "value": value})
 
+    # pylint: disable-next=too-many-nested-blocks
     for item in tmp_vlist:
         newobj: list[tuple] = []
         for field in fields:
@@ -399,7 +403,7 @@ def get_dict_list(obj: dict, **kwargs: Any) -> list[Any]:
     return vlist
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_list_fields(obj: dict, **kwargs: Any) -> list[Any]:
     """
     Get the specified fields from a dict list in list format.
@@ -430,6 +434,7 @@ def get_list_fields(obj: dict, **kwargs: Any) -> list[Any]:
                 default = ""
                 value_type = "value"
                 quote = False
+                index_template = "<<<index>>>"
                 if isinstance(field, dict):
                     default = deep_get(field, DictPath("default"), "")
                     index_template = deep_get(field, DictPath("index_template"), "<<<index>>>")
@@ -516,7 +521,7 @@ def get_package_version_list(obj: dict, **kwargs: Any) -> Optional[list[tuple[st
     return package_versions
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str, str]]:
     """
     Get a list of pod affinities.
@@ -545,6 +550,7 @@ def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str,
 
             selectors = ""
             for item in deep_get(obj, DictPath(f"spec#affinity#{atype}#{policy}"), []):
+                items = []
                 topology = ""
                 if isinstance(item, dict):
                     items = [item]
@@ -578,7 +584,7 @@ def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str,
 
                     if tmp2 is None:
                         continue
-                    elif isinstance(tmp2, list):
+                    if isinstance(tmp2, list):
                         selectors = make_set_expression(tmp2)
                     elif isinstance(tmp2, dict):
                         selectors = make_label_selector(tmp2)
@@ -590,7 +596,7 @@ def get_pod_affinity(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str,
     return affinities
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str]]]:
     """
     Get a list of all pods referencing a configmap.
@@ -670,7 +676,7 @@ def get_pod_configmaps(obj: dict, **kwargs: Any) -> Optional[list[tuple[str, str
     return vlist
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=too-many-locals
 def get_prepopulated_list(obj: dict, **kwargs: Any) -> list[dict]:
     """
     Get a prepopulated list of actions;
@@ -825,7 +831,6 @@ def get_resources(obj: dict, **kwargs: Any) -> list[tuple[str, str, str]]:
     return resources
 
 
-# pylint: disable-next=unused-argument
 def get_strings_from_string(obj: dict, **kwargs: Any) -> list[list[str]]:
     """
     Get a list of strings from a string with embedded newlines.
@@ -945,7 +950,7 @@ def get_security_context(obj: dict, **kwargs: Any) -> list[tuple[str, str]]:
     return security_policies
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=too-many-locals
 def get_svc_port_target_endpoints(obj: dict, **kwargs: Any) -> list[tuple[str, str, str, str]]:
     """
     Get the Service port target endpoints.

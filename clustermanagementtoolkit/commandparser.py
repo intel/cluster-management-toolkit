@@ -418,7 +418,6 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-# pylint: disable-next=unused-argument
 def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Display usage information for a single command

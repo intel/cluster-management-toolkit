@@ -182,10 +182,9 @@ def format_list(items: Any, fieldlen: int, pad: int,
 # references is unused for now, but will eventually be used to compare against
 # reference values (such as using other paths to get the range, instead of getting
 # it static from formatting#mapping)
-# pylint: disable=unused-argument,too-many-locals,too-many-statements,too-many-branches
-def map_value(value: Any,
-              references: Any = None,
-              selected: bool = False,
+
+# pylint: disable-next=unused-argument,too-many-locals,too-many-statements,too-many-branches
+def map_value(value: Any, references: Any = None, selected: bool = False,
               default_field_color: ThemeAttr = ThemeAttr("types", "generic"),
               mapping: Optional[dict] = None) -> tuple[ThemeRef | ThemeStr, str]:
     """
@@ -319,6 +318,7 @@ def align_and_pad(array: Sequence[ThemeRef | ThemeStr], pad: int,
     return tmp_array
 
 
+# pylint: disable-next=too-many-branches
 def format_numerical_with_units(string: str, ftype: str,
                                 selected: bool, non_units: Optional[set] = None,
                                 separator_lookup: Optional[dict] = None) \
@@ -416,7 +416,7 @@ def generator_age_raw(value: int | str, selected: bool) -> list[ThemeRef | Theme
     return array
 
 
-# pylint: disable=unused-argument,too-many-arguments
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -429,7 +429,7 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable=unused-argument,too-many-arguments,too-many-locals,too-many-branches
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
                       **formatting: dict) -> Sequence[ThemeRef | ThemeStr]:
@@ -491,6 +491,7 @@ def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
                     ralign: bool, selected: bool,
                     **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -521,7 +522,7 @@ def generator_basic(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -535,6 +536,7 @@ def generator_hex(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=too-many-locals,too-many-arguments,too-many-positional-arguments
 def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
                    ralign: bool, selected: bool,
                    **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -576,6 +578,7 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
                        mapping=mapping)
 
 
+# pylint: disable-next=too-many-branches,too-many-locals,too-many-arguments,too-many-positional-arguments
 def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
                                ralign: bool, selected: bool,
                                **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -649,7 +652,7 @@ def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
                        field_suffixes=field_suffixes)
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
                   ralign: bool, selected: bool,
                   **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -686,7 +689,7 @@ def generator_mem(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_mem_single(obj: dict, field: str, fieldlen: int, pad: int,
                          ralign: bool, selected: bool,
                          **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -699,7 +702,7 @@ def generator_mem_single(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_numerical(obj: dict, field: str, fieldlen: int, pad: int,
                         ralign: bool, selected: bool,
                         **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -721,6 +724,7 @@ def generator_numerical(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: int,
                                    ralign: bool, selected: bool,
                                    **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -743,6 +747,7 @@ def generator_numerical_with_units(obj: dict, field: str, fieldlen: int, pad: in
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
                      ralign: bool, selected: bool,
                      **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -759,10 +764,27 @@ def generator_status(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=unused-argument,too-many-arguments,too-many-positional-arguments
 def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
                         ralign: bool, selected: bool,
                         **formatting: dict) -> list[ThemeRef | ThemeStr]:
+    """
+    Generate a formatted string either from a timestamp or a string;
+    special strings such as "<none>" are also handled.
+
+        Parameters:
+            obj (dict): The object to get data from
+            field (str): The field in the object to get data from
+            fieldlen (int): The length of the field
+            pad (int): The amount of padding
+            ralign (bool): Should the text be right-aligned?
+            selected (bool): Should the generated field be selected?
+            **formatting (dict): Formatting for the data
+        Returns:
+            ([ThemeRef | ThemeStr]): A formatted string
+    """
     array: list[ThemeRef | ThemeStr] = []
+    string: str = ""
 
     value = getattr(obj, field)
 
@@ -788,6 +810,7 @@ def generator_timestamp(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
                                  ralign: bool, selected: bool,
                                  **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -842,6 +865,7 @@ def generator_timestamp_with_age(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def generator_value_mapper(obj: dict, field: "str", fieldlen: int, pad: int,
                            ralign: bool, selected: bool,
                            **formatting: dict) -> list[ThemeRef | ThemeStr]:
@@ -957,6 +981,7 @@ def __fix_to_str(fix: list[ThemeRef | tuple[str, str]] | ThemeRef | tuple[str, s
 
 
 # For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-locals
 def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
     """
     Return the field with separators, prefixes, suffixes, ellipsis, etc.,
@@ -986,11 +1011,7 @@ def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
     field_prefixes: list[ThemeRef] = deep_get(kwargs, DictPath("field_prefixes"))
     field_suffixes: list[ThemeRef] = deep_get(kwargs, DictPath("field_suffixes"))
 
-    try:
-        items = getattr(obj, field)
-    except AttributeError:
-        import sys
-        sys.exit(str(dir(obj)))
+    items = getattr(obj, field)
 
     strings: list[str] = []
 
@@ -1040,6 +1061,7 @@ def processor_list(obj: Type, field: str, **kwargs: Any) -> str:
 
 
 # For the list processor to work we need to know the length of all the separators
+# pylint: disable-next=too-many-locals
 def processor_list_with_status(obj: Type, field: str, **kwargs: Any) -> str:
     """
     Return the field with separators, prefixes, suffixes, ellipsis, etc.,
@@ -1156,6 +1178,7 @@ default_processor: dict[Callable, Callable] = {
 
 # The return type of the formatting will be the same
 # as the type of the default, so default == None is a programming error
+# pylint: disable-next=too-many-branches
 def get_formatting(field: dict[str, Any],
                    formatting: str,
                    default: dict[str, Any]) \
@@ -1284,6 +1307,7 @@ formatter_to_generator_and_processor: dict[str, dict[str, Any]] = {
 
 
 # This generates old-style fields from new-style fields
+# pylint: disable-next=too-many-locals
 def get_formatter(field: dict) -> dict:
     """
     Based on formatter, generator, processor, etc and data type,
@@ -1441,6 +1465,7 @@ builtin_fields: dict[str, dict[str, Any]] = {
 }
 
 
+# pylint: disable-next=too-many-branches,too-many-locals
 def fieldgenerator(view: str, selected_namespace: str = "",
                    **kwargs: Any) -> tuple[Optional[dict],
                                            Optional[list[str]], Optional[str], bool]:

@@ -1186,6 +1186,477 @@ def test_color_status_group(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_window_tee_hline(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.window_tee_hline
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (y-position, start, end, formatting, expected_result, expected_exception)
+        testdata = (
+            # Without custom formatting
+            (
+                0, 0, 5, None,
+                None,
+                None,
+            ),
+            # With custom formatting
+            (
+                0, 0, 5, ThemeAttr("logo", "bright"),
+                None,
+                None,
+            ),
+        )
+
+        for ypos, start, end, formatting, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(win, ypos, start, end, formatting)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_window_tee_vline(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.window_tee_vline
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (x-position, start, end, formatting, expected_result, expected_exception)
+        testdata = (
+            # Without custom formatting
+            (
+                0, 0, 5, None,
+                None,
+                None,
+            ),
+            # With custom formatting
+            (
+                0, 0, 5, ThemeAttr("logo", "bright"),
+                None,
+                None,
+            ),
+        )
+
+        for xpos, start, end, formatting, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(win, xpos, start, end, formatting)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_scrollbar_vertical(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.scrollbar_vertical
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (x-position, miny, maxy, height, yoffset, clear_color,
+        #  expected_result, expected_exception)
+        testdata = (
+            # Does not fit in visible area
+            (
+                0, 0, 10, 30, 5, ThemeAttr("windowwidget", "boxdrawing"),
+                ((0, 0), (10, 0), (3, 0, 3)),
+                None,
+            ),
+            # Fits in visible area
+            (
+                0, 0, 10, 5, 0, ThemeAttr("windowwidget", "boxdrawing"),
+                ((-1, -1), (-1, -1), (-1, -1, -1)),
+                None,
+            ),
+        )
+
+        for xpos, miny, maxy, height, yoffset, clear_color, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(win, xpos, miny, maxy, height, yoffset, clear_color)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_scrollbar_horizontal(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.scrollbar_horizontal
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (y-position, minx, maxx, width, xoffset, clear_color,
+        #  expected_result, expected_exception)
+        testdata = (
+            # Does not fit in visible area
+            (
+                0, 0, 10, 30, 5, ThemeAttr("windowwidget", "boxdrawing"),
+                ((0, 0), (0, 10), (0, 3, 5)),
+                None,
+            ),
+            # Fits in visible area
+            (
+                0, 0, 10, 5, 0, ThemeAttr("windowwidget", "boxdrawing"),
+                ((-1, -1), (-1, -1), (-1, -1, -1)),
+                None,
+            ),
+        )
+
+        for ypos, minx, maxx, width, xoffset, clear_color, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(win, ypos, minx, maxx, width, xoffset, clear_color)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_generate_heatmap(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.generate_heatmap
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (maxwidth, stgroups, selected, expected_result, expected_exception)
+        testdata = (
+            # Repeat statusgroups, should be compacted
+            (
+                20, [StatusGroup.OK, StatusGroup.OK, StatusGroup.OK, StatusGroup.OK,
+                     StatusGroup.ADMIN, StatusGroup.PENDING, StatusGroup.OK], 0,
+                [[ThemeStr('█', ThemeAttr('main', 'status_ok'), True),
+                  ThemeStr('■■■', ThemeAttr('main', 'status_ok'), False),
+                  ThemeStr('■', ThemeAttr('main', 'status_admin'), False),
+                  ThemeStr('■', ThemeAttr('main', 'status_pending'), False),
+                  ThemeStr('■', ThemeAttr('main', 'status_ok'), False)]],
+                None,
+            ),
+            # No stgroups
+            (
+                20, [], 0,
+                [],
+                None,
+            ),
+        )
+
+        for maxwidth, stgroups, selected, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(maxwidth, stgroups, selected)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_percentagebar(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.percentagebar
+    win = curses.initscr()
+
+    if result:
+        # Indata format:
+        # (minx, maxx, total, subsets, expected_result, expected_exception)
+        testdata = (
+            # A valid percentage bar with width
+            (
+                0, 20, 100, [
+                    (30, ThemeRef("strings", "cputime_user")),
+                    (50, ThemeRef("strings", "cputime_total_system")),
+                    (20, ThemeRef("strings", "cputime_total_guest")),
+                ],
+                [ThemeStr('■■■■■■', ThemeAttr('types', 'cputime_user'), False),
+                 ThemeStr('■■■■■■■■■■', ThemeAttr('types', 'cputime_total_system'), False),
+                 ThemeStr('■■■■', ThemeAttr('types', 'cputime_total_guest'), False),
+                 ThemeStr(' ', ThemeAttr('types', 'generic'), False)],
+                None,
+            ),
+            # A percentage bar with no total
+            (
+                0, 20, 0, [
+                    (30, ThemeRef("strings", "cputime_user")),
+                    (50, ThemeRef("strings", "cputime_total_system")),
+                    (20, ThemeRef("strings", "cputime_total_guest")),
+                ],
+                [ThemeStr('                     ', ThemeAttr('types', 'generic'), False)],
+                None,
+            ),
+        )
+
+        for minx, maxx, total, subsets, \
+                expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(minx, maxx, total, subsets)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    curses.endwin()
+    return message, result
+
+
+def test_get_labels(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = curses_helper.get_labels
+
+    if result:
+        # Indata format:
+        # (labels, expected_result, expected_exception)
+        testdata = (
+            # A valid set of labels
+            (
+                {
+                    "k8s-app": "kube-dns",
+                },
+                [
+                    {
+                        "lineattrs": WidgetLineAttrs.NORMAL,
+                        "columns": [[ThemeStr("k8s-app", ThemeAttr("windowwidget", "highlight"))],
+                                    [ThemeStr("kube-dns",
+                                              ThemeAttr("windowwidget", "default"))]],
+                        "retval": None,
+                    },
+                ],
+                None,
+            ),
+            # No labels
+            (
+                None,
+                None,
+                None,
+            ),
+        )
+
+        for labels, expected_result, expected_exception in testdata:
+            try:
+                tmp = fun(labels)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                tmp = str(e)
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception):
+                        if not expected_result or expected_result == tmp:
+                            continue
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"           result: {tmp}\n" \
+                                  f"  expected result: {expected_result}"
+                        result = False
+                        break
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {tmp}\n" \
+                                  f"         expected: {expected_exception}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: Dict = {
     ("ThemeStr()",): {
         "callable": test_themestring,
@@ -1233,6 +1704,34 @@ tests: Dict = {
     },
     ("color_status_group()",): {
         "callable": test_color_status_group,
+        "result": None,
+    },
+    ("window_tee_hline()",): {
+        "callable": test_window_tee_hline,
+        "result": None,
+    },
+    ("window_tee_vline()",): {
+        "callable": test_window_tee_vline,
+        "result": None,
+    },
+    ("scrollbar_vertical()",): {
+        "callable": test_scrollbar_vertical,
+        "result": None,
+    },
+    ("scrollbar_horizontal()",): {
+        "callable": test_scrollbar_horizontal,
+        "result": None,
+    },
+    ("generate_heatmap()",): {
+        "callable": test_generate_heatmap,
+        "result": None,
+    },
+    ("percentagebar()",): {
+        "callable": test_percentagebar,
+        "result": None,
+    },
+    ("get_labels()",): {
+        "callable": test_get_labels,
         "result": None,
     },
 }

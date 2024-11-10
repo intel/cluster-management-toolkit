@@ -50,7 +50,7 @@ from clustermanagementtoolkit import about
 
 def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether or not strict host key checking has been disabled in cmtconfig
+    This checks whether or not strict host key checking has been disabled in cmtconfig.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -107,7 +107,7 @@ def check_disable_strict_host_key_checking(**kwargs: Any) -> tuple[bool, int, in
 def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
     This checks whether the user is in /etc/sudoers or /etc/sudoers.d,
-    and whether the user can sudo without a password
+    and whether the user can sudo without a password.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -211,7 +211,7 @@ def check_sudo_configuration(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 
 def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether .ansible is owned and accessible by the user
+    This checks whether .ansible is owned and accessible by the user.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -309,7 +309,7 @@ def check_ansible_dir_permissions(**kwargs: Any) -> tuple[bool, int, int, int, i
 
 def check_netrc_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible)
+    This checks whether the .netrc are sufficiently strict (0600 is required to satisfy Ansible).
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -389,7 +389,7 @@ def check_netrc_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 
 def check_known_hosts_hashing(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether ssh known_hosts hashing is enabled
+    This checks whether ssh known_hosts hashing is enabled.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -452,7 +452,7 @@ def check_known_hosts_hashing(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 
 def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether .kube/config has insecure options
+    This checks whether .kube/config has insecure options.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -527,7 +527,7 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
 # pylint: disable-next=too-many-statements,too-many-locals
 def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether the versions of the various Kubernetes match properly
+    This checks whether the versions of the various Kubernetes match properly.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -698,7 +698,7 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
 # pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
 def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether the versions of kubelet and kube-proxy are acceptable
+    This checks whether the versions of kubelet and kube-proxy are acceptable.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1031,7 +1031,7 @@ def get_pod_set(pods: list[dict],
                                                         dict[tuple[str, str], list[dict]]]:
     """
     Given an any_of list (namespace, pod_prefix), and an all_of list (namespace, pod_prefix),
-    returns all pod objects (if any)
+    returns all pod objects (if any).
 
         Parameters:
             pods ([pod]): A list of pod objects
@@ -1081,7 +1081,7 @@ def get_pod_set(pods: list[dict],
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def check_running_pods(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks what pods are running and their status
+    This checks what pods are running and their status.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1229,7 +1229,8 @@ def check_running_pods(**kwargs: Any) -> tuple[bool, int, int, int, int]:
 def __check_permissions(recommended_permissions: list[dict], pathtype: str,
                         **kwargs: Any) -> tuple[bool, bool, int, int, int, int]:
     """
-    Check permissions for a path
+    Check permissions for a path.
+
         Parameters:
             recommended_permissions ([dict]): A list of dicts with the path to check,
                                               the recommended permissions,
@@ -1426,10 +1427,9 @@ def __check_permissions(recommended_permissions: list[dict], pathtype: str,
     return abort, issue, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-arguments,unused-argument
 def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether any files or directories have insecure permissions
+    This checks whether any files or directories have insecure permissions.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
@@ -1479,10 +1479,9 @@ def check_file_permissions(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     return abort, critical, error, warning, note
 
 
-# pylint: disable-next=too-many-locals
 def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
-    Run a playbook
+    Run a playbook.
 
         Parameters:
             playbookpath (FilePath): A path to the playbook to run
@@ -1530,7 +1529,7 @@ def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tup
 # pylint: disable-next=too-many-locals
 def check_control_plane(**kwargs: Any) -> tuple[bool, int, int, int, int]:
     """
-    This checks whether a host is suitable to be used as a control plane
+    This checks whether a host is suitable to be used as a control plane.
 
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments

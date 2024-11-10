@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -1357,7 +1356,7 @@ def add_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
                                 "'backend'" in str(e):
                             # This is to handle systems that doesn't have the latest version
                             # of cryptography
-                            # pylint: disable-next=import-outside-toplevel,no-name-in-module
+                            # pylint: disable-next=import-outside-toplevel
                             from cryptography.hazmat import primitives  # type: ignore
                             x509obj = \
                                 x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend=primitives.default_backend)  # type: ignore # noqa: E501 pylint: disable=line-too-long

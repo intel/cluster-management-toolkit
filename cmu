@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -284,7 +283,7 @@ def format_timestamp(timestamp: datetime,
             timestamp (datetime): The timestamp
             localtimezone (bool): IS the timestamp in local time
         Returns:
-            ([ThemeRef|ThemeStr]): A formatted timestamp
+            ([ThemeRef | ThemeStr]): A formatted timestamp
     """
     array = []
 
@@ -429,7 +428,7 @@ def __get_container_info(obj: dict, container_type: str,
     return containers
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=too-many-locals
 def get_container_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for containers.
@@ -669,7 +668,7 @@ def __process_timestamp(value: Sequence[int | str] | str,
     return new_value
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def process_value(value: Any, vtype: str, **kwargs: Any) -> \
         int | float | str | list[str] | list[tuple[str]] | datetime | None:
     """
@@ -800,7 +799,6 @@ def transform_filter(transformations: dict, value: DictPath) -> Any:
     return value
 
 
-# pylint: disable-next=line-too-long
 # pylint: disable-next=too-many-return-statements,too-many-locals,too-many-branches,too-many-statements # noqa: E501
 def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: Any = None) -> bool:
     # When is a list of when-conditions,
@@ -1015,7 +1013,7 @@ def transform_list(vlist: list | dict, transform: dict) -> list:
     return result
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_obj(obj: dict, field_dict: dict, field_names: list[str],
             field_index: str, view: str, **kwargs: Any) -> Type:
     """
@@ -2392,7 +2390,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window,
     uip.tabstops = tabstops
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
 def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int,
                       is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
@@ -2453,7 +2451,6 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
         uip.addthemearray(listpad, tmp, y=ypos, x=pos + tagprefixlen, deleted=is_deleted)
 
 
-# pylint: disable-next=line-too-long
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     """
@@ -2824,6 +2821,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     default_status = "<unset>"
                 else:
                     key, path, default_status = status_data
+
+                src_obj = listview_args
 
                 # If path is a list the first item tells what source to use and the second
                 # what path to fetch the value from
@@ -4014,6 +4013,7 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGr
     filetype: str = deep_get(kwargs, DictPath("filetype"), "string")
 
     status = StatusGroup.OK
+    result: list[Any] = []
 
     try:
         if filetype == "string":
@@ -4024,7 +4024,6 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGr
         if "SecurityStatus.PARENT_DOES_NOT_EXIST" in str(e) \
                 or "SecurityStatus.DOES_NOT_EXIST" in str(e):
             status = file_not_found_status
-            result = []
         else:
             raise
 
@@ -4190,6 +4189,13 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                     loadavg_raw = []
 
             if meminfo_raw:
+                memtotal = 0
+                memfree = 0
+                memcached = 0
+                sreclaimable = 0
+                memshared = 0
+                swaptotal = 0
+                swapfree = 0
                 try:
                     for tmp in meminfo_raw:
                         values = tmp.split()
@@ -5121,7 +5127,6 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> l
     return format_helptext(helptext)
 
 
-# pylint: disable-next=line-too-long
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) -> Retval:
     global initial_container  # pylint: disable=global-statement
@@ -5568,7 +5573,6 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                 if "_pass_obj" in listgetter_args:
                     listgetter_args["_obj"] = obj
 
-                # pylint: disable-next=comparison-with-callable
                 uip.refresh_window()
                 uip.refresh_statusbar()
                 if first_fetch or uip.update_forced:
@@ -6310,7 +6314,7 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     return resourceinfodispatch(stdscr, ref, kind)
 
 
-# pylint: disable-next=too-many-arguments
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def log_add_line(timestamps, facilities, severities, messages,
                  timestamp, facility, severity, message, facility_extended):
     if timestamp is not None and timestamp != none_timestamp():
@@ -6327,7 +6331,6 @@ def log_add_line(timestamps, facilities, severities, messages,
     return timestamps, facilities, severities, messages
 
 
-# pylint: disable-next=line-too-long
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
 def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any) -> Retval:
     global executor  # pylint: disable=global-statement
@@ -7561,7 +7564,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     stdscr.refresh()
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
+# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def executecommand(stdscr: curses.window,
                    obj: dict, container, msg, command, waitforkeypress: bool) -> None:
     """
@@ -7724,6 +7727,7 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
     Dispatch from an object to the infoview of another object.
 
         Parameters:
+            stdscr (curses.window): The curses window to operate on
             **kwargs (dict[str, Any]): Keyword arguments
                 obj (dict): The object to get information from
                 kind_path (DictPath): The path to get the kind from
@@ -7781,8 +7785,20 @@ def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
     return resourceinfodispatch(stdscr, obj, (kind, api_family), info=info, **kwargs)
 
 
-# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def resourceinfodispatch_from_selection(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch from a selection to the infoview of another object.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind (str): The kind of the object to dispatch to
+                api_version (str): The API-version of the object to dispatch to
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
     # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("selection"))
     kind = deep_get(kwargs, DictPath("kind"))
@@ -8189,7 +8205,7 @@ def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
     return containerinfoloop(stdscr, container=None, kind=None, obj=None, **multilog_args)
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     return view_pod_logs(uip.stdscr, **values)
 
@@ -8216,7 +8232,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
                                 title=title, formatter=formatter)
 
 
-# pylint: disable=unused-argument,too-many-locals
+# pylint: disable-next=unused-argument,too-many-locals
 def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     success = True
     force = deep_get(values, DictPath("__force"), False)
@@ -8253,7 +8269,7 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) ->
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     values["__force"] = True
     return delete_resource(uip, items=items, action=action, values=values, kind=kind)
@@ -8370,9 +8386,9 @@ def __edit_resource(kind, namespace, name) -> tuple[int, list[str]]:
     return result.returncode, args
 
 
-# pylint: disable=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def perform_action_on_configuration(uip: UIProps, items, action,
-                                    values, kind, **kwargs: Any) -> None:
+                                    values, **kwargs: Any) -> None:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8461,7 +8477,7 @@ def __summarise_resources(path):
     return resources
 
 
-# pylint: disable=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
         if not resource_url.startswith(("http://", "https://")):
@@ -8585,7 +8601,7 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
     stdscr.refresh()
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
@@ -8618,7 +8634,7 @@ def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> 
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
@@ -8646,7 +8662,7 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
@@ -8671,7 +8687,7 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
@@ -8703,7 +8719,7 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -
 
 # Valid kinds:
 # ("Deployment", "apps")
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     curses.endwin()
     _retval = clear_screen()
@@ -8732,7 +8748,7 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: A
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for item in items:
         ansible_delete_log(item)
@@ -8740,7 +8756,7 @@ def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Ret
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     tmpargs = deep_get(values, DictPath("action_args#command"), [])
     iterate = deep_get(values, DictPath("action_args#iterate"), False)
@@ -8800,7 +8816,7 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: 
     uip.stdscr.refresh()
 
 
-# pylint: disable=unused-argument,too-many-locals,too-many-branches
+# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
 def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
     verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
     verbose = deep_get(kwargs, DictPath("verbose"), verbose)
@@ -8866,14 +8882,14 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
     uip.stdscr.refresh()
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.cordon_node(node)
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     force = deep_get(kwargs, DictPath("force"), False)
     for node in items:
@@ -8881,12 +8897,12 @@ def drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retv
     return Retval.RETURNDONE
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def force_drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     return drain_node(uip, items, action, values, kind, **{"force": True})
 
 
-# pylint: disable=unused-argument
+# pylint: disable-next=unused-argument
 def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     for node in items:
         kh.uncordon_node(node)
@@ -11245,13 +11261,13 @@ COMMANDLINE = {
 }
 
 
-# pylint: disable-next=too-many-branches,too-many-statements
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
 def main() -> None:
     """
     Main function for the program.
     """
-    # global auditlog  # pylint: disable=global-statement
-    # global debuglog  # pylint: disable=global-statement
+    # global auditlog
+    # global debuglog
     global read_only_mode  # pylint: disable=global-statement
 
     # Before doing anything else, make sure that the user is not running as root
@@ -11350,7 +11366,7 @@ def main() -> None:
         # we add option aliases (which we probably should) this
         # is a good thing to have
         if opt in ("--kubeconfig", "--kube-config"):
-            global kube_config_file
+            global kube_config_file  # pylint: disable=global-statement
             kube_config_file = optarg
 
     if themeindex and not theme_path_found:

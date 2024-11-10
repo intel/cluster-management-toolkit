@@ -45,7 +45,7 @@ from clustermanagementtoolkit.curses_helper import ThemeAttr, ThemeRef, ThemeStr
 if json_is_ujson:
     def json_dumps(obj: dict) -> str:
         """
-        Dump Python object to JSON in text format; ujson version
+        Dump Python object to JSON in text format; ujson version.
 
             Parameters:
                 obj (dict): The JSON object to dump
@@ -57,7 +57,7 @@ if json_is_ujson:
 else:
     def json_dumps(obj: dict) -> str:
         """
-        Dump Python object to JSON in text format; json version
+        Dump Python object to JSON in text format; json version.
 
             Parameters:
                 obj (dict): The JSON object to dump
@@ -70,7 +70,7 @@ else:
 
 def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
     """
-    Reformat yaml with |-style str
+    Reformat yaml with |-style str.
 
         Parameters:
             dumper: Opaque type internal to python-yaml
@@ -86,7 +86,7 @@ def __str_representer(dumper: yaml.Dumper, data: Any) -> yaml.Node:
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_markdown(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Markdown formatter; returns the text with syntax highlighting for a subset of Markdown
+    Markdown formatter; returns the text with syntax highlighting for a subset of Markdown.
 
         Parameters:
             lines (str|[str]): A list of strings *or*
@@ -237,7 +237,7 @@ def format_markdown(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef
 # pylint: disable-next=unused-argument
 def format_binary(lines: bytes, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Binary "formatter"; Just returns a message saying that binary views cannot be viewed
+    Binary "formatter"; Just returns a message saying that binary views cannot be viewed.
 
         Parameters:
             lines (bytes): Unused
@@ -251,7 +251,7 @@ def format_binary(lines: bytes, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]
 # pylint: disable=unused-argument
 def format_none(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Noop formatter; returns the text without syntax highlighting
+    Noop formatter; returns the text without syntax highlighting.
 
         Parameters:
             lines ([str]): A list of strings
@@ -271,10 +271,9 @@ def format_none(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
     return dumps
 
 
-# pylint: disable-next=unused-argument
 def format_ansible_line(line: str, **kwargs: Any) -> list[ThemeRef | ThemeStr]:
     """
-    Formats a single line of an Ansible play
+    Formats a single line of an Ansible play.
 
         Parameters:
             line (str): a string
@@ -296,10 +295,9 @@ def format_ansible_line(line: str, **kwargs: Any) -> list[ThemeRef | ThemeStr]:
     return tmpline
 
 
-# pylint: disable-next=unused-argument
 def format_diff_line(line: str, **kwargs: Any) -> list[ThemeRef | ThemeStr]:
     """
-    Formats a single line of a diff
+    Formats a single line of a diff.
 
         Parameters:
             line (str): a string
@@ -359,7 +357,7 @@ def format_diff_line(line: str, **kwargs: Any) -> list[ThemeRef | ThemeStr]:
 def format_yaml_line(line: str, **kwargs: Any) -> tuple[list[ThemeRef | ThemeStr],
                                                         list[list[ThemeRef | ThemeStr]]]:
     """
-    Formats a single line of YAML
+    Formats a single line of YAML.
 
         Parameters:
             line (str): a string
@@ -536,7 +534,7 @@ def format_yaml_line(line: str, **kwargs: Any) -> tuple[list[ThemeRef | ThemeStr
 # pylint: disable-next=too-many-branches,too-many-locals,too-many-statements
 def format_yaml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    YAML formatter; returns the text with syntax highlighting for YAML
+    YAML formatter; returns the text with syntax highlighting for YAML.
 
         Parameters:
             lines (str|[str]): A list of strings *or*
@@ -619,7 +617,7 @@ def format_yaml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
 
 def reformat_json(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Given a string representation of JSON, reformat it
+    Given a string representation of JSON, reformat it.
 
         Parameters:
             lines (str|[str]): A list of strings *or*
@@ -658,7 +656,7 @@ KEY_HEADERS: tuple[str, ...] = (
 
 def format_crt(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    CRT formatter; returns the text with syntax highlighting for certificates
+    CRT formatter; returns the text with syntax highlighting for certificates.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -686,7 +684,7 @@ def format_crt(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
 
 def format_haproxy(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    HAProxy formatter; returns the text with syntax highlighting for HAProxy
+    HAProxy formatter; returns the text with syntax highlighting for HAProxy.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -755,7 +753,7 @@ def format_haproxy(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_caddyfile(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    CaddyFile formatter; returns the text with syntax highlighting for CaddyFiles
+    CaddyFile formatter; returns the text with syntax highlighting for CaddyFiles.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -909,7 +907,7 @@ def format_caddyfile(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
 
 def format_mosquitto(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Mosquitto formatter; returns the text with syntax highlighting for Mosquitto
+    Mosquitto formatter; returns the text with syntax highlighting for Mosquitto.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -964,7 +962,7 @@ def format_mosquitto(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
 # pylint: disable-next=too-many-branches
 def format_nginx(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    NGINX formatter; returns the text with syntax highlighting for NGINX
+    NGINX formatter; returns the text with syntax highlighting for NGINX.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1036,7 +1034,7 @@ def format_nginx(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def format_xml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    XML formatter; returns the text with syntax highlighting for XML
+    XML formatter; returns the text with syntax highlighting for XML.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1227,7 +1225,7 @@ def format_xml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
 def format_python_traceback(lines: str | list[str],
                             **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    Python Traceback formatter; returns the text with syntax highlighting for Python Tracebacks
+    Python Traceback formatter; returns the text with syntax highlighting for Python Tracebacks.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1281,7 +1279,7 @@ def format_python_traceback(lines: str | list[str],
 # pylint: disable-next=too-many-branches
 def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    TOML formatter; returns the text with syntax highlighting for TOML
+    TOML formatter; returns the text with syntax highlighting for TOML.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1380,7 +1378,7 @@ def format_toml(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | T
 
 def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    FluentBit formatter; returns the text with syntax highlighting for FluentBit
+    FluentBit formatter; returns the text with syntax highlighting for FluentBit.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1437,7 +1435,7 @@ def format_fluentbit(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRe
 
 def format_ini(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    INI formatter; returns the text with syntax highlighting for INI
+    INI formatter; returns the text with syntax highlighting for INI.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1494,7 +1492,7 @@ def format_ini(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | Th
 
 def format_known_hosts(lines: str | list[str], **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
-    known_hosts formatter; returns the text with syntax highlighting for .ssh/known_hosts
+    known_hosts formatter; returns the text with syntax highlighting for .ssh/known_hosts.
 
         Parameters:
             lines (list[str]): A list of strings
@@ -1570,7 +1568,7 @@ formatter_mapping = (
 def map_dataformat(dataformat: str) -> Callable[[str | list[str]],
                                                 list[list[ThemeRef | ThemeStr]]]:
     """
-    Identify what formatter to use, based either on a file ending or an explicit dataformat tag
+    Identify what formatter to use, based either on a file ending or an explicit dataformat tag.
 
         Parameters:
             dataformat: The data format *or* the name of the file
@@ -1748,7 +1746,7 @@ def identify_cmdata(cmdata_name: str, cm_name: str,
                     cm_namespace: str, data: Any) -> tuple[str, Callable]:
     """
     Try to identify the format of a configmap given the name of the data,
-    the name of the configmap, the namespace of the configmap, and the data itself
+    the name of the configmap, the namespace of the configmap, and the data itself.
 
         Parameters:
             cmdata_name (str): The name of the configmap data
@@ -1815,7 +1813,7 @@ def identify_formatter(dataformat: str,
                        obj: Optional[dict[str, Any]] = None,
                        path: Optional[str] = None) -> Callable:
     """
-    Identify what formatter to use for an object
+    Identify what formatter to use for an object.
 
         Parameters:
             dataformat (str): Unused

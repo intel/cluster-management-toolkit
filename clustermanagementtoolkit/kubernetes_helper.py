@@ -373,7 +373,7 @@ class PoolManagerContext:
     A class for wrapping PoolManager/ProxyManager
     """
 
-    # pylint: disable-next=too-many-arguments
+    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
     def __init__(self, cert_file: Optional[str] = None, key_file: Optional[str] = None,
                  ca_certs_file: Optional[str] = None, token: Optional[str] = None,
                  insecuretlsskipverify: bool = False) -> None:
@@ -420,6 +420,8 @@ class PoolManagerContext:
                     "cert_reqs": "CERT_NONE",
                     "ca_certs": None,
                 }
+        else:
+            raise ProgrammingError(f"{__name__}() called with both cert_file and token == None")
 
         # The type ignores are necessary because mypy cannot handle
         # def foo(a: int = 5, **kwargs)
@@ -628,7 +630,6 @@ def kubectl_get_version() -> tuple[Optional[int], Optional[int], str,
         server_major_version, server_minor_version, server_git_version
 
 
-# pylint: disable-next=too-many-branches
 def get_node_status(node: dict) -> tuple[str, StatusGroup, list[tuple[str, str]], list[dict]]:
     """
     Given a node dict, extract the node status
@@ -764,7 +765,6 @@ def list_contexts(config_path: Optional[FilePath] = None) \
     return contexts
 
 
-# pylint: disable-next=too-many-return-statements
 def set_context(config_path: Optional[FilePath] = None,
                 name: Optional[str] = None) -> Optional[str]:
     """
@@ -2662,6 +2662,7 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_patch(kind=kind, name=node, body=body)
 
+    # pylint: disable-next=too-many-locals
     def drain_node(self, node: str, **kwargs: Any) -> tuple[str, int]:
         """
         Drain a Node
@@ -2700,7 +2701,7 @@ class KubernetesHelper:
             owr = deep_get(pod, DictPath("metadata#ownerReferences"), [])
             controller = get_controller_from_owner_references(owr)
             if controller is not None:
-                controller_kind, controller_name = controller
+                controller_kind, _controller_name = controller
                 # Don't check the API-group; this way we allow
                 # for other types of DaemonSets.
                 if controller_kind[0] == "DaemonSet":
@@ -2712,7 +2713,8 @@ class KubernetesHelper:
                 if status in (200, 201):
                     # Successfully created an eviction
                     continue
-                elif status in (429, 500):
+
+                if status in (429, 500):
                     # PodDisruptionBudget messed up one or several evictions
                     if not error_message:
                         first_error_status = status
@@ -2727,7 +2729,7 @@ class KubernetesHelper:
 
     def uncordon_node(self, node: str) -> tuple[str, int]:
         """
-        Uncordon a Node
+        Uncordon a Node.
 
             Parameters:
                 node (str): The node to uncordon
@@ -2743,12 +2745,12 @@ class KubernetesHelper:
         body = json.dumps(data).encode("utf-8")
         return self.__rest_helper_patch(kind, name=node, body=body)
 
-    # pylint: disable-next=too-many-arguments
+    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
     def patch_obj_by_kind_name_namespace(self, kind: tuple[str, str], name: str,
                                          namespace: str, patch: dict, subresource: str = "",
                                          strategic_merge: bool = True) -> tuple[str, int]:
         """
-        Patch an object
+        Patch an object.
 
             Parameters:
                 kind ((kind, api_group)): Kind of object to patch

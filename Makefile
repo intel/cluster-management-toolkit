@@ -73,6 +73,9 @@ FLAKE8_IGNORE := F841,W503
 # Hence we do not need warnings about them.
 PYLINT_IGNORE := W0511
 
+# Warn about useless disable
+PYLINT_ENABLE := useless-suppression
+
 code-checks-weak: flake8 ruff
 code-checks: mypy pylint
 
@@ -232,7 +235,7 @@ pylint:
 			continue;; \
 		esac ;\
 		printf -- "File: $$file\n" ;\
-		$$cmd --disable $(PYLINT_IGNORE) $$file ;\
+		$$cmd --disable $(PYLINT_IGNORE) --enable $(PYLINT_ENABLE) $$file ;\
 	done
 
 pylint-markdown:

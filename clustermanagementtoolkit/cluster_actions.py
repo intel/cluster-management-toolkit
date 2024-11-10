@@ -84,7 +84,7 @@ vm_destroy_template_playbooks: list[FilePath] = [
 
 def get_crio_version(kubernetes_version: tuple[int, int]) -> Optional[tuple[str, str]]:
     """
-    Given a Kubernetes version, return the matching cri-o version
+    Given a Kubernetes version, return the matching cri-o version.
 
         Parameters:
             kubernetes_version ((int, int)): A version tuple (major, minor)
@@ -245,7 +245,6 @@ def get_api_server_package_version(**kwargs: Any) -> tuple[str, str, str]:
     return version, version_major, version_minor
 
 
-# pylint: disable-next=too-many-locals
 def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optional[dict] = None,
                  quiet: bool = False, verbose: bool = False) -> tuple[int, dict]:
     """

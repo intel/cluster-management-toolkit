@@ -103,7 +103,7 @@ def join_securitystatus_set(separator: str, securitystatuses: set[SecurityStatus
     return securitystatus_str
 
 
-# pylint: disable=too-many-statements,too-many-locals,too-many-branches
+# pylint: disable-next=too-many-statements,too-many-locals,too-many-branches
 def check_path(path: FilePath, **kwargs: Any) -> list[SecurityStatus]:
     """
     Verifies that a path meets certain security criteria;
@@ -447,9 +447,10 @@ def secure_rmdir(path: FilePath, ignore_non_existing: bool = False) -> None:
             raise OSError from e
 
 
+# pylint: disable-next=too-many-branches
 def secure_write_string(path: FilePath, string: str, **kwargs: Any) -> None:
     """
-    Write a string to a file in a safe manner
+    Write a string to a file in a safe manner.
 
         Parameters:
             path (FilePath): The path to write to
@@ -652,6 +653,7 @@ def secure_read_string(path: FilePath, checks: Optional[list[SecurityChecks]] = 
                                  read_mode="r", temporary=temporary))
 
 
+# pylint: disable-next=too-many-branches
 def secure_which(path: FilePath, fallback_allowlist: list[str],
                  security_policy: SecurityPolicy = SecurityPolicy.STRICT,
                  executable: bool = True) -> FilePath:
@@ -822,6 +824,7 @@ def secure_mkdir(directory: FilePath, permissions: int = 0o750, verbose: bool = 
     return violations
 
 
+# pylint: disable-next=too-many-branches
 def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
                 exit_on_failure: bool = False,
                 permissions: Optional[int] = None) -> list[SecurityStatus]:
@@ -923,7 +926,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
     return [SecurityStatus.OK]
 
 
-# pylint: disable-next=too-many-return-statements,too-many-statements
+# pylint: disable-next=too-many-return-statements,too-many-statements,too-many-branches,too-many-locals
 def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
                    exit_on_failure: bool = False,
                    replace_existing: bool = False) -> list[SecurityStatus]:
