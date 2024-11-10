@@ -166,7 +166,7 @@ def fieldgetter_api_server_version(**kwargs: Any) -> list[Any]:
 
 
 # Fieldgetters acceptable for direct use in view files
-fieldgetter_allowlist: Dict[str, Callable] = {
+fieldgetter_allowlist: dict[str, Callable] = {
     "fieldgetter_api_server_version": fieldgetter_api_server_version,
     "fieldgetter_cmt_version": fieldgetter_cmt_version,
     "fieldgetter_crc_version": fieldgetter_crc_version,
