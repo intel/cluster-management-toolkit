@@ -1715,7 +1715,8 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
     },
     # export.kubevirt.io
     ("VirtualMachineExport", "export.kubevirt.io"): {
-        "api_paths": ["apis/export.kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/export.kubevirt.io/v1beta1/",
+                      "apis/export.kubevirt.io/v1alpha1/"],
         "api": "virtualmachineexports",
     },
     # extensions.istio.io
@@ -2274,21 +2275,25 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
     },
     # instancetype.kubevirt.io
     ("VirtualMachineClusterInstancetype", "instancetype.kubevirt.io"): {
-        "api_paths": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+        "api_paths": ["apis/instancetype.kubevirt.io/v1beta1/",
+                      "apis/instancetype.kubevirt.io/v1alpha2/"],
         "api": "virtualmachineclusterinstancetypes",
         "namespaced": False,
     },
     ("VirtualMachineClusterPreference", "instancetype.kubevirt.io"): {
-        "api_paths": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+        "api_paths": ["apis/instancetype.kubevirt.io/v1beta1/",
+                      "apis/instancetype.kubevirt.io/v1alpha2/"],
         "api": "virtualmachineclusterpreferences",
         "namespaced": False,
     },
     ("VirtualMachineInstancetype", "instancetype.kubevirt.io"): {
-        "api_paths": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+        "api_paths": ["apis/instancetype.kubevirt.io/v1beta1/",
+                      "apis/instancetype.kubevirt.io/v1alpha2/"],
         "api": "virtualmachineinstancetypes",
     },
     ("VirtualMachinePreference", "instancetype.kubevirt.io"): {
-        "api_paths": ["apis/instancetype.kubevirt.io/v1alpha2/"],
+        "api_paths": ["apis/instancetype.kubevirt.io/v1beta1/",
+                      "apis/instancetype.kubevirt.io/v1alpha2/"],
         "api": "virtualmachinepreferences",
     },
     # ipam.cluster.x-k8s.io
@@ -3770,7 +3775,7 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
     },
     # pool.kubevirt.io
     ("VirtualMachinePool", "pool.kubevirt.io"): {
-        "api_paths": ["apis/kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/pool.kubevirt.io/v1alpha1/"],
         "api": "virtualmachinepools",
     },
     # pmem-csi.intel.com
@@ -4039,15 +4044,18 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
     },
     # snapshot.kubevirt.io
     ("VirtualMachineRestore", "snapshot.kubevirt.io"): {
-        "api_paths": ["apis/snapshot.kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/snapshot.kubevirt.io/v1beta1/",
+                      "apis/snapshot.kubevirt.io/v1alpha1/"],
         "api": "virtualmachinerestores",
     },
     ("VirtualMachineSnapshotContent", "snapshot.kubevirt.io"): {
-        "api_paths": ["apis/snapshot.kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/snapshot.kubevirt.io/v1beta1/",
+                      "apis/snapshot.kubevirt.io/v1alpha1/"],
         "api": "virtualmachinesnapshotcontents",
     },
     ("VirtualMachineSnapshot", "snapshot.kubevirt.io"): {
-        "api_paths": ["apis/snapshot.kubevirt.io/v1alpha1/"],
+        "api_paths": ["apis/snapshot.kubevirt.io/v1beta1/",
+                      "apis/snapshot.kubevirt.io/v1alpha1/"],
         "api": "virtualmachinesnapshots",
     },
     # sources.knative.dev

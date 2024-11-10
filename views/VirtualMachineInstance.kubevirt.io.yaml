@@ -9,7 +9,7 @@ listview:
   group: "Virtualization"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase", "age"]
+      fields: ["namespace", "name", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready", "age"]
       sortcolumn: "phase"
   fields:
     ipaddresses:
@@ -81,6 +81,7 @@ listview:
         when:
         - key: "type"
           eq: "Paused"
+        default: ["False"]
       type: "str"
     ready:
       header: "Ready:"
@@ -125,7 +126,7 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase"]
+        fields: ["controller", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready"]
     rows:
       controller:
         header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
@@ -219,6 +220,7 @@ infoview:
           when:
           - key: "type"
             eq: "Paused"
+          default: ["False"]
         type: "str"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]

@@ -13,6 +13,16 @@
     options:
       facilities:
       - "pos"
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+[+-]\d{4}: (.*)'
+      message:
+        field: 1
+  - name: "custom_splitter"
+    options:
+      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z (.*)'
+      message:
+        field: 1
   - name: "override_severity"
     overrides:
     - matchtype: "startswith"
@@ -30,3 +40,12 @@
     - matchtype: "startswith"
       matchkey: "panic:"
       loglevel: "alert"
+    - matchtype: "startswith"
+      matchkey: "qemu-kvm: warning:"
+      loglevel: "warning"
+    - matchtype: "startswith"
+      matchkey: "libvirt version:"
+      loglevel: "notice"
+    - matchtype: "startswith"
+      matchkey: "starting up libvirt version:"
+      loglevel: "notice"

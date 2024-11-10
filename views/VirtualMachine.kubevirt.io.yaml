@@ -9,18 +9,12 @@ listview:
   group: "Virtualization"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "status", "ready", "age"]
+      fields: ["namespace", "name", "vm_created", "status", "ready", "age"]
       sortcolumn: "status"
   fields:
     ready:
       header: "Ready:"
-      paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+      path: "status#ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -42,36 +36,62 @@ listview:
       formatting:
         mapping:
           mappings:
-            "ErrorUnschedulable":
+            ErrorUnschedulable:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+            Running:
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            Starting:
+              field_colors:
+              - context: "main"
+                type: "status_pending"
             __default:
               field_colors:
               - context: "types"
                 type: "generic"
+    vm_created:
+      header: "VM Created:"
+      path: "status#created"
+      type: "str"
   actions:
     actionlist:
       "Delete resource":
         description: "Delete resource"
         confirm: true
         actionfunc: "delete_resource"
+      "Start VM":
+        description: "Start VM"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Starting"
+          args:
+            patch:
+              spec:
+                runStrategy: "Always"
+            strategic_merge: false
+      "Halt VM":
+        description: "Halt VM"
+        actionfunc: "patch_resource"
+        extravars:
+          action_str: "Halting"
+          args:
+            patch:
+              spec:
+                runStrategy: "Halted"
+            strategic_merge: false
 infoview:
   name: "Virtual Machine Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["status", "ready"]
+        fields: ["run_strategy", "vm_created", "status", "ready"]
     rows:
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
-        paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+        path: "status#ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -85,6 +105,10 @@ infoview:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+      run_strategy:
+        header: [["Run Strategy:", ["main", "infoheader"]]]
+        path: "spec#runStrategy"
+        type: "str"
       status:
         header: [["Status:", ["main", "infoheader"]]]
         path: "status#printableStatus"
@@ -93,14 +117,26 @@ infoview:
         formatting:
           mapping:
             mappings:
-              "ErrorUnschedulable":
+              ErrorUnschedulable:
                 field_colors:
                 - context: "main"
                   type: "status_not_ok"
+              Running:
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              Starting:
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
               __default:
                 field_colors:
                 - context: "types"
                   type: "generic"
+      vm_created:
+        header: [["VM Created:", ["main", "infoheader"]]]
+        path: "status#created"
+        type: "str"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -127,7 +163,7 @@ infoview:
       api_family: "kubevirt.io"
     field_indexes:
       Normal:
-        fields: ["name", "ipaddresses", "node_name", "ready", "live_migratable", "paused", "phase", "age"]
+        fields: ["name", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready", "age"]
         sortcolumn: "status"
     fields:
       ipaddresses:
@@ -158,6 +194,38 @@ infoview:
         header: "Phase:"
         path: "status#phase"
         type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Failed":
+                field_colors:
+                - context: "main"
+                  type: "status_not_ok"
+              "Pending":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "Running":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Scheduling":
+                field_colors:
+                - context: "main"
+                  type: "status_pending"
+              "Scheduled":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Succeeded":
+                field_colors:
+                - context: "main"
+                  type: "status_done"
+              "Unknown":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
       paused:
         header: "Paused:"
         paths:
@@ -167,6 +235,7 @@ infoview:
           when:
           - key: "type"
             eq: "Paused"
+          default: ["False"]
         type: "str"
       ready:
         header: "Ready:"
@@ -208,3 +277,14 @@ infoview:
         - "reason"
       # Not supported for now
       sortcolumn: "name"
+    "VM template":
+      key: "t"
+      modifier: "shift"
+      read_only: true
+      helptext: "Show VM template"
+      action: "call"
+      action_call: "view_yaml"
+      action_args:
+        title: "VM template"
+        _pass_obj: true
+        path: "spec#template"
