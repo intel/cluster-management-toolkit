@@ -11,7 +11,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import cast, Callable, Dict, List, Optional, Tuple
+from typing import cast, Callable, Optional
 
 from clustermanagementtoolkit import about
 
@@ -34,7 +34,7 @@ commandline = None  # pylint: disable=invalid-name
 
 
 # pylint: disable-next=unused-argument
-def __version(options: List[Tuple[str, str]], args: List[str]) -> int:
+def __version(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Display version information
 
@@ -149,7 +149,7 @@ def __sub_usage(command: str) -> int:
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
+def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Display usage information
 
@@ -165,7 +165,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     has_options: bool = False
     has_args: bool = False
 
-    output: List[List[ANSIThemeStr]] = []
+    output: list[list[ANSIThemeStr]] = []
     output_format: str = "default"
 
     for opt, optarg in options:
@@ -419,7 +419,7 @@ def __usage(options: List[Tuple[str, str]], args: List[str]) -> int:
 
 
 # pylint: disable-next=unused-argument
-def __command_usage(options: List[Tuple[str, str]], args: List[str]) -> int:
+def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Display usage information for a single command
 
@@ -436,9 +436,9 @@ def __command_usage(options: List[Tuple[str, str]], args: List[str]) -> int:
     return __sub_usage(args[0])
 
 
-def __find_command(__commandline: Dict, arg: str) -> \
-        Tuple[str, Optional[Callable[[Tuple[str, str], List[str]], None]],
-              str, int, int, List[Dict], List[Dict]]:
+def __find_command(__commandline: dict, arg: str) -> \
+        tuple[str, Optional[Callable[[tuple[str, str], list[str]], None]],
+              str, int, int, list[dict], list[dict]]:
     command = None
     commandname = ""
     required_args = []
@@ -539,12 +539,12 @@ COMMANDLINEDEFAULTS = {
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def parse_commandline(__programname: str, __programversion: str,
                       __programdescription: str, __programauthors: str,
-                      argv: List[str],
-                      __commandline: Dict,
+                      argv: list[str],
+                      __commandline: dict,
                       default_command: Optional[str] = None,
-                      theme: Optional[FilePath] = None) -> Tuple[Callable,
-                                                                 List[Tuple[str, str]],
-                                                                 List[str]]:
+                      theme: Optional[FilePath] = None) -> tuple[Callable,
+                                                                 list[tuple[str, str]],
+                                                                 list[str]]:
     """
     Parse the command line
 
@@ -586,8 +586,8 @@ def parse_commandline(__programname: str, __programversion: str,
     commandname = None
     command = None
     key = None
-    options: List[Tuple[str, str]] = []
-    args: List[str] = []
+    options: list[tuple[str, str]] = []
+    args: list[str] = []
     min_args = 0
     max_args = 0
 

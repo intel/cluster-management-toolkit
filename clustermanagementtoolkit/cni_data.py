@@ -9,7 +9,7 @@
 Helper for installing and upgrading CNI
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from clustermanagementtoolkit.cmtio import check_path, execute_command, join_securitystatus_set
 
@@ -110,9 +110,9 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
         Raises:
             FilePathAuditError
     """
-    violations = check_path(cni_path)
+    violations: list[SecurityStatus] = check_path(cni_path)
     if violations != [SecurityStatus.OK]:
-        violations_joined = join_securitystatus_set(",", set(violations))
+        violations_joined: str = join_securitystatus_set(",", set(violations))
         raise FilePathAuditError(f"Violated rules: {violations_joined}", path=cni_path)
 
     # Ideally we should patch this using a round-trip capable YAML parser,
@@ -124,7 +124,7 @@ def __patch_cni_weave(cni_path: FilePath, pod_network_cidr: str) -> bool:
     return execute_command(args)
 
 
-cni_data: Dict[str, Any] = {
+cni_data: dict[str, dict[str, dict[str, Any]]] = {
     "antrea": {
         "executable": {
             "candidate_version_function": get_github_version,

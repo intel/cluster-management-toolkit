@@ -12,7 +12,7 @@ Helpers for preparing/installing/tearing down/purging a cluster.
 import errno
 import re
 import sys
-from typing import Any, cast, Dict, List, Optional, Tuple
+from typing import Any, cast, Optional
 
 from clustermanagementtoolkit.ansible_helper import ansible_print_action_summary
 from clustermanagementtoolkit.ansible_helper import populate_playbooks_from_filenames
@@ -32,7 +32,7 @@ from clustermanagementtoolkit.networkio import get_github_version, scan_and_add_
 
 from clustermanagementtoolkit import kubernetes_helper
 
-cri_data: Dict = {
+cri_data: dict[str, dict[str, str]] = {
     "containerd": {
         "socket": "unix:///run/containerd/containerd.sock",
     },
@@ -41,35 +41,35 @@ cri_data: Dict = {
     },
 }
 
-prepare_playbooks = [
+prepare_playbooks: list[FilePath] = [
     FilePath("prepare_passwordless_ansible.yaml"),
     FilePath("prepare_node.yaml"),
 ]
 
-setup_playbooks = [
+setup_playbooks: list[FilePath] = [
     FilePath("add_kubernetes_repo.yaml"),
     FilePath("kubeadm_setup_node.yaml"),
 ]
 
-join_playbooks = [
+join_playbooks: list[FilePath] = [
     FilePath("kubeadm_join_node.yaml"),
 ]
 
 # For now we require the host to have the requisite packages to create VMs installed already,
 # and for the ansible user to be a member of libvirt and kvm.
-vm_create_template_playbooks = [
+vm_create_template_playbooks: list[FilePath] = [
     FilePath("vm_template_create.yaml"),
     FilePath("vm_template_instantiate.yaml"),
 ]
 
 # Commit template changes to the backing image.
-vm_commit_template_playbooks = [
+vm_commit_template_playbooks: list[FilePath] = [
     FilePath("vm_template_commit.yaml"),
 ]
 
 # For now we require the host to have the requisite packages to create VMs installed already,
 # and for the ansible user to be a member of libvirt and kvm.
-vm_create_playbooks = [
+vm_create_playbooks: list[FilePath] = [
     FilePath("vm_create.yaml"),
     FilePath("vm_instantiate.yaml"),
 ]
@@ -77,12 +77,12 @@ vm_create_playbooks = [
 # While destroy might sound extremely destructive, the VM-image remains untouched.
 # destroy refers to the virtual machine, which we don't want running, since we will need
 # use it as base image for new images.
-vm_destroy_template_playbooks = [
+vm_destroy_template_playbooks: list[FilePath] = [
     FilePath("vm_destroy.yaml"),
 ]
 
 
-def get_crio_version(kubernetes_version: Tuple[int, int]) -> Optional[Tuple[str, str]]:
+def get_crio_version(kubernetes_version: tuple[int, int]) -> Optional[tuple[str, str]]:
     """
     Given a Kubernetes version, return the matching cri-o version
 
@@ -112,7 +112,7 @@ def get_crio_version(kubernetes_version: Tuple[int, int]) -> Optional[Tuple[str,
     return crio_major_version, crio_minor_version
 
 
-def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:
+def get_control_planes(**kwargs: Any) -> list[tuple[str, list[str]]]:
     """
     Get the list of control planes.
 
@@ -142,8 +142,8 @@ def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:
         sys.exit(errno.EINVAL)
 
     for node in vlist:
-        name = deep_get(node, DictPath("metadata#name"))
-        node_roles = kubernetes_helper.get_node_roles(cast(Dict, node))
+        name: str = deep_get(node, DictPath("metadata#name"))
+        node_roles: list[str] = kubernetes_helper.get_node_roles(cast(dict, node))
         if "control-plane" in node_roles or "master" in node_roles:
             ipaddresses = []
             for address in deep_get(node, DictPath("status#addresses")):
@@ -155,7 +155,7 @@ def get_control_planes(**kwargs: Any) -> List[Tuple[str, List[str]]]:
 
 
 # pylint: disable-next=too-many-locals
-def get_api_server_package_version(**kwargs: Any) -> Tuple[str, str, str]:
+def get_api_server_package_version(**kwargs: Any) -> tuple[str, str, str]:
     """
     Get the package version for kubeadm/rke2 from the API-server.
 
@@ -246,8 +246,8 @@ def get_api_server_package_version(**kwargs: Any) -> Tuple[str, str, str]:
 
 
 # pylint: disable-next=too-many-locals
-def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optional[Dict] = None,
-                 quiet: bool = False, verbose: bool = False) -> Tuple[int, Dict]:
+def run_playbook(playbookpath: FilePath, hosts: list[str], extra_values: Optional[dict] = None,
+                 quiet: bool = False, verbose: bool = False) -> tuple[int, dict]:
     """
     Run an Ansible playbook.
 
@@ -303,7 +303,7 @@ def run_playbook(playbookpath: FilePath, hosts: List[str], extra_values: Optiona
     return retval, ansible_results
 
 
-def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs: Any) -> int:
+def run_playbooks(playbooks: list[tuple[list[ANSIThemeStr], FilePath]], **kwargs: Any) -> int:
     """
     Run a set of Ansible playbooks.
 
@@ -316,8 +316,8 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    hosts: Optional[List[str]] = deep_get(kwargs, DictPath("hosts"))
-    extra_values: Optional[Dict] = deep_get(kwargs, DictPath("extra_values"))
+    hosts: Optional[list[str]] = deep_get(kwargs, DictPath("hosts"))
+    extra_values: Optional[dict] = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     if not playbooks or hosts is None:
@@ -326,7 +326,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
     for string, playbookpath in playbooks:
         ansithemeprint(string)
         retval, _ansible_results = \
-            run_playbook(playbookpath, hosts=cast(List[str], hosts),
+            run_playbook(playbookpath, hosts=cast(list[str], hosts),
                          extra_values=extra_values, verbose=verbose)
 
         # We do not want to continue executing playbooks if the first one failed
@@ -336,7 +336,7 @@ def run_playbooks(playbooks: List[Tuple[List[ANSIThemeStr], FilePath]], **kwargs
     return retval
 
 
-def prepare_nodes(hosts: List[str], **kwargs: Any) -> int:
+def prepare_nodes(hosts: list[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames prepare them for use as cluster nodes.
 
@@ -348,7 +348,7 @@ def prepare_nodes(hosts: List[str], **kwargs: Any) -> int:
         Returns:
             (int): 0 on success, non-zero on failure
     """
-    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     playbooks = populate_playbooks_from_filenames(prepare_playbooks)
@@ -366,7 +366,7 @@ def prepare_nodes(hosts: List[str], **kwargs: Any) -> int:
                          extra_values=extra_values, verbose=verbose)
 
 
-def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
+def setup_nodes(hosts: list[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames do every bit of setup except joining the nodes to the cluster.
 
@@ -382,7 +382,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
     """
     kh: kubernetes_helper.KubernetesHelper = deep_get(kwargs, DictPath("kubernetes_helper"))
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
-    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
     cri: str = deep_get(kwargs, DictPath("cri"))
 
@@ -413,7 +413,7 @@ def setup_nodes(hosts: List[str], **kwargs: Any) -> int:
 
 
 # pylint: disable-next=too-many-locals
-def join_nodes(hosts: List[str], **kwargs: Any) -> int:
+def join_nodes(hosts: list[str], **kwargs: Any) -> int:
     """
     Given a list of hostnames join them as worker nodes to the cluster.
 
@@ -431,7 +431,7 @@ def join_nodes(hosts: List[str], **kwargs: Any) -> int:
     k8s_distro: str = deep_get(kwargs, DictPath("k8s_distro"), "kubeadm")
     cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
-    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"), {})
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
 
     cri_socket: str = deep_get(cri_data[cri], DictPath("socket"))
 
@@ -476,7 +476,7 @@ def join_nodes(hosts: List[str], **kwargs: Any) -> int:
                          extra_values=extra_values, verbose=verbose)
 
 
-def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: Any) -> int:
+def prepare_vm_template(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs: Any) -> int:
     """
     Create a template VM image to use when instantiating virtualised nodes.
 
@@ -497,7 +497,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     os_variant: str = deep_get(kwargs, DictPath("os_variant"))
     template_name: str = deep_get(kwargs, DictPath("template_name"))
     template_balloon_size: str = deep_get(kwargs, DictPath("template_balloon_size"))
-    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict[str, Any] = deep_get(kwargs, DictPath("extra_values"))
     cri: str = deep_get(kwargs, DictPath("cri"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
@@ -548,7 +548,7 @@ def prepare_vm_template(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs
     return retval
 
 
-def create_vm_hosts(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: Any) -> int:
+def create_vm_hosts(vmhost: str, hosts: list[tuple[str, str, str]], **kwargs: Any) -> int:
     """
     Create VM hosts.
 
@@ -566,7 +566,7 @@ def create_vm_hosts(vmhost: str, hosts: List[Tuple[str, str, str]], **kwargs: An
     """
     os_image: FilePath = deep_get(kwargs, DictPath("os_image"))
     os_variant: str = deep_get(kwargs, DictPath("os_variant"))
-    extra_values: Dict = deep_get(kwargs, DictPath("extra_values"))
+    extra_values: dict = deep_get(kwargs, DictPath("extra_values"))
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
     playbooks = populate_playbooks_from_filenames(vm_create_playbooks)

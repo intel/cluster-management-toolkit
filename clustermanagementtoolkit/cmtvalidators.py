@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 try:
     import validators  # type: ignore
@@ -261,7 +261,7 @@ def validate_fqdn(fqdn: str, message_on_error: bool = False) -> HostNameStatus:
     return HostNameStatus.OK
 
 
-def validator_bool(value: Any, error_on_failure: bool = True) -> Tuple[bool, bool]:
+def validator_bool(value: Any, error_on_failure: bool = True) -> tuple[bool, bool]:
     """
     Checks whether the value represents a bool.
     Note: this validator is not meant to validate all forms of truthiness; only user input.
@@ -495,7 +495,7 @@ def validator_taint(string: str, validator: str, **kwargs: Any) -> bool:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
-def validate_argument(arg: str, arg_string: List[ANSIThemeStr], options: Dict) -> bool:
+def validate_argument(arg: str, arg_string: list[ANSIThemeStr], options: dict) -> bool:
     """
     Validate an argument or argument list
 

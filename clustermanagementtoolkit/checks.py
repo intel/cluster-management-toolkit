@@ -501,25 +501,24 @@ def check_insecure_kube_config_options(**kwargs: Any) -> tuple[bool, int, int, i
     else:
         # Use critical for highlighting warning here, since the warning is so important
         ansithemeprint([ANSIThemeStr("  ", "default"),
-                        ANSIThemeStr("Warning", "critical"),
+                        ANSIThemeStr("Warning", "warning"),
                         ANSIThemeStr(":", "default")], stderr=True)
         ansithemeprint([ANSIThemeStr("    TLS verification has been disabled in ", "emphasis"),
                         ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
-                        ANSIThemeStr("; this is a security threat.", "emphasis")], stderr=True)
-        ansithemeprint([ANSIThemeStr("    If TLS verification is disabled other systems can "
-                                     "impersonate the control plane", "default")], stderr=True)
-        ansithemeprint([ANSIThemeStr("    and thus perform Man in the Middle (MITM) "
-                                     "attacks.", "default")], stderr=True)
+                        ANSIThemeStr(";", "emphasis")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    this is a security threat.", "emphasis")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    If TLS verification is disabled other systems "
+                                     "can impersonate", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    the control plane and thus perform Man in the Middle "
+                                     "(MITM) attacks.", "default")], stderr=True)
         ansithemeprint([ANSIThemeStr("    It is advised that you remove the ", "default"),
-                        ANSIThemeStr("insecure-skip-tls-verify", "argument"),
-                        ANSIThemeStr(" option from ", "default"),
+                        ANSIThemeStr("insecure-skip-tls-verify", "argument")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    option from ", "default"),
                         ANSIThemeStr(f"{KUBE_CONFIG_FILE}", "path"),
-                        ANSIThemeStr(",", "default")], stderr=True)
-        ansithemeprint([ANSIThemeStr("    unless you are absolutely certain that your "
-                                     "network environment is safe", "default")],
-                       stderr=True)
-        ansithemeprint([ANSIThemeStr("    and this is a development cluster.\n", "default")],
-                       stderr=True)
+                        ANSIThemeStr(", unless this is a development cluster",
+                                     "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    and you are absolutely certain that your "
+                                     "network environment is safe.\n", "default")], stderr=True)
         critical += 1
 
     return abort, critical, error, warning, note
@@ -536,6 +535,8 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                 error (int): The current count of error severity security issues
                 warning (int): The current count of warning severity security issues
                 note (int): The current count of note severity security issues
+                verbose (bool): True for verbose output about actions
+                quiet_on_ok (bool): Only output messages when issues are found?
         Returns:
             (bool, int, int, int, int):
                 (bool): Is this error severe enough that we should abort immediately?
@@ -548,40 +549,46 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
     error: int = deep_get(kwargs, DictPath("error"), 0)
     warning: int = deep_get(kwargs, DictPath("warning"), 0)
     note: int = deep_get(kwargs, DictPath("note"), 0)
+    verbose = deep_get(kwargs, DictPath("verbose"), True)
+    quiet_on_ok = deep_get(kwargs, DictPath("quiet_on_ok"), False)
 
     mismatch = False
     abort = False
 
     # Is the version of kubectl within one version of the cluster version?
-    ansithemeprint([ANSIThemeStr("[Checking client/server version match]", "phase")])
+    if verbose:
+        ansithemeprint([ANSIThemeStr("[Checking client/server version match]", "phase")])
 
     _kubectl_major_version, kubectl_minor_version, kubectl_git_version, \
         server_major_version, server_minor_version, server_git_version = kubectl_get_version()
 
     if kubectl_git_version == "<unavailable>" or kubectl_minor_version is None:
-        ansithemeprint([ANSIThemeStr("Critical", "critical"),
+        ansithemeprint([ANSIThemeStr("  ", "default"),
+                        ANSIThemeStr("Critical", "critical"),
                         ANSIThemeStr(": Could not extract ", "default"),
                         ANSIThemeStr("kubectl", "programname"),
-                        ANSIThemeStr(" version; will abort.", "default")], stderr=True)
+                        ANSIThemeStr(" version; will abort.\n", "default")], stderr=True)
         abort = True
         critical += 1
-    else:
+    elif verbose == True:
         ansithemeprint([ANSIThemeStr("         kubectl ", "programname"),
                         ANSIThemeStr("version: ", "default"),
                         ANSIThemeStr(f"{kubectl_git_version}", "version")])
     if server_git_version == "<unavailable>" or \
             server_major_version is None or server_minor_version is None:
+        print()
         ansithemeprint([ANSIThemeStr("  ", "default"),
-                        ANSIThemeStr("Critical", "error"),
+                        ANSIThemeStr("Critical", "critical"),
                         ANSIThemeStr(":", "default")], stderr=True)
         ansithemeprint([ANSIThemeStr("    Could not extract ", "default"),
                         ANSIThemeStr("kube-apiserver", "programname"),
-                        ANSIThemeStr(" version (double-check that the server is "
-                                     "running and that ", "default"),
+                        ANSIThemeStr(" version (double-check that the server is",
+                                     "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    running and that ", "default"),
                         ANSIThemeStr("https_proxy", "argument"),
-                        ANSIThemeStr(" and  ", "default"),
+                        ANSIThemeStr(" and ", "default"),
                         ANSIThemeStr("no_proxy", "argument"),
-                        ANSIThemeStr(" are correctly set); will abort.",
+                        ANSIThemeStr(" are correctly set); will abort.\n",
                                      "default")], stderr=True)
         https_proxy_env = os.getenv("https_proxy")
         no_proxy_env = os.getenv("no_proxy")
@@ -590,13 +597,14 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                         ANSIThemeStr(f"{https_proxy_env}", "url")], stderr=True)
         ansithemeprint([ANSIThemeStr("      no_proxy", "argument"),
                         ANSIThemeStr(" (env): ", "default"),
-                        ANSIThemeStr(f"{no_proxy_env}", "url")], stderr=True)
+                        ANSIThemeStr(f"{no_proxy_env}\n", "url")], stderr=True)
         abort = True
         critical += 1
-    else:
+    elif verbose:
         ansithemeprint([ANSIThemeStr("  kube-apiserver ", "programname"),
                         ANSIThemeStr("version: ", "default"),
                         ANSIThemeStr(f"{server_git_version}", "version")])
+        print()
 
     if abort:
         return abort, critical, error, warning, note
@@ -604,8 +612,6 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
     kubectl_minor_version = cast(int, kubectl_minor_version)
     server_major_version = cast(int, server_major_version)
     server_minor_version = cast(int, server_minor_version)
-
-    print()
 
     if server_major_version != 1:
         ansithemeprint([ANSIThemeStr("  ", "default"),
@@ -632,7 +638,7 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                         ANSIThemeStr(";", "default")])
         ansithemeprint([ANSIThemeStr("    this is a supported configuration, "
                                      "but it is generally recommended to keep", "default")])
-        ansithemeprint([ANSIThemeStr("    the versions in sync.", "default")])
+        ansithemeprint([ANSIThemeStr("    the versions in sync.\n", "default")])
         note += 1
         mismatch = True
     elif kubectl_minor_version > server_minor_version:
@@ -647,7 +653,7 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                         ANSIThemeStr("kube-apiserver", "programname"),
                         ANSIThemeStr("; this might work, but it is generally recommended",
                                      "default")], stderr=True)
-        ansithemeprint([ANSIThemeStr("    to keep the versions in sync.",
+        ansithemeprint([ANSIThemeStr("    to keep the versions in sync.\n",
                                      "default")], stderr=True)
         warning += 1
         mismatch = True
@@ -664,7 +670,7 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
                         ANSIThemeStr(";", "default")])
         ansithemeprint([ANSIThemeStr("    this is a supported configuration, "
                                      "but it is generally recommended to keep", "default")])
-        ansithemeprint([ANSIThemeStr("    the versions in sync.", "default")], stderr=True)
+        ansithemeprint([ANSIThemeStr("    the versions in sync.\n", "default")], stderr=True)
         warning += 1
         mismatch = True
     elif kubectl_minor_version < server_minor_version:
@@ -679,12 +685,12 @@ def check_client_server_version_match(**kwargs: Any) -> tuple[bool, int, int, in
         ansithemeprint([ANSIThemeStr("    this is ", "default"),
                         ANSIThemeStr("NOT", "emphasis"),
                         ANSIThemeStr(" supported and is likely to "
-                                     "cause issues.", "default")], stderr=True)
+                                     "cause issues.\n", "default")], stderr=True)
         error += 1
         mismatch = True
 
-    if not mismatch:
-        ansithemeprint([ANSIThemeStr("  OK", "ok")])
+    if not mismatch and not quiet_on_ok:
+        ansithemeprint([ANSIThemeStr("  OK\n", "ok")])
 
     return abort, critical, error, warning, note
 
@@ -802,7 +808,8 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int
             mismatch = True
 
         if kubelet_major_version is not None and kubelet_major_version != 1:
-            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+            ansithemeprint([ANSIThemeStr("  ", "default"),
+                            ANSIThemeStr("Critical", "critical"),
                             ANSIThemeStr(": ", "default"),
                             ANSIThemeStr(about.PROGRAM_SUITE_NAME, "programname"),
                             ANSIThemeStr(" has not been tested for any other major version "
@@ -816,7 +823,8 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int
             mismatch = True
 
         if kubeproxy_major_version is not None and kubeproxy_major_version != 1:
-            ansithemeprint([ANSIThemeStr("Critical", "critical"),
+            ansithemeprint([ANSIThemeStr("  ", "default"),
+                            ANSIThemeStr("Critical", "critical"),
                             ANSIThemeStr(": ", "default"),
                             ANSIThemeStr(about.PROGRAM_SUITE_NAME, "programname"),
                             ANSIThemeStr(" has not been tested for any other major version "

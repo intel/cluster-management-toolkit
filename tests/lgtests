@@ -16,7 +16,7 @@
 import builtins
 import importlib
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest import mock
 import yaml
 
@@ -35,7 +35,7 @@ real_import = None  # pylint: disable=invalid-name
 import_override = {}
 
 
-def override_import(name: str, *args: List[Any], **kwargs: Any):
+def override_import(name: str, *args: list[Any], **kwargs: Any):
     retval, exception = import_override.get(name, (None, None))
     if exception:
         raise exception
@@ -53,7 +53,7 @@ def yaml_dump(data: Any, base_indent: int = 4) -> str:
 
 
 # pylint: disable-next=unused-argument
-def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
+def test_json_ujson(verbose: bool = False) -> tuple[str, bool]:
     global import_override  # pylint: disable=global-statement
 
     message = ""
@@ -84,7 +84,7 @@ def test_json_ujson(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_check_matchlists(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_matchlists(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -200,7 +200,7 @@ def test_check_matchlists(verbose: bool = False) -> Tuple[str, bool]:
 
 
 # This also tests split_matchlist()
-def test_check_matchlist(verbose: bool = False) -> Tuple[str, bool]:
+def test_check_matchlist(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -301,7 +301,7 @@ def test_check_matchlist(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
+def test_get_device_model(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -586,7 +586,222 @@ def test_get_device_model(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
+def test_filter_list_entry(verbose: bool = False) -> tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = listgetters.filter_list_entry
+
+    if result:
+        # Indata format:
+        # (obj, caller_obj, filters, expected_result, expected_exception, expected_exception_msg)
+        testdata = (
+            # Object as source, substitutions
+            (
+                {
+                    "status": {
+                        "allocatable": {
+                            "cpu": 8,
+                        },
+                    },
+                },
+                {},
+                {
+                    "resource": {
+                        "source": "object",
+                        "enabled": True,
+                        "allow": [
+                            {
+                                "key": "<<<status>>>#allocatable#<<<name>>>",
+                                "substitutions": {
+                                    "<<<name>>>": ["name"],
+                                    "<<<status>>>": "status",
+                                },
+                                "exists": True,
+                            },
+                        ],
+                    },
+                },
+                True,
+                None,
+                "",
+            ),
+            # Object as source,
+            (
+                {
+                    "metadata": {
+                        "name": "system-node-critical",
+                    },
+                },
+                {
+                    "metadata": {
+                        "priorityClassName": "system-node-critical",
+                    },
+                },
+                {
+                    "priority_class": {
+                        "enabled": True,
+                        "allow": [
+                            {
+                                "key": "spec#priorityClassName",
+                                "values": {
+                                    "source": "caller",
+                                    "path": "metadata#name",
+                                },
+                            },
+                        ],
+                    },
+                },
+                True,
+                None,
+                "",
+            ),
+            # Object as source, dictlist
+            (
+                {
+                    "metadata": {
+                        "ownerReferences": [
+                            {
+                                "apiVersion": "kubevirt.io/v1",
+                                "blockOwnerDeletion": True,
+                                "controller": True,
+                                "kind": "VirtualMachine",
+                                "name": "testvm",
+                            },
+                        ],
+                    },
+                },
+                {
+                    "metadata": {
+                        "name": "testvm",
+                    },
+                },
+                {
+                    "controller": {
+                        "enabled": True,
+                        "allow": [
+                            {
+                                "type": "dictlist",
+                                "path": "metadata#ownerReferences",
+                                "fields": {
+                                    "kind": "VirtualMachine",
+                                    "api_family": "kubevirt.io",
+                                    "name": {
+                                        "source": "caller",
+                                        "path": "metadata#name",
+                                    },
+                                    "controller": True,
+                                },
+                            },
+                        ]
+                    },
+                },
+                False,
+                None,
+                "",
+            ),
+            # Object as source; no allow rules
+            (
+                {},
+                {},
+                {
+                    "resource": {
+                        "source": "object",
+                        "enabled": True,
+                        "allow": [],
+                    },
+                },
+                False,
+                None,
+                "",
+            ),
+            # Object as source; filter disabled
+            (
+                {},
+                {},
+                {
+                    "resource": {
+                        "source": "object",
+                        "enabled": False,
+                        "allow": [
+                            {
+                                "key": "status#allocatable#<<<name>>>",
+                                "substitutions": {
+                                    "<<<name>>>": ["name"],
+                                },
+                                "exists": True,
+                            }
+                        ]
+                    },
+                },
+                False,
+                None,
+                "",
+            ),
+            # No filters
+            (
+                {},
+                {},
+                {},
+                False,
+                None,
+                "",
+            ),
+            # Incorrect rule-type
+            (
+                {},
+                {},
+                {
+                    "controller": {
+                        "enabled": True,
+                        "allow": [
+                            {
+                                "type": "foobar",
+                            },
+                        ]
+                    },
+                },
+                False,
+                Exception,
+                "errno.ENOTSUP",
+            ),
+        )
+
+        for obj, caller_obj, filters, \
+                expected_result, expected_exception, expected_exception_msg in testdata:
+            try:
+                with mock.patch("sys.exit", side_effect=Exception("errno.ENOTSUP")):
+                    tmp = fun(obj, caller_obj, filters)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
+def test_listgetter_policy_rules(verbose: bool = False) -> tuple[str, bool]:
     message = ""
     result = True
 
@@ -872,7 +1087,7 @@ def test_listgetter_policy_rules(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
-tests: Dict = {
+tests: dict = {
     ("json_ujson",): {
         "callable": test_json_ujson,
         "result": None,
@@ -887,6 +1102,10 @@ tests: Dict = {
     },
     ("get_device_model()",): {
         "callable": test_get_device_model,
+        "result": None,
+    },
+    ("filter_list_entry()",): {
+        "callable": test_filter_list_entry,
         "result": None,
     },
     ("listgetter_policy_rules()",): {

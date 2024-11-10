@@ -12,7 +12,7 @@ for cases where the obj provided from the list view is not sufficient
 
 from pathlib import Path, PurePath
 import sys
-from typing import Callable, Dict, List
+from typing import Any, Callable
 
 try:
     from natsort import natsorted
@@ -31,7 +31,7 @@ from clustermanagementtoolkit.cmtio import check_path, join_securitystatus_set
 from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 
 
-def objgetter_ansible_facts(obj: Dict) -> Dict:
+def objgetter_ansible_facts(obj: dict) -> dict:
     """
     Get an obj by using ansible facts
 
@@ -55,7 +55,7 @@ def objgetter_ansible_facts(obj: Dict) -> Dict:
     return ar
 
 
-def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
+def objgetter_journalctl_log(obj: list[dict]) -> dict:
     """
     Format a journalctl log message
 
@@ -74,7 +74,7 @@ def objgetter_journalctl_log(obj: List[Dict]) -> Dict:
     return data
 
 
-def objgetter_ansible_log(obj: FilePath) -> Dict:
+def objgetter_ansible_log(obj: FilePath) -> dict:
     """
     Get an obj from an ansible log entry
 
@@ -83,13 +83,13 @@ def objgetter_ansible_log(obj: FilePath) -> Dict:
         Returns:
             (dict): An ansible log entry
     """
-    tmpobj: Dict = secure_read_yaml(obj.joinpath("metadata.yaml"))
+    tmpobj: dict[str, Any] = secure_read_yaml(obj.joinpath("metadata.yaml"))
     tmpobj["log_path"] = str(obj)
 
     # The playbook directory itself may be a symlink.
     # This is expected behaviour when installing from a git repo,
     # but we only allow it if the rest of the path components are secure
-    checks = [
+    checks: list[SecurityChecks] = [
         SecurityChecks.PARENT_RESOLVES_TO_SELF,
         SecurityChecks.PARENT_OWNER_IN_ALLOWLIST,
         SecurityChecks.OWNER_IN_ALLOWLIST,
@@ -145,7 +145,7 @@ def objgetter_ansible_log(obj: FilePath) -> Dict:
 
 
 # Objgetters acceptable for direct use in view files
-objgetter_allowlist: Dict[str, Callable] = {
+objgetter_allowlist: dict[str, Callable] = {
     "objgetter_ansible_facts": objgetter_ansible_facts,
     "objgetter_ansible_log": objgetter_ansible_log,
     "objgetter_journalctl_log": objgetter_journalctl_log,

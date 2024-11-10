@@ -11,7 +11,7 @@ to be expressed through parameters to generic_infogetter()
 """
 
 import re
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 from clustermanagementtoolkit.cmtlib import get_since, timestamp_to_datetime
 
@@ -23,8 +23,8 @@ from clustermanagementtoolkit.kubernetes_helper import kind_tuple_to_name, guess
 
 
 # pylint: disable-next=too-many-branches
-def get_container_status(src_statuses: List[Dict],
-                         container: str) -> Tuple[str, StatusGroup, int, str, int]:
+def get_container_status(src_statuses: list[dict],
+                         container: str) -> tuple[str, StatusGroup, int, str, int]:
     """
     Return the status for a container
 
@@ -107,7 +107,7 @@ def get_container_status(src_statuses: List[Dict],
 
 
 # pylint: disable-next=unused-argument
-def datagetter_container_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[StatusGroup, Dict]:
+def datagetter_container_status(obj: dict[str, Any], **kwargs: Any) -> tuple[StatusGroup, dict]:
     """
     A datagetter that returns the status of a container
 
@@ -125,8 +125,8 @@ def datagetter_container_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[Sta
 
 
 # pylint: disable-next=unused-argument
-def get_endpointslices_endpoints(obj: Dict[str, Any],
-                                 **kwargs: Any) -> List[Tuple[str, StatusGroup]]:
+def get_endpointslices_endpoints(obj: dict[str, Any],
+                                 **kwargs: Any) -> list[tuple[str, StatusGroup]]:
     """
     Get the endpoints for an endpoint slice
 
@@ -151,8 +151,8 @@ def get_endpointslices_endpoints(obj: Dict[str, Any],
 
 
 # pylint: disable-next=unused-argument
-def datagetter_eps_endpoints(obj: Dict[str, Any],
-                             **kwargs: Any) -> Tuple[List[Tuple[str, StatusGroup]], Dict]:
+def datagetter_eps_endpoints(obj: dict[str, Any],
+                             **kwargs: Any) -> tuple[list[tuple[str, StatusGroup]], dict]:
     """
     A datagetter that returns the endpoints for an endpoint slice
 
@@ -165,7 +165,7 @@ def datagetter_eps_endpoints(obj: Dict[str, Any],
     return get_endpointslices_endpoints(obj), {}
 
 
-def datagetter_metrics(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], Dict]:
+def datagetter_metrics(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str], dict]:
     """
     A datagetter that returns metrics for the specified path
 
@@ -191,8 +191,8 @@ def datagetter_metrics(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], D
     return result, {}
 
 
-def datagetter_deprecated_api(obj: Dict[str, Any],
-                              **kwargs: Any) -> Tuple[Tuple[str, str, str], Dict]:
+def datagetter_deprecated_api(obj: dict[str, Any],
+                              **kwargs: Any) -> tuple[tuple[str, str, str], dict]:
     """
     A datagetter that returns deprecated API information for the specified path
 
@@ -218,8 +218,8 @@ def datagetter_deprecated_api(obj: Dict[str, Any],
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def datagetter_latest_version(obj: Dict[str, Any],
-                              **kwargs: Any) -> Tuple[Tuple[str, str, str], Dict]:
+def datagetter_latest_version(obj: dict[str, Any],
+                              **kwargs: Any) -> tuple[tuple[str, str, str], dict]:
     """
     A datagetter that returns the latest available API for kind as passed in path
 
@@ -269,7 +269,7 @@ def datagetter_latest_version(obj: Dict[str, Any],
                                             kind_tuple_to_name(kind), "", resource_cache=kh_cache)
 
     if ref is not None:
-        versions: Dict = {}
+        versions: dict = {}
         sorted_versions = []
 
         for version_entry in deep_get(ref, DictPath("spec#versions"), {}):
@@ -333,7 +333,7 @@ def datagetter_latest_version(obj: Dict[str, Any],
     return (group, latest_version, message), {}
 
 
-def get_endpoint_endpoints(subsets: List[Dict]) -> List[Tuple[str, StatusGroup]]:
+def get_endpoint_endpoints(subsets: list[dict]) -> list[tuple[str, StatusGroup]]:
     """
     Get the endpoints for an endpoint
 
@@ -359,8 +359,8 @@ def get_endpoint_endpoints(subsets: List[Dict]) -> List[Tuple[str, StatusGroup]]
     return endpoints
 
 
-def datagetter_endpoint_ips(obj: Dict[str, Any],
-                            **kwargs: Any) -> Tuple[List[Tuple[str, StatusGroup]], Dict]:
+def datagetter_endpoint_ips(obj: dict[str, Any],
+                            **kwargs: Any) -> tuple[list[tuple[str, StatusGroup]], dict]:
     """
     A datagetter that returns the endpoints for an endpoint
 
@@ -381,7 +381,7 @@ def datagetter_endpoint_ips(obj: Dict[str, Any],
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def get_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, StatusGroup]:
+def get_pod_status(obj: dict[str, Any], **kwargs: Any) -> tuple[str, StatusGroup]:
     """
     Get status for a Pod
 
@@ -506,7 +506,7 @@ def get_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, StatusGroup
     return phase, status_group
 
 
-def datagetter_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, Dict]:
+def datagetter_pod_status(obj: dict[str, Any], **kwargs: Any) -> tuple[str, dict]:
     """
     A datagetter that returns the status for a pod
 
@@ -533,7 +533,7 @@ def datagetter_pod_status(obj: Dict[str, Any], **kwargs: Any) -> Tuple[str, Dict
     return status, {"status_group": status_group}
 
 
-def datagetter_api_support(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str], Dict]:
+def datagetter_api_support(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str], dict]:
     """
     A datagetter that returns the level of support that CMT provides for an API;
     can be one of:
@@ -583,7 +583,7 @@ def datagetter_api_support(obj: Dict[str, Any], **kwargs: Any) -> Tuple[List[str
 
 
 # Datagetters acceptable for direct use in view files
-datagetter_allowlist: Dict[str, Callable] = {
+datagetter_allowlist: dict[str, Callable] = {
     "datagetter_container_status": datagetter_container_status,
     "datagetter_deprecated_api": datagetter_deprecated_api,
     "datagetter_latest_version": datagetter_latest_version,

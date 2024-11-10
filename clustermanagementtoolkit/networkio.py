@@ -22,7 +22,7 @@ import sys
 import tarfile
 import tempfile
 import time
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, cast, Optional, Sequence
 
 import paramiko
 
@@ -92,7 +92,7 @@ def reformat_github_release_notes(changelog: str = "") -> str:
     return "\n".join(formatted_changelog)
 
 
-def scan_and_add_ssh_keys(hosts: List[str]) -> None:
+def scan_and_add_ssh_keys(hosts: list[str]) -> None:
     """
     Scan hosts and add their public ssh keys to .ssh/known_hosts
 
@@ -159,7 +159,7 @@ def scan_and_add_ssh_keys(hosts: List[str]) -> None:
         sys.exit(errno.EIO)
 
 
-checksum_functions: Dict[str, Callable] = {
+checksum_functions: dict[str, Callable] = {
     "md5": hashlib.md5,  # nosec
     "sha": hashlib.sha1,  # nosec nosem
     "sha1": hashlib.sha1,  # nosec nosem
@@ -262,7 +262,7 @@ def verify_checksum(checksum: bytes,
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def download_files(directory: str,
-                   fetch_urls: Sequence[Tuple[str, str, Optional[str], Optional[str]]],
+                   fetch_urls: Sequence[tuple[str, str, Optional[str], Optional[str]]],
                    permissions: int = 0o644) -> bool:
     """
     Download files; if the file is a tar file it can extract a file.
@@ -461,7 +461,7 @@ def download_files(directory: str,
     return retval
 
 
-def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str], str, str]]:
+def get_github_version(url: str, version_regex: str) -> Optional[tuple[list[str], str, str]]:
     """
     Given a github repository find the latest release;
     exclude releases that do not match the regex and prereleases.
@@ -476,7 +476,7 @@ def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str]
                 (str): The release page body
     """
     compiled_version_regex = re.compile(version_regex)
-    versions: List[Tuple[List[str], str, str]] = []
+    versions: list[tuple[list[str], str, str]] = []
 
     if url is not None:
         with tempfile.TemporaryDirectory() as td:
@@ -496,16 +496,16 @@ def get_github_version(url: str, version_regex: str) -> Optional[Tuple[List[str]
                 body = deep_get(release, DictPath("body"), "")
                 versions.append((list(tmp.groups()), published_at, body))
     if versions:
-        return cast(Tuple[List[str], str, str], natsorted(versions, reverse=True)[0])
+        return cast(tuple[list[str], str, str], natsorted(versions, reverse=True)[0])
 
     return [], "", ""
 
 
-candidate_version_function_allowlist: Dict = {
+candidate_version_function_allowlist: dict[str, Callable] = {
     "get_github_version": get_github_version,
 }
 
-reformatter_allowlist: Dict = {
+reformatter_allowlist: dict[str, Callable] = {
     "reformat_github_release_notes": reformat_github_release_notes,
 }
 
@@ -530,7 +530,7 @@ def update_version_cache(**kwargs: Any) -> None:
     if software_sources_dir.startswith(("{HOME}/", "{HOME}\\")):
         software_sources_dir = HOMEDIR.joinpath(software_sources_dir[len('{HOME}/'):])
 
-    sources: Dict = {}
+    sources: dict = {}
     try:
         for path in natsorted(Path(cmtpaths.SYSTEM_SOFTWARE_SOURCES_DIR).iterdir()):
             path = str(path)
@@ -581,7 +581,7 @@ def update_version_cache(**kwargs: Any) -> None:
         last_update_data = {}
 
     try:
-        candidate_versions: Dict = secure_read_yaml(VERSION_CANDIDATES_FILE)
+        candidate_versions: dict = secure_read_yaml(VERSION_CANDIDATES_FILE)
     except FilePathAuditError as e:
         if "DOES_NOT_EXIST" in str(e):
             candidate_versions = {}
@@ -605,9 +605,9 @@ def update_version_cache(**kwargs: Any) -> None:
         tmp: str = deep_get(data, DictPath("candidate_version#function"), "")
         candidate_version_func: Optional[Callable] = \
             deep_get(candidate_version_function_allowlist, DictPath(tmp))
-        candidate_version_args: Dict = deep_get(data, DictPath("candidate_version#args"), {})
+        candidate_version_args: dict = deep_get(data, DictPath("candidate_version#args"), {})
 
-        candidate_version_tuple: Optional[Tuple] = None
+        candidate_version_tuple: Optional[tuple] = None
         release_body = ""
 
         # By default we only update the cache once per hour unless forced
@@ -666,7 +666,7 @@ def update_version_cache(**kwargs: Any) -> None:
             secure_write_string(VERSION_CACHE_DIR.joinpath(changelog_dest), release_body,
                                 allow_relative_path=True, permissions=0o644)
         else:
-            version_substitutions: Dict = {}
+            version_substitutions: dict = {}
             if candidate_version_tuple:
                 for i, item in enumerate(candidate_version_tuple):
                     version_substitutions[f"<<<version.{i}>>>"] = item

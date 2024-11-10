@@ -11,7 +11,7 @@ Get list data asynchronously
 
 import re
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 try:
     from natsort import natsorted
@@ -104,7 +104,7 @@ def get_inventory_list() -> None:
 
 
 # pylint: disable-next=too-many-locals
-def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
+def get_context_list(**kwargs: Any) -> tuple[list[dict], list[str]]:
     """
     Get the list of Kubernetes contexts.
 
@@ -128,7 +128,7 @@ def get_context_list(**kwargs: Any) -> Tuple[List[Dict], List[str]]:
     context_list = kh.list_contexts()
     tag_prefix = deep_get(kwargs, DictPath("tag_prefix"), "✓ ")
 
-    inventory_dict: Dict = {
+    inventory_dict: dict[str, Any] = {
         "all": {
             "hosts": {},
         }
@@ -240,8 +240,8 @@ def postprocessor_node_resources(**kwargs: Any) -> tuple[list[dict], int | str]:
     vlist = deep_get(kwargs, DictPath("vlist"), [])
     status = deep_get(kwargs, DictPath("status"))
     units = deep_get(kwargs, DictPath("units"), {})
-    resources: Dict = {}
-    vresources: List[Dict] = []
+    resources: dict = {}
+    vresources: list[dict] = []
 
     if status == 200:
         for node in vlist:
@@ -265,12 +265,12 @@ def postprocessor_node_resources(**kwargs: Any) -> tuple[list[dict], int | str]:
     return vresources, status
 
 
-listgetter_postprocessors: Dict[str, Callable] = {
+listgetter_postprocessors: dict[str, Callable] = {
     "postprocessor_node_resources": postprocessor_node_resources,
 }
 
 # Asynchronous listgetters acceptable for direct use in view files
-listgetter_async_allowlist: Dict[str, Callable] = {
+listgetter_async_allowlist: dict[str, Callable] = {
     # Used by listpad
     "get_context_list": get_context_list,
     "get_inventory_list": get_inventory_list,

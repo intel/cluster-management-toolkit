@@ -48,7 +48,7 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Dict, List, Optional, Sequence, Type
+from typing import Any, cast, Optional, Sequence, Type
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -276,7 +276,7 @@ def gather_cluster_info(**kwargs: Any) -> None:
 
 
 def format_timestamp(timestamp: datetime,
-                     localtimezone: bool = False) -> List[ThemeRef | ThemeStr]:
+                     localtimezone: bool = False) -> list[ThemeRef | ThemeStr]:
     """
     Takes datetime and formats it as a YYYY-MM-DD HH:MM:SS themearray.
 
@@ -397,7 +397,7 @@ def get_image_tuple(image: str) -> tuple[str, str]:
 # We should probably have a real type for container_type here
 def __get_container_info(obj: dict, container_type: str,
                          spec_path: DictPath, status_path: DictPath) -> dict:
-    containers: Dict = {}
+    containers: dict = {}
 
     for container in deep_get(obj, spec_path, []):
         container_name = deep_get(container, DictPath("name"))
@@ -430,7 +430,7 @@ def __get_container_info(obj: dict, container_type: str,
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_container_info(**kwargs: Any) -> List[Type]:
+def get_container_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for containers.
 
@@ -444,8 +444,8 @@ def get_container_info(**kwargs: Any) -> List[Type]:
         raise ProgrammingError("get_container_info() called without kubernetes_helper")
     kh_cache_ = deep_get(kwargs, DictPath("kh_cache"))
 
-    info: List[Type] = []
-    containers: Dict = {}
+    info: list[Type] = []
+    containers: dict = {}
 
     # There's no direct way to get a list of unique containers
     # as defined by the tuple (name, type, version, image_id),
@@ -512,7 +512,7 @@ def get_container_info(**kwargs: Any) -> List[Type]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_log_info(**kwargs: Any) -> List[Type]:
+def get_log_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for logs.
 
@@ -521,7 +521,7 @@ def get_log_info(**kwargs: Any) -> List[Type]:
         Returns:
             ([InfoClass]): A list with info
     """
-    info: List[Type] = []
+    info: list[Type] = []
 
     # Fetch kubelet log, if available (for now only useful if run on the control plane)
     sudo_path = secure_which(FilePath("sudo"),
@@ -616,21 +616,21 @@ def __process_sum_numerical(value: Sequence[int | float]) -> float | int:
     return sum(value)
 
 
-def __process_stringify_list(values: Sequence[Any]) -> List[str]:
-    tmp: List[str] = []
+def __process_stringify_list(values: Sequence[Any]) -> list[str]:
+    tmp: list[str] = []
     for value in values:
         tmp.append(str(value))
     return tmp
 
 
-def __process_sum_cpu_usage(values: List[str]) -> str:
+def __process_sum_cpu_usage(values: list[str]) -> str:
     cpu_usage_sum = 0.0
     for value in values:
         cpu_usage_sum += normalise_cpu_usage_to_millicores(value)
     return f"{cpu_usage_sum:0.1f}"
 
 
-def __process_sum_mem_usage(values: List[str]) -> str:
+def __process_sum_mem_usage(values: list[str]) -> str:
     mem_usage_sum = 0
     for value in values:
         mem_usage_sum += normalise_mem_to_bytes(value)
@@ -780,7 +780,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
         if isinstance(value, list):
             new_value = _values
         elif isinstance(value, tuple):
-            new_value = tuple(cast(List, _values))
+            new_value = tuple(cast(list, _values))
     elif vtype == "raw":
         # Do not convert this type
         new_value = value
@@ -794,7 +794,7 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
     return new_value
 
 
-def transform_filter(transformations: Dict, value: DictPath) -> Any:
+def transform_filter(transformations: dict, value: DictPath) -> Any:
     if transformations and value in transformations:
         value = deep_get(transformations, value)
     return value
@@ -802,7 +802,7 @@ def transform_filter(transformations: Dict, value: DictPath) -> Any:
 
 # pylint: disable-next=line-too-long
 # pylint: disable-next=too-many-return-statements,too-many-locals,too-many-branches,too-many-statements # noqa: E501
-def when_filter(when_path: Dict, item: Dict, key: Optional[str] = None, value: Any = None) -> bool:
+def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: Any = None) -> bool:
     # When is a list of when-conditions,
     # all of which have to evaluate to true
     when_conditions = deep_get(when_path, DictPath("when"), [])
@@ -1016,7 +1016,7 @@ def transform_list(vlist: list | dict, transform: dict) -> list:
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
-def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
+def get_obj(obj: dict, field_dict: dict, field_names: list[str],
             field_index: str, view: str, **kwargs: Any) -> Type:
     """
     Extract data for all fields in a list row from an object.
@@ -1036,9 +1036,9 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
     """
     d = {}
 
-    filters: Dict[str, Any] = deep_get(kwargs, DictPath("filters"), {})
+    filters: dict[str, Any] = deep_get(kwargs, DictPath("filters"), {})
     deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
-    caller_obj: Dict = deep_get(kwargs, DictPath("caller_obj"), {})
+    caller_obj: dict = deep_get(kwargs, DictPath("caller_obj"), {})
 
     # fields both specify formatting and where to get the data from;
     # here we are only concerned with the data
@@ -1803,7 +1803,7 @@ def get_obj(obj: Dict, field_dict: Dict, field_names: List[str],
     return entry
 
 
-def generic_infogetter(**kwargs: Any) -> List[Dict]:
+def generic_infogetter(**kwargs: Any) -> list[dict]:
     """
     Generic getter for information from an object.
 
@@ -1856,8 +1856,8 @@ def generic_infogetter(**kwargs: Any) -> List[Dict]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
-        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
+def get_journalctl_log(obj: dict, **kwargs: Any) -> \
+        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from journalctl.
 
@@ -1872,13 +1872,13 @@ def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
                 ([str]): A list of severities
                 ([ThemeArray]): A list of ThemeArrays
     """
-    timestamps: List[str] = []
-    messages: List[str] = []
-    facilities: List[str] = []
-    severities: List[str] = []
-    messages: List[List[ThemeRef | ThemeStr]] = []
+    timestamps: list[str] = []
+    messages: list[str] = []
+    facilities: list[str] = []
+    severities: list[LogLevel] = []
+    messages: list[list[ThemeRef | ThemeStr]] = []
 
-    show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
+    show_raw: bool = deep_get(kwargs, DictPath("_show_raw"), False)
     objlist = deep_get(obj, DictPath("obj"))
     parser = deep_get(objlist[0], DictPath("parser"))
 
@@ -1942,8 +1942,8 @@ def get_journalctl_log(obj: Dict, **kwargs: Any) -> \
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_traceflow(obj: Dict, **kwargs: Any) -> \
-        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
+def get_traceflow(obj: dict, **kwargs: Any) -> \
+        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from a traceflow.
 
@@ -1957,10 +1957,10 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
                 ([str]): A list of severities
                 ([ThemeArray]): A list of ThemeArrays
     """
-    timestamps: List[str] = []
-    facilities: List[str] = []
-    severities: List[str] = []
-    messages: List[List[ThemeRef | ThemeStr]] = []
+    timestamps: list[str] = []
+    facilities: list[str] = []
+    severities: list[LogLevel] = []
+    messages: list[list[ThemeRef | ThemeStr]] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -1972,7 +1972,7 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
             saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
         else:
             saved_timestamp = ""
-        message: List[ThemeRef | ThemeStr] = []
+        message: list[ThemeRef | ThemeStr] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp
@@ -1996,8 +1996,8 @@ def get_traceflow(obj: Dict, **kwargs: Any) -> \
 
 
 # pylint: disable-next=unused-argument
-def get_task_log(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
-    field = []
+def get_task_log(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
+    field: list = []
 
     skipped = deep_get(obj, DictPath("log#skipped"), False)
     stdout_lines = deep_get(obj, DictPath("log#stdout_lines"), [])
@@ -2031,9 +2031,9 @@ def get_task_log(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     return field
 
 
-def logpad_files(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
+def logpad_files(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     # This is essentially just a wrapper around listgetter_files
-    show_raw = deep_get(kwargs, DictPath("_show_raw"), False)
+    show_raw: bool = deep_get(kwargs, DictPath("_show_raw"), False)
     extra_values_lookup = deep_get(kwargs, DictPath("extra_values_lookup"), {})
     if (formatter := deep_get(obj, DictPath("_extra_data#formatter"))) is None:
         formatter = deep_get(kwargs, DictPath("formatter"), "none")
@@ -2060,7 +2060,7 @@ def logpad_files(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     return formatters.format_none(vlist[0], **formatter_args)
 
 
-def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
+def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
     Takes an object and dumps it using the specified format (if possible).
 
@@ -2082,8 +2082,8 @@ def logpad_formatted(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]
 
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
-def get_cmt_log(obj: Dict, **kwargs: Any) -> \
-        tuple[List[str], List[str], List[str], List[List[ThemeRef | ThemeStr]]]:
+def get_cmt_log(obj: dict, **kwargs: Any) -> \
+        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
     """
     Extract log entries from CMT log.
 
@@ -2098,11 +2098,11 @@ def get_cmt_log(obj: Dict, **kwargs: Any) -> \
                 ([ThemeArray]): A list of ThemeArrays
     """
     filepath = deep_get(obj, DictPath("filepath"), "")
-    timestamps: List[str] = []
-    messages: List[str] = []
-    facilities: List[str] = []
-    severities: List[str] = []
-    messages: List[List[ThemeRef | ThemeStr]] = []
+    timestamps: list[str] = []
+    messages: list[str] = []
+    facilities: list[str] = []
+    severities: list[LogLevel] = []
+    messages: list[list[ThemeRef | ThemeStr]] = []
 
     d = secure_read_yaml(filepath)
 
@@ -2173,7 +2173,7 @@ def get_cmt_log(obj: Dict, **kwargs: Any) -> \
     return (timestamps, facilities, severities, messages)
 
 
-def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
+def logpad_yaml(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
     """
     Takes an object and dumps it as formatted YAML.
 
@@ -2184,7 +2184,7 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
             ([themearray]): A list of themearrays
     """
     path = deep_get(kwargs, DictPath("path"), "")
-    messages = []
+    messages: list = []
 
     try:
         if path:
@@ -2200,8 +2200,8 @@ def logpad_yaml(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
     return messages
 
 
-def logpad_msg_getter(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr]]:
-    messages: List[List[ThemeRef | ThemeStr]] = []
+def logpad_msg_getter(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
+    messages: list[list[ThemeRef | ThemeStr]] = []
 
     path = deep_get(kwargs, DictPath("path"))
     tmp = deep_get(obj, DictPath(path), "")
@@ -2212,7 +2212,7 @@ def logpad_msg_getter(obj: Dict, **kwargs: Any) -> List[List[ThemeRef | ThemeStr
     return messages
 
 
-def get_name_by_kind_from_owner_references(owner_references: List[Dict], kind: str) -> str:
+def get_name_by_kind_from_owner_references(owner_references: list[dict], kind: str) -> str:
     for owr in owner_references:
         if deep_get(owr, DictPath("kind"), "") == kind:
             name = deep_get(owr, DictPath("name"))
@@ -2220,8 +2220,8 @@ def get_name_by_kind_from_owner_references(owner_references: List[Dict], kind: s
     return name
 
 
-def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_name: str) -> str:
-    holder_kind = ""
+def get_holder_kind_from_owner_references(owner_references: list[dict], holder_name: str) -> str:
+    holder_kind: str = ""
 
     for owr in owner_references:
         if deep_get(owr, DictPath("name")) == holder_name:
@@ -2234,7 +2234,7 @@ def get_holder_kind_from_owner_references(owner_references: List[Dict], holder_n
 def get_pod_log_by_name_namespace_container(name: str, namespace: str, container: str,
                                             tail_lines: int = DEFAULT_TAIL_LINES) \
         -> tuple[str, bool]:
-    internal_error = False
+    internal_error: bool = False
 
     rawmsg, status = \
         kh.read_namespaced_pod_log(name, namespace, container=container, tail_lines=tail_lines)
@@ -2262,7 +2262,7 @@ def get_pod_log_by_name_namespace_container(name: str, namespace: str, container
 
 
 # To make the failure case easier, return both the ref and the name of the control plane
-def get_control_plane() -> tuple[Optional[Dict], str]:
+def get_control_plane() -> tuple[Optional[dict], str]:
     if not kubernetes_support:
         return None, ""
 
@@ -2318,8 +2318,8 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 # pylint: disable-next=too-many-locals
 def generate_list_header(uip: UIProps, headerpad: curses.window,
-                         field_dict: Dict, is_taggable: bool = False) -> None:
-    headerarray: List[ThemeRef | ThemeStr] = []
+                         field_dict: dict, is_taggable: bool = False) -> None:
+    headerarray: list[ThemeRef | ThemeStr] = []
     first = True
 
     tabstops = []
@@ -2407,7 +2407,7 @@ def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, yp
             tagprefixlen = len(ThemeRef("separators", "tag"))
 
             if is_tagged:
-                tagprefix: List[ThemeRef | ThemeStr] = [ThemeRef("separators", "tag")]
+                tagprefix: list[ThemeRef | ThemeStr] = [ThemeRef("separators", "tag")]
             else:
                 tagprefix = [ThemeStr("".ljust(tagprefixlen), ThemeAttr("types", "generic"))]
         else:
@@ -2784,7 +2784,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             # The data in some fields might become shorter, so we need to trigger a clear
             uip.statusbar.erase()
 
-            statusarray1: List[ThemeRef | ThemeStr] = []
+            statusarray1: list[ThemeRef | ThemeStr] = []
 
             if view != "Contexts" and selected_namespace:
                 statusarray1 += \
@@ -2806,7 +2806,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     ThemeStr("Label selector: ", ThemeAttr("statusbar", "infoheader")),
                     ThemeStr(f"{label_selector}", ThemeAttr("statusbar", "highlight"))
                 ]
-            statusarray2: List[ThemeRef | ThemeStr] = []
+            statusarray2: list[ThemeRef | ThemeStr] = []
             if read_only_mode:
                 statusarray2 += [ThemeStr("Read Only Mode", ThemeAttr("statusbar", "highlight"))]
 
@@ -3462,10 +3462,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     action_src_list[action] = tmp_action_src_list[action]
 
             # Populate the list of actions
-            action_context = deep_get(views, DictPath(f"{view}#actions#actionlist#context"), None)
             actions, actionlist = \
-                populate_actionlist(context=action_context,
-                                    action_list=action_src_list,
+                populate_actionlist(action_list=action_src_list,
                                     control_plane_selected=control_plane_selected,
                                     single_item=(len(items) == 1),
                                     cluster_available=cluster_available)
@@ -3741,7 +3739,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 uip.force_update()
 
 
-def __switch_resource_map(**kwargs: Any) -> tuple[Retval, Dict]:
+def __switch_resource_map(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     uip.refresh_all()
     return Retval.MATCH, {
@@ -3750,7 +3748,7 @@ def __switch_resource_map(**kwargs: Any) -> tuple[Retval, Dict]:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def __resource_map_cursor(**kwargs: Any) -> tuple[Retval, Dict]:
+def __resource_map_cursor(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     selected = deep_get(kwargs, DictPath("selected"))
@@ -3824,7 +3822,7 @@ def __resource_map_cursor(**kwargs: Any) -> tuple[Retval, Dict]:
     }
 
 
-def __open_reference(**kwargs: Any) -> tuple[Retval, Dict]:
+def __open_reference(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     keypress = deep_get(kwargs, DictPath("__keypress"))
     pod_name = deep_get(kwargs, DictPath("pod_name"))
@@ -3857,7 +3855,7 @@ def __open_reference(**kwargs: Any) -> tuple[Retval, Dict]:
     return Retval.MATCH, {}
 
 
-def __fetch_package_versions(**kwargs: Any) -> tuple[Retval, Dict]:
+def __fetch_package_versions(**kwargs: Any) -> tuple[Retval, dict]:
     uip = deep_get(kwargs, DictPath("uip"))
     hostname = deep_get(kwargs, DictPath("hostname"))
 
@@ -4009,7 +4007,7 @@ clusteroverview_shortcuts = {
 
 
 # pylint: disable-next=unused-argument
-def read_file_async(*args: Any, **kwargs: Any) -> tuple[List[Any], List[StatusGroup]]:
+def read_file_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGroup]]:
     file_not_found_status: str = deep_get(kwargs,
                                           DictPath("file_not_found_status"), "File not found")
     path: str = deep_get(kwargs, DictPath("path"))
@@ -4034,7 +4032,7 @@ def read_file_async(*args: Any, **kwargs: Any) -> tuple[List[Any], List[StatusGr
 
 
 # pylint: disable-next=unused-argument
-def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[List[Any], List[StatusGroup]]:
+def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[StatusGroup]]:
     playbook = deep_get(kwargs, DictPath("playbook"))
     selection = deep_get(kwargs, DictPath("selection"))
     verbose = deep_get(kwargs, DictPath("verbose"), False)
@@ -4267,7 +4265,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         internal_ips_array = generators.format_list(iips, 0, 0)
         external_ips_array = generators.format_list(eips, 0, 0)
 
-        infoarrays: List[List[ThemeRef | ThemeStr]] = [
+        infoarrays: list[list[ThemeRef | ThemeStr]] = [
             [
                 ThemeStr("Control Plane: ", ThemeAttr("main", "infoheader")),
                 ThemeStr(f"{name}", ThemeAttr("types", "generic"))
@@ -4300,7 +4298,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         # cpu usage:
         # low-priority (bold blue) / normal (green) / kernel (red) / virtualized (cyan)
         # This is aggregate over all CPUs
-        percentagebar_cpu: List[ThemeRef | ThemeStr] = \
+        percentagebar_cpu: list[ThemeRef | ThemeStr] = \
             curses_helper.percentagebar(7, uip.infopadwidth - 10, cputimetotal, [
                 (cputimeusernice, ThemeRef("strings", "cputime_user_nice")),
                 (cputimeuser, ThemeRef("strings", "cputime_user")),
@@ -4310,7 +4308,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
 
         # memory usage:
         # used (green) / buffers (bold blue) / cache (yellow)
-        percentagebar_mem: List[ThemeRef | ThemeStr] = \
+        percentagebar_mem: list[ThemeRef | ThemeStr] = \
             curses_helper.percentagebar(7, uip.infopadwidth - 10, memtotal, [
                 (memused - memcached - buffers, ThemeRef("strings", "mem")),
                 (buffers, ThemeRef("strings", "buffers")),
@@ -4320,7 +4318,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         # swap usage:
         # used (red)
         if swaptotal:
-            percentagebar_or_string_swap: List[ThemeRef | ThemeStr] = \
+            percentagebar_or_string_swap: list[ThemeRef | ThemeStr] = \
                 curses_helper.percentagebar(6, uip.infopadwidth - 10, swaptotal, [
                     (swapused, ThemeRef("strings", "swap_used"))])
             percentagebar_or_string_swap += [
@@ -4330,7 +4328,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
         else:
             percentagebar_or_string_swap = [ThemeStr("Disabled", ThemeAttr("types", "none"))]
 
-        tasksarrays: List[List[ThemeRef | ThemeStr]] = [
+        tasksarrays: list[list[ThemeRef | ThemeStr]] = [
             [
                 ThemeStr("Tasks: ", ThemeAttr("main", "infoheader")),
                 ThemeStr(f"{running}", ThemeAttr("types", "numerical")),
@@ -4405,7 +4403,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                     evlens[i] = max(evlens[i], len(val))
 
         # Draw the events over the bottom of the visible area of the listpad
-        eventarrays: List[ThemeRef | ThemeStr] = [
+        eventarrays: list[ThemeRef | ThemeStr] = [
             [ThemeStr("Events:", ThemeAttr("main", "listheader_compact"))],
         ]
 
@@ -4472,7 +4470,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                                                      ThemeAttr("types", "value")],
                                        field_separators=[ThemeRef("separators", "keyvalue_taint")])
 
-            nodearrays: List[List[ThemeRef | ThemeStr]] = [
+            nodearrays: list[list[ThemeRef | ThemeStr]] = [
                 [
                     ThemeStr(f"Node ({selected_node + 1}/{len(nodeinfo)}):",
                              ThemeAttr("main", "listheader"),
@@ -4506,7 +4504,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                 curses_helper.generate_heatmap(node_heatmap_width, node_statuses, selected_node)
             nodearrays += node_heatmap
 
-            podarrays: List[List[ThemeRef | ThemeStr]] = [
+            podarrays: list[list[ThemeRef | ThemeStr]] = [
                 [
                     ThemeStr(f"Pod ({selected_pod + 1}/{len(podinfo)}):",
                              ThemeAttr("main", "listheader"),
@@ -4838,7 +4836,7 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
 
             if not _cnis:
                 cni = "<unknown>"
-                cnistr: List[ThemeRef | ThemeStr] = [
+                cnistr: list[ThemeRef | ThemeStr] = [
                     ThemeStr(f"{cni}", color_status_group(StatusGroup.UNKNOWN))
                 ]
                 cni_version = "N/A"
@@ -4881,11 +4879,11 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
                 ThemeStr(f"{cni_status[0]}", color_status_group(cni_status[1]))
             ]
 
-            versionarray: List[ThemeRef | ThemeStr] = [
+            versionarray: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Version: ", ThemeAttr("main", "infoheader")),
             ]
             versionarray += cni_version_str
-            candidateversionarray: List[ThemeRef | ThemeStr] = [
+            candidateversionarray: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Candidate version: ", ThemeAttr("main", "infoheader")),
             ]
 
@@ -4893,11 +4891,11 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
             candidateversionarray.append(ThemeStr(f"{candidate_version}",
                                                   ThemeAttr("types", "version")))
 
-            namearray: List[ThemeRef | ThemeStr] = [
+            namearray: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Container Network Interface: ", ThemeAttr("main", "infoheader")),
             ]
             namearray += cnistr
-            statusarray: List[ThemeRef | ThemeStr] = [
+            statusarray: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
             ]
             statusarray += cni_status_str
@@ -5051,8 +5049,8 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> List[Dict]:
-    helptext: List[tuple[str, str]] = []
+def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> list[dict]:
+    helptext: list[tuple[str, str]] = []
 
     if viewtype == "infoview":
         helptext += helptexts.infoviewheader_part1
@@ -5125,7 +5123,7 @@ def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> L
 
 # pylint: disable-next=line-too-long
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) -> Retval:
+def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) -> Retval:
     global initial_container  # pylint: disable=global-statement
     global executor  # pylint: disable=global-statement
 
@@ -5384,11 +5382,11 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 uip.infopad.erase()
             uip.statusbar.erase()
 
-            statusarray1: List[ThemeRef | ThemeStr] = [
+            statusarray1: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Fields: ", ThemeAttr("statusbar", "infoheader")),
                 ThemeStr(field_index, ThemeAttr("statusbar", "highlight"))
             ]
-            statusarray2: List[ThemeRef | ThemeStr] = []
+            statusarray2: list[ThemeRef | ThemeStr] = []
 
             for status_data in deep_get(viewref, DictPath("statusmsg"), []):
                 if len(status_data) == 2:
@@ -5449,7 +5447,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
             if infopad is not None:
                 y = 0
                 if name_path is not None and name_path:
-                    fieldarray: List[ThemeRef | ThemeStr] = [
+                    fieldarray: list[ThemeRef | ThemeStr] = [
                         ThemeStr("Name:", ThemeAttr("main", "infoheader")),
                         ThemeStr(f" {deep_get(obj, DictPath(name_path))}",
                                  ThemeAttr("types", "generic"))
@@ -5747,7 +5745,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                     timestamp = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
-                    tsthemearray: List[ThemeRef | ThemeStr] = \
+                    tsthemearray: list[ThemeRef | ThemeStr] = \
                         [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
 
                 if severities is None or uip.yoffset + y >= len(severities):
@@ -5758,7 +5756,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                 message = messages[uip.yoffset + y]
                 if uip.search_matches:
                     line_match = uip.yoffset + y in uip.search_matches
-                    match_prefix: List[ThemeRef | ThemeStr] = \
+                    match_prefix: list[ThemeRef | ThemeStr] = \
                         [ThemeRef("separators", "matchbullet")]
                     if not line_match:
                         match_prefix = \
@@ -6010,7 +6008,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                             tmp = []
                             for i, column in enumerate(w_item):
                                 tmp_formatting = w_formatting[min(i, len(w_formatting) - 1)]
-                                if isinstance(tmp_formatting, List):
+                                if isinstance(tmp_formatting, list):
                                     formatting = ThemeAttr(tmp_formatting[0], tmp_formatting[1])
                                 else:
                                     formatting = tmp_formatting
@@ -6161,7 +6159,7 @@ def genericinfoloop(stdscr: curses.window, obj: Dict, view: str, **kwargs: Any) 
                         title_name = deep_get(ref, DictPath(title_name_path), "")
                     elif "_name_tuple_paths" in action_args:
                         title_name_paths = deep_get(action_args, DictPath("_name_tuple_paths"), [])
-                        title_name = deep_get_str_tuple_paths(cast(Dict, ref), title_name_paths, "")
+                        title_name = deep_get_str_tuple_paths(cast(dict, ref), title_name_paths, "")
                     elif selected is not None:
                         title_name = getattr(selected, "name", "")
                     if title_name != "":
@@ -6519,7 +6517,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
             timestamps: list[str] = []
             facilities: list[str] = []
-            severities: list[str] = []
+            severities: list[LogLevel] = []
             messages: list[ThemeRef | ThemeStr] | str = []
             parser = None
             prev_timestamp = None
@@ -6748,39 +6746,39 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
                 status, status_group, restarts, message, _age = \
                     datagetters.get_container_status(src_statuses, containername)
-                containerarray: List[ThemeRef | ThemeStr] = [
+                containerarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Container: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{containername}{containertypearray}", ThemeAttr("types", "generic"))
                 ]
-                statusarray: List[ThemeRef | ThemeStr] = [
+                statusarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{status}", color_status_group(status_group))
                 ]
                 if message != "":
                     statusarray.append(ThemeStr(f" ({message})", ThemeAttr("types", "generic")))
-                restartsarray: List[ThemeRef | ThemeStr] = [
+                restartsarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Restarts: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{restarts}", ThemeAttr("types", "numerical"))
                 ]
-                podarray: List[ThemeRef | ThemeStr] = [
+                podarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Pod: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{pod_info.name}", ThemeAttr("types", "generic")),
                 ]
-                containeridarray: List[ThemeRef | ThemeStr] = [
+                containeridarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Container ID: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{deep_get(container_status, DictPath('containerID'))}",
                              ThemeAttr("types", "generic")),
                 ]
                 image_name, image_version = \
                     get_image_tuple(deep_get(container_status, DictPath("image")))
-                imagearray: List[ThemeRef | ThemeStr] = [
+                imagearray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Image: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{image_name}", ThemeAttr("types", "generic")),
                     ThemeRef("separators", "version"),
                     ThemeStr(f"{image_version}", ThemeAttr("types", "version")),
                 ]
                 image_id = deep_get(container_status, DictPath("imageID"))
-                imageidarray: List[ThemeRef | ThemeStr] = [
+                imageidarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("I", ThemeAttr("main", "infoheader_shortcut")),
                     ThemeStr("mage ID: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{image_id}", ThemeAttr("types", "generic")),
@@ -6802,7 +6800,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                         ThemeStr("Pod: ", ThemeAttr("main", "infoheader")),
                         ThemeStr(f"{podname}", ThemeAttr("types", "generic")),
                     ]
-                    namespacearray: List[ThemeRef | ThemeStr] = [
+                    namespacearray: list[ThemeRef | ThemeStr] = [
                         ThemeStr("Namespace: ", ThemeAttr("main", "infoheader")),
                         ThemeStr(f"{namespace}", ThemeAttr("types", "namespace")),
                     ]
@@ -6859,7 +6857,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             # We have two different widths of the statusbar
             if uip.maxx - uip.minx > 108:
                 # Wide version
-                statusarray1: List[ThemeRef | ThemeStr] = [
+                statusarray1: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Updates: ", ThemeAttr("statusbar", "infoheader")),
                     ThemeStr(f"{interval}", ThemeAttr("statusbar", "highlight")),
                     ThemeRef("separators", "statusbar"),
@@ -6881,7 +6879,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     ThemeStr(f"{loglimit}", ThemeAttr("statusbar", "highlight")),
                     ThemeStr(")", ThemeAttr("statusbar", "default")),
                 ]
-                statusarray2: List[ThemeRef | ThemeStr] = []
+                statusarray2: list[ThemeRef | ThemeStr] = []
                 if not fold_msg:
                     statusarray2 += [
                         ThemeStr("Unfolding messages", ThemeAttr("statusbar", "highlight")),
@@ -7009,11 +7007,11 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 if y + yadd > uip.logpadheight:
                     continue
 
-                tsthemearray = None
+                tsthemearray: list[ThemeRef | ThemeStr] = []
                 # FIXME
                 if only_new_dates:
                     if new_date:
-                        tsthemearray: List[ThemeRef | ThemeStr] = \
+                        tsthemearray = \
                             [ThemeStr(datestamp, ThemeAttr("logview", datetype))]
                         new_date = False
                         # If we do empty lines for new dates we need something like this
@@ -7058,7 +7056,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 else:
                     severity = severities[uip.yoffset + y]
 
-                msgstrarray: List[ThemeRef, ThemeStr] = []
+                msgstrarray: list[ThemeRef | ThemeStr] = []
 
                 if severity_prefix:
                     _prefix, _severity_type, _suffix = severity_prefix
@@ -7087,7 +7085,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     msgstrarray += facility_extended
 
                 if facility != "":
-                    facilitystr: List[ThemeRef | ThemeStr] = [
+                    facilitystr: list[ThemeRef | ThemeStr] = [
                         ThemeRef("separators", "facility_prefix"),
                         ThemeStr(facility, ThemeAttr("logview", "facility")),
                         ThemeRef("separators", "facility_suffix"),
@@ -7565,7 +7563,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches
 def executecommand(stdscr: curses.window,
-                   obj: Dict, container, msg, command, waitforkeypress: bool) -> None:
+                   obj: dict, container, msg, command, waitforkeypress: bool) -> None:
     """
     Executes a command in a container.
     XXX: This should be renamed.
@@ -8039,7 +8037,7 @@ def executecommand_multiple(stdscr: curses.window, msg, command, items, waitfork
     stdscr.refresh()
 
 
-def __run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> int:
+def __run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> int:
     extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
     quiet: bool = deep_get(kwargs, DictPath("quiet"), False)
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
@@ -8073,8 +8071,8 @@ def __run_playbook(playbookpath: FilePath, hosts: List[str], **kwargs: Any) -> i
     return retval
 
 
-def run_playbook(playbook: Dict, nodes: List[str],
-                 values: Optional[Dict] = None) -> tuple[int, Dict]:
+def run_playbook(playbook: dict, nodes: list[str],
+                 values: Optional[dict] = None) -> tuple[int, dict]:
     verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
     return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes,
                           extra_values=values, verbose=verbose)
@@ -8303,7 +8301,7 @@ def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
 # ("DaemonSet", "apps")
 # ("Deployment", "apps")
 # ("StatefulSet", apps")
-def __restart_resource(kind, namespace, name):
+def __restart_resource(kind, namespace, name) -> int:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8319,7 +8317,7 @@ def __restart_resource(kind, namespace, name):
     args = [kubectl_path, "rollout", "restart",
             f"{kind[0]}.{kind[1]}/{name}", f"--namespace={namespace}"]
     result = subprocess.run(args, stdout=PIPE, stderr=PIPE, universal_newlines=True, check=False)
-    return result
+    return result.returncode
 
 
 def __get_resource_scale(kind, namespace, name):
@@ -8348,10 +8346,10 @@ def __scale_replicas(kind, namespace, name, scale):
     args = [kubectl_path, "scale", f"{kind[0]}.{kind[1]}/{name}",
             f"--namespace={namespace}", f"--replicas={scale}"]
     result = subprocess.run(args, stdout=PIPE, stderr=PIPE, universal_newlines=True, check=False)
-    return result
+    return result.returncode
 
 
-def __edit_resource(kind, namespace, name):
+def __edit_resource(kind, namespace, name) -> tuple[int, list[str]]:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8533,7 +8531,7 @@ def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwa
     return Retval.MATCH
 
 
-def format_commandline(args: List[str], implicit_command: bool = True) -> List[ANSIThemeStr]:
+def format_commandline(args: list[str], implicit_command: bool = True) -> list[ANSIThemeStr]:
     """
     Given a command line as an array of strings, format it as an array of ANSIThemeStr.
 
@@ -8567,7 +8565,7 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
     obj = deep_get(kwargs, DictPath("obj"))
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(obj, DictPath("metadata#name"))
-    namespace = deep_get(obj, DictPath("metadata#namespace"), "")
+    namespace: str = deep_get(obj, DictPath("metadata#namespace"), "")
     if name is None:
         return
 
@@ -9021,7 +9019,7 @@ def list_configuration_files(basedir):
 
 
 # pylint: disable-next=too-many-locals
-def populate_actionlist(**kwargs: Any) -> tuple[List[Dict], List[Dict]]:
+def populate_actionlist(**kwargs: Any) -> tuple[list[dict], dict]:
     """
     Populate the list of actions based on context and policy.
 
@@ -9032,21 +9030,18 @@ def populate_actionlist(**kwargs: Any) -> tuple[List[Dict], List[Dict]]:
                 control_plane_selected (bool): Is the control plane part of the selection?
                 single_item (bool): Has only a single item been selected?
     """
-    context: Optional[Dict] = deep_get(kwargs, DictPath("context"))
-    action_list: Optional[List[Dict]] = deep_get(kwargs, DictPath("action_list"))
+    action_list: dict[str, Any] = deep_get(kwargs, DictPath("action_list"), {})
     control_plane_selected: bool = deep_get(kwargs, DictPath("control_plane_selected"), False)
     single_item: bool = deep_get(kwargs, DictPath("single_item"), False)
 
-    actions: List[Dict] = []
-    order = []
-    for item in action_list:
-        context_types = deep_get(action_list, DictPath(f"{item}#context_types"))
-        if context is not None and context_types != [] and context not in context_types:
-            continue
+    actions: list[dict] = []
+    order: list[tuple[str, str, str]] = []
 
-        description = deep_get(action_list, DictPath(f"{item}#description"))
-        category = deep_get(action_list, DictPath(f"{item}#category"), "")
-        name = item
+    for item in action_list:
+        description: str = deep_get(action_list, DictPath(f"{item}#description"),
+                                    "<description missing>")
+        category: str = deep_get(action_list, DictPath(f"{item}#category"), "")
+        name: str = item
         order.append((description, category, name))
 
     currentcategory = ""
@@ -9095,7 +9090,7 @@ def populate_actionlist(**kwargs: Any) -> tuple[List[Dict], List[Dict]]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Optional[Dict]:
+def __populate_playbooklist(path: FilePath, action_list: Optional[dict]) -> Optional[dict]:
     if not os.path.isdir(path):
         return action_list
 
@@ -9219,7 +9214,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[Dict]) -> Opti
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def populate_playbooklist(**kwargs: Any) -> tuple[List[Dict], Dict]:
+def populate_playbooklist(**kwargs: Any) -> tuple[list[dict], dict]:
     """
     Populate the list of playbooks based on context and policy.
 
@@ -9232,9 +9227,9 @@ def populate_playbooklist(**kwargs: Any) -> tuple[List[Dict], Dict]:
                 single_item (bool): Has only a single item been selected?
                 cluster_available (bool): Is the cluster available?
     """
-    context: Optional[Dict] = deep_get(kwargs, DictPath("context"))
-    actions: List[Dict] = deep_get(kwargs, DictPath("actions"))
-    action_list: Optional[Dict] = deep_get(kwargs, DictPath("action_list"))
+    context: Optional[dict] = deep_get(kwargs, DictPath("context"))
+    actions: list[dict] = deep_get(kwargs, DictPath("actions"))
+    action_list: dict = deep_get(kwargs, DictPath("action_list"), {})
     control_plane_selected: bool = deep_get(kwargs, DictPath("control_plane_selected"), False)
     single_item: bool = deep_get(kwargs, DictPath("single_item"), False)
     cluster_available: bool = deep_get(kwargs, DictPath("cluster_available"), True)
@@ -9253,7 +9248,7 @@ def populate_playbooklist(**kwargs: Any) -> tuple[List[Dict], Dict]:
 
     order = []
     for item in action_list:
-        playbooktypes = action_list[item].get("playbook_types", [])
+        playbooktypes: list[str] = action_list[item].get("playbook_types", [])
         if context is not None and playbooktypes != [] and context not in playbooktypes:
             continue
 
@@ -9326,7 +9321,7 @@ def populate_playbooklist(**kwargs: Any) -> tuple[List[Dict], Dict]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> List[Dict[str, Any]]:
+def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict[str, Any]]:
     global force_refresh_apis  # pylint: disable=global-statement
 
     if force_refresh_apis:
@@ -10271,7 +10266,7 @@ def populate_views(force_refresh: bool = False) -> None:
                     _header = deep_get(infopad_rows,
                                        DictPath(f"{row}#header"),
                                        [["<unset>", ["types", "unset"]]])
-                    header: List[ThemeRef | ThemeStr] = []
+                    header: list[ThemeRef | ThemeStr] = []
                     try:
                         for string, formatting in _header:
                             header.append(ThemeStr(string,
@@ -10623,7 +10618,7 @@ def setupui(stdscr: curses.window) -> None:
 
 
 # pylint: disable-next=unused-argument
-def list_namespaces(options: List[tuple[str, str]], args: List[str]) -> None:
+def list_namespaces(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     List all available namespaces.
 
@@ -10679,7 +10674,7 @@ def list_namespaces(options: List[tuple[str, str]], args: List[str]) -> None:
 
 
 # pylint: disable-next=unused-argument,disable-next=too-many-branches,too-many-statements
-def list_views(options: List[tuple[str, str]], args: List[str]) -> None:
+def list_views(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     List available views and their supported fields and default sort column.
 
@@ -10812,11 +10807,11 @@ def customise_listviews() -> None:
             continue
 
         # OK, we've now (hopefully) skipped all views that do not have a list view
-        fields: List[str] = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}#fields"), [])
+        fields: list[str] = deep_get(cmtlib.cmtconfig, DictPath(f"Views#{view}#fields"), [])
         if not fields:
             continue
 
-        custom_fields: Dict = {}
+        custom_fields: dict = {}
 
         viewref_fields = deep_get(viewref, DictPath("fields"), [])
 
@@ -10860,7 +10855,7 @@ def customise_listviews() -> None:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def open_view(options: List[tuple[str, str]], args: List[str]) -> None:
+def open_view(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Open the specified view.
 

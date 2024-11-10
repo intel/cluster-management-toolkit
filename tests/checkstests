@@ -247,7 +247,7 @@ def test_check_ansible_dir_permissions(verbose: bool = False) -> Tuple[str, bool
 
     if result:
         # Indata format:
-        # (kwargs, mock_response, mock_exit, expected_result, expected_exception)
+        # (kwargs, mock_response, mock_exit, expected_result, expected_exception, exception_message)
         testdata = (
             # Existing directory with correct permissions is OK; verbose
             (
@@ -685,6 +685,162 @@ def test_check_known_hosts_hashing(verbose: bool = False) -> Tuple[str, bool]:
     return message, result
 
 
+def test_check_client_server_version_match(verbose: bool = False) -> Tuple[str, bool]:
+    message = ""
+    result = True
+
+    fun = checks.check_client_server_version_match
+
+    if result:
+        # Indata format:
+        # (kwargs, mock_response, expected_result, expected_exception, exception_message)
+        testdata = (
+            # Matching major/minor; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 31, "v1.31.2", 1, 31, "v1.31.2"),
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Matching major/minor; quiet
+            (
+                {
+                    "verbose": False,
+                    "quiet_on_ok": True,
+                },
+                (1, 31, "v1.31.2", 1, 31, "v1.31.2"),
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Missing kubectl version; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (0, 0, "<unavailable>", 1, 31, "v1.31.2"),
+                # We abort; 1 new critical
+                (True, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Missing server version; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 31, "v1.31.2", 0, 0, "<unavailable>"),
+                # We abort; 1 new critical
+                (True, 1, 0, 0, 0),
+                None,
+                "",
+            ),
+            # Unsupported major version; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 31, "v1.31.2", 2, 0, "v2.0.0"),
+                # We shouldn't exit and no new errors
+                (False, 0, 0, 0, 0),
+                Exception,
+                "errno.ENOTSUP",
+            ),
+            # kubectl minor > server [+1]; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 31, "v1.31.2", 1, 30, "v1.30.1"),
+                # We shouldn't exit; 1 new note
+                (False, 0, 0, 0, 1),
+                None,
+                "",
+            ),
+            # kubectl minor > server [+2]; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 31, "v1.31.2", 1, 29, "v1.29.4"),
+                # We shouldn't exit; 1 new note
+                (False, 0, 0, 1, 0),
+                None,
+                "",
+            ),
+            # kubectl minor < server [-1]; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 30, "v1.30.1", 1, 31, "v1.31.2"),
+                # We shouldn't exit; 1 new note
+                (False, 0, 0, 1, 0),
+                None,
+                "",
+            ),
+            # kubectl minor < server [-2]; verbose
+            (
+                {
+                    "verbose": True,
+                    "quiet_on_ok": False,
+                },
+                (1, 29, "v1.29.4", 1, 31, "v1.31.2"),
+                # We shouldn't exit; 1 new note
+                (False, 0, 1, 0, 0),
+                None,
+                "",
+            ),
+        )
+
+        for kwargs, mock_response, \
+                expected_result, expected_exception, expected_exception_msg in testdata:
+            try:
+                with mock.patch("clustermanagementtoolkit.checks.kubectl_get_version",
+                                return_value=mock_response), \
+                     mock.patch("sys.exit", side_effect=Exception("errno.ENOTSUP")):
+                    tmp = fun(**kwargs)
+                if tmp != expected_result:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"           result: {tmp}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+            except Exception as e:
+                if expected_exception is not None:
+                    if isinstance(e, expected_exception) \
+                            and expected_exception_msg is None or expected_exception_msg == str(e):
+                        pass
+                    else:
+                        message = f"{fun.__name__}() did not yield expected result:\n" \
+                                  f"        exception: {type(e)}\n" \
+                                  f"          message: {str(e)}\n" \
+                                  f"         expected: {expected_exception}" \
+                                  f" expected message: {expected_exception_msg}"
+                        result = False
+                        break
+                else:
+                    message = f"{fun.__name__}() did not yield expected result:\n" \
+                              f"        exception: {type(e)}\n" \
+                              f"          message: {str(e)}\n" \
+                              f"  expected result: {expected_result}"
+                    result = False
+                    break
+    return message, result
+
+
 tests: Dict = {
     ("check_disable_strict_host_key_checking()",): {
         "callable": test_check_disable_strict_host_key_checking,
@@ -708,6 +864,10 @@ tests: Dict = {
     },
     ("check_insecure_kube_config_options()",): {
         "callable": test_check_insecure_kube_config_options,
+        "result": None,
+    },
+    ("check_client_server_version_match()",): {
+        "callable": test_check_client_server_version_match,
         "result": None,
     },
 }

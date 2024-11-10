@@ -10,7 +10,7 @@ Get information
 """
 
 import base64
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Type
 
 from clustermanagementtoolkit import cmtlib
 
@@ -27,7 +27,7 @@ from clustermanagementtoolkit.kubernetes_helper import get_controller_from_owner
 from clustermanagementtoolkit.kubernetes_helper import get_pod_restarts_total
 
 
-def format_controller(controller: Tuple[Tuple[str, str], str], show_kind: str) -> Tuple[str, str]:
+def format_controller(controller: tuple[tuple[str, str], str], show_kind: str) -> tuple[str, str]:
     """
     Reformat a controller kind + name tuple
 
@@ -63,7 +63,7 @@ def format_controller(controller: Tuple[Tuple[str, str], str], show_kind: str) -
 
 
 # pylint: disable-next=too-many-locals
-def get_pod_info(**kwargs: Any) -> List[Type]:
+def get_pod_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Pods
 
@@ -77,10 +77,10 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
             ([InfoClass]): A list with info
     """
     in_depth_node_status: bool = deep_get(kwargs, DictPath("in_depth_node_status"), True)
-    extra_vars: Dict[str, Any] = deep_get(kwargs, DictPath("extra_vars"),
+    extra_vars: dict[str, Any] = deep_get(kwargs, DictPath("extra_vars"),
                                           {"show_kind": "", "show_evicted": True})
-    filters: List[Dict[str, Any]] = deep_get(kwargs, DictPath("filters"), [])
-    info: List[Type] = []
+    filters: list[dict[str, Any]] = deep_get(kwargs, DictPath("filters"), [])
+    info: list[Type] = []
 
     if not (vlist := deep_get(kwargs, DictPath("vlist"))):
         return []
@@ -179,7 +179,7 @@ def get_pod_info(**kwargs: Any) -> List[Type]:
 
 
 # pylint: disable-next=unused-argument,too-many-locals
-def get_node_info(**kwargs: Any) -> List[Type]:
+def get_node_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Nodes
 
@@ -189,7 +189,7 @@ def get_node_info(**kwargs: Any) -> List[Type]:
         Returns:
             info (list[InfoClass]): A list with info
     """
-    info: List[Type] = []
+    info: list[Type] = []
 
     if (vlist := deep_get(kwargs, DictPath("vlist"))) is None or not vlist:
         return []
@@ -234,7 +234,7 @@ def get_node_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]]:
+def get_node_addresses(addresses: list[dict]) -> tuple[str, list[str], list[str]]:
     """
     Given the addresses list return all internal/external IPs and the hostname
 
@@ -283,7 +283,7 @@ def get_node_addresses(addresses: List[Dict]) -> Tuple[str, List[str], List[str]
 
 
 # pylint: disable-next=too-many-locals
-def get_auth_rule_info(**kwargs: Any) -> List[Type]:
+def get_auth_rule_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Istio Authorization Policy Rules
 
@@ -294,7 +294,7 @@ def get_auth_rule_info(**kwargs: Any) -> List[Type]:
             ([InfoClass]): A list with info
     """
     obj = deep_get(kwargs, DictPath("_obj"))
-    info: List[Type] = []
+    info: list[Type] = []
 
     if obj is None:
         return []
@@ -349,7 +349,7 @@ def get_auth_rule_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_eps_subsets_info(**kwargs: Any) -> List[Type]:
+def get_eps_subsets_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for EndpointSlice subsets
 
@@ -418,7 +418,7 @@ def get_eps_subsets_info(**kwargs: Any) -> List[Type]:
     return subsets
 
 
-def get_key_value_info(**kwargs: Any) -> List[Type]:
+def get_key_value_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for key/value-based information
 
@@ -428,7 +428,7 @@ def get_key_value_info(**kwargs: Any) -> List[Type]:
         Returns:
             ([InfoClass]): A list with info
     """
-    info: List[Type] = []
+    info: list[Type] = []
 
     vlist = deep_get(kwargs, DictPath("_vlist"))
     if vlist is None:
@@ -474,7 +474,7 @@ def get_key_value_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_limit_info(**kwargs: Any) -> List[Type]:
+def get_limit_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Limits
 
@@ -484,7 +484,7 @@ def get_limit_info(**kwargs: Any) -> List[Type]:
             ([InfoClass]): A list with info
     """
     obj = deep_get(kwargs, DictPath("_obj"))
-    info: List[Type] = []
+    info: list[Type] = []
 
     if obj is None:
         return []
@@ -525,7 +525,7 @@ def get_limit_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_promrules_info(**kwargs: Any) -> List[Type]:
+def get_promrules_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Prometheus Rules
 
@@ -536,7 +536,7 @@ def get_promrules_info(**kwargs: Any) -> List[Type]:
             info (list[InfoClass]): A list with info
     """
     obj = deep_get(kwargs, DictPath("_obj"))
-    info: List[Type] = []
+    info: list[Type] = []
 
     if obj is None:
         return []
@@ -578,7 +578,7 @@ def get_promrules_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_rq_item_info(**kwargs: Any) -> List[Type]:
+def get_rq_item_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Resource Quotas
 
@@ -609,7 +609,7 @@ def get_rq_item_info(**kwargs: Any) -> List[Type]:
 
 
 # pylint: disable-next=too-many-locals,too-many-statements
-def get_sas_info(**kwargs: Any) -> List[Type]:
+def get_sas_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Service Account secrets
 
@@ -626,7 +626,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     obj = deep_get(kwargs, DictPath("_obj"))
-    info: List[Type] = []
+    info: list[Type] = []
 
     if obj is None:
         return []
@@ -757,7 +757,7 @@ def get_sas_info(**kwargs: Any) -> List[Type]:
     return info
 
 
-def get_strategy_info(**kwargs: Any) -> List[Type]:
+def get_strategy_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Telemetry Aware Scheduling policies
 
@@ -865,7 +865,7 @@ def get_strategy_info(**kwargs: Any) -> List[Type]:
 
 
 # pylint: disable-next=too-many-locals,too-many-branches
-def get_subsets_info(**kwargs: Any) -> List[Type]:
+def get_subsets_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Endpoint subsets
 
@@ -947,7 +947,7 @@ def get_subsets_info(**kwargs: Any) -> List[Type]:
 
 
 # pylint: disable-next=unused-argument
-def get_themearrays(obj: Dict, **kwargs: Any) -> Dict:
+def get_themearrays(obj: dict, **kwargs: Any) -> dict:
     """
     This is effectively a noop, but we need to have an infogetter
 

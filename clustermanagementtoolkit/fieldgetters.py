@@ -11,7 +11,7 @@ Get data for fields in a list; typically used to populate _extra_data
 
 import copy
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from clustermanagementtoolkit import about
 
@@ -23,7 +23,7 @@ from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 from clustermanagementtoolkit.cmttypes import ProgrammingError, SecurityPolicy
 
 
-def fieldgetter_executable_version(**kwargs: Any) -> List[Any]:
+def fieldgetter_executable_version(**kwargs: Any) -> list[Any]:
     """
     A fieldgetter that provides the version from an executable.
 
@@ -33,7 +33,7 @@ def fieldgetter_executable_version(**kwargs: Any) -> List[Any]:
             [str]: The list of cmt versions
     """
     executable: FilePath = FilePath(deep_get(kwargs, DictPath("executable"), ""))
-    args: List[str] = deep_get(kwargs, DictPath("args"), [])
+    args: list[str] = deep_get(kwargs, DictPath("args"), [])
     version_regex: str = deep_get(kwargs, DictPath("version_regex"), '')
 
     security_policy = SecurityPolicy.ALLOWLIST_RELAXED
@@ -58,7 +58,7 @@ def fieldgetter_executable_version(**kwargs: Any) -> List[Any]:
     return ["".join(version)]
 
 
-def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
+def fieldgetter_cmt_version(**kwargs: Any) -> list[Any]:
     """
     A fieldgetter that provides the version of the Cluster Version Toolkit.
 
@@ -68,7 +68,7 @@ def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
         Returns:
             [str]: The list of cmt versions
     """
-    fields: List[Any] = deep_get(kwargs, DictPath("fields"), [])
+    fields: list[Any] = deep_get(kwargs, DictPath("fields"), [])
     versions = [
         about.PROGRAM_SUITE_VERSION,
         about.UI_PROGRAM_VERSION,
@@ -85,7 +85,7 @@ def fieldgetter_cmt_version(**kwargs: Any) -> List[Any]:
 
 
 # pylint: disable-next=too-many-branches
-def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
+def fieldgetter_crc_version(**kwargs: Any) -> list[Any]:
     """
     A fieldgetter that provides the version of Code Ready Containers (CRC).
 
@@ -95,7 +95,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
         Returns:
             ([str]): The list of CRC version fields
     """
-    fields: List[Any] = deep_get(kwargs, DictPath("fields"), [])
+    fields: list[Any] = deep_get(kwargs, DictPath("fields"), [])
     security_policy = SecurityPolicy.ALLOWLIST_RELAXED
     fallback_allowlist = ["/bin", "/sbin", "/usr/bin", "/usr/sbin",
                           "/usr/local/bin", "/usr/local/sbin", f"{HOMEDIR}/bin"]
@@ -139,7 +139,7 @@ def fieldgetter_crc_version(**kwargs: Any) -> List[Any]:
     return version_strings
 
 
-def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
+def fieldgetter_api_server_version(**kwargs: Any) -> list[Any]:
     """
     A fieldgetter that provides the version of the Kubernetes API-server.
 
@@ -152,7 +152,7 @@ def fieldgetter_api_server_version(**kwargs: Any) -> List[Any]:
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("fieldgetter_api_server_version() called without kubernetes_helper")
-    fields: List[Any] = deep_get(kwargs, DictPath("fields"), [])
+    fields: list[Any] = deep_get(kwargs, DictPath("fields"), [])
 
     field_list = []
     result = kh.get_api_server_version()

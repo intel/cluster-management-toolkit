@@ -87,7 +87,7 @@ def get_device_model(obj: dict, device: DictPath) -> str:
     Return the device model for a partition.
 
         Parameters:
-            obj (Dict): The object to extract device model information from
+            obj (dict): The object to extract device model information from
             device (DictPath): The device to extract model information for
         Returns:
             (str): The device model
@@ -137,7 +137,20 @@ def split_matchlist(matchlist: list[str],
 # Returns True if the item should be skipped
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def filter_list_entry(obj: dict[str, Any], caller_obj: dict[str, Any], filters: dict) -> bool:
-    skip = False
+    """
+    Filter an object based on a set of rules and return whether the object should be skipped
+    Usage is typically to pass in an object from a listgetter (hence the name)
+    and filter it against data in the referenced object.
+
+        Parameters:
+            obj (dict): The primary dict
+            caller_obj (dict): The secondary dict
+            filters (dict): The filters to apply
+        Returns:
+            (bool): True to deny the entry, False to allow the entry
+    """
+    skip: bool = False
+
     # pylint: disable-next=too-many-nested-blocks
     for f in filters:
         if not deep_get(filters[f], DictPath("enabled"), True):
@@ -637,9 +650,16 @@ def get_ingress_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
 def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     """
     Get a list of network policy rules.
+
+        Parameters:
+            obj (dict): The object to extract data from
+        Returns:
+            (([dict[str, Any], int|str)):
+                ([dict[str, Any]]): The network policy rules
+                (int): The status for the request
     """
-    vlist = []
-    status = 200
+    vlist: list = []
+    status: int = 200
 
     for item in deep_get(obj, DictPath("spec#ingress"), []):
         policy_type = "ingress"
