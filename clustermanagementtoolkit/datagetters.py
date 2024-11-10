@@ -178,7 +178,7 @@ def datagetter_metrics(obj: dict[str, Any], **kwargs: Any) -> tuple[list[str], d
             result ([str]), {} (dict): A list with metrics and an empty dict
     """
     path = deep_get(kwargs, DictPath("path"))
-    default = deep_get(kwargs, DictPath("default"), [])
+    default: list[str] = deep_get(kwargs, DictPath("default"), [])
 
     if obj is None or not obj or path is None:
         return default, {}

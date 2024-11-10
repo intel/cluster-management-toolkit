@@ -260,8 +260,24 @@ def filter_list_entry(obj: dict[str, Any], caller_obj: dict[str, Any], filters: 
 # listview, listpad
 def generic_listgetter(kind: tuple[str, str], namespace: str,
                        **kwargs: Any) -> tuple[list[dict[str, Any]], int | str]:
+    """
+    Fetch data from Kubernetes.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+                label_selector (str): A comma-separated string with a list of label selectors
+                field_selector (str): A comma-separated string with a list of field selectors
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of Kubernetes objects
+                (int): The status for the Kubernetes request
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("generic_listgetter() called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     label_selector = deep_get(kwargs, DictPath("label_selector"), "")
@@ -292,12 +308,16 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
         Returns:
-            (([dict[str, Any], int])):
-                ([dict[str, Any]): The list of metrics
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of metrics
                 (int): The status for the Kubernetes request
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_metrics_list() called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
+
+    filters: list[str] = deep_get(kwargs, DictPath("filter"), [])
 
     vlist = []
 
@@ -313,19 +333,18 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
 
     metric_set = set()
     for line in metrics:
-        tmp = metrics_regex.match(line)
-        if tmp is None:
+        if (tmp := metrics_regex.match(line)) is None:
             continue
         metric = tmp[1]
         metric_set.add(metric)
-        if deep_get(kwargs, DictPath("filter")) is not None:
-            if metric not in deep_get(kwargs, DictPath("filter")):
-                continue
+
+        if filters is not None and metric not in filters:
+            continue
 
         fields = [f"{x}" for x in next(csv.reader([tmp[2]], delimiter=",", quotechar="\""))]
         if not fields:
             continue
-        d: dict = {
+        d: dict[str, Any] = {
             "name": metric,
             "fields": {},
         }
@@ -341,8 +360,22 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
 
 # pylint: disable-next=unused-argument,too-many-locals
 def get_pod_containers_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int | str]:
+    """
+    Get a list of all pods with a separate entry for every container.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of Kubernetes objects
+                (int): The status for the Kubernetes request
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_pod_containers_list() called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     vlist = []
@@ -488,17 +521,33 @@ def listgetter_files(**kwargs: Any) -> tuple[list[dict[str, Any]], None | int | 
 
 
 def listgetter_dir(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
-    status = 200
+    """
+    Get a list of directory entries. If prefixes and/or suffixes are set,
+    any entries not matching the prefixes/suffixes will be skipped.
+
+        Parameters:
+            dirpath (str): The path to get the directory entries from
+            prefixes ([str]): A list of accepted prefixes
+            suffixes ([str]): A list of accepted suffixes
+            types ([str]): A list of entry types to include; if empty all types will
+                           be included; currently supported filters are [file, dir]
+        Returns:
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The directory entries
+                (int): The status for the request
+    """
+    status: int = 200
 
     dirpath = deep_get(kwargs, DictPath("dirpath"), "")
+    types = deep_get(kwargs, DictPath("types"), [])
     # Substitute {HOME} for {HOMEDIR}
     if dirpath.startswith("{HOME}"):
         dirpath = dirpath.replace("{HOME}", HOMEDIR, 1)
-    prefixes = deep_get(kwargs, DictPath("prefixes"), [])
-    suffixes = deep_get(kwargs, DictPath("suffixes"), [])
+    prefixes: list[str] = deep_get(kwargs, DictPath("prefixes"), [])
+    suffixes: list[str] = deep_get(kwargs, DictPath("suffixes"), [])
     kind = deep_get(kwargs, DictPath("kind"))
 
-    vlist = []
+    vlist: list[dict[str, Any]] = []
 
     if os.path.isdir(dirpath):
         for filename in os.listdir(dirpath):
@@ -506,12 +555,23 @@ def listgetter_dir(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
                 continue
             if suffixes and not filename.endswith(tuple(suffixes)):
                 continue
-            filepath = FilePath(dirpath).joinpath(filename)
-            filepath_entry = Path(filepath)
-            fstat = filepath_entry.stat()
-            mtime = datetime.fromtimestamp(fstat.st_mtime)
-            ctime = datetime.fromtimestamp(fstat.st_ctime)
-            filesize = disksize_to_human(fstat.st_size)
+            if types:
+                if os.path.isfile(filename):
+                    if not "file" in types:
+                        continue
+                elif os.path.isdir(filename):
+                    if not "dir" in types:
+                        continue
+                else:
+                    # We don't support other types in the filter
+                    continue
+
+            filepath: FilePath = FilePath(dirpath).joinpath(filename)
+            filepath_entry: Path = Path(filepath)
+            fstat: os.stat_result = filepath_entry.stat()
+            mtime: datetime = datetime.fromtimestamp(fstat.st_mtime)
+            ctime: datetime = datetime.fromtimestamp(fstat.st_ctime)
+            filesize: str = disksize_to_human(fstat.st_size)
 
             vlist.append({
                 "filename": filename,
@@ -541,7 +601,7 @@ def get_hpa_metrics(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int
         Parameters:
             obj (dict): The object to extract data from
         Returns:
-            (([dict[str, Any], int|str)):
+            (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The metrics
                 (int): The status for the request
     """
@@ -605,7 +665,7 @@ def get_ingress_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]
             kwargs (Dict): Additional parameters
         Returns:
             (([dict], int)):
-                ([dict]): The ingress rules
+                ([dict[str, Any]]): The ingress rules
                 (int): The status for the request
     """
     vlist = []
@@ -654,7 +714,7 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
         Parameters:
             obj (dict): The object to extract data from
         Returns:
-            (([dict[str, Any], int|str)):
+            (([dict[str, Any]], int)):
                 ([dict[str, Any]]): The network policy rules
                 (int): The status for the request
     """
@@ -732,8 +792,24 @@ def get_netpol_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]]
 
 def get_pv_from_pvc_name(pvc_name: str,
                          **kwargs: Any) -> tuple[Optional[dict[str, Any]], Optional[str]]:
+    """
+    Given the name of a Persistent Volume Claim,
+    return the corresponding PersistentVolume.
+
+        Parameters:
+            pvc_name (str): The name of the Persistent Volume Claim
+            **kwargs (dict[str, Any]): Keyword arguments
+                kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
+        Returns:
+            ((dict[str, Any], str)):
+                (dict[str, Any]): Persistent Volume object
+                (str): The name of the Persistent Volume.
+        Raises:
+            ProgrammingError: Function called without kubernetes_helper
+    """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_pv_from_pvc_name() called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     pv = None
@@ -756,8 +832,18 @@ def get_pv_from_pvc_name(pvc_name: str,
     return pv, pv_name
 
 
-def get_pv_status(pv: dict[str, Any]) -> tuple[str, StatusGroup]:
-    phase = deep_get(pv, DictPath("status#phase"))
+def get_pv_status(obj: dict[str, Any]) -> tuple[str, StatusGroup]:
+    """
+    Given a Persistent Volume object, return its status.
+
+        Parameters:
+            obj (dict[str, Any]): The Persistent Volume object
+        Returns:
+            ((str, StatusGroup)):
+                (str): The status of the Persistent Volume
+                (StatusGroup): The StatusGroup of the status
+    """
+    phase = deep_get(obj, DictPath("status#phase"), "")
 
     if phase in ("Bound", "Available"):
         reason = phase
@@ -766,7 +852,7 @@ def get_pv_status(pv: dict[str, Any]) -> tuple[str, StatusGroup]:
         reason = phase
         status_group = StatusGroup.PENDING
     else:
-        reason = deep_get(pv, DictPath("status#reason"), "").strip()
+        reason = deep_get(obj, DictPath("status#reason"), "").strip()
         status_group = StatusGroup.NOT_OK
     return reason, status_group
 
@@ -782,17 +868,17 @@ def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
                 kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
         Returns:
-            (([dict[str, Any], int])):
-                ([dict[str, Any]): The list of pod resources.
-                (int): The status.
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list of pod resources.
+                (int): The status for the request
         Raises:
             ProgrammingError: Function called without kubernetes_helper
     """
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_pod_resource_list() called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
-    vlist = []
+    vlist: list[dict[str, Any]] = []
 
     init_containers = True
     containers = True
@@ -952,7 +1038,7 @@ def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict
     else:
         trivy_kind = controller_kind
         trivy_name = controller_name
-    selector_dict = {
+    selector_dict: dict[str, str] = {
         "trivy-operator.resource.kind": trivy_kind,
         "trivy-operator.resource.name": trivy_name,
     }
@@ -1653,15 +1739,14 @@ def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict
 # pylint: disable-next=too-many-locals
 def get_info_by_last_applied_configuration(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("get_info_by_last_applied_configuration() "
-                               "called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     kind = deep_get(kwargs, DictPath("kind"))
     if kind is None:
         return [], 404
 
-    configuration = {
+    configuration: dict[str, str] = {
         "kind": kind[0]
     }
 
@@ -1712,7 +1797,7 @@ def get_info_by_last_applied_configuration(obj: dict, **kwargs: Any) -> tuple[li
 
 # pylint: disable-next=unused-argument
 def get_sidecar_rule_list(obj: dict, **kwargs: Any) -> tuple[list[dict], int]:
-    vlist = []
+    vlist: list[dict[str, Any]] = []
 
     for traffic_type, items in (("Ingress", deep_get(obj, DictPath("spec#ingress"), [])),
                                 ("Egress", deep_get(obj, DictPath("spec#egress"), []))):
@@ -1866,12 +1951,14 @@ def listgetter_dict_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[
     Given a dict, return a list of dicts.
     The format of the newly generated dict is:
     {"key": key_from_dict, "value": value_from_dict}
-    This is to ensure that we can get the key without knowing the name of the key
+    This is to ensure that we can get the key without knowing the name of the key.
 
         Parameters:
             obj (Dict): The object to convert to a list
         Returns:
-            ([dict]): The list representation of the dict
+            (([dict[str, Any]], int)):
+                ([dict[str, Any]]): The list representation of the dict
+                (int): The status.
     """
     path = deep_get(kwargs, DictPath("path"))
     vlist = []
@@ -2001,8 +2088,7 @@ def listgetter_matchrules(obj: dict, **kwargs: Any) -> tuple[list[dict], str]:
 def listgetter_namespaced_resources(obj: dict,
                                     **kwargs: Any) -> tuple[list, str | int | list[StatusGroup]]:
     if (kh := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
-        raise ProgrammingError("listgetter_namespaced_resources() "
-                               "called without kubernetes_helper")
+        raise ProgrammingError(f"{__name__}() called without kubernetes_helper")
     kh_cache = deep_get(kwargs, DictPath("kh_cache"))
 
     vlist = []
