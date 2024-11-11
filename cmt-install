@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -563,7 +562,6 @@ def trim_package_list(packages: dict, distro: str = "", fallback: bool = False) 
     return trimmed_packages
 
 
-# pylint: disable-next=unused-argument
 def install_software(packages: dict, verbose: bool = False, distro: str = "") -> None:
     """
     Batch install packages
@@ -609,7 +607,7 @@ def install_software_with_pip(packages: list[str],
     _retval = subprocess.run(args, check=False).returncode
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-statements,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-statements,too-many-branches
 def install_software_with_pip_fallback(packages: dict, pip_proxy: str = "",
                                        verbose: bool = False,
                                        dryrun: bool = False,

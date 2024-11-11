@@ -206,7 +206,6 @@ def populate_playbooks_from_filenames(playbooks: list[FilePath]) -> list[tuple[l
     return populate_playbooks_from_paths(playbook_paths)
 
 
-# pylint: disable-next=unused-argument
 def ansible_print_action_summary(playbooks: list[tuple[list[ANSIThemeStr], FilePath]]) -> None:
     """
     Given a list of playbook paths, print a summary of the actions that will be performed
@@ -1377,7 +1376,7 @@ def ansible_write_log(start_date: datetime, playbook: FilePath, events: list[dic
         secure_write_yaml(logentry_path, d, permissions=0o600, sort_keys=False)
 
 
-# pylint: disable-next=too-many-branches,too-many-arguments
+# pylint: disable-next=too-many-branches
 def ansible_print_task_results(task: str,
                                msg_lines: list[str],
                                stdout_lines: list[str],

@@ -358,7 +358,7 @@ def get_metrics_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     return vlist, status
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=too-many-locals
 def get_pod_containers_list(**kwargs: Any) -> tuple[list[dict[str, Any]], int | str]:
     """
     Get a list of all pods with a separate entry for every container.
@@ -557,10 +557,10 @@ def listgetter_dir(**kwargs: Any) -> tuple[list[dict[str, Any]], int]:
                 continue
             if types:
                 if os.path.isfile(filename):
-                    if not "file" in types:
+                    if "file" not in types:
                         continue
                 elif os.path.isdir(filename):
-                    if not "dir" in types:
+                    if "dir" not in types:
                         continue
                 else:
                     # We don't support other types in the filter
@@ -619,6 +619,7 @@ def get_hpa_metrics(obj: dict, **kwargs: Any) -> tuple[list[dict[str, Any]], int
         target_type_name = target_type[0].lower() + target_type[1:]
 
         kind = ""
+        name = ""
         api_group = ""
         object_name = ""
 
@@ -857,7 +858,7 @@ def get_pv_status(obj: dict[str, Any]) -> tuple[str, StatusGroup]:
     return reason, status_group
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def get_pod_resource_list(obj: dict[str, Any], **kwargs: Any) -> tuple[list[dict[str, Any]], int]:
     """
     Return a list of resources for a pod.
@@ -2179,7 +2180,7 @@ def listgetter_feature_gates(obj: dict, **kwargs: Any) -> tuple[dict | list[dict
     return vlist, 200
 
 
-# pylint: disable-next=too-many-locals,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
     """
     Listgetter for paths.
@@ -2274,7 +2275,6 @@ def listgetter_path(obj: dict, **kwargs: Any) -> tuple[dict | list[dict], int]:
                             d[key] = value
                     vlist.append(d)
                 else:
-                    sys.exit(f"{item=}")
                     vlist.append(item)
         elif flatten_dicts and tmp2 is not None:
             for item in tmp2:

@@ -221,7 +221,6 @@ def add_resource(key: str, units: dict[str, list[str]],
     return resources
 
 
-# pylint: disable-next=too-many-locals
 def postprocessor_node_resources(**kwargs: Any) -> tuple[list[dict], int | str]:
     """
     Postprocessor for node resources. Extracts the node resources

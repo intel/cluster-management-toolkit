@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -15,7 +14,7 @@
 # Copyright the Cluster Management Toolkit for Kubernetes contributors.
 # SPDX-License-Identifier: MIT
 
-# pylint: disable=too-many-lines,wrong-import-position
+# pylint: disable=too-many-lines
 
 import errno
 from getpass import getuser
@@ -171,7 +170,6 @@ def set_group_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-# pylint: disable-next=unused-argument
 def set_global_vars(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Set global variables
@@ -992,7 +990,6 @@ def list_playbooks(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-# pylint: disable-next=unused-argument
 def run_playbook(options: list[tuple[str, str]], args: list[str]) -> int:
     """
     Run playbook on host(s) or group(s)

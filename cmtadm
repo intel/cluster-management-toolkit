@@ -1,6 +1,5 @@
 #! /bin/sh
 # vim: ts=4 filetype=python expandtab shiftwidth=4 softtabstop=4 syntax=python
-# pylint: disable-next=anomalous-backslash-in-string
 ''''eval version=$( ls /usr/bin/python3.* | \
     grep '.*[0-9]$' | sort -nr -k2 -t. | head -n1 ) && \
     version=${version##/usr/bin/python3.} && [ ${version} ] && \
@@ -887,6 +886,9 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
             elif upgradetype == "executable":
                 directory = BINDIR
                 permissions = 0o755
+            else:
+                raise ValueError(f"Unknown upgradetype {upgradetype}; this is a programming error.")
+
             secure_mkdir(directory)
 
             for url in deep_get(cni_data, DictPath(f"{cni}#{upgradetype}#urls"), []):
@@ -975,7 +977,7 @@ def __upgrade_cni(cni: str, upgradetype: str, context: str,
             ansithemeprint([ANSIThemeStr("No newer version available.", "default")])
 
 
-# pylint: disable-next=unused-argument,too-many-branches
+# pylint: disable-next=too-many-branches
 def setup_cni(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Install and configure the specified CNI
@@ -1214,7 +1216,7 @@ def teardown_cni(options: list[tuple[str, str]], args: list[str]) -> None:
         sys.exit(errno.EINVAL)
 
 
-# pylint: disable-next=unused-argument,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
 def upgrade_cni(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     Upgrade the specified CNI to the latest version
@@ -1792,7 +1794,7 @@ def check_versions(pkg_packages: list[str], version_checks: list[tuple[str, list
     return pkg_versions, other_versions
 
 
-# pylint: disable-next=unused-argument
+# pylint: disable-next=too-many-locals
 def run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> tuple[int, dict]:
     """
     Run a playbook
@@ -2011,7 +2013,6 @@ def __generic_task_run_playbooks_on_selection(selection: list[str], installation
                                  extra_values=extra_values, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_prepreparation_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-preparation playbooks
@@ -2046,6 +2047,8 @@ def __task_run_preparation_playbooks_on_localhost(installation_info: dict,
     os_distro = identify_distro()
     selection = __selection_localhost()
     playbooks = populate_playbooks_from_filenames(prepare_targets["localhost"]["playbooks"])
+    packages = []
+    held_packages = []
 
     # The first minor Kubernetes version available from the new repository is 1.24.0;
     # let's add all minor versions from 24 and up; the old repository is no longer usable.
@@ -2099,6 +2102,9 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: dict,
     os_distro = identify_distro()
     control_planes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"), [])
     nodes = deep_get(installation_info, DictPath(f"{cluster_name}#nodes"), [])
+    packages = []
+    held_packages = []
+
     if not control_planes:
         selection = __selection_control_planes()
     else:
@@ -2143,7 +2149,6 @@ def __task_run_preparation_playbooks_on_hosts(installation_info: dict,
                                  extra_values=extra_values, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_postpreparation_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-preparation playbooks
@@ -2183,7 +2188,6 @@ def __task_setup_bash_completion(installation_info: dict, verbose: bool = False)
     secure_write_string(BASH_COMPLETION_DIR.joinpath("kubectl"), result)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_presetup_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-setup playbooks
@@ -2217,6 +2221,9 @@ def __task_run_setup_playbooks_on_localhost(installation_info: dict, verbose: bo
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
     os_distro = identify_distro()
     selection = __selection_localhost()
+    packages = []
+    held_packages = []
+
     playbooks = \
         populate_playbooks_from_filenames(setup_control_plane_targets["localhost"]["playbooks"])
 
@@ -2257,6 +2264,9 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: dict,
     os_distro = identify_distro()
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
     selection = __selection_control_planes()
+    packages = []
+    held_packages = []
+
     playbooks = \
         populate_playbooks_from_filenames(setup_control_plane_targets[k8s_distro]["playbooks"])
     cri = installation_info[cluster_name]["cri"]
@@ -2295,7 +2305,6 @@ def __task_run_setup_playbooks_on_control_planes(installation_info: dict,
                                  extra_values=extra_values, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_postsetup_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-setup playbooks
@@ -2602,7 +2611,6 @@ def __task_uncordon_control_planes(installation_info: dict, verbose: bool = Fals
             sys.exit(errno.EINVAL)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_preupgrade_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-upgrade playbooks
@@ -2639,6 +2647,8 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: dict,
     os_distro = identify_distro()
     pod_network_cidr = installation_info[cluster_name]["pod_network_cidr"]
     requested_version = installation_info[cluster_name]["requested_version"]
+    packages = []
+    held_packages = []
     selection = __selection_control_planes()
     playbooks = \
         populate_playbooks_from_filenames(upgrade_control_plane_targets[k8s_distro]["playbooks"])
@@ -2682,7 +2692,6 @@ def __task_run_upgrade_playbooks_on_control_planes(installation_info: dict,
                                  extra_values=extra_values, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_postupgrade_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-upgrade playbooks
@@ -2726,7 +2735,6 @@ def __task_verify_that_cluster_has_no_nodes(installation_info: dict, verbose: bo
     ansithemeprint([ANSIThemeStr("OK", "ok")])
 
 
-# pylint: disable-next=unused-argument
 def __task_run_preteardown_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-teardown playbooks
@@ -2768,7 +2776,6 @@ def __task_run_teardown_playbooks_on_control_planes(installation_info: dict,
                                  extra_values={}, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_postteardown_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-teardown playbooks
@@ -2862,7 +2869,6 @@ def __task_remove_kubeconfig(installation_info: dict, verbose: bool = False) -> 
     check_and_print_status(True)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_prepurge_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs pre-purge playbooks
@@ -2898,6 +2904,8 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: dict,
     k8s_distro = installation_info[cluster_name]["distro"]
     os_distro = identify_distro()
     selection = __selection_control_planes()
+    packages = []
+    held_packages = []
     playbooks = \
         populate_playbooks_from_filenames(purge_control_plane_targets[k8s_distro]["playbooks"])
 
@@ -2926,7 +2934,6 @@ def __task_run_purge_playbooks_on_control_planes(installation_info: dict,
                                  extra_values=extra_values, verbose=verbose)
 
 
-# pylint: disable-next=unused-argument
 def __task_run_postpurge_playbooks(installation_info: dict, verbose: bool = False) -> None:
     """
     A task that runs post-purge playbooks
@@ -3189,6 +3196,7 @@ def __find_requested_version(k8s_distro: str, version: Optional[str] = None) -> 
             requested_version (str): The best matching package version
     """
     os_distro = identify_distro()
+    versions: list[str] = []
 
     requested_version: str = ""
 
@@ -4030,11 +4038,14 @@ def add_nodes(options: list[tuple[str, Any]], args: list[Any]) -> None:
     cordon_on_join = False
     cri = "containerd"
     cri_version = None
+    verbose: bool = False
 
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
     k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#distro"))
     control_planes = deep_get(installation_info, DictPath(f"{cluster_name}#control_planes"))
+
+    configuration_paths: list[FilePath] = []
 
     if k8s_distro == "kubeadm":
         configuration_paths = [
@@ -4221,6 +4232,8 @@ def create_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
     """
     global kh  # pylint: disable=global-statement
     global no_password  # pylint: disable=global-statement
+
+    join_configuration_path: list[str] = []
 
     http_proxy = deep_get(cmtlib.cmtconfig, DictPath("Network#http_proxy"), "")
     if http_proxy is None:
@@ -5242,6 +5255,7 @@ def setup_control_planes(options: list[tuple[str, Any]], args: list[str]) -> Non
     installation_info = get_installation_info()
     cluster_name = deep_get(installation_info, DictPath("installation_target"))
     k8s_distro = deep_get(installation_info, DictPath(f"{cluster_name}#distro"))
+    configuration_paths: list[FilePath] = []
 
     if k8s_distro == "kubeadm":
         setup_control_plane_tasks = __setup_kubeadm_control_plane_tasks
@@ -6159,6 +6173,8 @@ def upgrade_control_plane(options: list[tuple[str, str]], args: list[str]) -> No
 
     ansithemeprint([ANSIThemeStr("\n• ", "separator"),
                     ANSIThemeStr("Running sanity checks", "action")])
+
+    pkg_versions: list[str] = []
 
     if k8s_distro == "kubeadm":
         if os_distro in ("debian",):

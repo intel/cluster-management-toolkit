@@ -622,7 +622,7 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
     return message
 
 
-# pylint: disable-next=too-many-locals,too-many-arguments,too-many-branches
+# pylint: disable-next=too-many-locals,too-many-branches
 def iptables(message: str,
              remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]], **kwargs: Any) \
         -> tuple[list[ThemeRef | ThemeStr], LogLevel, str,
@@ -1938,6 +1938,7 @@ def expand_event(message: str, severity: LogLevel, **kwargs: Any) \
     # Try to extract an embedded severity; use it if higher than severity
     tmp = re.match(r"^.*type: '([A-Z][a-z]+)' reason:", raw_message)
     if tmp is not None:
+        _severity = severity
         if tmp[1] == "Normal":
             _severity = LogLevel.INFO
         elif tmp[1] == "Warning":
@@ -2082,7 +2083,7 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
         # First go through the list of matches and check that there are at least one
         # key=value pair; we do not allow *only* bare keys. While it could theoretically
         # occur, it leaves too much room for false positives.
-        if not any(["=" in item for item in tmp]):
+        if not any("=" in item for item in tmp):
             # Give up; this line cannot be parsed as a set of key=value
             return facility, severity, message, remnants
 
@@ -2240,6 +2241,7 @@ def key_value(message: str, **kwargs: Any) -> tuple[str, LogLevel, str,
                                                     LogLevel.NOTICE, force_severity=True))
                     else:
                         if is_event and d_key == "type":
+                            severity_ = severity
                             if d_value.strip("\"") == "Normal":
                                 severity_ = LogLevel.NOTICE
                             elif d_value.strip("\"") == "Warning":
@@ -2369,7 +2371,7 @@ def key_value_with_leading_message(message: str,
         # First go through the list of matches and check that there are at least one
         # key=value pair; we do not allow *only* bare keys. While it could theoretically
         # occur, it leaves too much room for false positives.
-        if not any(["=" in item for item in tmp]):
+        if not any("=" in item for item in tmp):
             # Give up; this line cannot be parsed as a set of key=value
             return facility, severity, message, remnants
 
@@ -2667,7 +2669,20 @@ def directory(message: str,
 def seconds_severity_facility(message: str, **kwargs: Any) \
         -> tuple[str, LogLevel, str | list[ThemeRef | ThemeStr],
                  list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
+    """
+    Convert messages in [seconds] SEVERITY facility message format
 
+        Parameters:
+            message (str): The message to format
+            **kwargs (dict[str, Any]): Keyword arguments (Unused)
+        Returns:
+            ((str, LogLevel, str|ThemeArray, [(ThemeArray, LogLevel)]))):
+                (str): The log facility
+                (LogLevel): The LogLevel of the message
+                (str|ThemeArray): The unchanged message if nothing matched,
+                                  or the formatted themearray
+                ([(ThemeArray, LogLevel)]): Unused
+    """
     facility: str = ""
     severity: LogLevel = LogLevel.INFO
     remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
@@ -3277,7 +3292,6 @@ def ansible_line_scanner(message: str,
     return processor, (timestamp, facility, severity, remnants)
 
 
-# pylint: disable-next=unused-argument
 def ansible_line(message: str,
                  **kwargs: Any) -> tuple[tuple[str, Optional[Callable], dict],
                                          list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
@@ -3971,7 +3985,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
                 line (int): The line number
         Returns:
             (datetime, str, LogLevel,
-             str|ThemeArray|(str, Callable, dict),
+             str | ThemeArray | (str, Callable, dict),
              [(ThemeArray, LogLevel)], (str, str), Parser):
                 (datetime): A timestamp
                 (str): The log facility
@@ -3987,6 +4001,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
     override_parser: Optional[Parser] = deep_get(kwargs, DictPath("override_parser"))
     container_type: str = deep_get(kwargs, DictPath("container_type"), "container")
     line: int = deep_get(kwargs, DictPath("line"), 0)
+    facility: str = ""
 
     # First extract the Kubernetes timestamp
     message, timestamp = split_iso_timestamp(message, none_timestamp())
@@ -3999,6 +4014,8 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
     if override_parser is not None:
         # Any other timestamps (as found in the logs) are ignored
         parser = None
+        severity = LogLevel.INFO
+        remnants = None
         for parser in parsers:
             if parser.name == override_parser:
                 options = {

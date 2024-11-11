@@ -240,7 +240,6 @@ def verify_checksum(checksum: bytes,
 
     if checksum_type in ("shake_128", "shake_256"):
         shake_length = len(match_checksum) // 2
-        # pylint: disable-next=too-many-function-args
         if m.hexdigest(shake_length) != match_checksum:  # type: ignore
             return False
     else:

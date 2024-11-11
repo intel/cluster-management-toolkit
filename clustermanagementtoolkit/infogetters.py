@@ -178,7 +178,7 @@ def get_pod_info(**kwargs: Any) -> list[Type]:
     return info
 
 
-# pylint: disable-next=unused-argument,too-many-locals
+# pylint: disable-next=too-many-locals
 def get_node_info(**kwargs: Any) -> list[Type]:
     """
     Infogetter for Nodes
