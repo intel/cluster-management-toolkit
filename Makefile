@@ -461,6 +461,7 @@ BASH_COMPLETION_DIR := /usr/share/bash-completion/completions
 CMT_CONFIG_DIR := /etc/cmt
 CMT_CONFIGLET_DIR := $(CMT_CONFIG_DIR)/cmt.yaml.d
 CMT_DATA_DIR := /usr/share/cluster-management-toolkit
+CMT_VIEWS_DIR := $(CMT_DATA_DIR)/views
 DIST_PACKAGE_DIR := /usr/lib/python3/dist-packages
 BINDIR := /usr/bin
 
@@ -468,10 +469,11 @@ install:
 	@$(INSTALL_DIRECTORY) $(DESTDIR)$(BASH_COMPLETION_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_CONFIGLET_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_DATA_DIR) &&\
+	$(INSTALL_DIRECTORY) $(DESTDIR)$(CMT_VIEWS_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(DIST_PACKAGE_DIR) &&\
 	$(INSTALL_DIRECTORY) $(DESTDIR)$(BINDIR) &&\
 	$(INSTALL_DATA) cmt.yaml $(DESTDIR)$(CMT_CONFIG_DIR) &&\
 	$(INSTALL) cmt cmtadm cmtinv cmu $(DESTDIR)$(BINDIR) &&\
 	tar cf - --exclude=.*.swp clustermanagementtoolkit | (cd $(DESTDIR)$(DIST_PACKAGE_DIR); tar xf -) &&\
 	tar cf - --exclude=.*.swp parsers playbooks sources themes | (cd $(DESTDIR)$(CMT_DATA_DIR); tar xf -) &&\
-	cp views/*.yaml $(DESTDIR)$(CMT_DATA_DIR)/views || printf -- "Installation failed.\n"
+	cp views/*.yaml $(DESTDIR)$(CMT_VIEWS_DIR) || printf -- "Installation failed.\n"
