@@ -3532,13 +3532,22 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
     global no_password  # pylint: disable=global-statement
 
     # default options
-    confirm = True
+    confirm: bool  = True
+    verbose: bool = False
 
     for opt, _optarg in options:
         if opt == "-Y":
             confirm = False
         elif opt == "--no-password":
             no_password = True
+        elif opt == "--save-ansible-logs":
+            ansible_configuration["save_logs"] = True
+        elif opt == "--verbose":
+            verbose = True
+
+    __task_check_and_create_ssh_key(installation_info={})
+    __task_add_ssh_keys_to_inventory(installation_info={})
+    print()
 
     if kh is None:
         kh = kubernetes_helper.KubernetesHelper(about.PROGRAM_SUITE_NAME,
@@ -3665,7 +3674,7 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
 
         retval, ansible_results = \
             run_playbook(get_playbook_path(FilePath("prepare_passwordless_ansible.yaml")),
-                         hosts=[controlplane], extra_values=extra_values, quiet=True)
+                         hosts=[controlplane], extra_values=extra_values, verbose=verbose)
         if retval != 0:
             break
 
@@ -6859,6 +6868,20 @@ COMMANDLINE = {
                     [ANSIThemeStr("are already configured for login using an SSH key",
                                   "description")],
                 ],
+            },
+            "--save-ansible-logs": {
+                "description": [
+                    ANSIThemeStr("Save logs from Ansible runs", "description")],
+                "extended_description": [
+                    [ANSIThemeStr("The logs can be viewed using “", "description"),
+                     ANSIThemeStr("cmu", "programname"),
+                     ANSIThemeStr(" logs", "command"),
+                     ANSIThemeStr("“", "description")]
+                ],
+            },
+            "--verbose": {
+                "description": [
+                    ANSIThemeStr("Be more verbose", "description")],
             },
         },
         "optional_args": [
