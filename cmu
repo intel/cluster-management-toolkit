@@ -47,7 +47,7 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, cast, Optional, Sequence, Type
+from typing import Any, Callable, cast, Optional, Sequence, Type
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -794,6 +794,16 @@ def process_value(value: Any, vtype: str, **kwargs: Any) -> \
 
 
 def transform_filter(transformations: dict, value: DictPath) -> Any:
+    """
+    Given a transformation dictionary,
+    look up and return the corresponding value.
+
+        Parameters:
+            transformations (dict[str, Any]): The transformation dictionary
+            value (DictPath): The value to look up
+        Returns:
+            (Any): The transformed value
+    """
     if transformations and value in transformations:
         value = deep_get(transformations, value)
     return value
@@ -801,8 +811,20 @@ def transform_filter(transformations: dict, value: DictPath) -> Any:
 
 # pylint: disable-next=too-many-return-statements,too-many-locals,too-many-branches,too-many-statements # noqa: E501
 def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: Any = None) -> bool:
-    # When is a list of when-conditions,
-    # all of which have to evaluate to true
+    """
+    A filter used by infogetters. Given a dictionary of when-conditions,
+    # and either a dict or a key/value pair, return True if all conditions
+    # evaluate to true, or False if at least one condition evaluates to false.
+
+        Parameters:
+            when_path (dict[str, list[dict[str, Any]]]): A dictionary of when-conditions
+            item (dict[str, Any]): An item to filter
+            key (str): A key
+            value (Any): A value
+        Returns:
+            (bool): True if all conditions evaluated to True,
+                    False if at least one condition evaluated to False
+    """
     when_conditions = deep_get(when_path, DictPath("when"), [])
 
     _key = key
@@ -828,7 +850,7 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
             return False
         if when_key_in is not None and key not in when_key_in:
             return False
-        if when_key_notin is not None and key in when_key_in:
+        if when_key_notin is not None and key in when_key_notin:
             return False
         if when_key_startswith is not None and not key.startswith(when_key_startswith):
             return False
@@ -3251,7 +3273,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 tagged_items.clear()
                 uip.list_needs_regeneration(True)
                 continue
-            for key, value in natsorted(labels):
+            for key, value in cast(list[tuple[str, str]], natsorted(labels)):
                 labellist.append({
                     "lineattrs": WidgetLineAttrs.NORMAL,
                     "columns": [[ThemeStr(f"{key}", ThemeAttr("windowwidget", "default"))],
@@ -9682,14 +9704,14 @@ def is_cluster_reachable() -> bool:
     return reachable
 
 
-availability_checker_allowlist = {
+availability_checker_allowlist: dict[str, Callable] = {
     "is_cluster_reachable": is_cluster_reachable,
     "is_kubernetes_supported": is_kubernetes_supported,
 }
 
 
 # action calls acceptable for direct use in view files
-action_call_allowlist = {
+action_call_allowlist: dict[str, Callable] = {
     "create_namespace": create_namespace,
     "decode_and_view_data": decode_and_view_data,
     "decode_and_view_file_templates": decode_and_view_file_templates,
@@ -9712,7 +9734,7 @@ action_call_allowlist = {
 
 
 # Actionfuncs acceptable for direct use in view files
-actionfunc_allowlist = {
+actionfunc_allowlist: dict[str, Callable] = {
     "action_view_pod_logs": action_view_pod_logs,
     "cordon_node": cordon_node,
     "delete_logs": delete_logs,
@@ -9730,7 +9752,7 @@ actionfunc_allowlist = {
 
 
 # Activatedfuns acceptable for direct use in view files
-activatedfun_allowlist = {
+activatedfun_allowlist: dict[str, Callable] = {
     "resourceinfodispatch": resourceinfodispatch,
     "resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
     "resourceinfodispatch_with_lookup_on_activation":
@@ -9739,7 +9761,7 @@ activatedfun_allowlist = {
 
 
 # Infogetters acceptable for direct use in view files
-infogetter_allowlist = {
+infogetter_allowlist: dict[str, Callable] = {
     # Used by listview, infopad, and listpad
     "generic_infogetter": generic_infogetter,
     # Used by listview

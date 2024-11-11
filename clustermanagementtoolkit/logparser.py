@@ -3725,8 +3725,7 @@ def init_parser_list() -> None:
             parser_files.append(path)
             continue
 
-        for ppath in natsorted(Path(parser_dir).iterdir()):
-            ppath = cast(Path, ppath)
+        for ppath in cast(list[Path], natsorted(Path(parser_dir).iterdir())):
             filename = ppath.name
 
             if filename.startswith(("~", ".")) or not filename.endswith((".yaml", ".yml")):
