@@ -429,7 +429,7 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
     return align_and_pad(array, pad, fieldlen, ralign, selected)
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
+# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
                       **formatting: dict) -> Sequence[ThemeRef | ThemeStr]:
@@ -578,7 +578,7 @@ def generator_list(obj: dict, field: str, fieldlen: int, pad: int,
                        mapping=mapping)
 
 
-# pylint: disable-next=too-many-branches,too-many-locals,too-many-arguments,too-many-positional-arguments
+# noqa: E501 pylint: disable-next=too-many-branches,too-many-locals,too-many-arguments,too-many-positional-arguments
 def generator_list_with_status(obj: dict, field: str, fieldlen: int, pad: int,
                                ralign: bool, selected: bool,
                                **formatting: dict) -> list[ThemeRef | ThemeStr]:

@@ -11,7 +11,7 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import cast, Callable, Optional
+from typing import Any, cast, Callable, Optional
 
 from clustermanagementtoolkit import about
 
@@ -25,12 +25,12 @@ from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 
 from clustermanagementtoolkit import cmtvalidators
 
-programname = None  # pylint: disable=invalid-name
-programversion = None  # pylint: disable=invalid-name
-programdescription = None  # pylint: disable=invalid-name
-programauthors = None  # pylint: disable=invalid-name
+programname: str = ""  # pylint: disable=invalid-name
+programversion: str = ""  # pylint: disable=invalid-name
+programdescription: str = ""  # pylint: disable=invalid-name
+programauthors: str = ""  # pylint: disable=invalid-name
 
-commandline = None  # pylint: disable=invalid-name
+commandline: dict[str, Any] = {}  # pylint: disable=invalid-name
 
 
 # pylint: disable-next=unused-argument
@@ -70,7 +70,7 @@ def __sub_usage(command: str) -> int:
     assert commandline is not None
 
     commandinfo = {}
-    headerstring = None
+    headerstring: list[ANSIThemeStr] = []
     command_found = False
 
     for _key, value in commandline.items():
@@ -268,7 +268,7 @@ def __usage(options: list[tuple[str, str]], args: list[str]) -> int:
                 commands.append(([ANSIThemeStr("### _Global Options:_", "description")],
                                  [ANSIThemeStr("", "default")]))
 
-        tmp = []
+        tmp: list[ANSIThemeStr] = []
         separator = "|"
         for cmd in deep_get(value, DictPath("command"), []):
             if key.startswith("__"):
@@ -435,7 +435,7 @@ def __command_usage(options: list[tuple[str, str]], args: list[str]) -> int:
     return __sub_usage(args[0])
 
 
-def __find_command(__commandline: dict, arg: str) -> \
+def __find_command(__commandline: dict[str, Any], arg: str) -> \
         tuple[str, Optional[Callable[[tuple[str, str], list[str]], None]],
               str, int, int, list[dict], list[dict]]:
     command = None
@@ -539,7 +539,7 @@ COMMANDLINEDEFAULTS = {
 def parse_commandline(__programname: str, __programversion: str,
                       __programdescription: str, __programauthors: str,
                       argv: list[str],
-                      __commandline: dict,
+                      __commandline: dict[str, Any],
                       default_command: Optional[str] = None,
                       theme: Optional[FilePath] = None) -> tuple[Callable,
                                                                  list[tuple[str, str]],
@@ -569,7 +569,7 @@ def parse_commandline(__programname: str, __programversion: str,
     global programdescription  # pylint: disable=global-statement
     global programauthors  # pylint: disable=global-statement
 
-    i = 1
+    i: int = 1
 
     programname = __programname
     cmtvalidators.set_programname(programname)

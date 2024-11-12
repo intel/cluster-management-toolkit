@@ -2597,25 +2597,7 @@ def list_api_resources(options: list[tuple[str, str]], args: list[str]) -> int:
     return result
 
 
-# pylint: disable-next=pointless-string-statement
-"""
-def get_resource(options: list[tuple[str, str]], args: list[str]) -> None:
-    namespaces = ["default"]
-
-    for opt, optarg in options:
-        # This is a tuple option, so the easiest way is to check this way
-        if "--all-namespaces" in opt:
-            namespaces = None
-        elif "--namespace" in opt:
-            namespaces = optarg.split(",")
-
-    # We might have to get the resources across multiple namespaces,
-    # so we need to do multiple requests
-    return
-"""
-
-
-CMT_COMMANDLINE = {
+CMT_COMMANDLINE: dict[str, Any] = {
     "Cordon Node": {
         "command": ["cordon"],
         "values":
@@ -3850,37 +3832,6 @@ CMT_COMMANDLINE = {
         "description": [
             ANSIThemeStr("", "default")],
     },
-    # "Get": {
-    #     "command": ["get", "l", "list"],
-    #     "values": [
-    #         ANSIThemeStr("RESOURCE", "argument"),
-    #         ANSIThemeStr(",", "separator"),
-    #         ANSIThemeStr("...", "argument")],
-    #     "description": [
-    #         ANSIThemeStr("List information about ", "description"),
-    #         ANSIThemeStr("RESOURCE", "argument"),
-    #         ANSIThemeStr(",", "separator"),
-    #         ANSIThemeStr("...", "argument")],
-    #     "options": {
-    #         ("-N", "--namespace"): {
-    #             "values": [ANSIThemeStr("NAMESPACE", "argument"),
-    #                    ANSIThemeStr(",", "separator"),
-    #                    ANSIThemeStr("...", "argument")],
-    #             "description": [ANSIThemeStr("Only show resources belonging to ", "description"),
-    #                     ANSIThemeStr("NAMESPACE", "argument"),
-    #                     ANSIThemeStr(",", "separator"),
-    #                     ANSIThemeStr("...", "argument")],
-    #             "requires_arg": True,
-    #         },
-    #         ("-A", "--all-namespaces"): {
-    #             "description":
-    #                [ANSIThemeStr("Show resources across all namespaces", "description")],
-    #         },
-    #     },
-    #     "min_args": 1,
-    #     "max_args": 1,
-    #     "callback": get_resource,
-    # },
     "extended_description": [
         [ANSIThemeStr("You can use “", "description"),
          ANSIThemeStr("ALL", "emphasis"),

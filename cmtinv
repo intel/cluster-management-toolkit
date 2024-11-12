@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import cast, Optional
+from typing import Any, cast, Optional
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -1159,7 +1159,7 @@ def ping(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-COMMANDLINE = {
+COMMANDLINE: dict[str, Any] = {
     "Add Groups": {
         "command": ["add-group", "add-groups"],
         "values": [

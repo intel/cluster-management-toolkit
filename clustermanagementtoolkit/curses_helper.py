@@ -2036,7 +2036,7 @@ ignoreinput: bool = False
 #    "columns": strarray, ...,
 #    "retval": the value to return if this item is selected (any type is allowed)
 # }
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-statements,too-many-branches,too-many-positional-arguments
+# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-statements,too-many-branches,too-many-positional-arguments
 def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
                  items: list[dict[str, Any]],
                  **kwargs: Any) \
@@ -2740,7 +2740,7 @@ class UIProps:
                 timestamps ([datetime]): The timestamps
                 facilities ([str]): The facilities
                 severities ([LogLevel]): The LogLevels
-                messages ([str|ThemeArray]): The log messages
+                messages ([str | ThemeArray]): The log messages
         """
         self.timestamps = timestamps
         self.facilities = facilities

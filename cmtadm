@@ -3739,7 +3739,7 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
             ansithemeprint([ANSIThemeStr("Error", "error"),
                             ANSIThemeStr(": Received empty version data from ", "default"),
                             ANSIThemeStr(controlplane, "hostname"),
-                            ANSIThemeStr(f"; skipping.", "default")], stderr=True)
+                            ANSIThemeStr("; skipping.", "default")], stderr=True)
             failures.append(cluster_name)
             continue
 
@@ -6843,7 +6843,7 @@ def troubleshoot(options: list[tuple[str, str]], args: list[str]) -> None:
                                      "problem free.", "default")])
 
 
-COMMANDLINE = {
+COMMANDLINE: dict[str, Any] = {
     "Check Versions": {
         "command": ["check-versions", "cv"],
         "description": [

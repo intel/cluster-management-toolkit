@@ -22,6 +22,7 @@ import re
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
+from typing import Any
 
 from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath, SecurityPolicy
 
@@ -944,7 +945,7 @@ def install(options: list[tuple[str, str]], args: list[str]) -> int:
     return 0
 
 
-COMMANDLINE = {
+COMMANDLINE: dict[str, Any] = {
     # Default command
     "__global_options": {
         "command": ["__global_options"],

@@ -1460,7 +1460,7 @@ def merge_message(message: str | list[ThemeRef | ThemeStr], **kwargs: Any) \
                 message (str): The newly emptied message
                 remnants (list[(themearray, LogLevel)]): Remnants with message preprended
     """
-    remnants: Optional[list[tuple[list[ThemeRef | ThemeStr], LogLevel]]] = \
+    remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = \
         deep_get(kwargs, DictPath("remnants"))
     severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
 

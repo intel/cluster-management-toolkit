@@ -926,7 +926,7 @@ def secure_copy(src: FilePath, dst: FilePath, verbose: bool = False,
     return [SecurityStatus.OK]
 
 
-# pylint: disable-next=too-many-return-statements,too-many-statements,too-many-branches,too-many-locals
+# noqa: E501 pylint: disable-next=too-many-return-statements,too-many-statements,too-many-branches,too-many-locals
 def secure_symlink(src: FilePath, dst: FilePath, verbose: bool = False,
                    exit_on_failure: bool = False,
                    replace_existing: bool = False) -> list[SecurityStatus]:

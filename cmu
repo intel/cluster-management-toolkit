@@ -549,7 +549,7 @@ def get_log_info(**kwargs: Any) -> list[Type]:
                 continue
 
             # The first entry in the obj list holds metadata
-            split_response = [{
+            split_response: list[dict[str, Any]] = [{
                 "parser": parser,
             }]
             split_response += response.splitlines()
@@ -638,6 +638,8 @@ def __process_sum_mem_usage(values: list[str]) -> str:
 
 def __process_timestamp(value: Sequence[int | str] | str,
                         action: str, formatter: str) -> datetime | int:
+    new_value: Any = None
+
     if action in ("earliest", "latest") and isinstance(value, (list, tuple)):
         tmp_timestamp: datetime = none_timestamp()
         for tmp1 in value:
@@ -1059,6 +1061,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
     filters: dict[str, Any] = deep_get(kwargs, DictPath("filters"), {})
     deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
     caller_obj: dict = deep_get(kwargs, DictPath("caller_obj"), {})
+    duration: int = -1
 
     # fields both specify formatting and where to get the data from;
     # here we are only concerned with the data
@@ -1435,13 +1438,11 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                     else:
                         datetime_start = timestamp_to_datetime(start_time)
                         if isinstance(end_time, int):
-                            datetime_end = timedelta(seconds=end_time)
-                            timediff = datetime_start + datetime_end
-                            duration = timediff
+                            datetime_end = start_time + timedelta(seconds=end_time)
                         else:
                             datetime_end = timestamp_to_datetime(end_time)
-                            timediff = datetime_end - datetime_start
-                            duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+                        timediff = datetime_end - datetime_start
+                        duration = timediff.total_seconds
                         _values.append((duration, "raw"))
                 elif ptype == "comparison":
                     # Input is two paths; output is the value of the first path
@@ -1875,9 +1876,9 @@ def generic_infogetter(**kwargs: Any) -> list[dict]:
     return info
 
 
-# pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+# pylint: disable-next=too-many-locals,too-many-branches
 def get_journalctl_log(obj: dict, **kwargs: Any) -> \
-        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
+        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
     """
     Extract log entries from journalctl.
 
@@ -1886,17 +1887,16 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
             **kwargs (dict[str, Any]): Keyword arguments
                 _show_raw (bool): Return unformatted entries?
         Returns:
-            (([str], [str], [str], [str])):
-                ([str]): A list of timestamps
+            (([datetime], [str], [LogLevel], [ThemeRef | ThemeStr])):
+                ([datetime]): A list of timestamps
                 ([str]): A list of facilities
-                ([str]): A list of severities
-                ([ThemeArray]): A list of ThemeArrays
+                ([LogLevel]): A list of severities
+                ([[ThemeRef | ThemeStr] | str]): A list of messages
     """
-    timestamps: list[str] = []
-    messages: list[str] = []
+    timestamps: list[datetime] = []
     facilities: list[str] = []
     severities: list[LogLevel] = []
-    messages: list[list[ThemeRef | ThemeStr]] = []
+    messages: list[list[ThemeRef | ThemeStr] | str] = []
 
     show_raw: bool = deep_get(kwargs, DictPath("_show_raw"), False)
     objlist = deep_get(obj, DictPath("obj"))
@@ -1935,7 +1935,7 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
             severity = raw_severity
             msg = raw_msg
 
-        timestamps.append(timestamp)
+        timestamps.append(timestamp.astimezone())
         facilities.append(facility)
         if severity is None:
             severity = raw_severity
@@ -1947,23 +1947,23 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
                 fmt_remnants, remnant_severity = remnants
 
                 for remnant in fmt_remnants:
-                    timestamps.append("")
+                    timestamps.append(none_timestamp())
                     facilities.append("")
                     severities.append(remnant_severity)
                     messages.append(remnant)
             else:
                 for remnant, remnant_severity in remnants:
-                    timestamps.append("")
+                    timestamps.append(none_timestamp())
                     facilities.append("")
                     severities.append(remnant_severity)
                     messages.append(remnant)
 
-    return (timestamps, facilities, severities, messages)
+    return timestamps, facilities, severities, messages
 
 
 # pylint: disable-next=unused-argument,too-many-locals
 def get_traceflow(obj: dict, **kwargs: Any) -> \
-        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
+        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
     """
     Extract log entries from a traceflow.
 
@@ -1971,16 +1971,16 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
             obj (dict): The object to extract log entries from
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
-            (([str], [str], [str], [str])):
+            (([datetime], [str], [str], [str])):
                 ([str]): A list of timestamps
                 ([str]): A list of facilities
                 ([str]): A list of severities
-                ([ThemeArray]): A list of ThemeArrays
+                ([ThemeArray] | str): A list of ThemeArrays
     """
-    timestamps: list[str] = []
+    timestamps: list[datetime] = []
     facilities: list[str] = []
     severities: list[LogLevel] = []
-    messages: list[list[ThemeRef | ThemeStr]] = []
+    messages: list[list[ThemeRef | ThemeStr] | str] = []
 
     for result in deep_get(obj, DictPath("status#results"), []):
         node = deep_get(result, DictPath("node"), "<unset>")
@@ -1989,16 +1989,16 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
                                                   ThemeRef("separators", "facility_padding")])
         tmp_timestamp = deep_get(result, DictPath("timestamp"), -1)
         if tmp_timestamp >= 0:
-            saved_timestamp = str(datetime.fromtimestamp(tmp_timestamp))
+            saved_timestamp = datetime.fromtimestamp(tmp_timestamp)
         else:
-            saved_timestamp = ""
+            saved_timestamp = none_timestamp()
         message: list[ThemeRef | ThemeStr] = []
         for observation in deep_get(result, DictPath("observations"), []):
             facility = node
             timestamp = saved_timestamp
             for key, value in sorted(observation.items()):
                 facilities.append(facility)
-                timestamps.append(timestamp)
+                timestamps.append(timestamp.astimezone())
                 message = []
                 if not facility and node:
                     message.append(ThemeStr("".ljust(nodestr_len), ThemeAttr("main", "default")))
@@ -2010,9 +2010,9 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
                 ]
                 messages.append(message)
                 facility = ""
-                timestamp = ""
+                timestamp = none_timestamp()
 
-    return (timestamps, facilities, severities, messages)
+    return timestamps, facilities, severities, messages
 
 
 # pylint: disable-next=unused-argument
@@ -2103,7 +2103,7 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]
 
 # pylint: disable-next=unused-argument,too-many-locals,too-many-branches,too-many-statements
 def get_cmt_log(obj: dict, **kwargs: Any) -> \
-        tuple[list[str], list[str], list[str], list[list[ThemeRef | ThemeStr]]]:
+        tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
     """
     Extract log entries from CMT log.
 
@@ -2112,22 +2112,21 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
             **kwargs (dict[str, Any]): Keyword arguments
         Returns:
             (([str], [str], [str], [str])):
-                ([str]): A list of timestamps
+                ([datetime]): A list of timestamps
                 ([str]): A list of facilities
-                ([str]): A list of severities
+                ([LogLevel]): A list of severities
                 ([ThemeArray]): A list of ThemeArrays
     """
     filepath = deep_get(obj, DictPath("filepath"), "")
-    timestamps: list[str] = []
-    messages: list[str] = []
+    timestamps: list[datetime] = []
     facilities: list[str] = []
     severities: list[LogLevel] = []
-    messages: list[list[ThemeRef | ThemeStr]] = []
+    messages: list[list[ThemeRef | ThemeStr] | str] = []
 
     d = secure_read_yaml(filepath)
 
     if not d or not isinstance(d, list):
-        return messages
+        return timestamps, facilities, severities, messages
 
     for message in d:
         timestamp = deep_get(message, DictPath("timestamp"), "")
@@ -2149,14 +2148,14 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
 
         for msg in msgs:
             if first:
-                timestamps.append(timestamp)
+                timestamps.append(timestamp.astimezone())
                 if facility:
                     facilities.append((facilitystr, facility))
                 else:
                     facilities.append(facilitystr)
                 first = False
             else:
-                timestamps.append("")
+                timestamps.append(none_timestamp())
                 if facility:
                     facilities.append(("".ljust(len(facilitystr)), "".ljust(len(facility))))
                 else:
@@ -2190,7 +2189,7 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                 reformatted_msg.append(ThemeStr(string, fmt))
             messages.append(reformatted_msg)
 
-    return (timestamps, facilities, severities, messages)
+    return timestamps, facilities, severities, messages
 
 
 def logpad_yaml(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
@@ -2413,12 +2412,12 @@ def generate_list_header(uip: UIProps, headerpad: curses.window,
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
-def generate_list_row(uip: UIProps, listpad: curses.window, data, field_list, ypos: int,
-                      is_selected: bool, is_taggable: bool = False,
+def generate_list_row(uip: UIProps, listpad: curses.window,
+                      data, field_list,
+                      ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
-    first = True
-
-    i = 0
+    first: bool = True
+    i: int = 0
 
     for field in field_list:
         i += 1
@@ -4063,7 +4062,18 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[S
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
+def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
+    """
+    Main loop for the Cluster Overview.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            view (str): The view to show
+        Returns:
+            (Retval): The return value
+        Raises:
+            ProgrammingError (view is invalid)
+    """
     global executor  # pylint: disable=global-statement
 
     # Just in case there are leftover futures from other views
@@ -4195,7 +4205,7 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
             uip.update_window()
 
             if islocal:
-                tmp = secure_read_string(FilePath("/proc/loadavg"))
+                tmp: str = secure_read_string(FilePath("/proc/loadavg"))
                 loadavg_raw = tmp.splitlines()
                 tmp = secure_read_string(FilePath("/proc/meminfo"))
                 meminfo_raw = tmp.splitlines()
@@ -4435,15 +4445,15 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
             [ThemeStr("Events:", ThemeAttr("main", "listheader_compact"))],
         ]
 
-        tmp = []
+        tmp2: list[ThemeStr] = []
         for i, header in enumerate(evheaders):
-            tmp.append(ThemeStr(header.ljust(evlens[i]), ThemeAttr("main", "listheader")))
+            tmp2.append(ThemeStr(header.ljust(evlens[i]), ThemeAttr("main", "listheader")))
             if i < len(evheaders):
-                tmp.append(ThemeStr("  ", ThemeAttr("main", "listheader")))
-        eventarrays.append(tmp)
+                tmp2.append(ThemeStr("  ", ThemeAttr("main", "listheader")))
+        eventarrays.append(tmp2)
 
         for evindex in range(0, 5):
-            tmp = []
+            tmp2 = []
 
             if evindex < len(events):
                 event = events[evindex]
@@ -4453,13 +4463,13 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                     if ptype == "timestamp":
                         timestamp = timestamp_to_datetime(cast(str, val))
                         formatted_timestamp = format_timestamp(timestamp)
-                        tmp += formatted_timestamp
+                        tmp2 += formatted_timestamp
                         ft_len = evlens[i] - themearray_len(formatted_timestamp)
                         if ft_len:
-                            tmp.append(ThemeStr("".ljust(ft_len), ThemeAttr("main", "default")))
+                            tmp2.append(ThemeStr("".ljust(ft_len), ThemeAttr("main", "default")))
                     elif ptype == "namespace":
-                        tmp.append(ThemeStr(val.ljust(evlens[i]),
-                                            ThemeAttr("types", "namespace")))
+                        tmp2.append(ThemeStr(val.ljust(evlens[i]),
+                                             ThemeAttr("types", "namespace")))
                     elif ptype == "event_type":
                         if val == "Error":
                             event_type = "status_not_ok"
@@ -4467,15 +4477,15 @@ def clusteroverviewloop(stdscr: curses.window, view) -> Retval:
                             event_type = "status_admin"
                         else:
                             event_type = "status_ok"
-                        tmp.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", event_type)))
+                        tmp2.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", event_type)))
                     else:
-                        tmp.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", "default")))
+                        tmp2.append(ThemeStr(val.ljust(evlens[i]), ThemeAttr("main", "default")))
 
                     if i < len(evheaders):
-                        tmp.append(ThemeStr("  ", ThemeAttr("main", "default")))
+                        tmp2.append(ThemeStr("  ", ThemeAttr("main", "default")))
             else:
-                tmp.append(ThemeStr("<none>", ThemeAttr("types", "none")))
-            eventarrays.append(tmp)
+                tmp2.append(ThemeStr("<none>", ThemeAttr("types", "none")))
+            eventarrays.append(tmp2)
 
         y += 1
         curses_helper.window_tee_hline(uip.stdscr, y=y, start=0, end=uip.maxx)
@@ -4825,6 +4835,17 @@ cniloop_shortcuts = {
 
 # pylint: disable-next=too-many-locals,too-many-statements
 def cniloop(stdscr: curses.window, view: str) -> Retval:
+    """
+    Main loop for the Container Network Interface view.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            view (str): The view to show
+        Returns:
+            (Retval): The return value
+        Raises:
+            ProgrammingError (view is invalid)
+    """
     global executor  # pylint: disable=global-statement
 
     # Just in case there are leftover futures from other views
@@ -5077,7 +5098,9 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def generate_helptext(view, viewtype: str, additional_helptexts, shortcuts) -> list[dict]:
+def generate_helptext(view: str, viewtype: str,
+                      additional_helptexts: list[tuple[str, str]],
+                      shortcuts: dict[str, dict[str, Any]]) -> list[dict]:
     helptext: list[tuple[str, str]] = []
 
     if viewtype == "infoview":
@@ -5688,7 +5711,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                     if isinstance(tmp, tuple):
                         timestamps, facilities, severities, messages = tmp
                     else:
-                        timestamps = None
+                        timestamps = []
                         facilities = None
                         severities = None
                         messages = tmp
@@ -5721,6 +5744,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
             maxx = 0
             yadd = 0
 
+            tscount = 0
             for y in range(0, min(uip.logpadheight, len(messages))):
                 facility = None
                 if facilities is not None and uip.yoffset + y < len(facilities):
@@ -5767,12 +5791,14 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                                      ThemeRef("separators", "facility_extended_suffix")]
                         facility += [ThemeRef("separators", "facility_padding")]
 
-                if timestamps is None or uip.yoffset + y >= len(timestamps):
-                    timestamp = "".ljust(uip.tspadwidth)
+                if timestamps is None or uip.yoffset + y >= len(timestamps) \
+                        or timestamps[uip.yoffset + y] == none_timestamp():
+                    timestamp: str = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
-                    tsthemearray: list[ThemeRef | ThemeStr] = \
-                        [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
+                    tscount += 1
+                tsthemearray: list[ThemeRef | ThemeStr] = \
+                    [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
 
                 if severities is None or uip.yoffset + y >= len(severities):
                     severity = LogLevel.INFO
@@ -5816,7 +5842,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                 for i, _line in enumerate(_lines):
                     if y + yadd + i >= uip.logpadheight:
                         break
-                    if i == 0 and timestamps is not None:
+                    if i == 0 and timestamps is not None and tscount:
                         uip.addthemearray(cast(curses.window, tspad), tsthemearray, y=y + yadd, x=0)
                     _ypos, xpos = uip.addthemearray(logpad, _line, y=y + yadd + i, x=0)
                     maxx = max(maxx, xpos)
@@ -5900,12 +5926,12 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                                                   DictPath("listpad#on_activation#formatter_path"))
                         on_activation_args["formatter"] = formatter
                         on_activation_args["formatter_path"] = formatter_path
-                    if view == ("ConfigMap", ""):
+                    if view == ("ConfigMap", "") and callable(uip.activatedfun):
                         retval = uip.activatedfun(uip.stdscr,
                                                   deep_get(obj, DictPath(f"data#{match}"), ""),
                                                   ikind, info=None, title=name,
                                                   **on_activation_args)
-                    else:
+                    elif callable(uip.activatedfun):
                         retval = uip.activatedfun(uip.stdscr, match, ikind, info=obj,
                                                   **on_activation_args)
                     if retval == Retval.RETURNFULL:
@@ -6337,12 +6363,37 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def log_add_line(timestamps, facilities, severities, messages,
-                 timestamp, facility, severity, message, facility_extended):
+def log_add_line(timestamps: list[datetime], facilities: list[str],
+                 severities: list[LogLevel], messages: list[list[ThemeRef | ThemeStr] | str],
+                 timestamp: Optional[datetime], facility: str,
+                 severity: LogLevel, message: list[ThemeRef | ThemeStr],
+                 facility_extended: list[ThemeRef | ThemeStr]) \
+        -> tuple[list[datetime], list[str], list[LogLevel], list[list[ThemeRef | ThemeStr] | str]]:
+    """
+    Add a new line to the log.
+
+        Parameters:
+            timestamps ([datetime]): The list of timestamps
+            facilities ([str]): The list of facilities
+            severities ([LogLevel]): The list of severities
+            messages ([[ThemeRef | ThemeStr] | str]): The list of log messages
+            timestamp (Optional[datetime]): The timestamp of the message to add
+            facility ([str]): The facility of the message to add
+            severity ([LogLevel]): The severity of the message to add
+            message ([ThemeRef | ThemeStr] | str): The message to add
+            facility_extended ([ThemeRef | ThemeStr): A formatted facility;
+                                                      used in podlog-viewer
+        Returns:
+            (([datetime], [str], [LogLevel], [ThemeRef | ThemeStr])):
+                ([datetime]): The updated list of timestamps
+                ([str]): The updated list of facilities
+                ([LogLevel]): The updated list of severities
+                ([[ThemeRef | ThemeStr] | str]): The updated list of log messages
+    """
     if timestamp is not None and timestamp != none_timestamp():
         timestamps.append(timestamp.astimezone())
     else:
-        timestamps.append("")
+        timestamps.append(none_timestamp())
     if facility_extended is None:
         facilities.append(facility)
     else:
@@ -6400,12 +6451,6 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
     uip.toggle_borders(show_borders)
     show_timestamps = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_timestamps"), True)
     uip.toggle_timestamps(show_timestamps)
-    # Currently not working properly
-    # compact_timestamps = False
-    # Currently not working properly
-    only_new_dates = False
-    # Currently not working properly
-    highlight_new_dates = False
     wrap_lines = False
     # Show severity as text
     severity_prefix = deep_get(cmtlib.cmtconfig, DictPath("Pod#severity_prefix"), [])
@@ -6540,10 +6585,10 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             uip.refresh_statusbar()
             curses.doupdate()
 
-            timestamps: list[str] = []
+            timestamps: list[datetime] = []
             facilities: list[str] = []
             severities: list[LogLevel] = []
-            messages: list[ThemeRef | ThemeStr] | str = []
+            messages: list[list[ThemeRef | ThemeStr] | str] = []
             parser = None
             prev_timestamp = None
             prev_facility = ""
@@ -6586,20 +6631,20 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 else:
                     line = _line
                 if internal_error:
-                    timestamp, facility, severity, message, remnants, parser, _parser = \
+                    timestamp_, facility, severity, message, remnants, parser, _parser = \
                         logparser("internal_error", "", "", message=line,
                                   container_type=container_type, line=i)
                 elif raw_logs:
-                    timestamp, facility, severity, message, remnants, parser, _parser = \
+                    timestamp_, facility, severity, message, remnants, parser, _parser = \
                         logparser("raw", "", "", message=line,
                                   container_type=container_type, line=i)
                 elif override_parser is not None or _parser is None or parser is None:
-                    timestamp, facility, severity, message, remnants, parser, _parser = \
+                    timestamp_, facility, severity, message, remnants, parser, _parser = \
                         logparser(podname, containername, image, message=line, fold_msg=fold_msg,
                                   override_parser=override_parser,
                                   container_type=container_type, line=i)
                 else:
-                    timestamp, facility, severity, message, remnants = \
+                    timestamp_, facility, severity, message, remnants = \
                         logparser_initialised(parser=_parser, message=line,
                                               fold_msg=fold_msg, line=i)
 
@@ -6611,11 +6656,14 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 # then continue parsing until we either get ["end_block", *],
                 # ["break", *], or reach the end of the file
                 if isinstance(message, tuple) and message[0] == "start_block" and not raw_logs:
-                    _logentries = [(timestamp, facility, severity, remnants)]
+                    _logentries = [(timestamp_, facility, severity, remnants)]
                     processor = message
                     options = processor[2]
                     _block_state = "none"
                     for j in range(i, len(splitmsg)):
+                        if not callable(processor[1]):
+                            raise ProgrammingError(f"processor: {processor} does not "
+                                                   "contain a valid processor")
                         processor, _logentry = \
                             processor[1](splitmsg[j], fold_msg=fold_msg, options=options)
                         _block_state = processor[0]
@@ -6627,7 +6675,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                             if _logentries:
                                 timestamps, facilities, severities, messages = \
                                     log_add_line(timestamps, facilities, severities, messages,
-                                                 timestamp, facility, severity,
+                                                 timestamp_, facility, severity,
                                                  _logentries[0][3], facility_extended)
                             if len(_logentries) > 1:
                                 for _timestamp, _facility, _severity, _message in _logentries[1:]:
@@ -6678,7 +6726,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                         and (themearray_len(prev_message) or prev_remnants is not None) \
                         and prev_remnants == remnants:
                     repeat_count += 1
-                    prev_timestamp = timestamp
+                    prev_timestamp = timestamp_
                     if merge_repeats:
                         merged_lines += 1
                         continue
@@ -6695,14 +6743,14 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                                                    color_log_severity(prev_severity))],
                                          facility_extended)
                     repeat_count = 0
-                    prev_timestamp = timestamp
+                    prev_timestamp = timestamp_
                     prev_facility = facility
                     prev_severity = severity
                     prev_message = message
                     prev_remnants = remnants
 
                 timestamps, facilities, severities, messages = \
-                    log_add_line(timestamps, facilities, severities, messages, timestamp,
+                    log_add_line(timestamps, facilities, severities, messages, timestamp_,
                                  facility, severity, message, facility_extended)
 
                 if remnants is not None and remnants:
@@ -7001,53 +7049,22 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
             uip.logpad.erase()
             # This is needed in case we get a resize event or toggle borders
             uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
-            new_date = False
-            if timestamps is not None and timestamps:
-                current_datestamp = str(timestamps[0])[0:len("YYYY-MM-DD")]
-                new_date = True
             yadd = 0
+            timestamp: str = ""
+            tscount = 0
             for y in range(0, min(uip.logpadheight, uip.loglen)):
-                if uip.yoffset + y >= len(timestamps):
+                if timestamps is None or uip.yoffset + y >= len(timestamps) \
+                        or timestamps[uip.yoffset + y] == none_timestamp():
                     timestamp = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
-                    datestamp = timestamp[0:len("YYYY-MM-DD ")]
-                    if current_datestamp is not None \
-                            and isinstance(timestamps[uip.yoffset + y], datetime) \
-                            and datestamp != current_datestamp:
-                        current_datestamp = datestamp
-                        new_date = True
-                hourstamp = timestamp[len("YYYY-MM-DD "):]
-
-                if new_date and highlight_new_dates:
-                    datetype = "timestamp_newdate"
-                else:
-                    datetype = "timestamp"
-
-#               if not compact_timestamps:
-#                   hourxpos = len("YYYY-MM-DD ")
-#               else:
-#                   hourxpos = 0
+                    tscount += 1
 
                 if y + yadd > uip.logpadheight:
                     continue
 
-                tsthemearray: list[ThemeRef | ThemeStr] = []
-                # FIXME
-                if only_new_dates:
-                    if new_date:
-                        tsthemearray = \
-                            [ThemeStr(datestamp, ThemeAttr("logview", datetype))]
-                        new_date = False
-                        # If we do empty lines for new dates we need something like this
-                        # uip.addstr(logpad, "", y=y + yadd, x=0)
-                        # yadd += 1
-                else:
-                    tsthemearray = [ThemeStr(datestamp, ThemeAttr("logview", datetype))]
-
-                tsthemearray += [ThemeStr(hourstamp, ThemeAttr("logview", "timestamp"))]
-
-                new_date = False
+                tsthemearray: list[ThemeRef | ThemeStr] = \
+                    [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
 
                 if show_facility == "None" or uip.yoffset + y >= len(facilities):
                     facility_extended = ""
@@ -7141,7 +7158,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 for i, msgstrarray in enumerate(msgstrarrays):
                     if y + yadd + i >= uip.logpadheight:
                         break
-                    if i == 0 and tspad is not None:
+                    if i == 0 and tspad is not None and tscount:
                         uip.addthemearray(tspad, tsthemearray, y=y + yadd, x=0)
                     _cury, _curx = uip.addthemearray(logpad, msgstrarray, y=y + yadd + i, x=0)
                     maxlen = max(maxlen, themearray_len(msgstrarray))
@@ -7478,7 +7495,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
             for y in range(0, uip.loglen):
                 # Even when the log is raw we want the first timestamp
-                if y >= len(timestamps) or isinstance(timestamps[y], str):
+                if y >= len(timestamps) or isinstance(timestamps[y], str) \
+                        or timestamps[uip.yoffset + y] == none_timestamp():
                     timestamp = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[y])[0:uip.tspadwidth]
@@ -7586,7 +7604,7 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
     stdscr.refresh()
 
 
-# pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
+# noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def executecommand(stdscr: curses.window,
                    obj: dict, container, msg, command, waitforkeypress: bool) -> None:
     """
@@ -9025,12 +9043,21 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> Retval:
     return Retval.RETURNDONE
 
 
-def list_configuration_files(basedir):
-    # Always provide a means to navigate up in the directory tree
-    plist = []
-    directories = []
-    kustomizations = []
-    files = []
+def list_configuration_files(basedir: FilePath):
+    """
+    Scan a directory and a list of all {.yml,.yaml} files
+    and directories with a kustomization.yaml file in it.
+
+        Parameters:
+            basedir (FilePath): The directory to scan
+        Returns:
+            ([(str, str, str]): A list of directory entries
+                (str): The path to the file
+                (str): The filename
+                (str): The file type (Configuration File/Kustomization/<dir>)
+    """
+    plist: list[tuple[str, str, str]] = []
+    files: list[tuple[str, str, str]] = []
 
     if os.path.isdir(basedir):
         for filename in os.listdir(basedir):
@@ -9048,16 +9075,15 @@ def list_configuration_files(basedir):
             else:
                 continue
 
+    # Always provide a means to navigate up in the directory tree
     plist = [(f"{os.path.dirname(basedir)}", "..", "<dir>")]
-    plist += natsorted(directories)
-    plist += natsorted(kustomizations)
-    plist += natsorted(files)
+    plist += cast(list[tuple[str, str, str]], natsorted(files))
 
     return plist
 
 
 # pylint: disable-next=too-many-locals
-def populate_actionlist(**kwargs: Any) -> tuple[list[dict], dict]:
+def populate_actionlist(**kwargs: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """
     Populate the list of actions based on context and policy.
 
@@ -9067,12 +9093,16 @@ def populate_actionlist(**kwargs: Any) -> tuple[list[dict], dict]:
                 action_list ([dict]): The list of actions
                 control_plane_selected (bool): Is the control plane part of the selection?
                 single_item (bool): Has only a single item been selected?
+        Returns:
+            (([dict[str, Any]], dict[str, Any])):
+                ([dict[str, Any]]): The formatted list of actions (for use with WindowWidget)
+                (dict[str, Any]): The action list dict
     """
     action_list: dict[str, Any] = deep_get(kwargs, DictPath("action_list"), {})
     control_plane_selected: bool = deep_get(kwargs, DictPath("control_plane_selected"), False)
     single_item: bool = deep_get(kwargs, DictPath("single_item"), False)
 
-    actions: list[dict] = []
+    actions: list[dict[str, Any]] = []
     order: list[tuple[str, str, str]] = []
 
     for item in action_list:
@@ -9528,6 +9558,17 @@ def selectwindow(uip: UIProps, refresh_apis: bool = False) -> Retval:
 
 
 def selectorloop(stdscr: curses.window, view: str) -> Retval:
+    """
+    Main loop for the Selector.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            view (str): The view to show
+        Returns:
+            (Retval): The return value
+        Raises:
+            ProgrammingError (view is invalid)
+    """
     field_list, sortcolumn = (None, None)
     uip = UIProps(stdscr)
 
@@ -11000,7 +11041,7 @@ def open_view(options: list[tuple[str, str]], args: list[str]) -> None:
             raise
 
 
-COMMANDLINE = {
+COMMANDLINE: dict[str, Any] = {
     # This is purely for the benefit of the helptext generator
     "View": {
         "command": ["VIEW"],
