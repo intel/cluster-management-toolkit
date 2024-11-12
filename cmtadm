@@ -3616,6 +3616,8 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
         if ctx[0]:
             current_context = ctx[1]
 
+    failures: list[str] = []
+
     for cluster_name, context in clusters:
         if args and cluster_name not in args[0]:
             continue
@@ -3627,20 +3629,28 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                             ANSIThemeStr(" for cluster ", "default"),
                             ANSIThemeStr(f"{cluster_name}", "hostname"),
                             ANSIThemeStr("; skipping.", "default")])
+            failures.append(cluster_name)
             continue
 
         vlist, status = kh.get_list_by_kind_namespace(("Node", ""), "")
         if status != 200:
             ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": API-server returned ", "default"),
+                            ANSIThemeStr(": The API-server for cluster ", "default"),
+                            ANSIThemeStr(f"{cluster_name}", "hostname"),
+                            ANSIThemeStr(" returned ", "default"),
                             ANSIThemeStr(f"{status}", "errorvalue"),
-                            ANSIThemeStr("; aborting.", "default")], stderr=True)
-            sys.exit(errno.EINVAL)
+                            ANSIThemeStr("; skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
+
         if vlist is None:
             ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": API-server did not return any data", "default")],
-                           stderr=True)
-            sys.exit(errno.EINVAL)
+                            ANSIThemeStr(": The API-server for cluster ", "default"),
+                            ANSIThemeStr(f"{cluster_name}", "hostname"),
+                            ANSIThemeStr(" did not return any data", "default"),
+                            ANSIThemeStr("; skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
 
         controlplanes = []
         nodes = []
@@ -3658,13 +3668,12 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
 
         if controlplane is None:
             ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": Could not find a control plane for the cluster ",
-                                         "default"),
-                            ANSIThemeStr(cluster_name, "hostname"),
-                            ANSIThemeStr("; aborting.", "default")], stderr=True)
-            # Remember to restore current-context
-            kh.set_context(name=current_context)
-            sys.exit(errno.ENOENT)
+                            ANSIThemeStr(": Could not find a control plane", "default"),
+                            ANSIThemeStr(" for cluster ", "default"),
+                            ANSIThemeStr(f"{cluster_name}", "hostname"),
+                            ANSIThemeStr("; skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
 
         __task_request_ansible_password(installation_info={})
 
@@ -3678,8 +3687,18 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
         retval, ansible_results = \
             run_playbook(get_playbook_path(FilePath("prepare_passwordless_ansible.yaml")),
                          hosts=[controlplane], extra_values=extra_values, verbose=verbose)
-        if retval != 0:
-            break
+
+        if not ansible_results:
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": The Ansible playbook “", "default"),
+                            ANSIThemeStr("prepare_passwordless_ansible.yaml", "path"),
+                            ANSIThemeStr("“ failed on ", "default"),
+                            ANSIThemeStr(controlplane, "hostname"),
+                            ANSIThemeStr(" (retval: ", "default"),
+                            ANSIThemeStr(f"{retval}", "errorvalue"),
+                            ANSIThemeStr("); skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
 
         tmp_cni = kh.identify_cni()
         if len(tmp_cni) != 1:
@@ -3697,8 +3716,16 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                                               selection=[controlplane], quiet=False)
 
         if not ansible_results:
-            raise ValueError(f"Error: Failed to get package versions from {controlplane} "
-                             f"(retval: {retval}); aborting.")
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": The Ansible playbook “", "default"),
+                            ANSIThemeStr("get_versions.yaml", "path"),
+                            ANSIThemeStr("“ failed on ", "default"),
+                            ANSIThemeStr(controlplane, "hostname"),
+                            ANSIThemeStr(" (retval: ", "default"),
+                            ANSIThemeStr(f"{retval}", "errorvalue"),
+                            ANSIThemeStr("); skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
 
         k8s_distro = "<unknown>"
         version = "<unknown>"
@@ -3709,8 +3736,12 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                 break
 
         if not tmp:
-            raise ValueError(f"Error: Received empty version data from {controlplane} "
-                             f"(retval: {retval}); aborting.")
+            ansithemeprint([ANSIThemeStr("Error", "error"),
+                            ANSIThemeStr(": Received empty version data from ", "default"),
+                            ANSIThemeStr(controlplane, "hostname"),
+                            ANSIThemeStr(f"; skipping.", "default")], stderr=True)
+            failures.append(cluster_name)
+            continue
 
         package_version_regex: re.Pattern[str] = re.compile(r"^(.*?): (.*)")
 
@@ -3733,10 +3764,20 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
                             ANSIThemeStr(": Failed to import cluster ", "default"),
                             ANSIThemeStr(f"{cluster_name}", "hostname"),
                             ANSIThemeStr("; could not identify distro; skipping.", "default")])
+            failures.append(cluster_name)
+            continue
 
     kh.set_context(name=current_context)
 
-    ansithemeprint([ANSIThemeStr("\nCluster import successful", "success")])
+    if not failures:
+        ansithemeprint([ANSIThemeStr("\nCluster import successful", "success")])
+    else:
+        ansithemeprint([ANSIThemeStr("\nFailed to import the following clusters:", "warning")],
+                       stderr=True)
+
+        for cluster_name in failures:
+            ansithemeprint([ANSIThemeStr("• ", "separator"),
+                            ANSIThemeStr(f"{cluster_name}", "hostname")], stderr=True)
 
 
 # pylint: disable-next=unused-argument,too-many-locals
