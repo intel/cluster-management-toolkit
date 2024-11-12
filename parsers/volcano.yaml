@@ -8,3 +8,8 @@
   parser_rules:
   - name: "ts_8601"
   - name: "glog"
+  - name: "override_severity"
+    overrides:
+    - matchtype: "startswith"
+      matchkey: "Trace["
+      loglevel: "debug"
