@@ -1442,7 +1442,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                         else:
                             datetime_end = timestamp_to_datetime(end_time)
                         timediff = datetime_end - datetime_start
-                        duration = timediff.total_seconds
+                        duration = int(timediff.total_seconds())
                         _values.append((duration, "raw"))
                 elif ptype == "comparison":
                     # Input is two paths; output is the value of the first path
