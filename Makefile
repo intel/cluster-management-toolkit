@@ -408,6 +408,7 @@ setup_tests: create_test_symlinks
 	 test -f test_symlink || ln -s $$(pwd)/05-not_executable.sh test_symlink ;\
 	 chmod a+x 06-executable.sh ;\
 	 chmod o+w 03-wrong_dir_permissions ;\
+	 chmod 0600 testfile.txt ;\
 	 chmod o+w 01-wrong_permissions )
 
 async_fetch: setup_tests
