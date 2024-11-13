@@ -25,12 +25,12 @@ from clustermanagementtoolkit.cmttypes import deep_get, DictPath, FilePath
 
 from clustermanagementtoolkit import cmtvalidators
 
-programname: str = ""  # pylint: disable=invalid-name
-programversion: str = ""  # pylint: disable=invalid-name
-programdescription: str = ""  # pylint: disable=invalid-name
-programauthors: str = ""  # pylint: disable=invalid-name
+programname: str = ""
+programversion: str = ""
+programdescription: str = ""
+programauthors: str = ""
 
-commandline: dict[str, Any] = {}  # pylint: disable=invalid-name
+commandline: dict[str, Any] = {}
 
 
 # pylint: disable-next=unused-argument
