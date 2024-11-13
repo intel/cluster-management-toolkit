@@ -21,7 +21,7 @@ listview:
         when:
         - key: "type"
           eq: "Ready"
-        default: "<unknown>"
+        default: ["<unknown>"]
       formatter: "value_mapper"
       formatting:
         mapping:
@@ -34,6 +34,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_not_ok"
+            "<unknown>":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
     issuer:
       header: "Issuer:"
       paths:
@@ -66,13 +70,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["common_name", "dns_names", "issuer", "secret_name", "valid_from", "valid_until", "renewal_time", "condition_ready", "status_message"]
+        fields: ["common_name", "dns_names", "issuer", "secret_name", "usages", "duration", "renew_before", "renew_before_percentage", "valid_from", "valid_until", "renewal_time", "condition_ready", "status_message"]
     rows:
       common_name:
         header: [["Common Name:", ["main", "infoheader"]]]
         path: "spec#commonName"
-        type: "str"
         default: "<none>"
+        type: "str"
       condition_ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
@@ -82,7 +86,7 @@ infoview:
           when:
           - key: "type"
             eq: "Ready"
-          default: "<unknown>"
+          default: ["<unknown>"]
         formatter: "value_mapper"
         formatting:
           mapping:
@@ -105,6 +109,12 @@ infoview:
         - path: ["spec#dnsNames"]
           pathtype: "list"
         formatter: "list"
+      duration:
+        header: [["Duration:", ["main", "infoheader"]]]
+        path: "spec#duration"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
       issuer:
         header: [["I", ["main", "infoheader_shortcut"]], ["ssuer:", ["main", "infoheader"]]]
         paths:
@@ -120,8 +130,21 @@ infoview:
       renewal_time:
         header: [["Renewal Time:", ["main", "infoheader"]]]
         path: "status#renewalTime"
+        default: "<unset>"
         type: "timestamp"
         formatter: "timestamp"
+      renew_before:
+        header: [["Renew Before:", ["main", "infoheader"]]]
+        path: "spec#renewBefore"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
+      renew_before_percentage:
+        header: [["Renew Before (Percentage):", ["main", "infoheader"]]]
+        path: "spec#renewBeforePercentage"
+        default: "<unset>"
+        type: "str"
+        formatter: "numerical_with_units"
       secret_name:
         header: [["S", ["main", "infoheader_shortcut"]], ["ecret Name:", ["main", "infoheader"]]]
         paths:
@@ -136,15 +159,22 @@ infoview:
           when:
           - key: "type"
             eq: "Ready"
-          default: ""
+          default: ["<unset>"]
+      usages:
+        header: [["Usages:", ["main", "infoheader"]]]
+        path: "spec#usages"
+        type: "raw"
+        formatter: "list"
       valid_from:
         header: [["Valid From:", ["main", "infoheader"]]]
         path: "status#notBefore"
+        default: "<unset>"
         type: "timestamp"
         formatter: "timestamp"
       valid_until:
         header: [["Valid Until:", ["main", "infoheader"]]]
         path: "status#notAfter"
+        default: "<unset>"
         type: "timestamp"
         formatter: "timestamp"
   shortcuts:

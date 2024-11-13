@@ -6,9 +6,13 @@ listview:
   group: "Certificate Management"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "state", "age"]
+      fields: ["namespace", "name", "processing", "state", "age"]
       sortcolumn: "namespace"
   fields:
+    processing:
+      header: "Processing:"
+      path: "status#processing"
+      type: "str"
     state:
       header: "State:"
       path: "status#state"
@@ -37,6 +41,10 @@ listview:
               field_colors:
               - context: "main"
                 type: "status_pending"
+            revoked:
+              field_colors:
+              - context: "main"
+                type: "status_not_ok"
             ready:
               field_colors:
               - context: "main"
