@@ -1465,6 +1465,11 @@ kubernetes_resources: dict[tuple[str, str], dict[str, list[str] | str | bool]] =
         "api": "nodelatencymonitors",
         "namespaced": False,
     },
+    ("PacketCapture", "crd.antrea.io"): {
+        "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
+        "api": "packetcaptures",
+        "namespaced": False,
+    },
     ("SupportBundleCollection", "crd.antrea.io"): {
         "api_paths": ["apis/crd.antrea.io/v1alpha1/"],
         "api": "supportbundlecollections",
