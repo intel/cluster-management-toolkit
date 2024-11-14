@@ -5546,7 +5546,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
                 if creation_timestamp_path is not None \
                         and creation_timestamp_path \
                         and deep_get(obj, DictPath(creation_timestamp_path)) is not None:
-                    timestamp = deep_get(obj, DictPath(creation_timestamp_path))
+                    timestamp: str = deep_get(obj, DictPath(creation_timestamp_path))
 
                     if timestamp is None:
                         field = [ThemeRef("strings", "unset")]
@@ -5793,7 +5793,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
 
                 if timestamps is None or uip.yoffset + y >= len(timestamps) \
                         or timestamps[uip.yoffset + y] == none_timestamp():
-                    timestamp: str = "".ljust(uip.tspadwidth)
+                    timestamp = "".ljust(uip.tspadwidth)
                 else:
                     timestamp = str(timestamps[uip.yoffset + y]).ljust(uip.tspadwidth)
                     tscount += 1
@@ -9582,7 +9582,7 @@ def selectorloop(stdscr: curses.window, view: str) -> Retval:
             return retval
 
 
-listviewactions = {
+listviewactions: dict[str, dict[str, Any]] = {
     "Apply configuration (local)": {
         "description": "Apply configurations from file/Kustomization (autodetected)",
         "confirm": True,
@@ -9729,16 +9729,28 @@ listviewactions = {
 }
 
 
-infoviews = {}  # type: ignore
+infoviews: dict[str, Any] = {}
 
 
 # These functions are used to check whether an API is available
 def is_kubernetes_supported() -> bool:
+    """
+    Check whether Kubernetes is supported/enabled
+
+        Returns:
+            (bool): True if Kubernetes is supported/enabled, False if not
+    """
     return kubernetes_support
 
 
 def is_cluster_reachable() -> bool:
-    reachable = False
+    """
+    Check whether the cluster is reachable
+
+        Returns:
+            (bool): True if the cluster is reachable, False if not
+    """
+    reachable: bool = False
 
     if kubernetes_support and kh is not None:
         reachable = kh.is_cluster_reachable()
@@ -9834,7 +9846,7 @@ infogetter_allowlist: dict[str, Callable] = {
 
 
 # These views are always defined internally and cannot be disabled
-views_special = {
+views_special: dict[str, dict[str, Any]] = {
     "Selector": {
         "windowheader": "Selector",
         "kind": ("__Selector", ""),
@@ -9843,6 +9855,7 @@ views_special = {
         "fields": None,
         "skip": True,
         "is_taggable": False,
+        "view_file_path": "<builtin>",
     },
     "Cluster Overview": {
         "windowheader": "Cluster Overview",
@@ -9858,6 +9871,7 @@ views_special = {
         "infogetter": None,
         "is_taggable": False,
         "check_availability": is_cluster_reachable,
+        "view_file_path": "<builtin>",
     },
     "Container Network Interface Info": {
         "windowheader": "Container Network Interface Info",
@@ -9871,11 +9885,12 @@ views_special = {
         "listgetter": None,
         "infogetter": None,
         "check_availability": is_cluster_reachable,
+        "view_file_path": "<builtin>",
     },
 }
 
 
-views = {**views_special}
+views: dict[str, dict[str, Any]] = {**views_special}
 
 
 key_mappings = {
@@ -9975,16 +9990,17 @@ def populate_views(force_refresh: bool = False) -> None:
             available_api_families.add(kind)
 
     # Get a full list of views from all view directories
-    # Start by adding files from the views directory
-    view_dirs = []
+    # Start by adding the system views, then add local additions;
+    # this way local modifications will override system views.
+    view_dirs: list[str] = []
+
+    view_dirs.append(cmtpaths.SYSTEM_VIEWS_DIR)
+    view_dirs.append(cmtpaths.VIEW_DIR)
     view_dirs += deep_get(cmtlib.cmtconfig, DictPath("General#local_views"), [])
 
-    views = {**views_special}
-
-    view_dirs.append(cmtpaths.VIEW_DIR)
-    view_dirs.append(cmtpaths.SYSTEM_VIEWS_DIR)
-
     view_files = []
+
+    views = {**views_special}
 
     yaml_regex: re.Pattern[str] = re.compile(r"^(.*)\.ya?ml$")
 
@@ -10014,8 +10030,8 @@ def populate_views(force_refresh: bool = False) -> None:
 
     # pylint: disable-next=too-many-nested-blocks
     for view_file in view_files:
-        has_listview = False
-        has_infoview = False
+        has_listview: bool = False
+        has_infoview: bool = False
 
         try:
             d = secure_read_yaml(FilePath(view_file), directory_is_symlink=True)
@@ -10126,10 +10142,24 @@ def populate_views(force_refresh: bool = False) -> None:
                          "Aborting.")
 
             if viewname in views:
+                # We allow for view-files to be overriden, but *only* if the override
+                # is in another level of the directory stack. This way we'll probably
+                # detect copy'n'paste errors, but at the same time allow for local overrides.
                 conflicting_kind = deep_get(views[viewname], DictPath("kind"))
-                sys.exit(f"Error when processing view-file {view_file} for kind: "
-                         f"{(kind, api_family)}; a view named {viewname} already exists "
-                         f"(for the kind: {conflicting_kind})")
+                conflicting_viewfile = deep_get(views[viewname], DictPath("view_file_path"))
+                if os.path.dirname(conflicting_viewfile) == os.path.dirname(view_file):
+                    sys.exit(f"Error when processing view-file {view_file} for kind: "
+                             f"{(kind, api_family)};\n"
+                             f"a view named {viewname} already exists "
+                             f"for the kind: {conflicting_kind} "
+                             f"in view-file {conflicting_viewfile}")
+                else:
+                    ansithemeprint([ANSIThemeStr("Note", "note"),
+                                    ANSIThemeStr(": overriding view-file ", "default"),
+                                    ANSIThemeStr(f"{conflicting_viewfile}", "path"),
+                                    ANSIThemeStr(" with view-file ", "default"),
+                                    ANSIThemeStr(f"{view_file}", "path"),
+                                    ANSIThemeStr(".", "default")])
 
             # This complexity is required because if the key is missing we want to use the default,
             # but if the key is explicitly None we do not want any fallback
@@ -10189,6 +10219,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 "infogetter": infogetter,
                 "infogetter_args": deep_get(d, DictPath("listview#infogetter_args"), {}),
                 "actions": deep_get(d, DictPath("listview#actions"), {}),
+                "view_file_path": view_file,
             }
 
             shortcuts = {}
@@ -10428,6 +10459,7 @@ def populate_views(force_refresh: bool = False) -> None:
                 "shortcuts": {},
                 "no_reload_on_refresh": deep_get(d, DictPath("infoview#no_reload_on_refresh"),
                                                  False),
+                "view_file_path": view_file,
             }
             infoview_entry["objgetter"] = \
                 check_allowlist(objgetter_allowlist, "objgetter_allowlist",
