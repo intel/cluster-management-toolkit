@@ -2869,7 +2869,7 @@ def python_traceback(message: str, **kwargs: Any) \
     if message == "During handling of the above exception, " \
                   "another exception occurred:":
         remnants = [ThemeStr(message, ThemeAttr("logview", "severity_error"))]
-        processor: tuple[str, Optional[Callable], dict] = \
+        processor = \
             ("start_block", python_traceback_scanner_nested_exception, {})
         return processor, remnants
 
