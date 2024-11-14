@@ -219,9 +219,9 @@ def generic_str_to_severity(valid_indata: Tuple[str], fun: Callable,
         # If we don't pass a default we should get None
         indata = "#"
         tmp = fun(indata)
-        if tmp is not None:
+        if tmp != LogLevel.DEFAULT:
             message = f"{fun.__name__}(default = None) returned {tmp} with " \
-                      f"invalid indata ({indata}), expected None"
+                      f"invalid indata ({indata}), expected LogLevel.DEFAULT"
             result = False
 
     if result:
@@ -1074,7 +1074,7 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
     if result:
         testdata = (
             # Indata format:
-            # (string, fold_msg, expected_result, expected_remnants, expected_exception)
+            # (string, severity, facility, expected_result, expected_remnants, expected_exception)
             ('E0514 09:01:55.108028382       1 server_chttp2.cc:40] foo',
              LogLevel.INFO, "",
              ("foo", LogLevel.ERR, "server_chttp2.cc:40", [], True), None),
@@ -1092,7 +1092,7 @@ def test_split_glog(verbose: bool = False) -> Tuple[str, bool]:
              ("Not a match", LogLevel.INFO, "", [], False), None),
             ('Not a match',
              None, "",
-             ("Not a match", LogLevel.INFO, "", [], False), None),
+             ("Not a match", LogLevel.DEFAULT, "", [], False), None),
             ('ERROR: logging before flag.Parse: E0514 09:01:55.108028382       '
              '1 server_chttp2.cc:40] foo',
              LogLevel.INFO, "",

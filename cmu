@@ -47,7 +47,7 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, Callable, cast, Optional, Sequence, Type
+from typing import Any, Callable, cast, Optional, Sequence, Set, Type
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -204,6 +204,9 @@ DEFAULT_TAIL_LINES = 4000
 
 force_refresh_apis = False  # pylint: disable=invalid-name
 
+views: dict[str, dict[str, Any]] = {}
+infoviews: dict[tuple[str, str], Any] = {}
+
 
 def init_kubernetes_client() -> None:
     """
@@ -313,8 +316,8 @@ def update_field_widths(field_dict: dict, field_names: list[str], objects: list[
         Returns:
             (int): The total length of all the fields of a line
     """
-    linelen = 0
-    pos = 0
+    linelen: int = 0
+    pos: int = 0
 
     for field_name in field_names:
         field_dict[field_name]["pos"] = pos
@@ -383,7 +386,7 @@ def get_image_tuple(image: str) -> tuple[str, str]:
                 (str): The container name
                 (str): The container version
     """
-    tmp = re.match(r"^(.*):(.*)", image)
+    tmp: Optional[re.Match[str]] = re.match(r"^(.*):(.*)", image)
     if tmp is not None:
         image_name = f"{tmp[1]}"
         image_version = f"{tmp[2]}"
@@ -436,12 +439,13 @@ def get_container_info(**kwargs: Any) -> list[Type]:
         Parameters:
             **kwargs (dict[str, Any]): Keyword arguments
                 kubernetes_helper (KubernetesHelper): A reference to a KubernetesHelper object
+                kh_cache (KubernetesResourceCache): A reference to a KubernetesResourceCache object
         Returns:
             ([InfoClass]): A list with info
     """
     if (kh_ := deep_get(kwargs, DictPath("kubernetes_helper"))) is None:
         raise ProgrammingError("get_container_info() called without kubernetes_helper")
-    kh_cache_ = deep_get(kwargs, DictPath("kh_cache"))
+    kh_cache_: Optional[KubernetesResourceCache] = deep_get(kwargs, DictPath("kh_cache"))
 
     info: list[Type] = []
     containers: dict = {}
@@ -939,7 +943,23 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def transform_list(vlist: list | dict, transform: dict) -> list:
+def transform_list(vlist: list | dict, transform: dict) -> list[Any]:
+    """
+    Given data as a list or dict, modify the data according the rules
+    in a transformation ruleset.
+
+        Parameters:
+            sorted (booled): Should the result be sorted? True to sort, False to keep order
+            key_regexes: Regexes to apply to the key
+            key_groups: Regex groups to extract from the key
+            key_join: Separator to use when joining the key groups
+            key_defaults: Default values to use if the key regexes doesn't match
+            value_regexes: Regexes to apply to the value
+            value_groups: Regex groups to extract from the value
+            value_join: Separator to use when joining the value groups
+            value_defaults: Default values to use if the value regexes doesn't match
+            output: The expected output; can be any combination of key, value
+    """
     sort: bool = deep_get(transform, DictPath("sorted"), False)
     key_regexes: list[str] = deep_get(transform, DictPath("key#regex"), [])
     key_groups: list[int] = deep_get(transform, DictPath("key#groups"), [])
@@ -1032,7 +1052,7 @@ def transform_list(vlist: list | dict, transform: dict) -> list:
         result.append(tmp3)
 
     if sort:
-        return natsorted(result)
+        return cast(list[Any], natsorted(result))
 
     return result
 
@@ -1212,7 +1232,7 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                     value = []
                     tmp = deep_get_with_fallback(obj, path, {})
                     if isinstance(tmp, list):
-                        tmp2 = {}
+                        tmp2: dict[str, Any] = {}
                         for item in tmp:
                             if not isinstance(item, dict):
                                 break
@@ -1587,22 +1607,22 @@ def get_obj(obj: dict, field_dict: dict, field_names: list[str],
                                 _subpath = subpath
                                 if isinstance(_subpath, str):
                                     _subpath = [_subpath]
-                                _tmp = deep_get_with_fallback(item, _subpath, _default)
+                                tmp_ = deep_get_with_fallback(item, _subpath, _default)
                                 if isinstance(prefix, str):
-                                    if isinstance(_tmp, str):
-                                        _tmp = prefix + _tmp
+                                    if isinstance(tmp_, str):
+                                        tmp_ = prefix + tmp_
                                     else:
-                                        _tmp = [prefix] + _tmp
+                                        tmp_ = [prefix] + tmp_
                                 else:
                                     tmp += prefix
 
                                 if isinstance(suffix, str):
-                                    if isinstance(_tmp, str):
-                                        _tmp += suffix
+                                    if isinstance(tmp_, str):
+                                        tmp_ += suffix
                                     else:
-                                        _tmp += [suffix]
+                                        tmp_ += [suffix]
 
-                                tmp.append(_tmp)
+                                tmp.append(tmp_)
 
                                 if isinstance(suffix, list):
                                     tmp += suffix
@@ -1910,7 +1930,7 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
 
         timestamp = \
             datetime.fromtimestamp(int(deep_get(d, DictPath("__REALTIME_TIMESTAMP")), 0) / 1000000)
-        severity = None
+        severity = LogLevel.DEFAULT
         facility = ""
         remnants = None
         msg = ""
@@ -1937,7 +1957,7 @@ def get_journalctl_log(obj: dict, **kwargs: Any) -> \
 
         timestamps.append(timestamp.astimezone())
         facilities.append(facility)
-        if severity is None:
+        if severity == LogLevel.DEFAULT:
             severity = raw_severity
         severities.append(severity)
         messages.append(msg)
@@ -2413,7 +2433,7 @@ def generate_list_header(uip: UIProps, headerpad: curses.window,
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
 def generate_list_row(uip: UIProps, listpad: curses.window,
-                      data, field_list,
+                      data: Type, field_list: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
     first: bool = True
@@ -2611,11 +2631,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
     uip.last_action = datetime.now()
     uip.idle_timeout = 5
-    tagged_items = set()
-    serverstatus = "ok"
+    tagged_items: Set[Type] = set()
+    serverstatus: str = "ok"
 
-    first_fetch = True
-    new_data = "false"
+    first_fetch: bool = True
+    new_data: str = "false"
     uip.force_update()
     uip.listlen = 0
 
@@ -2975,8 +2995,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.update_window(update=False)
         # pylint: disable-next=too-many-nested-blocks
         elif c == curses.KEY_F7:
-            action_title = "Perform cluster-wide actions"
-            action_src_list = listviewactions
+            action_title: str = "Perform cluster-wide actions"
+            action_src_list: dict[str, dict[str, dict[str, Any]]] = listviewactions
 
             # Populate the list of actions
             actions, actionlist = populate_actionlist(action_list=action_src_list)
@@ -3129,7 +3149,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
             all_ns = "<All>"
             if selected_namespace == "":
-                preselection = all_ns
+                preselection: str | Set = all_ns
             else:
                 preselection = selected_namespace
             namespace_list = [{
@@ -3327,10 +3347,11 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                 [ThemeStr(f"{value}", ThemeAttr("windowwidget", "default"))]],
                 })
             label_headers = ["Label:", "Value:"]
-            tagged_labels = curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
-                                                       uip.maxy // 2, uip.maxx // 2, labellist,
-                                                       headers=label_headers, title="Labels",
-                                                       cursor=True, taggable=True)
+            tagged_labels = cast(set, curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
+                                                                 uip.maxy // 2, uip.maxx // 2,
+                                                                 labellist, headers=label_headers,
+                                                                 title="Labels", cursor=True,
+                                                                 taggable=True))
             if tagged_labels:
                 selectors = {}
                 for i, label in enumerate(labels):
@@ -3471,14 +3492,13 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                     "Perform action on tagged items")
             tmp_action_src_list = deep_get(views, DictPath(f"{view}#actions#actionlist"), {})
 
-            action_src_list = {
-            }
+            action_src_list = {}
 
             for action in tmp_action_src_list:
                 # Override default actions by passing an empty action by the same name
                 if action in action_src_list and tmp_action_src_list[action] == {}:
                     action_src_list.pop(action)
-                else:
+                elif action:
                     action_src_list[action] = tmp_action_src_list[action]
 
             # Populate the list of actions
@@ -3644,8 +3664,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
                 selection_vars["_tagged_items"] = list(tagged_items)
                 selection_vars["action_args"] = action_args
-                retval = actionfunc(uip, items, actionlist[action], values=selection_vars,
-                                    kind=kind, title=title)
+                retval = actionfunc(uip=uip, items=items, action=actionlist[action],
+                                    values=selection_vars, kind=kind, title=title)
                 if retval is not None and retval == Retval.RETURNFULL:
                     return retval
 
@@ -4109,27 +4129,27 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
     # and the entire width of the screen
     _statusbar = uip.init_statusbar()
 
-    selected_heatmap = "Node"
-    selected_node = 0
-    selected_pod = 0
+    selected_heatmap: str = "Node"
+    selected_node: int = 0
+    selected_pod: int = 0
 
     # Get control plane node
     control_plane_node, control_plane_name = get_control_plane()
     control_plane_addresses = deep_get(control_plane_node, DictPath("status#addresses"), [])
     name, iips, eips = infogetters.get_node_addresses(control_plane_addresses)
 
-    hostname = socket.gethostname()
-    islocal = hostname == name
+    hostname: str = socket.gethostname()
+    islocal: bool = hostname == name
 
     stat_regex: re.Pattern[str] = re.compile(r"^[A-Za-z]+ +(\d+) +(\d+) +(\d+) +(\d+) "
                                              r"(\d+) +(\d+) +(\d+) +(\d+) +(\d+) (\d+)$")
 
-    loadavg_raw = []
-    meminfo_raw = []
-    stat_raw = []
+    loadavg_raw: list[str] = []
+    meminfo_raw: list[str] = []
+    stat_raw: list[str] = []
 
-    podinfo = []
-    nodeinfo = []
+    podinfo: list[Type] = []
+    nodeinfo: list[Type] = []
 
     pod_curypos = 0
     node_curypos = 0
@@ -4147,19 +4167,14 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
     swapused = 0
     running = 0
     tasks = 0
-    loadavg_raw = []
-    meminfo_raw = []
-    stat_raw = []
 
     swaptotal = 0
 
-    node_statuses = []
-    node_heatmap = []
-    nodeinfo = []
-    pod_statuses = []
-    podinfo = []
-    pod_heatmap = []
-    events = []
+    node_statuses: list[StatusGroup] = []
+    node_heatmap: list[list[ThemeStr | ThemeRef]] = []
+    pod_statuses: list[StatusGroup] = []
+    pod_heatmap: list[list[ThemeStr | ThemeRef]] = []
+    events: list[dict[str, Any]] = []
 
     if not islocal:
         ping_playbook_path = get_playbook_path(FilePath("load_ping.yaml"))
@@ -5098,7 +5113,7 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements
-def generate_helptext(view: str, viewtype: str,
+def generate_helptext(view: str | tuple[str, str], viewtype: str,
                       additional_helptexts: list[tuple[str, str]],
                       shortcuts: dict[str, dict[str, Any]]) -> list[dict]:
     helptext: list[tuple[str, str]] = []
@@ -5112,7 +5127,7 @@ def generate_helptext(view: str, viewtype: str,
             helptext += additional_helptexts
             return format_helptext(helptext)
 
-        viewref = infoviews[view]
+        viewref = infoviews[cast(tuple[str, str], view)]
 
         if "listpad" in viewref:
             helptext += helptexts.togglewidth
@@ -5145,7 +5160,7 @@ def generate_helptext(view: str, viewtype: str,
     elif viewtype == "listview":
         helptext += helptexts.listviewheader
 
-        viewref = views[view]
+        viewref = views[cast(str, view)]
 
         if viewref["kind"] in infoviews:
             helptext += helptexts.openresource
@@ -5173,7 +5188,8 @@ def generate_helptext(view: str, viewtype: str,
 
 
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) -> Retval:
+def genericinfoloop(stdscr: curses.window,
+                    obj: dict[str, Any], view: tuple[str, str], **kwargs: Any) -> Retval:
     global initial_container  # pylint: disable=global-statement
     global executor  # pylint: disable=global-statement
 
@@ -5345,7 +5361,7 @@ def genericinfoloop(stdscr: curses.window, obj: dict, view: str, **kwargs: Any) 
         }
 
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
-        _shortcuts = {}
+        _shortcuts: dict[int, str] = {}
         for shortcut in shortcuts:
             _shortcut = shortcuts[shortcut].get("shortcut")
             if _shortcut is None:
@@ -6394,7 +6410,7 @@ def log_add_line(timestamps: list[datetime], facilities: list[str],
         timestamps.append(timestamp.astimezone())
     else:
         timestamps.append(none_timestamp())
-    if facility_extended is None:
+    if not facility_extended:
         facilities.append(facility)
     else:
         facilities.append((facility_extended, facility))
@@ -6405,7 +6421,8 @@ def log_add_line(timestamps: list[datetime], facilities: list[str],
 
 
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any) -> Retval:
+def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
+                      kind: tuple[str, str], obj: dict[str, Any], **kwargs: Any) -> Retval:
     global executor  # pylint: disable=global-statement
     global override_tail_lines  # pylint: disable=global-statement
 
@@ -6415,9 +6432,9 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
 
     multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
     multilog_containers = deep_get(kwargs, DictPath("multilog_containers"), [])
-    all_same_namespace = deep_get(kwargs, DictPath("all_same_namespace"), False)
-    multilog_prefix = ["namespace", "podname", "container"]
-    facility_extended = None
+    all_same_namespace: bool = deep_get(kwargs, DictPath("all_same_namespace"), False)
+    multilog_prefix: list[str] = ["namespace", "podname", "container"]
+    facility_extended: list[ThemeRef | ThemeStr] = []
 
     uip = UIProps(stdscr)
 
@@ -6534,7 +6551,7 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                 image_id = None
                 for namespace, podname, containername, image_id in multilog_containers_full:
                     if len(multilog_containers) == 1:
-                        facility_extended = None
+                        facility_extended = []
                     elif multilog_prefix == ["container"]:
                         facility_extended = [
                             ThemeRef("separators", "facility_extended_prefix"),
@@ -6575,7 +6592,8 @@ def containerinfoloop(stdscr: curses.window, container, kind, obj, **kwargs: Any
                     # to allow the logparser to function without guessing
                     for line in split_msg(rawmsg):
                         splitmsg.append((line, podname, containername, image_id, facility_extended))
-                splitmsg = natsorted(splitmsg, key=itemgetter(0))
+                splitmsg = cast(list[tuple[str, str, str, str, list[ThemeRef | ThemeStr]]],
+                                natsorted(splitmsg, key=itemgetter(0)))
 
             if not uip.continuous_log:
                 del notice
@@ -8245,8 +8263,19 @@ def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
     return containerinfoloop(stdscr, container=None, kind=None, obj=None, **multilog_args)
 
 
-# pylint: disable-next=unused-argument
-def action_view_pod_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def action_view_pod_logs(**kwargs: Any) -> Retval:
+    """
+    Action used by the Pod log viewer.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                values (dict[str, Any]): The items to operate on
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    values: dict = deep_get(kwargs, DictPath("values"))
     return view_pod_logs(uip.stdscr, **values)
 
 
@@ -8272,10 +8301,25 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
                                 title=title, formatter=formatter)
 
 
-# pylint: disable-next=unused-argument,too-many-locals
-def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
-    success = True
-    force = deep_get(values, DictPath("__force"), False)
+def delete_resource(**kwargs: Any) -> Retval:
+    """
+    Delete resources.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+                force (bool): Force-delete the resources? True to force deletion,
+                              False to delete gracefully
+        Returns:
+            (Retval): The return value
+    """
+    success: bool = True
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    force: bool = deep_get(kwargs, DictPath("force"), False)
+    items: list[str] = deep_get(kwargs, DictPath("items"), [])
 
     for item in items:
         if isinstance(item, tuple):
@@ -8309,10 +8353,20 @@ def delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) ->
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def force_delete_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
-    values["__force"] = True
-    return delete_resource(uip, items=items, action=action, values=values, kind=kind)
+def force_delete_resource(**kwargs: Any) -> Retval:
+    """
+    Force delete resources.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+        Returns:
+            (Retval): The return value
+    """
+    kwargs["force"] = True
+    return delete_resource(**kwargs)
 
 
 def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
@@ -8641,12 +8695,29 @@ def edit_resource(stdscr: curses.window, **kwargs) -> None:
     stdscr.refresh()
 
 
-# pylint: disable-next=unused-argument
-def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def patch_resource(**kwargs: Any) -> Retval:
+    """
+    Patch resources.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+                values (dict[str, Any]): Extra arguments
+                    action_str (str): The string describing the action
+                    args (dict): The arguments to pass to patch_object()
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    action_str: str = deep_get(kwargs, DictPath("values#action_str"))
+    args: dict = deep_get(kwargs, DictPath("values#args"), {})
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
+
     curses.endwin()
     _retval = clear_screen()
-    action_str = deep_get(values, DictPath("action_str"))
-    args = deep_get(values, DictPath("args"), {})
 
     for item in items:
         namespace, name = item
@@ -8674,8 +8745,22 @@ def patch_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> 
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def restart_resource_rescale(**kwargs: Any) -> Retval:
+    """
+    Restart resources by rescaling them.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
+
     curses.endwin()
     _retval = clear_screen()
 
@@ -8702,8 +8787,22 @@ def restart_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def restart_resource_rollout(**kwargs: Any) -> Retval:
+    """
+    Restarts resources using rollout.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
+
     curses.endwin()
     _retval = clear_screen()
 
@@ -8727,8 +8826,24 @@ def restart_resource_rollout(uip: UIProps, items, action, values, kind, **kwargs
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def rescale_resource(**kwargs: Any) -> Retval:
+    """
+    Rescale resources.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+                values (dict[str, Any]): The items to operate on
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
+    values: dict = deep_get(kwargs, DictPath("values"))
+
     curses.endwin()
     _retval = clear_screen()
 
@@ -8759,8 +8874,23 @@ def rescale_resource(uip: UIProps, items, action, values, kind, **kwargs: Any) -
 
 # Valid kinds:
 # ("Deployment", "apps")
-# pylint: disable-next=unused-argument
-def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def stop_resource_rescale(**kwargs: Any) -> Retval:
+    """
+    Stop resources by rescaling.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                uip (UIProps): A reference to the UI Properties object
+                kind (str): The kind of the resource to delete
+                items ([str]): The list of resources to delete
+                values (dict[str, Any]): The items to operate on
+        Returns:
+            (Retval): The return value
+    """
+    uip: UIProps = deep_get(kwargs, DictPath("uip"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"), [])
+
     curses.endwin()
     _retval = clear_screen()
 
@@ -8788,11 +8918,19 @@ def stop_resource_rescale(uip: UIProps, items, action, values, kind, **kwargs: A
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def delete_logs(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def delete_logs(**kwargs: Any) -> Retval:
+    """
+    Delete log messages.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                items ([str]): The list of logs to delete
+        Returns:
+            (Retval): The return value
+    """
+    items = deep_get(kwargs, DictPath("items"), [])
     for item in items:
         ansible_delete_log(item)
-
     return Retval.RETURNDONE
 
 
@@ -8922,28 +9060,65 @@ def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> N
     uip.stdscr.refresh()
 
 
-# pylint: disable-next=unused-argument
-def cordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def cordon_node(**kwargs: Any) -> Retval:
+    """
+    Cordon node(s).
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                items ([str]): The list of nodes to cordon
+        Returns:
+            (Retval): The return value
+    """
+    items = deep_get(kwargs, DictPath("items"))
     for node in items:
         kh.cordon_node(node)
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
-    force = deep_get(kwargs, DictPath("force"), False)
+def drain_node(**kwargs: Any) -> Retval:
+    """
+    Drain node(s).
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                items ([str]): The list of nodes to drain
+                force (bool): Force-drain the nodes? True to force drain, False to drain gracefully
+        Returns:
+            (Retval): The return value
+    """
+    items: list[str] = deep_get(kwargs, DictPath("items"), [])
+    force: bool = deep_get(kwargs, DictPath("force"), False)
     for node in items:
         kh.drain_node(node, force=force)
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument
-def force_drain_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
-    return drain_node(uip, items, action, values, kind, **{"force": True})
+def force_drain_node(**kwargs: Any) -> Retval:
+    """
+    Force drain node(s).
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                items ([str]): The list of nodes to drain
+        Returns:
+            (Retval): The return value
+    """
+    kwargs["force"] = True
+    return drain_node(**kwargs)
 
 
-# pylint: disable-next=unused-argument
-def uncordon_node(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
+def uncordon_node(**kwargs: Any) -> Retval:
+    """
+    Uncordon node(s).
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                items ([str]): The list of nodes to uncordon
+        Returns:
+            (Retval): The return value
+    """
+    items = deep_get(kwargs, DictPath("items"))
     for node in items:
         kh.uncordon_node(node)
     return Retval.RETURNDONE
@@ -9729,9 +9904,6 @@ listviewactions: dict[str, dict[str, Any]] = {
 }
 
 
-infoviews: dict[str, Any] = {}
-
-
 # These functions are used to check whether an API is available
 def is_kubernetes_supported() -> bool:
     """
@@ -9890,7 +10062,7 @@ views_special: dict[str, dict[str, Any]] = {
 }
 
 
-views: dict[str, dict[str, Any]] = {**views_special}
+views  = {**views_special}
 
 
 key_mappings = {
@@ -10159,7 +10331,7 @@ def populate_views(force_refresh: bool = False) -> None:
                                     ANSIThemeStr(f"{conflicting_viewfile}", "path"),
                                     ANSIThemeStr(" with view-file ", "default"),
                                     ANSIThemeStr(f"{view_file}", "path"),
-                                    ANSIThemeStr(".", "default")])
+                                    ANSIThemeStr(".\n", "default")])
 
             # This complexity is required because if the key is missing we want to use the default,
             # but if the key is explicitly None we do not want any fallback
@@ -10222,9 +10394,8 @@ def populate_views(force_refresh: bool = False) -> None:
                 "view_file_path": view_file,
             }
 
-            shortcuts = {}
-
-            _shortcuts = deep_get(d, DictPath("listview#shortcuts"), {})
+            shortcuts: dict[str, dict[str, Any]] = {}
+            _shortcuts: dict[str, dict[str, Any]] = deep_get(d, DictPath("listview#shortcuts"), {})
 
             # Always include the shortcuts for YAML dump and JSON dump, unless overridden
             if "View YAML dump" not in _shortcuts:
@@ -10420,7 +10591,7 @@ def populate_views(force_refresh: bool = False) -> None:
 
             listpad_fields = deep_get(listpad, DictPath("fields"), {})
 
-            listpad_field_indexes = {}
+            listpad_field_indexes: dict[str, dict[str, Any]] = {}
             _indexes = deep_get(listpad, DictPath("field_indexes"), {})
             confkind = kind
             if api_family:
@@ -10671,7 +10842,8 @@ def populate_views(force_refresh: bool = False) -> None:
                 infoview_entry["shortcuts"] = shortcuts
 
             # Replace existing listviews with the same name
-            infoviews.pop((kind, api_family), None)
+            if (kind, api_family) in infoviews:
+                del infoviews[(kind, api_family)]
 
             # Add the new view
             infoviews[(kind, api_family)] = infoview_entry
@@ -10804,7 +10976,7 @@ def list_views(options: list[tuple[str, str]], args: list[str]) -> None:
     populate_views()
     customise_listviews()
 
-    for view in natsorted(views):
+    for view in cast(dict[str, dict[str, Any]], natsorted(views)):
         viewref = views[view]
         if "skip" in viewref:
             continue
@@ -10845,7 +11017,7 @@ def list_views(options: list[tuple[str, str]], args: list[str]) -> None:
                     ANSIThemeStr("Kind:", "header"),
                     ANSIThemeStr(f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"),
                     ANSIThemeStr("Supported fields:", "header")])
-    for view, kind, fields in viewfields:
+    for view, kind, fields in cast(list[tuple[str, str, list[ANSIThemeStr]]], viewfields):
         joined_fields = ansithemestr_join_list(fields, separator=ANSIThemeStr(", ", "separator"))
         ansithemeprint([ANSIThemeStr(f"{view.ljust(maxviewlen + 2)}"
                                      f"{kind.ljust(maxkindlen + 2)}",

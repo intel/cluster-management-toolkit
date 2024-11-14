@@ -833,6 +833,8 @@ class SecurityPolicy(Enum):
 class LogLevel(IntEnum):
     """
     Loglevels used by CMT.
+
+    LogLevel.ALL will be substituted by LogLevel.INFO unless it's overriden
     """
     EMERG = 0
     ALERT = 1
@@ -845,6 +847,7 @@ class LogLevel(IntEnum):
     DIFFPLUS = 8
     DIFFMINUS = 9
     DIFFSAME = 10
+    DEFAULT = 254
     ALL = 255
 
 

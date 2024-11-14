@@ -2524,7 +2524,7 @@ class UIProps:
         # Helptext
         self.helptext: Optional[list[dict[str, Any]]] = None
 
-        self.update_forced = False
+        self.update_forced: bool = False
 
         # The UID of the selected object (if applicable)
         self.selected_uid = None
@@ -2535,15 +2535,15 @@ class UIProps:
         # The timestamp
         self.last_timestamp_update: Optional[str] = None
 
-        self.idle_timeout = 5
-        self.last_action = datetime.now()
+        self.idle_timeout: int = 5
+        self.last_action: datetime = datetime.now()
 
         # Info to use for populating lists, etc.
         self.sorted_list: list[Type] = []
-        self.sortorder_reverse = False
+        self.sortorder_reverse: bool = False
 
         # Used for searching
-        self.searchkey = ""
+        self.searchkey: str = ""
 
         # Used for label list
         self.labels: Optional[list[dict]] = None
@@ -2552,81 +2552,81 @@ class UIProps:
         self.annotations: Optional[list[dict]] = None
 
         # Reference to the external color class
-        self.miny = 0
-        self.maxy = 0
-        self.minx = 0
-        self.maxx = 0
-        self.mincurypos = 0
-        self.maxcurypos = 0
-        self.curypos = 0
-        self.yoffset = 0
-        self.xoffset = 0
-        self.maxyoffset = 0
-        self.maxxoffset = 0
-        self.last_update: Optional[datetime] = None
+        self.miny: int = 0
+        self.maxy: int = 0
+        self.minx: int = 0
+        self.maxx: int = 0
+        self.mincurypos: int = 0
+        self.maxcurypos: int = 0
+        self.curypos: int = 0
+        self.yoffset: int = 0
+        self.xoffset: int = 0
+        self.maxyoffset: int = 0
+        self.maxxoffset: int = 0
+        self.last_update: datetime = cmtlib.none_timestamp()
         # Number of seconds between updates
-        self.update_delay = 0
+        self.update_delay: int = 0
         # Has an update been requested?
-        self.update_triggered = False
+        self.update_triggered: bool = False
         # Update will update the content to display,
         # Refresh just updates the display
-        self.refresh = True
-        self.sortcolumn = ""
-        self.sortkey1 = ""
-        self.sortkey2 = ""
+        self.refresh: bool = True
+        self.sortcolumn: str = ""
+        self.sortkey1: str = ""
+        self.sortkey2: str = ""
         self.field_list: dict = {}
 
-        self.helpstring = "[F1] / [Shift] + H: Help"
+        self.helpstring: str = "[F1] / [Shift] + H: Help"
         # Should there be a timestamp in the upper right corner?
-        self.timestamp = True
+        self.timestamp: bool = True
 
         self.selected: Type | None = None
 
         # For generic information
-        self.infopadminwidth = 0
-        self.infopadypos = 0
-        self.infopadxpos = 0
-        self.infopadheight = 0
-        self.infopadwidth = 0
+        self.infopadminwidth: int = 0
+        self.infopadypos: int = 0
+        self.infopadxpos: int = 0
+        self.infopadheight: int = 0
+        self.infopadwidth: int = 0
         self.infopad: Optional[curses.window] = None
         # For lists
-        self.headerpadminwidth = 0
-        self.headerpadypos = 0
-        self.headerpadxpos = 0
-        self.headerpadheight = 0
-        self.headerpadwidth = 0
+        self.headerpadminwidth: int = 0
+        self.headerpadypos: int = 0
+        self.headerpadxpos: int = 0
+        self.headerpadheight: int = 0
+        self.headerpadwidth: int = 0
         self.headerpad: Optional[curses.window] = None
         self.listlen: int = 0
         # This one really is a misnomer and could possible be confused with the infopad
-        self.sort_triggered = False
-        self.regenerate_list = False
+        self.sort_triggered: bool = False
+        self.regenerate_list: bool = False
         self.info: list[Type] = []
         # This is a list of the xoffset for all headers in listviews
         self.tabstops: list[int] = []
-        self.listpadypos = 0
-        self.listpadxpos = 0
-        self.listpadheight = 0
-        self.listpadwidth = 0
+        self.listpadypos: int = 0
+        self.listpadxpos: int = 0
+        self.listpadheight: int = 0
+        self.listpadwidth: int = 0
         self.listpad: Optional[curses.window] = None
-        self.listpadminwidth = 0
-        self.reversible = True
+        self.listpadminwidth: int = 0
+        self.reversible: bool = True
         # For logs with a timestamp column
-        self.tspadypos = 0
-        self.tspadxpos = 0
-        self.tspadheight = 0
+        self.tspadypos: int = 0
+        self.tspadxpos: int = 0
+        self.tspadheight: int = 0
         self.tspadwidth = len("YYYY-MM-DD HH:MM:SS")
         self.tspad: Optional[curses.window] = None
-        self.borders = True
-        self.logpadypos = 0
-        self.logpadxpos = 0
-        self.logpadheight = 0
-        self.logpadwidth = 0
+        self.borders: bool = True
+        self.logpadypos: int = 0
+        self.logpadxpos: int = 0
+        self.logpadheight: int = 0
+        self.logpadwidth: int = 0
         self.logpad: Optional[curses.window] = None
-        self.loglen = 0
-        self.logpadminwidth = 0
+        self.loglen: int = 0
+        self.logpadminwidth: int = 0
         self.statusbar: Optional[curses.window] = None
         self.statusbarypos: int = 0
-        self.continuous_log = False
+        self.continuous_log: bool = False
         self.match_index: Optional[int] = None
         self.search_matches: set[int] = set()
         self.timestamps: Optional[list[datetime]] = None
@@ -2634,12 +2634,12 @@ class UIProps:
         self.severities: Optional[list[LogLevel]] = None
         self.messages: Optional[list[str | ThemeArray | list[ThemeStr | ThemeRef]]] = None
         # For checking clicks/drags of the scrollbars
-        self.leftarrow = -1, -1
-        self.rightarrow = -1, -1
-        self.hdragger = -1, -1, -1
-        self.upperarrow = -1, -1
-        self.lowerarrow = -1, -1
-        self.vdragger = -1, -1, -1
+        self.leftarrow: tuple[int, int] = -1, -1
+        self.rightarrow: tuple[int, int] = -1, -1
+        self.hdragger: tuple[int, int, int] = -1, -1, -1
+        self.upperarrow: tuple[int, int] = -1, -1
+        self.lowerarrow: tuple[int, int] = -1, -1
+        self.vdragger: tuple[int, int, int] = -1, -1, -1
 
         # Function handler for <enter> / <double-click>
         self.activatedfun: Optional[Callable] = None
@@ -2780,7 +2780,7 @@ class UIProps:
         """
         Disable automated updates.
         """
-        self.last_update = None
+        self.last_update = cmtlib.none_timestamp()
 
     def reset_update_delay(self) -> None:
         """
@@ -2802,11 +2802,11 @@ class UIProps:
             self.update_triggered = False
             return True
 
-        if self.last_update is None or self.update_delay == 0:
+        if self.last_update == cmtlib.none_timestamp() or self.update_delay == 0:
             return False
 
         timediff = datetime.now() - self.last_update
-        duration = timediff.days * 24 * 60 * 60 + timediff.seconds
+        duration = int(timediff.total_seconds())
 
         return duration >= self.update_delay
 

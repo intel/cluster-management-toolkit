@@ -15,7 +15,7 @@ import copy
 from datetime import datetime
 import re
 from typing import Any, Callable, cast, Optional
-from typing import Sequence, Type
+from typing import Type
 import yaml
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr
@@ -287,7 +287,7 @@ def map_value(value: Any, references: Any = None, selected: bool = False,
     return ThemeStr(string, fmt, selected), string
 
 
-def align_and_pad(array: Sequence[ThemeRef | ThemeStr], pad: int,
+def align_and_pad(array: list[ThemeRef | ThemeStr], pad: int,
                   fieldlen: int, ralign: bool,
                   selected: bool) -> list[ThemeRef | ThemeStr]:
     """
@@ -432,7 +432,7 @@ def generator_age(obj: dict, field: str, fieldlen: int, pad: int,
 # noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def generator_address(obj: dict, field: str, fieldlen: int, pad: int,
                       ralign: bool, selected: bool,
-                      **formatting: dict) -> Sequence[ThemeRef | ThemeStr]:
+                      **formatting: dict) -> list[ThemeRef | ThemeStr]:
     item_separator = deep_get(formatting, DictPath("item_separator"))
 
     items = getattr(obj, field, [])

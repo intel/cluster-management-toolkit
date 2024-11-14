@@ -208,7 +208,7 @@ def month_to_numerical(month: str) -> str:
 
 
 # Mainly used by glog
-def letter_to_severity(letter: str, **kwargs: Any) -> Optional[LogLevel]:
+def letter_to_severity(letter: str, **kwargs: Any) -> LogLevel:
     """
     Convert a 1-letter severity string to a LogLevel
 
@@ -219,7 +219,7 @@ def letter_to_severity(letter: str, **kwargs: Any) -> Optional[LogLevel]:
         Returns:
             (LogLevel): The corresponding LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"))
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.DEFAULT)
     severities = {
         "F": LogLevel.EMERG,
         "E": LogLevel.ERR,
@@ -233,7 +233,7 @@ def letter_to_severity(letter: str, **kwargs: Any) -> Optional[LogLevel]:
 
 
 # Used by Kiali and kubeshark
-def str_3letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
+def str_3letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
     Convert a 3-letter severity string to a LogLevel
 
@@ -244,7 +244,7 @@ def str_3letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
         Returns:
             (LogLevel): The corresponding LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"))
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.DEFAULT)
     severities = {
         "ERR": LogLevel.ERR,
         "WRN": LogLevel.WARNING,
@@ -253,7 +253,7 @@ def str_3letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
     return severities.get(string.upper(), default)
 
 
-def str_4letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
+def str_4letter_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
     Convert a 4-letter severity string to a LogLevel
 
@@ -264,7 +264,7 @@ def str_4letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
         Returns:
             (LogLevel): The corresponding LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"))
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.DEFAULT)
     severities = {
         "CRIT": LogLevel.CRIT,
         "FATA": LogLevel.CRIT,
@@ -278,7 +278,7 @@ def str_4letter_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
     return severities.get(string.upper(), default)
 
 
-def str_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
+def str_to_severity(string: str, **kwargs: Any) -> LogLevel:
     """
     Convert a severity string to a LogLevel
 
@@ -289,7 +289,7 @@ def str_to_severity(string: str, **kwargs: Any) -> Optional[LogLevel]:
         Returns:
             (LogLevel): The corresponding LogLevel
     """
-    default: Optional[LogLevel] = deep_get(kwargs, DictPath("default"))
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.DEFAULT)
     severities = {
         "fatal": LogLevel.CRIT,
         "error": LogLevel.ERR,
@@ -383,7 +383,7 @@ def split_bracketed_severity(message: str, **kwargs: Any) -> tuple[str, LogLevel
                 (str): The input string with the severity prefix removed
                 (LogLevel): The extracted LogLevel
     """
-    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.INFO)
+    default: LogLevel = deep_get(kwargs, DictPath("default"), LogLevel.DEFAULT)
     severities = {
         "[fatal]": LogLevel.CRIT,
         # This is for ingress-nginx; while alert is higher than crit in syslog terms,
@@ -626,7 +626,7 @@ def strip_iso_timestamp_with_tz(message: str) -> str:
 def iptables(message: str,
              remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]], **kwargs: Any) \
         -> tuple[list[ThemeRef | ThemeStr], LogLevel, str,
-                 list[tuple[list[ThemeRef | ThemeStr], Optional[LogLevel]]]]:
+                 list[tuple[list[ThemeRef | ThemeStr], LogLevel]]]:
     """
     Format output from iptables-save
 
@@ -647,12 +647,12 @@ def iptables(message: str,
                     (ThemeArray): The formatted strings of the remnant
                     (LogLevel): The severity of the remnant
     """
-    severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.INFO)
+    severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.DEFAULT)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     fold_msg: bool = deep_get(kwargs, DictPath("fold_msg"), True)
 
     new_message: list[ThemeRef | ThemeStr] = []
-    new_remnants: list[tuple[list[ThemeRef | ThemeStr], Optional[LogLevel]]] = []
+    new_remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
 
     old_messages: list[str] = []
     if fold_msg and "\\n" in message:
@@ -1043,7 +1043,7 @@ def http(message: str,
 
 
 def split_glog(message: str, **kwargs: Any) \
-    -> tuple[str, Optional[LogLevel], str,
+    -> tuple[str, LogLevel, str,
              list[tuple[list[ThemeRef | ThemeStr], LogLevel]], bool]:
     """
     Extract messages in glog format
@@ -1056,7 +1056,7 @@ def split_glog(message: str, **kwargs: Any) \
         Returns:
             (message, severity, facility, remnants, matched)
     """
-    severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
+    severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.DEFAULT)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
 
     matched: bool = False
@@ -3421,8 +3421,8 @@ def custom_line(message: str, **kwargs: Any) -> tuple[tuple[str, Optional[Callab
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def custom_splitter(message: str, **kwargs: Any) -> \
-        tuple[str | list[ThemeRef | ThemeStr], Optional[LogLevel], str]:
-    severity: Optional[LogLevel] = deep_get(kwargs, DictPath("severity"))
+        tuple[str | list[ThemeRef | ThemeStr], LogLevel, str]:
+    severity: LogLevel = deep_get(kwargs, DictPath("severity"), LogLevel.DEFAULT)
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
@@ -3468,8 +3468,6 @@ def custom_splitter(message: str, **kwargs: Any) -> \
                 severity = cast(LogLevel, int(tmp[severity_field]))
             else:
                 sys.exit(f"Unknown severity transform rule {severity_transform}; aborting.")
-            if severity is None:
-                severity = LogLevel.INFO
             message, severity = custom_override_severity(tmp[message_field], severity,
                                                          overrides=severity_overrides)
         else:
@@ -3502,7 +3500,7 @@ def custom_parser(message: str, filters: list[str | tuple], **kwargs: Any) \
     options: dict = deep_get(kwargs, DictPath("options"), {})
 
     facility: str = ""
-    severity: Optional[LogLevel] = None
+    severity: LogLevel = LogLevel.DEFAULT
     remnants: list[tuple[list[ThemeRef | ThemeStr], LogLevel]] = []
 
     # pylint: disable-next=too-many-nested-blocks
@@ -3666,14 +3664,12 @@ def custom_parser(message: str, filters: list[str | tuple], **kwargs: Any) \
             # These parsers CAN handle ThemeArrays
             # Severity formats
             if _filter[0] == "override_severity":
-                if severity is None:
-                    severity = LogLevel.INFO
                 message, severity = custom_override_severity(message, severity, _filter[1])
 
         if isinstance(message, tuple) and message[0] == "start_block":
             break
 
-    if severity is None:
+    if severity == LogLevel.DEFAULT:
         severity = LogLevel.INFO
 
     # As a step towards always using ThemeStr, convert all regular strings
