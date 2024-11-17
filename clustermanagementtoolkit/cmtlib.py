@@ -18,7 +18,8 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Generator, Optional
+from typing import Any, cast, Optional
+from collections.abc import Generator
 
 from clustermanagementtoolkit.ansithemeprint import ANSIThemeStr, ansithemeprint
 

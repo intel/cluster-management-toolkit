@@ -22,7 +22,8 @@ import sys
 import tarfile
 import tempfile
 import time
-from typing import Any, Callable, cast, Optional, Sequence
+from typing import Any, cast, Optional
+from collections.abc import Callable, Sequence
 
 import paramiko
 
@@ -173,8 +174,8 @@ checksum_functions: dict[str, Callable] = {
     "sha3_256": hashlib.sha3_256,
     "sha3_384": hashlib.sha3_384,
     "sha3_512": hashlib.sha3_512,
-    "shake_128": hashlib.shake_128,  # type: ignore
-    "shake_256": hashlib.shake_256,  # type: ignore
+    "shake_128": hashlib.shake_128,
+    "shake_256": hashlib.shake_256,
 }
 
 
@@ -240,7 +241,7 @@ def verify_checksum(checksum: bytes,
 
     if checksum_type in ("shake_128", "shake_256"):
         shake_length = len(match_checksum) // 2
-        if m.hexdigest(shake_length) != match_checksum:  # type: ignore
+        if m.hexdigest(shake_length) != match_checksum:
             return False
     else:
         if m.hexdigest() != match_checksum:
@@ -348,9 +349,9 @@ def download_files(directory: str,
 
         if checksum_url is not None:
             if checksum_url.startswith("http://"):
-                r1 = pm.request("GET", checksum_url)  # type: ignore
+                r1 = pm.request("GET", checksum_url)
             elif checksum_url.startswith("https://"):
-                r1 = spm.request("GET", checksum_url)  # type: ignore
+                r1 = spm.request("GET", checksum_url)
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Unknown or missing protocol; "
@@ -367,9 +368,9 @@ def download_files(directory: str,
 
         try:
             if url.startswith("http://"):
-                r1 = pm.request("GET", url)  # type: ignore
+                r1 = pm.request("GET", url)
             elif url.startswith("https://"):
-                r1 = spm.request("GET", url)  # type: ignore
+                r1 = spm.request("GET", url)
             else:
                 ansithemeprint([ANSIThemeStr("Error", "error"),
                                 ANSIThemeStr(": Unknown or missing protocol; URL ", "default"),
@@ -454,8 +455,8 @@ def download_files(directory: str,
                             ANSIThemeStr(f"{r1.status}", "errorvalue")] + reason, stderr=True)
             retval = False
             continue
-    pm.clear()  # type: ignore
-    spm.clear()  # type: ignore
+    pm.clear()
+    spm.clear()
 
     return retval
 

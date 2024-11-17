@@ -11,7 +11,8 @@ This module parses command line options and generate helptexts
 
 import errno
 import sys
-from typing import Any, cast, Callable, Optional
+from typing import Any, cast, Optional
+from collections.abc import Callable
 
 from clustermanagementtoolkit import about
 

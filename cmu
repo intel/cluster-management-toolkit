@@ -47,7 +47,8 @@ import socket
 import subprocess  # nosec
 from subprocess import PIPE, STDOUT  # nosec
 import sys
-from typing import Any, Callable, cast, Optional, Sequence, Set, Type
+from typing import Any, cast, Optional, Type
+from collections.abc import Callable, Sequence, Set
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -79,7 +80,7 @@ from clustermanagementtoolkit import cmtio
 from clustermanagementtoolkit.cmtio import execute_command, execute_command_with_response
 from clustermanagementtoolkit.cmtio import expand_path
 from clustermanagementtoolkit.cmtio import secure_read_string, secure_which, secure_write_string
-from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml, secure_read_yaml_all
+from clustermanagementtoolkit.cmtio_yaml import secure_read_yaml
 # from cmtlog import auditlog, debuglog, CMTLogType, CMTLog
 # from cmtlog import debuglog, CMTLogType, CMTLog
 
@@ -527,15 +528,15 @@ def get_log_info(**kwargs: Any) -> list[Type]:
     info: list[Type] = []
 
     # Fetch kubelet log, if available (for now only useful if run on the control plane)
-    sudo_path = secure_which(FilePath("sudo"),
-                             fallback_allowlist=["/bin", "/usr/bin"],
-                             security_policy=SecurityPolicy.ALLOWLIST_STRICT)
-    journalctl_path = secure_which(FilePath(os.path.join(BINDIR, "journalctl")),
-                                   fallback_allowlist=["/bin", "/usr/bin"],
-                                   security_policy=SecurityPolicy.ALLOWLIST_STRICT)
-    args = [sudo_path, journalctl_path, "--no-pager", "-o", "json"]
+    sudo_path: FilePath = secure_which(FilePath("sudo"),
+                                       fallback_allowlist=["/bin", "/usr/bin"],
+                                       security_policy=SecurityPolicy.ALLOWLIST_STRICT)
+    journalctl_path: FilePath = secure_which(FilePath(os.path.join(BINDIR, "journalctl")),
+                                             fallback_allowlist=["/bin", "/usr/bin"],
+                                             security_policy=SecurityPolicy.ALLOWLIST_STRICT)
+    args: list[str] = [sudo_path, journalctl_path, "--no-pager", "-o", "json"]
 
-    logs = [
+    logs: list[tuple[str, str, list[str], str]] = [
         ("Latest boot, last 1h", "[dmesg]",
          ["-k", "-b", "--since", "1 hour ago", "--lines", "10000"], "glog"),
         ("Latest 1000 lines", "[kubelet]",
@@ -552,12 +553,17 @@ def get_log_info(**kwargs: Any) -> list[Type]:
             if not response:
                 continue
 
-            # The first entry in the obj list holds metadata
-            split_response: list[dict[str, Any]] = [{
+            # The first entry in the obj list holds metadata;
+            # the rest of the entries are strings
+            split_response: list[Any] = [{
+                # "parser": str
+                # "name": str
+                # "host": str
+                # "created_at": datetime
                 "parser": parser,
             }]
             split_response += response.splitlines()
-            latestentry = split_response[1]
+            latestentry: str = cast(str, split_response[1])
 
             d = json.loads(latestentry)
 
@@ -842,30 +848,31 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
             key = deep_get(when_condition, DictPath("key"))
 
         # These do not make sense when using when#key, since we already know the key
-        when_key_eq = deep_get(when_condition, DictPath("key_eq"))
-        when_key_ne = deep_get(when_condition, DictPath("key_ne"))
-        when_key_in = deep_get(when_condition, DictPath("key_in"))
-        when_key_notin = deep_get(when_condition, DictPath("key_notin"))
-        when_key_startswith = deep_get(when_condition, DictPath("key_startswith"))
-        when_key_notstartswith = deep_get(when_condition, DictPath("key_notstartswith"))
-        when_key_endswith = deep_get(when_condition, DictPath("key_endswith"))
-        when_key_notendswith = deep_get(when_condition, DictPath("key_notendswith"))
-        if when_key_eq is not None and when_key_eq != key:
-            return False
-        if when_key_ne is not None and when_key_eq == key:
-            return False
-        if when_key_in is not None and key not in when_key_in:
-            return False
-        if when_key_notin is not None and key in when_key_notin:
-            return False
-        if when_key_startswith is not None and not key.startswith(when_key_startswith):
-            return False
-        if when_key_notstartswith is not None and key.startswith(when_key_notstartswith):
-            return False
-        if when_key_endswith is not None and not key.endswith(when_key_endswith):
-            return False
-        if when_key_notendswith is not None and key.endswith(when_key_notendswith):
-            return False
+        if key is not None:
+            when_key_eq = deep_get(when_condition, DictPath("key_eq"))
+            when_key_ne = deep_get(when_condition, DictPath("key_ne"))
+            when_key_in = deep_get(when_condition, DictPath("key_in"))
+            when_key_notin = deep_get(when_condition, DictPath("key_notin"))
+            when_key_startswith = deep_get(when_condition, DictPath("key_startswith"))
+            when_key_notstartswith = deep_get(when_condition, DictPath("key_notstartswith"))
+            when_key_endswith = deep_get(when_condition, DictPath("key_endswith"))
+            when_key_notendswith = deep_get(when_condition, DictPath("key_notendswith"))
+            if when_key_eq is not None and when_key_eq != key:
+                return False
+            if when_key_ne is not None and when_key_eq == key:
+                return False
+            if when_key_in is not None and key not in when_key_in:
+                return False
+            if when_key_notin is not None and key in when_key_notin:
+                return False
+            if when_key_startswith is not None and not key.startswith(when_key_startswith):
+                return False
+            if when_key_notstartswith is not None and key.startswith(when_key_notstartswith):
+                return False
+            if when_key_endswith is not None and not key.endswith(when_key_endswith):
+                return False
+            if when_key_notendswith is not None and key.endswith(when_key_notendswith):
+                return False
 
         # Check for none
         if _value is None:
@@ -912,10 +919,12 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
         if when_notisdict is not None and isinstance(value, dict):
             return False
         if when_dicthaskey is not None \
-                and (not isinstance(value, dict) or when_dicthaskey not in value):
+                and (value is None
+                     or (not isinstance(value, dict) or when_dicthaskey not in value)):
             return False
         if when_notdicthaskey is not None \
-                and (not isinstance(value, dict) or when_notdicthaskey in value):
+                and (value is not None
+                     and (not isinstance(value, dict) or when_notdicthaskey in value)):
             return False
 
         # Set-based checks
@@ -930,13 +939,13 @@ def when_filter(when_path: dict, item: dict, key: Optional[str] = None, value: A
         if when_ne is not None and (value is None or value == type(value)(when_ne)):
             return False
 
-        if when_lt is not None and not value < type(value)(when_lt):
+        if when_lt is not None and (value is None or value >= type(value)(when_lt)):
             return False
-        if when_lte is not None and not value <= type(value)(when_lte):
+        if when_lte is not None and (value is None or value > type(value)(when_lte)):
             return False
-        if when_gt is not None and not value > type(value)(when_gt):
+        if when_gt is not None and (value is None or value <= type(value)(when_gt)):
             return False
-        if when_gte is not None and value >= type(value)(when_gte):
+        if when_gte is not None and (value is None or value >= type(value)(when_gte)):
             return False
 
     return True
@@ -2037,6 +2046,17 @@ def get_traceflow(obj: dict, **kwargs: Any) -> \
 
 # pylint: disable-next=unused-argument
 def get_task_log(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]]:
+    """
+        Parameters:
+            obj (dict): The object to extract data from
+            **kwargs (dict[str, Any]): Keyword arguments
+                log#skipped (bool): Was the log task skipped? True if the task was skipped
+                log#stdout_lines (list[str]): Output to stdout
+                log#stderr_lines (list[str]): Output to stderr
+                log#msg_lines (list[str]): Merged output
+        Returns:
+            ([[ThemeRef | ThemeStr]]): A list of messages
+    """
     field: list = []
 
     skipped = deep_get(obj, DictPath("log#skipped"), False)
@@ -2106,12 +2126,13 @@ def logpad_formatted(obj: dict, **kwargs: Any) -> list[list[ThemeRef | ThemeStr]
 
         Parameters:
             obj (dict): The dict to dump
-            **kwargs (Dict): Additional parameters
+            **kwargs (dict[str, Any]): Keyword arguments
+                path (str): The path to get the data from
+                formatter (str): The formatter to use for formatting the message
         Returns:
-            [ThemeArray]: A list of themearrays
+            ([[ThemeRef | ThemeStr]]): A list of messages
     """
-
-    path = deep_get(kwargs, DictPath("path"), "")
+    path: DictPath = DictPath(deep_get(kwargs, DictPath("path"), ""))
     dump_formatter_tmp = deep_get(kwargs, DictPath("formatter"), "format_none")
     dump_formatter = deep_get(formatter_allowlist, DictPath(dump_formatter_tmp))
     if dump_formatter is None:
@@ -2182,7 +2203,7 @@ def get_cmt_log(obj: dict, **kwargs: Any) -> \
                     facilities.append("".ljust(len(facilitystr)))
             severities.append(severity)
 
-            reformatted_msg = []
+            reformatted_msg: list[ThemeRef | ThemeStr] = []
             for substring in msg:
                 if themestrings:
                     # These log messages are in ANSIThemeStr format;
@@ -2356,8 +2377,7 @@ def set_cluster_context(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 
 # pylint: disable-next=too-many-locals
-def generate_list_header(uip: UIProps, headerpad: curses.window,
-                         field_dict: dict, is_taggable: bool = False) -> None:
+def generate_list_header(uip: UIProps, field_dict: dict, is_taggable: bool = False) -> None:
     headerarray: list[ThemeRef | ThemeStr] = []
     first = True
 
@@ -2427,13 +2447,12 @@ def generate_list_header(uip: UIProps, headerpad: curses.window,
         tabstops.append(tabstop)
 
     # We've processed all fields, time to output the header
-    uip.addthemearray(headerpad, headerarray, y=0, x=0)
+    uip.addthemearray(uip.headerpad, headerarray, y=0, x=0)
     uip.tabstops = tabstops
 
 
 # pylint: disable-next=too-many-arguments,too-many-locals,too-many-positional-arguments
-def generate_list_row(uip: UIProps, listpad: curses.window,
-                      data: Type, field_list: dict,
+def generate_list_row(uip: UIProps, data: Type, field_list: dict,
                       ypos: int, is_selected: bool, is_taggable: bool = False,
                       is_tagged: bool = False, is_deleted: bool = False) -> None:
     first: bool = True
@@ -2450,7 +2469,7 @@ def generate_list_row(uip: UIProps, listpad: curses.window,
             else:
                 tagprefix = [ThemeStr("".ljust(tagprefixlen), ThemeAttr("types", "generic"))]
         else:
-            tagprefix = ""
+            tagprefix = []
             tagprefixlen = 0
 
         generator = field_list[field].get("generator")
@@ -2486,20 +2505,21 @@ def generate_list_row(uip: UIProps, listpad: curses.window,
         pos = field_list[field]["pos"]
 
         if first and is_taggable:
-            uip.addthemearray(listpad, tagprefix, y=ypos, x=pos, deleted=is_deleted)
+            uip.addthemearray(uip.listpad, tagprefix, y=ypos, x=pos, deleted=is_deleted)
             first = False
 
-        uip.addthemearray(listpad, tmp, y=ypos, x=pos + tagprefixlen, deleted=is_deleted)
+        uip.addthemearray(uip.listpad, tmp, y=ypos, x=pos + tagprefixlen, deleted=is_deleted)
 
 
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def genericlistloop(stdscr: curses.window, view: str) -> Retval:
+def genericlistloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Generic main loop for listviews.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
-            view (str): The view to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                view (str): The view to show
         Returns:
             (Retval): The return value
         Raises:
@@ -2509,6 +2529,12 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
     global selected_namespace  # pylint: disable=global-statement
     global initial_name  # pylint: disable=global-statement
     global initial_namespace  # pylint: disable=global-statement
+
+    # Just in case there are leftover futures from other views
+    executor.shutdown()
+    executor = reexecutor.ReExecutor()
+
+    view = deep_get(kwargs, DictPath("kind"))
 
     if not (isinstance(stdscr, curses.window) and isinstance(view, str)):
         msg = [
@@ -2558,10 +2584,6 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                                severity=LogLevel.ERR,
                                formatted_msg=formatted_msg)
 
-    # Just in case there are leftover futures from other views
-    executor.shutdown()
-    executor = reexecutor.ReExecutor()
-
     if "Custom" in field_indexes:
         field_index = "Custom"
     elif "Wide" in field_indexes:
@@ -2605,10 +2627,10 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     activatedfun=activatedfun, on_activation=on_activation)
 
     # The statusbar is always located at the bottom of the screen and fills the entire width
-    statusbar = uip.init_statusbar()
+    uip.init_statusbar()
 
     # For the list
-    headerpad, listpad = uip.init_listpad(listheight=1, width=-1, ypos=1, xpos=1)
+    uip.init_listpad(listheight=1, width=-1, ypos=1, xpos=1)
 
     label_selector = ""
 
@@ -2820,7 +2842,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
         if uip.refresh:
             # The data in some fields might become shorter, so we need to trigger a clear
-            uip.statusbar.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             statusarray1: list[ThemeRef | ThemeStr] = []
 
@@ -2887,8 +2910,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     ThemeStr(value, ThemeAttr("statusbar", "default")),
                 ]
 
-            uip.addthemearray(statusbar, statusarray1, y=0, x=0)
-            uip.addthemearray(statusbar, statusarray2, y=1, x=0)
+            uip.addthemearray(uip.statusbar, statusarray1, y=0, x=0)
+            uip.addthemearray(uip.statusbar, statusarray2, y=1, x=0)
 
         uip.update_sorted_list()
 
@@ -2900,7 +2923,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 selected = uip.get_selected()
                 if uip.activatedfun is not None:
                     if (retval := uip.activatedfun(uip.stdscr,
-                                                   unique_match, kind)) == Retval.RETURNFULL:
+                                                   obj=unique_match,
+                                                   kind=kind)) == Retval.RETURNFULL:
                         return retval
                 uip.force_update()
                 uip.refresh_all()
@@ -2908,13 +2932,13 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
 
         uip.refresh_selected()
         if not uip.is_list_regenerated():
-            generate_list_header(uip, headerpad, field_dict, is_taggable=is_taggable)
+            generate_list_header(uip, field_dict, is_taggable=is_taggable)
             for y in range(uip.yoffset,
                            min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
                 item = uip.sorted_list[y]
                 is_tagged = item in tagged_items
                 is_deleted = getattr(item, "__deleted", False)
-                generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset,
+                generate_list_row(uip, item, field_dict, y - uip.yoffset,
                                   uip.is_selected(item), is_taggable=is_taggable,
                                   is_tagged=is_tagged, is_deleted=is_deleted)
             uip.list_needs_regeneration(False)
@@ -2963,7 +2987,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.toggle_borders()
             uip.refresh_all()
             uip.force_update()
-            uip.update_window(update=False)
+            uip.update_window(update="false")
         elif c == ord("W"):
             if not field_indexes:
                 continue
@@ -2992,7 +3016,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.resize_listpad(width=-1)
             uip.refresh_all()
             uip.force_update()
-            uip.update_window(update=False)
+            uip.update_window(update="false")
         # pylint: disable-next=too-many-nested-blocks
         elif c == curses.KEY_F7:
             action_title: str = "Perform cluster-wide actions"
@@ -3203,7 +3227,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.force_update()
             if ".".join(kind) in executor:
                 executor.update(".".join(kind), namespace=selected_namespace)
-            uip.update_window(update=False)
+            uip.update_window(update="false")
             uip.list_needs_regeneration(True)
             infogetter_extra_args["_vlist"] = []
         elif c in (ord("t"), ord(" ")) and is_taggable:
@@ -3302,7 +3326,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
                                        uip.maxy // 2, uip.maxx // 2,
                                        labellist, headers=label_headers,
-                                       title="Labels", cursor=False)
+                                       cursor=False)
             tagged_items.clear()
             uip.list_needs_regeneration(True)
             uip.refresh_all()
@@ -3364,7 +3388,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             uip.force_update()
             if ".".join(kind) in executor:
                 executor.update(".".join(kind), label_selector=label_selector)
-            uip.update_window(update=False)
+            uip.update_window(update="false")
             uip.list_needs_regeneration(True)
             infogetter_extra_args["_vlist"] = []
         elif c == ord("A") and view == "Inventory" and not tagged_items:
@@ -3429,7 +3453,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                 uip.force_update()
                 if ".".join(kind) in executor:
                     executor.update(".".join(kind), label_selector=label_selector)
-                uip.update_window(update=False)
+                uip.update_window(update="false")
                 uip.list_needs_regeneration(True)
                 infogetter_extra_args["_vlist"] = []
         elif c == ord("L") and is_taggable:
@@ -3684,12 +3708,8 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
             if read_only_mode and not read_only:
                 continue
 
-            shortcut_keys = deep_get(value, DictPath("shortcut"))
-            if shortcut_keys is None:
+            if (shortcut_keys := deep_get(value, DictPath("shortcut"))) is None:
                 continue
-
-            if not isinstance(shortcut_keys, list):
-                shortcut_keys = [shortcut_keys]
 
             if c not in shortcut_keys:
                 continue
@@ -3744,7 +3764,7 @@ def genericlistloop(stdscr: curses.window, view: str) -> Retval:
                     parent_namespace_path = \
                         deep_get(action_args, DictPath("_parent_namespace_path"))
                     action_args["_parent_namespace"] = deep_get(obj, parent_namespace_path, "")
-                if "_named_title" in action_args:
+                if "_named_title" in action_args and selected is not None:
                     title = deep_get(action_args, DictPath("title"), "")
                     title_name = ""
                     if "_name_path" in action_args:
@@ -3888,7 +3908,7 @@ def __open_reference(**kwargs: Any) -> tuple[Retval, dict]:
         kind = ("Pod", "")
 
     ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)
-    retval = resourceinfodispatch(uip.stdscr, ref, kind)
+    retval = resourceinfodispatch(uip.stdscr, obj=ref, kind=kind)
     if retval is not None and retval == Retval.RETURNFULL:
         return retval, {}
     uip.force_update()
@@ -3938,28 +3958,28 @@ clusteroverview_shortcuts = {
     ],
     "Open info page for Node": {
         "helptext": ("D", "Open info page for Node"),
-        "shortcut": ord("d"),
+        "shortcut": [ord("d")],
         "helpgroup": 2,
         "action": "key_callback",
         "action_call": __open_reference,
     },
     "Open info page for Namespace [Pod context only]": {
         "helptext": ("[Shift] + N", "Open info page for Namespace [Pod context only]"),
-        "shortcut": ord("N"),
+        "shortcut": [ord("N")],
         "helpgroup": 2,
         "action": "key_callback",
         "action_call": __open_reference,
     },
     "Open info page for Pod [Pod context only]": {
         "helptext": ("[Shift] + P", "Open info page for Pod [Pod context only]"),
-        "shortcut": ord("P"),
+        "shortcut": [ord("P")],
         "helpgroup": 2,
         "action": "key_callback",
         "action_call": __open_reference,
     },
     "Show package versions": {
         "helptext": ("[Shift] + V", "Show package versions"),
-        "shortcut": ord("V"),
+        "shortcut": [ord("V")],
         "helpgroup": 2,
         "action": "key_callback",
         "action_call": __fetch_package_versions,
@@ -3982,7 +4002,7 @@ clusteroverview_shortcuts = {
         }
     },
     "Switch to previous resource map": {
-        "shortcut": curses.KEY_SLEFT,
+        "shortcut": [curses.KEY_SLEFT],
         "helptext": ("[Shift] + [Left]", "Switch to previous resource map"),
         "helpgroup": 3,
         "action": "key_callback",
@@ -3993,7 +4013,7 @@ clusteroverview_shortcuts = {
     },
     "Switch to next resource map": {
         "helptext": ("[Shift] + [Right]", "Switch to next resource map"),
-        "shortcut": curses.KEY_SRIGHT,
+        "shortcut": [curses.KEY_SRIGHT],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __switch_resource_map,
@@ -4003,42 +4023,42 @@ clusteroverview_shortcuts = {
     },
     "Jump to first column of resource map": {
         "helptext": ("[Home]", "Jump to first column of resource map"),
-        "shortcut": curses.KEY_HOME,
+        "shortcut": [curses.KEY_HOME],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
     },
     "Jump to last column of resource map": {
         "helptext": ("[End]", "Jump to last column of resource map"),
-        "shortcut": curses.KEY_END,
+        "shortcut": [curses.KEY_END],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
     },
     "Jump to next elevated severity in resource map": {
         "helptext": ("[Tab]", "Jump to next elevated severity in resource map"),
-        "shortcut": ord("\t"),
+        "shortcut": [ord("\t")],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
     },
     "Jump to first row of resource map": {
         "helptext": ("[Shift] + [Home]", "Jump to first row of resource map"),
-        "shortcut": curses.KEY_SHOME,
+        "shortcut": [curses.KEY_SHOME],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
     },
     "Jump to last row of resource map": {
         "helptext": ("[Shift] + [End]", "Jump to last row of resource map"),
-        "shortcut": curses.KEY_SEND,
+        "shortcut": [curses.KEY_SEND],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
     },
     "Jump to previous elevated severity in resource map": {
         "helptext": ("[Shift] + [Tab]", "Jump to previous elevated severity in resource map"),
-        "shortcut": curses.KEY_BTAB,
+        "shortcut": [curses.KEY_BTAB],
         "helpgroup": 3,
         "action": "key_callback",
         "action_call": __resource_map_cursor,
@@ -4082,13 +4102,14 @@ def run_ansible_play_async(*args: Any, **kwargs: Any) -> tuple[list[Any], list[S
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
+def clusteroverviewloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Main loop for the Cluster Overview.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
-            view (str): The view to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                kind (tuple[str, str]): The view to show [unused]
         Returns:
             (Retval): The return value
         Raises:
@@ -4100,7 +4121,10 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
     executor.shutdown()
     executor = reexecutor.ReExecutor()
 
-    field_list, sortcolumn = (None, None)
+    view: str = deep_get(kwargs, DictPath("kind"))
+
+    field_list: dict[str, Any] = {}
+    sortcolumn: str = ""
     uip = UIProps(stdscr)
 
     windowheader = view
@@ -4118,16 +4142,15 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
     eventpadheight = 7
 
     # For generic information
-    infopad = uip.init_infopad(height=infopadheight, width=-1, ypos=1, xpos=1)
+    uip.init_infopad(height=infopadheight, width=-1, ypos=1, xpos=1)
 
     # For the status panes
-    _headerpad, listpad = \
-        uip.init_listpad(listheight=1, width=-1,
-                         ypos=infopadheight + eventpadheight + 2, xpos=1, header=False)
+    uip.init_listpad(listheight=1, width=-1,
+                     ypos=infopadheight + eventpadheight + 2, xpos=1, header=False)
 
     # For the status bar; position is always at the bottom of the screen
     # and the entire width of the screen
-    _statusbar = uip.init_statusbar()
+    uip.init_statusbar()
 
     selected_heatmap: str = "Node"
     selected_node: int = 0
@@ -4150,6 +4173,9 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
 
     podinfo: list[Type] = []
     nodeinfo: list[Type] = []
+
+    pod_heatmap_width: int = 0
+    node_heatmap_width: int = 0
 
     pod_curypos = 0
     node_curypos = 0
@@ -4214,8 +4240,10 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
 
         if uip.is_update_triggered():
             # The data in some fields might become shorter, so we need to trigger a clear
-            uip.infopad.erase()
-            uip.statusbar.erase()
+            if uip.infopad is not None:
+                uip.infopad.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             uip.update_window()
 
@@ -4302,8 +4330,8 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
                 else:
                     stat_raw = []
 
-            # We most likely have far more nodes than pods, so give the nodes 20% of the width and
-            # the pods 80% of the width; even this is probably too much for the nodes,
+            # We most likely have far more nodes than pods, so give the nodes 20% of the width
+            # and the pods 80% of the width; even this is probably too much for the nodes,
             # but we can adjust that later
             node_heatmap_width = ((uip.maxx - uip.minx - 1) // 5) - 2
             pod_heatmap_width = ((uip.maxx - uip.minx - 1) * 4 // 5) - 1
@@ -4345,7 +4373,7 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
 
         y = 0
         for i, row in enumerate(infoarrays):
-            uip.addthemearray(infopad, row, y=y + i, x=0)
+            uip.addthemearray(uip.infopad, row, y=y + i, x=0)
         y += i
 
         # cpu usage:
@@ -4411,7 +4439,7 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
 
         if loadavg_raw and meminfo_raw and stat_raw:
             for i, row in enumerate(tasksarrays):
-                uip.addthemearray(infopad, row, y=y + i, x=0)
+                uip.addthemearray(uip.infopad, row, y=y + i, x=0)
             y += i + 1
         else:
             y += len(tasksarrays)
@@ -4603,10 +4631,10 @@ def clusteroverviewloop(stdscr: curses.window, view: str) -> Retval:
             uip.resize_listpad(max(len(node_heatmap), len(pod_heatmap)))
 
             for y, row in enumerate(nodearrays):
-                uip.addthemearray(listpad, row, y=y, x=node_heatmap_xpos)
+                uip.addthemearray(uip.listpad, row, y=y, x=node_heatmap_xpos)
 
             for y, row in enumerate(podarrays):
-                uip.addthemearray(listpad, row, y=y, x=pod_heatmap_xpos)
+                uip.addthemearray(uip.listpad, row, y=y, x=pod_heatmap_xpos)
 
         if selected_heatmap == "Pod":
             uip.maxcurypos = len(pod_heatmap) - 1
@@ -4838,7 +4866,7 @@ cniloop_shortcuts = {
         "Show information about the program",
     ],
     "Update Cluster Network Interface": {
-        "shortcut": ord("U"),
+        "shortcut": [ord("U")],
         "helptext": ("[Shift] + U",
                      "Update Cluster Network Interface (if a newer candidate is available)"),
         "helpgroup": 3,
@@ -4849,13 +4877,14 @@ cniloop_shortcuts = {
 
 
 # pylint: disable-next=too-many-locals,too-many-statements
-def cniloop(stdscr: curses.window, view: str) -> Retval:
+def cniloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Main loop for the Container Network Interface view.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
-            view (str): The view to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                kind (tuple[str, str]): The view to show [unused]
         Returns:
             (Retval): The return value
         Raises:
@@ -4867,6 +4896,8 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
     executor.shutdown()
     executor = reexecutor.ReExecutor()
 
+    view: str = deep_get(kwargs, DictPath("kind"))
+
     uip = UIProps(stdscr)
 
     windowheader = view
@@ -4875,13 +4906,13 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
     update_delay = views[view].get("update_delay", -1)
 
     uip.init_window(windowheader=windowheader, update_delay=update_delay,
-                    sortcolumn=None, activatedfun=activatedfun, on_activation=on_activation)
+                    sortcolumn="", activatedfun=activatedfun, on_activation=on_activation)
 
     # For generic information
-    infopad = uip.init_infopad(height=9, width=-1, ypos=1, xpos=1)
+    uip.init_infopad(height=9, width=-1, ypos=1, xpos=1)
 
     # The statusbar is always located at the bottom of the screen and fills the entire width
-    _statusbar = uip.init_statusbar()
+    uip.init_statusbar()
 
     candidate_version = ""
 
@@ -4890,8 +4921,10 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
     while True:
         if uip.is_update_triggered():
             # The data in some fields might become shorter, so we need to trigger a clear
-            uip.infopad.erase()
-            uip.statusbar.erase()
+            if uip.infopad is not None:
+                uip.infopad.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             uip.update_window()
 
@@ -4964,10 +4997,10 @@ def cniloop(stdscr: curses.window, view: str) -> Retval:
             ]
             statusarray += cni_status_str
 
-            uip.addthemearray(infopad, namearray, y=0, x=0)
-            uip.addthemearray(infopad, versionarray, y=1, x=0)
-            uip.addthemearray(infopad, candidateversionarray, y=2, x=0)
-            uip.addthemearray(infopad, statusarray, y=3, x=0)
+            uip.addthemearray(uip.infopad, namearray, y=0, x=0)
+            uip.addthemearray(uip.infopad, versionarray, y=1, x=0)
+            uip.addthemearray(uip.infopad, candidateversionarray, y=2, x=0)
+            uip.addthemearray(uip.infopad, statusarray, y=3, x=0)
 
         uip.refresh_window()
         uip.refresh_infopad()
@@ -5029,7 +5062,7 @@ def decode_and_view_data(stdscr: curses.window, **kwargs: Any) -> Retval:
         formatter = formatters.format_yaml
     else:
         formatter = formatters.format_none
-    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=obj, kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
@@ -5054,7 +5087,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
     title = name
     if encoding == "":
         formatter = formatters.map_dataformat(title)
-        return resourceinfodispatch(stdscr, content, ("__ResourceView", ""),
+        return resourceinfodispatch(stdscr, obj=content, kind=("__ResourceView", ""),
                                     title=title, formatter=formatter)
 
     vtype, value = decode_value(content)
@@ -5065,7 +5098,7 @@ def decode_and_view_file_templates(stdscr: curses.window, **kwargs: Any) -> Retv
     elif vtype.startswith(("base64-binary", "gzip")):
         return Retval.RETURNDONE
     formatter = formatters.map_dataformat(title)
-    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=obj, kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
@@ -5116,6 +5149,17 @@ def export_data(stdscr: curses.window, **kwargs: Any) -> Retval:
 def generate_helptext(view: str | tuple[str, str], viewtype: str,
                       additional_helptexts: list[tuple[str, str]],
                       shortcuts: dict[str, dict[str, Any]]) -> list[dict]:
+    """
+    Generate helptext for a view.
+
+        Parameters:
+            view (str | (str, str)): The view to generate helptext for
+            viewtype (str): The view type (infoview or listview)
+            additional_helptexts ([(str, str)]): Additional helptext
+            shortcuts (dict[str, dict[str, Any]]): The shorts + helptexts to add
+        Returns:
+            ([dict]): Formatted helptext suitable for passing to windowwidget()
+    """
     helptext: list[tuple[str, str]] = []
 
     if viewtype == "infoview":
@@ -5188,8 +5232,20 @@ def generate_helptext(view: str | tuple[str, str], viewtype: str,
 
 
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def genericinfoloop(stdscr: curses.window,
-                    obj: dict[str, Any], view: tuple[str, str], **kwargs: Any) -> Retval:
+def genericinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Generic main loop for infoviews.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to operate on
+                kind (tuple[str, str]): The view to show
+        Returns:
+            (Retval): The return value
+        Raises:
+            ProgrammingError (view is invalid)
+    """
     global initial_container  # pylint: disable=global-statement
     global executor  # pylint: disable=global-statement
 
@@ -5197,15 +5253,14 @@ def genericinfoloop(stdscr: curses.window,
     executor.shutdown()
     executor = reexecutor.ReExecutor()
 
-    # If obj is a tuple we got the object as obj[0]
-    # params as obj[1]
-    if isinstance(obj, tuple):
-        obj = obj[0]
+    obj: dict[str, Any] = deep_get(kwargs, DictPath("obj"))
+    view: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
 
     # If we are using the logpad this can be used to format the data
     formatter_path = deep_get(kwargs, DictPath("formatter_path"))
     # formatter_path has precedence over formatter, to allow ConfigMaps to work properly
     formatter = deep_get(kwargs, DictPath("formatter"))
+    formatter_args: dict = deep_get(kwargs, DictPath("formatter_args"), {})
     if formatter_path is not None:
         formatter = deep_get(obj, DictPath(formatter_path))
     elif formatter is not None:
@@ -5275,8 +5330,8 @@ def genericinfoloop(stdscr: curses.window,
     labels = deep_get(viewref, DictPath("labels"))
     annotations = deep_get(viewref, DictPath("annotations"))
     extraref = deep_get(viewref, DictPath("extraref"))
-    data = deep_get(viewref, DictPath("data"), None)
-    if data is not None:
+    data: Optional[dict] = None
+    if deep_get(viewref, DictPath("data"), False):
         data = obj
     viewoverride = deep_get(viewref, DictPath("viewoverride"), view)
     infopadheight = 0
@@ -5323,7 +5378,7 @@ def genericinfoloop(stdscr: curses.window,
     if deep_get(shortcuts, DictPath("Namespace")) is None \
             and deep_get(obj, DictPath(namespace_path)) is not None:
         shortcuts["Namespace"] = {
-            "shortcut": ord("N"),
+            "shortcut": [ord("N")],
             "read_only": True,
             "helptext": ("[Shift] + N", "Open info page for Namespace"),
             "call": resourceinfodispatch,
@@ -5336,7 +5391,7 @@ def genericinfoloop(stdscr: curses.window,
     if "securityContext" in deep_get(obj, DictPath("spec"), {}) \
             or "securityContext" in deep_get(obj, DictPath("spec#template#spec"), {}):
         shortcuts["Show Security Context"] = {
-            "shortcut": ord("x"),
+            "shortcut": [ord("x")],
             "read_only": True,
             "helptext": ("X", "Show security context information"),
             "widget": "windowwidget",
@@ -5345,29 +5400,27 @@ def genericinfoloop(stdscr: curses.window,
             "itemgetter": itemgetters.get_security_context,
             "formatting": [ThemeAttr("windowwidget", "default"),
                            ThemeAttr("windowwidget", "highlight")],
+            "force_update": False,
         }
 
     # Always include the shortcut for conditions,
     # unless the path returns None
     if "conditions" in deep_get(obj, DictPath("status"), {}):
         shortcuts["Show Resource Conditions"] = {
-            "shortcut": ord("c"),
+            "shortcut": [ord("c")],
             "read_only": True,
             "helptext": ("C", "Show resource conditions"),
             "widget": "windowwidget",
             "title": "Conditions:",
             "headers": ["Type:", "Status:", "Last Probe:", "Last Transition:", "Message:"],
             "itemgetter": itemgetters.get_conditions,
+            "force_update": False,
         }
 
     if deep_get(cmtlib.cmtconfig, DictPath("Internal#sanity_check_views"), False):
         _shortcuts: dict[int, str] = {}
         for shortcut in shortcuts:
-            _shortcut = shortcuts[shortcut].get("shortcut")
-            if _shortcut is None:
-                continue
-            if not isinstance(_shortcut, list):
-                _shortcut = [_shortcut]
+            _shortcut = shortcuts[shortcut].get("shortcut", [])
             for _sc in _shortcut:
                 if _sc in _shortcuts:
                     sys.exit(f"infoview {view}: The same keypress ({_sc}) is used for both "
@@ -5391,49 +5444,38 @@ def genericinfoloop(stdscr: curses.window,
 
     # For generic information
     if infopadheight:
-        infopad = uip.init_infopad(height=infopadheight, width=-1, ypos=1, xpos=1,
-                                   labels=deep_get(obj, DictPath(labels)),
-                                   annotations=deep_get(obj, DictPath(annotations)))
-    else:
-        infopad = None
+        uip.init_infopad(height=infopadheight, width=-1, ypos=1, xpos=1,
+                         labels=deep_get(obj, DictPath(labels)),
+                         annotations=deep_get(obj, DictPath(annotations)))
 
     # The statusbar is always located at the bottom of the screen and fills the entire width
-    statusbar = uip.init_statusbar()
+    uip.init_statusbar()
 
     # For lists
-    headerpad = None
-    listpad = None
     if deep_get(viewref, DictPath("listpad"), {}):
         if infopadheight == 0:
-            headerpad, listpad = \
-                uip.init_listpad(listheight=1, width=-1, ypos=1, xpos=1)
+            uip.init_listpad(listheight=1, width=-1, ypos=1, xpos=1)
         else:
-            headerpad, listpad = \
-                uip.init_listpad(listheight=1, width=-1, ypos=infopadheight + 2, xpos=1)
+            uip.init_listpad(listheight=1, width=-1, ypos=infopadheight + 2, xpos=1)
 
     # For log pads; we cannot have both a logpad and a listpad simultaneously;
     # at least not with the current implementation
-    logpad = deep_get(viewref, DictPath("logpad"))
-    if logpad is not None:
-        if listpad is not None:
+    if deep_get(viewref, DictPath("logpad")) is not None:
+        if uip.listpad is not None:
             raise ValueError("We cannot have listpad and logpad simultaneously")
 
-        show_timestamps = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"),
-                                                           DictPath("timestamps")], True)
+        show_timestamps: bool = deep_get_with_fallback(viewref, [DictPath("logpad#timestamps"),
+                                                                 DictPath("timestamps")], True)
         uip.toggle_timestamps(show_timestamps)
         if infopadheight == 0:
-            tspad, logpad = \
-                uip.init_logpad(width=-1, ypos=1, xpos=1,
-                                timestamps=show_timestamps)
+            uip.init_logpad(width=-1, ypos=1, xpos=1, timestamps=show_timestamps)
         else:
-            tspad, logpad = \
-                uip.init_logpad(width=-1, ypos=infopadheight + 2, xpos=1,
-                                timestamps=show_timestamps)
+            uip.init_logpad(width=-1, ypos=infopadheight + 2, xpos=1, timestamps=show_timestamps)
 
-    wrap_lines = False
-    raw_output = False
+    wrap_lines: bool = False
+    raw_output: bool = False
 
-    first_fetch = True
+    first_fetch: bool = True
 
     # pylint: disable-next=too-many-nested-blocks
     while True:
@@ -5441,12 +5483,13 @@ def genericinfoloop(stdscr: curses.window,
         if formatter:
             deep_set(infoview_args, DictPath("formatter"), formatter.__name__)
 
-        # Output listpad if we have one
+        # Output infopad and listpad if we have one
         if uip.is_update_triggered():
             # The data in some fields might become shorter, so we need to trigger a clear
-            if infopad is not None:
+            if uip.infopad is not None:
                 uip.infopad.erase()
-            uip.statusbar.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             statusarray1: list[ThemeRef | ThemeStr] = [
                 ThemeStr("Fields: ", ThemeAttr("statusbar", "infoheader")),
@@ -5463,6 +5506,7 @@ def genericinfoloop(stdscr: curses.window,
 
                 # If path is a list the first item tells what source to use and the second
                 # what path to fetch the value from
+                src_obj: dict[str, Any] = infoview_args
                 if isinstance(path, list):
                     if path[0] == "config":
                         src_obj = cmtlib.cmtconfig
@@ -5472,7 +5516,6 @@ def genericinfoloop(stdscr: curses.window,
                         src_obj = infoview_args
                     value_path = DictPath(path[1])
                 else:
-                    src_obj = infoview_args
                     value_path = DictPath(path)
 
                 value = str(deep_get(src_obj, value_path, default_status))
@@ -5483,8 +5526,8 @@ def genericinfoloop(stdscr: curses.window,
                     ThemeStr(value, ThemeAttr("statusbar", "default")),
                 ]
 
-            uip.addthemearray(statusbar, statusarray1, y=0, x=0)
-            uip.addthemearray(statusbar, statusarray2, y=1, x=0)
+            uip.addthemearray(uip.statusbar, statusarray1, y=0, x=0)
+            uip.addthemearray(uip.statusbar, statusarray2, y=1, x=0)
 
             # Refresh obj whenever we reload,
             # unless this is a special view or "no_reload_on_refresh" is true
@@ -5510,7 +5553,7 @@ def genericinfoloop(stdscr: curses.window,
 
             uip.update_window()
 
-            if infopad is not None:
+            if uip.infopad is not None:
                 y = 0
                 if name_path is not None and name_path:
                     fieldarray: list[ThemeRef | ThemeStr] = [
@@ -5518,7 +5561,7 @@ def genericinfoloop(stdscr: curses.window,
                         ThemeStr(f" {deep_get(obj, DictPath(name_path))}",
                                  ThemeAttr("types", "generic"))
                     ]
-                    uip.addthemearray(infopad, fieldarray, y=y, x=0)
+                    uip.addthemearray(uip.infopad, fieldarray, y=y, x=0)
                     y += 1
 
                 if namespace_path is not None and namespace_path \
@@ -5529,7 +5572,7 @@ def genericinfoloop(stdscr: curses.window,
                         ThemeStr(f" {deep_get(obj, DictPath(namespace_path))}",
                                  ThemeAttr("types", "namespace"))
                     ]
-                    uip.addthemearray(infopad, fieldarray, y=y, x=0)
+                    uip.addthemearray(uip.infopad, fieldarray, y=y, x=0)
                     y += 1
 
                 for key, value in deep_get(viewref, DictPath("infopad"), {}).items():
@@ -5554,7 +5597,7 @@ def genericinfoloop(stdscr: curses.window,
                                 fieldarray += _generator(data, key, fieldlen=0, pad=0,
                                                          ralign=ralign,
                                                          selected=False, **formatting)
-                        uip.addthemearray(infopad, fieldarray, y=y, x=0)
+                        uip.addthemearray(uip.infopad, fieldarray, y=y, x=0)
 
                         y += 1
                         continue
@@ -5575,12 +5618,14 @@ def genericinfoloop(stdscr: curses.window,
                         ThemeStr("Created: ", ThemeAttr("main", "infoheader")),
                     ]
                     fieldarray += field
-                    uip.addthemearray(infopad, fieldarray, y=y, x=0)
+                    uip.addthemearray(uip.infopad, fieldarray, y=y, x=0)
             uip.refresh_window()
             uip.refresh_infopad()
             curses.doupdate()
 
-            if listpad is not None:
+            vlist: list[dict[str, Any]] = []
+
+            if uip.listpad is not None:
                 listgetter = deep_get(viewref, DictPath("listpad#listgetter"))
                 listgetter_args = deep_get(viewref, DictPath("listpad#listgetter_args"), {})
                 _kind = deep_get(listgetter_args, DictPath("_kind"))
@@ -5701,18 +5746,21 @@ def genericinfoloop(stdscr: curses.window,
                 _listlen = uip.update_info(info)
                 linelen = update_field_widths(field_dict, field_names, uip.info)
                 uip.resize_listpad(linelen)
-            elif logpad is not None:
+            elif uip.logpad is not None:
+                decoded_obj: str = ""
+
                 if deep_get(infoview_args, DictPath("decoder#override_decoder")):
                     decoder = deep_get(infoview_args, DictPath("decoder#decoder"))
                     if decoder is not None:
                         try:
-                            decoded_obj = copy.deepcopy(base64.b64decode(obj).decode("utf-8"))
+                            decoded_obj = \
+                                copy.deepcopy(base64.b64decode(cast(str, obj)).decode("utf-8"))
                         except (binascii.Error, TypeError, UnicodeDecodeError):
-                            decoded_obj = obj
+                            decoded_obj = cast(str, obj)
                 else:
-                    decoded_obj = obj
+                    decoded_obj = cast(str, obj)
 
-                if formatter is not None:
+                if formatter is not None and decoded_obj is not None:
                     formatter_args = deep_get(infoview_args, DictPath("formatter_args"), {})
                     formatted_obj = formatter(decoded_obj, raw=raw_output, **formatter_args)
                 else:
@@ -5724,36 +5772,35 @@ def genericinfoloop(stdscr: curses.window,
 
                 if infogetter is not None:
                     tmp = infogetter(formatted_obj, **infogetter_args)
+                    timestamps: list[datetime] = []
+                    facilities: list[str] = []
+                    severities: list[LogLevel] = []
                     if isinstance(tmp, tuple):
                         timestamps, facilities, severities, messages = tmp
                     else:
-                        timestamps = []
-                        facilities = None
-                        severities = None
                         messages = tmp
                     uip.update_log_info(timestamps, facilities, severities, messages)
-                    uip.loglen = len(messages)
 
         # Output listpad if we have one
         remember_uid = uip.remember_uid
         uip.remember_uid = False
-        if listpad is not None:
+        if uip.listpad is not None:
             uip.update_sorted_list()
             if not uip.is_list_regenerated():
-                generate_list_header(uip, headerpad, field_dict)
+                generate_list_header(uip, field_dict)
                 # Output the visible part of the list
                 uip.selected = None
                 for y in range(uip.yoffset,
                                min(uip.yoffset + uip.mincurypos + uip.maxcurypos + 1, uip.listlen)):
                     item = uip.sorted_list[y]
                     uip.select_if_y(y, item)
-                    generate_list_row(uip, listpad, item, field_dict, y - uip.yoffset,
+                    generate_list_row(uip, item, field_dict, y - uip.yoffset,
                                       uip.is_selected(item))
                 uip.list_needs_regeneration(False)
         uip.remember_uid = remember_uid
 
         # Output logpad if we have one
-        if logpad is not None and uip.refresh:
+        if uip.logpad is not None and uip.refresh:
             uip.logpad.erase()
             # This is needed in case we get a resize event or toggle borders
             uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
@@ -5762,8 +5809,8 @@ def genericinfoloop(stdscr: curses.window,
 
             tscount = 0
             for y in range(0, min(uip.logpadheight, len(messages))):
-                facility = None
-                if facilities is not None and uip.yoffset + y < len(facilities):
+                facility: list[ThemeRef | ThemeStr] = []
+                if uip.yoffset + y < len(facilities):
                     fac = facilities[uip.yoffset + y]
 
                     if fac:
@@ -5774,7 +5821,6 @@ def genericinfoloop(stdscr: curses.window,
                             fac0 = fac
                             fac1 = ""
 
-                        facility = []
                         facility_prefix_len = len(ThemeRef("separators", "facility_prefix"))
                         facility_ext_prefix_len = \
                             len(ThemeRef("separators", "facility_extended_prefix"))
@@ -5807,7 +5853,7 @@ def genericinfoloop(stdscr: curses.window,
                                      ThemeRef("separators", "facility_extended_suffix")]
                         facility += [ThemeRef("separators", "facility_padding")]
 
-                if timestamps is None or uip.yoffset + y >= len(timestamps) \
+                if uip.yoffset + y >= len(timestamps) \
                         or timestamps[uip.yoffset + y] == none_timestamp():
                     timestamp = "".ljust(uip.tspadwidth)
                 else:
@@ -5816,7 +5862,7 @@ def genericinfoloop(stdscr: curses.window,
                 tsthemearray: list[ThemeRef | ThemeStr] = \
                     [ThemeStr(timestamp, ThemeAttr("logview", "timestamp"))]
 
-                if severities is None or uip.yoffset + y >= len(severities):
+                if uip.yoffset + y >= len(severities):
                     severity = LogLevel.INFO
                 else:
                     severity = severities[uip.yoffset + y]
@@ -5845,22 +5891,22 @@ def genericinfoloop(stdscr: curses.window,
                 untruncated_len = themearray_len(message)
                 max_untruncated_len = 16384
                 if wrap_lines or untruncated_len < max_untruncated_len:
-                    _lines = themearray_wrap_line(message, maxwidth,
+                    lines_ = themearray_wrap_line(message, maxwidth,
                                                   wrap_marker=(uip.borders or get_mousemask() != 0))
                 else:
-                    _lines = [themearray_truncate(message, max_untruncated_len - 1)]
+                    lines_ = [themearray_truncate(message, max_untruncated_len - 1)]
                     severity_name = f"severity_{loglevel_to_name(LogLevel.ERR).lower()}"
-                    _lines.append([ThemeStr(f"Line too long ({untruncated_len} bytes); "
+                    lines_.append([ThemeStr(f"Line too long ({untruncated_len} bytes); "
                                             f"truncated to {max_untruncated_len} bytes "
                                             "(Use line wrapping to see the entire message)",
                                             ThemeAttr("logview", severity_name))])
 
-                for i, _line in enumerate(_lines):
+                for i, _line in enumerate(lines_):
                     if y + yadd + i >= uip.logpadheight:
                         break
-                    if i == 0 and timestamps is not None and tscount:
-                        uip.addthemearray(cast(curses.window, tspad), tsthemearray, y=y + yadd, x=0)
-                    _ypos, xpos = uip.addthemearray(logpad, _line, y=y + yadd + i, x=0)
+                    if i == 0 and timestamps and tscount:
+                        uip.addthemearray(uip.tspad, tsthemearray, y=y + yadd, x=0)
+                    _ypos, xpos = uip.addthemearray(uip.logpad, _line, y=y + yadd + i, x=0)
                     maxx = max(maxx, xpos)
                 yadd += i
             uip.resize_logpad(-1, maxx)
@@ -5942,13 +5988,14 @@ def genericinfoloop(stdscr: curses.window,
                                                   DictPath("listpad#on_activation#formatter_path"))
                         on_activation_args["formatter"] = formatter
                         on_activation_args["formatter_path"] = formatter_path
+                    retval: Retval | None = None
                     if view == ("ConfigMap", "") and callable(uip.activatedfun):
                         retval = uip.activatedfun(uip.stdscr,
-                                                  deep_get(obj, DictPath(f"data#{match}"), ""),
-                                                  ikind, info=None, title=name,
+                                                  obj=deep_get(obj, DictPath(f"data#{match}"), ""),
+                                                  kind=ikind, info=None, title=name,
                                                   **on_activation_args)
                     elif callable(uip.activatedfun):
-                        retval = uip.activatedfun(uip.stdscr, match, ikind, info=obj,
+                        retval = uip.activatedfun(uip.stdscr, obj=match, kind=ikind, info=obj,
                                                   **on_activation_args)
                     if retval == Retval.RETURNFULL:
                         return retval
@@ -5979,7 +6026,7 @@ def genericinfoloop(stdscr: curses.window,
             uip.toggle_borders()
             uip.refresh_all()
             uip.force_update()
-        elif c == ord("W") and listpad is not None:
+        elif c == ord("W") and uip.listpad is not None:
             if not field_indexes:
                 continue
 
@@ -6002,11 +6049,11 @@ def genericinfoloop(stdscr: curses.window,
             uip.resize_listpad(width=-1)
             uip.refresh_all()
             uip.force_update()
-        elif c == ord("R") and logpad is not None:
+        elif c == ord("R") and uip.logpad is not None:
             raw_output = not raw_output
             uip.refresh_all()
             uip.force_update()
-        elif c == ord("W") and logpad is not None:
+        elif c == ord("W") and uip.logpad is not None:
             wrap_lines = not wrap_lines
             uip.refresh_all()
             uip.force_update()
@@ -6019,177 +6066,181 @@ def genericinfoloop(stdscr: curses.window,
             if (shortcut_keys := deep_get(sc_value, DictPath("shortcut"))) is None:
                 continue
 
-            if not isinstance(shortcut_keys, list):
-                shortcut_keys = [shortcut_keys]
-
             if c not in shortcut_keys:
                 continue
 
-            widget = deep_get(sc_value, DictPath("widget"))
-            force_update = deep_get(sc_value, DictPath("force_update"), True)
+            widget: str = deep_get(sc_value, DictPath("widget"), "")
+            force_update: Optional[bool] = deep_get(sc_value, DictPath("force_update"))
             tmpselection = None
-            if widget is not None:
-                if widget == "windowwidget":
-                    w_title = deep_get(sc_value, DictPath("title"), "")
-                    w_headers = deep_get(sc_value, DictPath("headers"))
-                    if (w_itemgetter := deep_get(sc_value, DictPath("itemgetter"))) is None:
-                        continue
-                    w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
-                    w_itemgetter_args["kubernetes_helper"] = kh
-                    w_itemgetter_args["kh_cache"] = kh_cache
-                    w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "object")
-                    w_selectable = deep_get(sc_value, DictPath("selectable"), False)
-                    # w_kind = deep_get(sc_value, DictPath("kind"), view)
-                    if "_slow_task_msg" in w_itemgetter_args:
-                        _w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
-                                                      message=deep_get(w_itemgetter_args,
-                                                                       DictPath("_slow_task_msg")))
+            if widget == "windowwidget":
+                w_title = deep_get(sc_value, DictPath("title"), "")
+                w_headers = deep_get(sc_value, DictPath("headers"))
+                if (w_itemgetter := deep_get(sc_value, DictPath("itemgetter"))) is None:
+                    continue
+                w_itemgetter_args = deep_get(sc_value, DictPath("itemgetter_args"), {})
+                w_itemgetter_args["kubernetes_helper"] = kh
+                w_itemgetter_args["kh_cache"] = kh_cache
+                w_itemgetter_src = deep_get(w_itemgetter_args, DictPath("source"), "object")
+                w_selectable = deep_get(sc_value, DictPath("selectable"), False)
+                # w_kind = deep_get(sc_value, DictPath("kind"), view)
+                if "_slow_task_msg" in w_itemgetter_args:
+                    _w_win = curses_helper.notice(uip.stdscr, uip.maxy // 2, uip.maxx // 2,
+                                                  message=deep_get(w_itemgetter_args,
+                                                                   DictPath("_slow_task_msg")))
 
-                    if w_itemgetter_src == "selected":
-                        selected = uip.get_selected()
-                        if selected is not None:
-                            w_ref = getattr(selected, "ref", None)
-                            if w_ref is not None:
-                                w_items = w_itemgetter(w_ref["ref"], **w_itemgetter_args)
-                    else:
-                        w_items = w_itemgetter(obj, **w_itemgetter_args)
-
-                    # If the first element is an integer we assume that we've been provided
-                    # a pre-formatted list. Otherwise we apply formatting if available.
-                    # If not available we try to provide some sensible defaults.
-                    if w_items is not None and w_items \
-                            and (isinstance(w_items[0], dict)
-                                 or (isinstance(w_items[0], (list, tuple))
-                                     # pylint: disable-next=unidiomatic-typecheck
-                                     and type(w_items[0][0]) != int)):  # noqa: E721
-                        tmp_items = []
-                        w_formatting = deep_get(sc_value, DictPath("formatting"),
-                                                [ThemeAttr("windowwidget", "default")])
-                        lineattrs = WidgetLineAttrs.NORMAL
-                        # w_item is a line
-                        for w_item in w_items:
-                            ref = None
-                            if isinstance(w_item, dict):
-                                ref = deep_get(w_item, DictPath("ref"))
-                                w_item = deep_get(w_item, DictPath("fields"))
-                            # w_item[i] is a column
-                            tmp = []
-                            for i, column in enumerate(w_item):
-                                tmp_formatting = w_formatting[min(i, len(w_formatting) - 1)]
-                                if isinstance(tmp_formatting, list):
-                                    formatting = ThemeAttr(tmp_formatting[0], tmp_formatting[1])
-                                else:
-                                    formatting = tmp_formatting
-                                tmp.append([ThemeStr(column, formatting)])
-
-                            tmp_items.append({
-                                "lineattrs": lineattrs,
-                                "columns": tmp,
-                                "retval": ref,
-                            })
-                        w_items = tmp_items
-
-                    if w_items is not None and w_items:
-                        w_sortcolumn = deep_get(sc_value, DictPath("sortcolumn"))
-                        tmpselection = \
-                            curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
-                                                       uip.maxy // 2, uip.maxx // 2,
-                                                       items=w_items, headers=w_headers,
-                                                       title=w_title, cursor=w_selectable,
-                                                       sortcolumn=w_sortcolumn)
-                        if not tmpselection:
-                            continue
-                elif widget == "inputbox":
+                if w_itemgetter_src == "selected":
                     selected = uip.get_selected()
-                    w_title = deep_get(sc_value, DictPath("inputtitle"), "")
-                    if not (w_result := curses_helper.inputbox(uip.stdscr, title=w_title)):
-                        continue
-                    # This is necessary because we never go through
-                    # the normal update cycle for the listpad and infopad
-                    uip.refresh_infopad()
-                    uip.refresh_listpad()
-                    uip.refresh_logpad()
-                    uip.refresh_statusbar()
-                    curses.doupdate()
-                    # Check this condition before confirming
-                    w_confirm = deep_get(sc_value, DictPath("confirm"), False)
-                    if isinstance(w_confirm, str):
-                        if w_confirm == "path_exists":
-                            w_confirm = os.path.exists(w_result)
-                        else:
-                            sys.exit("Unknown value for w_confirm; "
-                                     "must be either boolean or path_exists")
-                    if w_confirm:
-                        curses.doupdate()
-                        w_confirmtitle = deep_get(sc_value, DictPath("confirmtitle"))
-                        if not curses_helper.confirmationbox(uip.stdscr,
-                                                             title=w_confirmtitle, default=False):
-                            continue
-                elif widget == "command":
-                    w_args = deep_get(sc_value, DictPath("widget_args"), {})
-                    if "_pass_obj" in w_args:
-                        w_args["obj"] = obj
-                    elif "_pass_selected_obj" in w_args:
-                        selected = uip.get_selected()
-                        if selected is not None:
-                            w_args["obj"] = getattr(selected, "ref")
-                    do_command(uip.stdscr, **w_args)
-                elif widget == "executecommand":
-                    selected = uip.get_selected()
-                    if (w_kinds := deep_get_with_fallback(sc_value,
-                                                          [DictPath("widget_args#kinds"),
-                                                           DictPath("kinds")])) is None:
-                        continue
-                    w_ref = None
                     if selected is not None:
                         w_ref = getattr(selected, "ref", None)
-                    if w_kinds != ["<native>"] \
-                            and [deep_get(w_ref, DictPath("kind"), ""),
-                                 deep_get(w_ref, DictPath("api_group"), "")] not in w_kinds \
-                            and w_kinds != [("", "")]:
-                        continue
+                        if w_ref is not None:
+                            w_items = w_itemgetter(w_ref["ref"], **w_itemgetter_args)
+                else:
+                    w_items = w_itemgetter(obj, **w_itemgetter_args)
 
-                    w_inputtitle = deep_get_with_fallback(sc_value,
-                                                          [DictPath("widget_args#inputtitle"),
-                                                           DictPath("inputtitle")])
-                    if w_inputtitle is not None:
-                        if not (w_input := curses_helper.inputbox(uip.stdscr, title=w_inputtitle)):
-                            continue
-                        w_command = w_input.split()
-                    else:
-                        w_command = deep_get_with_fallback(sc_value,
-                                                           [DictPath("widget_args#command"),
-                                                            DictPath("command")], [])
-                    if not w_command:
-                        continue
+                # If the first element is an integer we assume that we've been provided
+                # a pre-formatted list. Otherwise we apply formatting if available.
+                # If not available we try to provide some sensible defaults.
+                if w_items is not None and w_items \
+                        and (isinstance(w_items[0], dict)
+                             or (isinstance(w_items[0], (list, tuple))
+                                 # pylint: disable-next=unidiomatic-typecheck
+                                 and type(w_items[0][0]) != int)):  # noqa: E721
+                    tmp_items = []
+                    w_formatting = deep_get(sc_value, DictPath("formatting"),
+                                            [ThemeAttr("windowwidget", "default")])
+                    lineattrs = WidgetLineAttrs.NORMAL
+                    # w_item is a line
+                    for w_item in w_items:
+                        ref = None
+                        if isinstance(w_item, dict):
+                            ref = deep_get(w_item, DictPath("ref"))
+                            w_item = deep_get(w_item, DictPath("fields"))
+                        # w_item[i] is a column
+                        tmp = []
+                        for i, column in enumerate(w_item):
+                            tmp_formatting = w_formatting[min(i, len(w_formatting) - 1)]
+                            if isinstance(tmp_formatting, list):
+                                formatting = ThemeAttr(tmp_formatting[0], tmp_formatting[1])
+                            else:
+                                formatting = tmp_formatting
+                            tmp.append([ThemeStr(column, formatting)])
 
-                    w_waitforkeypress = deep_get(sc_value,
-                                                 DictPath("widget_args#wait_for_keypress"), False)
-                    if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
-                        containername = deep_get(w_ref, DictPath("name"), "")
-                    if w_command == ["<ephemeral>"]:
-                        ephemeral_image = \
-                            deep_get(cmtlib.cmtconfig, DictPath("Debug#ephemeral_image"), "busybox")
-                        msg = [ANSIThemeStr("Creating ephemeral ", "action"),
-                               ANSIThemeStr(ephemeral_image, "programname"),
-                               ANSIThemeStr(" container sharing process namespace with ",
-                                            "action"),
-                               ANSIThemeStr(f"{containername}", "path")]
-                    elif w_command == ["<dnsutils>"]:
-                        node_name = deep_get(obj, DictPath("metadata#name"))
-                        containername = None
-                        msg = [ANSIThemeStr("Opening dnsutils container on ", "action"),
-                               ANSIThemeStr(node_name, "hostname")]
+                        tmp_items.append({
+                            "lineattrs": lineattrs,
+                            "columns": tmp,
+                            "retval": ref,
+                        })
+                    w_items = tmp_items
+
+                if w_items is not None and w_items:
+                    w_sortcolumn = deep_get(sc_value, DictPath("sortcolumn"))
+                    tmpselection = \
+                        curses_helper.windowwidget(uip.stdscr, uip.maxy, uip.maxx,
+                                                   uip.maxy // 2, uip.maxx // 2,
+                                                   items=w_items, headers=w_headers,
+                                                   title=w_title, cursor=w_selectable,
+                                                   sortcolumn=w_sortcolumn)
+                    if not tmpselection:
+                        continue
+            elif widget == "inputbox":
+                selected = uip.get_selected()
+                w_title = deep_get(sc_value, DictPath("inputtitle"), "")
+                if not (w_result := curses_helper.inputbox(uip.stdscr, title=w_title)):
+                    continue
+                # This is necessary because we never go through
+                # the normal update cycle for the listpad and infopad
+                uip.refresh_infopad()
+                uip.refresh_listpad()
+                uip.refresh_logpad()
+                uip.refresh_statusbar()
+                curses.doupdate()
+                # Check this condition before confirming
+                w_confirm = deep_get(sc_value, DictPath("confirm"), False)
+                if isinstance(w_confirm, str):
+                    if w_confirm == "path_exists":
+                        w_confirm = os.path.exists(w_result)
                     else:
-                        msg = [ANSIThemeStr("Executing ", "action"),
-                               ANSIThemeStr(w_command[0], "programname"),
-                               ANSIThemeStr(" inside ", "action"),
-                               ANSIThemeStr(containername, "path")]
-                    executecommand(uip.stdscr, obj, containername, msg,
-                                   command=w_command, waitforkeypress=w_waitforkeypress)
+                        sys.exit("Unknown value for w_confirm; "
+                                 "must be either boolean or path_exists")
+                if w_confirm:
+                    curses.doupdate()
+                    w_confirmtitle = deep_get(sc_value, DictPath("confirmtitle"))
+                    if not curses_helper.confirmationbox(uip.stdscr,
+                                                         title=w_confirmtitle, default=False):
+                        continue
+            elif widget == "command":
+                if force_update is None:
+                    force_update = True
+                w_args = deep_get(sc_value, DictPath("widget_args"), {})
+                if "_pass_obj" in w_args:
+                    w_args["obj"] = obj
+                elif "_pass_selected_obj" in w_args:
+                    selected = uip.get_selected()
+                    if selected is not None:
+                        w_args["obj"] = getattr(selected, "ref")
+                do_command(uip.stdscr, **w_args)
+            elif widget == "executecommand":
+                selected = uip.get_selected()
+                if (w_kinds := deep_get_with_fallback(sc_value,
+                                                      [DictPath("widget_args#kinds"),
+                                                       DictPath("kinds")])) is None:
+                    continue
+                w_ref = None
+                if selected is not None:
+                    w_ref = getattr(selected, "ref", None)
+                if w_kinds != ["<native>"] \
+                        and [deep_get(w_ref, DictPath("kind"), ""),
+                             deep_get(w_ref, DictPath("api_group"), "")] not in w_kinds \
+                        and w_kinds != [("", "")]:
+                    continue
+
+                w_inputtitle = deep_get_with_fallback(sc_value,
+                                                      [DictPath("widget_args#inputtitle"),
+                                                       DictPath("inputtitle")])
+                if w_inputtitle is not None:
+                    if not (w_input := curses_helper.inputbox(uip.stdscr, title=w_inputtitle)):
+                        continue
+                    w_command = w_input.split()
+                else:
+                    w_command = deep_get_with_fallback(sc_value,
+                                                       [DictPath("widget_args#command"),
+                                                        DictPath("command")], [])
+                if not w_command:
+                    continue
+
+                w_waitforkeypress = deep_get(sc_value,
+                                             DictPath("widget_args#wait_for_keypress"), False)
+                containername: str = ""
+                if not (w_kinds == ["<native>"] and w_command == ["<dnsutils>"]):
+                    containername = deep_get(w_ref, DictPath("name"), "")
+                if w_command == ["<ephemeral>"]:
+                    ephemeral_image = \
+                        deep_get(cmtlib.cmtconfig, DictPath("Debug#ephemeral_image"), "busybox")
+                    msg = [ANSIThemeStr("Creating ephemeral ", "action"),
+                           ANSIThemeStr(ephemeral_image, "programname"),
+                           ANSIThemeStr(" container sharing process namespace with ",
+                                        "action"),
+                           ANSIThemeStr(f"{containername}", "path")]
+                elif w_command == ["<dnsutils>"]:
+                    node_name = deep_get(obj, DictPath("metadata#name"))
+                    containername = None
+                    msg = [ANSIThemeStr("Opening dnsutils container on ", "action"),
+                           ANSIThemeStr(node_name, "hostname")]
+                else:
+                    msg = [ANSIThemeStr("Executing ", "action"),
+                           ANSIThemeStr(w_command[0], "programname"),
+                           ANSIThemeStr(" inside ", "action"),
+                           ANSIThemeStr(containername, "path")]
+                executecommand(uip.stdscr, obj, containername, msg,
+                               command=w_command, waitforkeypress=w_waitforkeypress)
             if "action" in sc_value:
                 selected = uip.get_selected()
-                action = deep_get(sc_value, DictPath("action"), "")
+                action = deep_get(sc_value, DictPath("action"), "<missing>")
+                if action == "<missing>":
+                    # No action defined; unless we're forced to update
+                    # we don't.
+                    if force_update is None:
+                        continue
                 if action == "from_ref":
                     ref = tmpselection
                     action = deep_get(ref, DictPath("action"))
@@ -6217,7 +6268,7 @@ def genericinfoloop(stdscr: curses.window,
                         deep_get(obj, DictPath(parent_namespace_path), "")
                 if "_named_title" in action_args:
                     title = deep_get(action_args, DictPath("title"), "")
-                    title_name = ""
+                    title_name: str = ""
                     if selected is not None:
                         ref = getattr(selected, "ref", None)
                     elif tmpselection is not None:
@@ -6238,8 +6289,11 @@ def genericinfoloop(stdscr: curses.window,
                     action_args["selection"] = tmpselection
                 if action == "call" and action_call is not None:
                     retval = action_call(uip.stdscr, **action_args)
-                    if retval is not None and retval == Retval.RETURNFULL:
-                        return retval
+                    if retval is not None:
+                        if retval == Retval.RETURNFULL:
+                            return retval
+                        if retval == Retval.NOMATCH and force_update is None:
+                            continue
                 elif action == "toggle_var":
                     var = deep_get(action_args, DictPath("var"))
                     if var is not None:
@@ -6269,8 +6323,7 @@ def genericinfoloop(stdscr: curses.window,
                         if not curses_helper.confirmationbox(uip.stdscr,
                                                              title=w_confirmtitle, default=False):
                             continue
-                    _values = {}
-                    _values = {
+                    _values: dict[str, dict[str, Any]] = {
                         "action_args": {
                             "command": command,
                             "iterate": True,
@@ -6279,7 +6332,9 @@ def genericinfoloop(stdscr: curses.window,
                     items = [(deep_get(obj, DictPath("metadata#namespace"), ""),
                               deep_get(obj, DictPath("metadata#name")))]
                     action_execute_command(uip, items=items, action={},
-                                           values=_values, kind=None, title="")
+                                           values=_values)
+                if force_update is None:
+                    force_update = True
             else:
                 call = deep_get(sc_value, DictPath("call"))
                 call_name = None
@@ -6328,10 +6383,13 @@ def genericinfoloop(stdscr: curses.window,
                             kind = guess_kind(kind)
                         ref = kh.get_ref_by_kind_name_namespace(kind, call_name, call_namespace,
                                                                 resource_cache=kh_cache)
-                        retval = call(uip.stdscr, ref, kind)
+                        retval = call(uip.stdscr, obj=ref, kind=kind)
                         if retval is not None and retval == Retval.RETURNFULL:
                             return retval
-            if force_update:
+                if force_update is None:
+                    force_update = True
+            if force_update is not None and force_update:
+                uip.update_forced = True
                 uip.force_update()
 
 
@@ -6375,7 +6433,7 @@ def eventdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     namespace_path = deep_get(kwargs, DictPath("namespace_path"))
     namespace = deep_get_with_fallback(obj, namespace_path + ["metadata#namespace"], "")
     ref = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)
-    return resourceinfodispatch(stdscr, ref, kind)
+    return resourceinfodispatch(stdscr, obj=ref, kind=kind)
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
@@ -6421,8 +6479,21 @@ def log_add_line(timestamps: list[datetime], facilities: list[str],
 
 
 # noqa: E501 pylint: disable-next=too-many-locals,too-many-branches,too-many-statements,too-many-return-statements
-def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
-                      kind: tuple[str, str], obj: dict[str, Any], **kwargs: Any) -> Retval:
+def containerinfoloop(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Info loop for showing container logs.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                container (dict[str, Any]): The container object
+                obj (dict): The object to operate on
+                kind (tuple[str, str]): The view to show
+        Returns:
+            (Retval): The return value
+        Raises:
+            ProgrammingError (view is invalid)
+    """
     global executor  # pylint: disable=global-statement
     global override_tail_lines  # pylint: disable=global-statement
 
@@ -6430,26 +6501,30 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
     executor.shutdown()
     executor = reexecutor.ReExecutor()
 
+    container: dict[str, Any] = deep_get(kwargs, DictPath("container"))
+    kind: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+    obj: dict[str, Any] = deep_get(kwargs, DictPath("obj"), {})
+
     multilog_containers_full = deep_get(kwargs, DictPath("multilog_containers_full"), [])
     multilog_containers = deep_get(kwargs, DictPath("multilog_containers"), [])
     all_same_namespace: bool = deep_get(kwargs, DictPath("all_same_namespace"), False)
     multilog_prefix: list[str] = ["namespace", "podname", "container"]
     facility_extended: list[ThemeRef | ThemeStr] = []
 
-    uip = UIProps(stdscr)
+    uip: UIProps = UIProps(stdscr)
 
-    helptext = format_helptext(helptexts.containerinfo)
+    helptext: list[dict] = format_helptext(helptexts.containerinfo)
     uip.init_window(windowheader="Container Info", helptext=helptext)
 
     # For generic information
-    infopad = uip.init_infopad(height=7, width=-1, ypos=1, xpos=1)
+    uip.init_infopad(height=7, width=-1, ypos=1, xpos=1)
 
     # For the pod log
-    tspad, logpad = uip.init_logpad(width=-1, ypos=9, xpos=1)
+    uip.init_logpad(width=-1, ypos=9, xpos=1)
 
     # For the status bar; position is always at the bottom of the screen
     # and the entire width of the screen
-    statusbar = uip.init_statusbar()
+    uip.init_statusbar()
 
     # Number of lines of log to show by default
     if override_tail_lines is None:
@@ -6465,7 +6540,7 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
     tmp_log_level = deep_get(cmtlib.cmtconfig, DictPath("Pod#loglevel"), "Info")
     log_level = name_to_loglevel(tmp_log_level)
     show_borders = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_borders"), True)
-    uip.toggle_borders(show_borders)
+    uip.toggle_borders(borders=show_borders)
     show_timestamps = deep_get(cmtlib.cmtconfig, DictPath("Pod#show_timestamps"), True)
     uip.toggle_timestamps(show_timestamps)
     wrap_lines = False
@@ -6608,27 +6683,27 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
             severities: list[LogLevel] = []
             messages: list[list[ThemeRef | ThemeStr] | str] = []
             parser = None
-            prev_timestamp = None
-            prev_facility = ""
-            prev_severity = LogLevel.INFO
-            prev_message = [ThemeStr("", ThemeAttr("types", "generic"))]
-            prev_remnants = None
-            repeat_count = 0
+            prev_timestamp = none_timestamp()
+            prev_facility: str = ""
+            prev_severity: LogLevel = LogLevel.INFO
+            prev_message: list[ThemeRef | ThemeStr] = [ThemeStr("", ThemeAttr("types", "generic"))]
+            prev_remnants: list = []
+            repeat_count: int = 0
 
-            total_msgs = 0
-            hidden_msgs = 0
-            merged_lines = 0
+            total_msgs: int = 0
+            hidden_msgs: int = 0
+            merged_lines: int = 0
 
-            linecount = len(splitmsg)
-            linepercent = int(linecount * 0.1)
+            linecount: int = len(splitmsg)
+            linepercent: int = int(linecount * 0.1)
 
-            progressbar = None
+            progressbar: Optional[curses.window] = None
             if linecount > 1000:
                 progressbar = curses_helper.progressbar(None, y=uip.maxy // 2, minx=(uip.minx + 8),
                                                         maxx=(uip.maxx - 8), progress=0,
                                                         title="Parsing log")
 
-            i = 0
+            i: int = 0
             while i < len(splitmsg):
                 _line = splitmsg[i]
 
@@ -6637,10 +6712,11 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                     curses_helper.progressbar(progressbar, y=uip.maxy // 2, minx=(uip.minx + 8),
                                               maxx=(uip.maxx - 8),
                                               progress=100 - 100 * ((linecount - i) // linecount))
-                    progressbar.timeout(10)
-                    c = progressbar.getch()
-                    if c == 27:  # ESCAPE
-                        return Retval.RETURNDONE
+                    if progressbar:
+                        progressbar.timeout(10)
+                        c = progressbar.getch()
+                        if c == 27:  # ESCAPE
+                            return Retval.RETURNDONE
 
                 if isinstance(_line, tuple):
                     line, podname, containername, image, facility_extended = _line
@@ -6729,7 +6805,7 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                         continue
 
                     message = remnants
-                    remnants = None
+                    remnants = []
 
                 total_msgs += 1
 
@@ -6741,7 +6817,7 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                 if prev_message == message \
                         and prev_facility == facility \
                         and prev_severity == severity \
-                        and (themearray_len(prev_message) or prev_remnants is not None) \
+                        and (themearray_len(prev_message) or not prev_remnants) \
                         and prev_remnants == remnants:
                     repeat_count += 1
                     prev_timestamp = timestamp_
@@ -6800,8 +6876,10 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                                              facility_extended)
 
             # The data in some fields might become shorter, so we need to trigger a clear
-            uip.infopad.erase()
-            uip.statusbar.erase()
+            if uip.infopad is not None:
+                uip.infopad.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             del progressbar
 
@@ -6818,7 +6896,6 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                                  facility_extended)
 
             uip.update_log_info(timestamps, facilities, severities, messages)
-            uip.loglen = len(messages)
             uip.update_window()
 
             if not multilog_containers:
@@ -6835,7 +6912,7 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                     if deep_get(container_status, DictPath("name")) == containername:
                         break
 
-                status, status_group, restarts, message, _age = \
+                status, status_group, restarts, status_message, _age = \
                     datagetters.get_container_status(src_statuses, containername)
                 containerarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Container: ", ThemeAttr("main", "infoheader")),
@@ -6845,8 +6922,9 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                     ThemeStr("Status: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{status}", color_status_group(status_group))
                 ]
-                if message != "":
-                    statusarray.append(ThemeStr(f" ({message})", ThemeAttr("types", "generic")))
+                if status_message != "":
+                    statusarray.append(ThemeStr(f" ({status_message})",
+                                       ThemeAttr("types", "generic")))
                 restartsarray: list[ThemeRef | ThemeStr] = [
                     ThemeStr("Restarts: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{restarts}", ThemeAttr("types", "numerical"))
@@ -6874,13 +6952,13 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                     ThemeStr("mage ID: ", ThemeAttr("main", "infoheader")),
                     ThemeStr(f"{image_id}", ThemeAttr("types", "generic")),
                 ]
-                uip.addthemearray(infopad, containerarray, y=0, x=0)
-                uip.addthemearray(infopad, statusarray, y=1, x=0)
-                uip.addthemearray(infopad, restartsarray, y=2, x=0)
-                uip.addthemearray(infopad, podarray, y=3, x=0)
-                uip.addthemearray(infopad, containeridarray, y=4, x=0)
-                uip.addthemearray(infopad, imagearray, y=5, x=0)
-                uip.addthemearray(infopad, imageidarray, y=6, x=0)
+                uip.addthemearray(uip.infopad, containerarray, y=0, x=0)
+                uip.addthemearray(uip.infopad, statusarray, y=1, x=0)
+                uip.addthemearray(uip.infopad, restartsarray, y=2, x=0)
+                uip.addthemearray(uip.infopad, podarray, y=3, x=0)
+                uip.addthemearray(uip.infopad, containeridarray, y=4, x=0)
+                uip.addthemearray(uip.infopad, imagearray, y=5, x=0)
+                uip.addthemearray(uip.infopad, imageidarray, y=6, x=0)
             else:
                 if len(multilog_containers) == 1:
                     containerarray = [
@@ -6900,9 +6978,9 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                         ThemeStr("mage ID: ", ThemeAttr("main", "infoheader")),
                         ThemeStr(f"{image_id}", ThemeAttr("types", "generic")),
                     ]
-                    uip.addthemearray(infopad, podarray, y=1, x=0)
-                    uip.addthemearray(infopad, namespacearray, y=2, x=0)
-                    uip.addthemearray(infopad, containeridarray, y=3, x=0)
+                    uip.addthemearray(uip.infopad, podarray, y=1, x=0)
+                    uip.addthemearray(uip.infopad, namespacearray, y=2, x=0)
+                    uip.addthemearray(uip.infopad, containeridarray, y=3, x=0)
                 else:
                     containerarray = [
                         ThemeStr("Containers: ", ThemeAttr("main", "infoheader")),
@@ -6924,14 +7002,15 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                             ThemeStr("Namespace: ", ThemeAttr("main", "infoheader")),
                             ThemeStr(f"{namespace}", ThemeAttr("types", "namespace")),
                         ]
-                        uip.addthemearray(infopad, namespacearray, y=1, x=0)
-                uip.addthemearray(infopad, containerarray, y=0, x=0)
+                        uip.addthemearray(uip.infopad, namespacearray, y=1, x=0)
+                uip.addthemearray(uip.infopad, containerarray, y=0, x=0)
 
             uip.refresh = True
 
         if uip.refresh:
             # FIXME: the status stuff should be done by curses_helper
-            uip.statusbar.erase()
+            if uip.statusbar is not None:
+                uip.statusbar.erase()
 
             if uip.continuous_log:
                 interval = "Follow"
@@ -7057,14 +7136,16 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                         ThemeStr(" (Bundle)", ThemeAttr("statusbar", "dim")),
                     ]
 
-            uip.addthemearray(statusbar, statusarray1, y=0, x=0)
-            uip.addthemearray(statusbar, statusarray2, y=1, x=0)
+            uip.addthemearray(uip.statusbar, statusarray1, y=0, x=0)
+            uip.addthemearray(uip.statusbar, statusarray2, y=1, x=0)
 
             maxlen = 0
             latest_facility_len = -1
 
-            uip.tspad.erase()
-            uip.logpad.erase()
+            if uip.tspad is not None:
+                uip.tspad.erase()
+            if uip.logpad is not None:
+                uip.logpad.erase()
             # This is needed in case we get a resize event or toggle borders
             uip.resize_logpad(uip.maxy - uip.logpadypos - 2, 0)
             yadd = 0
@@ -7176,9 +7257,9 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
                 for i, msgstrarray in enumerate(msgstrarrays):
                     if y + yadd + i >= uip.logpadheight:
                         break
-                    if i == 0 and tspad is not None and tscount:
-                        uip.addthemearray(tspad, tsthemearray, y=y + yadd, x=0)
-                    _cury, _curx = uip.addthemearray(logpad, msgstrarray, y=y + yadd + i, x=0)
+                    if i == 0 and uip.tspad is not None and tscount:
+                        uip.addthemearray(uip.tspad, tsthemearray, y=y + yadd, x=0)
+                    _cury, _curx = uip.addthemearray(uip.logpad, msgstrarray, y=y + yadd + i, x=0)
                     maxlen = max(maxlen, themearray_len(msgstrarray))
                 yadd += i
             uip.resize_logpad(-1, maxlen)
@@ -7192,7 +7273,7 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
 
         uip.stdscr.timeout(100)
         c = uip.stdscr.getch()
-        retval = uip.generic_keycheck(c)
+        retval: Retval = uip.generic_keycheck(c)
 
         if retval == Retval.MATCH:
             continue
@@ -7250,11 +7331,11 @@ def containerinfoloop(stdscr: curses.window, container: dict[str, Any],
             uip.force_update()
         elif c == ord("I"):
             # XXX: This is very inefficient
-            _vlist = get_container_info()
+            _vlist = get_container_info(kubernetes_helper=kh, kh_cache_=kh_cache)
             retval = None
             for _obj in _vlist:
                 if _obj.name == containername and _obj.image_id == image_id:
-                    retval = resourceinfodispatch(stdscr, _obj.ref, ("__Container", ""))
+                    retval = resourceinfodispatch(stdscr, obj=_obj.ref, kind=("__Container", ""))
                     uip.force_update()
                     break
             if retval is not None and retval == Retval.RETURNFULL:
@@ -7624,10 +7705,20 @@ def do_command(stdscr: curses.window, **kwargs: Any) -> None:
 
 # noqa: E501 pylint: disable-next=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def executecommand(stdscr: curses.window,
-                   obj: dict, container, msg, command, waitforkeypress: bool) -> None:
+                   obj: dict, container: str, msg: list[ANSIThemeStr],
+                   command: list[str], waitforkeypress: bool) -> None:
     """
     Executes a command in a container.
     XXX: This should be renamed.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            obj (dict): The object to operate on
+            container (str): The name of the container to execute the command in
+            msg ([ANSIThemeStr]): The message to output before executing the command
+            command ([str]): The command to execute
+            waitforkeypress (bool): Wait for a keypress after executing the command?
+                                    True to wait, False to return immediately
     """
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
@@ -7757,7 +7848,7 @@ def listviewdispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
             viewfunc = views[view]["viewfunc"]
         else:
             viewfunc = genericlistloop
-        return viewfunc(stdscr, view)
+        return viewfunc(stdscr, kind=view)
 
     return Retval.RETURNDONE
 
@@ -7779,8 +7870,7 @@ def patch_object(stdscr: curses.window, **kwargs: Any) -> Retval:
 
 # This dispatches to info views; as soon as one is added this function will
 # dispatch to that view.
-def resourceinfodispatch(stdscr: curses.window, obj: dict,
-                         kind: str | tuple[str, str], **kwargs: Any) -> Retval:
+def resourceinfodispatch(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Dispatch from an object to the infoview of another object.
 
@@ -7793,13 +7883,15 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
                 name_path (DictPath): The path to get name from
                 namespace_path (DictPath): The path to get namespace from
         Returns:
-            (Retval): Retval.RETURNDONE if no match was found, otherwise
-                      Retval from the involved object whenever that returns.
+            (Retval): Retval.NOMATCH if no match was found or a container had invalid status,
+                      otherwise Retval from the involved object whenever that returns.
     """
+    kind: str | tuple[str, str] = deep_get(kwargs, DictPath("kind"), ("", ""))
+    obj: dict = deep_get(kwargs, DictPath("obj"))
     info = deep_get(kwargs, DictPath("info"))
 
     if obj is None:
-        return Retval.RETURNDONE
+        return Retval.NOMATCH
 
     if kind == ("", ""):
         kind = deep_get(obj, DictPath("kind"), "")
@@ -7811,9 +7903,8 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
             else:
                 api_family = api_version.split("/")[0]
             kind = (kind, api_family)
-
-    if kind in infoviews:
-        return genericinfoloop(stdscr, obj, kind, **kwargs)
+        kwargs.pop("apiVersion", None)
+        kwargs["kind"] = kind
 
     # Exceptions
     if kind in (("Container", ""), ("InitContainer", ""), ("EphemeralContainer", "")):
@@ -7829,18 +7920,39 @@ def resourceinfodispatch(stdscr: curses.window, obj: dict,
             datagetters.get_container_status(src_statuses, containername)
         if status in ("ContainerCreating", "CreateContainerError", "ErrImagePull",
                       "ImagePullBackOff", "Pending", "PodInitializing", "UNKNOWN"):
-            return Retval.RETURNDONE
-        return containerinfoloop(stdscr, obj, kind, info)
+            return Retval.NOMATCH
+        return containerinfoloop(stdscr, obj=info, kind=kind, container=obj)
+
+    if kind in infoviews:
+        return genericinfoloop(stdscr, **kwargs)
 
     return Retval.RETURNDONE
 
 
-def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, obj=None,
-                                                kind=None, info=None, **kwargs: Any) -> Retval:
-    kind = deep_get(obj, DictPath("kind"))
-    api_family = deep_get(obj, DictPath("api_group"), "")
-    obj = deep_get(obj, DictPath("ref"))
-    return resourceinfodispatch(stdscr, obj, (kind, api_family), info=info, **kwargs)
+def resourceinfodispatch_from_pod_resource_list(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch from a pod resource to the infoview of that object.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                kind (str): The kind of the object to dispatch to
+                api_version (str): The API-version of the object to dispatch to
+        Returns:
+            (Retval): Retval.RETURNDONE if no match was found, otherwise
+                      Retval from the involved object whenever that returns.
+    """
+    kind = deep_get_with_fallback(kwargs, [DictPath("obj#ref#kind"),
+                                           DictPath("obj#kind"),
+                                           DictPath("kind")])
+    api_family = deep_get_with_fallback(kwargs, [DictPath("obj#ref#api_group"),
+                                                 DictPath("obj#api_group"),
+                                                 DictPath("api_group")], "")
+    kwargs["obj"] = deep_get_with_fallback(kwargs, [DictPath("obj#ref"), DictPath("obj")])
+    kwargs["kind"] = (kind, api_family)
+
+    return resourceinfodispatch(stdscr, **kwargs)
 
 
 def resourceinfodispatch_from_selection(stdscr: curses.window, **kwargs: Any) -> Retval:
@@ -7863,11 +7975,43 @@ def resourceinfodispatch_from_selection(stdscr: curses.window, **kwargs: Any) ->
     api_family = deep_get(kwargs, DictPath("api_family"), "")
     kwargs.pop("kind", None)
     kwargs.pop("api_family", None)
-    return resourceinfodispatch(stdscr, obj, (kind, api_family), **kwargs)
+    return resourceinfodispatch(stdscr, obj=obj, kind=(kind, api_family), **kwargs)
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
 def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Retval:
+    """
+    Dispatch to an object after doing various types of path-based lookups from
+    the source object.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                obj (dict): The object to get information from
+                selected (dict): The selected obj from a listpad
+                selected_obj (dict): The selected obj from a widget list
+                _selected_obj (dict): The selected obj from a widget list
+                selection (FIXME): FIXME
+                kind (str | (str, str)): The kind
+                kind_path (DictPath): The path to get the kind from
+                api_group (str): The API-group
+                api_group_path (DictPath): The path to get the API-group from
+                api_version (str): The API-version
+                api_version_path (DictPath): The path to get the API-version from
+                name (str): The object name
+                name_path (DictPath): The path to get name from
+                namespace (str): The object namespace
+                namespace_path (DictPath): The path to get namespace from
+                namespaced_name (str): A "namespace<separator>name" string
+                namespaced_name_path (str): The path to a "namespace<separator>name" string
+                namespaced_name_separator (str): The separator for the namespaced_name string
+                _parent_namespace: Namespace of the parent object
+                owner_reference_path (DictPath): The path to the owner reference
+                holder_identity_path (DictPath): The path to the holder identity
+        Returns:
+            (Retval): Retval.NOMATCH if no match was found or the kind is unknown,
+                      otherwise Retval from the involved object whenever that returns.
+    """
     # Do not pass both direct and _path versions at the same time
     obj = deep_get(kwargs, DictPath("obj"))
     # pylint: disable-next=too-many-nested-blocks
@@ -8041,7 +8185,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
                 name = str(name)
 
     if kind is None or isinstance(kind, tuple) and kind[0] is None:
-        return Retval.RETURNDONE
+        return Retval.NOMATCH
 
     if namespaced_name_path is not None:
         namespaced_name = deep_get_with_fallback(obj, DictPath(namespaced_name_path))
@@ -8051,7 +8195,7 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
             namespace, name = tmp
 
     if name is None or not name:
-        return Retval.RETURNDONE
+        return Retval.NOMATCH
 
     if namespace is None and obj is not None:
         namespace = deep_get_with_fallback(obj, namespace_path)
@@ -8072,47 +8216,13 @@ def resourceinfodispatch_with_lookup(stdscr: curses.window, **kwargs: Any) -> Re
     try:
         obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)
     except NameError:
-        obj = None
+        return Retval.NOMATCH
 
-    return resourceinfodispatch(stdscr, obj, kind)
-
-
-def resourceinfodispatch_with_lookup_on_activation(stdscr: curses.window,
-                                                   obj, kind, **kwargs) -> Optional[Retval]:
-    if "obj" not in kwargs:
-        kwargs["obj"] = obj
-    if kind not in kwargs:
-        kwargs["kind"] = kind
-    return resourceinfodispatch_with_lookup(stdscr, **kwargs)
-
-
-# Iterate over the list of items and execute command on all of them
-def executecommand_multiple(stdscr: curses.window, msg, command, items, waitforkeypress) -> None:
-    item = None
-
-    curses.endwin()
-    _retval = clear_screen()
-    print(msg + "\n")
-
-    for item in items:
-        args = command + [item]
-        retval = subprocess.run(args, check=False).returncode
-        if retval != 0:
-            break
-
-    if waitforkeypress or retval > 0:
-        if retval > 0:
-            ansithemeprint([ANSIThemeStr("Error", "error"),
-                            ANSIThemeStr(": ", "default")]
-                           + format_commandline(args)
-                           + [ANSIThemeStr(" returned ", "default"),
-                              ANSIThemeStr(f"{retval}", "errorvalue")], stderr=True)
-        ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
-    stdscr.refresh()
+    return resourceinfodispatch(stdscr, obj=obj, kind=kind)
 
 
 def __run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> int:
-    extra_values: dict = deep_get(kwargs, DictPath("extra_values"), {})
+    extra_values: dict[str, Any] = deep_get(kwargs, DictPath("extra_values"), {})
     quiet: bool = deep_get(kwargs, DictPath("quiet"), False)
     verbose: bool = deep_get(kwargs, DictPath("verbose"), False)
 
@@ -8125,7 +8235,7 @@ def __run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> i
     if http_proxy or https_proxy:
         use_proxy = "yes"
 
-    values = {
+    values: dict[str, Any] = {
         "http_proxy": http_proxy,
         "https_proxy": https_proxy,
         "no_proxy": no_proxy,
@@ -8145,8 +8255,7 @@ def __run_playbook(playbookpath: FilePath, hosts: list[str], **kwargs: Any) -> i
     return retval
 
 
-def run_playbook(playbook: dict, nodes: list[str],
-                 values: Optional[dict] = None) -> tuple[int, dict]:
+def run_playbook(playbook: dict, nodes: list[str], values: Optional[dict] = None) -> int:
     verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
     return __run_playbook(FilePath(cast(str, playbook.get("playbook"))), nodes,
                           extra_values=values, verbose=verbose)
@@ -8181,7 +8290,7 @@ def view_obj(stdscr: curses.window, **kwargs: Any) -> Retval:
         if _formatter is None:
             raise ValueError(f"{formatter} is not in formatter_allowlist")
         formatter = _formatter
-    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=obj, kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
@@ -8207,7 +8316,7 @@ def view_yaml(stdscr: curses.window, **kwargs: Any) -> Retval:
         obj = [obj]
     title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
     formatter = formatters.format_yaml
-    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=obj, kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
@@ -8233,13 +8342,13 @@ def view_json(stdscr: curses.window, **kwargs: Any) -> Retval:
         obj = [obj]
     title = deep_get_with_fallback(kwargs, [DictPath("named_title"), DictPath("title")])
     formatter = formatters.reformat_json
-    return resourceinfodispatch(stdscr, obj, ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=obj, kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
 def view_pod_logs(stdscr: curses.window, **kwargs: Any) -> Retval:
-    containers = []
-    containers_full = []
+    containers: list[tuple[str, str, str]] = []
+    containers_full: list[tuple[str, str, str, str]] = []
     items = deep_get(kwargs, DictPath("_tagged_items"), [])
     selected = deep_get(kwargs, DictPath("selected"))
     if selected is not None:
@@ -8297,7 +8406,7 @@ def view_last_applied_configuration(stdscr: curses.window, **kwargs: Any) -> Ret
     title = deep_get(kwargs, DictPath("title"))
     # themearrays = formatters.format_yaml([data])
     formatter = formatters.format_yaml
-    return resourceinfodispatch(stdscr, [data], ("__ResourceView", ""),
+    return resourceinfodispatch(stdscr, obj=[data], kind=("__ResourceView", ""),
                                 title=title, formatter=formatter)
 
 
@@ -8325,7 +8434,7 @@ def delete_resource(**kwargs: Any) -> Retval:
         if isinstance(item, tuple):
             namespace, name = item
         else:
-            namespace = None
+            namespace = ""
             name = item
         message, status = kh.delete_obj_by_kind_name_namespace(kind, name, namespace, force=force)
         if status != 200:
@@ -8370,8 +8479,17 @@ def force_delete_resource(**kwargs: Any) -> Retval:
 
 
 def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
-    selection_vars = deep_get(kwargs, DictPath("selection_vars"))
-    name = deep_get(selection_vars, DictPath("namespace"))
+    """
+    Create a namespace.
+
+        Parameters:
+            stdscr (curses.window): The curses window to operate on
+            **kwargs (dict[str, Any]): Keyword arguments
+                selection_vars#namespace (str): The name of the namespace to create
+        Returns:
+            (Retval): Retval.RETURNDONE
+    """
+    name = deep_get(kwargs, DictPath("selection_vars#namespace"))
 
     curses.endwin()
     _retval = clear_screen()
@@ -8411,7 +8529,7 @@ def create_namespace(stdscr: curses.window, **kwargs: Any) -> Retval:
 # ("DaemonSet", "apps")
 # ("Deployment", "apps")
 # ("StatefulSet", apps")
-def __restart_resource(kind, namespace, name) -> int:
+def __restart_resource(kind: tuple[str, str], namespace: str, name: str) -> int:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8430,7 +8548,7 @@ def __restart_resource(kind, namespace, name) -> int:
     return result.returncode
 
 
-def __get_resource_scale(kind, namespace, name):
+def __get_resource_scale(kind: tuple[str, str], namespace: str, name: str) -> int:
     obj = kh.get_ref_by_kind_name_namespace(kind, name, namespace, resource_cache=kh_cache)
     return deep_get(obj, DictPath("status#replicas"))
 
@@ -8440,7 +8558,7 @@ def __get_resource_scale(kind, namespace, name):
 # ("ReplicaSet", "apps")
 # ("ReplicationController", "")
 # ("StatefulSet", apps")
-def __scale_replicas(kind, namespace, name, scale):
+def __scale_replicas(kind: tuple[str, str], namespace: str, name: str, scale: int) -> int:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8459,7 +8577,7 @@ def __scale_replicas(kind, namespace, name, scale):
     return result.returncode
 
 
-def __edit_resource(kind, namespace, name) -> tuple[int, list[str]]:
+def __edit_resource(kind: tuple[str, str], namespace: str, name: str) -> tuple[int, list[str]]:
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8480,9 +8598,11 @@ def __edit_resource(kind, namespace, name) -> tuple[int, list[str]]:
     return result.returncode, args
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def perform_action_on_configuration(uip: UIProps, items, action,
-                                    values, **kwargs: Any) -> None:
+# pylint: disable-next=too-many-locals,too-many-branches
+def perform_action_on_configuration(uip: UIProps, **kwargs: Any) -> Retval:
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
+    action: dict[str, Any] = deep_get(kwargs, DictPath("action"))
+
     try:
         kubectl_path = secure_which(FilePath("/usr/bin/kubectl"),
                                     fallback_allowlist=["/etc/alternatives"],
@@ -8521,7 +8641,7 @@ def perform_action_on_configuration(uip: UIProps, items, action,
                         ANSIThemeStr("kubectl", "programname"),
                         ANSIThemeStr(" version; aborting.", "default")], stderr=True)
         sys.exit(errno.ENOENT)
-    args = [kubectl_path]
+    args: list = [kubectl_path]
     extra_options = []
 
     if configuration_action == "apply":
@@ -8550,34 +8670,18 @@ def perform_action_on_configuration(uip: UIProps, items, action,
         ansithemeinput([ANSIThemeStr("\nPress Enter to continue...", "default")])
     uip.stdscr.refresh()
 
-    return result.returncode, args
+    return result.returncode
 
 
-def __summarise_resources(path):
-    resources = []
-    dicts = secure_read_yaml_all(path)
-    for d in dicts:
-        kind, api_group = \
-            kh.kind_api_version_to_kind(deep_get(d, DictPath("kind")),
-                                        deep_get(d, DictPath("apiVersion")))
-        if api_group == "":
-            merged_kind = kind
-        else:
-            merged_kind = f"{kind}.{api_group}"
-        name = deep_get(d, DictPath("metadata#name"))
-        namespace = deep_get(d, DictPath("metadata#namespace"), "")
-        resources.append((merged_kind, namespace, name))
+# pylint: disable-next=too-many-locals,too-many-branches
+def diff_resource_configuration(uip: UIProps, **kwargs: Any) -> Retval:
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
 
-    return resources
-
-
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def diff_resource_configuration(uip: UIProps, items, action, values, kind, **kwargs: Any) -> Retval:
     if (resource_url := deep_get(values, DictPath("resource_url"))) is not None:
         if not resource_url.startswith(("http://", "https://")):
             return Retval.MATCH
         resource_path = resource_url
-        rtype = deep_get(action, DictPath("extravars#rtype"))
+        rtype: str = deep_get(kwargs, DictPath("action#extravars#rtype"))
     else:
         resource_path, rtype = values["resource_path"]
 
@@ -8671,7 +8775,7 @@ def format_commandline(args: list[str], implicit_command: bool = True) -> list[A
     return themearray
 
 
-def edit_resource(stdscr: curses.window, **kwargs) -> None:
+def edit_resource(stdscr: curses.window, **kwargs: Any) -> None:
     obj = deep_get(kwargs, DictPath("obj"))
     kind = deep_get(kwargs, DictPath("kind"))
     name = deep_get(obj, DictPath("metadata#name"))
@@ -8934,14 +9038,25 @@ def delete_logs(**kwargs: Any) -> Retval:
     return Retval.RETURNDONE
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
-    tmpargs = deep_get(values, DictPath("action_args#command"), [])
-    iterate = deep_get(values, DictPath("action_args#iterate"), False)
+# pylint: disable-next=too-many-locals,too-many-branches
+def action_execute_command(uip: UIProps, **kwargs: Any) -> None:
+    """
+    Execute a command on localhost.
+
+        Parameters:
+            **kwargs (dict[str, Any]): Keyword arguments
+                values (dict[str, Any]): Values
+                items ([(str, str)]): A list of items that can be substituted into argument lists
+    """
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
+    items: list[tuple[str, str]] = deep_get(kwargs, DictPath("items"))
+
+    tmpargs: list[str] = deep_get(values, DictPath("action_args#command"), [])
+    iterate: bool = deep_get(values, DictPath("action_args#iterate"), False)
     if not tmpargs:
         return
 
-    args = []
+    args: list[str] = []
 
     for arg in tmpargs:
         if arg == "<<<items>>>":
@@ -8952,7 +9067,7 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: 
         else:
             args.append(arg)
 
-    description = action.get("description")
+    description = deep_get(kwargs, DictPath("action#description"))
     if description is None:
         description = " ".join(args)
     msg = [ANSIThemeStr("Executing “", "action"),
@@ -8994,15 +9109,18 @@ def action_execute_command(uip: UIProps, items, action, values, kind, **kwargs: 
     uip.stdscr.refresh()
 
 
-# pylint: disable-next=unused-argument,too-many-locals,too-many-branches
-def command_hosts(uip: UIProps, items, action, values, kind, **kwargs: Any) -> None:
+# pylint: disable-next=too-many-locals,too-many-branches
+def command_hosts(uip: UIProps, **kwargs: Any) -> None:
+    values: dict[str, Any] = deep_get(kwargs, DictPath("values"))
+    action: dict[str, Any] = deep_get(kwargs, DictPath("action"))
+    items: list[str] = deep_get(kwargs, DictPath("items"), [])
     verbose: bool = deep_get(cmtlib.cmtconfig, DictPath("Ansible#verbose"), False)
     verbose = deep_get(kwargs, DictPath("verbose"), verbose)
 
     values.pop("_tagged_items", None)
     msg = \
         [ANSIThemeStr("Executing playbook “", "action"),
-         ANSIThemeStr(action.get("description"), "argument"),
+         ANSIThemeStr(action.get("description", "<description unset>"), "argument"),
          ANSIThemeStr("“ on the following hosts: ", "action")] \
         + ansithemestr_join_list(items, formatting="hostname",
                                  separator=ANSIThemeStr(", ", "separator")) \
@@ -9124,9 +9242,6 @@ def uncordon_node(**kwargs: Any) -> Retval:
     return Retval.RETURNDONE
 
 
-nodeplaybooks = {}  # type: ignore
-
-
 # pylint: disable-next=too-many-locals
 def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
@@ -9218,7 +9333,7 @@ def ssh_to_host(stdscr: curses.window, **kwargs: Any) -> Retval:
     return Retval.RETURNDONE
 
 
-def list_configuration_files(basedir: FilePath):
+def list_configuration_files(basedir: FilePath) -> list[tuple[str, str, str]]:
     """
     Scan a directory and a list of all {.yml,.yaml} files
     and directories with a kustomization.yaml file in it.
@@ -9333,12 +9448,9 @@ def populate_actionlist(**kwargs: Any) -> tuple[list[dict[str, Any]], dict[str, 
 
 
 # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-def __populate_playbooklist(path: FilePath, action_list: Optional[dict]) -> Optional[dict]:
+def __populate_playbooklist(path: FilePath, action_list: dict) -> dict:
     if not os.path.isdir(path):
         return action_list
-
-    if action_list is None:
-        action_list = {}
 
     yaml_regex: re.Pattern[str] = re.compile(r"^(.*)\.ya?ml$")
 
@@ -9346,8 +9458,7 @@ def __populate_playbooklist(path: FilePath, action_list: Optional[dict]) -> Opti
         if playbookpath.name.startswith(("~", ".")):
             continue
 
-        tmp = yaml_regex.match(playbookpath.name)
-        if tmp is None:
+        if (tmp := yaml_regex.match(playbookpath.name)) is None:
             continue
 
         playbookname = str(tmp[1])
@@ -9489,7 +9600,7 @@ def populate_playbooklist(**kwargs: Any) -> tuple[list[dict], dict]:
     action_list = __populate_playbooklist(ANSIBLE_PLAYBOOK_DIR, action_list=action_list)
     action_list = __populate_playbooklist(SYSTEM_ANSIBLE_PLAYBOOK_DIR, action_list=action_list)
 
-    order = []
+    order: list[tuple[str, str, str]] = []
     for item in action_list:
         playbooktypes: list[str] = action_list[item].get("playbook_types", [])
         if context is not None and playbooktypes != [] and context not in playbooktypes:
@@ -9606,7 +9717,7 @@ def format_selection_list(uip: UIProps, refresh_apis: bool = False) -> list[dict
         available_api_families = {}
 
     items = []
-    order = []
+    order: list[tuple[str, str, str]] = []
 
     # Find the correct sort order
     for viewkey, viewref in views.items():
@@ -9732,19 +9843,29 @@ def selectwindow(uip: UIProps, refresh_apis: bool = False) -> Retval:
     return Retval.NOMATCH
 
 
-def selectorloop(stdscr: curses.window, view: str) -> Retval:
+def selectorloop(stdscr: curses.window, **kwargs: Any) -> Retval:
     """
     Main loop for the Selector.
 
         Parameters:
             stdscr (curses.window): The curses window to operate on
-            view (str): The view to show
+            **kwargs (dict[str, Any]): Keyword arguments
+                view (str): The view to show
         Returns:
             (Retval): The return value
         Raises:
             ProgrammingError (view is invalid)
     """
-    field_list, sortcolumn = (None, None)
+    global executor  # pylint: disable=global-statement
+
+    # Just in case there are leftover futures from other views
+    executor.shutdown()
+    executor = reexecutor.ReExecutor()
+
+    view: tuple[str, str] = deep_get(kwargs, DictPath("kind"))
+
+    field_list: dict = {}
+    sortcolumn: str = ""
     uip = UIProps(stdscr)
 
     windowheader = deep_get(views, DictPath(f"{view}#windowheader"), view)
@@ -9977,11 +10098,10 @@ actionfunc_allowlist: dict[str, Callable] = {
 
 
 # Activatedfuns acceptable for direct use in view files
-activatedfun_allowlist: dict[str, Callable] = {
+activatedfun_allowlist: dict[str, Callable[..., Retval]] = {
     "resourceinfodispatch": resourceinfodispatch,
     "resourceinfodispatch_from_pod_resource_list": resourceinfodispatch_from_pod_resource_list,
-    "resourceinfodispatch_with_lookup_on_activation":
-        resourceinfodispatch_with_lookup_on_activation,
+    "resourceinfodispatch_with_lookup": resourceinfodispatch_with_lookup,
 }
 
 
@@ -10037,7 +10157,7 @@ views_special: dict[str, dict[str, Any]] = {
         "viewfunc": clusteroverviewloop,
         "fields": None,
         "update_delay": 5,
-        "sortcolumn": None,
+        "sortcolumn": "",
         "activatedfun": None,
         "listgetter": None,
         "infogetter": None,
@@ -10052,7 +10172,7 @@ views_special: dict[str, dict[str, Any]] = {
         "group": "Administration",
         "viewfunc": cniloop,
         "fields": None,
-        "sortcolumn": None,
+        "sortcolumn": "",
         "activatedfun": None,
         "listgetter": None,
         "infogetter": None,
@@ -10062,63 +10182,76 @@ views_special: dict[str, dict[str, Any]] = {
 }
 
 
-views  = {**views_special}
+views = {**views_special}
 
 
-key_mappings = {
-    "f1": curses.KEY_F1,
-    "f2": curses.KEY_F2,
-    "f3": curses.KEY_F3,
-    "f4": curses.KEY_F4,
-    "f5": curses.KEY_F5,
-    "f6": curses.KEY_F6,
-    "f7": curses.KEY_F7,
-    "f8": curses.KEY_F8,
-    "f9": curses.KEY_F9,
-    "f10": curses.KEY_F10,
-    "f11": curses.KEY_F11,
-    "f12": curses.KEY_F12,
-    "f13": curses.KEY_F13,
-    "f14": curses.KEY_F14,
-    "f15": curses.KEY_F15,
-    "f16": curses.KEY_F16,
-    "f17": curses.KEY_F17,
-    "f18": curses.KEY_F18,
-    "f19": curses.KEY_F19,
-    "f20": curses.KEY_F20,
-    "f21": curses.KEY_F21,
-    "f22": curses.KEY_F22,
-    "f23": curses.KEY_F23,
-    "f24": curses.KEY_F24,
+key_mappings: dict[str, list[int]] = {
+    "f1": [curses.KEY_F1],
+    "f2": [curses.KEY_F2],
+    "f3": [curses.KEY_F3],
+    "f4": [curses.KEY_F4],
+    "f5": [curses.KEY_F5],
+    "f6": [curses.KEY_F6],
+    "f7": [curses.KEY_F7],
+    "f8": [curses.KEY_F8],
+    "f9": [curses.KEY_F9],
+    "f10": [curses.KEY_F10],
+    "f11": [curses.KEY_F11],
+    "f12": [curses.KEY_F12],
+    "f13": [curses.KEY_F13],
+    "f14": [curses.KEY_F14],
+    "f15": [curses.KEY_F15],
+    "f16": [curses.KEY_F16],
+    "f17": [curses.KEY_F17],
+    "f18": [curses.KEY_F18],
+    "f19": [curses.KEY_F19],
+    "f20": [curses.KEY_F20],
+    "f21": [curses.KEY_F21],
+    "f22": [curses.KEY_F22],
+    "f23": [curses.KEY_F23],
+    "f24": [curses.KEY_F24],
 }
 
 
-def map_key(view_file: str, shortcut: str, activatedfun,
-            key: str, modifier: str) -> tuple[int | list[int], str]:
+def map_key(view_file: str, shortcut: str, activatedfun: Optional[Callable],
+            key: str, modifier: str) -> tuple[list[int], str]:
+    """
+    Setup a shortcut mapping and return the key-code(s) + helptext.
+
+        Parameters:
+            view_file (str): The path to the view-file (used for error messages)
+            shortcut (str): The shortcut description (used for error messages)
+            activatedfun (Callable): The function to call upon activation;
+                                     used to double-check whether the default shortcut
+                                     for "enter" has been disabled.
+            key (str): They base key
+            modifier (str): The modifier (""/"shift"/"ctrl")
+        Returns:
+            ((int | [int], str)):
+                ([int]): The shortcut key(s)
+                (str): The helptext
+    """
     if modifier and modifier not in ("ctrl", "shift"):
         sys.exit(f"View-file {view_file} is invalid: "
                  f"unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
 
     if key in ("f1", "f2", "f3", "f4", "f5", "f6",
                "f7", "f8", "f9", "f10", "f11", "f12") and not modifier:
-        shortcut_key = deep_get(key_mappings, DictPath(key))
-        help_key = f"[{key.upper()}]"
+        shortcut_key: list[int] = deep_get(key_mappings, DictPath(key))
+        help_key: str = f"[{key.upper()}]"
     elif key in ("f1", "f2", "f3", "f4", "f5", "f6",
                  "f7", "f8", "f9", "f10", "f11", "f12") and modifier == "shift":
-        _key = key[0] + str(int(key[1:]) + 12)
+        key_: str = key[0] + str(int(key[1:]) + 12)
         num = int(key[1:]) + 12
-        shortcut_key = deep_get(key_mappings, DictPath(_key))
+        shortcut_key = deep_get(key_mappings, DictPath(key_))
         help_key = f"[Shift] + [{key.upper()}] / [{key[0].upper()}{num}]"
     elif key in ("f13", "f14", "f15", "f16", "f17", "f18",
                  "f19", "f20", "f21", "f22", "f23", "f24") and not modifier:
         num = int(key[1:]) - 12
-        _key = key[0] + str(num)
-        shortcut_key = deep_get(key_mappings, DictPath(key))
+        key_ = key[0] + str(num)
+        shortcut_key = deep_get(key_mappings, DictPath(key_))
         help_key = f"[Shift] + [{key[0].upper()}{num}] / [{key.upper()}]"
     elif key in ("enter", "return"):
-        if modifier:
-            help_key = "[Enter]"
-            shortcut_key = [curses.KEY_ENTER, 10, 13]
         if modifier or activatedfun is None:
             help_key = "[Enter]"
             shortcut_key = [curses.KEY_ENTER, 10, 13]
@@ -10129,13 +10262,18 @@ def map_key(view_file: str, shortcut: str, activatedfun,
     elif modifier:
         if modifier == "shift":
             help_key = f"[Shift] + {key.upper()}"
-            shortcut_key = ord(key.upper())
+            shortcut_key = [ord(key.upper())]
         elif modifier == "ctrl":
             help_key = f"[Ctrl] + {key.upper()}"
-            shortcut_key = ord(key) - 96
+            shortcut_key = [ord(key) - 96]
+        else:
+            # This shouldn't be necessary since we check this at the beginning of the function,
+            # but pylint complains otherwise.
+            sys.exit(f"View-file {view_file} is invalid: "
+                     f"unknown modifier {modifier}; valid modifiers are shift, ctrl; aborting")
     else:
         help_key = f"{key.upper()}"
-        shortcut_key = ord(key)
+        shortcut_key = [ord(key)]
 
     return shortcut_key, help_key
 
@@ -10156,7 +10294,7 @@ def populate_views(force_refresh: bool = False) -> None:
     else:
         tmp_available_api_families = {}
 
-    available_api_families = set()
+    available_api_families: Set = set()
     for kind, kind_data in tmp_available_api_families.items():
         if deep_get(kind_data, DictPath("available"), False):
             available_api_families.add(kind)
@@ -10187,10 +10325,10 @@ def populate_views(force_refresh: bool = False) -> None:
             filename = cast(str, filename)
             if filename.startswith(("~", ".")):
                 continue
-            if not filename.endswith((".yaml", ".yml")):
+
+            if (match_tmp := yaml_regex.match(filename)) is None:
                 continue
 
-            match_tmp: re.Match[str] = yaml_regex.match(filename)
             tmp = match_tmp[1]
             if "." in tmp:
                 kind, api_family = tmp.split(".", 1)
@@ -10232,7 +10370,7 @@ def populate_views(force_refresh: bool = False) -> None:
             _command = set.union(_command, set(deep_get(d, DictPath("command"), [])))
         # OK, we've got all commands we wanted; now we want the preferred form first
         _command.discard(default_command)
-        _command = [default_command] + list(_command)
+        _command.add(default_command)
         # Finally, now that we have a list, add variants with api_family suffixed
         command = list(_command)
         if api_family:
@@ -10360,11 +10498,13 @@ def populate_views(force_refresh: bool = False) -> None:
 
             on_activation = deep_get(d, DictPath("listview#on_activation"))
             if on_activation is None or "call" not in on_activation:
-                activatedfun = genericinfoloop
+                activatedfun: Callable[..., Retval] = genericinfoloop
             else:
-                activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
-                                               deep_get(on_activation, DictPath("call")),
-                                               allow_none=True)
+                activatedfun = cast(Callable[..., Retval],
+                                    check_allowlist(activatedfun_allowlist,
+                                                    "activatedfun_allowlist",
+                                                    deep_get(on_activation, DictPath("call")),
+                                                    allow_none=True))
 
             if "labels" in deep_get(d, DictPath("listview"), {}):
                 labels = deep_get(d, DictPath("listview#labels"))
@@ -10517,10 +10657,10 @@ def populate_views(force_refresh: bool = False) -> None:
                 kind = deep_get(d, DictPath("infoview#kind"))
                 api_family = deep_get(d, DictPath("infoview#api_family"), "")
             name = deep_get(d, DictPath("infoview#name"), "<missing>")
-            infopad = deep_get(d, DictPath("infoview#infopad"), {})
+            infopad: dict = deep_get(d, DictPath("infoview#infopad"), {})
 
-            row_indexes = {}
-            row_fields = {}
+            row_indexes: dict[str, dict[str, Any]] = {}
+            row_fields: dict[str, Any] = {}
 
             _indexes = deep_get(infopad, DictPath("row_indexes"))
 
@@ -10562,9 +10702,11 @@ def populate_views(force_refresh: bool = False) -> None:
             listpad = deep_get(d, DictPath("infoview#listpad"), {})
 
             on_activation = deep_get(listpad, DictPath("on_activation"))
-            activatedfun = check_allowlist(activatedfun_allowlist, "activatedfun_allowlist",
-                                           deep_get(on_activation, DictPath("call")),
-                                           allow_none=True)
+            activatedfun = cast(Callable[..., Retval],
+                                check_allowlist(activatedfun_allowlist,
+                                                "activatedfun_allowlist",
+                                                deep_get(on_activation, DictPath("call")),
+                                                allow_none=True))
             override_kind = deep_get(on_activation, DictPath("kind"))
             override_api_family = deep_get(on_activation, DictPath("api_family"), "")
             on_activation_extraref = deep_get(on_activation, DictPath("extraref"))
@@ -10820,18 +10962,15 @@ def populate_views(force_refresh: bool = False) -> None:
                                         deep_get(_shortcuts[shortcut], DictPath("action_call")),
                                         allow_none=True)
 
-            logpad = deep_get(d, DictPath("infoview#logpad"), {})
-
-            if logpad:
+            if logpad := deep_get(d, DictPath("infoview#logpad"), {}):
                 if deep_get(infoview_entry, DictPath("listpad"), {}):
                     sys.exit(f"View-file “{view_file}“ is invalid: "
                              "listpad and logpad cannot be used concurrently.")
 
                 log_infogetter = deep_get(logpad, DictPath("infogetter"))
                 if log_infogetter is None:
-                    if logpad:
-                        raise ValueError("View-file {view_file} is invalid: "
-                                         "logpad specified, but no infogetter is provided")
+                    raise ValueError("View-file {view_file} is invalid: "
+                                     "logpad specified, but no infogetter is provided")
                 logpad["infogetter"] = deep_get(infogetter_allowlist, DictPath(log_infogetter))
                 infoview_entry["logpad"] = copy.deepcopy(logpad)
 
@@ -10886,7 +11025,7 @@ def setupui(stdscr: curses.window) -> None:
                                 ANSIThemeStr("the cluster may be offline or the API disabled.",
                                              "default")])
                 sys.exit(errno.ENOTSUP)
-            viewfunc(stdscr, defaultview)
+            viewfunc(stdscr, kind=defaultview)
         else:
             curses.endwin()
             ansithemeprint([ANSIThemeStr("Error", "error"),
@@ -10909,14 +11048,15 @@ def list_namespaces(options: list[tuple[str, str]], args: list[str]) -> None:
             options ([(str, str)]): List of opt, optarg
             args ([str]): Unused
     """
-    color = "auto"
+    color: str = "auto"
 
     # Valid formats:
     # default = Normal output format (default)
     # csv = Comma-separated values
     # ssv = Space-separated values
     # tsv = Tab-separated values
-    output_format = "default"
+    output_format: str = "default"
+    separator: str = ""
 
     for opt, optarg in options:
         if opt == "--color":
@@ -11017,7 +11157,7 @@ def list_views(options: list[tuple[str, str]], args: list[str]) -> None:
                     ANSIThemeStr("Kind:", "header"),
                     ANSIThemeStr(f"{''.ljust(maxkindlen + 2 - len('Kind:'))}", "default"),
                     ANSIThemeStr("Supported fields:", "header")])
-    for view, kind, fields in cast(list[tuple[str, str, list[ANSIThemeStr]]], viewfields):
+    for view, kind, fields in viewfields:
         joined_fields = ansithemestr_join_list(fields, separator=ANSIThemeStr(", ", "separator"))
         ansithemeprint([ANSIThemeStr(f"{view.ljust(maxviewlen + 2)}"
                                      f"{kind.ljust(maxkindlen + 2)}",
@@ -11554,8 +11694,9 @@ def main() -> None:
     read_cmtconfig()
 
     defaultthemefile = DEFAULT_THEME_FILE
+    tmpthemefile: str = defaultthemefile
 
-    themeindex = None
+    themeindex: int = -1
     try:
         themeindex = sys.argv.index("--theme")
         if themeindex + 1 < len(sys.argv):
@@ -11565,7 +11706,7 @@ def main() -> None:
     except ValueError:
         pass
 
-    if themeindex is None:
+    if themeindex < 0:
         tmpthemefile = deep_get(cmtlib.cmtconfig, DictPath("Global#theme"))
     themefile, theme_path_found = \
         expand_path(path=tmpthemefile,
@@ -11636,7 +11777,7 @@ def main() -> None:
             global kube_config_file  # pylint: disable=global-statement
             kube_config_file = optarg
 
-    if themeindex and not theme_path_found:
+    if themeindex >= 0 and not theme_path_found:
         ansithemeprint([ANSIThemeStr("Warning", "warning"),
                         ANSIThemeStr(": could not find theme “", "default"),
                         ANSIThemeStr(f"{tmpthemefile}", "path"),

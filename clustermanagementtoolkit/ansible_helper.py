@@ -16,7 +16,8 @@ import errno
 from pathlib import Path, PurePath
 import re
 import sys
-from typing import Any, cast, Optional, Sequence
+from typing import Any, cast, Optional
+from collections.abc import Sequence
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -52,7 +53,7 @@ ansible_configuration: dict = {
 
 # Used by Ansible
 try:
-    import ansible_runner  # type: ignore
+    import ansible_runner
 except ModuleNotFoundError:  # pragma: no cover
     # This is acceptable; we don't benefit from a backtrace or log message
     sys.exit("ModuleNotFoundError: Could not import ansible_runner; "
@@ -367,7 +368,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[list[ANSIThemeStr] | str
         key_value_regex = re.compile(r"^(.*?)(:)(.*)")
         for data in tmp_dump.splitlines():
             # Is it a list?
-            tmp2 = list_regex.match(cast(str, data))
+            tmp2 = list_regex.match(data)
             if tmp2 is not None:
                 indent = tmp2[1]
                 listmarker = tmp2[2]
@@ -378,7 +379,7 @@ def ansible_get_inventory_pretty(**kwargs: Any) -> list[list[ANSIThemeStr] | str
                 continue
 
             # Is it key: value?
-            tmp2 = key_value_regex.match(cast(str, data))
+            tmp2 = key_value_regex.match(data)
             if tmp2 is not None:
                 key = tmp2[1]
                 separator = tmp2[2]

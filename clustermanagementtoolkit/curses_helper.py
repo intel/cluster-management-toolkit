@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Curses-based User Interface helpers
+Curses-based User Interface helpers.
 """
 
 # pylint: disable=too-many-lines
@@ -23,7 +23,8 @@ from operator import attrgetter
 import os
 from pathlib import Path, PurePath
 import sys
-from typing import Any, Callable, cast, NamedTuple, NoReturn, Optional, Sequence, Type, Union
+from typing import Any, cast, NamedTuple, NoReturn, Optional, Type, Union
+from collections.abc import Callable, Sequence
 
 try:
     from natsort import natsorted
@@ -55,7 +56,7 @@ mousemask = 0  # pylint: disable=invalid-name
 # A reference to text formatting
 class ThemeAttr(NamedTuple):
     """
-    A reference to formatting for a themed string
+    A reference to formatting for a themed string.
 
         Parameters:
             context: The context to use when doing a looking in themes
@@ -70,14 +71,13 @@ class ThemeAttr(NamedTuple):
 
 class ThemeStr:
     """
-    A themed string for use with curses
+    A themed string for use with curses.
 
         Parameters:
             string: A string
             themeattr: The themeattr used to format the string
             selected (Optional[bool]): Selected or unselected formatting
     """
-
     def __init__(self, string: str, themeattr: ThemeAttr, selected: Optional[bool] = False) -> None:
         if not (isinstance(string, str)
                 and isinstance(themeattr, ThemeAttr)
@@ -172,7 +172,6 @@ class ThemeRef:
             key: The key to use when doing a looking in themes
             selected (Optional[bool]): Should the selected or unselected formatting be used
     """
-
     def __init__(self, context: str, key: str, selected: Optional[bool] = False) -> None:
         if not (isinstance(context, str)
                 and isinstance(key, str)
@@ -304,7 +303,7 @@ class ThemeRef:
 
 class ThemeArray:
     """
-    An array of themed strings and references to themed strings
+    An array of themed strings and references to themed strings.
 
         Parameters:
             [ThemeStr|ThemeRef]: The themearray
@@ -312,7 +311,6 @@ class ThemeArray:
                              passing this parameter overrides
                              individual members of the ThemeArray
     """
-
     def __init__(self, array: list[ThemeRef | ThemeStr],
                  selected: Optional[bool] = None) -> None:
         if array is None:
@@ -394,7 +392,6 @@ class ThemeArray:
             Parameters:
                 item (union(ThemeRef, ThemeStr)): The item to append
         """
-
         if not isinstance(item, (ThemeRef, ThemeStr)):
             msg = [
                 [("ThemeArray.append()", "emphasis"),
@@ -488,9 +485,9 @@ class ThemeArray:
 # pylint: disable-next=too-few-public-methods
 class CursesConfiguration:
     """
-    Configuration options for the curses UI
+    Configuration options for the curses UI.
     """
-    abouttext: Optional[list[tuple[int, list[ThemeStr]]]] = None
+    abouttext: list[list[ThemeRef | ThemeStr]] = []
     mousescroll_enable: bool = False
     mousescroll_up: int = 0b10000000000000000
     mousescroll_down: int = 0b1000000000000000000000000000
@@ -498,7 +495,7 @@ class CursesConfiguration:
 
 class WidgetLineAttrs(IntFlag):
     """
-    Special properties used by lines in windowwidgets
+    Special properties used by lines in windowwidgets.
     """
     # No specific attributes
     NORMAL = 0
@@ -1258,7 +1255,7 @@ def alert(stdscr: Optional[curses.window], y: int, x: int, message: str) -> curs
 
 
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-def progressbar(win: curses.window, y: int, minx: int, maxx: int,
+def progressbar(win: Optional[curses.window], y: int, minx: int, maxx: int,
                 progress: int, title: Optional[str] = None) -> curses.window:
     """
     A progress bar.
@@ -1648,10 +1645,9 @@ def addthemearray(win: curses.window,
 
 # This extracts the string without formatting;
 # once everything uses proper ThemeArray this wo not be necessary anymore
-def themearray_to_string(themearray: ThemeArray | Sequence[ThemeRef | ThemeStr]) -> str:
+def themearray_to_string(themearray: list[ThemeRef | ThemeStr]) -> str:
     """
-    Given a themearray (either a true ThemeArray or list[ThemeRef | ThemeStr],
-    return an unformatted string.
+    Given a themearray return an unformatted string.
 
         Parameters:
             themearray (ThemeArray): A themearray
@@ -1669,19 +1665,18 @@ def themearray_to_string(themearray: ThemeArray | Sequence[ThemeRef | ThemeStr])
     return string
 
 
-def themearray_truncate(themearray: ThemeArray | list[ThemeRef | ThemeStr],
-                        max_len: int) -> ThemeArray | list[ThemeRef | ThemeStr]:
+def themearray_truncate(themearray: list[ThemeRef | ThemeStr],
+                        max_len: int) -> list[ThemeRef | ThemeStr]:
     """
     Given a themearray, truncate it to max_len.
 
         Parameters:
-            themearray (ThemeArray): A themearray
+            themearray ([ThemeRef | ThemeStr]): A themearray
             max_len (int): The max length to truncate to
         Returns:
-            (ThemeArray): The truncated themearray
+            ([ThemeRef | ThemeStr]): The truncated themearray
     """
-    output_format: Type = type(themearray)
-    truncated_themearray: ThemeArray | list[ThemeRef | ThemeStr] = []
+    truncated_themearray: list[ThemeRef | ThemeStr] = []
 
     # For the time being (until we implement proper iteration
     # over ThemeArray elements) this is needed.
@@ -1703,17 +1698,12 @@ def themearray_truncate(themearray: ThemeArray | list[ThemeRef | ThemeStr],
             break
         truncated_themearray.append(element)
 
-    if output_format == ThemeArray:
-        truncated_themearray = ThemeArray(cast(list[ThemeRef | ThemeStr],
-                                               truncated_themearray))
-
     return truncated_themearray
 
 
-def themearray_len(themearray: ThemeArray | Sequence[ThemeRef | ThemeStr]) -> int:
+def themearray_len(themearray: list[ThemeRef | ThemeStr]) -> int:
     """
-    Given a themearray (either a true ThemeArray or list[ThemeRef | ThemeStr],
-    return its length.
+    Given a themearray return its length.
 
         Parameters:
             themearray (ThemeArray): A themearray
@@ -2484,7 +2474,7 @@ def windowwidget(stdscr: curses.window, maxy: int, maxx: int, y: int, x: int,
 label_headers = ["Label:", "Value:"]
 
 
-def get_labels(labels: Optional[dict]) -> Optional[list[dict]]:
+def get_labels(labels: dict[str, str]) -> list[dict]:
     """
     Get labels/annotations.
 
@@ -2496,7 +2486,7 @@ def get_labels(labels: Optional[dict]) -> Optional[list[dict]]:
     if labels is None:
         return None
 
-    rlabels = []
+    rlabels: list[dict[str, Any]] = []
     for key, value in labels.items():
         rlabels.append({
             "lineattrs": WidgetLineAttrs.NORMAL,
@@ -2514,9 +2504,8 @@ annotation_headers: tuple[str, ...] = ("Annotation:", "Value:")
 # pylint: disable-next=too-many-instance-attributes,too-many-public-methods
 class UIProps:
     """
-    The class used for the UI
+    The class used for the UI.
     """
-
     # pylint: disable-next=too-many-statements
     def __init__(self, stdscr: curses.window) -> None:
         self.stdscr: curses.window = stdscr
@@ -2530,7 +2519,7 @@ class UIProps:
         self.selected_uid = None
 
         # Remember position by UID (if False we remember by cursor position)
-        self.remember_uid = True
+        self.remember_uid: bool = True
 
         # The timestamp
         self.last_timestamp_update: Optional[str] = None
@@ -2546,10 +2535,10 @@ class UIProps:
         self.searchkey: str = ""
 
         # Used for label list
-        self.labels: Optional[list[dict]] = None
+        self.labels: list[dict[str, Any]] = []
 
         # Used for annotation list
-        self.annotations: Optional[list[dict]] = None
+        self.annotations: list[dict[str, Any]] = []
 
         # Reference to the external color class
         self.miny: int = 0
@@ -2629,10 +2618,10 @@ class UIProps:
         self.continuous_log: bool = False
         self.match_index: Optional[int] = None
         self.search_matches: set[int] = set()
-        self.timestamps: Optional[list[datetime]] = None
-        self.facilities: Optional[list[str]] = None
-        self.severities: Optional[list[LogLevel]] = None
-        self.messages: Optional[list[str | ThemeArray | list[ThemeStr | ThemeRef]]] = None
+        self.timestamps: list[datetime] = []
+        self.facilities: list[str] = []
+        self.severities: list[LogLevel] = []
+        self.messages: list[list[ThemeStr | ThemeRef] | str] = []
         # For checking clicks/drags of the scrollbars
         self.leftarrow: tuple[int, int] = -1, -1
         self.rightarrow: tuple[int, int] = -1, -1
@@ -2674,7 +2663,7 @@ class UIProps:
 
     def update_sorted_list(self) -> None:
         """
-        Resort the list
+        Resort the list.
         """
         if self.curypos == -1 or self.yoffset == -1:
             self.curypos = 0
@@ -2728,11 +2717,11 @@ class UIProps:
 
         return self.listlen
 
-    def update_log_info(self, timestamps: Optional[list[datetime]],
-                        facilities: Optional[list[str]],
-                        severities: Optional[list[LogLevel]],
-                        messages: Optional[list[str | ThemeArray
-                                                | list[ThemeStr | ThemeRef]]]) -> None:
+    def update_log_info(self,
+                        timestamps: list[datetime],
+                        facilities: list[str],
+                        severities: list[LogLevel],
+                        messages: list[list[ThemeStr | ThemeRef] | str]) -> None:
         """
         Update the information for the parsed container log.
 
@@ -2746,6 +2735,7 @@ class UIProps:
         self.facilities = facilities
         self.severities = severities
         self.messages = messages
+        self.loglen = len(self.messages)
 
     def set_update_delay(self, delay: int) -> None:
         """
@@ -2823,7 +2813,7 @@ class UIProps:
         """
         Check whether the UI is considered idle;
         The UI is idle if nothing has updated last_action within
-        the last idle_timeout seconds
+        the last idle_timeout seconds.
 
             Returns:
                 (bool): True if idle, False if not idle
@@ -3153,19 +3143,27 @@ class UIProps:
 
     # For generic information
     # Pass -1 as width to the infopadminwidth
-    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-    def init_infopad(self, height: int, width: int, ypos: int, xpos: int,
-                     labels: Optional[dict] = None,
-                     annotations: Optional[dict] = None) -> curses.window:
+    def init_infopad(self, height: int, width: int, ypos: int, xpos: int, **kwargs: Any) -> None:
+        """
+        Initialise the infopad.
+
+            Parameters:
+                height (int): The height of the infopad
+                width (int): The width of the infopad
+                ypos (int): The y-position of the infopad
+                xpos (int): The x-position of the infopad
+                **kwargs (dict[str, Any]): Keyword arguments
+                    labels (dict[str, Any]): A dict with labels
+                    annotations (dict[str, Any]): A dict with annotations
+        """
         self.infopadminwidth = self.maxx + 1
         self.infopadypos = ypos
         self.infopadxpos = xpos
         self.infopadheight = height
         self.infopadwidth = max(width, self.infopadminwidth)
         self.infopad = curses.newpad(max(self.infopadheight, self.maxy), self.infopadwidth)
-        self.labels = get_labels(labels)
-        self.annotations = get_labels(annotations)
-        return self.infopad
+        self.labels = get_labels(deep_get(kwargs, DictPath("labels"), {}))
+        self.annotations = get_labels(deep_get(kwargs, DictPath("annotations"), {}))
 
     # Pass -1 to keep the current height/width
     def resize_infopad(self, height: int, width: int) -> None:
@@ -3213,10 +3211,23 @@ class UIProps:
     # For (optionally) scrollable lists of information,
     # optionally with a header
     # Pass -1 as width to use listpadminwidth
-    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
     def init_listpad(self, listheight: int, width: int, ypos: int, xpos: int,
-                     header: bool = True) -> tuple[Optional[curses.window], curses.window]:
+                     **kwargs: Any) -> None:
+        """
+        Initialise the listpad.
+
+            Parameters:
+                listheight (int): The height of the list
+                width (int): The width of the listpad
+                ypos (int): The y-position of the listpad
+                xpos (int): The x-position of the listpad
+                **kwargs (dict[str, Any]): Keyword arguments
+                    header (bool): True to generate a headerpad,
+                                   False to not generate a headerpad
+        """
         self.listpadminwidth = self.maxx
+        header: bool = deep_get(kwargs, DictPath("header"), True)
+
         if header:
             self.headerpadypos = ypos
             self.headerpadxpos = xpos
@@ -3233,8 +3244,6 @@ class UIProps:
         self.curypos = 0
         self.yoffset = 0
         self.select(None)
-
-        return self.headerpad, self.listpad
 
     # Pass -1 to keep the current height/width
     def resize_listpad(self, width: int) -> None:
@@ -3328,8 +3337,20 @@ class UIProps:
     # as the yoffset changes.  The pad is still variable width though.
     #
     # Pass -1 as width to use logpadminwidth
-    def init_logpad(self, width: int, ypos: int, xpos: int,
-                    timestamps: bool = True) -> tuple[Optional[curses.window], curses.window]:
+    def init_logpad(self, width: int, ypos: int, xpos: int, **kwargs: Any) -> None:
+        """
+        Initialise the logpad.
+
+            Parameters:
+                width (int): The width of the logpad
+                ypos (int): The y-position of the logpad
+                xpos (int): The x-position of the logpad
+                **kwargs (dict[str, Any]): Keyword arguments
+                    timestamp (bool): True to generate a timestamp pad,
+                                      False not to generate a timestamp pad
+        """
+        timestamps: bool = deep_get(kwargs, DictPath("timestamps"), True)
+
         self.match_index = None
         self.search_matches = set()
 
@@ -3349,8 +3370,6 @@ class UIProps:
             self.logpadwidth = max(width, self.logpadminwidth)
         self.logpad = curses.newpad(self.logpadheight + 1, self.logpadwidth)
         self.loglen = 0
-
-        return self.tspad, self.logpad
 
     # Pass -1 to keep the current height/width
     # Calling this function directly is not necessary;
@@ -3433,7 +3452,18 @@ class UIProps:
 
         self.recalculate_logpad_xpos(tspadxpos=self.tspadxpos, timestamps=timestamps)
 
-    def toggle_borders(self, borders: Optional[bool] = None) -> None:
+    def toggle_borders(self, **kwargs: Any) -> None:
+        """
+        Toggle screen border on/off.
+
+            Parameters:
+                **kwargs (dict[str, Any]): Keyword arguments
+                    borders (bool): True to enable borders,
+                                    False to disable borders;
+                                    None to toggle borders
+        """
+        borders: Optional[bool] = deep_get(kwargs, DictPath("borders"))
+
         if borders is None:
             self.borders = not self.borders
         else:
@@ -3442,23 +3472,16 @@ class UIProps:
         self.recalculate_logpad_xpos(tspadxpos=self.tspadxpos)
         self.resize_listpad(-1)
 
-    def init_statusbar(self) -> curses.window:
+    def init_statusbar(self) -> None:
         """
-        Initialise the statusbar
-
-            Returns:
-                (curses.window): A reference to the statusbar object
+        Initialise the statusbar.
         """
-
         self.resize_statusbar()
-
-        return cast(curses.window, self.statusbar)
 
     def refresh_statusbar(self) -> None:
         """
-        Refresh the statusbar
+        Refresh the statusbar.
         """
-
         if self.statusbar is not None:
             col, __discard = themeattr_to_curses(ThemeAttr("statusbar", "default"))
             self.statusbar.bkgd(" ", col)
@@ -3469,9 +3492,8 @@ class UIProps:
 
     def resize_statusbar(self) -> None:
         """
-        Trigger the statusbar to be resized
+        Trigger the statusbar to be resized.
         """
-
         self.statusbarypos = self.maxy - 1
         if self.statusbar is not None:
             self.statusbar.erase()
@@ -3480,10 +3502,10 @@ class UIProps:
             self.statusbar = curses.newpad(2, self.maxx + 1)
 
     # pylint: disable-next=too-many-locals
-    def addthemearray(self, win: curses.window,
+    def addthemearray(self, win: Optional[curses.window],
                       array: list[ThemeRef | ThemeStr], **kwargs: Any) -> tuple[int, int]:
         """
-        Add a ThemeArray to a curses window
+        Add a ThemeArray to a curses window.
 
             Parameters:
                 win (curses.window): The curses window to operate on
@@ -3498,6 +3520,9 @@ class UIProps:
         y: int = deep_get(kwargs, DictPath("y"), -1)
         x: int = deep_get(kwargs, DictPath("x"), -1)
         deleted: bool = deep_get(kwargs, DictPath("deleted"), False)
+
+        if win is None:
+            return y, x
 
         for item in themearray_flatten(array):
             if deleted:
@@ -3618,8 +3643,7 @@ class UIProps:
         self.reselect_uid()
 
     def find_all_matches_by_searchkey(self,
-                                      messages: Optional[list[str | ThemeArray
-                                                              | list[ThemeStr | ThemeRef]]],
+                                      messages: list[list[ThemeStr | ThemeRef] | str],
                                       searchkey: str) -> None:
         self.match_index = None
         self.search_matches.clear()
@@ -3664,7 +3688,7 @@ class UIProps:
         self.reselect_uid()
 
     # Find the next line that has severity > NOTICE
-    def next_line_by_severity(self, severities: Optional[list[LogLevel]]) -> None:
+    def next_line_by_severity(self, severities: list[LogLevel]) -> None:
         y = 0
         newoffset = self.yoffset
 
@@ -3682,7 +3706,7 @@ class UIProps:
         self.refresh = True
 
     # Find the prev line that has severity > NOTICE
-    def prev_line_by_severity(self, severities: Optional[list[LogLevel]]) -> None:
+    def prev_line_by_severity(self, severities: list[LogLevel]) -> None:
         y = 0
         newoffset = self.yoffset
 
@@ -3906,7 +3930,7 @@ class UIProps:
         return unique_match
 
     def next_sortcolumn(self) -> None:
-        if self.sortcolumn is None or self.sortcolumn == "":
+        if self.sortcolumn == "":
             return
 
         match = 0
@@ -3923,7 +3947,7 @@ class UIProps:
         self.sort_triggered = True
 
     def prev_sortcolumn(self) -> None:
-        if self.sortcolumn is None or self.sortcolumn == "":
+        if self.sortcolumn == "":
             return
 
         match = 0
@@ -3941,7 +3965,7 @@ class UIProps:
         return self.sortcolumn
 
     def get_sortkeys(self) -> tuple[str, str]:
-        if self.field_list is None or not self.field_list:
+        if not self.field_list:
             # We do not really care about what the sortkeys are; we do not have a list to sort
             # but if we return valid strings we can at least pacify the type checker
             return "", ""
@@ -4022,16 +4046,17 @@ class UIProps:
                         kind = deep_get(on_activation, DictPath("kind"), view)
                         on_activation.pop("kind", None)
                         if data is not None:
-                            _retval = activatedfun(self.stdscr, selected.ref, kind,
+                            _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind,
                                                    info=data, **on_activation)
                         else:
-                            _retval = activatedfun(self.stdscr, selected.ref, kind,
+                            _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind,
                                                    **on_activation)
                     else:
                         on_activation = copy.deepcopy(self.on_activation)
                         kind = deep_get(on_activation, DictPath("kind"), self.view)
                         on_activation.pop("kind", None)
-                        _retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+                        _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind,
+                                               **on_activation)
                     if _retval is not None:
                         self.force_refresh()
                     return _retval
@@ -4150,15 +4175,16 @@ class UIProps:
                 kind = deep_get(on_activation, DictPath("kind"), view)
                 on_activation.pop("kind", None)
                 if data is not None:
-                    _retval = activatedfun(self.stdscr, selected.ref, kind,
+                    _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind,
                                            info=data, **on_activation)
                 else:
-                    _retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+                    _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind,
+                                           **on_activation)
             else:
                 on_activation = copy.deepcopy(self.on_activation)
                 kind = deep_get(on_activation, DictPath("kind"), self.view)
                 on_activation.pop("kind", None)
-                _retval = activatedfun(self.stdscr, selected.ref, kind, **on_activation)
+                _retval = activatedfun(self.stdscr, obj=selected.ref, kind=kind, **on_activation)
             if _retval is not None:
                 self.force_refresh()
             return _retval
@@ -4424,7 +4450,7 @@ class UIProps:
                 self.find_prev_match()
             return Retval.MATCH
         if c == ord("a"):
-            if self.annotations is not None:
+            if self.annotations:
                 title = ""
 
                 windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
@@ -4434,12 +4460,9 @@ class UIProps:
                 self.refresh_all()
                 return Retval.MATCH
         if c == ord("l"):
-            if self.labels is not None:
-                title = ""
-
+            if self.labels:
                 windowwidget(self.stdscr, self.maxy, self.maxx, self.maxy // 2, self.maxx // 2,
-                             items=self.labels, headers=label_headers,
-                             title=title, cursor=False)
+                             items=self.labels, headers=label_headers, cursor=False)
 
                 self.refresh_all()
                 return Retval.MATCH
@@ -4512,7 +4535,7 @@ class UIProps:
     # pylint: disable-next=too-many-locals
     def generate_helptext(self, shortcuts: dict, **kwargs: Any) -> list[dict]:
         """
-        Generate helptexts to use with generic_inputhandler()
+        Generate helptexts to use with generic_inputhandler().
 
             Parameters:
                 shortcuts (dict): A dict of shortcuts
@@ -4564,7 +4587,7 @@ class UIProps:
     # pylint: disable-next=too-many-locals,too-many-branches
     def generic_inputhandler(self, shortcuts: dict, **kwargs: Any) -> tuple[Retval, dict]:
         """
-        Generic inputhandler for views
+        Generic inputhandler for views.
 
             Parameters:
                 shortcuts (dict): View-specific shortcuts
@@ -4584,14 +4607,14 @@ class UIProps:
                 }
             },
             "Refresh information": {
-                "shortcut": curses.KEY_F5,
+                "shortcut": [curses.KEY_F5],
                 "helptext": ("[F5]", "Refresh information"),
                 "helpgroup": 1,
                 "action": "key_callback",
                 "action_call": self.__refresh_information,
             },
             "Show information about the program": {
-                "shortcut": curses.KEY_F12,
+                "shortcut": [curses.KEY_F12],
                 "helptext": ("[F12]", "Show information about the program"),
                 "helpgroup": 1,
                 "action": "key_callback",
@@ -4605,14 +4628,14 @@ class UIProps:
                 "action_call": self.__show_help,
             },
             "Switch main view": {
-                "shortcut": curses.KEY_F2,
+                "shortcut": [curses.KEY_F2],
                 "helptext": ("[F2]", "Switch main view"),
                 "helpgroup": 1,
                 "action": "key_callback",
                 "action_call": self.__select_menu,
             },
             "Switch main view (recheck available API resources)": {
-                "shortcut": curses.KEY_F3,
+                "shortcut": [curses.KEY_F3],
                 "helptext": ("[F3]", "Switch main view (recheck available API resources)"),
                 "helpgroup": 1,
                 "action": "key_callback",
@@ -4622,14 +4645,14 @@ class UIProps:
                 }
             },
             "Toggle mouse on/off": {
-                "shortcut": ord("M"),
+                "shortcut": [ord("M")],
                 "helptext": ("[Shift] + M", "Toggle mouse on/off"),
                 "helpgroup": 0,
                 "action": "key_callback",
                 "action_call": self.__toggle_mouse,
             },
             "Toggle borders": {
-                "shortcut": ord("B"),
+                "shortcut": [ord("B")],
                 "helptext": ("[Shift] + B", "Toggle borders on/off"),
                 "helpgroup": 0,
                 "action": "key_callback",

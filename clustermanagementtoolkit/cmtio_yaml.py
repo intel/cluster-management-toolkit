@@ -10,7 +10,8 @@ YAML I/O helpers
 """
 
 import sys
-from typing import Any, Iterator, Optional
+from typing import Any, Optional
+from collections.abc import Iterator
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover

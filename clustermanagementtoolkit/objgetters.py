@@ -12,7 +12,8 @@ for cases where the obj provided from the list view is not sufficient
 
 from pathlib import Path, PurePath
 import sys
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 try:
     from natsort import natsorted
@@ -74,17 +75,19 @@ def objgetter_journalctl_log(obj: list[dict]) -> dict:
     return data
 
 
-def objgetter_ansible_log(obj: FilePath) -> dict:
+def objgetter_ansible_log(obj: dict[str, Any]) -> dict:
     """
     Get an obj from an ansible log entry
 
         Parameters:
-            obj (FilePath): The obj to use as reference
+            obj (dict[str, Any]): The obj to use as reference
+                ref (FilePath): The base path of the ansible log entry
         Returns:
             (dict): An ansible log entry
     """
-    tmpobj: dict[str, Any] = secure_read_yaml(obj.joinpath("metadata.yaml"))
-    tmpobj["log_path"] = str(obj)
+    path: FilePath = deep_get(obj, DictPath("ref"))
+    tmpobj: dict[str, Any] = secure_read_yaml(path.joinpath("metadata.yaml"))
+    tmpobj["log_path"] = str(path)
 
     # The playbook directory itself may be a symlink.
     # This is expected behaviour when installing from a git repo,
@@ -131,10 +134,10 @@ def objgetter_ansible_log(obj: FilePath) -> dict:
         tmpobj["category"] = "Unavailable"
 
     logs = []
-    for path in natsorted(Path(str(obj)).iterdir()):
-        if (filename := PurePath(str(path)).name) == "metadata.yaml":
+    for entry in natsorted(Path(str(path)).iterdir()):
+        if (filename := PurePath(str(entry)).name) == "metadata.yaml":
             continue
-        log = secure_read_yaml(FilePath(str(path)))
+        log = secure_read_yaml(FilePath(str(entry)))
         logs.append({
             "index": filename.split("-", maxsplit=1)[0],
             "log": log

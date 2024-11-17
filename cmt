@@ -30,7 +30,8 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Optional, Sequence
+from typing import Any, cast, Optional
+from collections.abc import Sequence
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -112,7 +113,7 @@ def request_ansible_password() -> None:
                             ANSIThemeStr(": Empty password; aborting.", "default")], stderr=True)
             sys.exit(errno.EINVAL)
 
-        ansible_configuration["ansible_password"] = ansible_password  # type: ignore
+        ansible_configuration["ansible_password"] = ansible_password
 
 
 # pylint: disable-next=too-many-locals
@@ -352,7 +353,7 @@ def run_playbooks(playbooks: list[tuple[list[ANSIThemeStr], FilePath]], **kwargs
     for string, playbookpath in playbooks:
         ansithemeprint(string)
         retval, _ansible_results = \
-            run_playbook(playbookpath, hosts=cast(list[str], hosts),
+            run_playbook(playbookpath, hosts=hosts,
                          extra_values=extra_values, verbose=verbose)
 
         # We do not want to continue executing playbooks if the first one failed
@@ -918,7 +919,7 @@ def prepare_hosts(options: list[tuple[str, str]], args: list[str]) -> int:
             sys.exit(errno.ENOENT)
 
         hosts_raw = secure_read_string(FilePath(hostfile))
-        hosts_raw_split = cast(list[str], hosts_raw.splitlines())
+        hosts_raw_split = hosts_raw.splitlines()
 
         if len(hosts_raw_split) == 1 and "," in hosts_raw_split[0]:
             selection = hosts_raw_split[0].split(",")
@@ -1357,7 +1358,7 @@ def add_nodes(options: list[tuple[str, str]], args: list[str]) -> int:
                             # This is to handle systems that doesn't have the latest version
                             # of cryptography
                             # pylint: disable-next=import-outside-toplevel
-                            from cryptography.hazmat import primitives  # type: ignore
+                            from cryptography.hazmat import primitives
                             x509obj = \
                                 x509.load_pem_x509_certificate(ca_cert.encode("utf-8"), backend=primitives.default_backend)  # type: ignore # noqa: E501 pylint: disable=line-too-long
                         else:

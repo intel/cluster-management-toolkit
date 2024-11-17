@@ -14,7 +14,8 @@ This generates and post-processes elements for various more complex types
 import copy
 from datetime import datetime
 import re
-from typing import Any, Callable, cast, Optional
+from typing import Any, cast, Optional
+from collections.abc import Callable
 from typing import Type
 import yaml
 
@@ -1467,8 +1468,7 @@ builtin_fields: dict[str, dict[str, Any]] = {
 
 # pylint: disable-next=too-many-branches,too-many-locals
 def fieldgenerator(view: str, selected_namespace: str = "",
-                   **kwargs: Any) -> tuple[Optional[dict],
-                                           Optional[list[str]], Optional[str], bool]:
+                   **kwargs: Any) -> tuple[dict, list[str], str, bool]:
     """
     Generate a dict with the fields necessary for a view.
 
@@ -1491,10 +1491,10 @@ def fieldgenerator(view: str, selected_namespace: str = "",
     field_indexes = deep_get(kwargs, DictPath("field_indexes"))
 
     if field_indexes is None or not field_indexes:
-        return None, None, None, False
+        return {}, [], "", False
 
     field_names = copy.deepcopy(deep_get(field_indexes, DictPath(f"{field_index}#fields"), []))
-    sortcolumn = deep_get(field_indexes, DictPath(f"{field_index}#sortcolumn"))
+    sortcolumn = deep_get(field_indexes, DictPath(f"{field_index}#sortcolumn"), "")
     sortorder_reverse = deep_get(field_indexes, DictPath(f"{field_index}#sortorder_reverse"), False)
 
     denylist = copy.deepcopy(deep_get(kwargs, DictPath("denylist"), []))
@@ -1512,7 +1512,7 @@ def fieldgenerator(view: str, selected_namespace: str = "",
     # OK, we've pruned the denylisted fields; now we need to check
     # whether the sort column still applies, and if not try to pick
     # another sortcolumn
-    if sortcolumn is None or sortcolumn not in field_names:
+    if not sortcolumn or sortcolumn not in field_names:
         if "name" in field_names:
             sortcolumn = "name"
         elif "namespace" in field_names:

@@ -14,16 +14,17 @@ import concurrent.futures
 from datetime import datetime
 import sys
 import threading
-from typing import Any, Callable, Optional, Type
+from typing import Any, Optional, Type
+from collections.abc import Callable
 
 
 class ReExecutor:
     """
-    A wrapper class for concurrent futures
+    A wrapper class for concurrent futures.
     """
     def __init__(self, max_workers: Optional[int] = None) -> None:
         """
-        Init method for the ReExecutor() class
+        Init method for the ReExecutor() class.
 
             Parameters:
                 max_workers (int): The maximum number of worker threads to dimension
@@ -37,7 +38,7 @@ class ReExecutor:
 
     def __trigger(self, key: str) -> None:
         """
-        Internal method for (re-)triggering a callable
+        Internal method for (re-)triggering a callable.
 
             Parameter:
                 key (str): The identifier for the callable to (re-)trigger
@@ -52,7 +53,7 @@ class ReExecutor:
     def trigger(self, key: str, interval: int,
                 fn: Callable, /, *args: list[Any], **kwargs: Any) -> None:
         """
-        Trigger a callable
+        Trigger a callable.
 
             Parameter:
                 key (str): The identifier for the future to (re-)trigger
@@ -88,7 +89,7 @@ class ReExecutor:
     def update(self, key: str, **kwargs: Any) -> None:
         """
         Update one or several parameters for a callable;
-        we currently only support updating keyword args
+        we currently only support updating keyword args.
 
             Parameters:
                 key (str): The identifier for the callable to update parameters for
@@ -102,7 +103,7 @@ class ReExecutor:
 
     def get_parameters(self, key: str) -> tuple[list[Any], dict[str, Any]]:
         """
-        Get the parameters for a callable
+        Get the parameters for a callable.
 
             Returns:
                 ([args]): The arg list
@@ -114,7 +115,7 @@ class ReExecutor:
 
     def get(self, key: str) -> tuple[list[Type], list[Any]]:
         """
-        Check if there's available data from a callable; if there is, return it
+        Check if there's available data from a callable; if there is, return it.
 
             Parameters:
                 key (str): The identifier for the callable to update parameters for
@@ -140,7 +141,7 @@ class ReExecutor:
 
     def delete(self, key: str) -> None:
         """
-        Delete a callable
+        Delete a callable.
 
             Parameters:
                 key (str): The callable to delete
@@ -153,14 +154,14 @@ class ReExecutor:
 
     def flush(self) -> None:
         """
-        Flush the list of callables
+        Flush the list of callables.
         """
         for key in list(self.futures.keys()):
             self.delete(key)
 
     def shutdown(self) -> None:
         """
-        Shutdown the executor
+        Shutdown the executor.
         """
         self.flush()
         # If cancel_futures is supported we should use it
@@ -171,7 +172,7 @@ class ReExecutor:
 
     def __len__(self) -> int:
         """
-        Returns the number of items in the executor pool
+        Returns the number of items in the executor pool.
 
             Returns:
                 (int): The number of items in the executor pool
@@ -180,7 +181,7 @@ class ReExecutor:
 
     def __contains__(self, future: str) -> bool:
         """
-        Check whether a resource is a part of the executor pool
+        Check whether a resource is a part of the executor pool.
 
             Parameters:
                 future (str): The resource to check for

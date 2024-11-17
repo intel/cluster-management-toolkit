@@ -21,7 +21,8 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Generator
+from typing import Any, cast
+from collections.abc import Generator
 
 from clustermanagementtoolkit.ansible_helper import ansible_configuration
 from clustermanagementtoolkit.ansible_helper import ansible_run_playbook_on_selection
@@ -731,7 +732,7 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int
     _kubectl_major_version, _kubectl_minor_version, _kubectl_git_version, \
         server_major_version, server_minor_version, _server_git_version = kubectl_get_version()
 
-    if server_major_version is None:
+    if server_major_version is None or server_minor_version is None:
         ansithemeprint([ANSIThemeStr("  ", "default"),
                         ANSIThemeStr("Critical", "error"),
                         ANSIThemeStr(":", "default")], stderr=True)
@@ -747,9 +748,6 @@ def check_kubelet_and_kube_proxy_versions(**kwargs: Any) -> tuple[bool, int, int
         abort = True
         critical += 1
         return abort, critical, error, warning, note
-
-    server_major_version = cast(int, server_major_version)
-    server_minor_version = cast(int, server_minor_version)
 
     # Kubernetes API based checks
     ansithemeprint([ANSIThemeStr("\n[Checking ", "phase"),

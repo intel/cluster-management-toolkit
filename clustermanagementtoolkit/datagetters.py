@@ -11,7 +11,8 @@ to be expressed through parameters to generic_infogetter()
 """
 
 import re
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from clustermanagementtoolkit.cmtlib import get_since, timestamp_to_datetime
 

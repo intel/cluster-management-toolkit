@@ -30,7 +30,8 @@ import socket
 from subprocess import CalledProcessError  # nosec
 import sys
 import tempfile
-from typing import Any, Callable, cast, Optional
+from typing import Any, cast, Optional
+from collections.abc import Callable
 
 try:
     from natsort import natsorted
@@ -720,7 +721,7 @@ def check_version_from_url(url: str, version_regex: str) -> list[str]:
             versionoutput = tmp.splitlines()
             _version_regex: re.Pattern[str] = re.compile(version_regex)
             for line in versionoutput:
-                tmp_match = _version_regex.match(cast(str, line))
+                tmp_match = _version_regex.match(line)
                 if tmp_match is not None:
                     version = list(tmp_match.groups())
                     break
@@ -1437,7 +1438,7 @@ def add_ssh_keys_to_authorized_keys() -> bool:
         tmp = secure_read_string(FilePath(path))
         if tmp is not None:
             tmplines = tmp.splitlines()
-            pubkey = cast(str, tmplines[0])
+            pubkey = tmplines[0]
             if len(pubkey) == 0:
                 continue
 
@@ -3535,7 +3536,7 @@ def import_cluster(options: list[tuple[str, str]], args: list[str]) -> None:
     global no_password  # pylint: disable=global-statement
 
     # default options
-    confirm: bool  = True
+    confirm: bool = True
     verbose: bool = False
 
     for opt, _optarg in options:

@@ -42,7 +42,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
 try:
-    import urllib3  # type: ignore
+    import urllib3
 except ModuleNotFoundError:  # pragma: no cover
     sys.exit("ModuleNotFoundError: Could not import urllib3; "
              "you may need to (re-)run `cmt-install` or `pip3 install urllib3`; aborting.")
@@ -489,7 +489,7 @@ def guess_kind(kind: str | tuple[str, str]) -> tuple[str, str]:
 
     if isinstance(kind, str):
         if "." in kind:
-            kind = cast(tuple, tuple(kind.split(".", maxsplit=1)))
+            kind = cast(tuple[str, str], tuple(kind.split(".", maxsplit=1)[0:1]))
         else:
             kind = (kind, "")
 
@@ -990,7 +990,7 @@ class KubernetesHelper:
                         as pool_manager:
                     result = pool_manager.request("GET", url, headers=header_params,
                                                   timeout=urllib3.Timeout(connect=connect_timeout),
-                                                  redirect=False)  # type: ignore
+                                                  redirect=False)
                     status = result.status
             except urllib3.exceptions.MaxRetryError as e:
                 # No route to host does not have a HTTP response; make one up...
@@ -2049,12 +2049,11 @@ class KubernetesHelper:
                 if body is not None:
                     result = pool_manager.request(method, url, headers=header_params, body=body,
                                                   timeout=urllib3.Timeout(connect=connect_timeout),
-                                                  retries=_retries)  # type: ignore
+                                                  retries=_retries)
                 else:
                     result = pool_manager.request(method, url, headers=header_params,
-                                                  fields=query_params,
                                                   timeout=urllib3.Timeout(connect=connect_timeout),
-                                                  retries=_retries)  # type: ignore
+                                                  fields=query_params, retries=_retries)
                 status = result.status
             except urllib3.exceptions.MaxRetryError as e:
                 # No route to host does not have a HTTP response; make one up...

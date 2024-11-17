@@ -17,7 +17,7 @@ import sys
 from typing import Any
 
 try:
-    import validators  # type: ignore
+    import validators
 except ModuleNotFoundError:
     print("ModuleNotFoundError: Could not import validators; "
           "you may need to (re-)run `cmt-install` "

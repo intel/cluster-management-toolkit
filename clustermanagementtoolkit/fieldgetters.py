@@ -11,7 +11,8 @@ Get data for fields in a list; typically used to populate _extra_data
 
 import copy
 import re
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 
 from clustermanagementtoolkit import about
 

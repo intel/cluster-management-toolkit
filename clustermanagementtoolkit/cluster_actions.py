@@ -100,7 +100,7 @@ def get_crio_version(kubernetes_version: tuple[int, int]) -> Optional[tuple[str,
                                   r"^v(\d+)\.(\d+)\.\d+$")) is None:
         return None
 
-    version_tmp, _release_date, _body = tmp  # type: ignore
+    version_tmp, _release_date, _body = tmp
     if requested_major < int(version_tmp[0]) \
             or requested_major == int(version_tmp[0]) and requested_minor < int(version_tmp[1]):
         crio_major_version = str(requested_major)
@@ -325,7 +325,7 @@ def run_playbooks(playbooks: list[tuple[list[ANSIThemeStr], FilePath]], **kwargs
     for string, playbookpath in playbooks:
         ansithemeprint(string)
         retval, _ansible_results = \
-            run_playbook(playbookpath, hosts=cast(list[str], hosts),
+            run_playbook(playbookpath, hosts=hosts,
                          extra_values=extra_values, verbose=verbose)
 
         # We do not want to continue executing playbooks if the first one failed

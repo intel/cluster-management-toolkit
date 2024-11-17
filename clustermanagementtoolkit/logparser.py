@@ -32,6 +32,7 @@ unit-tests:
 
 import ast
 from collections import namedtuple
+from collections.abc import Callable, Sequence
 from datetime import datetime
 import difflib
 # ujson is much faster than json,
@@ -49,7 +50,7 @@ except ModuleNotFoundError:
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Callable, Optional, Sequence
+from typing import Any, cast, Optional
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -69,7 +70,7 @@ except ModuleNotFoundError:
           "you may need to (re-)run `cmt-install` or `pip3 install validators`; "
           "disabling IP-address validation.\n", file=sys.stderr)
     # pylint: disable-next=invalid-name
-    validators = None  # type: ignore
+    validators = None
 
 from clustermanagementtoolkit.cmtpaths import HOMEDIR, SYSTEM_PARSERS_DIR, PARSER_DIR
 
@@ -1139,7 +1140,7 @@ def tab_separated(message: str, **kwargs: Any) \
     if not is_timestamp(fields[0]) or len(fields) < 3:
         return message, severity, facility, remnants
 
-    severity = cast(LogLevel, str_to_severity(fields[1], default=severity))
+    severity = str_to_severity(fields[1], default=severity)
     message_index = 2
     if fields[2][0].islower():
         facility = fields[2]
@@ -1186,7 +1187,7 @@ def __split_severity_facility_style(message: str, **kwargs: Any) -> tuple[str, L
     facility: str = deep_get(kwargs, DictPath("facility"), "")
     tmp = re.match(r"^\s*([A-Z]+)\s+([a-zA-Z-\.]+)\s+(.*)", message)
     if tmp is not None:
-        severity = cast(LogLevel, str_to_severity(tmp[1], default=severity))
+        severity = str_to_severity(tmp[1], default=severity)
         facility = tmp[2]
         message = tmp[3]
     return message, severity, facility
@@ -1313,7 +1314,7 @@ def split_json_style(message: str, **kwargs: Any) \
                     logentry.pop(__fac, None)
 
         if level is not None:
-            severity = cast(LogLevel, str_to_severity(level))
+            severity = str_to_severity(level)
 
         # If the message is folded, append the rest
         if fold_msg:
@@ -2689,9 +2690,9 @@ def seconds_severity_facility(message: str, **kwargs: Any) \
 
     tmp = re.match(r"(\[\s*?\d+?\.\d+?s\])\s+([A-Z]+?)\s+(\S+?)\s(.*)", message)
     if tmp is not None:
-        severity = cast(LogLevel, str_to_severity(tmp[2], default=severity))
+        severity = str_to_severity(tmp[2], default=severity)
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
-        facility = cast(str, tmp[3])
+        facility = tmp[3]
         new_message: list[ThemeRef | ThemeStr] = \
             [ThemeStr(f"{tmp[1]} ", ThemeAttr("logview", "timestamp")),
              ThemeStr(f"{tmp[4]}", ThemeAttr("logview", severity_name))]
@@ -3938,9 +3939,7 @@ def logparser_initialised(**kwargs: Any) \
         custom_parser(message, filters=parser.rules, fold_msg=fold_msg, options=options)
 
     max_untruncated_len = 16384
-    if isinstance(rmessage, list) \
-            and themearray_len(cast(list[ThemeRef | ThemeStr],
-                                    rmessage)) > max_untruncated_len - 1:
+    if isinstance(rmessage, list) and themearray_len(rmessage) > max_untruncated_len - 1:
         severity_name = f"severity_{loglevel_to_name(severity).lower()}"
         remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
                                ThemeAttr("logview", severity_name))], severity)]
@@ -4083,9 +4082,7 @@ def logparser(pod_name: str, container_name: str, image_name: str, message: str,
         rmessage = [ThemeStr(message, ThemeAttr("logview", severity_name))]
 
     max_untruncated_len = 16384
-    if isinstance(rmessage, list) \
-            and themearray_len(cast(list[ThemeRef | ThemeStr],
-                                    rmessage)) > max_untruncated_len - 1:
+    if isinstance(rmessage, list) and themearray_len(rmessage) > max_untruncated_len - 1:
         remnants = [([ThemeStr(message[0:max_untruncated_len - 1],
                                ThemeAttr("logview", severity_name))], severity)]
         severity = LogLevel.ERR

@@ -27,7 +27,8 @@ except ModuleNotFoundError:
     DecodeException = json.decoder.JSONDecodeError  # type: ignore
 import re
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 try:
     import yaml
 except ModuleNotFoundError:  # pragma: no cover
@@ -1577,7 +1578,7 @@ def map_dataformat(dataformat: str) -> Callable[[str | list[str]],
     """
 
     for prefix, suffix, formatter_ in formatter_mapping:
-        if dataformat.startswith(prefix) and dataformat.endswith(suffix):  # type: ignore[arg-type]
+        if dataformat.startswith(prefix) and dataformat.endswith(suffix):
             return formatter_
     return format_none
 

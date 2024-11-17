@@ -13,7 +13,8 @@ Get items from lists for use in windowwidget
 
 import re
 import sys
-from typing import Any, Callable, cast, Optional
+from typing import Any, cast, Optional
+from collections.abc import Callable
 
 try:
     from natsort import natsorted

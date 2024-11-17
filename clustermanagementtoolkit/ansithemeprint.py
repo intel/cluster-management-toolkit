@@ -15,7 +15,8 @@ import copy
 from pathlib import Path, PurePath
 import subprocess  # nosec
 import sys
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
+from collections.abc import Sequence
 
 try:
     # python3-yaml is installed by cmt-install; thus we cannot rely on yaml being importable
