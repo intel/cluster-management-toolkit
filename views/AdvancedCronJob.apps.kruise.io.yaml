@@ -1,15 +1,17 @@
+---
 kind: "AdvancedCronJob"
 api_family: "apps.kruise.io"
 default_command: "advancedcronjobs"
 command:
-- "advcronjobs"
-- "advcronjob"
+  - "advcronjobs"
+  - "advcronjob"
 listview:
   name: "Advanced Cron Jobs"
   group: "Kruise"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "schedule", "type", "concurrency_policy", "last_scheduled", "paused", "age"]
+      fields: ["namespace", "name", "schedule", "type", "concurrency_policy",
+               "last_scheduled", "paused", "age"]
       sortcolumn: "namespace"
   fields:
     concurrency_policy:
@@ -34,12 +36,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     schedule:
       header: "Schedule:"
       path: "spec#schedule"
@@ -50,13 +52,15 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "kind"
+          - type: "kind"
 infoview:
   name: "Advanced Cron Job Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["concurrency_policy", "successful_jobs_history_limit", "failed_jobs_history_limit", "schedule", "last_scheduled", "type", "paused"]
+        fields: ["concurrency_policy", "successful_jobs_history_limit",
+                 "failed_jobs_history_limit", "schedule", "last_scheduled",
+                 "type", "paused"]
     rows:
       concurrency_policy:
         header: [["Concurrency Policy:", ["main", "infoheader"]]]
@@ -68,7 +72,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       last_scheduled:
         header: [["Last Scheduled:", ["main", "infoheader"]]]
         path: "status#lastScheduleTime"
@@ -86,12 +90,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       schedule:
         header: [["Schedule:", ["main", "infoheader"]]]
         path: "spec#schedule"
@@ -104,14 +108,14 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "status#type"
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -138,16 +142,16 @@ infoview:
       type:
         header: "Type:"
         paths:
-        - path: [["kind"], ["apiVersion"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group"]
+          - path: [["kind"], ["apiVersion"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
   shortcuts:
     "Pod template":
       key: "t"

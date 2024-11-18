@@ -1,9 +1,10 @@
+---
 kind: "AdmissionCheck"
 api_family: "kueue.x-k8s.io"
 default_command: "admissionchecks"
 command:
-- "admchecks"
-- "admcheck"
+  - "admchecks"
+  - "admcheck"
 listview:
   name: "Admission Checks"
   group: "Batch Scheduling"
@@ -23,20 +24,23 @@ infoview:
         default: "<unset>"
         type: "str"
       parameters:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameters:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameters:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#parameters#kind"], ["spec#parameters#apiGroup"], ["spec#parameters#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#parameters#kind"],
+                   ["spec#parameters#apiGroup"],
+                   ["spec#parameters#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       retry_delay:
         header: [["Retry Delay (minutes):", ["main", "infoheader"]]]
         path: "spec#retryDelayMinutes"
@@ -44,7 +48,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Open Parameters":
       key: "p"

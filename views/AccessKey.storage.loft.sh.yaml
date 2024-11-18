@@ -1,8 +1,9 @@
+---
 kind: "AccessKey"
 api_family: "storage.loft.sh"
 default_command: "accesskeys.storage"
 command:
-- "accesskey.storage"
+  - "accesskey.storage"
 listview:
   name: "Access Keys"
   group: "Lôft"
@@ -13,26 +14,26 @@ listview:
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: "<none>"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     display_name:
       header: "Display Name:"
       path: "spec#displayName"
@@ -42,31 +43,33 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "user", "controller", "type", "key", "ttl", "ttl_after_last_activity", "last_activity"]
+        fields: ["display_name", "user", "controller", "type", "key",
+                 "ttl", "ttl_after_last_activity", "last_activity"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]
         path: "spec#displayName"
@@ -86,7 +89,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         default: "<unset>"
       ttl_after_last_activity:
         header: [["TTL After Last Activity:", ["main", "infoheader"]]]
@@ -98,7 +101,8 @@ infoview:
         path: "spec#type"
         type: "str"
       user:
-        header: [["U", ["main", "infoheader_shortcut"]], ["ser:", ["main", "infoheader"]]]
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["ser:", ["main", "infoheader"]]]
         path: "spec#user"
         type: "bool"
         default: "<unset>"

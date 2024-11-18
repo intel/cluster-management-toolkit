@@ -1,15 +1,17 @@
+---
 kind: "AdmissionReport"
 api_family: "kyverno.io"
 default_command: "admissionreports"
 command:
-- "admrs"
-- "admr"
+  - "admrs"
+  - "admr"
 listview:
   name: "Admission Reports"
   group: "Kyverno"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "fail", "error", "warn", "skip", "pass", "age"]
+      fields: ["namespace", "name", "fail", "error",
+               "warn", "skip", "pass", "age"]
       sortcolumn: "namespace"
   fields:
     error:
@@ -20,15 +22,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     fail:
       header: "Fail:"
@@ -38,15 +40,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     pass:
       header: "Pass:"
@@ -54,8 +56,8 @@ listview:
       type: "raw"
       formatting:
         field_colors:
-        - context: "types"
-          type: "watermark_low"
+          - context: "types"
+            type: "watermark_low"
       align: "right"
     skip:
       header: "Skip:"
@@ -63,7 +65,7 @@ listview:
       type: "raw"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     warn:
       header: "Warn:"
@@ -73,22 +75,23 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
 infoview:
   name: "Admission Report Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["owner", "severity_header", "fail", "error", "warn", "skip", "pass"]
+        fields: ["owner", "severity_header",
+                 "fail", "error", "warn", "skip", "pass"]
     rows:
       error:
         header: [["  Error:", ["main", "infoheader"]]]
@@ -98,15 +101,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       fail:
         header: [["   Fail:", ["main", "infoheader"]]]
         path: "spec#summary#fail"
@@ -115,39 +118,42 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       owner:
-        header: [["O", ["main", "infoheader_shortcut"]], ["wner:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["wner:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#owner#kind"], ["spec#owner#apiVersion"], ["spec#owner#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#owner#kind"],
+                   ["spec#owner#apiVersion"],
+                   ["spec#owner#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       pass:
         header: [["   Pass:", ["main", "infoheader"]]]
         path: "spec#summary#pass"
         type: "raw"
         formatting:
           field_colors:
-          - context: "types"
-            type: "watermark_low"
+            - context: "types"
+              type: "watermark_low"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       skip:
@@ -156,7 +162,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       warn:
         header: [["   Warn:", ["main", "infoheader"]]]
         path: "spec#summary#warn"
@@ -165,15 +171,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -198,24 +204,24 @@ infoview:
             mappings:
               error:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
               fail:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
               warn:
                 field_colors:
-                - context: "types"
-                  type: "watermark_medium"
+                  - context: "types"
+                    type: "watermark_medium"
               pass:
                 field_colors:
-                - context: "types"
-                  type: "watermark_low"
+                  - context: "types"
+                    type: "watermark_low"
               skip:
                 field_colors:
-                - context: "types"
-                  type: "generic"
+                  - context: "types"
+                    type: "generic"
       rule:
         header: "Rule:"
         path: "rule"

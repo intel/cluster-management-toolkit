@@ -1,60 +1,65 @@
+---
 kind: "Event"
 # Make sure to keep this one in sync with Event.events.k8s.io.yaml
 default_command: "events"
 command:
-- "ev"
+  - "ev"
 listview:
   name: "Events"
   group: "Core"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "reporter", "first_seen", "count", "message"]
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj",
+               "reporter", "first_seen", "count", "message"]
       sortcolumn: "seen"
     Normal:
-      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj", "message"]
+      fields: ["namespace", "name", "seen", "type", "reason", "involved_obj",
+               "message"]
       sortcolumn: "seen"
   fields:
     count:
       header: "Count:"
       paths:
-      - path: ["series#count", "deprecatedCount", "count"]
-        pathtype: "value"
-        type: "raw"
-        default: 0
+        - path: ["series#count", "deprecatedCount", "count"]
+          pathtype: "value"
+          type: "raw"
+          default: 0
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     first_seen:
       header: "First Seen:"
       paths:
-      - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
-        pathtype: "value"
-        type: "timestamp"
+        - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+          pathtype: "value"
+          type: "timestamp"
       formatter: "age"
       align: "right"
     involved_obj:
       header: "Regarding:"
       paths:
-      - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
-        pathtype: "tuple"
-        type: ["kind", "api_group", "name"]
+        - path: [["regarding#kind", "involvedObject#kind"],
+                 ["regarding#apiVersion", "involvedObject#apiVersion"],
+                 ["regarding#name", "involvedObject#name"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     message:
       header: "Message:"
       paths:
-      - path: "message"
-        pathtype: "value"
-        type: "str"
-        replace_quotes: "same"
+        - path: "message"
+          pathtype: "value"
+          type: "str"
+          replace_quotes: "same"
     reason:
       header: "Reason:"
       path: "reason"
@@ -70,23 +75,28 @@ listview:
     reporter:
       header: "Reporter:"
       paths:
-      - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
-        default: ["", ""]
-        # This is needed, because the old Events API can return the new fields empty
-        fallback_on_empty: true
-        pathtype: "tuple"
-        type: "raw"
+        - path: [["reportingController",
+                  "deprecatedSource#component", "source#component"],
+                 ["reportingInstance", "deprecatedSource#host", "source#host"]]
+          default: ["", ""]
+          # This is needed, because the old Events API
+          # can return the new fields empty
+          fallback_on_empty: true
+          pathtype: "tuple"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "generic"
+          - type: "generic"
+          - type: "generic"
     seen:
       header: "Last Seen:"
       paths:
-      - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
-        pathtype: "value"
-        type: "timestamp"
+        - path: ["series#lastObservedTime", "deprecatedLastTimestamp",
+                 "lastTimestamp", "eventTime", "deprecatedFirstTimestamp",
+                 "firstTimestamp"]
+          pathtype: "value"
+          type: "timestamp"
       formatter: "age"
       align: "right"
     type:
@@ -100,20 +110,20 @@ listview:
           mappings:
             Error:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Normal:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Warning:
               field_colors:
-              - context: "main"
-                type: "status_admin"
+                - context: "main"
+                  type: "status_admin"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
   shortcuts:
     "Show Resource":
       key: "r"
@@ -140,49 +150,53 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["involved_obj", "reporter", "message", "reason", "type", "seen", "first_seen", "count"]
+        fields: ["involved_obj", "reporter", "message", "reason",
+                 "type", "seen", "first_seen", "count"]
     rows:
       count:
         header: [["Count:", ["main", "infoheader"]]]
         paths:
-        - path: ["series#count", "deprecatedCount", "count"]
-          pathtype: "value"
-          type: "raw"
+          - path: ["series#count", "deprecatedCount", "count"]
+            pathtype: "value"
+            type: "raw"
         default: -1
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       first_seen:
         header: [["First Seen:", ["main", "infoheader"]]]
         paths:
-        - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
-          pathtype: "value"
-          type: "timestamp"
+          - path: ["eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
+            pathtype: "value"
+            type: "timestamp"
         formatter: "age"
         align: "right"
       involved_obj:
-        header: [["I", ["main", "infoheader_shortcut"]], ["nvolved Object:", ["main", "infoheader"]]]
+        header: [["I", ["main", "infoheader_shortcut"]],
+                 ["nvolved Object:", ["main", "infoheader"]]]
         paths:
-        - path: [["regarding#kind", "involvedObject#kind"], ["regarding#apiVersion", "involvedObject#apiVersion"], ["regarding#name", "involvedObject#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["regarding#kind", "involvedObject#kind"],
+                   ["regarding#apiVersion", "involvedObject#apiVersion"],
+                   ["regarding#name", "involvedObject#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       message:
         header: [["Message:", ["main", "infoheader"]]]
         paths:
-        - path: "message"
-          pathtype: "value"
-          type: "str"
-          replace_quotes: "same"
+          - path: "message"
+            pathtype: "value"
+            type: "str"
+            replace_quotes: "same"
       reason:
         header: [["Reason:", ["main", "infoheader"]]]
         path: "reason"
@@ -198,23 +212,29 @@ infoview:
       reporter:
         header: [["Reporter:", ["main", "infoheader"]]]
         paths:
-        - path: [["reportingController", "deprecatedSource#component", "source#component"], ["reportingInstance", "deprecatedSource#host", "source#host"]]
-          default: ["", ""]
-          # This is needed, because the old Events API can return the new fields empty
-          fallback_on_empty: true
-          pathtype: "tuple"
-          type: "raw"
+          - path: [["reportingController",
+                    "deprecatedSource#component", "source#component"],
+                   ["reportingInstance",
+                    "deprecatedSource#host", "source#host"]]
+            default: ["", ""]
+            # This is needed, because the old Events API
+            # can return the new fields empty
+            fallback_on_empty: true
+            pathtype: "tuple"
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "generic"
+            - type: "generic"
+            - type: "generic"
       seen:
         header: [["Last Seen:", ["main", "infoheader"]]]
         paths:
-        - path: ["series#lastObservedTime", "deprecatedLastTimestamp", "lastTimestamp", "eventTime", "deprecatedFirstTimestamp", "firstTimestamp"]
-          pathtype: "value"
-          type: "timestamp"
+          - path: ["series#lastObservedTime", "deprecatedLastTimestamp",
+                   "lastTimestamp", "eventTime", "deprecatedFirstTimestamp",
+                   "firstTimestamp"]
+            pathtype: "value"
+            type: "timestamp"
         formatter: "age"
         align: "right"
       type:
@@ -228,20 +248,20 @@ infoview:
             mappings:
               Error:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Normal:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Warning:
                 field_colors:
-                - context: "main"
-                  type: "status_admin"
+                  - context: "main"
+                    type: "status_admin"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
   shortcuts:
     "Open involved object":
       key: "i"

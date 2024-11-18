@@ -1,8 +1,9 @@
+---
 kind: "Alertmanager"
 api_family: "monitoring.coreos.com"
 default_command: "alertmanagers"
 command:
-- "alm"
+  - "alm"
 listview:
   name: "Alertmanagers"
   group: "Monitoring"
@@ -17,7 +18,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     version:
       header: "Version:"
@@ -25,25 +26,25 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Alertmanager Info"
   infopad:
     row_indexes:
       Normal:
         fields:
-        - "image"
-        - "external_url"
-        - "listen_local"
-        - "log_format"
-        - "loglevel"
-        - "retention"
-        - "port_name"
-        - "route_prefix"
-        - "node_selector"
-        - "paused"
-        - "replicas"
-        - "service_account"
+          - "image"
+          - "external_url"
+          - "listen_local"
+          - "log_format"
+          - "loglevel"
+          - "retention"
+          - "port_name"
+          - "route_prefix"
+          - "node_selector"
+          - "paused"
+          - "replicas"
+          - "service_account"
     rows:
       external_url:
         header: [["External URL:", ["main", "infoheader"]]]
@@ -52,16 +53,16 @@ infoview:
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       listen_local:
         header: [["Listen Local:", ["main", "infoheader"]]]
         path: "spec#listenLocal"
@@ -77,15 +78,15 @@ infoview:
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeSelector"]
-          pathtype: "key_value"
+          - path: ["spec#nodeSelector"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         path: "spec#paused"
@@ -100,7 +101,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       retention:
         header: [["Retention:", ["main", "infoheader"]]]
         path: "spec#retention"
@@ -111,7 +112,8 @@ infoview:
         path: "spec#routePrefix"
         type: "str"
       service_account:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccountName"
         type: "str"
   listpad:
@@ -120,12 +122,12 @@ infoview:
       key_paths: ["spec#resources#limits", "spec#resources#requests"]
       key_name: "resource"
       fields:
-      - path: "spec#resources#limits"
-        name: "limit"
-        default:
-      - path: "spec#resources#requests"
-        name: "request"
-        default:
+        - path: "spec#resources#limits"
+          name: "limit"
+          default:
+        - path: "spec#resources#requests"
+          name: "request"
+          default:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -169,7 +171,7 @@ infoview:
       itemgetter_args:
         path: "spec#containers"
         fields:
-        - "name"
+          - "name"
         pass_ref: true
       action: "call"
       action_call: "view_yaml"

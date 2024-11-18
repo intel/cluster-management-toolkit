@@ -1,9 +1,10 @@
+---
 kind: "Freight"
 api_family: "kargo.akuity.io"
 default_command: "freights"
 command:
-- "kargofreights"
-- "kargofreight"
+  - "kargofreights"
+  - "kargofreight"
 listview:
   name: "Freights"
   group: "CI / CD"
@@ -20,15 +21,15 @@ listview:
     origin:
       header: "Origin:"
       paths:
-      - path: [["origin#kind"], ["origin#name"]]
-        pathtype: "tuple"
+        - path: [["origin#kind"], ["origin#name"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "generic"
+          - type: "kind"
+          - type: "generic"
         field_separators:
-        - type: "kind"
+          - type: "kind"
 infoview:
   name: "Freight Info"
   infopad:
@@ -42,22 +43,23 @@ infoview:
         default: "<unset>"
         type: "str"
       origin:
-        header: [["O", ["main", "infoheader_shortcut"]], ["rigin:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["rigin:", ["main", "infoheader"]]]
         paths:
-        - path: [["origin#kind"], ["origin#name"]]
-          pathtype: "tuple"
+          - path: [["origin#kind"], ["origin#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           field_separators:
-          - type: "kind"
+            - type: "kind"
       verified_in:
         header: [["Verified In:", ["main", "infoheader"]]]
         paths:
-        - path: "status#verifiedIn"
-          pathtype: "dictkeys"
+          - path: "status#verifiedIn"
+            pathtype: "dictkeys"
         formatter: "list"
       warehouse:
         header: [["Warehouse:", ["main", "infoheader"]]]
@@ -84,14 +86,14 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
       tag:
         header: "tag:"
         path: "tag"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Origin":
       key: "o"

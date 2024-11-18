@@ -1,15 +1,17 @@
+---
 kind: "QatDevicePlugin"
 api_family: "deviceplugin.intel.com"
 default_command: "qatdeviceplugins"
 command:
-- "qatdevplugins"
-- "qatdevplugin"
+  - "qatdevplugins"
+  - "qatdevplugin"
 listview:
   name: "QAT Device Plugins"
   group: "Accelerators"
   field_indexes:
     Normal:
-      fields: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
+      fields: ["name", "desired_number_scheduled",
+               "number_ready", "node_selector", "age"]
   fields:
     desired_number_scheduled:
       header: "Desired:"
@@ -19,15 +21,15 @@ listview:
     node_selector:
       header: "Node Selector:"
       paths:
-      - path: ["spec#nodeSelector"]
-        pathtype: "key_value"
+        - path: ["spec#nodeSelector"]
+          pathtype: "key_value"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "selector"
+          - type: "selector"
     number_ready:
       header: "Ready:"
       path: "status#numberReady"
@@ -38,25 +40,32 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controlled_daemon_set", "image", "init_image", "node_selector", "dpdk_driver", "kernel_vf_drivers", "max_num_devices", "loglevel", "replicas"]
+        fields: ["controlled_daemon_set", "image", "init_image",
+                 "node_selector", "dpdk_driver", "kernel_vf_drivers",
+                 "max_num_devices", "loglevel", "replicas"]
     rows:
       controlled_daemon_set:
-        header: [["Controlled ", ["main", "infoheader"]], ["D", ["main", "infoheader_shortcut"]], ["aemon Set:", ["main", "infoheader"]]]
+        header: [["Controlled ", ["main", "infoheader"]],
+                 ["D", ["main", "infoheader_shortcut"]],
+                 ["aemon Set:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#controlledDaemonSet#kind"], ["status#controlledDaemonSet#apiVersion"], ["status#controlledDaemonSet#namespace"], ["status#controlledDaemonSet#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name", "name"]
+          - path: [["status#controlledDaemonSet#kind"],
+                   ["status#controlledDaemonSet#apiVersion"],
+                   ["status#controlledDaemonSet#namespace"],
+                   ["status#controlledDaemonSet#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
       dpdk_driver:
         header: [["DPDK Driver:", ["main", "infoheader"]]]
         path: "spec#dpdkDriver"
@@ -64,31 +73,31 @@ infoview:
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
-          default: ["<none>"]
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       init_image:
         header: [["Init Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#initImage"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
-          default: ["<none>"]
+          - path: "spec#initImage"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       kernel_vf_drivers:
         header: [["Kernel VF Drivers:", ["main", "infoheader"]]]
         path: "spec#kernelVfDrivers"
@@ -100,26 +109,26 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       max_num_devices:
         header: [["Max # of Devices:", ["main", "infoheader"]]]
         path: "spec#maxNumDevices"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       node_selector:
         header: [["Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#nodeSelector"]
-          pathtype: "key_value"
+          - path: ["spec#nodeSelector"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       preferred_allocation_policy:
         header: [["Preferred Allocation Policy:", ["main", "infoheader"]]]
         path: "spec#preferredAllocationPolicy"
@@ -127,15 +136,15 @@ infoview:
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
-          pathtype: "tuple"
+          - path: [["status#numberReady"], ["status#desiredNumberScheduled"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
       resource_manager:
         header: [["Resource Manager:", ["main", "infoheader"]]]
         path: "spec#resourceManager"

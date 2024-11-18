@@ -1,18 +1,19 @@
+---
 kind: "AuthorizationPolicy"
 api_family: "security.istio.io"
 default_command: "istioauthorizationpolicies"
 command:
-- "istioauthorizationpolicy"
-- "istioauthpolicies"
-- "istioauthpolicy"
-- "istioauthpols"
-- "istioauthpol"
-- "authorizationpolicies.istio"
-- "authorizationpolicy.istio"
-- "authpolicies.istio"
-- "authpolicy.istio"
-- "authpols.istio"
-- "authpol.istio"
+  - "istioauthorizationpolicy"
+  - "istioauthpolicies"
+  - "istioauthpolicy"
+  - "istioauthpols"
+  - "istioauthpol"
+  - "authorizationpolicies.istio"
+  - "authorizationpolicy.istio"
+  - "authpolicies.istio"
+  - "authpolicy.istio"
+  - "authpols.istio"
+  - "authpol.istio"
 listview:
   name: "Authorization Policies"
   group: "Istio"
@@ -33,40 +34,41 @@ infoview:
         type: "str"
         default: "ALLOW"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       workload_selector:
         header: [["Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -86,29 +88,29 @@ infoview:
           # equals, logical and, not equals
           # key=[...] ∧ key≠[...], ...
           field_separators:
-          - type: "equals"
-          - type: "logical_and"
-          - type: "not_equals"
+            - type: "equals"
+            - type: "logical_and"
+            - type: "not_equals"
           item_separator:
             type: "logical_or"
           field_prefixes:
-          -
-            - type: "no_pad"
-          -
-            - type: "set_start"
-          -
-            - type: "no_pad"
-          -
-            - type: "set_start"
+            -
+              - type: "no_pad"
+            -
+              - type: "set_start"
+            -
+              - type: "no_pad"
+            -
+              - type: "set_start"
           field_suffixes:
-          -
-            - type: "no_pad"
-          -
-            - type: "set_end"
-          -
-            - type: "no_pad"
-          -
-            - type: "set_end"
+            -
+              - type: "no_pad"
+            -
+              - type: "set_end"
+            -
+              - type: "no_pad"
+            -
+              - type: "set_end"
       operations:
         header: "Operation:"
         path: "operations"
@@ -116,55 +118,55 @@ infoview:
         formatter: "list"
         formatting:
           field_separators:
-          - type: "logical_and"
+            - type: "logical_and"
           item_separator:
             type: "logical_or"
           field_prefixes:
-          -
-            - type: "hosts"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "hosts"
-            - type: "list_start"
-          -
-            - type: "ports"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "ports"
-            - type: "list_start"
-          -
-            - type: "methods"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "methods"
-            - type: "list_start"
-          -
-            - type: "paths"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "paths"
-            - type: "list_start"
+            -
+              - type: "hosts"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "hosts"
+              - type: "list_start"
+            -
+              - type: "ports"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "ports"
+              - type: "list_start"
+            -
+              - type: "methods"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "methods"
+              - type: "list_start"
+            -
+              - type: "paths"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "paths"
+              - type: "list_start"
           field_suffixes:
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
       sources:
         header: "Source:"
         path: "sources"
@@ -172,55 +174,55 @@ infoview:
         formatter: "list"
         formatting:
           field_separators:
-          - type: "logical_and"
+            - type: "logical_and"
           item_separator:
             type: "logical_or"
           field_prefixes:
-          -
-            - type: "principals"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "principals"
-            - type: "list_start"
-          -
-            - type: "request_principals"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "request_principals"
-            - type: "list_start"
-          -
-            - type: "namespaces"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "namespaces"
-            - type: "list_start"
-          -
-            - type: "ip_blocks"
-            - type: "list_start"
-          -
-            - type: "not"
-            - type: "ip_blocks"
-            - type: "list_start"
+            -
+              - type: "principals"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "principals"
+              - type: "list_start"
+            -
+              - type: "request_principals"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "request_principals"
+              - type: "list_start"
+            -
+              - type: "namespaces"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "namespaces"
+              - type: "list_start"
+            -
+              - type: "ip_blocks"
+              - type: "list_start"
+            -
+              - type: "not"
+              - type: "ip_blocks"
+              - type: "list_start"
           field_suffixes:
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
-          -
-            - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
+            -
+              - type: "list_end"
   shortcuts:
     "Open controller":
       key: "c"

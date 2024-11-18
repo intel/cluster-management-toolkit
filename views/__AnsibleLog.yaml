@@ -1,3 +1,4 @@
+---
 kind: "__AnsibleLog"
 default_command: "__"
 infoview:
@@ -34,7 +35,8 @@ infoview:
       kind: "__LogView"
     field_indexes:
       Normal:
-        fields: ["index", "name", "host", "start_time", "completion_time", "retval", "status"]
+        fields: ["index", "name", "host", "start_time",
+                 "completion_time", "retval", "status"]
         sortcolumn: "index"
     fields:
       completion_time:
@@ -51,7 +53,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       name:
         header: "Name:"
@@ -63,7 +65,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       start_time:
         header: "Started At:"
@@ -79,51 +81,51 @@ infoview:
             mappings:
               "COULD NOT RESOLVE":
                 field_colors:
-                - context: "main"
-                  type: "status_critical"
+                  - context: "main"
+                    type: "status_critical"
               "CONNECTION TIMED OUT":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "FAILED":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "FAILED (unknown error)":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "MISSING INTERPRETER?":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "NO ROUTE TO HOST":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "PERMISSION DENIED":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "SKIPPED":
                 field_colors:
-                - context: "types"
-                  type: "none"
+                  - context: "types"
+                    type: "none"
               "SUCCESS":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "UNKNOWN ERROR":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "UNREACHABLE (unknown reason)":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "UNKNOWN":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
   shortcuts:
     "Last Applied Configuration": null

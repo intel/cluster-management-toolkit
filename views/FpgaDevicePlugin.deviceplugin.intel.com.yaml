@@ -1,15 +1,17 @@
+---
 kind: "FpgaDevicePlugin"
 api_family: "deviceplugin.intel.com"
 default_command: "fpgadeviceplugins"
 command:
-- "fpgadevplugins"
-- "fpgadevplugin"
+  - "fpgadevplugins"
+  - "fpgadevplugin"
 listview:
   name: "FPGA Device Plugins"
   group: "Accelerators"
   field_indexes:
     Normal:
-      fields: ["name", "desired_number_scheduled", "number_ready", "node_selector", "age"]
+      fields: ["name", "desired_number_scheduled",
+               "number_ready", "node_selector", "age"]
   fields:
     desired_number_scheduled:
       header: "Desired:"
@@ -19,15 +21,15 @@ listview:
     node_selector:
       header: "Node Selector:"
       paths:
-      - path: ["spec#nodeSelector"]
-        pathtype: "key_value"
+        - path: ["spec#nodeSelector"]
+          pathtype: "key_value"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "key"
-        - type: "value"
+          - type: "key"
+          - type: "value"
         field_separators:
-        - type: "selector"
+          - type: "selector"
     number_ready:
       header: "Ready:"
       path: "status#numberReady"

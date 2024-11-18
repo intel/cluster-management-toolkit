@@ -1,9 +1,10 @@
+---
 kind: "APIServer"
 api_family: "config.openshift.io"
 default_command: "apiservers.config.openshift.io"
 command:
-- "apiservers.config"
-- "apiserver.config"
+  - "apiservers.config"
+  - "apiserver.config"
 listview:
   name: "API Servers"
   group: "OpenShift"
@@ -15,27 +16,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "client_ca", "audit_profile", "encryption_type", "tls_security_profile"]
+        fields: ["cluster_version", "client_ca", "audit_profile",
+                 "encryption_type", "tls_security_profile"]
     rows:
       audit_profile:
         header: [["Audit Profile:", ["main", "infoheader"]]]
         path: "spec#audit#profile"
         type: "str"
       client_ca:
-        header: [["C", ["main", "infoheader_shortcut"]], ["lient CA:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["lient CA:", ["main", "infoheader"]]]
         path: "spec#clientCA#name"
         default: "<none>"
         type: "str"
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       encryption_type:
         header: [["Encryption Type:", ["main", "infoheader"]]]

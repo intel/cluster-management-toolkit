@@ -1,9 +1,10 @@
+---
 kind: "FelixConfiguration"
 api_family: "crd.projectcalico.org"
 default_command: "felixconfigurations"
 command:
-- "felixconfs"
-- "felixconf"
+  - "felixconfs"
+  - "felixconf"
 listview:
   name: "Felix Configurations"
   group: "Calico"
@@ -15,7 +16,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["bpf_header", "bpf_enabled", "bpf_connect_time_load_balancing", "bpf_host_networked_nat_without_ctlb", "bpf_log_level", "log_severity_screen", "health_port", "floating_ips", "reporting_interval", "ipip_enabled", "vxlan_enabled", "vxlan_vni"]
+        fields: ["bpf_header", "bpf_enabled",
+                 "bpf_connect_time_load_balancing",
+                 "bpf_host_networked_nat_without_ctlb", "bpf_log_level",
+                 "log_severity_screen", "health_port", "floating_ips",
+                 "reporting_interval", "ipip_enabled",
+                 "vxlan_enabled", "vxlan_vni"]
     rows:
       bpf_connect_time_load_balancing:
         header: [["  Connect Time Load Balancing:", ["main", "infoheader"]]]
@@ -28,7 +34,8 @@ infoview:
       bpf_header:
         header: [["BPF:", ["main", "infoheader"]]]
       bpf_host_networked_nat_without_ctlb:
-        header: [["  Host Networked NAT Without Connect Time Load Balancing:", ["main", "infoheader"]]]
+        header: [["  Host Networked NAT Without Connect Time Load Balancing:",
+                  ["main", "infoheader"]]]
         path: "spec#bpfHostNetworkedNATWithoutCTLB"
         type: "str"
       bpf_log_level:
@@ -51,7 +58,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       log_severity_screen:
         header: [["Log Severity Screen:", ["main", "infoheader"]]]
         path: "spec#logSeverityScreen"
@@ -78,4 +85,4 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"

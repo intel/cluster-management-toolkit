@@ -1,9 +1,10 @@
+---
 kind: "FeatureGate"
 api_family: "config.openshift.io"
 default_command: "featuregates.config.openshift.io"
 command:
-- "featuregates.config"
-- "featuregate.config"
+  - "featuregates.config"
+  - "featuregate.config"
 listview:
   name: "Feature Gates"
   group: "OpenShift"
@@ -24,15 +25,17 @@ infoview:
         fields: ["cluster_version", "feature_set"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       feature_set:
         header: [["Feature Set:", ["main", "infoheader"]]]
@@ -44,18 +47,18 @@ infoview:
     listgetter_args:
       path: "status#featureGates"
       subpaths:
-      - path: "enabled"
-        type: "list"
-        key: "name"
-        extras:
-          key: "enabled"
-          value: true
-      - path: "disabled"
-        type: "list"
-        key: "name"
-        extras:
-          key: "enabled"
-          value: false
+        - path: "enabled"
+          type: "list"
+          key: "name"
+          extras:
+            key: "enabled"
+            value: true
+        - path: "disabled"
+          type: "list"
+          key: "name"
+          extras:
+            key: "enabled"
+            value: false
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -76,7 +79,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Cluster Version":
       key: "v"

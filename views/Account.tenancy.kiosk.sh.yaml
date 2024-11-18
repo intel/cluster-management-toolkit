@@ -1,10 +1,11 @@
+---
 kind: "Account"
 api_family: "tenancy.kiosk.sh"
 default_command: "accounts.kiosk"
 command:
-- "account.kiosk"
-- "kaccounts"
-- "kaccount"
+  - "account.kiosk"
+  - "kaccounts"
+  - "kaccount"
 listview:
   name: "Accounts"
   group: "Kiosk"
@@ -15,20 +16,20 @@ listview:
     spaces:
       header: "Spaces:"
       paths:
-      - path: "status#namespaces"
-        pathtype: "count"
+        - path: "status#namespaces"
+          pathtype: "count"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     subjects:
       header: "Subjects:"
       paths:
-      - path: "spec#subjects"
-        pathtype: "count"
+        - path: "spec#subjects"
+          pathtype: "count"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Account Info"
@@ -44,17 +45,18 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       spaces:
-        header: [["S", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["paces:", ["main", "infoheader"]]]
         paths:
-        - path: "status#namespaces"
-          pathtype: "items"
-          subpath: "name"
+          - path: "status#namespaces"
+            pathtype: "items"
+            subpath: "name"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -77,13 +79,14 @@ infoview:
       exists:
         header: "Exists:"
         paths:
-        - path: [["kind"], ["apiGroup"], ["namespace", "_extra_data#namespace"], ["name"], []]
-          pathtype: "lookup"
-          when:
-          - key: "metadata#name"
-            notnone: true
-          substitute: "True"
-          unknown: "Unknown"
+          - path: [["kind"], ["apiGroup"],
+                   ["namespace", "_extra_data#namespace"], ["name"], []]
+            pathtype: "lookup"
+            when:
+              - key: "metadata#name"
+                notnone: true
+            substitute: "True"
+            unknown: "Unknown"
         default: "False"
         formatter: "value_mapper"
         formatting:
@@ -91,16 +94,16 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       name:
         header: "Name:"
         path: "name"
@@ -108,20 +111,20 @@ infoview:
       namespace:
         header: "Namespace:"
         paths:
-        - path: ["namespace", "_extra_data#namespace"]
+          - path: ["namespace", "_extra_data#namespace"]
         type: "str"
       kind:
         header: "Kind:"
         paths:
-        - path: [["kind"], ["apiGroup"]]
-          pathtype: "tuple"
+          - path: [["kind"], ["apiGroup"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
   shortcuts:
     "Show Spaces":
       key: "s"
@@ -136,7 +139,7 @@ infoview:
       itemgetter_args:
         path: "status#namespaces"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "name"
       action: "call"

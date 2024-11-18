@@ -1,50 +1,52 @@
+---
 kind: "AntreaAgentInfo"
 api_family: "crd.antrea.io"
 default_command: "antreaagentinfos"
 command:
-- "aai"
+  - "aai"
 listview:
   name: "Antrea Agent Infos"
   group: "Antrea"
   field_indexes:
     Normal:
-      fields: ["name", "healthy", "last_heartbeat", "version", "node_name", "subnets", "age"]
+      fields: ["name", "healthy", "last_heartbeat",
+               "version", "node_name", "subnets", "age"]
   fields:
     healthy:
       header: "Healthy:"
       paths:
-      - path: "agentConditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "AgentHealthy"
+        - path: "agentConditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "AgentHealthy"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     last_heartbeat:
       header: "Last Heartbeat:"
       paths:
-      - path: "agentConditions"
-        pathtype: "items"
-        subpath: "lastHeartbeatTime"
-        when:
-        - key: "type"
-          eq: "AgentHealthy"
-        type: "timestamp"
+        - path: "agentConditions"
+          pathtype: "items"
+          subpath: "lastHeartbeatTime"
+          when:
+            - key: "type"
+              eq: "AgentHealthy"
+          type: "timestamp"
       formatter: "timestamp"
     node_name:
       header: "Node:"
@@ -52,7 +54,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     subnets:
       header: "Subnets:"
       path: "nodeSubnets"
@@ -64,7 +66,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Antrea Agent Info"
   infopad:
@@ -73,36 +75,39 @@ infoview:
         fields: ["node_name", "pod", "node_subnets", "version"]
     rows:
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "nodeRef#name"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       node_subnets:
         header: [["Node Subnets:", ["main", "infoheader"]]]
         path: "nodeSubnets"
         type: "raw"
         formatter: "address"
       pod:
-        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         paths:
-        - path: [["podRef#namespace"], ["podRef#name"]]
-          pathtype: "tuple"
+          - path: [["podRef#namespace"], ["podRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Network Policy Controller":
       key: "c"
@@ -159,7 +164,7 @@ infoview:
       itemgetter_args:
         path: "agentConditions"
         fields:
-        - "type"
-        - "status"
-        - "lastHeartbeatTime"
+          - "type"
+          - "status"
+          - "lastHeartbeatTime"
         override_types: ["", "", "timestamp"]

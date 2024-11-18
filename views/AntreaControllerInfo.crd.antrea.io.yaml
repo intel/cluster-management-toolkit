@@ -1,50 +1,52 @@
+---
 kind: "AntreaControllerInfo"
 api_family: "crd.antrea.io"
 default_command: "antreacontrollerinfos"
 command:
-- "aci"
+  - "aci"
 listview:
   name: "Antrea Controller Infos"
   group: "Antrea"
   field_indexes:
     Normal:
-      fields: ["name", "healthy", "last_heartbeat", "version", "node_name", "age"]
+      fields: ["name", "healthy", "last_heartbeat",
+               "version", "node_name", "age"]
   fields:
     healthy:
       header: "Healthy:"
       paths:
-      - path: "controllerConditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          in: ["controllerHealthy", "ControllerHealthy"]
+        - path: "controllerConditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              in: ["controllerHealthy", "ControllerHealthy"]
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     last_heartbeat:
       header: "Last Heartbeat:"
       paths:
-      - path: "controllerConditions"
-        pathtype: "items"
-        subpath: "lastHeartbeatTime"
-        when:
-        - key: "type"
-          in: ["controllerHealthy", "ControllerHealthy"]
-        type: "timestamp"
+        - path: "controllerConditions"
+          pathtype: "items"
+          subpath: "lastHeartbeatTime"
+          when:
+            - key: "type"
+              in: ["controllerHealthy", "ControllerHealthy"]
+          type: "timestamp"
       formatter: "timestamp"
     node_name:
       header: "Node:"
@@ -52,14 +54,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     version:
       header: "Version:"
       path: "version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Antrea Controller Info"
   infopad:
@@ -68,26 +70,30 @@ infoview:
         fields: ["node_name", "pod", "service", "version"]
     rows:
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "nodeRef#name"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod:
-        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         paths:
-        - path: [["podRef#namespace"], ["podRef#name"]]
-          pathtype: "tuple"
+          - path: [["podRef#namespace"], ["podRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       service:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice:", ["main", "infoheader"]]]
         path: "serviceRef#name"
         type: "str"
       version:
@@ -96,7 +102,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Network Policy Controller":
       key: "c"
@@ -156,7 +162,7 @@ infoview:
       itemgetter_args:
         path: "controllerConditions"
         fields:
-        - "type"
-        - "status"
-        - "lastHeartbeatTime"
+          - "type"
+          - "status"
+          - "lastHeartbeatTime"
         override_types: ["", "", "timestamp"]

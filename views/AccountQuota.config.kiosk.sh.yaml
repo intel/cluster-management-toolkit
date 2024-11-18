@@ -1,10 +1,11 @@
+---
 kind: "AccountQuota"
 api_family: "config.kiosk.sh"
 default_command: "accountquotas.kiosk"
 command:
-- "accountquotas.kiosk"
-- "kaccountquotas"
-- "kaccountquota"
+  - "accountquotas.kiosk"
+  - "kaccountquotas"
+  - "kaccountquota"
 listview:
   name: "Account Quotas"
   group: "Kiosk"
@@ -24,16 +25,17 @@ infoview:
         fields: ["spaces"]
     rows:
       spaces:
-        header: [["S", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["paces:", ["main", "infoheader"]]]
         paths:
-        - path: "status#namespaces"
-          pathtype: "items"
-          subpath: "name"
+          - path: "status#namespaces"
+            pathtype: "items"
+            subpath: "name"
         default: ["ALL"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -76,7 +78,7 @@ infoview:
       itemgetter_args:
         path: "status#namespaces"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "name"
       action: "call"

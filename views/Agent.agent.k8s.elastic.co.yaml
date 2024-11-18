@@ -1,3 +1,4 @@
+---
 kind: "Agent"
 api_family: "agent.k8s.elastic.co"
 default_command: "agents"
@@ -6,19 +7,20 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "available_nodes", "kibana_status", "fleet_server_status", "health", "age"]
+      fields: ["namespace", "name", "version", "available_nodes",
+               "kibana_status", "fleet_server_status", "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
       header: "Available Nodes:"
       paths:
-      - path: [["status#availableNodes"], ["status#expectedNodes"]]
-        pathtype: "tuple"
+        - path: [["status#availableNodes"], ["status#expectedNodes"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         item_separator:
           type: "fraction"
       align: "right"
@@ -33,16 +35,16 @@ listview:
           mappings:
             Established:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -54,24 +56,24 @@ listview:
           mappings:
             green:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             red:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             yellow:
               field_colors:
-              - context: "main"
-                type: "status_degraded"
+                - context: "main"
+                  type: "status_degraded"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     kibana_status:
       header: "Kibana Status:"
       path: "status#kibanaAssociationStatus"
@@ -83,23 +85,23 @@ listview:
           mappings:
             Established:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -112,33 +114,40 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["kibana_ref", "fleet_server_ref", "version", "policy_id", "mode", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "available_nodes", "kibana_status", "fleet_server_status", "health"]
+        fields: ["kibana_ref", "fleet_server_ref", "version", "policy_id",
+                 "mode", "http_header", "http_service_header",
+                 "http_service_type", "http_tls_header",
+                 "http_tls_self_signed_header", "http_tls_self_signed_enabled",
+                 "http_tls_self_signed_alt_names", "available_nodes",
+                 "kibana_status", "fleet_server_status", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#availableNodes"], ["status#expectedNodes"]]
-          pathtype: "tuple"
+          - path: [["status#availableNodes"], ["status#expectedNodes"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           item_separator:
             type: "fraction"
       fleet_server_ref:
-        header: [["F", ["main", "infoheader_shortcut"]], ["leet Server Reference:", ["main", "infoheader"]]]
+        header: [["F", ["main", "infoheader_shortcut"]],
+                 ["leet Server Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#fleetServerRef#namespace", "metadata#namespace"], ["spec#fleetServerRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#fleetServerRef#namespace", "metadata#namespace"],
+                   ["spec#fleetServerRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       fleet_server_status:
         header: [["Fleet Server Status:", ["main", "infoheader"]]]
         path: "status#fleetServerAssociationStatus"
@@ -150,16 +159,16 @@ infoview:
             mappings:
               Established:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -171,24 +180,24 @@ infoview:
             mappings:
               green:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               red:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               yellow:
                 field_colors:
-                - context: "main"
-                  type: "status_degraded"
+                  - context: "main"
+                    type: "status_degraded"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -203,16 +212,16 @@ infoview:
       http_tls_self_signed_alt_names:
         header: [["      Alt Names:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
@@ -221,18 +230,20 @@ infoview:
       http_tls_self_signed_header:
         header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
       kibana_ref:
-        header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ibana Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#kibanaRef#namespace", "metadata#namespace"], ["spec#kibanaRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#kibanaRef#namespace", "metadata#namespace"],
+                   ["spec#kibanaRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       kibana_status:
         header: [["Kibana Status:", ["main", "infoheader"]]]
         path: "status#kibanaAssociationStatus"
@@ -244,16 +255,16 @@ infoview:
             mappings:
               Established:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       mode:
         header: [["Mode:", ["main", "infoheader"]]]
         path: "spec#mode"
@@ -268,7 +279,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Configuration":
       key: "c"
@@ -293,11 +304,11 @@ infoview:
       itemgetter_args:
         path: "status#elasticsearchAssociationsStatus"
         fields:
-        - field: "key"
-          regex: "^([^/]+)/.+"
-        - field: "key"
-          regex: "^[^/]+/(.+)"
-        - "value"
+          - field: "key"
+            regex: "^([^/]+)/.+"
+          - field: "key"
+            regex: "^[^/]+/(.+)"
+          - "value"
       # This isn't supported for now
       sortcolumn: "namespace"
       selectable: true

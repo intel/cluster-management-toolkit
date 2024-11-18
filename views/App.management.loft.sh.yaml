@@ -1,10 +1,11 @@
+---
 kind: "App"
 api_family: "management.loft.sh"
 default_command: "apps.management"
 command:
-- "app.management"
-- "apps.mgmnt"
-- "app.mgmnt"
+  - "app.management"
+  - "apps.mgmnt"
+  - "app.mgmnt"
 listview:
   name: "Apps"
   group: "Lôft"
@@ -21,7 +22,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "description", "chart_header", "chart_name", "chart_repo_url", "default_namespace", "recommended_app"]
+        fields: ["display_name", "description",
+                 "chart_header", "chart_name", "chart_repo_url",
+                 "default_namespace", "recommended_app"]
     rows:
       chart_header:
         header: [["Chart:", ["main", "infoheader"]]]
@@ -51,8 +54,8 @@ infoview:
       recommended_app:
         header: [["Recommended App:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#recommendedApp"
-          pathtype: "list"
+          - path: "spec#recommendedApp"
+            pathtype: "list"
         formatter: "list"
   listpad:
     listgetter: "listgetter_path"
@@ -71,14 +74,14 @@ infoview:
       users:
         header: "Users:"
         paths:
-        - path: "users"
-          pathtype: "list"
+          - path: "users"
+            pathtype: "list"
         formatter: "list"
       verbs:
         header: "Verbs:"
         paths:
-        - path: "verbs"
-          pathtype: "list"
+          - path: "verbs"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "View Parameters":

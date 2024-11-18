@@ -1,15 +1,17 @@
+---
 kind: "ApmServer"
 api_family: "apm.k8s.elastic.co"
 default_command: "apmservers"
 command:
-- "apmsrvs"
-- "apmsrv"
+  - "apmsrvs"
+  - "apmsrv"
 listview:
   name: "APM Servers"
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "kibana_status", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "available_nodes",
+               "kibana_status", "elasticsearch_status", "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
@@ -21,13 +23,13 @@ listview:
     count:
       header: "Count:"
       paths:
-      - path: [["status#count"], ["spec#count"]]
-        pathtype: "tuple"
+        - path: [["status#count"], ["spec#count"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         item_separator:
           type: "fraction"
       align: "right"
@@ -42,16 +44,16 @@ listview:
           mappings:
             Established:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -63,24 +65,24 @@ listview:
           mappings:
             green:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             red:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             yellow:
               field_colors:
-              - context: "main"
-                type: "status_degraded"
+                - context: "main"
+                  type: "status_degraded"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     kibana_status:
       header: "Kibana Status:"
       path: "status#kibanaAssociationStatus"
@@ -92,23 +94,23 @@ listview:
           mappings:
             Established:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -121,45 +123,52 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["elasticsearch_ref", "kibana_ref", "label_selector", "secret", "version", "count", "service", "http_header", "http_service_header", "http_service_type", "http_tls_header", "http_tls_self_signed_header", "http_tls_self_signed_enabled", "http_tls_self_signed_alt_names", "available_nodes", "kibana_status", "elasticsearch_status", "health"]
+        fields: ["elasticsearch_ref", "kibana_ref", "label_selector", "secret",
+                 "version", "count", "service", "http_header",
+                 "http_service_header", "http_service_type", "http_tls_header",
+                 "http_tls_self_signed_header", "http_tls_self_signed_enabled",
+                 "http_tls_self_signed_alt_names", "available_nodes",
+                 "kibana_status", "elasticsearch_status", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#availableNodes"], ["status#expectedNodes"]]
-          pathtype: "tuple"
+          - path: [["status#availableNodes"], ["status#expectedNodes"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           item_separator:
             type: "fraction"
       count:
         header: [["Count:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#count"], ["spec#count"]]
-          pathtype: "tuple"
+          - path: [["status#count"], ["spec#count"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           item_separator:
             type: "fraction"
       elasticsearch_ref:
-        header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
+        header: [["E", ["main", "infoheader_shortcut"]],
+                 ["lasticsearch Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"],
+                   ["spec#elasticsearchRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
@@ -171,16 +180,16 @@ infoview:
             mappings:
               Established:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -192,24 +201,24 @@ infoview:
             mappings:
               green:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               red:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               yellow:
                 field_colors:
-                - context: "main"
-                  type: "status_degraded"
+                  - context: "main"
+                    type: "status_degraded"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       http_header:
         header: [["HTTP:", ["main", "infoheader"]]]
       http_service_header:
@@ -224,16 +233,16 @@ infoview:
       http_tls_self_signed_alt_names:
         header: [["      Alt Names:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: "spec#http#tls#selfSignedCertificate#subjectAltNames"
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       http_tls_self_signed_enabled:
         header: [["      Disabled:", ["main", "infoheader"]]]
         path: "spec#http#tls#selfSignedCertificate#disabled"
@@ -242,18 +251,20 @@ infoview:
       http_tls_self_signed_header:
         header: [["    Self-Signed Certificate:", ["main", "infoheader"]]]
       kibana_ref:
-        header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ibana Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#kibanaRef#namespace", "metadata#namespace"], ["spec#kibanaRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#kibanaRef#namespace", "metadata#namespace"],
+                   ["spec#kibanaRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       kibana_status:
         header: [["Kibana Status:", ["main", "infoheader"]]]
         path: "status#kibanaAssociationStatus"
@@ -265,26 +276,29 @@ infoview:
             mappings:
               Established:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         path: "status#selector"
         type: "str"
       secret:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ecret:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ecret:", ["main", "infoheader"]]]
         path: "status#secretTokenSecret"
         type: "str"
       service:
-        header: [["Ser", ["main", "infoheader"]], ["v", ["main", "infoheader_shortcut"]], ["ice:", ["main", "infoheader"]]]
+        header: [["Ser", ["main", "infoheader"]],
+                 ["v", ["main", "infoheader_shortcut"]],
+                 ["ice:", ["main", "infoheader"]]]
         path: "status#service"
         type: "str"
       version:
@@ -293,7 +307,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -306,67 +320,71 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip",
+                 "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status",
+                 "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       controller:
         header: "Controller:"
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -377,7 +395,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -387,14 +405,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:
@@ -409,7 +427,8 @@ infoview:
         _pass_obj: true
         kind: "Elasticsearch"
         api_family: "elasticsearch.k8s.elastic.co"
-        namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
+        namespace_path: ["spec#elasticsearchRef#namespace",
+                         "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
     "Open Kibana":
       key: "k"

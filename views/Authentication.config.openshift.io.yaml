@@ -1,9 +1,10 @@
+---
 kind: "Authentication"
 api_family: "config.openshift.io"
 default_command: "authentications.config.openshift.io"
 command:
-- "authentications.config"
-- "authentication.config"
+  - "authentications.config"
+  - "authentication.config"
 listview:
   name: "Authentications"
   group: "OpenShift"
@@ -15,25 +16,31 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "oauth_metadata", "integrated_oauth_metadata", "service_account_issuer", "webhook_token_authenticator_config", "type"]
+        fields: ["cluster_version", "oauth_metadata",
+                 "integrated_oauth_metadata", "service_account_issuer",
+                 "webhook_token_authenticator_config", "type"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       integrated_oauth_metadata:
-        header: [["I", ["main", "infoheader_shortcut"]], ["ntegrated OAuth Metadata:", ["main", "infoheader"]]]
+        header: [["I", ["main", "infoheader_shortcut"]],
+                 ["ntegrated OAuth Metadata:", ["main", "infoheader"]]]
         path: "status#integratedOAuthMetadata#name"
         type: "str"
       oauth_metadata:
-        header: [["O", ["main", "infoheader_shortcut"]], ["Auth Metadata:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["Auth Metadata:", ["main", "infoheader"]]]
         path: "spec#oauthMetadata#name"
         default: "<unset>"
         type: "str"
@@ -49,7 +56,9 @@ infoview:
         fallback_on_empty: true
         type: "str"
       webhook_token_authenticator_config:
-        header: [["Webhook ", ["main", "infoheader"]], ["T", ["main", "infoheader_shortcut"]], ["oken Authenticator Config:", ["main", "infoheader"]]]
+        header: [["Webhook ", ["main", "infoheader"]],
+                 ["T", ["main", "infoheader_shortcut"]],
+                 ["oken Authenticator Config:", ["main", "infoheader"]]]
         path: "spec#webhookTokenAuthenticator#kubeConfig#name"
         type: "str"
   shortcuts:

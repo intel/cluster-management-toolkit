@@ -1,18 +1,19 @@
+---
 kind: "AuthorizationPolicy"
 api_family: "policy.linkerd.io"
 default_command: "linkerdauthorizationpolicies"
 command:
-- "linkerdauthorizationpolicy"
-- "ldauthpolicies"
-- "ldauthpolicy"
-- "ldauthpols"
-- "ldauthpol"
-- "authorizationpolicies.linkerd"
-- "authorizationpolicy.linkerd"
-- "authpolicies.linkerd"
-- "authpolicy.linkerd"
-- "authpols.linkerd"
-- "authpol.linkerd"
+  - "linkerdauthorizationpolicy"
+  - "ldauthpolicies"
+  - "ldauthpolicy"
+  - "ldauthpols"
+  - "ldauthpol"
+  - "authorizationpolicies.linkerd"
+  - "authorizationpolicy.linkerd"
+  - "authpolicies.linkerd"
+  - "authpolicy.linkerd"
+  - "authpols.linkerd"
+  - "authpol.linkerd"
 listview:
   name: "Authorization Policies"
   group: "Network"
@@ -28,21 +29,24 @@ infoview:
         fields: ["target_ref"]
     rows:
       target_ref:
-        header: [["T", ["main", "infoheader_shortcut"]], ["arget Reference:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["arget Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#targetRef#kind"], ["spec#targetRef#group"], ["spec#targetRef#namespace", "metadata#namespace"], ["spec#targetRef#name"]]
-          pathtype: "tuple"
+          - path: [["spec#targetRef#kind"], ["spec#targetRef#group"],
+                   ["spec#targetRef#namespace", "metadata#namespace"],
+                   ["spec#targetRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
   shortcuts:
     "List Required Authentication References":
       key: "r"
@@ -56,10 +60,10 @@ infoview:
       itemgetter_args:
         path: "spec#requiredAuthenticationRefs"
         fields:
-        - "kind"
-        - "group"
-        - "namespace"
-        - "name"
+          - "kind"
+          - "group"
+          - "namespace"
+          - "name"
       selectable: true
       action: "call"
       action_call: "resourceinfodispatch_with_lookup"

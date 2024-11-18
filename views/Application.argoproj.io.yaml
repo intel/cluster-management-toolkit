@@ -1,9 +1,10 @@
+---
 kind: "Application"
 api_family: "argoproj.io"
 default_command: "applications.argoproj.io"
 command:
-- "argoapps"
-- "argoapp"
+  - "argoapps"
+  - "argoapp"
 listview:
   name: "Applications"
   group: "CI / CD"
@@ -22,12 +23,12 @@ listview:
           mappings:
             "Healthy":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     project:
       header: "Project:"
       path: "spec#project"
@@ -43,23 +44,31 @@ listview:
           mappings:
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
 infoview:
   name: "Application Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["project", "controller_namespace", "source_header", "source_path", "source_repo_url", "source_target_revision", "destination_header", "destination_namespace", "destination_server", "health"]
+        fields: ["project", "controller_namespace",
+                 "source_header", "source_path",
+                 "source_repo_url", "source_target_revision",
+                 "destination_header", "destination_namespace",
+                 "destination_server", "health"]
     rows:
       controller_namespace:
-        header: [["C", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["ntroller Namespace:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader"]],
+                 ["o", ["main", "infoheader_shortcut"]],
+                 ["ntroller Namespace:", ["main", "infoheader"]]]
         path: "status#controllerNamespace"
         type: "str"
       destination_header:
         header: [["Destination:", ["main", "infoheader"]]]
       destination_namespace:
-        header: [["  Name", ["main", "infoheader"]], ["s", ["main", "infoheader_shortcut"]], ["pace:", ["main", "infoheader"]]]
+        header: [["  Name", ["main", "infoheader"]],
+                 ["s", ["main", "infoheader_shortcut"]],
+                 ["pace:", ["main", "infoheader"]]]
         path: "spec#destination#namespace"
         type: "str"
       destination_server:
@@ -76,14 +85,15 @@ infoview:
             mappings:
               "Healthy":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       project:
-        header: [["P", ["main", "infoheader_shortcut"]], ["roject:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["roject:", ["main", "infoheader"]]]
         path: "spec#project"
         default: "default"
         type: "str"
@@ -94,12 +104,14 @@ infoview:
         path: "spec#source#path"
         type: "str"
       source_repo_url:
-        header: [["  Repo ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
+        header: [["  Repo ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
         path: "spec#source#repoURL"
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
       source_target_revision:
         header: [["  Target Revision:", ["main", "infoheader"]]]
         path: "spec#source#targetRevision"

@@ -1,9 +1,10 @@
+---
 kind: "Application"
 api_family: "app.k8s.io"
 default_command: "applications"
 command:
-- "apps"
-- "app"
+  - "apps"
+  - "app"
 listview:
   name: "Applications"
   group: "API & Extendability"
@@ -22,13 +23,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Application Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["add_ownerref", "label_selector", "kinds", "keywords", "type", "version"]
+        fields: ["add_ownerref", "label_selector",
+                 "kinds", "keywords", "type", "version"]
     rows:
       add_ownerref:
         header: [["Add ownerRef:", ["main", "infoheader"]]]
@@ -43,32 +45,32 @@ infoview:
       kinds:
         header: [["Kinds:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#componentKinds"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "group"
-          type: ["kind", "api_group"]
+          - path: "spec#componentKinds"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "group"
+            type: ["kind", "api_group"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separator:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#descriptor#type"
@@ -79,7 +81,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     on_activation:
       call: "resourceinfodispatch_with_lookup"
@@ -102,16 +104,16 @@ infoview:
       kind:
         header: "Kind:"
         paths:
-        - path: [["kind"], ["group"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group"]
+          - path: [["kind"], ["group"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separator:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       link:
         header: "Link:"
         path: "link"
@@ -130,16 +132,16 @@ infoview:
             mappings:
               "Ready":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "InProgress":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "__default":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "Description":
       key: "d"
@@ -162,8 +164,8 @@ infoview:
       itemgetter_args:
         path: "spec#descriptor#links"
         fields:
-        - "description"
-        - "url"
+          - "description"
+          - "url"
     "Maintainers":
       key: "m"
       helptext: "Show maintainers"
@@ -175,8 +177,8 @@ infoview:
       itemgetter_args:
         path: "spec#descriptor#maintainers"
         fields:
-        - "name"
-        - "email"
+          - "name"
+          - "email"
     "Owners":
       key: "o"
       helptext: "Show owners"
@@ -188,5 +190,5 @@ infoview:
       itemgetter_args:
         path: "spec#descriptor#owners"
         fields:
-        - "name"
-        - "email"
+          - "name"
+          - "email"

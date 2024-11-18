@@ -1,9 +1,10 @@
+---
 kind: "Event"
 api_family: "management.loft.sh"
 default_command: "event.management"
 command:
-- "event.management"
-- "ev.mgmnt"
+  - "event.management"
+  - "ev.mgmnt"
 listview:
   name: "Events"
   group: "Lôft"
@@ -15,9 +16,9 @@ listview:
     age:
       header: "Age:"
       paths:
-      - path: "status#stageTimestamp"
-        type: "timestamp"
-        default: -1
+        - path: "status#stageTimestamp"
+          type: "timestamp"
+          default: -1
       formatter: "age"
       align: "right"
     audit_id:
@@ -31,19 +32,22 @@ listview:
     object_ref:
       header: "Object Reference:"
       paths:
-      - path: [["status#objectRef#resource"], ["status#objectRef#apiGroup"], ["status#objectRef#namespace"], ["status#objectRef#name", "status#requestObject#metadata#name"]]
-        pathtype: "tuple"
+        - path: [["status#objectRef#resource"], ["status#objectRef#apiGroup"],
+                 ["status#objectRef#namespace"],
+                 ["status#objectRef#name",
+                  "status#requestObject#metadata#name"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "namespace"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
-        - type: "namespace"
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
     stage:
       header: "Stage:"
       path: "status#stage"
@@ -62,28 +66,34 @@ infoview:
     creation_timestamp_path: "status#stageTimestamp"
     row_indexes:
       Normal:
-        fields: ["level", "object_ref", "request_uri", "useragent", "source_ips", "user", "status_header", "status_code", "status_status", "stage"]
+        fields: ["level", "object_ref", "request_uri", "useragent",
+                 "source_ips", "user", "status_header", "status_code",
+                 "status_status", "stage"]
     rows:
       level:
         header: [["Level:", ["main", "infoheader"]]]
         path: "status#level"
         type: "str"
       object_ref:
-        header: [["O", ["main", "infoheader_shortcut"]], ["bject Reference:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["bject Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#objectRef#resource"], ["status#objectRef#apiGroup"], ["status#objectRef#namespace"], ["status#objectRef#name", "status#requestObject#metadata#name"]]
-          pathtype: "tuple"
+          - path: [["status#objectRef#resource"], ["status#objectRef#apiGroup"],
+                   ["status#objectRef#namespace"],
+                   ["status#objectRef#name",
+                    "status#requestObject#metadata#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind_api_group"
+            - type: "kind"
+            - type: "namespace"
       request_uri:
         header: [["Request URI:", ["main", "infoheader"]]]
         path: "status#requestURI"
@@ -91,8 +101,8 @@ infoview:
       source_ips:
         header: [["Source IPs:", ["main", "infoheader"]]]
         paths:
-        - path: "status#sourceIPs"
-          pathtype: "list"
+          - path: "status#sourceIPs"
+            pathtype: "list"
         formatter: "address"
       stage:
         header: [["Status:", ["main", "infoheader"]]]
@@ -106,26 +116,26 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 100
-              max: 199
-              field_colors:
-              - context: "main"
-                type: "status_pending"
-            - min: 200
-              max: 299
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - min: 300
-              max: 399
-              field_colors:
-              - context: "main"
-                type: "status_pending"
-            - min: 400
-              max: 599
-              field_colors:
-              - context: "main"
-                type: "status_not_ok"
+              - min: 100
+                max: 199
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              - min: 200
+                max: 299
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - min: 300
+                max: 399
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              - min: 400
+                max: 599
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
       status_header:
         header: [["Status:", ["main", "infoheader"]]]
       status_status:
@@ -133,7 +143,8 @@ infoview:
         path: "status#responseStatus#status"
         type: "str"
       user:
-        header: [["U", ["main", "infoheader_shortcut"]], ["ser:", ["main", "infoheader"]]]
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["ser:", ["main", "infoheader"]]]
         path: "status#user#username"
         type: "str"
       useragent:
@@ -153,7 +164,8 @@ infoview:
         kind_path: "status#objectRef#resource"
         api_family_path: "status#objectRef#apiGroup"
         namespace_path: "status#objectRef#namespace"
-        name_path: ["status#objectRef#name", "status#requestObject#metadata#name"]
+        name_path: ["status#objectRef#name",
+                    "status#requestObject#metadata#name"]
     "User Info":
       key: "u"
       modifier: "shift"
