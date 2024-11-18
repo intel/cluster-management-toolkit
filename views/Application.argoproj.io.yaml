@@ -1,0 +1,148 @@
+kind: "Application"
+api_family: "argoproj.io"
+default_command: "applications.argoproj.io"
+command:
+- "argoapps"
+- "argoapp"
+listview:
+  name: "Applications"
+  group: "CI / CD"
+  field_indexes:
+    Normal:
+      fields: ["namespace", "name", "project", "sync_status", "health", "age"]
+      sortcolumn: "namespace"
+  fields:
+    health:
+      header: "Health:"
+      path: "status#health#status"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Healthy":
+              field_colors:
+              - context: "main"
+                type: "status_ok"
+            "Unknown":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+    project:
+      header: "Project:"
+      path: "spec#project"
+      default: "default"
+      type: "str"
+    sync_status:
+      header: "Sync Status:"
+      path: "status#sync#status"
+      type: "str"
+      formatter: "value_mapper"
+      formatting:
+        mapping:
+          mappings:
+            "Unknown":
+              field_colors:
+              - context: "main"
+                type: "status_unknown"
+infoview:
+  name: "Application Info"
+  infopad:
+    row_indexes:
+      Normal:
+        fields: ["project", "controller_namespace", "source_header", "source_path", "source_repo_url", "source_target_revision", "destination_header", "destination_namespace", "destination_server", "health"]
+    rows:
+      controller_namespace:
+        header: [["C", ["main", "infoheader"]], ["o", ["main", "infoheader_shortcut"]], ["ntroller Namespace:", ["main", "infoheader"]]]
+        path: "status#controllerNamespace"
+        type: "str"
+      destination_header:
+        header: [["Destination:", ["main", "infoheader"]]]
+      destination_namespace:
+        header: [["  Name", ["main", "infoheader"]], ["s", ["main", "infoheader_shortcut"]], ["pace:", ["main", "infoheader"]]]
+        path: "spec#destination#namespace"
+        type: "str"
+      destination_server:
+        header: [["  Server:", ["main", "infoheader"]]]
+        path: "spec#destination#server"
+        type: "str"
+      health:
+        header: [["Health:", ["main", "infoheader"]]]
+        path: "status#health#status"
+        type: "str"
+        formatter: "value_mapper"
+        formatting:
+          mapping:
+            mappings:
+              "Healthy":
+                field_colors:
+                - context: "main"
+                  type: "status_ok"
+              "Unknown":
+                field_colors:
+                - context: "main"
+                  type: "status_unknown"
+      project:
+        header: [["P", ["main", "infoheader_shortcut"]], ["roject:", ["main", "infoheader"]]]
+        path: "spec#project"
+        default: "default"
+        type: "str"
+      source_header:
+        header: [["Source:", ["main", "infoheader"]]]
+      source_path:
+        header: [["  Path:", ["main", "infoheader"]]]
+        path: "spec#source#path"
+        type: "str"
+      source_repo_url:
+        header: [["  Repo ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
+        path: "spec#source#repoURL"
+        type: "str"
+        formatting:
+          field_colors:
+          - type: "url"
+      source_target_revision:
+        header: [["  Target Revision:", ["main", "infoheader"]]]
+        path: "spec#source#targetRevision"
+        type: "str"
+  shortcuts:
+    "Open controller Namespace":
+      key: "o"
+      read_only: true
+      helptext: "Open controller Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "status#controllerNamespace"
+    "Open destination Namespace":
+      key: "s"
+      read_only: true
+      helptext: "Open destionation Namespace"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "Namespace"
+        name_path: "spec#destination#namespace"
+    "Open Project":
+      key: "p"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open Project"
+      action: "call"
+      action_call: "resourceinfodispatch_with_lookup"
+      action_args:
+        _pass_obj: true
+        kind: "AppProject"
+        api_family: "argoproj.io"
+        name_path: "spec#project"
+        namespace_path: "metadata#namespace"
+    "Open source repo URL":
+      key: "u"
+      modifier: "shift"
+      read_only: true
+      helptext: "Open source repo URL in browser"
+      action: "execute"
+      action_args:
+        command: ["xdg-open", ["spec#source#repoURL"]]
