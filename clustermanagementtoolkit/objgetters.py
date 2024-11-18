@@ -75,17 +75,15 @@ def objgetter_journalctl_log(obj: list[dict]) -> dict:
     return data
 
 
-def objgetter_ansible_log(obj: dict[str, Any]) -> dict:
+def objgetter_ansible_log(path: FilePath) -> dict:
     """
-    Get an obj from an ansible log entry
+    Get an obj from an ansible log entry.
 
         Parameters:
-            obj (dict[str, Any]): The obj to use as reference
-                ref (FilePath): The base path of the ansible log entry
+            obj (FilePath): The path to the ansible log
         Returns:
             (dict): An ansible log entry
     """
-    path: FilePath = deep_get(obj, DictPath("ref"))
     tmpobj: dict[str, Any] = secure_read_yaml(path.joinpath("metadata.yaml"))
     tmpobj["log_path"] = str(path)
 

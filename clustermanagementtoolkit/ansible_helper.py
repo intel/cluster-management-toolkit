@@ -76,8 +76,8 @@ def get_playbook_path(playbook: FilePath | str) -> FilePath:
     """
     path = ""
 
-    if not isinstance(playbook, str):
-        raise TypeError(f"playbook is type: {type(playbook)}, expected str")
+    if not isinstance(playbook, (FilePath, str)):
+        raise TypeError(f"playbook is type: {type(playbook)}, expected FilePath | str")
     if not playbook:
         raise ValueError("len(playbook) == 0; expected a filename")
 
@@ -1714,7 +1714,7 @@ def ansible_ping(selection: list[str]) -> list[tuple[str, str]]:
         validate_args(kwargs_spec={"__allof": ("selection",), "selection": {"types": (list,)}},
                       kwargs={"selection": selection})
 
-    playbook_path = get_playbook_path("ping.yaml")
+    playbook_path = get_playbook_path(FilePath("ping.yaml"))
     _retval, ansible_results = ansible_run_playbook_on_selection(playbook_path,
                                                                  selection=selection, quiet=False)
 

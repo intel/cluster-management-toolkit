@@ -2066,6 +2066,10 @@ def test_ansible_ping(verbose: bool = False) -> Tuple[str, bool]:
             selection, expected_result, expected_exception = indata
             try:
                 tmp = fun(selection)
+                if tmp and len(tmp[0]) > 1 and tmp[0][1].startswith("UNREACHABLE (unknown"):
+                    print(f"Warning: ping returned {tmp[0][1]}; "
+                          "this is most likely a routing problem")
+                    continue
                 if tmp != expected_result:
                     message = f"{fun.__name__}() did not yield expected result:\n" \
                               f"      selection: {selection}\n" \
@@ -2202,7 +2206,7 @@ def main() -> int:
 
     init_ansithemeprint(themefile=None)
     cmtlib.read_cmtconfig()
-    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), TEST_PLAYBOOKS_DIR,
+    deep_set(cmtlib.cmtconfig, DictPath("Ansible#local_playbooks"), [TEST_PLAYBOOKS_DIR],
              create_path=True)
 
     # How many non-prepare testcases do we have?
