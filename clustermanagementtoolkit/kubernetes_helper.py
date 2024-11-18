@@ -489,7 +489,7 @@ def guess_kind(kind: str | tuple[str, str]) -> tuple[str, str]:
 
     if isinstance(kind, str):
         if "." in kind:
-            kind = cast(tuple[str, str], tuple(kind.split(".", maxsplit=1)[0:1]))
+            kind = cast(tuple[str, str], tuple(kind.split(".", maxsplit=1)[0:2]))
         else:
             kind = (kind, "")
 

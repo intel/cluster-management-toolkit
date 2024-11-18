@@ -105,6 +105,7 @@ def test_guess_kind(verbose: bool = False) -> Tuple[str, bool]:
             (("cronjobs", "batch"), ("CronJob", "batch"), None),
             (("CronJob", ""), ("CronJob", "batch"), None),
             (("DaemonSet", ""), ("DaemonSet", "apps"), None),
+            (("daemonsets", "apps"), ("DaemonSet", "apps"), None),
             ("daemonsets.apps", ("DaemonSet", "apps"), None),
             (("GpuAllocationState", ""), ("GpuAllocationState", "gpu.resource.intel.com"), None),
             (("Workflow", ""), None, NameError),
