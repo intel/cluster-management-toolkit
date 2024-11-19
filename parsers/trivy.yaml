@@ -2,36 +2,36 @@
 - name: "trivy"
   show_in_selector: false
   matchkeys:
-  - pod_name: "trivy-operator"
-    container_name: "trivy-operator"
+    - pod_name: "trivy-operator"
+      container_name: "trivy-operator"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "json"
-    options:
-      errors:
-      - "error"
-      - "status.reason"
-      versions:
-      - "Version"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "json"
+      options:
+        errors:
+          - "error"
+          - "status.reason"
+        versions:
+          - "Version"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
 - name: "trivy"
   show_in_selector: false
   matchkeys:
-  - pod_name: "scan-vulnerabilityreport"
-    container_type: "init_container"
+    - pod_name: "scan-vulnerabilityreport"
+      container_type: "init_container"
   parser_rules:
-  - name: "strip_ansicodes"
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\s*([A-Z]{4})\s+(.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      message:
-        field: 2
+    - name: "strip_ansicodes"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\s*([A-Z]{4})\s+(.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        message:
+          field: 2

@@ -2,30 +2,30 @@
 - name: "traefik-ingress-controller"
   show_in_selector: false
   matchkeys:
-  - pod_name: "traefik-ingress-controller"
+    - pod_name: "traefik-ingress-controller"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Traefik version"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Traefik version"
+          loglevel: "notice"
 - name: "traefik-mesh-proxy"
   show_in_selector: false
   matchkeys:
-  - pod_name: "traefik-mesh-proxy"
+    - pod_name: "traefik-mesh-proxy"
   parser_rules:
-  - name: "key_value"
+    - name: "key_value"
 - name: "traefik"
   show_in_selector: false
   matchkeys:
-  - pod_name: "traefik"
+    - pod_name: "traefik"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
