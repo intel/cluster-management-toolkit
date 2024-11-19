@@ -2,51 +2,51 @@
 - name: "xpu-manager"
   show_in_selector: false
   matchkeys:
-  - pod_name: "intel-xpumanager"
-    container_name: "xpumd"
-  - pod_name: "xpu-manager"
-    container_name: "xpumd"
+    - pod_name: "intel-xpumanager"
+      container_name: "xpumd"
+    - pod_name: "xpu-manager"
+      container_name: "xpumd"
   parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([A-Z])\] (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      message:
-        field: 2
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[([A-Z])\] (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        message:
+          field: 2
 - name: "xpu-manager"
   show_in_selector: false
   matchkeys:
-  - pod_name: "intel-xpumanager"
-    container_name: "python-exporter"
-  - pod_name: "xpu-manager"
-    container_name: "python-exporter"
+    - pod_name: "intel-xpumanager"
+      container_name: "python-exporter"
+    - pod_name: "xpu-manager"
+      container_name: "python-exporter"
   parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d+\] \[([A-Z]{4})\] (.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\[(\S+?)\] \[([A-Z]{4})\] (.*)'
-      facility:
-        fields:
-        - 1
-      severity:
-        field: 2
-        transform: "4letter"
-      message:
-        field: 3
-  - name: "python_traceback"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Starting gunicorn"
-      loglevel: "notice"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d+\] \[([A-Z]{4})\] (.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^\[(\S+?)\] \[([A-Z]{4})\] (.*)'
+        facility:
+          fields:
+            - 1
+        severity:
+          field: 2
+          transform: "4letter"
+        message:
+          field: 3
+    - name: "python_traceback"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Starting gunicorn"
+          loglevel: "notice"

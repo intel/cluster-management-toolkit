@@ -2,16 +2,16 @@
 - name: "route-controller-maanger"
   show_in_selector: false
   matchkeys:
-  - pod_name: "route-controller-manager"
+    - pod_name: "route-controller-manager"
   parser_rules:
-  - name: "glog"
-  - name: "expand_event"
-  - name: "key_value_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Starting controllers on "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "expand_event"
+    - name: "key_value_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Starting controllers on "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

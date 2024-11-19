@@ -2,18 +2,18 @@
 - name: "tigera"
   show_in_selector: false
   matchkeys:
-  - container_name: "tigera-operator"
+    - container_name: "tigera-operator"
   parser_rules:
-  - name: "glog"
-  - name: "ts_8601"
-  - name: "bracketed_severity"
-  - name: "json"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "bracketed_severity"
+    - name: "json"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

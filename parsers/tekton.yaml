@@ -2,21 +2,21 @@
 - name: "tekton"
   show_in_selector: false
   matchkeys:
-  - pod_name: "tekton-triggers"
-  - pod_name: "tekton-pipelines"
+    - pod_name: "tekton-triggers"
+    - pod_name: "tekton-pipelines"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "json"
-    options:
-      severities:
-      - "level"
-      - "severity"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "json"
+      options:
+        severities:
+          - "level"
+          - "severity"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

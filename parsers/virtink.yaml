@@ -2,16 +2,16 @@
 - name: "virtink"
   show_in_selector: false
   matchkeys:
-  - image_name: "/smartxworks/virt-controller"
-  - image_name: "/smartxworks/virt-daemon"
+    - image_name: "/smartxworks/virt-controller"
+    - image_name: "/smartxworks/virt-daemon"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
-    options:
-      errors:
-      - "error"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "tab_separated"
+      options:
+        errors:
+          - "error"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

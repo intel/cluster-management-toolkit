@@ -2,18 +2,18 @@
 - name: "wordpress"
   show_in_selector: false
   matchkeys:
-  - container_name: "wordpress"
+    - container_name: "wordpress"
   parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      # yamllint disable-line rule:line-length
-      regex: '^\[[A-Z][a-z][a-z]\s[A-Z][a-z]*\s\d*\s\d\d:\d\d:\d\d\.\d{6}\s\d{4}\]\s\[([^:]*):([^]]*)\]\s(.*)'
-      severity:
-        field: 2
-        transform: "str"
-      facility:
-        fields:
-        - 1
-      message:
-        field: 3
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\[[A-Z][a-z][a-z]\s[A-Z][a-z]*\s\d*\s\d\d:\d\d:\d\d\.\d{6}\s\d{4}\]\s\[([^:]*):([^]]*)\]\s(.*)'
+        severity:
+          field: 2
+          transform: "str"
+        facility:
+          fields:
+            - 1
+        message:
+          field: 3

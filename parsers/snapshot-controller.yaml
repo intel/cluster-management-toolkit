@@ -2,11 +2,11 @@
 - name: "snapshot-controller"
   show_in_selector: false
   matchkeys:
-  - pod_name: "snapshot-controller"
+    - pod_name: "snapshot-controller"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: "
-      loglevel: "notice"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: "
+          loglevel: "notice"

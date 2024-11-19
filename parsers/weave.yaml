@@ -2,95 +2,95 @@
 - name: "weave"
   show_in_selector: false
   matchkeys:
-  - pod_name: "weave-scope-agent"
-  - pod_name: "weave-scope-app"
-  - pod_name: "weave-scope-cluster-agent"
+    - pod_name: "weave-scope-agent"
+    - pod_name: "weave-scope-app"
+    - pod_name: "weave-scope-cluster-agent"
   parser_rules:
-  - name: "key_value"
-  - name: "angle_bracketed_facility"
-  - name: "custom_splitter"
-    options:
-      # yamllint disable-line rule:line-length
-      regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
-      severity:
-        field: 1
-        transform: "int"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "probe starting, version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "app starting, version"
-      loglevel: "notice"
+    - name: "key_value"
+    - name: "angle_bracketed_facility"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
+        severity:
+          field: 1
+          transform: "int"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "probe starting, version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "app starting, version"
+          loglevel: "notice"
 - name: "weave"
   show_in_selector: false
   matchkeys:
-  - pod_name: "weave-net"
-    container_name: "weave-npc"
+    - pod_name: "weave-net"
+      container_name: "weave-npc"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]{4}): (.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      message:
-        field: 2
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      # yamllint disable-line rule:line-length
-      regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
-      severity:
-        field: 1
-        transform: "int"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Starting Weaveworks NPC"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "WARNING"
-      loglevel: "warning"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-  - name: "json_event"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]{4}): (.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        message:
+          field: 2
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
+        severity:
+          field: 1
+          transform: "int"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Starting Weaveworks NPC"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "WARNING"
+          loglevel: "warning"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+    - name: "json_event"
 - name: "weave"
   show_in_selector: false
   matchkeys:
-  - pod_name: "weave-net"
-    container_name: "weave"
+    - pod_name: "weave-net"
+      container_name: "weave"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]{4}): (.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      message:
-        field: 2
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "weave  "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Error checking version"
-      loglevel: "warning"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]{4}): (.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        message:
+          field: 2
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "weave  "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Error checking version"
+          loglevel: "warning"

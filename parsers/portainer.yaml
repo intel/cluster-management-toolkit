@@ -2,26 +2,26 @@
 - name: "portainer"
   show_in_selector: false
   matchkeys:
-  - pod_name: "portainer"
+    - pod_name: "portainer"
   parser_rules:
-  - name: "key_value"
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^(server): (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([A-Z]+)\] \[([^]]+)\] (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
+    - name: "key_value"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^(server): (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^\[([A-Z]+)\] \[([^]]+)\] (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3

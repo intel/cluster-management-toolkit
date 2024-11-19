@@ -2,18 +2,18 @@
 - name: "volcano"
   show_in_selector: false
   matchkeys:
-  - pod_name: "volcano-admission"
-  - pod_name: "volcano-controllers"
-  - pod_name: "volcano-scheduler"
-  - image_name: "/volcanosh/numatopo"
+    - pod_name: "volcano-admission"
+    - pod_name: "volcano-controllers"
+    - pod_name: "volcano-scheduler"
+    - image_name: "/volcanosh/numatopo"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
