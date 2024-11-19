@@ -2,6 +2,8 @@
 apiVersion: "v1alpha4"
 kind: "ClusterDeployment"
 
+# yamllint disable rule:comments-indentation
+
 # Note: templated installs are only supported for kubeadm and rke2 at the moment
 # This configuration uses:
 #   ClusterConfiguration kubeadm.k8s.io/v1beta3 [Kubernetes 1.23+]
@@ -361,6 +363,7 @@ nodes:
 
       joinConfiguration:
         # Embedded node configuration template:
+        # yamllint disable rule:line-length
         data: |
           apiVersion: kubeadm.k8s.io/v1beta3
           kind: JoinConfiguration
@@ -391,10 +394,8 @@ nodes:
               - "sha256:{{ ca_cert_hash }}"
               # This will be auto-populated; only change if you know what
               # you're doing
-              apiServerEndpoint: "\
-                {{ control_plane_ip }}:\
-                {{ control_plane_port }}\
-                {{ control_plane_path }}"
+              apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+        # yamllint enable rule:line-length
 
         # Path to node configuration template, relative to the playbook
         # directory:
@@ -560,6 +561,7 @@ nodes:
 
     #       joinConfiguration:
     #         # Embedded node configuration template:
+              # yamllint disable rule:line-length
     #         data: |
     #           apiVersion: kubeadm.k8s.io/v1beta3
     #           kind: JoinConfiguration
@@ -591,10 +593,8 @@ nodes:
     #               - "sha256:{{ ca_cert_hash }}"
     #               # This will be auto-populated; only change if you know what
     #               # you're doing
-    #               apiServerEndpoint: "\
-    #                 {{ control_plane_ip }}:\
-    #                 {{ control_plane_port }}\
-    #                 {{ control_plane_path }}"
+    #               apiServerEndpoint: "{{ control_plane_ip }}:{{ control_plane_port }}{{ control_plane_path }}"
+              # yamllint enable rule:line-length
 
     #         # Path to node configuration template, relative to the playbook
     #         directory:
@@ -639,7 +639,7 @@ workloads:
           # substituted for the value
           # of the version field.
           # [optional; default: ""]
-          version: "v0.16.5"
+          version: "v0.16.6"
           # The URI[s] to the data;
           # this field can be either a string (a single URI) or a list (a single
           # or multiple URIs)
@@ -650,10 +650,8 @@ workloads:
           # file://
           # {HOME} is substituted for the path to the home directory of the user
           # [mandatory]
-          uri: "\
-            https://github.com/kubernetes-sigs/\
-            node-feature-discovery/deployment/\
-            overlays/default?ref=<<<version>>>"
+          # yamllint disable-line rule:line-length
+          uri: "https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=<<<version>>>"
   - name: "cert-manager"
     description: |
       cert-manager adds certificates and certificate issuers as resource types
@@ -664,10 +662,8 @@ workloads:
           method: "apply"
           type: "file"
           version: "v1.16.1"
-          uri: "\
-            https://github.com/cert-manager/\
-            cert-manager/releases/download/<<<version>>>/\
-            cert-manager.crds.yaml"
+          # yamllint disable-line rule:line-length
+          uri: "https://github.com/cert-manager/cert-manager/releases/download/<<<version>>>/cert-manager.crds.yaml"
       - helm:
           # The name of the helm repo to add
           repoName: "jetstack"
@@ -688,12 +684,14 @@ workloads:
       Intel GPU resource driver is a better alternative for Intel GPU device
       plugin, facilitating workload offloading by providing GPU access on
       Kubernetes cluster worker nodes.
+    # If you enable this you need to enable DRA support too and use Kubernetes 1.31 or newer
+    skip: true
     deployments:
       - git:
           # The repository to clone (if not already available locally)
           # [optional; the program will exit if no local checkout exists]
-          repo: "\
-            https://github.com/intel/intel-resource-drivers-for-kubernetes.git"
+          # yamllint disable-line rule:line-length
+          repo: "https://github.com/intel/intel-resource-drivers-for-kubernetes.git"
           # The directory to store the repository in
           # [mandatory]
           destination: "{HOME}/git/intel-resource-drivers-for-kubernetes"
