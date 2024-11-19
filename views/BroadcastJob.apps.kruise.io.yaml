@@ -3,14 +3,16 @@ kind: "BroadcastJob"
 api_family: "apps.kruise.io"
 default_command: "broadcastjobs"
 command:
-- "bcastjobs"
-- "bcastjob"
+  - "bcastjobs"
+  - "bcastjob"
 listview:
   name: "Broadcast Jobs"
   group: "Kruise"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "controller", "desired_replicas", "active_replicas", "succeeded_replicas", "failed_replicas", "phase", "age"]
+      fields: ["namespace", "name", "controller", "desired_replicas",
+               "active_replicas", "succeeded_replicas", "failed_replicas",
+               "phase", "age"]
       sortcolumn: "namespace"
   fields:
     active_replicas:
@@ -20,31 +22,31 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: ["<none>"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     desired_replicas:
       header: "Desired:"
       path: "status#desired"
@@ -52,7 +54,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     failed_replicas:
       header: "Failed:"
@@ -63,20 +65,20 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       align: "right"
     phase:
       header: "Phase:"
@@ -88,20 +90,20 @@ listview:
           mappings:
             "completed":
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             "failed":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "paused":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     succeeded_replicas:
       header: "Succeeded:"
       path: "status#succeeded"
@@ -111,22 +113,27 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
       align: "right"
 infoview:
   name: "Broadcast Job Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "completion_policy_header", "completion_policy_active_deadline_seconds", "completion_policy_ttl_seconds_after_finished", "completion_policy_type", "failure_policy_header", "failure_policy_restart_limit", "failure_policy_type", "parallelism", "replicas", "phase"]
+        fields: ["controller", "completion_policy_header",
+                 "completion_policy_active_deadline_seconds",
+                 "completion_policy_ttl_seconds_after_finished",
+                 "completion_policy_type", "failure_policy_header",
+                 "failure_policy_restart_limit", "failure_policy_type",
+                 "parallelism", "replicas", "phase"]
     rows:
       completion_policy_active_deadline_seconds:
         header: [["  Active Deadline Seconds:", ["main", "infoheader"]]]
@@ -135,7 +142,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       completion_policy_header:
         header: [["Completion Policy:", ["main", "infoheader"]]]
       completion_policy_ttl_seconds_after_finished:
@@ -145,34 +152,35 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       completion_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#completionPolicy#type"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       failure_policy_header:
         header: [["Failure Policy:", ["main", "infoheader"]]]
       failure_policy_restart_limit:
@@ -182,7 +190,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       failure_policy_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#failurePolicy#type"
@@ -194,7 +202,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -205,45 +213,48 @@ infoview:
             mappings:
               "completed":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "paused":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#desired"], " Desired", ["status#active"], " Active", ["status#failed"], " Failed", ["status#succeeded"], " Succeeded"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, ""]
+          - path: [["status#desired"], " Desired",
+                   ["status#active"], " Active",
+                   ["status#failed"], " Failed",
+                   ["status#succeeded"], " Succeeded"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
   shortcuts:
     "Open controller":
       key: "c"

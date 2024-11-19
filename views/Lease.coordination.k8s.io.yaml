@@ -26,7 +26,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["holder_identity", "lease_duration", "lease_transitions", "acquire_time", "renew_time"]
+        fields: ["holder_identity", "lease_duration", "lease_transitions",
+                 "acquire_time", "renew_time"]
     rows:
       acquire_time:
         header: [["Acquire Time:", ["main", "infoheader"]]]
@@ -34,7 +35,9 @@ infoview:
         type: "timestamp"
         formatter: "timestamp"
       holder_identity:
-        header: [["Holder ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
+        header: [["Holder ", ["main", "infoheader"]],
+                 ["I", ["main", "infoheader_shortcut"]],
+                 ["dentity:", ["main", "infoheader"]]]
         path: "spec#holderIdentity"
         type: "str"
       lease_duration:

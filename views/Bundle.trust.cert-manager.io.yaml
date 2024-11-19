@@ -7,86 +7,87 @@ listview:
   group: "Certificate Management"
   field_indexes:
     Normal:
-      fields: ["name", "secret_target", "configmap_target", "condition_synced", "condition_synced_reason", "age", "condition_synced_message"]
+      fields: ["name", "secret_target", "configmap_target", "condition_synced",
+               "condition_synced_reason", "age", "condition_synced_message"]
   fields:
     condition_synced:
       header: "Synced:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Synced"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Synced"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     condition_synced_message:
       header: "Message:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Synced"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Synced"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     condition_synced_reason:
       header: "Reason:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "reason"
-        when:
-        - key: "type"
-          eq: "Synced"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+            - key: "type"
+              eq: "Synced"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     configmap_target:
       header: "ConfigMap Target:"
       path: "spec#target#configMap#key"
@@ -102,116 +103,119 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["secret_target", "configmap_target", "additional_formats", "namespace_label_selector", "condition_synced", "condition_synced_reason", "condition_synced_message"]
+        fields: ["secret_target", "configmap_target", "additional_formats",
+                 "namespace_label_selector", "condition_synced",
+                 "condition_synced_reason", "condition_synced_message"]
     rows:
       additional_formats:
         header: [["Additional Formats:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#target#additionalFormats"
-          pathtype: "key_value"
-          subpaths:
-          - "key"
-          default: ["<none>"]
+          - path: "spec#target#additionalFormats"
+            pathtype: "key_value"
+            subpaths:
+              - "key"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       condition_synced:
         header: [["Synced:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Synced"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Synced"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       condition_synced_message:
         header: [["Message:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "Synced"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Synced"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       condition_synced_reason:
         header: [["Reason:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "reason"
-          when:
-          - key: "type"
-            eq: "Synced"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "reason"
+            when:
+              - key: "type"
+                eq: "Synced"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       configmap_target:
-        header: [["C", ["main", "infoheader_shortcut"]], ["onfigMap Target:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["onfigMap Target:", ["main", "infoheader"]]]
         path: "spec#target#configMap#key"
         default: "<unset>"
         type: "str"
       namespace_label_selector:
         header: [["Namespace Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#target#namespaceSelector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#target#namespaceSelector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       secret_target:
         header: [["Secret Target:", ["main", "infoheader"]]]
         path: "spec#target#secret#key"

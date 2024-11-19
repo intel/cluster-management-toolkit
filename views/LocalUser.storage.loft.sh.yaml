@@ -3,7 +3,7 @@ kind: "LocalUser"
 api_family: "storage.loft.sh"
 default_command: "localusers.storage"
 command:
-- "localuser.storage"
+  - "localuser.storage"
 listview:
   name: "Local Users"
   group: "Lôft"
@@ -35,16 +35,18 @@ infoview:
         path: "status#email"
         type: "str"
       groups:
-        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["roups:", ["main", "infoheader"]]]
         paths:
-        - path: "status#groups"
-          pathtype: "list"
+          - path: "status#groups"
+            pathtype: "list"
         formatter: "list"
       teams:
-        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["eams:", ["main", "infoheader"]]]
         paths:
-        - path: "status#teams"
-          pathtype: "list"
+          - path: "status#teams"
+            pathtype: "list"
         formatter: "list"
       username:
         header: [["Username:", ["main", "infoheader"]]]

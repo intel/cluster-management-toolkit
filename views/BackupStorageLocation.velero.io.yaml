@@ -3,14 +3,15 @@ kind: "BackupStorageLocation"
 api_family: "velero.io"
 default_command: "backupstoragelocations"
 command:
-- "backstorelocs"
-- "backstoreloc"
+  - "backstorelocs"
+  - "backstoreloc"
 listview:
   name: "Backup Storage Locations"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "phase", "last_validated", "default", "age", "message"]
+      fields: ["namespace", "name", "phase", "last_validated",
+               "default", "age", "message"]
   fields:
     default:
       header: "Default:"
@@ -34,12 +35,12 @@ listview:
           mappings:
             "Available":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Unavailable":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Backup Storage Location Info"
   infopad:
@@ -69,12 +70,12 @@ infoview:
             mappings:
               "Available":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Unavailable":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       provider:
         header: [["Provider:", ["main", "infoheader"]]]
         path: "spec#provider"

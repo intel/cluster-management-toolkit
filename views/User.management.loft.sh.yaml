@@ -3,9 +3,9 @@ kind: "User"
 api_family: "management.loft.sh"
 default_command: "users.management"
 command:
-- "user.management"
-- "users.mgmnt"
-- "user.mgmnt"
+  - "user.management"
+  - "users.mgmnt"
+  - "user.mgmnt"
 listview:
   name: "Users"
   group: "Lôft"
@@ -32,12 +32,12 @@ listview:
           mappings:
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -50,7 +50,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["username", "display_name", "disabled", "email", "description", "password_ref", "groups", "teams"]
+        fields: ["username", "display_name", "disabled", "email",
+                 "description", "password_ref", "groups", "teams"]
     rows:
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -67,12 +68,12 @@ infoview:
             mappings:
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]
         path: "spec#displayName"
@@ -82,29 +83,33 @@ infoview:
         path: "spec#email"
         type: "str"
       groups:
-        header: [["G", ["main", "infoheader_shortcut"]], ["roups:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["roups:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#groups"
-          pathtype: "list"
+          - path: "spec#groups"
+            pathtype: "list"
         formatter: "list"
       password_ref:
-        header: [["P", ["main", "infoheader_shortcut"]], ["assword Reference:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["assword Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#passwordRef#secretNamespace"], ["spec#passwordRef#secretName"]]
-          pathtype: "tuple"
+          - path: [["spec#passwordRef#secretNamespace"],
+                   ["spec#passwordRef#secretName"]]
+            pathtype: "tuple"
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       teams:
-        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["eams:", ["main", "infoheader"]]]
         paths:
-        - path: "status#teams"
-          pathtype: "list"
+          - path: "status#teams"
+            pathtype: "list"
         formatter: "list"
       username:
         header: [["Username:", ["main", "infoheader"]]]
@@ -123,7 +128,7 @@ infoview:
       itemgetter_args:
         path: "spec#clusterRoles"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "clusterroles"
       action: "call"

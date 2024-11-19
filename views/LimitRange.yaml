@@ -2,8 +2,8 @@
 kind: "LimitRange"
 default_command: "limitranges"
 command:
-- "limits"
-- "lr"
+  - "limits"
+  - "lr"
 listview:
   name: "Limit Ranges"
   group: "Policy"
@@ -15,8 +15,8 @@ listview:
     created_at:
       header: "Created At:"
       paths:
-      - path: ["metadata#creationTimestamp"]
-        type: "timestamp"
+        - path: ["metadata#creationTimestamp"]
+          type: "timestamp"
       formatter: "timestamp"
       default: -1
 infoview:
@@ -29,7 +29,8 @@ infoview:
     infogetter: "get_limit_info"
     field_indexes:
       Normal:
-        fields: ["ltype", "name", "lmin", "lmax", "default_request", "default_limit", "max_lr_ratio"]
+        fields: ["ltype", "name", "lmin", "lmax", "default_request",
+                 "default_limit", "max_lr_ratio"]
     fields:
       default_limit:
         header: "Default Limit:"

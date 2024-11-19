@@ -7,7 +7,8 @@ listview:
   group: "Batch Scheduling"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "min_available", "scheduler", "queue", "age"]
+      fields: ["namespace", "name", "min_available", "scheduler",
+               "queue", "age"]
   fields:
     min_available:
       header: "Min Available:"
@@ -15,7 +16,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     queue:
       header: "Queue:"
@@ -37,7 +38,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["queue", "scheduler", "policies", "max_retries", "min_available"]
+        fields: ["queue", "scheduler", "policies", "max_retries",
+                 "min_available"]
     rows:
       max_retries:
         header: [["Max Retries:", ["main", "infoheader"]]]
@@ -45,7 +47,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       min_available:
         header: [["Min Available:", ["main", "infoheader"]]]
@@ -53,24 +55,26 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       policies:
-        header: [["P", ["main", "infoheader_shortcut"]], ["olicies:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["olicies:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#policies"
-          pathtype: "items"
-          subpaths:
-          - "event"
-          - "action"
+          - path: "spec#policies"
+            pathtype: "items"
+            subpaths:
+              - "event"
+              - "action"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       queue:
-        header: [["Q", ["main", "infoheader_shortcut"]], ["ueue:", ["main", "infoheader"]]]
+        header: [["Q", ["main", "infoheader_shortcut"]],
+                 ["ueue:", ["main", "infoheader"]]]
         path: "spec#queue"
         type: "str"
       scheduler:
@@ -102,8 +106,8 @@ infoview:
       itemgetter_args:
         path: "spec#policies"
         fields:
-        - "event"
-        - "action"
+          - "event"
+          - "action"
       # Not supported for now
       sortcolumn: "event"
     "Tasks":

@@ -3,24 +3,25 @@ kind: "LocalQueue"
 api_family: "kueue.x-k8s.io"
 default_command: "localqueues"
 command:
-- "localqs"
-- "localq"
+  - "localqs"
+  - "localq"
 listview:
   name: "Local Queues"
   group: "Batch Scheduling"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "cluster_queue", "admitted_workloads", "pending_workloads", "active", "age"]
+      fields: ["namespace", "name", "cluster_queue", "admitted_workloads",
+               "pending_workloads", "active", "age"]
   fields:
     active:
       header: "Active:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Active"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Active"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -28,19 +29,19 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     admitted_workloads:
       header: "Admitted Workloads:"
       path: "status#admittedWorkloads"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     cluster_queue:
       header: "Cluster Queue:"
@@ -52,24 +53,26 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Local Queue Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_queue", "stop_policy", "workloads_header", "workloads_admitted", "workloads_pending", "workloads_reserving", "active"]
+        fields: ["cluster_queue", "stop_policy", "workloads_header",
+                 "workloads_admitted", "workloads_pending",
+                 "workloads_reserving", "active"]
     rows:
       active:
         header: [["Active:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Active"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Active"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -77,14 +80,15 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       cluster_queue:
-        header: [["C", ["main", "infoheader_shortcut"]], ["luster Queue:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["luster Queue:", ["main", "infoheader"]]]
         path: "spec#clusterQueue"
         type: "str"
       stop_policy:
@@ -99,7 +103,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       workloads_pending:
         header: [["  Pending:", ["main", "infoheader"]]]
@@ -107,7 +111,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       workloads_reserving:
         header: [["  Reserving:", ["main", "infoheader"]]]
@@ -115,7 +119,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
   listpad:
     listgetter: "generic_listgetter"
@@ -127,14 +131,14 @@ infoview:
         cluster_queue:
           enabled: true
           allow:
-          - key: "spec#queueName"
-            values:
-              source: "caller"
-              path: "metadata#name"
-          - key: "metadata#namespace"
-            values:
-              source: "caller"
-              path: "metadata#namespace"
+            - key: "spec#queueName"
+              values:
+                source: "caller"
+                path: "metadata#name"
+            - key: "metadata#namespace"
+              values:
+                source: "caller"
+                path: "metadata#namespace"
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
@@ -142,7 +146,8 @@ infoview:
       api_family: "kueue.x-k8s.io"
     field_indexes:
       Normal:
-        fields: ["namespace", "name", "queue", "priority", "admitted_by", "age"]
+        fields: ["namespace", "name", "queue", "priority", "admitted_by",
+                 "age"]
     fields:
       admitted_by:
         header: "Admitted By:"
@@ -154,7 +159,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       queue:
         header: "Queue:"

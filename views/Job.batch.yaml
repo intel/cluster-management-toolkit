@@ -7,10 +7,14 @@ listview:
   group: "Workloads"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time_with_age", "completion_mode", "suspended", "containers_template"]
+      fields: ["namespace", "name", "controller", "completions", "duration",
+               "state", "age", "completion_time_with_age", "completion_mode",
+               "suspended", "containers_template"]
       sortcolumn: "state"
     Normal:
-      fields: ["namespace", "name", "controller", "completions", "duration", "state", "age", "completion_time", "completion_mode", "containers_template"]
+      fields: ["namespace", "name", "controller", "completions", "duration",
+               "state", "age", "completion_time", "completion_mode",
+               "containers_template"]
       sortcolumn: "state"
   fields:
     completion_mode:
@@ -21,16 +25,16 @@ listview:
     completions:
       header: "Completions:"
       paths:
-      - path: [["status#succeeded"], ["spec#completions"]]
-        pathtype: "tuple"
-        default: [0, 0]
+        - path: [["status#succeeded"], ["spec#completions"]]
+          pathtype: "tuple"
+          default: [0, 0]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         field_separators:
-        - type: "fraction"
+          - type: "fraction"
       align: "right"
     completion_time:
       header: "Completion Time:"
@@ -40,90 +44,91 @@ listview:
     completion_time_with_age:
       header: "Completion Time:"
       paths:
-      - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-        pathtype: "timestamp_with_age"
+        - paths: [["status#startTime"], " (", "Duration: ",
+                  ["status#completionTime"], ")"]
+          pathtype: "timestamp_with_age"
       formatter: "timestamp_with_age"
       formatting:
         field_colors:
-        # This is a meta-type, indicating where the timestamp goes
-        - type: "timestamp"
-        - type: "generic"
-        - type: "generic"
-        # This is a meta-type, indicating where the age goes
-        - type: "age"
-        - type: "generic"
+          # This is a meta-type, indicating where the timestamp goes
+          - type: "timestamp"
+          - type: "generic"
+          - type: "generic"
+          # This is a meta-type, indicating where the age goes
+          - type: "age"
+          - type: "generic"
     containers_template:
       header: "Containers:"
       paths:
-      - paths:
-        - "spec#template#spec#initContainers"
-        - "spec#template#spec#containers"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - subpath: "image"
-        type: "raw"
+        - paths:
+            - "spec#template#spec#initContainers"
+            - "spec#template#spec#containers"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - subpath: "image"
+          type: "raw"
       formatter: "list"
     controller:
       header: "Controller:"
       paths:
-      - path: "metadata#ownerReferences"
-        pathtype: "items"
-        subpaths:
-        - "kind"
-        - "apiVersion"
-        - "name"
-        when:
-        - key: "controller"
-          eq: true
-        type: ["kind", "api_group", "name"]
+        - path: "metadata#ownerReferences"
+          pathtype: "items"
+          subpaths:
+            - "kind"
+            - "apiVersion"
+            - "name"
+          when:
+            - key: "controller"
+              eq: true
+          type: ["kind", "api_group", "name"]
       default: ["<none>"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "generic"
+          - type: "kind"
+          - type: "api_group"
+          - type: "generic"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
+          - type: "kind_api_group"
+          - type: "kind"
     duration:
       header: "Duration:"
       paths:
-      - paths: [["status#startTime"], ["status#completionTime"]]
-        pathtype: "timediff"
+        - paths: [["status#startTime"], ["status#completionTime"]]
+          pathtype: "timediff"
       default: 0
       formatter: "age"
       align: "right"
     state:
       header: "State:"
       paths:
-      - path: "status"
-        pathtype: "substitution"
-        subpath: "active"
-        when:
-        - key: "active"
-          notnone: true
-        - key: "active"
-          gt: 0
-        substitute: "Running"
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "reason"
-        when:
-        - key: "type"
-          eq: "Failed"
-        - key: "status"
-          eq: "True"
-      - path: "status#conditions"
-        pathtype: "substitution"
-        subpath: "type"
-        when:
-        - key: "status"
-          eq: "True"
-        - key: "type"
-          eq: "Complete"
-        substitute: "Completed"
+        - path: "status"
+          pathtype: "substitution"
+          subpath: "active"
+          when:
+            - key: "active"
+              notnone: true
+            - key: "active"
+              gt: 0
+          substitute: "Running"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "reason"
+          when:
+            - key: "type"
+              eq: "Failed"
+            - key: "status"
+              eq: "True"
+        - path: "status#conditions"
+          pathtype: "substitution"
+          subpath: "type"
+          when:
+            - key: "status"
+              eq: "True"
+            - key: "type"
+              eq: "Complete"
+          substitute: "Completed"
       default: "<unset>"
       formatter: "value_mapper"
       formatting:
@@ -131,24 +136,24 @@ listview:
           mappings:
             Active:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Completed:
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
             __default:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     suspended:
       header: "Suspended:"
       path: "spec#suspend"
@@ -190,7 +195,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "label_selector", "label_selector_is_manual", "completions", "completion_time_with_age", "completion_mode", "suspended", "parallelism", "backoff_limit", "pod_failure_policy", "pod_replacement_policy", "state"]
+        fields: ["controller", "label_selector", "label_selector_is_manual",
+                 "completions", "completion_time_with_age", "completion_mode",
+                 "suspended", "parallelism", "backoff_limit",
+                 "pod_failure_policy", "pod_replacement_policy", "state"]
     rows:
       backoff_limit:
         header: [["Backoff Limit:", ["main", "infoheader"]]]
@@ -199,43 +207,44 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       completions:
         header: [["Completions:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#succeeded"], ["spec#completions"]]
-          pathtype: "tuple"
-          default: [0, 0]
+          - path: [["status#succeeded"], ["spec#completions"]]
+            pathtype: "tuple"
+            default: [0, 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
       completion_mode:
         header: [["Completion Mode:", ["main", "infoheader"]]]
         path: "spec#completionMode"
@@ -244,19 +253,20 @@ infoview:
       completion_time_with_age:
         header: [["Completion Time:", ["main", "infoheader"]]]
         paths:
-        - paths: [["status#startTime"], " (", "Duration: ", ["status#completionTime"], ")"]
-          pathtype: "timestamp_with_age"
+          - paths: [["status#startTime"], " (", "Duration: ",
+                    ["status#completionTime"], ")"]
+            pathtype: "timestamp_with_age"
         formatter: "timestamp_with_age"
         formatting:
           field_colors:
-          # This is a meta-type, indicating where the timestamp goes
-          - type: "timestamp"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          # This is a meta-type, indicating where the age goes
-          - type: "age"
-          - type: "generic"
+            # This is a meta-type, indicating where the timestamp goes
+            - type: "timestamp"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            # This is a meta-type, indicating where the age goes
+            - type: "age"
+            - type: "generic"
       label_selector_is_manual:
         header: [["Manual Selector:", ["main", "infoheader"]]]
         path: "spec#manualSelector"
@@ -265,16 +275,16 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       parallelism:
         header: [["Parallelism:", ["main", "infoheader"]]]
         path: "spec#parallelism"
@@ -282,7 +292,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       pod_failure_policy:
         header: [["Pod Failure Policy:", ["main", "infoheader"]]]
         path: "spec#podFailurePolicy"
@@ -296,32 +306,32 @@ infoview:
       state:
         header: [["State:", ["main", "infoheader"]]]
         paths:
-        - path: "status"
-          pathtype: "substitution"
-          subpath: "active"
-          when:
-          - key: "active"
-            notnone: true
-          - key: "active"
-            gt: 0
-          substitute: "Running"
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "reason"
-          when:
-          - key: "type"
-            eq: "Failed"
-          - key: "status"
-            eq: "True"
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "type"
-          when:
-          - key: "status"
-            eq: "True"
-          - key: "type"
-            eq: "Complete"
-          substitute: "Completed"
+          - path: "status"
+            pathtype: "substitution"
+            subpath: "active"
+            when:
+              - key: "active"
+                notnone: true
+              - key: "active"
+                gt: 0
+            substitute: "Running"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "reason"
+            when:
+              - key: "type"
+                eq: "Failed"
+              - key: "status"
+                eq: "True"
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "type"
+            when:
+              - key: "status"
+                eq: "True"
+              - key: "type"
+                eq: "Complete"
+            substitute: "Completed"
         default: "<unset>"
         formatter: "value_mapper"
         formatting:
@@ -329,24 +339,24 @@ infoview:
             mappings:
               Active:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Completed:
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       suspended:
         header: [["Suspended:", ["main", "infoheader"]]]
         path: "spec#suspend"
@@ -363,67 +373,71 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age", "restarts",
+                 "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       controller:
         header: "Controller:"
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -434,7 +448,7 @@ infoview:
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pod_ip:
         header: "Pod IP:"
         path: "status#podIP"
@@ -444,14 +458,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:

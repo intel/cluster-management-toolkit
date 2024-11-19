@@ -7,7 +7,8 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "count", "available_nodes", "health", "age"]
+      fields: ["namespace", "name", "version", "count", "available_nodes",
+               "health", "age"]
       sortcolumn: "namespace"
   fields:
     available_nodes:
@@ -20,13 +21,13 @@ listview:
     count:
       header: "Count:"
       paths:
-      - path: [["status#count"], ["spec#count"]]
-        pathtype: "tuple"
+        - path: [["status#count"], ["spec#count"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         item_separator:
           type: "fraction"
       align: "right"
@@ -41,27 +42,27 @@ listview:
           mappings:
             green:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             red:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -74,7 +75,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["version", "count", "loglevel", "pipeline_workers", "update_strategy_header", "update_strategy_max_surge", "update_strategy_max_unavailable", "available_nodes", "health"]
+        fields: ["version", "count", "loglevel", "pipeline_workers",
+                 "update_strategy_header", "update_strategy_max_surge",
+                 "update_strategy_max_unavailable", "available_nodes", "health"]
     rows:
       available_nodes:
         header: [["Available Nodes:", ["main", "infoheader"]]]
@@ -86,13 +89,13 @@ infoview:
       count:
         header: [["Count:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#count"], ["spec#count"]]
-          pathtype: "tuple"
+          - path: [["status#count"], ["spec#count"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           item_separator:
             type: "fraction"
         align: "right"
@@ -107,24 +110,24 @@ infoview:
             mappings:
               green:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               red:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               yellow:
                 field_colors:
-                - context: "main"
-                  type: "status_degraded"
+                  - context: "main"
+                    type: "status_degraded"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
         path: "spec#config#log.level"
@@ -156,4 +159,4 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"

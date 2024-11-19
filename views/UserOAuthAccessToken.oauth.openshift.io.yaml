@@ -3,19 +3,21 @@ kind: "UserOAuthAccessToken"
 api_family: "oauth.openshift.io"
 default_command: "useroauthaccesstokens.oauth.openshift.io"
 command:
-- "useroauthaccesstoken.oauth.openshift.io"
-- "useroauthaccesstokens.openshift"
-- "useroauthaccesstoken.openshift"
-- "osuseroauthaccesstokens"
-- "osuseroauthaccesstoken"
+  - "useroauthaccesstoken.oauth.openshift.io"
+  - "useroauthaccesstokens.openshift"
+  - "useroauthaccesstoken.openshift"
+  - "osuseroauthaccesstokens"
+  - "osuseroauthaccesstoken"
 listview:
   name: "User OAuth Access Tokens"
   group: "OpenShift"
   field_indexes:
     Wide:
-      fields: ["name", "user_name", "client_name", "expiration", "redirect_uri", "scopes", "age"]
+      fields: ["name", "user_name", "client_name", "expiration",
+               "redirect_uri", "scopes", "age"]
     Normal:
-      fields: ["name", "user_name", "client_name", "expiration", "scopes", "age"]
+      fields: ["name", "user_name", "client_name", "expiration", "scopes",
+               "age"]
   fields:
     client_name:
       header: "Client Name:"
@@ -24,8 +26,8 @@ listview:
     expiration:
       header: "Expiration:"
       paths:
-      - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
-        pathtype: "timediff"
+        - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
+          pathtype: "timediff"
       formatter: "timestamp"
     redirect_uri:
       header: "Redirect URI:"
@@ -45,7 +47,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["user_name", "client_name", "expiration", "redirect_uri", "scopes"]
+        fields: ["user_name", "client_name", "expiration", "redirect_uri",
+                 "scopes"]
     rows:
       client_name:
         header: [["Client Name:", ["main", "infoheader"]]]
@@ -54,8 +57,8 @@ infoview:
       expiration:
         header: [["Expiration:", ["main", "infoheader"]]]
         paths:
-        - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
-          pathtype: "timediff"
+          - paths: [["metadata#creationTimestamp"], ["expiresIn"]]
+            pathtype: "timediff"
         formatter: "timestamp"
       redirect_uri:
         header: [["Redirect URI:", ["main", "infoheader"]]]

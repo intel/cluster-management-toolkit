@@ -3,9 +3,9 @@ kind: "LocalClusterAccess"
 api_family: "storage.loft.sh"
 default_command: "localclusteraccesses.storage"
 command:
-- "localclusteraccess.storage"
-- "lclras.storage"
-- "lclra.storage"
+  - "localclusteraccess.storage"
+  - "lclras.storage"
+  - "lclra.storage"
 listview:
   name: "Local Cluster Accesses"
   group: "Lôft"
@@ -17,15 +17,17 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "description", "priority", "cluster_roles", "users", "teams"]
+        fields: ["display_name", "description", "priority", "cluster_roles",
+                 "users", "teams"]
     rows:
       cluster_roles:
-        header: [["C", ["main", "infoheader_shortcut"]], ["luster Roles:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["luster Roles:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#clusterRoles"
-          pathtype: "items"
-          subpaths:
-          - "name"
+          - path: "spec#clusterRoles"
+            pathtype: "items"
+            subpaths:
+              - "name"
         formatter: "list"
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -41,23 +43,25 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       teams:
-        header: [["T", ["main", "infoheader_shortcut"]], ["eams:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["eams:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#teams"
-          pathtype: "list"
-          default: ["<none>"]
+          - path: "spec#teams"
+            pathtype: "list"
+            default: ["<none>"]
         formatter: "list"
       users:
-        header: [["U", ["main", "infoheader_shortcut"]], ["sers:", ["main", "infoheader"]]]
+        header: [["U", ["main", "infoheader_shortcut"]],
+                 ["sers:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#users"
-          pathtype: "items"
-          subpaths:
-          - "team"
-          - "user"
-          default: ["<none>"]
+          - path: "spec#users"
+            pathtype: "items"
+            subpaths:
+              - "team"
+              - "user"
+            default: ["<none>"]
         formatter: "list"
   shortcuts:
     "List Cluster Roles":
@@ -72,7 +76,7 @@ infoview:
       itemgetter_args:
         path: "spec#clusterRoles"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "clusterroles"
       action: "call"
@@ -93,7 +97,7 @@ infoview:
       itemgetter_args:
         path: "spec#teams"
         fields:
-        - "name"
+          - "name"
       # Not supported for now
       sortcolumn: "clusterroles"
       action: "call"
@@ -115,8 +119,8 @@ infoview:
       itemgetter_args:
         path: "spec#users"
         fields:
-        - "key"
-        - "value"
+          - "key"
+          - "value"
       # Not supported for now
       sortcolumn: "name"
       action: "call"

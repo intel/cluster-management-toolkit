@@ -7,7 +7,8 @@ listview:
   group: "Provisioning"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "status", "state", "consumer", "bmc", "hardware_profile", "online", "error", "age"]
+      fields: ["namespace", "name", "status", "state", "consumer", "bmc",
+               "hardware_profile", "online", "error", "age"]
       sortcolumn: "namespace"
   fields:
     bmc:
@@ -17,19 +18,20 @@ listview:
     consumer:
       header: "Consumer:"
       paths:
-      - path: [["spec#consumerRef#kind"], ["spec#consumerRef#apiVersion"], ["spec#consumerRef#namespace"], ["spec#consumerRef#name"]]
-        type: ["kind", "api_group", "name", "name"]
+        - path: [["spec#consumerRef#kind"], ["spec#consumerRef#apiVersion"],
+                 ["spec#consumerRef#namespace"], ["spec#consumerRef#name"]]
+          type: ["kind", "api_group", "name", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
-        - type: "namespace"
-        - type: "name"
+          - type: "kind"
+          - type: "api_group"
+          - type: "namespace"
+          - type: "name"
         field_separators:
-        - type: "kind_api_group"
-        - type: "kind"
-        - type: "namespace"
+          - type: "kind_api_group"
+          - type: "kind"
+          - type: "namespace"
     error:
       header: "Error:"
       path: "status#errorType"

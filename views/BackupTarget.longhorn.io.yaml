@@ -3,10 +3,10 @@ kind: "BackupTarget"
 api_family: "longhorn.io"
 default_command: "backuptargets.longhorn.io"
 command:
-- "lhbackuptargets"
-- "lhbackuptarget"
-- "lhbaktgts"
-- "lhbaktgt"
+  - "lhbackuptargets"
+  - "lhbackuptarget"
+  - "lhbaktgts"
+  - "lhbaktgt"
 listview:
   name: "Backup Targets"
   group: "Storage & Backups"
@@ -30,7 +30,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["owner_id", "available", "backup_target_url", "credential_secret", "poll_interval", "sync_requested_at", "last_synced_at"]
+        fields: ["owner_id", "available", "backup_target_url",
+                 "credential_secret", "poll_interval",
+                 "sync_requested_at", "last_synced_at"]
     rows:
       available:
         header: [["Available:", ["main", "infoheader"]]]
@@ -44,7 +46,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "url"
+            - type: "url"
       credential_secret:
         header: [["Credential Secret:", ["main", "infoheader"]]]
         path: "spec#credentialSecret"

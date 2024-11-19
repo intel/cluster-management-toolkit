@@ -3,12 +3,12 @@ kind: "BalloonsPolicy"
 api_family: "config.nri"
 default_command: "balloonspolicies"
 command:
-- "balloonspols"
-- "balloonspol"
-- "balloonpols"
-- "balloonpol"
-- "ballpols"
-- "ballpol"
+  - "balloonspols"
+  - "balloonspol"
+  - "balloonpols"
+  - "balloonpol"
+  - "ballpols"
+  - "ballpol"
 listview:
   name: "Balloons Policies"
   group: "Policy"
@@ -22,19 +22,19 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "allocator_topology_balancing"
-        - "instrumentation_header"
-        - "instrumentation_http_endpoint"
-        - "instrumentation_prometheus_export"
-        - "instrumentation_report_period"
-        - "instrumentation_sampling_rate_per_million"
-        - "pin_cpu"
-        - "pin_memory"
-        - "log_header"
-        - "log_debug"
-        - "log_source"
-        - "reserved_pool_namespaces"
-        - "reserved_resources"
+          - "allocator_topology_balancing"
+          - "instrumentation_header"
+          - "instrumentation_http_endpoint"
+          - "instrumentation_prometheus_export"
+          - "instrumentation_report_period"
+          - "instrumentation_sampling_rate_per_million"
+          - "pin_cpu"
+          - "pin_memory"
+          - "log_header"
+          - "log_debug"
+          - "log_source"
+          - "reserved_pool_namespaces"
+          - "reserved_resources"
     rows:
       allocator_topology_balancing:
         header: [["Allocator Topology Balancing:", ["main", "infoheader"]]]
@@ -89,15 +89,15 @@ infoview:
       reserved_resources:
         header: [["Reserved Resources:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#reservedResources"
-          pathtype: "key_value"
+          - path: "spec#reservedResources"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -105,7 +105,9 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["name", "priority", "hide_hyperthreads", "match_expressions", "min_balloons", "min_cpus", "prefer_new_balloons", "share_idle_cpus_in_same", "namespaces"]
+        fields: ["name", "priority", "hide_hyperthreads", "match_expressions",
+                 "min_balloons", "min_cpus", "prefer_new_balloons",
+                 "share_idle_cpus_in_same", "namespaces"]
     fields:
       hide_hyperthreads:
         header: "Hide Hyperthreads:"
@@ -114,18 +116,18 @@ infoview:
       match_expressions:
         header: "Match Expressions:"
         paths:
-        - path: "matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       min_balloons:
         header: "Min Balloons:"
         path: "minBalloons"
@@ -133,7 +135,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       min_cpus:
         header: "Min CPUs:"
@@ -141,7 +143,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       name:
         header: "Name:"
@@ -180,8 +182,8 @@ infoview:
       itemgetter_args:
         path: "status#nodes"
         fields:
-        - "key"
-        - "value#status"
-        - "value#timestamp"
-        - "value#errors"
+          - "key"
+          - "value#status"
+          - "value#timestamp"
+          - "value#errors"
       sortcolumn: "status"

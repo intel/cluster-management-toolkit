@@ -7,7 +7,8 @@ listview:
   group: "Logging"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "version", "elasticsearch_status", "health", "age"]
+      fields: ["namespace", "name", "version", "elasticsearch_status",
+               "health", "age"]
       sortcolumn: "namespace"
   fields:
     elasticsearch_status:
@@ -21,16 +22,16 @@ listview:
           mappings:
             Established:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     health:
       header: "Health:"
       path: "status#health"
@@ -42,31 +43,31 @@ listview:
           mappings:
             green:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             red:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             unknown:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
             yellow:
               field_colors:
-              - context: "main"
-                type: "status_degraded"
+                - context: "main"
+                  type: "status_degraded"
             "<unset>":
               field_colors:
-              - context: "types"
-                type: "unset"
+                - context: "types"
+                  type: "unset"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -79,21 +80,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["type", "elasticsearch_ref", "kibana_ref", "version", "elasticsearch_status", "health"]
+        fields: ["type", "elasticsearch_ref", "kibana_ref", "version",
+                 "elasticsearch_status", "health"]
     rows:
       elasticsearch_ref:
-        header: [["E", ["main", "infoheader_shortcut"]], ["lasticsearch Reference:", ["main", "infoheader"]]]
+        header: [["E", ["main", "infoheader_shortcut"]],
+                 ["lasticsearch Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"], ["spec#elasticsearchRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#elasticsearchRef#namespace", "metadata#namespace"],
+                   ["spec#elasticsearchRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       elasticsearch_status:
         header: [["Elasticsearch Status:", ["main", "infoheader"]]]
         path: "status#elasticsearchAssociationStatus"
@@ -105,16 +109,16 @@ infoview:
             mappings:
               Established:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       health:
         header: [["Health:", ["main", "infoheader"]]]
         path: "status#health"
@@ -126,37 +130,39 @@ infoview:
             mappings:
               green:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               red:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               unknown:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
               yellow:
                 field_colors:
-                - context: "main"
-                  type: "status_degraded"
+                  - context: "main"
+                    type: "status_degraded"
               "<unset>":
                 field_colors:
-                - context: "types"
-                  type: "unset"
+                  - context: "types"
+                    type: "unset"
       kibana_ref:
-        header: [["K", ["main", "infoheader_shortcut"]], ["ibana Reference:", ["main", "infoheader"]]]
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ibana Reference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#kibanaRef#namespace", "metadata#namespace"], ["spec#kibanaRef#name"]]
-          pathtype: "tuple"
-          default: ["<unset>", "<unset>"]
+          - path: [["spec#kibanaRef#namespace", "metadata#namespace"],
+                   ["spec#kibanaRef#name"]]
+            pathtype: "tuple"
+            default: ["<unset>", "<unset>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       type:
         header: [["Type:", ["main", "infoheader"]]]
         path: "spec#type"
@@ -167,14 +173,14 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
       multipath: "spec#config"
       subpaths:
-      - "heartbeat.monitors"
-      - "filebeat.inputs"
+        - "heartbeat.monitors"
+        - "filebeat.inputs"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -184,8 +190,8 @@ infoview:
       hosts_or_paths:
         header: "Hosts/Paths:"
         paths:
-        - path: ["hosts", "paths"]
-          pathtype: "list"
+          - path: ["hosts", "paths"]
+            pathtype: "list"
         type: "raw"
         formatter: "list"
       schedule:
@@ -209,7 +215,8 @@ infoview:
         _pass_obj: true
         kind: "Elasticsearch"
         api_family: "elasticsearch.k8s.elastic.co"
-        namespace_path: ["spec#elasticsearchRef#namespace", "metadata#namespace"]
+        namespace_path: ["spec#elasticsearchRef#namespace",
+                         "metadata#namespace"]
         name_path: "spec#elasticsearchRef#name"
     "Open Kibana":
       key: "k"

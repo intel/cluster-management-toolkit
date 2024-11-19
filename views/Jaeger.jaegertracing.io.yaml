@@ -7,7 +7,8 @@ listview:
   group: "Monitoring"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "status", "version", "strategy", "storage", "age"]
+      fields: ["namespace", "name", "status", "version", "strategy",
+               "storage", "age"]
       sortcolumn: "namespace"
   fields:
     status:
@@ -20,12 +21,12 @@ listview:
           mappings:
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     storage:
       header: "Storage:"
       path: "spec#storage#type"
@@ -40,4 +41,4 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"

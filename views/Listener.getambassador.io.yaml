@@ -7,9 +7,11 @@ listview:
   group: "Network"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "port", "protocol", "protocol_stack", "security_model", "l7_depth", "stats_prefix", "age"]
+      fields: ["namespace", "name", "port", "protocol", "protocol_stack",
+               "security_model", "l7_depth", "stats_prefix", "age"]
     Normal:
-      fields: ["namespace", "name", "port", "protocol", "protocol_stack", "security_model", "age"]
+      fields: ["namespace", "name", "port", "protocol", "protocol_stack",
+               "security_model", "age"]
   fields:
     l7_depth:
       header: "L7 Depth:"
@@ -23,7 +25,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "port"
+          - type: "port"
     protocol:
       header: "Protocol:"
       path: "spec#protocol"
@@ -31,7 +33,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "service"
+          - type: "service"
     protocol_stack:
       header: "Protocol Stack:"
       path: "spec#protocolStack"
@@ -40,7 +42,7 @@ listview:
       formatter: "list"
       formatting:
         field_colors:
-        - type: "service"
+          - type: "service"
     security_model:
       header: "Security Model:"
       path: "spec#securityModel"
@@ -54,7 +56,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["hostbinding_header", "hostbinding_from", "hostbinding_selector", "l7_depth", "port", "security_model"]
+        fields: ["hostbinding_header", "hostbinding_from",
+                 "hostbinding_selector", "l7_depth", "port", "security_model"]
     rows:
       l7_depth:
         header: [["L7 Depth:", ["main", "infoheader"]]]
@@ -72,28 +75,28 @@ infoview:
       hostbinding_selector:
         header: [["  Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#hostBinding#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#hostBinding#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       port:
         header: [["Port:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#protocol"], ["spec#port"]]
-          pathtype: "tuple"
+          - path: [["spec#protocol"], ["spec#port"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "service"
-          - type: "port"
+            - type: "service"
+            - type: "port"
           field_separators:
-          - type: "port"
+            - type: "port"
       security_model:
         header: [["Security Model:", ["main", "infoheader"]]]
         path: "spec#securityModel"

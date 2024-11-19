@@ -3,8 +3,8 @@ kind: "BackendLBPolicy"
 api_family: "gateway.networking.k8s.io"
 default_command: "backendlbpolicies"
 command:
-- "backendlbps"
-- "backendlbp"
+  - "backendlbps"
+  - "backendlbp"
 listview:
   name: "Backend Load Balancer Policies"
   group: "Network"
@@ -17,7 +17,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["session_persistance_header", "session_persistance_name", "session_persistance_type", "session_persistance_cookie_config_header", "session_persistance_cookie_config_lifetime_type", "session_persistance_absolute_timeout", "session_persistance_idle_timeout"]
+        fields: ["session_persistance_header", "session_persistance_name",
+                 "session_persistance_type",
+                 "session_persistance_cookie_config_header",
+                 "session_persistance_cookie_config_lifetime_type",
+                 "session_persistance_absolute_timeout",
+                 "session_persistance_idle_timeout"]
     rows:
       session_persistance_absolute_timeout:
         header: [["  Absolute Timeout:", ["main", "infoheader"]]]
@@ -59,6 +64,6 @@ infoview:
       itemgetter_args:
         path: "spec#targetRefs"
         fields:
-        - "kind"
-        - "group"
-        - "name"
+          - "kind"
+          - "group"
+          - "name"

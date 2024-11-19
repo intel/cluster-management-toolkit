@@ -3,8 +3,8 @@ kind: "Build"
 api_family: "config.openshift.io"
 default_command: "builds.config.openshift.io"
 command:
-- "builds.config"
-- "build.config"
+  - "builds.config"
+  - "build.config"
 listview:
   name: "Builds"
   group: "OpenShift"
@@ -19,15 +19,17 @@ infoview:
         fields: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   shortcuts:
     "Cluster Version":
