@@ -12,22 +12,27 @@
 # COLOR_CYAN    6
 # COLOR_WHITE   7
 #
-# To achieve other colours, these colours can be redefined, but there can be a maximum of 8 colours
-# Redefine the colours using [R, G, B], where each value can be in the range [0,1000]
+# To achieve other colours, these colours can be redefined, but there can be a
+# maximum of 8 colours Redefine the colours using [R, G, B], where each value
+# can be in the range [0,1000]
 #
 # Colours are then combined into pairs of foreground:background,
-# with additional attributes normal bold. If you don't define a palette the system palette will be used.
+# with additional attributes normal bold. If you don't define a palette the
+# system palette will be used.
 #
 # Terminals are even more limited than this
 
-# Note that the colour in the comment assumes that the terminal program (or user) hasn't redefined the palette
+# Note that the colour in the comment assumes that the terminal program (or
+# user) hasn't redefined the palette
 term:
-  # color, intensity (normal, bright), attribute (normal, underline, inverted, dim)
+  # color, intensity (normal, bright), attribute (normal, underline, inverted,
+  # dim)
   default: "\033[0m"                            # reset
   programname: "\033[1;37m"                     # white + bright
   version: "\033[0;32m"                         # green
   candidateversion: "\033[1;36m"                # cyan + bright
-  # FIXME: having command the same colour as action is probably not a good choice
+  # FIXME: having command the same colour as action is probably not a good
+  # choice
   command: "\033[1;36m"                         # cyan + bright
   option: "\033[0;36m"                          # cyan
   argument: "\033[0;32m"                        # green
@@ -618,7 +623,8 @@ boxdrawing:
   # area, but for stdscr this is an issue.
   #
   # The workaround is to use addch for such characters (cmu implements this),
-  # but not all characters are supported by addch(); it does not support unicode.
+  # but not all characters are supported by addch(); it does not support
+  # unicode.
   # The same limitation applies to border().
   #
   # If you change this and the program crashes, this is most likely the reason.
@@ -1088,7 +1094,8 @@ separators:
   methods: [["Methods", ["types", "separator_methods"]]]
   paths: [["Paths", ["types", "separator_paths"]]]
   principals: [["Principals", ["types", "separator_principals"]]]
-  request_principals: [["RequestPrincipals", ["types", "separator_request_principals"]]]
+  request_principals: [["RequestPrincipals",
+                        ["types", "separator_request_principals"]]]
   namespaces: [["Namespaces", ["types", "separator_namespaces"]]]
   ipblocks: [["IPBlocks", ["types", "separator_ipblocks"]]]
   secret_type: [["/", ["types", "separator_secret_type"]]]
@@ -1109,8 +1116,10 @@ separators:
   space: [[" ", ["types", "separator_pad"]]]
   pad: [["  ", ["types", "separator_pad"]]]
   line_break: [["⏎", ["types", "separator_line_break"]]]
-  facility_extended_prefix: [["[", ["types", "separator_facility_extended_prefix"]]]
-  facility_extended_suffix: [["]", ["types", "separator_facility_extended_suffix"]]]
+  facility_extended_prefix: [["[",
+                              ["types", "separator_facility_extended_prefix"]]]
+  facility_extended_suffix: [["]",
+                              ["types", "separator_facility_extended_suffix"]]]
   facility_prefix: [["<", ["types", "separator_facility_prefix"]]]
   facility_suffix: [[">", ["types", "separator_facility_suffix"]]]
   facility_padding: [[" ", ["types", "separator_facility_suffix"]]]

@@ -1,3 +1,4 @@
+---
 # Note: while you can do all configuration here, the recommended
 # way to change the configuration options is to put your changes
 # in cmt.yaml.d, split into separate files for each category.
@@ -96,8 +97,8 @@ Ansible:
   # forks: 10
 
   # User for ansible connections
-  # Unless the user you are running cmu as is the same as the user to login as on nodes
-  # you probably want to specify this either here or in the inventory
+  # Unless the user you are running cmu as is the same as the user to login as
+  # on nodes you probably want to specify this either here or in the inventory
   #
   # This user will also be used when ssh:ing to nodes
   # ansible_user:
@@ -110,23 +111,24 @@ Ansible:
   # but after that it will rely on ssh host keys and passwordless sudo.
   # ansible_password:
 
-  # If this is set to true all logs are saved whenever you execute ansible actions;
-  # these logs can later be accessed per host (via the node/host view)
+  # If this is set to true all logs are saved whenever you execute ansible
+  # actions; these logs can later be accessed per host (via the node/host view)
   # or per action (in the logs view)
   # save_logs: true
 
-  # Path to directories with locally installed playbooks; this can also be used to override
-  # the default playbooks--any playbook with the same name as one of the system playbooks
-  # will override the system playbook; prioritised by the order of directories,
-  # where a playbook in the first listed directory would override a playbook in the second,
-  # etc.
+  # Path to directories with locally installed playbooks; this can also be used
+  # to override the default playbooks--any playbook with the same name as one
+  # of the system playbooks will override the system playbook; prioritised by
+  # the order of directories, where a playbook in the first listed directory
+  # would override a playbook in the second, etc.
   #
-  # Playbook paths must be quoted. To reference playbook directories relative to the user's home directory
+  # Playbook paths must be quoted. To reference playbook directories relative
+  # to the user's home directory
   # you can use "{HOME}/", so for instance:
   # local_playbooks:
-  # - "{HOME}/local_playbooks"
-  # - "/opt/cmt/playbooks"
-  # - ...
+  #   - "{HOME}/local_playbooks"
+  #   - "/opt/cmt/playbooks"
+  #   - ...
 
 Containerd:
   # Registry mirrors for containerd; format:
@@ -149,7 +151,8 @@ Docker:
   # insecure_registries:
 
 Mouse:
-  # Enable or disable mouse support by default (can still be toggled on/off in the program as needed)
+  # Enable or disable mouse support by default (can still be toggled on/off in
+  # the program as needed)
   # enable: true
 
   # If your mouse has a scrollwheel or physical up and down buttons
@@ -160,22 +163,22 @@ Mouse:
   # enablescroll: true
 
   # This seems to work with at least some Logitech mice:
-  # - 0b10000000000000000000
-  # - 0b10000000000000000
+  #   - 0b10000000000000000000
+  #   - 0b10000000000000000
   # scrollup: 0b10000000000000000000
 
   # At least two different possible values have been identified for down so far:
-  # - 0b1000000000000000000000000000
-  # - 0b1000000000000000000000
+  #   - 0b1000000000000000000000000000
+  #   - 0b1000000000000000000000
   # scrolldown: 0b1000000000000000000000000000
 
 Packages:
   # Use this section to specify preferred versions of packages to install
   # using playbooks; having the information here is preferred over hardcoding
   # the versions in the playbooks.
-  # - "<package name>":
-  #     suffix: "-<suffix>"
-  #     version: "<debian package version>"
+  #   - "<package name>":
+  #       suffix: "-<suffix>"
+  #       version: "<debian package version>"
 
 # Views prefixed with "__" are artificial views; they do not correspond
 # to Kubernetes APIs
@@ -210,8 +213,10 @@ Endpoints:
   # expand_subsets: "None"
 
 Event:
-  # For the "regarding" field this specifies whether the format should be along the lines of
-  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
+  # For the "regarding" field this specifies whether the format should be along
+  # the lines of:
+  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to
+  # "kind") (default)
   # kind: "<kind>/<source>"
   # or
   # skip: "<source>"
@@ -222,10 +227,10 @@ __Inventory:
   # virtual file systems such as /proc, /sys, etc are always skipped.
   # You can use * as a prefix or suffix (but not infix) to do partial matches
   # mountpoint_skiplist:
-  # - "/boot/efi"
-  # - "/var/lib/origin/*"
-  # - "/run/*"
-  # - "*@docker*"
+  #   - "/boot/efi"
+  #   - "/var/lib/origin/*"
+  #   - "/run/*"
+  #   - "*@docker*"
 
   # Devices to skip in the list of mounts for a host; devices that have no
   # corresponding ansible_device are skipped unless they are NFS mounts
@@ -233,7 +238,7 @@ __Inventory:
   # You can use * as a prefix or suffix or both to do partial matches,
   # but infix ("a*b") is not supported
   # device_skiplist:
-  # - "loop*"
+  #   - "loop*"
 
   # Pinging the hosts to get their status is done using ansible
   # and can thus be a slow operation (roughly 3 seconds!);
@@ -255,8 +260,10 @@ Node:
   # disablestricthostkeychecking: false
 
 Pod:
-  # For the "Controller" field this specifies whether the format should be along the lines of
-  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to "kind") (default)
+  # For the "Controller" field this specifies whether the format should be
+  # along the lines of
+  # mixed: "<kind>.<api_family>/<source>" (for core APIs this is equivalent to
+  # "kind") (default)
   # kind: "<kind>/<source>"
   # or
   # skip: "<source>"
@@ -280,21 +287,21 @@ Pod:
   # without going through the Pod Info page
   #
   # filter_resources:
-  # - "antrea_agent"
-  # - "antrea_controller"
-  # - "cilium_endpoint"
-  # - "config_map"
-  # - "controller"
-  # - "cronjob"
-  # - "event"
-  # - "node"
-  # - "owner_reference"
-  # - "persistent_volume_claim"
-  # - "pod_disruption_budget"
-  # - "pod_metrics"
-  # - "priority_class"
-  # - "secret"
-  # - "service_account"
+  #   - "antrea_agent"
+  #   - "antrea_controller"
+  #   - "cilium_endpoint"
+  #   - "config_map"
+  #   - "controller"
+  #   - "cronjob"
+  #   - "event"
+  #   - "node"
+  #   - "owner_reference"
+  #   - "persistent_volume_claim"
+  #   - "pod_disruption_budget"
+  #   - "pod_metrics"
+  #   - "priority_class"
+  #   - "secret"
+  #   - "service_account"
 
   # The number of container log lines shown by default
   # logsize: 4000
@@ -326,10 +333,11 @@ Pod:
   # show_timestamps: true
 
   # Prefix all messages with the severity
-  # By default all identifiable severity markers are stripped; severity is instead
-  # visualised by log message colour.  From an accessibility point of view this
-  # can be suboptimal, so optionally a severity prefix can be used.
-  # The prefix is configured through a list of options (with the empty list to disable)
+  # By default all identifiable severity markers are stripped; severity is
+  # instead visualised by log message colour.  From an accessibility point of
+  # view this can be suboptimal, so optionally a severity prefix can be used.
+  # The prefix is configured through a list of options (with the empty list to
+  # disable)
   # severity_prefix: ["PREFIX", "severity_type", "SUFFIX"]
   # Options for severity_type are:
   # "letter" -- A one-letter severity ("W" for warning)
@@ -350,15 +358,16 @@ Pod:
   # Show borders and scrollbars
   # show_borders: true
 
-  # Path to directories with locally installed parser files; this can also be used to override
-  # the default parsers--any locally provided match rules will apply be applied before
-  # the default parsers; prioritised by the order of directories,
-  # where a parser rule in the first listed directory would override a playbook in the second,
-  # etc.
+  # Path to directories with locally installed parser files; this can also be
+  # used to override the default parsers--any locally provided match rules will
+  # apply be applied before the default parsers; prioritised by the order of
+  # directories, where a parser rule in the first listed directory would
+  # override a playbook in the second, etc.
   #
-  # Parser paths must be quoted. To reference parser directories relative to the user's home directory
+  # Parser paths must be quoted. To reference parser directories relative to
+  # the user's home directory
   # you can use "{HOME}/", so for instance:
   # local_parsers:
-  # - "{HOME}/local_parsers"
-  # - "/opt/cmt/parsers"
-  # - ...
+  #   - "{HOME}/local_parsers"
+  #   - "/opt/cmt/parsers"
+  #   - ...
