@@ -1,4 +1,7 @@
-# XXX: This will not work with multiple controlplanes; we need to fetch from the first controlplane
+---
+# XXX: This will not work with multiple controlplanes;
+# we need to fetch from the first controlplane
+# yamllint disable rule:line-length
 - name: "Copy kubeconfig from control plane to .kube on localhost"
   hosts: "selection:&controlplane"
   vars:
