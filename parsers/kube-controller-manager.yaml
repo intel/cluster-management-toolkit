@@ -1,25 +1,26 @@
+---
 - name: "kube-controller-manager"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kube-controller-manager"
+    - pod_name: "kube-controller-manager"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      - "version"
-  - name: "expand_event"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "cluster-policy-controller version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Version: v"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "kube-controller-manager-operator version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"
+    - name: "expand_event"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "cluster-policy-controller version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Version: v"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "kube-controller-manager-operator version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

@@ -1,68 +1,69 @@
+---
 - name: "nvidia"
   show_in_selector: false
   matchkeys:
-  - image_name: "/nvidia/k8s-device-plugin"
-  - image_name: "/nvidia/cloud-native/k8s-driver-manager"
-    container_type: "init_container"
+    - image_name: "/nvidia/k8s-device-plugin"
+    - image_name: "/nvidia/cloud-native/k8s-driver-manager"
+      container_type: "init_container"
   parser_rules:
-  - name: "glog"
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "exact"
-        matchkey: "Running with config:"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "exact"
-        matchkey: "}"
-        matchline: "any"
-        format_block_end: true
-      loglevel: "info"
+    - name: "glog"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "Running with config:"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "exact"
+            matchkey: "}"
+            matchline: "any"
+            format_block_end: true
+        loglevel: "info"
 - name: "nvidia"
   show_in_selector: false
   matchkeys:
-  - image_name: "/nvidia/k8s/container-toolkit"
-  - image_name: "/nvidia/k8s/dcgm-exporter"
-  - image_name: "/nvidia/cloud-native/gpu-operator-validator"
-    container_type: "init_container"
+    - image_name: "/nvidia/k8s/container-toolkit"
+    - image_name: "/nvidia/k8s/dcgm-exporter"
+    - image_name: "/nvidia/cloud-native/gpu-operator-validator"
+      container_type: "init_container"
   parser_rules:
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "version: "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "NVIDIA-SMI has failed"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "CRITICAL:"
-      loglevel: "critical"
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "exact"
-        matchkey: "Using config:"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "startswith"
-        matchkey: "time"
-        matchline: "any"
-        format_block_end: false
-        process_block_end: false
-      loglevel: "info"
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "+---------------"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "startswith"
-        matchkey: "+---------------"
-        matchline: "any"
-        format_block_end: true
-      loglevel: "info"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "version: "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "NVIDIA-SMI has failed"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "CRITICAL:"
+          loglevel: "critical"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "Using config:"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "startswith"
+            matchkey: "time"
+            matchline: "any"
+            format_block_end: false
+            process_block_end: false
+        loglevel: "info"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "+---------------"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "startswith"
+            matchkey: "+---------------"
+            matchline: "any"
+            format_block_end: true
+        loglevel: "info"

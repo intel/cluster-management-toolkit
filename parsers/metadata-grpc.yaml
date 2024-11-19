@@ -1,11 +1,12 @@
+---
 - name: "metadata-grpc"
   show_in_selector: false
   matchkeys:
-  - image_name: "/tfx-oss-public/ml_metadata_store_server"
+    - image_name: "/tfx-oss-public/ml_metadata_store_server"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "WARNING"
-      loglevel: "warning"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "WARNING"
+          loglevel: "warning"

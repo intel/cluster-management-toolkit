@@ -1,24 +1,25 @@
+---
 - name: "metrics-server"
   show_in_selector: false
   matchkeys:
-  - pod_name: "metrics-server"
-  - pod_name: "rke2-metrics-server"
+    - pod_name: "metrics-server"
+    - pod_name: "rke2-metrics-server"
   parser_rules:
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[[a-z]+?\] \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?:\d+): (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "key_value_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http2: \"server\": error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[[a-z]+?\] \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?:\d+): (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "key_value_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http2: \"server\": error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

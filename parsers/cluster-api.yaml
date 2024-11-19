@@ -1,37 +1,38 @@
+---
 - name: "cluster-api"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-capi-operator"
-    container_name: "cluster-capi-operator"
-  - pod_name: "capi-"
-    container_name: "manager"
-  - pod_name: "capi-"
-    container_name: "cluster-kube-cluster-api-operator"
-  - pod_name: "capo-"
-    container_name: "manager"
-  - pod_name: "capd-controller-manager"
-    container_name: "manager"
-  - pod_name: "capmox-controller-manager"
-    container_name: "manager"
+    - pod_name: "cluster-capi-operator"
+      container_name: "cluster-capi-operator"
+    - pod_name: "capi-"
+      container_name: "manager"
+    - pod_name: "capi-"
+      container_name: "cluster-kube-cluster-api-operator"
+    - pod_name: "capo-"
+      container_name: "manager"
+    - pod_name: "capd-controller-manager"
+      container_name: "manager"
+    - pod_name: "capmox-controller-manager"
+      container_name: "manager"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      allow_bare_keys: true
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-    - matchtype: "regex"
-      matchkey: "^Flag.*has been deprecated"
-      loglevel: "warning"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+        allow_bare_keys: true
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+        - matchtype: "regex"
+          matchkey: "^Flag.*has been deprecated"
+          loglevel: "warning"
 - name: "cluster-api"
   show_in_selector: false
   matchkeys:
-  - pod_name: "capch-controller-manager"
-    container_name: "manager"
+    - pod_name: "capch-controller-manager"
+      container_name: "manager"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
+    - name: "glog"
+    - name: "tab_separated"

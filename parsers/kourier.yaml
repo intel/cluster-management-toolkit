@@ -1,22 +1,24 @@
+---
 - name: "kourier"
   show_in_selector: false
   matchkeys:
-  - pod_name: "3scale-kourier"
+    - pod_name: "3scale-kourier"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}\]\[\d+\]\[([a-z]+)\]\[([^]]+)\] \[([^]]+)\] (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-        - 3
-        separators:
-        - ":"
-      message:
-        field: 4
-  - name: "http"
-    options:
-      reformat_timestamps: true
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\[\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}\]\[\d+\]\[([a-z]+)\]\[([^]]+)\] \[([^]]+)\] (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+            - 3
+          separators:
+            - ":"
+        message:
+          field: 4
+    - name: "http"
+      options:
+        reformat_timestamps: true

@@ -1,11 +1,12 @@
+---
 - name: "kubeedge"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeedge/cloudcore"
+    - image_name: "/kubeedge/cloudcore"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: v"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: v"
+          loglevel: "notice"

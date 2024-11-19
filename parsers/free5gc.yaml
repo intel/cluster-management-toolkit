@@ -1,50 +1,51 @@
+---
 - name: "free5gc"
   show_in_selector: false
   matchkeys:
-  - image_name: "/towards5gs/free5gc"
+    - image_name: "/towards5gs/free5gc"
   parser_rules:
-  - name: "strip_ansicodes"
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([A-Z]{4})\]\[([^]]+)\]\[([^]]+)\]\s?(.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      facility:
-        fields:
-        - 2
-        - 3
-        separators:
-        - "|"
-      message:
-        field: 4
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "\tfree5GC version:"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "UPF config version"
-      loglevel: "notice"
+    - name: "strip_ansicodes"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[([A-Z]{4})\]\[([^]]+)\]\[([^]]+)\]\s?(.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        facility:
+          fields:
+            - 2
+            - 3
+          separators:
+            - "|"
+        message:
+          field: 4
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "\tfree5GC version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "UPF config version"
+          loglevel: "notice"
 - name: "free5gc"
   show_in_selector: false
   matchkeys:
-  - image_name: "/towards5gs/ueransim"
+    - image_name: "/towards5gs/ueransim"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^\[[^]]+]\s\[([^]]+)\]\s\[([^]]+)\]\s(.*)'
-      severity:
-        field: 2
-        transform: "str"
-      facility:
-        fields:
-        - 1
-      message:
-        field: 3
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "UERANSIM v"
-      loglevel: "notice"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[[^]]+]\s\[([^]]+)\]\s\[([^]]+)\]\s(.*)'
+        severity:
+          field: 2
+          transform: "str"
+        facility:
+          fields:
+            - 1
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "UERANSIM v"
+          loglevel: "notice"

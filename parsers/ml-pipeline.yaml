@@ -1,43 +1,44 @@
+---
 - name: "ml-pipeline"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ml-pipeline-ui-artifact"
+    - pod_name: "ml-pipeline-ui-artifact"
   parser_rules:
-  - name: "json_line"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([A-Z]+?)\] (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
+    - name: "json_line"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[([A-Z]+?)\] (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
 - name: "ml-pipeline"
   show_in_selector: false
   matchkeys:
-  - image_name: "/ml-pipeline/metadata-writer"
+    - image_name: "/ml-pipeline/metadata-writer"
   parser_rules:
-  - name: "python_traceback"
+    - name: "python_traceback"
 - name: "ml-pipeline"
   show_in_selector: false
   matchkeys:
-  - image_name: "/ml-pipeline/api-server"
+    - image_name: "/ml-pipeline/api-server"
   parser_rules:
-  - name: "glog"
+    - name: "glog"
 - name: "ml-pipeline"
   show_in_selector: false
   matchkeys:
-  - image_name: "/ml-pipeline/workflow-controller"
-  - image_name: "/ml-pipeline/persistenceagent"
-  - image_name: "/ml-pipeline/scheduledworkflow"
-  - image_name: "/ml-pipeline/viewer-crd-controller"
-  - image_name: "/ml-pipeline/argoexec"
-  - image_name: "/ml-pipeline/kfp-driver"
-  - image_name: "/ml-pipeline/argoexec"
-    container_type: "init_container"
+    - image_name: "/ml-pipeline/workflow-controller"
+    - image_name: "/ml-pipeline/persistenceagent"
+    - image_name: "/ml-pipeline/scheduledworkflow"
+    - image_name: "/ml-pipeline/viewer-crd-controller"
+    - image_name: "/ml-pipeline/argoexec"
+    - image_name: "/ml-pipeline/kfp-driver"
+    - image_name: "/ml-pipeline/argoexec"
+      container_type: "init_container"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-    options:
-      versions:
-      - "version"
+    - name: "glog"
+    - name: "key_value"
+      options:
+        versions:
+          - "version"

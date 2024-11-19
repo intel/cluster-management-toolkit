@@ -1,19 +1,20 @@
+---
 - name: "knative-eventing"
   show_in_selector: false
   matchkeys:
-  - pod_name: "eventing-controller"
-  - pod_name: "eventing-webhook"
-  - pod_name: "imc-dispatcher"
-  - pod_name: "imc-controller"
-  - pod_name: "mt-broker-controller"
-  - pod_name: "mt-broker-filter"
-  - pod_name: "mt-broker-ingress"
+    - pod_name: "eventing-controller"
+    - pod_name: "eventing-webhook"
+    - pod_name: "imc-dispatcher"
+    - pod_name: "imc-controller"
+    - pod_name: "mt-broker-controller"
+    - pod_name: "mt-broker-filter"
+    - pod_name: "mt-broker-ingress"
   parser_rules:
-  - name: "glog"
-  - name: "ts_8601"
-  - name: "json"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "json"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

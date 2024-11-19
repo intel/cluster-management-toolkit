@@ -1,12 +1,13 @@
+---
 - name: "openshift-authentication"
   show_in_selector: false
   matchkeys:
-  - pod_name: "network-node-identity"
+    - pod_name: "network-node-identity"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake"
-      loglevel: "error"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake"
+          loglevel: "error"

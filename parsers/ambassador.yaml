@@ -1,11 +1,12 @@
+---
 - name: "ambassador"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ambassador"
+    - pod_name: "ambassador"
   parser_rules:
-  - name: "json"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Operator Version: "
-      loglevel: "notice"
+    - name: "json"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Operator Version: "
+          loglevel: "notice"

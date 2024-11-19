@@ -1,33 +1,34 @@
+---
 - name: "knative-serving"
   show_in_selector: false
   matchkeys:
-  - image_regex: '^.*knative.*serving.*'
-    container_name: "webhook"
-  - pod_name: "net-istio-webhook"
-    container_name: "webhook"
-  - pod_name: "net-kourier-controller"
-    container_name: "controller"
-  - container_name: "domainmapping-webhook"
-  - pod_name: "net-istio-controller"
-  - image_regex: '^.*knative.*serving.*'
-    container_name: "controller"
-  - container_name: "domain-mapping"
-  - image_regex: '^.*knative.*serving.*'
-    container_name: "autoscaler"
-  - image_regex: '^.*knative.*serving.*'
-    container_name: "activator"
+    - image_regex: '^.*knative.*serving.*'
+      container_name: "webhook"
+    - pod_name: "net-istio-webhook"
+      container_name: "webhook"
+    - pod_name: "net-kourier-controller"
+      container_name: "controller"
+    - container_name: "domainmapping-webhook"
+    - pod_name: "net-istio-controller"
+    - image_regex: '^.*knative.*serving.*'
+      container_name: "controller"
+    - container_name: "domain-mapping"
+    - image_regex: '^.*knative.*serving.*'
+      container_name: "autoscaler"
+    - image_regex: '^.*knative.*serving.*'
+      container_name: "activator"
   parser_rules:
-  - name: "glog"
-  - name: "ts_8601"
-  - name: "json"
-    options:
-      severities:
-      - "severity"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http2: server: error"
-      loglevel: "warning"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "json"
+      options:
+        severities:
+          - "severity"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http2: server: error"
+          loglevel: "warning"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

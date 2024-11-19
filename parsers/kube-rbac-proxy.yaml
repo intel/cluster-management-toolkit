@@ -1,33 +1,34 @@
+---
 - name: "kube-rbac-proxy"
   show_in_selector: false
   matchkeys:
-  - container_name: "kube-rbac-proxy"
+    - container_name: "kube-rbac-proxy"
   parser_rules:
-  - name: "glog"
-  - name: "ts_8601"
-  - name: "colon_severity"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Flag --logtostderr has been deprecated"
-      loglevel: "warning"
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "==== Deprecation Warning"
-        matchline: "any"
-        format_block_start: true
-      - matchtype: "startswith"
-        matchkey: "==== Removed Flag Warning"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "startswith"
-        matchkey: "========================"
-        matchline: "any"
-        format_block_end: true
-      loglevel: "warning"
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "colon_severity"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Flag --logtostderr has been deprecated"
+          loglevel: "warning"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "==== Deprecation Warning"
+            matchline: "any"
+            format_block_start: true
+          - matchtype: "startswith"
+            matchkey: "==== Removed Flag Warning"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "startswith"
+            matchkey: "========================"
+            matchline: "any"
+            format_block_end: true
+        loglevel: "warning"

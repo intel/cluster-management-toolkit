@@ -1,12 +1,13 @@
+---
 - name: "haproxy"
   show_in_selector: false
   matchkeys:
-  - container_name: "mosquitto"
-    image_name: "/library/eclipse-mosquitto"
+    - container_name: "mosquitto"
+      image_name: "/library/eclipse-mosquitto"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      # Safe
-      regex: '^\d{10}:\s(.*)'
-      message:
-        field: 1
+    - name: "custom_splitter"
+      options:
+        # Safe
+        regex: '^\d{10}:\s(.*)'
+        message:
+          field: 1

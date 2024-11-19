@@ -1,33 +1,34 @@
+---
 - name: "openshift-ovnkube"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ovnkube"
-    container_name: "ovnkube-controller"
-  - pod_name: "ovnkube"
-    container_name: "ovnkube-cluster-manager"
+    - pod_name: "ovnkube"
+      container_name: "ovnkube-controller"
+    - pod_name: "ovnkube"
+      container_name: "ovnkube-cluster-manager"
   parser_rules:
-  - name: "glog"
+    - name: "glog"
 - name: "openshift-ovnkube"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ovnkube"
-    container_name: "ovn-controller"
-  - pod_name: "ovnkube"
-    container_name: "northd"
-  - pod_name: "ovnkube"
-    container_name: "nbdb"
-  - pod_name: "ovnkube"
-    container_name: "sbdb"
+    - pod_name: "ovnkube"
+      container_name: "ovn-controller"
+    - pod_name: "ovnkube"
+      container_name: "northd"
+    - pod_name: "ovnkube"
+      container_name: "nbdb"
+    - pod_name: "ovnkube"
+      container_name: "sbdb"
   parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^\|\d+\|([^\|]+)\|([A-Z]+)\|(.*)'
-      facility:
-        fields:
-        - 1
-      severity:
-        field: 2
-        transform: "4letter"
-      message:
-        field: 3
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^\|\d+\|([^\|]+)\|([A-Z]+)\|(.*)'
+        facility:
+          fields:
+            - 1
+        severity:
+          field: 2
+          transform: "4letter"
+        message:
+          field: 3

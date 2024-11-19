@@ -1,17 +1,18 @@
+---
 - name: "hostpath-provisioner"
   show_in_selector: false
   matchkeys:
-  - pod_name: "hostpath-provisioner"
-  - pod_name: "csi-hostpathplugin"
-  - pod_name: "csi-hostpath-attacher"
-  - pod_name: "csi-hostpath-resizer"
+    - pod_name: "hostpath-provisioner"
+    - pod_name: "csi-hostpathplugin"
+    - pod_name: "csi-hostpath-attacher"
+    - pod_name: "csi-hostpath-resizer"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: v"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Version : v"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: v"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Version : v"
+          loglevel: "notice"

@@ -1,22 +1,23 @@
+---
 - name: "cerebro"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cerebro"
+    - pod_name: "cerebro"
   parser_rules:
-  - name: "strip_ansicodes"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[([a-z]+)\] ([^ ]+) - (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "WARNING: "
-      loglevel: "warning"
+    - name: "strip_ansicodes"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[([a-z]+)\] ([^ ]+) - (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "WARNING: "
+          loglevel: "warning"

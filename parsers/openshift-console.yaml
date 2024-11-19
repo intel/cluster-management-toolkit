@@ -1,32 +1,33 @@
+---
 - name: "openshift-console"
   show_in_selector: false
   matchkeys:
-  - pod_name: "console-operator"
-    container_name: "console-operator"
-  - pod_name: "console-conversion"
-  - pod_name: "console"
-    container_name: "console"
-    image_name: "/openshift"
+    - pod_name: "console-operator"
+      container_name: "console-operator"
+    - pod_name: "console-conversion"
+    - pod_name: "console"
+      container_name: "console"
+      image_name: "/openshift"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "expand_event"
-  - name: "key_value_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: \"TLS\" handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "expand_event"
+    - name: "key_value_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: \"TLS\" handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
 - name: "openshift-console"
   show_in_selector: false
   matchkeys:
-  - pod_name: "downloads"
-    container_name: "download-server"
-    image_name: "/openshift"
+    - pod_name: "downloads"
+      container_name: "download-server"
+      image_name: "/openshift"
   parser_rules:
-  - name: "http"
-    options:
-      reformat_timestamps: true
+    - name: "http"
+      options:
+        reformat_timestamps: true

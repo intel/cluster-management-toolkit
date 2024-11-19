@@ -1,18 +1,19 @@
+---
 - name: "kube-router"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kube-router"
-    container_name: "kube-router"
+    - pod_name: "kube-router"
+      container_name: "kube-router"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "regex"
-      matchkey: "^Running.*kube-router version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "failed to run kube-router"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "regex"
+          matchkey: "^Running.*kube-router version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "failed to run kube-router"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

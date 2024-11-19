@@ -1,21 +1,22 @@
+---
 - name: "intel-gpu-resource-driver"
   show_in_selector: false
   matchkeys:
-  - pod_name: "intel-gpu-resource-driver-"
+    - pod_name: "intel-gpu-resource-driver-"
   parser_rules:
-  - name: "glog"
-  - name: "diff_line"
-    options:
-      block_start:
-      - matchtype: "regex"
-        matchkey: "^\"updated object\".+diff=<$"
-        matchline: "any"
-      block_end:
-      - matchtype: "startswith"
-        matchkey: " >"
-      indent: "\t"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "DriverVersion:"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "diff_line"
+      options:
+        block_start:
+          - matchtype: "regex"
+            matchkey: "^\"updated object\".+diff=<$"
+            matchline: "any"
+        block_end:
+          - matchtype: "startswith"
+            matchkey: " >"
+        indent: "\t"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "DriverVersion:"
+          loglevel: "notice"

@@ -1,51 +1,52 @@
+---
 - name: "fluentd"
   show_in_selector: false
   matchkeys:
-  - pod_name: "fluentd"
-    container_name: "fluentd"
+    - pod_name: "fluentd"
+      container_name: "fluentd"
   parser_rules:
-  - name: "strip_ansicodes"
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^(\S+?)\s+\d\d:\d\d:\d\d\.\d\d\s([A-Z]{4})\s+(==>.*)'
-      facility:
-        fields:
-        - 1
-      severity:
-        field: 2
-        transform: "4letter"
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^(\S+?)\s+\d\d:\d\d:\d\d\.\d\d\s(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\[(\S+?)\]: (.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "regex"
-      matchkey: '^gem.*?version '
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "starting fluentd-1.14.4"
-      loglevel: "notice"
-  - name: "custom_splitter"
-    options:
-      regex: '^(gem)\s+(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
+    - name: "strip_ansicodes"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^(\S+?)\s+\d\d:\d\d:\d\d\.\d\d\s([A-Z]{4})\s+(==>.*)'
+        facility:
+          fields:
+            - 1
+        severity:
+          field: 2
+          transform: "4letter"
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^(\S+?)\s+\d\d:\d\d:\d\d\.\d\d\s(.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^\[(\S+?)\]: (.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        message:
+          field: 2
+    - name: "override_severity"
+      overrides:
+        - matchtype: "regex"
+          matchkey: '^gem.*?version '
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "starting fluentd-1.14.4"
+          loglevel: "notice"
+    - name: "custom_splitter"
+      options:
+        regex: '^(gem)\s+(.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2

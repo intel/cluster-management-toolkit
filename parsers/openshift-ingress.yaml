@@ -1,67 +1,68 @@
+---
 - name: "openshift-ingress"
   show_in_selector: false
   matchkeys:
-  - pod_name: "router-default"
-    container_name: "router"
+    - pod_name: "router-default"
+      container_name: "router"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: \"TLS\" handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-    - matchtype: "endswith"
-      matchkey: "failed: backend reported failure"
-      loglevel: "warning"
-    - matchtype: "regex"
-      matchkey: ".*has-synced failed:.*"
-      loglevel: "warning"
-    - matchtype: "regex"
-      matchkey: ".*check failed:.*"
-      loglevel: "warning"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: \"TLS\" handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+        - matchtype: "endswith"
+          matchkey: "failed: backend reported failure"
+          loglevel: "warning"
+        - matchtype: "regex"
+          matchkey: ".*has-synced failed:.*"
+          loglevel: "warning"
+        - matchtype: "regex"
+          matchkey: ".*check failed:.*"
+          loglevel: "warning"
 - name: "openshift-ingress"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ingress-operator"
-    container_name: "ingress-operator"
+    - pod_name: "ingress-operator"
+      container_name: "ingress-operator"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "expand_event"
-  - name: "custom_splitter"
-    options:
-      regex: '^\t([A-Z]+?)\t([^\s]+?)\t([^\s]+?:\d+?)\t(.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-        - 3
-        separators:
-        - "|"
-      message:
-        field: 4
-  - name: "json_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "expand_event"
+    - name: "custom_splitter"
+      options:
+        regex: '^\t([A-Z]+?)\t([^\s]+?)\t([^\s]+?:\d+?)\t(.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+            - 3
+          separators:
+            - "|"
+        message:
+          field: 4
+    - name: "json_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
 - name: "openshift-ingress"
   show_in_selector: false
   matchkeys:
-  - pod_name: "ingress-canary"
-    container_name: "serve-healthcheck-canary"
+    - pod_name: "ingress-canary"
+      container_name: "serve-healthcheck-canary"
   parser_rules:
-  - name: "ts_8601"
+    - name: "ts_8601"

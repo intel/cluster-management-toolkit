@@ -1,80 +1,81 @@
+---
 - name: "etcd"
   show_in_selector: false
   matchkeys:
-  - pod_name: "etcd"
+    - pod_name: "etcd"
   parser_rules:
-  - name: "ts_8601"
-  - name: "bracketed_severity"
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]) \| (\S+?): (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^(raft)\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d ([A-Z]{4}): (.*)'
-      severity:
-        field: 2
-        transform: "4letter"
-      facility:
-        fields:
-        - 1
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]+?): \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?): (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "glog"
-  - name: "expand_event"
-  - name: "json"
-    options:
-      versions:
-      - "etcd-version"
-      facilities:
-      - "caller"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "regex"
-      matchkey: "^Error: \"?context\"? deadline exceeded$"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "etcd Version"
-      loglevel: "notice"
-    - matchtype: "regex"
-      matchkey: 'starting an etcd server.*etcd-version'
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "trace["
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]+): \d{4}/\d\d/\d\d \d\d:\d\d:\d\d \[([^]]+)] (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "key_value"
+    - name: "ts_8601"
+    - name: "bracketed_severity"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]) \| (\S+?): (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^(raft)\d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d ([A-Z]{4}): (.*)'
+        severity:
+          field: 2
+          transform: "4letter"
+        facility:
+          fields:
+            - 1
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]+?): \d\d\d\d/\d\d/\d\d \d\d:\d\d:\d\d (\S+?): (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "glog"
+    - name: "expand_event"
+    - name: "json"
+      options:
+        versions:
+          - "etcd-version"
+        facilities:
+          - "caller"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "regex"
+          matchkey: "^Error: \"?context\"? deadline exceeded$"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "etcd Version"
+          loglevel: "notice"
+        - matchtype: "regex"
+          matchkey: 'starting an etcd server.*etcd-version'
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "trace["
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]+): \d{4}/\d\d/\d\d \d\d:\d\d:\d\d \[([^]]+)] (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "key_value"

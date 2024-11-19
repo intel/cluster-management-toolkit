@@ -1,50 +1,53 @@
+---
 - name: "kuberay"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kuberay/apiserver"
-  - image_name: "/kuberay/security-proxy"
+    - image_name: "/kuberay/apiserver"
+    - image_name: "/kuberay/security-proxy"
   parser_rules:
-  - name: "glog"
+    - name: "glog"
 - name: "kuberay"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kuberay/operator"
+    - image_name: "/kuberay/operator"
   parser_rules:
-  - name: "glog"
-  - name: "json"
+    - name: "glog"
+    - name: "json"
 - name: "kuberay"
   show_in_selector: false
   matchkeys:
-  - container_name: "kuberay-operator"
+    - container_name: "kuberay-operator"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
+    - name: "glog"
+    - name: "tab_separated"
 - name: "kuberay"
   show_in_selector: false
   matchkeys:
-  - container_name: "ray-head"
-  - container_name: "ray-worker"
+    - container_name: "ray-head"
+    - container_name: "ray-worker"
   parser_rules:
-  - name: "strip_ansicodes"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d,\d{3} ([A-Z]) \d+ \d+\] (.+?): (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d,\d{3}\s([A-Z]{4})\s([^ ]+)\s--\s(.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
+    - name: "strip_ansicodes"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\[\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d,\d{3} ([A-Z]) \d+ \d+\] (.+?): (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d,\d{3}\s([A-Z]{4})\s([^ ]+)\s--\s(.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3

@@ -1,11 +1,12 @@
+---
 - name: "nginx"
   show_in_selector: false
   matchkeys:
-  - image_name: "/library/nginx"
+    - image_name: "/library/nginx"
   parser_rules:
-  - name: "colon_facility"
-  - name: "ts_8601"
-  - name: "bracketed_severity"
-  - name: "http"
-    options:
-      reformat_timestamps: true
+    - name: "colon_facility"
+    - name: "ts_8601"
+    - name: "bracketed_severity"
+    - name: "http"
+      options:
+        reformat_timestamps: true

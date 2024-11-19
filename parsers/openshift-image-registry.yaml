@@ -1,28 +1,29 @@
+---
 - name: "openshift-image-registry"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-image-registry"
-    container_name: "cluster-image-registry"
-  - pod_name: "node-ca"
-    container_name: "node-ca"
+    - pod_name: "cluster-image-registry"
+      container_name: "cluster-image-registry"
+    - pod_name: "node-ca"
+      container_name: "node-ca"
   parser_rules:
-  - name: "glog"
-  - name: "expand_event"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Cluster Image Registry Operator Version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "expand_event"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Cluster Image Registry Operator Version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
 - name: "openshift-image-registry"
   show_in_selector: false
   matchkeys:
-  - pod_name: "image-registry"
-    container_name: "registry"
+    - pod_name: "image-registry"
+      container_name: "registry"
   parser_rules:
-  - name: "key_value"
-    options:
-      versions:
-      - "distribution_version"
+    - name: "key_value"
+      options:
+        versions:
+          - "distribution_version"

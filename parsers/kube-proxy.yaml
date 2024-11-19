@@ -1,25 +1,26 @@
+---
 - name: "kube-proxy"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kube-proxy"
+    - pod_name: "kube-proxy"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      - "version"
-      allow_bare_keys: true
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Flag --logtostderr has been deprecated"
-      loglevel: "warning"
-    - matchtype: "startswith"
-      matchkey: "Version: v"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "\"Version info\""
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"
+        allow_bare_keys: true
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Flag --logtostderr has been deprecated"
+          loglevel: "warning"
+        - matchtype: "startswith"
+          matchkey: "Version: v"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "\"Version info\""
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

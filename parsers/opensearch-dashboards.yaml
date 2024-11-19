@@ -1,13 +1,14 @@
+---
 - name: "opensearch-dashboards"
   show_in_selector: false
   matchkeys:
-  - pod_name: "opensearch-dashboards-"
-  - pod_name: "index-patterns"
-    image_name: "/fury/opensearchproject/opensearch-dashboards"
+    - pod_name: "opensearch-dashboards-"
+    - pod_name: "index-patterns"
+      image_name: "/fury/opensearchproject/opensearch-dashboards"
   parser_rules:
-  - name: "json"
-    options:
-      timestamps: ["@timestamp"]
-      error_tags:
-        tags:
-          error: "error"
+    - name: "json"
+      options:
+        timestamps: ["@timestamp"]
+        error_tags:
+          tags:
+            error: "error"

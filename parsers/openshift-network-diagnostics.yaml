@@ -1,17 +1,18 @@
+---
 - name: "openshift-network-diagnostics"
   show_in_selector: false
   matchkeys:
-  - pod_name: "network-check-source"
-    container_name: "check-endpoints"
-  - pod_name: "network-check-target"
-    container_name: "network-check-target-container"
+    - pod_name: "network-check-source"
+      container_name: "check-endpoints"
+    - pod_name: "network-check-target"
+      container_name: "network-check-target-container"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "check-endpoints version "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "check-endpoints version "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

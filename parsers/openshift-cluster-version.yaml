@@ -1,21 +1,22 @@
+---
 - name: "openshift-cluster-version"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-version-operator"
-    container_name: "cluster-version-operator"
+    - pod_name: "cluster-version-operator"
+      container_name: "cluster-version-operator"
   parser_rules:
-  - name: "glog"
-  - name: "diff_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "Updating "
-        matchline: "any"
-      block_end:
-      - matchtype: "startswith"
-        matchkey: "  }"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "ClusterVersionOperator "
-      loglevel: "notice"
+    - name: "glog"
+    - name: "diff_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "Updating "
+            matchline: "any"
+        block_end:
+          - matchtype: "startswith"
+            matchkey: "  }"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "ClusterVersionOperator "
+          loglevel: "notice"

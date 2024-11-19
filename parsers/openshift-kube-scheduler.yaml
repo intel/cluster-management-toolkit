@@ -1,47 +1,50 @@
+---
 - name: "kube-scheduler"
   show_in_selector: false
   matchkeys:
-  - pod_name: "openshift-kube-scheduler"
-    container_name: "kube-scheduler"
+    - pod_name: "openshift-kube-scheduler"
+      container_name: "kube-scheduler"
   parser_rules:
-  - name: "glog"
-  - name: "yaml_line"
-    options:
-      block_start:
-      - matchtype: "exact"
-        matchkey: "-------------------------Configuration File Contents Start Here----------------------"
-        matchline: "any"
-      block_end:
-      - matchtype: "exact"
-        matchkey: "------------------------------------Configuration File Contents End Here---------------------------------"
-      - matchtype: "empty"
-  - name: "yaml_line"
-    options:
-      block_start:
-      - matchtype: "exact"
-        matchkey: "Using component config:"
-        matchline: "any"
-      block_end:
-      - matchtype: "empty"
-  - name: "expand_event"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      - "version"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "Version: v"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Starting Kubernetes Scheduler version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "cert-recovery-controller version"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "openshift-cluster-kube-scheduler-operator version"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "yaml_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            # yamllint disable-line rule:line-length
+            matchkey: "-------------------------Configuration File Contents Start Here----------------------"
+            matchline: "any"
+        block_end:
+          - matchtype: "exact"
+            # yamllint disable-line rule:line-length
+            matchkey: "------------------------------------Configuration File Contents End Here---------------------------------"
+          - matchtype: "empty"
+    - name: "yaml_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "Using component config:"
+            matchline: "any"
+        block_end:
+          - matchtype: "empty"
+    - name: "expand_event"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "Version: v"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Starting Kubernetes Scheduler version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "cert-recovery-controller version"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "openshift-cluster-kube-scheduler-operator version"
+          loglevel: "notice"

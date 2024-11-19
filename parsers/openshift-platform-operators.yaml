@@ -1,27 +1,28 @@
+---
 - name: "openshift-platform-operators"
   show_in_selector: false
   matchkeys:
-  - pod_name: "platform-operators-controller-manager"
-    container_name: "manager"
+    - pod_name: "platform-operators-controller-manager"
+      container_name: "manager"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s([A-Z]+)\s([a-z][^\s]+)\s(.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s([A-Z]+)\s(.*)'
-      severity:
-        field: 1
-        transform: "str"
-      message:
-        field: 2
-  - name: "json_with_leading_message"
-  - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s([A-Z]+)\s([a-z][^\s]+)\s(.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s([A-Z]+)\s(.*)'
+        severity:
+          field: 1
+          transform: "str"
+        message:
+          field: 2
+    - name: "json_with_leading_message"
+    - name: "glog"

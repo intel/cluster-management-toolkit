@@ -1,16 +1,17 @@
+---
 - name: "dapr"
   show_in_selector: false
   matchkeys:
-  - pod_name: "dapr-"
-  - image_name: "/daprio/daprd"
+    - pod_name: "dapr-"
+    - image_name: "/daprio/daprd"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-    options:
-      facilities:
-      - "scope"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "contains"
-      matchkey: "-- version "
-      loglevel: "notice"
+    - name: "glog"
+    - name: "key_value"
+      options:
+        facilities:
+          - "scope"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "contains"
+          matchkey: "-- version "
+          loglevel: "notice"

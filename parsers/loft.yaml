@@ -1,19 +1,20 @@
+---
 - name: "loft"
   show_in_selector: false
   matchkeys:
-  - pod_name: "loft"
+    - pod_name: "loft"
   parser_rules:
-  - name: "glog"
-  - name: "json_line"
-    options:
-      block_start:
-      - matchtype: "endswith"
-        matchkey: "with policy: {"
-        matchline: "any"
+    - name: "glog"
+    - name: "json_line"
+      options:
+        block_start:
+          - matchtype: "endswith"
+            matchkey: "with policy: {"
+            matchline: "any"
 - name: "loft"
   show_in_selector: false
   matchkeys:
-  - image_name: "/loftsh/cluster-api-provider-vcluster"
+    - image_name: "/loftsh/cluster-api-provider-vcluster"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
+    - name: "glog"
+    - name: "tab_separated"

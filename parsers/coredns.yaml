@@ -1,33 +1,34 @@
+---
 - name: "coredns"
   show_in_selector: false
   matchkeys:
-  - pod_name: "coredns"
-  - pod_name: "rke2-coredns"
+    - pod_name: "coredns"
+    - pod_name: "rke2-coredns"
   parser_rules:
-  - name: "ts_8601"
-  - name: "bracketed_severity"
-    default_loglevel: "info"
-  - name: "glog"
-  - name: "json_line"
-    options:
-      block_start:
-      - matchtype: "exact"
-        matchkey: "Params from apiserver:"
-        matchline: "any"
-  - name: "custom_splitter"
-    options:
-      regex: '^(plugin/[^:]+): (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "CoreDNS"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-  - name: "key_value"
+    - name: "ts_8601"
+    - name: "bracketed_severity"
+      default_loglevel: "info"
+    - name: "glog"
+    - name: "json_line"
+      options:
+        block_start:
+          - matchtype: "exact"
+            matchkey: "Params from apiserver:"
+            matchline: "any"
+    - name: "custom_splitter"
+      options:
+        regex: '^(plugin/[^:]+): (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "CoreDNS"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+    - name: "key_value"

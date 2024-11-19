@@ -1,30 +1,31 @@
+---
 - name: "otterize"
   show_in_selector: false
   matchkeys:
-  - pod_name: "otterize-network-mapper"
+    - pod_name: "otterize-network-mapper"
   parser_rules:
-  - name: "json"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "   ____    __"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "  / __/___/ /  ___"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: " / _// __/ _ \\/ _ \\"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "/___/\\__/_//_/\\___/ v"
-      loglevel: "notice"
+    - name: "json"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "   ____    __"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "  / __/___/ /  ___"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: " / _// __/ _ \\/ _ \\"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "/___/\\__/_//_/\\___/ v"
+          loglevel: "notice"
 - name: "otterize"
   show_in_selector: false
   matchkeys:
-  - pod_name: "otterize-network-sniffer"
-  - pod_name: "otterize-istio-watcher"
-  - pod_name: "otterize-watcher"
-  - image_name: "/otterize/credentials-operator"
+    - pod_name: "otterize-network-sniffer"
+    - pod_name: "otterize-istio-watcher"
+    - pod_name: "otterize-watcher"
+    - image_name: "/otterize/credentials-operator"
   parser_rules:
-  - name: "key_value"
+    - name: "key_value"

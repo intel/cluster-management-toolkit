@@ -1,20 +1,21 @@
+---
 - name: "kuik"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kube-image-keeper"
+    - pod_name: "kube-image-keeper"
   parser_rules:
-  - name: "tab_separated"
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "key_value"
-    options:
-      errors:
-      - "err"
-      - "error"
-      - "err.message"
-  - name: "http"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
+    - name: "tab_separated"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "key_value"
+      options:
+        errors:
+          - "err"
+          - "error"
+          - "err.message"
+    - name: "http"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"

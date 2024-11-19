@@ -1,15 +1,16 @@
+---
 - name: "metrics-scraper"
   show_in_selector: false
   matchkeys:
-  - pod_name: "dashboard-metrics-scraper"
-  - pod_name: "kubernetes-metrics-scraper"
+    - pod_name: "dashboard-metrics-scraper"
+    - pod_name: "kubernetes-metrics-scraper"
   parser_rules:
-  - name: "json"
-  - name: "http"
-    options:
-      reformat_timestamps: true
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Kubernetes host:"
-      loglevel: "notice"
+    - name: "json"
+    - name: "http"
+      options:
+        reformat_timestamps: true
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Kubernetes host:"
+          loglevel: "notice"

@@ -1,23 +1,24 @@
+---
 - name: "openshift-cluster-samples"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-samples-operator"
-    container_name: "cluster-samples-operator-watch"
+    - pod_name: "cluster-samples-operator"
+      container_name: "cluster-samples-operator-watch"
   parser_rules:
-  - name: "glog"
+    - name: "glog"
 - name: "openshift-cluster-samples"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-samples-operator"
-    container_name: "cluster-samples-operator"
+    - pod_name: "cluster-samples-operator"
+      container_name: "cluster-samples-operator"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "clearImageStreamTagError"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "clearImageStreamTagError"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

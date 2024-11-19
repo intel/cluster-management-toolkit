@@ -1,102 +1,107 @@
+---
 - name: "eck"
   show_in_selector: false
   matchkeys:
-  - image_name: "/eck/eck-operator"
-  - image_name: "/apm/apm-server"
-  - image_name: "/elasticsearch/elasticsearch"
-  - image_name: "/beats/elastic-agent"
-  - image_name: "/beats/filebeat"
+    - image_name: "/eck/eck-operator"
+    - image_name: "/apm/apm-server"
+    - image_name: "/elasticsearch/elasticsearch"
+    - image_name: "/beats/elastic-agent"
+    - image_name: "/beats/filebeat"
   parser_rules:
-  - name: "glog"
-  - name: "json"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "WARNING:"
-      loglevel: "warning"
+    - name: "glog"
+    - name: "json"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "WARNING:"
+          loglevel: "warning"
 - name: "eck"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kibana/kibana"
+    - image_name: "/kibana/kibana"
   parser_rules:
-  - name: "glog"
-  - name: "json"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d[^]]+\]\[([A-Z]+)\s*\]\[([^]]+)\] (.*)'
-      facility:
-        fields:
-        - 2
-      severity:
-        field: 1
-        transform: "str"
-      message:
-        field: 3
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Elastic APM Node.js Agent v"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "json"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d{4}-\d\d-\d[^]]+\]\[([A-Z]+)\s*\]\[([^]]+)\] (.*)'
+        facility:
+          fields:
+            - 2
+        severity:
+          field: 1
+          transform: "str"
+        message:
+          field: 3
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Elastic APM Node.js Agent v"
+          loglevel: "notice"
 - name: "eck"
   show_in_selector: false
   matchkeys:
-  - image_name: "/enterprise-search/enterprise-search"
+    - image_name: "/enterprise-search/enterprise-search"
   parser_rules:
-  - name: "json"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d[^]]+\]\[\d+\]\[\d+\]\[([^]]+)\]\[([A-Z]+)\s*\]: (.*)'
-      facility:
-        fields:
-        - 1
-      severity:
-        field: 2
-        transform: "str"
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d[^]]+\]\[\d+\]\[\d+\]\[([^]]+)\]\[([A-Z]+)\s*\]:()'
-      facility:
-        fields:
-        - 1
-      severity:
-        field: 2
-        transform: "str"
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}:([A-Z]+):(.+?): (.*)'
-      facility:
-        fields:
-        - 2
-      severity:
-        field: 1
-        transform: "str"
-      message:
-        field: 3
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "#########################################################"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "startswith"
-        matchkey: "#########################################################"
-        matchline: "any"
-        format_block_end: true
-      loglevel: "notice"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "WARNING:"
-      loglevel: "warning"
-    - matchtype: "startswith"
-      matchkey: "Error:"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Elastic Enterprise Search version="
-      loglevel: "notice"
+    - name: "json"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\[\d{4}-\d\d-\d[^]]+\]\[\d+\]\[\d+\]\[([^]]+)\]\[([A-Z]+)\s*\]: (.*)'
+        facility:
+          fields:
+            - 1
+        severity:
+          field: 2
+          transform: "str"
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\[\d{4}-\d\d-\d[^]]+\]\[\d+\]\[\d+\]\[([^]]+)\]\[([A-Z]+)\s*\]:()'
+        facility:
+          fields:
+            - 1
+        severity:
+          field: 2
+          transform: "str"
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}:([A-Z]+):(.+?): (.*)'
+        facility:
+          fields:
+            - 2
+        severity:
+          field: 1
+          transform: "str"
+        message:
+          field: 3
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            # yamllint disable-line rule:line-length
+            matchkey: "#########################################################"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "startswith"
+            # yamllint disable-line rule:line-length
+            matchkey: "#########################################################"
+            matchline: "any"
+            format_block_end: true
+        loglevel: "notice"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "WARNING:"
+          loglevel: "warning"
+        - matchtype: "startswith"
+          matchkey: "Error:"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Elastic Enterprise Search version="
+          loglevel: "notice"

@@ -1,25 +1,26 @@
+---
 - name: "keycloak"
   show_in_selector: false
   matchkeys:
-  - image_name: "/keycloak/keycloak"
+    - image_name: "/keycloak/keycloak"
   parser_rules:
-  - name: "ts_8601"
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]{4})  \[([^]]+)\] \((.+?)\) (.*)'
-      severity:
-        field: 1
-        transform: "4letter"
-      facility:
-        fields:
-        - 2
-        - 3
-        separators:
-        - "|"
-      message:
-        field: 4
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Keycloak "
-      loglevel: "notice"
+    - name: "ts_8601"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]{4})  \[([^]]+)\] \((.+?)\) (.*)'
+        severity:
+          field: 1
+          transform: "4letter"
+        facility:
+          fields:
+            - 2
+            - 3
+          separators:
+            - "|"
+        message:
+          field: 4
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Keycloak "
+          loglevel: "notice"

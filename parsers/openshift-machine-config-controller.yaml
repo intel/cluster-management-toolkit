@@ -1,49 +1,50 @@
+---
 - name: "machine-config-controller"
   show_in_selector: false
   matchkeys:
-  - container_name: "machine-config-"
-  - container_name: "oauth-proxy"
+    - container_name: "machine-config-"
+    - container_name: "oauth-proxy"
   parser_rules:
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d ([^:]+:[^:]+): (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s+([^\s]+)\s+([^]]+)] (.*)'
-      severity: 1
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "expand_event"
-  - name: "json_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "CoreOS aleph version:"
-        matchline: "any"
-      block_end:
-      - matchtype: "exact"
-        matchkey: "}"
-        matchline: "any"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version:"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Nmstate version:"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "Error syncing "
-      loglevel: "error"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}/\d\d/\d\d \d\d:\d\d:\d\d ([^:]+:[^:]+): (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ\s+([^\s]+)\s+([^]]+)] (.*)'
+        severity: 1
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "expand_event"
+    - name: "json_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "CoreOS aleph version:"
+            matchline: "any"
+        block_end:
+          - matchtype: "exact"
+            matchkey: "}"
+            matchline: "any"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Nmstate version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "Error syncing "
+          loglevel: "error"

@@ -1,84 +1,85 @@
+---
 - name: "kasten"
   show_in_selector: false
   matchkeys:
-  - pod_name: "aggregatedapis-svc"
-    image_name: "/kasten-images/aggregatedapis"
+    - pod_name: "aggregatedapis-svc"
+      image_name: "/kasten-images/aggregatedapis"
   parser_rules:
-  - name: "glog"
+    - name: "glog"
 - name: "kasten"
   show_in_selector: false
   matchkeys:
-  - pod_name: "auth-svc"
-    image_name: "/kasten-images/auth"
-  - pod_name: "config-svc"
-    image_name: "/kasten-images/config"
-  - pod_name: "crypto-svc"
-    image_name: "/kasten-images/crypto"
-  - pod_name: "crypto-svc"
-    image_name: "/kasten-images/bloblifecyclemanager"
-  - pod_name: "dashboardbff-svc"
-    image_name: "/kasten-images/dashboardbff"
-  - pod_name: "executor-svc"
-    image_name: "/kasten-images/executor"
-  - pod_name: "kanister-svc"
-    image_name: "/kasten-images/kanister"
-  - pod_name: "state-svc"
-    image_name: "/kasten-images/state"
-  - pod_name: "state-svc"
-    image_name: "/kasten-images/admin"
+    - pod_name: "auth-svc"
+      image_name: "/kasten-images/auth"
+    - pod_name: "config-svc"
+      image_name: "/kasten-images/config"
+    - pod_name: "crypto-svc"
+      image_name: "/kasten-images/crypto"
+    - pod_name: "crypto-svc"
+      image_name: "/kasten-images/bloblifecyclemanager"
+    - pod_name: "dashboardbff-svc"
+      image_name: "/kasten-images/dashboardbff"
+    - pod_name: "executor-svc"
+      image_name: "/kasten-images/executor"
+    - pod_name: "kanister-svc"
+      image_name: "/kasten-images/kanister"
+    - pod_name: "state-svc"
+      image_name: "/kasten-images/state"
+    - pod_name: "state-svc"
+      image_name: "/kasten-images/admin"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      regex: '^ (Error): (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: " Error:"
-      loglevel: "error"
-  - name: "json_with_leading_message"
-    options:
-      versions:
-      - "version"
-      messages:
-      - "message"
-      - "Message"
-      severities:
-      - "level"
-      - "Level"
-      timestamps:
-      - "time"
-      - "Time"
-      facilities:
-      - keys:
-        - "File"
-        - "Line"
-        separators:
-        - ":"
-      errors:
-      - "Err"
-  - name: "key_value"
-    options:
-      versions:
-      - "version"
-      facilities:
-      - keys:
-        - "File"
-        - "Line"
-        separators:
-        - ":"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^ (Error): (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        message:
+          field: 2
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: " Error:"
+          loglevel: "error"
+    - name: "json_with_leading_message"
+      options:
+        versions:
+          - "version"
+        messages:
+          - "message"
+          - "Message"
+        severities:
+          - "level"
+          - "Level"
+        timestamps:
+          - "time"
+          - "Time"
+        facilities:
+          - keys:
+              - "File"
+              - "Line"
+            separators:
+              - ":"
+        errors:
+          - "Err"
+    - name: "key_value"
+      options:
+        versions:
+          - "version"
+        facilities:
+          - keys:
+              - "File"
+              - "Line"
+            separators:
+              - ":"
 - name: "kasten"
   show_in_selector: false
   matchkeys:
-  - pod_name: "frontend-svc"
-    image_name: "/kasten-images/frontend"
+    - pod_name: "frontend-svc"
+      image_name: "/kasten-images/frontend"
   parser_rules:
-  - name: "http"
-    options:
-      reformat_timestamps: true
+    - name: "http"
+      options:
+        reformat_timestamps: true

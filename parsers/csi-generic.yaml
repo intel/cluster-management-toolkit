@@ -1,14 +1,15 @@
+---
 - name: "csi-generic"
   show_in_selector: false
   matchkeys:
-  - pod_name: "csi-attacher"
-  - pod_name: "csi-provisioner"
-  - pod_name: "csi-resizer"
-  - pod_name: "csi-snapshotter"
+    - pod_name: "csi-attacher"
+    - pod_name: "csi-provisioner"
+    - pod_name: "csi-resizer"
+    - pod_name: "csi-snapshotter"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      - "version"
-  - name: "expand_event"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"
+    - name: "expand_event"

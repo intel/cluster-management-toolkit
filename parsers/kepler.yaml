@@ -1,11 +1,12 @@
+---
 - name: "kepler"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kepler"
+    - pod_name: "kepler"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "modprobe: FATAL: "
-      loglevel: "error"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "modprobe: FATAL: "
+          loglevel: "error"

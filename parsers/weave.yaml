@@ -1,3 +1,4 @@
+---
 - name: "weave"
   show_in_selector: false
   matchkeys:
@@ -9,6 +10,7 @@
   - name: "angle_bracketed_facility"
   - name: "custom_splitter"
     options:
+      # yamllint disable-line rule:line-length
       regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
       severity:
         field: 1
@@ -46,6 +48,7 @@
   - name: "glog"
   - name: "custom_splitter"
     options:
+      # yamllint disable-line rule:line-length
       regex: '^[A-Z][a-z]{2} [A-Z][a-z]{2} +\d+ \d\d:\d\d:\d\d \d{4} <(\d)> (\S+:\d+) (.*)'
       severity:
         field: 1

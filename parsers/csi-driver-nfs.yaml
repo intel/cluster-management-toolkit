@@ -1,50 +1,51 @@
+---
 - name: "csi-driver-nfs"
   show_in_selector: false
   matchkeys:
-  - image_name: "/sig-storage/csi-node-driver-registrar"
-  - image_name: "/sig-storage/livenessprobe"
+    - image_name: "/sig-storage/csi-node-driver-registrar"
+    - image_name: "/sig-storage/livenessprobe"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-    options:
-      versions:
-      - "version"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+      options:
+        versions:
+          - "version"
 - name: "csi-driver-nfs"
   show_in_selector: false
   matchkeys:
-  - image_name: "/sig-storage/csi-provisioner"
+    - image_name: "/sig-storage/csi-provisioner"
   parser_rules:
-  - name: "glog"
-  - name: "key_value_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: "
-      loglevel: "notice"
+    - name: "glog"
+    - name: "key_value_with_leading_message"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: "
+          loglevel: "notice"
 - name: "csi-driver-nfs"
   show_in_selector: false
   matchkeys:
-  - pod_name: "csi-nfs"
+    - pod_name: "csi-nfs"
   parser_rules:
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Version: "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Driver: nfs.csi.k8s.io version: "
-      loglevel: "notice"
-  - name: "custom_line"
-    options:
-      block_start:
-      - matchtype: "startswith"
-        matchkey: "DRIVER INFORMATION:"
-        matchline: "any"
-        format_block_start: true
-      block_end:
-      - matchtype: "empty"
-        matchkey: ""
-        matchline: "any"
-        format_block_end: true
-      loglevel: "notice"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Version: "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Driver: nfs.csi.k8s.io version: "
+          loglevel: "notice"
+    - name: "custom_line"
+      options:
+        block_start:
+          - matchtype: "startswith"
+            matchkey: "DRIVER INFORMATION:"
+            matchline: "any"
+            format_block_start: true
+        block_end:
+          - matchtype: "empty"
+            matchkey: ""
+            matchline: "any"
+            format_block_end: true
+        loglevel: "notice"

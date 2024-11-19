@@ -1,16 +1,17 @@
+---
 - name: "freshpod"
   show_in_selector: false
   matchkeys:
-  - pod_name: "freshpod"
-    container_name: "freshpod"
+    - pod_name: "freshpod"
+      container_name: "freshpod"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "connected kubernetes apiserver"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "connected docker api"
-      loglevel: "notice"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "connected kubernetes apiserver"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "connected docker api"
+          loglevel: "notice"

@@ -1,163 +1,167 @@
+---
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - container_name: "training-operator"
-    image_name: "/kubeflow/training-operator"
+    - container_name: "training-operator"
+      image_name: "/kubeflow/training-operator"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
-  - name: "key_value"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "tab_separated"
+    - name: "key_value"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeflownotebookswg/kfam"
+    - image_name: "/kubeflownotebookswg/kfam"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
+    - name: "glog"
+    - name: "key_value"
 - name: "tensorflow"
   show_in_selector: false
   matchkeys:
-  - pod_name: "tensorflow-mnist-launcher"
-    container_name: "mpi"
+    - pod_name: "tensorflow-mnist-launcher"
+      container_name: "mpi"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^()\[(\d+)\] \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
-      severity:
-        field: 3
-        transform: "letter"
-      facility:
-        fields:
-        - 4
-        - 2
-        - 1
-        separators:
-        - "|"
-        - "|"
-      message:
-        field: 5
-  - name: "custom_splitter"
-    options:
-      regex: '^()\[(\d+)\] (.*)'
-      facility:
-        fields:
-        - 1
-        - 2
-        - 1
-        separators:
-        - "|"
-        - "|"
-      message:
-        field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^()\[(\d+)\] \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{6}: ([A-Z]) ([^]]+)] (.*)'
+        severity:
+          field: 3
+          transform: "letter"
+        facility:
+          fields:
+            - 4
+            - 2
+            - 1
+          separators:
+            - "|"
+            - "|"
+        message:
+          field: 5
+    - name: "custom_splitter"
+      options:
+        regex: '^()\[(\d+)\] (.*)'
+        facility:
+          fields:
+            - 1
+            - 2
+            - 1
+          separators:
+            - "|"
+            - "|"
+        message:
+          field: 3
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeflownotebookswg/profile-controller"
-  - image_name: "/kubeflownotebookswg/notebook-controller"
-  - image_name: "/kubeflownotebookswg/pvcviewer-controller"
-  - image_name: "/kubeflownotebookswg/tensorboard-controller"
+    - image_name: "/kubeflownotebookswg/profile-controller"
+    - image_name: "/kubeflownotebookswg/notebook-controller"
+    - image_name: "/kubeflownotebookswg/pvcviewer-controller"
+    - image_name: "/kubeflownotebookswg/tensorboard-controller"
   parser_rules:
-  - name: "glog"
-  - name: "tab_separated"
+    - name: "glog"
+    - name: "tab_separated"
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeflowkatib/katib-controller"
-  - image_name: "/kubeflowkatib/katib-db-manager"
-  - image_name: "/kubeflownotebookswg/poddefaults-webhook"
+    - image_name: "/kubeflowkatib/katib-controller"
+    - image_name: "/kubeflowkatib/katib-db-manager"
+    - image_name: "/kubeflownotebookswg/poddefaults-webhook"
   parser_rules:
-  - name: "glog"
-  - name: "json"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "json"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/horovod/horovod"
-  - image_name: "/kubeflow/tf-mnist-with-summaries"
+    - image_name: "/horovod/horovod"
+    - image_name: "/kubeflow/tf-mnist-with-summaries"
   parser_rules:
-  - name: "custom_splitter"
-    options:
-      regex: '^[A-Za-z]{3} [A-Za-z]{3} \d+ \d\d:\d\d:\d\d \d{4}\[\d+\]<([^>]+?)>:(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+?: ([A-Z]) ([^:]+:\d+)\] (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]+):(.+?):(.+)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^[A-Za-z]{3} [A-Za-z]{3} \d+ \d\d:\d\d:\d\d \d{4}\[\d+\]<([^>]+?)>:(.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d+?: ([A-Z]) ([^:]+:\d+)\] (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]+):(.+?):(.+)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeflowkatib/pytorch-mnist"
-  - image_name: "/kubeflowkatib/suggestion-hyperopt"
-  - image_name: "/kubeflowkatib/file-metrics-collector"
-  - image_name: "/bytepsimage/mxnet"
+    - image_name: "/kubeflowkatib/pytorch-mnist"
+    - image_name: "/kubeflowkatib/suggestion-hyperopt"
+    - image_name: "/kubeflowkatib/file-metrics-collector"
+    - image_name: "/bytepsimage/mxnet"
   parser_rules:
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[\d\d:\d\d:\d\d\] ([^:]+?:\d+?): (.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]+):([^:]+?):(.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "python_traceback"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[\d\d:\d\d:\d\d\] ([^:]+?:\d+?): (.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]+):([^:]+?):(.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "python_traceback"
 - name: "kubeflow"
   show_in_selector: false
   matchkeys:
-  - image_name: "/kubeflow/jaxjob-simple"
-  - image_name: "/kubeflow/model-registry"
+    - image_name: "/kubeflow/jaxjob-simple"
+    - image_name: "/kubeflow/model-registry"
   parser_rules:
-  - name: "glog"
+    - name: "glog"

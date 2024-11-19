@@ -1,9 +1,10 @@
+---
 - name: "iptables"
   show_in_selector: false
   matchkeys:
-  - container_name: "istio-init"
-    image_name: "/istio/proxyv2"
-    container_type: "init_container"
+    - container_name: "istio-init"
+      image_name: "/istio/proxyv2"
+      container_type: "init_container"
   parser_rules:
-  - name: "ts_8601"
-  - name: "iptables"
+    - name: "ts_8601"
+    - name: "iptables"

@@ -1,38 +1,40 @@
+---
 - name: "openshift-cluster-node-tuning"
   show_in_selector: false
   matchkeys:
-  - pod_name: "cluster-node-tuning-operator"
-    container_name: "cluster-node-tuning-operator"
-  - pod_name: "tuned"
-    container_name: "tuned"
+    - pod_name: "cluster-node-tuning-operator"
+      container_name: "cluster-node-tuning-operator"
+    - pod_name: "tuned"
+      container_name: "tuned"
   parser_rules:
-  - name: "glog"
-  - name: "custom_splitter"
-    options:
-      regex: '^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d ([A-Z]+?)\s+(\S+?): (.*)'
-      severity:
-        field: 1
-        transform: "str"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "ts_8601"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "TuneD: "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "node-tuning Version:"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "starting openshift-tuned "
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
+    - name: "glog"
+    - name: "custom_splitter"
+      options:
+        # yamllint disable-line rule:line-length
+        regex: '^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d ([A-Z]+?)\s+(\S+?): (.*)'
+        severity:
+          field: 1
+          transform: "str"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "ts_8601"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "TuneD: "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "node-tuning Version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "starting openshift-tuned "
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"

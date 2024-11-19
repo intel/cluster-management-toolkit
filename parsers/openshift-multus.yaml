@@ -1,64 +1,65 @@
+---
 - name: "openshift-multus"
   show_in_selector: false
   matchkeys:
-  - pod_name: "multus"
-    container_name: "kube-multus"
-  - pod_name: "multus-additional-cni-plugins"
-  - pod_name: "multus-additional-cni-plugins"
-    container_type: "init_container"
+    - pod_name: "multus"
+      container_name: "kube-multus"
+    - pod_name: "multus-additional-cni-plugins"
+    - pod_name: "multus-additional-cni-plugins"
+      container_type: "init_container"
   parser_rules:
-  - name: "ts_8601"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "[verbose]"
-      loglevel: "debug"
-  - name: "custom_splitter"
-    options:
-      regex: '^(\[verbose\] )?(.*)'
-      message:
-        field: 2
-  - name: "glog"
-  - name: "json"
-    options:
-      versions:
-      - "cniVersion"
-  - name: "expand_event"
-  - name: "custom_splitter"
-    options:
-      regex: '^\[(cnibincopy)\]\s(.*)'
-      facility:
-        fields:
-        - 1
-      message:
-        field: 2
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "WARN: "
-      loglevel: "warning"
+    - name: "ts_8601"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "[verbose]"
+          loglevel: "debug"
+    - name: "custom_splitter"
+      options:
+        regex: '^(\[verbose\] )?(.*)'
+        message:
+          field: 2
+    - name: "glog"
+    - name: "json"
+      options:
+        versions:
+          - "cniVersion"
+    - name: "expand_event"
+    - name: "custom_splitter"
+      options:
+        regex: '^\[(cnibincopy)\]\s(.*)'
+        facility:
+          fields:
+            - 1
+        message:
+          field: 2
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "WARN: "
+          loglevel: "warning"
 - name: "openshift-multus"
   show_in_selector: false
   matchkeys:
-  - pod_name: "multus-admission-controller"
-    container_name: "multus-admission-controller"
-  - pod_name: "network-metrics-daemon"
-    container_name: "network-metrics-daemon"
-    image_name: "/openshift"
+    - pod_name: "multus-admission-controller"
+      container_name: "multus-admission-controller"
+    - pod_name: "network-metrics-daemon"
+      container_name: "network-metrics-daemon"
+      image_name: "/openshift"
   parser_rules:
-  - name: "ts_8601"
-  - name: "glog"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "http: \"TLS\" handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "http: TLS handshake error"
-      loglevel: "error"
-    - matchtype: "startswith"
-      matchkey: "Version:"
-      loglevel: "notice"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "ts_8601"
+    - name: "glog"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "http: \"TLS\" handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "http: TLS handshake error"
+          loglevel: "error"
+        - matchtype: "startswith"
+          matchkey: "Version:"
+          loglevel: "notice"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"

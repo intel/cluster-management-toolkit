@@ -1,43 +1,44 @@
+---
 - name: "keda"
   show_in_selector: false
   matchkeys:
-  - pod_name: "keda"
+    - pod_name: "keda"
   parser_rules:
-  - name: "glog"
-  - name: "ts_8601"
-  - name: "key_value_with_leading_message"
-    options:
-      severity:
-        overrides:
+    - name: "glog"
+    - name: "ts_8601"
+    - name: "key_value_with_leading_message"
+      options:
+        severity:
+          overrides:
+            - matchtype: "startswith"
+              matchkey: "\"KEDA Version:"
+              loglevel: "notice"
+    - name: "custom_splitter"
+      options:
+        regex: '^([A-Z]) \| (.*)'
+        severity:
+          field: 1
+          transform: "letter"
+        message:
+          field: 2
+    - name: "custom_splitter"
+      options:
+        regex: '^\t([A-Z]+?)\t(\S+?)\t(.*)'
+        severity:
+          field: 1
+          transform: "str"
+          overrides:
+            - matchtype: "startswith"
+              matchkey: "KEDA Version:"
+              loglevel: "notice"
+        facility:
+          fields:
+            - 2
+        message:
+          field: 3
+    - name: "json_with_leading_message"
+    - name: "override_severity"
+      overrides:
         - matchtype: "startswith"
-          matchkey: "\"KEDA Version:"
-          loglevel: "notice"
-  - name: "custom_splitter"
-    options:
-      regex: '^([A-Z]) \| (.*)'
-      severity:
-        field: 1
-        transform: "letter"
-      message:
-        field: 2
-  - name: "custom_splitter"
-    options:
-      regex: '^\t([A-Z]+?)\t(\S+?)\t(.*)'
-      severity:
-        field: 1
-        transform: "str"
-        overrides:
-        - matchtype: "startswith"
-          matchkey: "KEDA Version:"
-          loglevel: "notice"
-      facility:
-        fields:
-        - 2
-      message:
-        field: 3
-  - name: "json_with_leading_message"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+          matchkey: "Trace["
+          loglevel: "debug"

@@ -1,13 +1,14 @@
+---
 - name: "kube-storage-version-migrator"
   show_in_selector: false
   matchkeys:
-  - pod_name: "kube-storage-version-migrator"
-    container_name: "kube-storage-version-migrator"
+    - pod_name: "kube-storage-version-migrator"
+      container_name: "kube-storage-version-migrator"
   parser_rules:
-  - name: "glog"
-  - name: "expand_event"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "openshift-kube-storage-version-migrator-operator version"
-      loglevel: "notice"
+    - name: "glog"
+    - name: "expand_event"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "openshift-kube-storage-version-migrator-operator version"
+          loglevel: "notice"

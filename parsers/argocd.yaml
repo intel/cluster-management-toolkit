@@ -1,23 +1,24 @@
+---
 - name: "argocd"
   show_in_selector: false
   matchkeys:
-  - pod_name: "argocd-application-controller"
-  - pod_name: "argocd-applicationset-controller"
-  - pod_name: "argocd-dex-server"
-  - pod_name: "argocd-notifications-controller"
-  - pod_name: "argocd-repo-server"
-  - pod_name: "argocd-server"
+    - pod_name: "argocd-application-controller"
+    - pod_name: "argocd-applicationset-controller"
+    - pod_name: "argocd-dex-server"
+    - pod_name: "argocd-notifications-controller"
+    - pod_name: "argocd-repo-server"
+    - pod_name: "argocd-server"
   parser_rules:
-  - name: "glog"
-  - name: "key_value"
-    options:
-      versions:
-      - "version"
-  - name: "override_severity"
-    overrides:
-    - matchtype: "startswith"
-      matchkey: "Alloc="
-      loglevel: "debug"
-    - matchtype: "startswith"
-      matchkey: "Trace["
-      loglevel: "debug"
+    - name: "glog"
+    - name: "key_value"
+      options:
+        versions:
+          - "version"
+    - name: "override_severity"
+      overrides:
+        - matchtype: "startswith"
+          matchkey: "Alloc="
+          loglevel: "debug"
+        - matchtype: "startswith"
+          matchkey: "Trace["
+          loglevel: "debug"
