@@ -3,10 +3,10 @@ kind: "Component"
 api_family: "dapr.io"
 default_command: "components"
 command:
-- "components.dapr"
-- "component.dapr"
-- "comps.dapr"
-- "comp.dapr"
+  - "components.dapr"
+  - "component.dapr"
+  - "comps.dapr"
+  - "comp.dapr"
 listview:
   name: "Components"
   group: "Dapr"
@@ -25,7 +25,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Component Info"
@@ -44,7 +44,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -62,12 +62,12 @@ infoview:
       secretkeyref:
         header: "Secret Key Reference:"
         paths:
-        - path: [["secretKeyRef#name"], ["secretKeyRef#key"]]
-          pathtype: "tuple"
+          - path: [["secretKeyRef#name"], ["secretKeyRef#key"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       value:
         header: "Value:"
         path: "value"

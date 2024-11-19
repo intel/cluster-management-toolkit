@@ -3,14 +3,15 @@ kind: "CSIDriver"
 api_family: "storage.k8s.io"
 default_command: "csidrivers"
 command:
-- "csidrvs"
-- "csidrv"
+  - "csidrvs"
+  - "csidrv"
 listview:
   name: "CSI Drivers"
   group: "Storage & Backups"
   field_indexes:
     Normal:
-      fields: ["name", "attach_required", "pod_info_on_mount", "volume_lifecycle_modes", "age"]
+      fields: ["name", "attach_required", "pod_info_on_mount",
+               "volume_lifecycle_modes", "age"]
   fields:
     attach_required:
       header: "Attach Required:"
@@ -23,8 +24,8 @@ listview:
     volume_lifecycle_modes:
       header: "Modes:"
       paths:
-      - path: "spec#volumeLifecycleModes"
-        pathtype: "list"
+        - path: "spec#volumeLifecycleModes"
+          pathtype: "list"
       formatter: "list"
   actions:
     actionlist:
@@ -38,35 +39,38 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "attach_required", "pod_info_on_mount", "fs_group_policy", "selinux_mount", "requires_republish", "storage_capacity", "volume_lifecycle_modes"]
+        fields: ["controller", "attach_required", "pod_info_on_mount",
+                 "fs_group_policy", "selinux_mount", "requires_republish",
+                 "storage_capacity", "volume_lifecycle_modes"]
     rows:
       attach_required:
         header: [["Attach Required:", ["main", "infoheader"]]]
         path: "spec#attachRequired"
         type: "bool"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       fs_group_policy:
         header: [["FS Group Policy:", ["main", "infoheader"]]]
         path: "spec#fsGroupPolicy"
@@ -90,8 +94,8 @@ infoview:
       volume_lifecycle_modes:
         header: [["Modes:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#volumeLifecycleModes"
-          pathtype: "list"
+          - path: "spec#volumeLifecycleModes"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "Open controller":

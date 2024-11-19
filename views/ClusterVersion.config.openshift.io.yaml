@@ -3,9 +3,9 @@ kind: "ClusterVersion"
 api_family: "config.openshift.io"
 default_command: "clusterversions"
 command:
-- "clusterversions.config.openshift.io"
-- "clusterversions.config"
-- "clusterversion.config"
+  - "clusterversions.config.openshift.io"
+  - "clusterversions.config"
+  - "clusterversion.config"
 listview:
   name: "Cluster Versions"
   group: "OpenShift"
@@ -16,85 +16,86 @@ listview:
     available:
       header: "Available:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "status"
-        when:
-        - key: "type"
-          eq: "Available"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "status"
+          when:
+            - key: "type"
+              eq: "Available"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     progressing:
       header: "Progressing:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "status"
-        when:
-        - key: "type"
-          eq: "Progressing"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "status"
+          when:
+            - key: "type"
+              eq: "Progressing"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "<unknown>":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     status:
       header: "Status:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpaths:
-        - "message"
-        when:
-        - key: "type"
-          eq: "Progressing"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpaths:
+            - "message"
+          when:
+            - key: "type"
+              eq: "Progressing"
     version:
       header: "Version:"
       paths:
-      - path: "status#history"
-        pathtype: "items"
-        subpaths:
-        - "version"
-        when:
-        - key: "state"
-          eq: "Completed"
+        - path: "status#history"
+          pathtype: "items"
+          subpaths:
+            - "version"
+          when:
+            - key: "state"
+              eq: "Completed"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Cluster Version Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["channel", "cluster_id", "desired_channels", "desired_image", "desired_url", "desired_version"]
+        fields: ["channel", "cluster_id", "desired_channels",
+                 "desired_image", "desired_url", "desired_version"]
     rows:
       channel:
         header: [["Channel:", ["main", "infoheader"]]]
@@ -114,7 +115,9 @@ infoview:
         path: "status#desired#image"
         type: "str"
       desired_url:
-        header: [["Desired ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
+        header: [["Desired ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
         path: "status#desired#url"
         type: "str"
       desired_version:
@@ -123,7 +126,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     on_activation:
       call: "resourceinfodispatch_with_lookup"
@@ -143,15 +146,15 @@ infoview:
       kind:
         header: "Kind:"
         paths:
-        - path: [["kind"], ["group"]]
-          pathtype: "tuple"
+          - path: [["kind"], ["group"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
       name:
         header: "Name:"
         path: "name"
@@ -162,7 +165,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       unmanaged:
         header: "Unmanaged:"
         path: "unmanaged"

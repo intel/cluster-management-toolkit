@@ -21,15 +21,17 @@ infoview:
         fields: ["display_name", "cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]
@@ -66,7 +68,7 @@ infoview:
       itemgetter_args:
         path: "spec#links"
         fields:
-        - "text"
-        - "href"
+          - "text"
+          - "href"
       # Not supported for now
       sortcolumn: "text"

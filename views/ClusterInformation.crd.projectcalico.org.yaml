@@ -13,7 +13,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["calico_version", "cluster_guid", "cluster_type", "datastore_ready"]
+        fields: ["calico_version", "cluster_guid",
+                 "cluster_type", "datastore_ready"]
     rows:
       calico_version:
         header: [["Calico Version:", ["main", "infoheader"]]]
@@ -21,7 +22,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       cluster_guid:
         header: [["Cluster GUID:", ["main", "infoheader"]]]
         path: "spec#clusterGUID"
@@ -29,9 +30,9 @@ infoview:
       cluster_type:
         header: [["Cluster Type:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#clusterType"
-          pathtype: "split"
-          type: "str"
+          - path: "spec#clusterType"
+            pathtype: "split"
+            type: "str"
         formatter: "list"
       datastore_ready:
         header: [["Datastore Ready:", ["main", "infoheader"]]]

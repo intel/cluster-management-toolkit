@@ -3,8 +3,8 @@ kind: "ClusterServiceVersion"
 api_family: "operators.coreos.com"
 default_command: "clusterserviceversions"
 command:
-- "csvs"
-- "csv"
+  - "csvs"
+  - "csv"
 listview:
   name: "Cluster Service Versions"
   group: "API & Extendability"
@@ -27,29 +27,30 @@ listview:
           mappings:
             Failed:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Succeeded:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     version:
       header: "Version:"
       path: "spec#version"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Cluster Service Version Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["display_name", "keywords", "maturity", "version", "minimum_kubernetes_version", "phase"]
+        fields: ["display_name", "keywords", "maturity", "version",
+                 "minimum_kubernetes_version", "phase"]
     rows:
       display_name:
         header: [["Display Name:", ["main", "infoheader"]]]
@@ -70,7 +71,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -81,23 +82,23 @@ infoview:
             mappings:
               Failed:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Succeeded:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "spec#version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Description":
       key: "d"
@@ -120,8 +121,8 @@ infoview:
       itemgetter_args:
         path: "spec#maintainers"
         fields:
-        - "name"
-        - "email"
+          - "name"
+          - "email"
     "Installation Spec":
       key: "i"
       read_only: true
@@ -145,8 +146,8 @@ infoview:
       itemgetter_args:
         path: "spec#installModes"
         fields:
-        - "type"
-        - "supported"
+          - "type"
+          - "supported"
       formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
       "sortcolumn": "type"

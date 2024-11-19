@@ -16,13 +16,14 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Cluster CSI Driver Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["loglevel", "operator_loglevel", "management_state", "ready_replicas"]
+        fields: ["loglevel", "operator_loglevel",
+                 "management_state", "ready_replicas"]
     rows:
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -42,7 +43,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "List generations":
       key: "g"
@@ -56,10 +57,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "resource"
-        - "group"
-        - "namespace"
-        - "name"
+          - "resource"
+          - "group"
+          - "namespace"
+          - "name"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

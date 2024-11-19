@@ -3,13 +3,13 @@ kind: "ClusterPolicy"
 api_family: "kyverno.io"
 default_command: "clusterpolicies.kyverno"
 command:
-- "clusterpolicy.kyverno"
-- "kyclusterpolicies"
-- "kyclusterpolicy"
-- "kyclusterpols"
-- "kyclusterpol"
-- "kyclrpols"
-- "kyclrpol"
+  - "clusterpolicy.kyverno"
+  - "kyclusterpolicies"
+  - "kyclusterpolicy"
+  - "kyclusterpols"
+  - "kyclusterpol"
+  - "kyclrpols"
+  - "kyclrpol"
 listview:
   name: "Cluster Policies"
   group: "Kyverno"
@@ -32,7 +32,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["background", "apply_rules", "failure_policy", "validate_schema", "validation_failure_action", "generate_existing", "mutate_existing_on_policy_update", "webhook_timeout"]
+        fields: ["background", "apply_rules", "failure_policy",
+                 "validate_schema", "validation_failure_action",
+                 "generate_existing", "mutate_existing_on_policy_update",
+                 "webhook_timeout"]
     rows:
       apply_rules:
         header: [["Apply Rules:", ["main", "infoheader"]]]
@@ -72,16 +75,16 @@ infoview:
       webhook_timeout:
         header: [["Webhook Timeout:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#webhookTimeoutSeconds"], "s"]
-          pathtype: "tuple"
-          default: "10"
+          - path: [["spec#webhookTimeoutSeconds"], "s"]
+            pathtype: "tuple"
+            default: "10"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "unit"
+            - type: "numerical"
+            - type: "unit"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
   listpad:
     on_activation:
       call: "resourceinfodispatch"

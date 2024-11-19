@@ -3,139 +3,143 @@ kind: "CertificateRequest"
 api_family: "cert-manager.io"
 default_command: "certificaterequests"
 command:
-- "certreqs"
-- "certreq"
+  - "certreqs"
+  - "certreq"
 listview:
   name: "Certificate Requests"
   group: "Certificate Management"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "condition_ready", "issuer", "status_message", "age"]
+      fields: ["namespace", "name", "condition_ready",
+               "issuer", "status_message", "age"]
       sortcolumn: "namespace"
   fields:
     condition_ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     issuer:
       header: "Issuer:"
       paths:
-      - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
-        pathtype: "tuple"
-        type: ["kind", "name"]
+        - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
+          pathtype: "tuple"
+          type: ["kind", "name"]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "generic"
+          - type: "kind"
+          - type: "generic"
         field_separators:
-        - type: "kind"
+          - type: "kind"
     status_message:
       header: "Status:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "message"
-        when:
-        - key: "type"
-          eq: "Ready"
-        default: ""
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "message"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: ""
 infoview:
   name: "Certificate Request Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["issuer", "certificate", "username", "uid", "groups", "condition_ready", "status_message"]
+        fields: ["issuer", "certificate", "username", "uid",
+                 "groups", "condition_ready", "status_message"]
     rows:
       certificate:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ertificate:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ertificate:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Certificate"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Certificate"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
+            - type: "generic"
       condition_ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       groups:
         header: [["Groups:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#groups"]
-          pathtype: "list"
+          - path: ["spec#groups"]
+            pathtype: "list"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "group"
+            - type: "group"
       issuer:
-        header: [["I", ["main", "infoheader_shortcut"]], ["ssuer:", ["main", "infoheader"]]]
+        header: [["I", ["main", "infoheader_shortcut"]],
+                 ["ssuer:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
-          pathtype: "tuple"
+          - path: [["spec#issuerRef#kind"], ["spec#issuerRef#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "generic"
+            - type: "kind"
+            - type: "generic"
           item_separator:
             type: "kind"
       status_message:
         header: [["Status:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: ""
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: ""
       uid:
         header: [["UID:", ["main", "infoheader"]]]
         path: "spec#uid"
@@ -147,7 +151,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "user"
+            - type: "user"
   shortcuts:
     "Certificate":
       key: "c"

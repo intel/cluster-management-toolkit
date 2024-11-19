@@ -3,8 +3,8 @@ kind: "ClusterOperator"
 api_family: "config.openshift.io"
 default_command: "clusteroperators"
 command:
-- "clusteroperators.config"
-- "clusteroperator.config"
+  - "clusteroperators.config"
+  - "clusteroperator.config"
 listview:
   name: "Cluster Operators"
   group: "OpenShift"
@@ -15,12 +15,12 @@ listview:
     available:
       header: "Available:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Available"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Available"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -28,21 +28,21 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     degraded:
       header: "Degraded:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Degraded"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Degraded"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -50,36 +50,36 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     progressing:
       header: "Progressing:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Progressing"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Progressing"
       type: "str"
     version:
       header: "Version:"
       paths:
-      - path: "status#versions"
-        pathtype: "items"
-        subpath: "version"
-        when:
-        - key: "name"
-          eq: "operator"
-        default: ["<unset>"]
+        - path: "status#versions"
+          pathtype: "items"
+          subpath: "version"
+          when:
+            - key: "name"
+              eq: "operator"
+          default: ["<unset>"]
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Cluster Operator Info"
   infopad:
@@ -88,15 +88,17 @@ infoview:
         fields: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   listpad:
     on_activation:
@@ -119,7 +121,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "api_group"
+            - type: "api_group"
       name:
         header: "Name:"
         path: "name"
@@ -130,7 +132,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       resource:
         header: "Resource:"
         path: "resource"
@@ -160,7 +162,7 @@ infoview:
       itemgetter_args:
         path: "status#versions"
         fields:
-        - "name"
-        - "version"
+          - "name"
+          - "version"
       # Not supported for now
       sortcolumn: "resource"

@@ -3,10 +3,10 @@ kind: "ClusterExtension"
 api_family: "olm.operatorframework.io"
 default_command: "clusterextensions"
 command:
-- "clrextensions"
-- "clrextension"
-- "clrexts"
-- "clrext"
+  - "clrextensions"
+  - "clrextension"
+  - "clrexts"
+  - "clrext"
 listview:
   name: "Cluster Extensions"
   group: "API & Extendability"
@@ -24,7 +24,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "namespace"
+          - type: "namespace"
     package_name:
       header: "Package Name:"
       path: "spec#packageName"
@@ -34,25 +34,29 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["package_name", "install_namespace", "channel", "service_account", "upgrade_constraint_policy"]
+        fields: ["package_name", "install_namespace", "channel",
+                 "service_account", "upgrade_constraint_policy"]
     rows:
       channel:
         header: [["Channel:", ["main", "infoheader"]]]
         path: "spec#channel"
         type: "str"
       install_namespace:
-        header: [["Install ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
+        header: [["Install ", ["main", "infoheader"]],
+                 ["N", ["main", "infoheader_shortcut"]],
+                 ["amespace:", ["main", "infoheader"]]]
         path: "spec#installNamespace"
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       package_name:
         header: [["Package Name:", ["main", "infoheader"]]]
         path: "spec#packageName"
         type: "str"
       service_account:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ervice Account:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ervice Account:", ["main", "infoheader"]]]
         path: "spec#serviceAccount#name"
         type: "str"
       upgrade_constraint_policy:

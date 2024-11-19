@@ -19,29 +19,29 @@ infoview:
     row_indexes:
       Normal:
         fields:
-        - "phase"
-        - "cert_config_header"
-        - "cert_ca_header"
-        - "cert_ca_duration"
-        - "cert_ca_renew_before"
-        - "cert_server_header"
-        - "cert_server_duration"
-        - "cert_server_renew_before"
-        - "image_pull_policy"
-        - "infrastructure_header"
-        - "infrastructure_node_selector"
-        - "infrastructure_tolerations"
-        - "workload_header"
-        - "workload_node_selector"
-        - "uninstall_strategy"
-        - "version_header"
-        - "version_observed"
-        - "version_operator"
-        - "version_target"
-        - "configuration"
-        - "configuration_feature_gates"
-        - "configuration_tls_security_profile_type"
-        - "configuration_datavolume_ttl_seconds"
+          - "phase"
+          - "cert_config_header"
+          - "cert_ca_header"
+          - "cert_ca_duration"
+          - "cert_ca_renew_before"
+          - "cert_server_header"
+          - "cert_server_duration"
+          - "cert_server_renew_before"
+          - "image_pull_policy"
+          - "infrastructure_header"
+          - "infrastructure_node_selector"
+          - "infrastructure_tolerations"
+          - "workload_header"
+          - "workload_node_selector"
+          - "uninstall_strategy"
+          - "version_header"
+          - "version_observed"
+          - "version_operator"
+          - "version_target"
+          - "configuration"
+          - "configuration_feature_gates"
+          - "configuration_tls_security_profile_type"
+          - "configuration_datavolume_ttl_seconds"
     rows:
       cert_config_header:
         header: [["Certificate Configuration:", ["main", "infoheader"]]]
@@ -96,31 +96,31 @@ infoview:
       infrastructure_node_selector:
         header: [["  Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#infra#nodeSelector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#infra#nodeSelector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       infrastructure_tolerations:
         header: [["  Tolerations:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#infra#tolerations"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#infra#tolerations"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -137,33 +137,33 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       version_operator:
         header: [["  Operator:", ["main", "infoheader"]]]
         path: "status#operatorVersion"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       version_target:
         header: [["  Target:", ["main", "infoheader"]]]
         path: "status#targetVersion"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       workload_header:
         header: [["Workload:", ["main", "infoheader"]]]
       workload_node_selector:
         header: [["  Node Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#workload#nodeSelector"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#workload#nodeSelector"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"

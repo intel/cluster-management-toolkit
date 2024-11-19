@@ -3,20 +3,22 @@ kind: "CustomResourceDefinition"
 api_family: "apiextensions.k8s.io"
 default_command: "customresourcedefinitions"
 command:
-- "crds"
-- "crd"
+  - "crds"
+  - "crd"
 listview:
   name: "Custom Resource Definitions"
   group: "API & Extendability"
   field_indexes:
     Wide:
-      fields: ["name", "kind", "api_group_crd", "stored_versions", "scope", "created_at", "api_support"]
+      fields: ["name", "kind", "api_group_crd", "stored_versions",
+               "scope", "created_at", "api_support"]
       sortcolumn: "api_group_crd"
     Normal:
       fields: ["name", "api_group_crd", "created_at", "api_support"]
       sortcolumn: "api_group_crd"
     Development:
-      fields: ["plural", "kind", "api_group_crd", "stored_versions", "scope", "api_support"]
+      fields: ["plural", "kind", "api_group_crd", "stored_versions",
+               "scope", "api_support"]
       sortcolumn: "api_support"
   fields:
     api_group_crd:
@@ -26,8 +28,8 @@ listview:
     created_at:
       header: "Created At:"
       paths:
-      - path: ["metadata#creationTimestamp"]
-        type: "timestamp"
+        - path: ["metadata#creationTimestamp"]
+          type: "timestamp"
       formatter: "timestamp"
       default: -1
     kind:
@@ -49,7 +51,7 @@ listview:
       formatter: "list"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
   actions:
     actionlist:
       "Delete resource":
@@ -76,7 +78,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["kind", "list_kind", "api_group", "singular", "plural", "short_names", "scope", "stored_versions"]
+        fields: ["kind", "list_kind", "api_group", "singular", "plural",
+                 "short_names", "scope", "stored_versions"]
     rows:
       api_group:
         header: [["API-Group:", ["main", "infoheader"]]]
@@ -84,14 +87,15 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "api_group"
+            - type: "api_group"
       kind:
-        header: [["K", ["main", "infoheader_shortcut"]], ["ind:", ["main", "infoheader"]]]
+        header: [["K", ["main", "infoheader_shortcut"]],
+                 ["ind:", ["main", "infoheader"]]]
         path: "spec#names#kind"
         type: "str"
         formatting:
           field_colors:
-          - type: "kind"
+            - type: "kind"
       list_kind:
         header: [["List Kind:", ["main", "infoheader"]]]
         path: "spec#names#listKind"
@@ -120,7 +124,7 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   shortcuts:
     "Open list view for kind":
       key: "k"

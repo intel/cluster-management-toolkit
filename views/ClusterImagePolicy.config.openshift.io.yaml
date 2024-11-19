@@ -3,8 +3,8 @@ kind: "ClusterImagePolicy"
 api_family: "config.openshift.io"
 default_command: "clusterimagepolicies"
 command:
-- "clrimgpols"
-- "clrimgpol"
+  - "clrimgpols"
+  - "clrimgpol"
 listview:
   name: "Cluster Image Policies"
   group: "OpenShift"
@@ -16,18 +16,22 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "scopes", "policy_header", "policy_root_of_trust_header", "policy_root_of_trust_type", "policy_root_of_trust_public_key"]
+        fields: ["cluster_version", "scopes", "policy_header",
+                 "policy_root_of_trust_header", "policy_root_of_trust_type",
+                 "policy_root_of_trust_public_key"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       policy_header:
         header: [["Policy:", ["main", "infoheader"]]]
@@ -38,11 +42,14 @@ infoview:
         path: "spec#policy#rootOfTrust#policyType"
         type: "str"
       policy_root_of_trust_public_key:
-        header: [["    Public ", ["main", "infoheader"]], ["K", ["main", "infoheader_shortcut"]], ["ey:", ["main", "infoheader"]]]
+        header: [["    Public ", ["main", "infoheader"]],
+                 ["K", ["main", "infoheader_shortcut"]],
+                 ["ey:", ["main", "infoheader"]]]
         path: "spec#policy#rootOfTrust#publicKey#keyData"
         type: "str"
       scopes:
-        header: [["S", ["main", "infoheader_shortcut"]], ["copes:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["copes:", ["main", "infoheader"]]]
         path: "spec#scopes"
         type: "raw"
         formatter: "list"

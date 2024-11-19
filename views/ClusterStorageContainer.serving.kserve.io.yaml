@@ -3,8 +3,8 @@ kind: "ClusterStorageContainer"
 api_family: "serving.kserve.io"
 default_command: "clusterstoragecontainers"
 command:
-- "clrstoragecontainers"
-- "clrstoragecontainer"
+  - "clrstoragecontainers"
+  - "clrstoragecontainer"
 listview:
   name: "Cluster Storage Containers"
   group: "Machine Learning"
@@ -27,16 +27,16 @@ infoview:
       container_image:
         header: [["  Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#container#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#container#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:

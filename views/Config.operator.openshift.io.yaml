@@ -3,8 +3,8 @@ kind: "Config"
 api_family: "operator.openshift.io"
 default_command: "configs.operator.openshift.io"
 command:
-- "configs.operator"
-- "config.operator"
+  - "configs.operator"
+  - "config.operator"
 listview:
   name: "Configs"
   group: "OpenShift"
@@ -19,24 +19,27 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Config Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "loglevel", "operator_loglevel", "management_state", "ready_replicas"]
+        fields: ["cluster_version", "loglevel", "operator_loglevel",
+                 "management_state", "ready_replicas"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       loglevel:
         header: [["Loglevel:", ["main", "infoheader"]]]
@@ -56,7 +59,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Cluster Version":
       key: "v"

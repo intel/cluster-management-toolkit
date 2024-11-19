@@ -3,70 +3,71 @@ kind: "CertificateSigningRequest"
 api_family: "certificates.k8s.io"
 default_command: "certificatesigningrequests"
 command:
-- "certsignreqs"
-- "certsignreq"
-- "csrs"
-- "csr"
+  - "certsignreqs"
+  - "certsignreq"
+  - "csrs"
+  - "csr"
 listview:
   name: "Certificate Signing Requests"
   group: "Certificate Management"
   field_indexes:
     Normal:
-      fields: ["name", "signername", "requestor", "requested_duration", "age", "csr_condition"]
+      fields: ["name", "signername", "requestor",
+               "requested_duration", "age", "csr_condition"]
   fields:
     csr_condition:
       header: "Condition:"
       paths:
-      - path: "status#conditions"
-        pathtype: "substitution"
-        subpath: "type"
-        when:
-        - key: "type"
-          eq: "Denied"
-        - key: "status"
-          eq: "True"
-        substitute: "Denied"
-        default: ~
-      - path: "status#conditions"
-        pathtype: "substitution"
-        subpath: "type"
-        when:
-        - key: "type"
-          eq: "Approved"
-        - key: "status"
-          eq: "True"
-        substitute: "Approved"
-        default: ~
-      - path: "status"
-        pathtype: "substitution"
-        when:
-        - key: "certificate"
-          notmissing: true
-        substitute: "Issued"
-        default: ~
+        - path: "status#conditions"
+          pathtype: "substitution"
+          subpath: "type"
+          when:
+            - key: "type"
+              eq: "Denied"
+            - key: "status"
+              eq: "True"
+          substitute: "Denied"
+          default: null
+        - path: "status#conditions"
+          pathtype: "substitution"
+          subpath: "type"
+          when:
+            - key: "type"
+              eq: "Approved"
+            - key: "status"
+              eq: "True"
+          substitute: "Approved"
+          default: null
+        - path: "status"
+          pathtype: "substitution"
+          when:
+            - key: "certificate"
+              notmissing: true
+          substitute: "Issued"
+          default: null
       default: ["Pending"]
       formatter: "list"
       formatting:
         field_separators:
-        - type: "list"
+          - type: "list"
         mapping:
           mappings:
             Approved:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Issued:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Pending:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             Denied:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     requested_duration:
       header: "Requested Duration:"
       path: "spec#expirationSeconds"
@@ -103,61 +104,62 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["signername", "requestor", "requested_duration", "groups", "csr_condition", "usages"]
+        fields: ["signername", "requestor", "requested_duration",
+                 "groups", "csr_condition", "usages"]
     rows:
       csr_condition:
         header: [["Condition:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "type"
-          when:
-          - key: "type"
-            eq: "Denied"
-          - key: "status"
-            eq: "True"
-          substitute: "Denied"
-          default: ~
-        - path: "status#conditions"
-          pathtype: "substitution"
-          subpath: "type"
-          when:
-          - key: "type"
-            eq: "Approved"
-          - key: "status"
-            eq: "True"
-          substitute: "Approved"
-          default: ~
-        - path: "status"
-          pathtype: "substitution"
-          when:
-          - key: "certificate"
-            notmissing: true
-          substitute: "Issued"
-          default: ~
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "type"
+            when:
+              - key: "type"
+                eq: "Denied"
+              - key: "status"
+                eq: "True"
+            substitute: "Denied"
+            default: null
+          - path: "status#conditions"
+            pathtype: "substitution"
+            subpath: "type"
+            when:
+              - key: "type"
+                eq: "Approved"
+              - key: "status"
+                eq: "True"
+            substitute: "Approved"
+            default: null
+          - path: "status"
+            pathtype: "substitution"
+            when:
+              - key: "certificate"
+                notmissing: true
+            substitute: "Issued"
+            default: null
         default: ["Pending"]
         formatter: "list"
         formatting:
           field_separators:
-          - type: "list"
+            - type: "list"
           mapping:
             mappings:
               Approved:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Issued:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Pending:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               Denied:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       groups:
         header: [["Groups:", ["main", "infoheader"]]]
         path: "spec#groups"

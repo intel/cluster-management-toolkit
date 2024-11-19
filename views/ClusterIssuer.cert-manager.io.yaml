@@ -12,114 +12,117 @@ listview:
     condition_ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
-        default: "<unknown>"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
+          default: "<unknown>"
       formatter: "value_mapper"
       formatting:
         mapping:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Cluster Issuer Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["condition_ready", "type", "crl_distribution_points", "ca_secret_name"]
+        fields: ["condition_ready", "type",
+                 "crl_distribution_points", "ca_secret_name"]
     rows:
       ca_secret_name:
-        header: [["C", ["main", "infoheader_shortcut"]], ["A Secret Name:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["A Secret Name:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#ca#secretName"]
-          pathtype: "str"
+          - path: ["spec#ca#secretName"]
+            pathtype: "str"
       condition_ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       crl_distribution_points:
         header: [["CRL Distribution Points:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selfSigned#crlDistributionPoints", "spec#ca#crlDistributionPoints"]
-          pathtype: "str"
+          - path: ["spec#selfSigned#crlDistributionPoints",
+                   "spec#ca#crlDistributionPoints"]
+            pathtype: "str"
         default: ""
       type:
         header: [["Type:", ["main", "infoheader"]]]
         paths:
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "selfSigned"
-          when:
-          - key: "selfSigned"
-            notnone: true
-          substitute: "Self-Signed"
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "ca"
-          when:
-          - key: "ca"
-            notnone: true
-          substitute: "CA"
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "vault"
-          when:
-          - key: "vault"
-            notnone: true
-          substitute: "Vault"
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "venafi"
-          when:
-          - key: "venafi"
-            notnone: true
-          substitute: "Venafi"
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "external"
-          when:
-          - key: "external"
-            notnone: true
-          substitute: "External"
-        - path: "spec"
-          pathtype: "substitution"
-          subpath: "acme"
-          when:
-          - key: "acme"
-            notnone: true
-          substitute: "ACME"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "selfSigned"
+            when:
+              - key: "selfSigned"
+                notnone: true
+            substitute: "Self-Signed"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "ca"
+            when:
+              - key: "ca"
+                notnone: true
+            substitute: "CA"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "vault"
+            when:
+              - key: "vault"
+                notnone: true
+            substitute: "Vault"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "venafi"
+            when:
+              - key: "venafi"
+                notnone: true
+            substitute: "Venafi"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "external"
+            when:
+              - key: "external"
+                notnone: true
+            substitute: "External"
+          - path: "spec"
+            pathtype: "substitution"
+            subpath: "acme"
+            when:
+              - key: "acme"
+                notnone: true
+            substitute: "ACME"
         default: "<unknown>"
         formatter: "value_mapper"
         formatting:
@@ -127,8 +130,8 @@ infoview:
             mappings:
               "<unknown>":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -143,12 +146,12 @@ infoview:
         issuer:
           enabled: true
           allow:
-          - key: "spec#issuerRef#kind"
-            values: ["ClusterIssuer"]
-          - key: "spec#issuerRef#name"
-            values:
-              source: "caller"
-              path: "metadata#name"
+            - key: "spec#issuerRef#kind"
+              values: ["ClusterIssuer"]
+            - key: "spec#issuerRef#name"
+              values:
+                source: "caller"
+                path: "metadata#name"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -161,25 +164,25 @@ infoview:
       condition_ready:
         header: "Ready:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: "<unknown>"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: "<unknown>"
         formatter: "value_mapper"
         formatting:
           mapping:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       secret:
         header: "Secret:"
         path: "spec#secretName"
@@ -187,13 +190,13 @@ infoview:
       status_message:
         header: "Status:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "message"
-          when:
-          - key: "type"
-            eq: "Ready"
-          default: ""
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "message"
+            when:
+              - key: "type"
+                eq: "Ready"
+            default: ""
   shortcuts:
     "CA Secret Name":
       key: "c"

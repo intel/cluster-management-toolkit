@@ -13,7 +13,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["pull_secret", "cluster_dns_ip", "images_header", "image_base_os", "image_base_os_container", "image_base_os_extensions_container", "image_api_server_watcher_key", "image_baremetal_runtime_config", "image_coredns", "image_haproxy", "image_infra_key", "image_keepalived", "image_machine_config_operator", "image_release"]
+        fields: ["pull_secret", "cluster_dns_ip", "images_header",
+                 "image_base_os", "image_base_os_container",
+                 "image_base_os_extensions_container",
+                 "image_api_server_watcher_key",
+                 "image_baremetal_runtime_config", "image_coredns",
+                 "image_haproxy", "image_infra_key", "image_keepalived",
+                 "image_machine_config_operator", "image_release"]
     rows:
       cluster_dns_ip:
         header: [["Cluster DNS IP:", ["main", "infoheader"]]]
@@ -89,19 +95,22 @@ infoview:
         default: "<none>"
         fallback_on_empty: true
       pull_secret:
-        header: [["P", ["main", "infoheader_shortcut"]], ["ull Secret:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ull Secret:", ["main", "infoheader"]]]
         paths:
-        - path: ["Secret", ["spec#pullSecret#namespace"], ["spec#pullSecret#name"]]
-          pathtype: "tuple"
+          - path: ["Secret",
+                   ["spec#pullSecret#namespace"],
+                   ["spec#pullSecret#name"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "namespace"
-          - type: "generic"
+            - type: "kind"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "kind"
-          - type: "namespace"
+            - type: "kind"
+            - type: "namespace"
   shortcuts:
     "List controller certificates":
       key: "c"
@@ -116,9 +125,9 @@ infoview:
       itemgetter_args:
         path: "status#controllerCertificates"
         fields:
-        - "bundleFile"
-        - "signer"
-        - "subject"
+          - "bundleFile"
+          - "signer"
+          - "subject"
       # Not supported for now
       sortcolumn: "bundle_file"
     "Open pull Secret":

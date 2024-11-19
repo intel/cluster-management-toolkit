@@ -3,14 +3,15 @@ kind: "ClusterComplianceReport"
 api_family: "aquasecurity.github.io"
 default_command: "clustercompliancereports"
 command:
-- "clustercompliances"
-- "clustercompliance"
+  - "clustercompliances"
+  - "clustercompliance"
 listview:
   name: "Cluster Compliance Reports"
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["name", "title", "version", "severity_fail", "severity_pass", "age", "description"]
+      fields: ["name", "title", "version", "severity_fail",
+               "severity_pass", "age", "description"]
   fields:
     description:
       header: "Description:"
@@ -24,15 +25,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     severity_pass:
       header: "Pass:"
@@ -40,7 +41,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     title:
       header: "Title:"
@@ -52,13 +53,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Cluster Compliance Report Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["title", "version", "description", "severity_header", "severity_pass", "severity_fail", "cron_schedule"]
+        fields: ["title", "version", "description", "severity_header",
+                 "severity_pass", "severity_fail", "cron_schedule"]
     rows:
       cron_schedule:
         header: [["Cron Schedule:", ["main", "infoheader"]]]
@@ -74,7 +76,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       severity_fail:
@@ -85,15 +87,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       title:
         header: [["Title:", ["main", "infoheader"]]]
         path: "spec#compliance#title"
@@ -104,7 +106,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -114,14 +116,14 @@ infoview:
     listgetter_args:
       join_key: "id"
       paths:
-      - path: "spec#compliance#controls"
-        type: "list"
-        key_name: "__type"
-        key_value: "Basic"
-      - path: "status#summaryReport#controlCheck"
-        type: "list"
-        key_name: "__type"
-        key_value: "Basic"
+        - path: "spec#compliance#controls"
+          type: "list"
+          key_name: "__type"
+          key_value: "Basic"
+        - path: "status#summaryReport#controlCheck"
+          type: "list"
+          key_name: "__type"
+          key_value: "Basic"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -139,14 +141,14 @@ infoview:
       severity:
         header: "Severity:"
         paths:
-        - path: "severity"
-          pathtype: "remap"
-          substitutions:
-            "CRITICAL": "Critical"
-            "HIGH": "High"
-            "LOW": "Low"
-            "MEDIUM": "Medium"
-            "UNKNOWN": "Unknown"
+          - path: "severity"
+            pathtype: "remap"
+            substitutions:
+              "CRITICAL": "Critical"
+              "HIGH": "High"
+              "LOW": "Low"
+              "MEDIUM": "Medium"
+              "UNKNOWN": "Unknown"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -155,28 +157,28 @@ infoview:
               "Critical":
                 index: 0
                 field_colors:
-                - context: "main"
-                  type: "severity_critical"
+                  - context: "main"
+                    type: "severity_critical"
               "High":
                 index: 1
                 field_colors:
-                - context: "main"
-                  type: "severity_high"
+                  - context: "main"
+                    type: "severity_high"
               "Low":
                 index: 4
                 field_colors:
-                - context: "main"
-                  type: "severity_low"
+                  - context: "main"
+                    type: "severity_low"
               "Medium":
                 index: 2
                 field_colors:
-                - context: "main"
-                  type: "severity_medium"
+                  - context: "main"
+                    type: "severity_medium"
               "Unknown":
                 index: 3
                 field_colors:
-                - context: "main"
-                  type: "severity_medium"
+                  - context: "main"
+                    type: "severity_medium"
       total_fail:
         header: "Total Failed:"
         path: "totalFail"
@@ -184,7 +186,7 @@ infoview:
         default: "Manual check needed"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
   shortcuts:
     "Open controller":

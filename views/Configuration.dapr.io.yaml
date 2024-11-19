@@ -3,10 +3,10 @@ kind: "Configuration"
 api_family: "dapr.io"
 default_command: "configurations.dapr.io"
 command:
-- "configurations.dapr"
-- "configuration.dapr"
-- "confs.dapr"
-- "conf.dapr"
+  - "configurations.dapr"
+  - "configuration.dapr"
+  - "confs.dapr"
+  - "conf.dapr"
 listview:
   name: "Configurations"
   group: "Dapr"
@@ -19,7 +19,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["metrics_header", "metrics_enabled", "mtls_header", "mtls_enabled", "mtls_allowed_clock_skew", "mtls_workload_cert_ttl"]
+        fields: ["metrics_header", "metrics_enabled", "mtls_header",
+                 "mtls_enabled", "mtls_allowed_clock_skew",
+                 "mtls_workload_cert_ttl"]
     rows:
       metrics_header:
         header: [["Metrics:", ["main", "infoheader"]]]

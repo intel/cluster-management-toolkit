@@ -3,19 +3,23 @@ kind: "CiliumEndpoint"
 api_family: "cilium.io"
 default_command: "ciliumendpoints"
 command:
-- "ciliumeps"
-- "ciliumep"
-- "ceps"
-- "cep"
+  - "ciliumeps"
+  - "ciliumep"
+  - "ceps"
+  - "cep"
 listview:
   name: "Cilium Endpoints"
   group: "Cilium"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "endpoint_id", "cilium_identity", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node", "age"]
+      fields: ["namespace", "name", "endpoint_id", "cilium_identity",
+               "ingress_enforcement", "egress_enforcement",
+               "visibility_policy", "endpoint_state",
+               "ipv4", "ipv6", "node", "age"]
       sortcolumn: "namespace"
     Normal:
-      fields: ["namespace", "name", "endpoint_state", "ipv4", "ipv6", "node", "age"]
+      fields: ["namespace", "name", "endpoint_state",
+               "ipv4", "ipv6", "node", "age"]
       sortcolumn: "namespace"
   fields:
     cilium_identity:
@@ -24,26 +28,26 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     egress_enforcement:
       header: "Egress Enforcement:"
       paths:
-      - path: "status#policy#egress#enforcing"
-        pathtype: "value"
+        - path: "status#policy#egress#enforcing"
+          pathtype: "value"
     endpoint_id:
       header: "Endpoint ID:"
       path: "status#id"
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     endpoint_state:
       header: "Endpoint State:"
       paths:
-      - path: "status#state"
-        pathtype: "value"
+        - path: "status#state"
+          pathtype: "value"
       default: "<unknown>"
       formatter: "value_mapper"
       formatting:
@@ -51,113 +55,116 @@ listview:
           mappings:
             creating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             disconnected:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             disconnecting:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             invalid:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             not-ready:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             regenerating:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             restoring:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             waiting-for-identity:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             waiting-to-regenerate:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             __default:
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     ingress_enforcement:
       header: "Ingress Enforcement:"
       paths:
-      - path: "status#policy#ingress#enforcing"
-        pathtype: "value"
+        - path: "status#policy#ingress#enforcing"
+          pathtype: "value"
     ipv4:
       header: "IPv4:"
       paths:
-      - path: "status#networking#addressing"
-        pathtype: "items"
-        subpath: "ipv4"
-        default: "<unset>"
+        - path: "status#networking#addressing"
+          pathtype: "items"
+          subpath: "ipv4"
+          default: "<unset>"
       formatter: "address"
     ipv6:
       header: "IPv6:"
       paths:
-      - path: "status#networking#addressing"
-        pathtype: "items"
-        subpath: "ipv6"
-        default: "<unset>"
+        - path: "status#networking#addressing"
+          pathtype: "items"
+          subpath: "ipv6"
+          default: "<unset>"
       formatter: "address"
     node:
       header: "Node:"
       paths:
-      - path: "status#networking#node"
-        pathtype: "value"
+        - path: "status#networking#node"
+          pathtype: "value"
       formatter: "address"
     visibility_policy:
       header: "Visibility Policy:"
       paths:
-      - path: "status#policy#visibility#enforcing"
-        pathtype: "value"
+        - path: "status#policy#visibility#enforcing"
+          pathtype: "value"
 infoview:
   name: "Cilium Endpoint Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["endpoint_id", "cilium_identity", "pod", "ingress_enforcement", "egress_enforcement", "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node"]
+        fields: ["endpoint_id", "cilium_identity", "pod",
+                 "ingress_enforcement", "egress_enforcement",
+                 "visibility_policy", "endpoint_state", "ipv4", "ipv6", "node"]
     rows:
       cilium_identity:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ilium Identity:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ilium Identity:", ["main", "infoheader"]]]
         path: "status#identity#id"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       egress_enforcement:
         header: [["Egress Enforcement:", ["main", "infoheader"]]]
         paths:
-        - path: "status#policy#egress#enforcing"
-          pathtype: "value"
+          - path: "status#policy#egress#enforcing"
+            pathtype: "value"
       endpoint_id:
         header: [["Endpoint ID:", ["main", "infoheader"]]]
         path: "status#id"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
       endpoint_state:
         header: [["Endpoint State:", ["main", "infoheader"]]]
         paths:
-        - path: "status#state"
-          pathtype: "value"
+          - path: "status#state"
+            pathtype: "value"
         default: "<unknown>"
         formatter: "value_mapper"
         formatting:
@@ -165,93 +172,95 @@ infoview:
             mappings:
               creating:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               disconnected:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               disconnecting:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               invalid:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               not-ready:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               ready:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               regenerating:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               restoring:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               waiting-for-identity:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               waiting-to-regenerate:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               __default:
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       ingress_enforcement:
         header: [["Ingress Enforcement:", ["main", "infoheader"]]]
         paths:
-        - path: "status#policy#ingress#enforcing"
-          pathtype: "value"
+          - path: "status#policy#ingress#enforcing"
+            pathtype: "value"
       ipv4:
         header: [["IPv4:", ["main", "infoheader"]]]
         paths:
-        - path: "status#networking#addressing"
-          pathtype: "items"
-          subpath: "ipv4"
-          default: "<unset>"
+          - path: "status#networking#addressing"
+            pathtype: "items"
+            subpath: "ipv4"
+            default: "<unset>"
         formatter: "address"
       ipv6:
         header: [["IPv6:", ["main", "infoheader"]]]
         paths:
-        - path: "status#networking#addressing"
-          pathtype: "items"
-          subpath: "ipv6"
-          default: "<unset>"
+          - path: "status#networking#addressing"
+            pathtype: "items"
+            subpath: "ipv6"
+            default: "<unset>"
         formatter: "address"
       node:
         header: [["Node:", ["main", "infoheader"]]]
         paths:
-        - path: "status#networking#node"
-          pathtype: "value"
+          - path: "status#networking#node"
+            pathtype: "value"
         formatter: "address"
       pod:
-        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#external-identifiers#k8s-namespace"], ["status#external-identifiers#k8s-pod-name"]]
-          pathtype: "tuple"
+          - path: [["status#external-identifiers#k8s-namespace"],
+                   ["status#external-identifiers#k8s-pod-name"]]
+            pathtype: "tuple"
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
-          - type: "generic"
+            - type: "namespace"
+            - type: "generic"
           field_separators:
-          - type: "namespace"
+            - type: "namespace"
       visibility_policy:
         header: [["Visibility Policy:", ["main", "infoheader"]]]
         paths:
-        - path: "status#policy#visibility#enforcing"
-          pathtype: "value"
+          - path: "status#policy#visibility#enforcing"
+            pathtype: "value"
   shortcuts:
     "Cilium Identity":
       key: "c"
@@ -309,6 +318,6 @@ infoview:
       itemgetter_args:
         path: "status#named-ports"
         fields:
-        - "name"
-        - "port"
-        - "protocol"
+          - "name"
+          - "port"
+          - "protocol"

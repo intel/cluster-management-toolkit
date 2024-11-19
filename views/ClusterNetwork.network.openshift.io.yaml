@@ -7,7 +7,8 @@ listview:
   group: "OpenShift"
   field_indexes:
     Normal:
-      fields: ["name", "cluster_network", "service_network", "plugin_name", "age"]
+      fields: ["name", "cluster_network", "service_network",
+               "plugin_name", "age"]
   fields:
     cluster_network:
       header: "Cluster Network:"
@@ -28,7 +29,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "cluster_network", "service_network", "vxlan_port", "mtu", "plugin_name"]
+        fields: ["controller", "cluster_network", "service_network",
+                 "vxlan_port", "mtu", "plugin_name"]
     rows:
       cluster_network:
         header: [["Cluster Network:", ["main", "infoheader"]]]
@@ -36,35 +38,36 @@ infoview:
         type: "str"
         formatter: "address"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       mtu:
         header: [["MTU:", ["main", "infoheader"]]]
         path: "mtu"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       plugin_name:
         header: [["Plugin Name:", ["main", "infoheader"]]]
         path: "pluginName"
@@ -80,7 +83,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
   shortcuts:
     "Open controller":
       key: "c"

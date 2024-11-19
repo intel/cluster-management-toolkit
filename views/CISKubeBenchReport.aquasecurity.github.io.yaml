@@ -3,26 +3,27 @@ kind: "CISKubeBenchReport"
 api_family: "aquasecurity.github.io"
 default_command: "ciskubebenchreports"
 command:
-- "kubebench"
+  - "kubebench"
 listview:
   name: "CIS Kube-Bench Reports"
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["name", "scanner", "severity_fail", "severity_warn", "severity_info", "severity_pass", "age"]
+      fields: ["name", "scanner", "severity_fail", "severity_warn",
+               "severity_info", "severity_pass", "age"]
   fields:
     scanner:
       header: "Scanner:"
       paths:
-      - path: [["report#scanner#name"], ["report#scanner#version"]]
-        pathtype: "tuple"
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     severity_fail:
       header: "Fail:"
       path: "report#summary#failCount"
@@ -31,15 +32,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     severity_info:
       header: "Info:"
@@ -49,15 +50,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
     severity_pass:
       header: "Pass:"
@@ -65,7 +66,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     severity_warn:
       header: "Warn:"
@@ -75,58 +76,61 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
 infoview:
   name: "CSI Kube-Bench Report Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "scanner", "vendor", "severity_header", "severity_fail", "severity_warn", "severity_info", "severity_pass", "update_timestamp"]
+        fields: ["controller", "scanner", "vendor", "severity_header",
+                 "severity_fail", "severity_warn", "severity_info",
+                 "severity_pass", "update_timestamp"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       scanner:
         header: [["Scanner:", ["main", "infoheader"]]]
         paths:
-        - path: [["report#scanner#name"], ["report#scanner#version"]]
-          pathtype: "tuple"
+          - path: [["report#scanner#name"], ["report#scanner#version"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       severity_fail:
         header: [["  Fail:", ["main", "infoheader"]]]
         path: "report#summary#failCount"
@@ -135,15 +139,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       severity_info:
         header: [["  Info:", ["main", "infoheader"]]]
         path: "report#summary#infoCount"
@@ -152,15 +156,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       severity_pass:
@@ -169,13 +173,13 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       update_timestamp:
         header: [["Last Update:", ["main", "infoheader"]]]
         paths:
-        - path: ["report#updateTimestamp"]
-          type: "timestamp"
-          default: -1
+          - path: ["report#updateTimestamp"]
+            type: "timestamp"
+            default: -1
         formatter: "timestamp"
       vendor:
         header: [["Vendor:", ["main", "infoheader"]]]
@@ -189,15 +193,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
   listpad:
     on_activation:
       call: "resourceinfodispatch"
@@ -208,11 +212,12 @@ infoview:
       path: "report#sections"
       subpath: "tests"
       path_fields:
-      - "node_type"
+        - "node_type"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["test_set_id", "test_set", "category", "fail", "warn", "info", "pass"]
+        fields: ["test_set_id", "test_set", "category",
+                 "fail", "warn", "info", "pass"]
         sortcolumn: "test_set_id"
     fields:
       category:
@@ -226,7 +231,7 @@ infoview:
         align: "right"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       fail:
         header: "Fail:"
         path: "fail"
@@ -236,15 +241,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       info:
         header: "Info:"
         path: "info"
@@ -254,15 +259,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
       pass:
         header: "Pass:"
         path: "pass"
@@ -270,7 +275,7 @@ infoview:
         align: "right"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       test_set:
         header: "Test Set:"
         path: "desc"
@@ -284,15 +289,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
   shortcuts:
     "Open controller":
       key: "c"

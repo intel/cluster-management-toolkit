@@ -3,9 +3,9 @@ kind: "ClusterRoleTemplate"
 api_family: "storage.loft.sh"
 default_command: "clusterroletemplates.storage"
 command:
-- "clusterroletemplate.storage"
-- "clrroletmpls.storage"
-- "clrroletmpl.storage"
+  - "clusterroletemplate.storage"
+  - "clrroletmpls.storage"
+  - "clrroletmpl.storage"
 listview:
   name: "Cluster Role Template Instances"
   group: "Lôft"
@@ -27,9 +27,9 @@ infoview:
       clusters:
         header: [["Clusters:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#clusters"
-          pathtype: "list"
-          default: ["<none>"]
+          - path: "spec#clusters"
+            pathtype: "list"
+            default: ["<none>"]
         formatter: "list"
       description:
         header: [["Description:", ["main", "infoheader"]]]
@@ -52,14 +52,14 @@ infoview:
       users:
         header: "Users:"
         paths:
-        - path: "users"
-          pathtype: "list"
+          - path: "users"
+            pathtype: "list"
         formatter: "list"
       verbs:
         header: "Verbs:"
         paths:
-        - path: "verbs"
-          pathtype: "list"
+          - path: "verbs"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "Cluster Role Template":

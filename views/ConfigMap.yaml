@@ -2,7 +2,7 @@
 kind: "ConfigMap"
 default_command: "configmaps"
 command:
-- "cm"
+  - "cm"
 listview:
   name: "Config Maps"
   group: "Core"
@@ -17,15 +17,15 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     immutable:
       header: "Immutable:"
       paths:
-      - path: "immutable"
-        pathtype: "value"
-        type: "bool"
-        default: ""
+        - path: "immutable"
+          pathtype: "value"
+          type: "bool"
+          default: ""
   actions:
     actionlist:
       "Delete resource":
@@ -41,35 +41,36 @@ infoview:
         fields: ["controller", "immutable"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       immutable:
         header: [["Immutable:", ["main", "infoheader"]]]
         paths:
-        - path: "immutable"
-          pathtype: "value"
-          type: "bool"
-          default: "False"
+          - path: "immutable"
+            pathtype: "value"
+            type: "bool"
+            default: "False"
   listpad:
     on_activation:
       call: "resourceinfodispatch"

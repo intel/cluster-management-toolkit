@@ -3,14 +3,15 @@ kind: "ClusterSbomReport"
 api_family: "aquasecurity.github.io"
 default_command: "clustersbomreports"
 command:
-- "clrsboms"
-- "clrsbom"
+  - "clrsboms"
+  - "clrsbom"
 listview:
   name: "Cluster SBOM Reports"
   group: "Security"
   field_indexes:
     Normal:
-      fields: ["name", "scanner", "repository", "tag", "components_count", "dependencies_count", "age"]
+      fields: ["name", "scanner", "repository", "tag",
+               "components_count", "dependencies_count", "age"]
       sortcolumn: "name"
   fields:
     components_count:
@@ -19,7 +20,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     dependencies_count:
       header: "Dependencies:"
@@ -27,7 +28,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     repository:
       header: "Repository:"
@@ -36,41 +37,43 @@ listview:
     scanner:
       header: "Scanner:"
       paths:
-      - path: [["report#scanner#name"], ["report#scanner#version"]]
-        pathtype: "tuple"
+        - path: [["report#scanner#name"], ["report#scanner#version"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     tag:
       header: "Tag:"
       path: "report#artifact#tag"
       type: "str"
       formatting:
         field_colors:
-        - type: "version"
+          - type: "version"
 infoview:
   name: "Cluster SBOM Report Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["scanner", "vendor", "bom_format", "digest", "repository", "tag"]
+        fields: ["scanner", "vendor", "bom_format", "digest",
+                 "repository", "tag"]
     rows:
       bom_format:
         header: [["BOM Format:", ["main", "infoheader"]]]
         paths:
-        - path: [["report#components#bomFormat"], ["report#components#specVersion"]]
-          pathtype: "tuple"
+          - path: [["report#components#bomFormat"],
+                   ["report#components#specVersion"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       digest:
         header: [["Digest:", ["main", "infoheader"]]]
         path: "report#artifact#digest"
@@ -82,22 +85,22 @@ infoview:
       scanner:
         header: [["Scanner:", ["main", "infoheader"]]]
         paths:
-        - path: [["report#scanner#name"], ["report#scanner#version"]]
-          pathtype: "tuple"
+          - path: [["report#scanner#name"], ["report#scanner#version"]]
+            pathtype: "tuple"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       tag:
         header: [["Tag:", ["main", "infoheader"]]]
         path: "report#artifact#tag"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       vendor:
         header: [["Vendor:", ["main", "infoheader"]]]
         path: "report#scanner#vendor"
@@ -110,10 +113,10 @@ infoview:
     listgetter: "listgetter_path"
     listgetter_args:
       paths:
-      - path: "report#components#components"
-        type: "list"
-        key_name: "__type"
-        key_value: "Basic"
+        - path: "report#components#components"
+          type: "list"
+          key_name: "__type"
+          key_value: "Basic"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
@@ -123,11 +126,11 @@ infoview:
       licenses:
         header: "Licenses:"
         paths:
-        - path: "licenses"
-          pathtype: "items"
-          subpaths:
-          - "license#name"
-          default: ["<unspecified>"]
+          - path: "licenses"
+            pathtype: "items"
+            subpaths:
+              - "license#name"
+            default: ["<unspecified>"]
         type: "list"
         formatter: "list"
       name:
@@ -149,4 +152,4 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"

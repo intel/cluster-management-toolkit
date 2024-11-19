@@ -3,10 +3,10 @@ kind: "CiliumNode"
 api_family: "cilium.io"
 default_command: "ciliumnodes"
 command:
-- "ciliumns"
-- "ciliumn"
-- "cns"
-- "cn"
+  - "ciliumns"
+  - "ciliumn"
+  - "cns"
+  - "cn"
 listview:
   name: "Cilium Nodes"
   group: "Cilium"
@@ -18,10 +18,15 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node", "instance_id", "cilium_identity", "health_header", "health_ipv4", "health_ipv6", "encryption", "ipam_header", "ipam_pod_cidrs", "ipam_max_above_watermark", "ipam_min_allocate", "ipam_max_allocate", "ipam_operator_status", "ipam_release_ips", "ipam_preallocate"]
+        fields: ["node", "instance_id", "cilium_identity", "health_header",
+                 "health_ipv4", "health_ipv6", "encryption", "ipam_header",
+                 "ipam_pod_cidrs", "ipam_max_above_watermark",
+                 "ipam_min_allocate", "ipam_max_allocate",
+                 "ipam_operator_status", "ipam_release_ips", "ipam_preallocate"]
     rows:
       cilium_identity:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ilium Identity:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ilium Identity:", ["main", "infoheader"]]]
         path: "spec#nodeidentity"
         type: "str"
         default: "<unset>"
@@ -32,7 +37,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       health_header:
         header: [["Health:", ["main", "infoheader"]]]
       health_ipv4:
@@ -61,7 +66,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ipam_max_allocate:
         header: [["  Max Allocate:", ["main", "infoheader"]]]
         path: "spec#ipam#max-allocate"
@@ -69,7 +74,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ipam_min_allocate:
         header: [["  Min Allocate:", ["main", "infoheader"]]]
         path: "spec#ipam#max-allocate"
@@ -77,7 +82,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ipam_pod_cidrs:
         header: [["  Pod CIDRs:", ["main", "infoheader"]]]
         path: "spec#ipam#podCIDRs"
@@ -90,7 +95,7 @@ infoview:
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ipam_operator_status:
         header: [["  Operator Status:", ["main", "infoheader"]]]
         path: "status#ipam#operator-status#error"
@@ -101,28 +106,29 @@ infoview:
         path: "status#ipam#operator-status"
         type: "raw"
       node:
-        header: [["N", ["main", "infoheader_shortcut"]], ["ode:", ["main", "infoheader"]]]
+        header: [["N", ["main", "infoheader_shortcut"]],
+                 ["ode:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Node"
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Node"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   shortcuts:
     "Addresses":
       key: "a"
@@ -136,8 +142,8 @@ infoview:
       itemgetter_args:
         path: "spec#addresses"
         fields:
-        - "ip"
-        - "type"
+          - "ip"
+          - "type"
       formatting: [["windowwidget", "default"], ["windowwidget", "highlight"]]
       # This isn't supported for now
       sortcolumn: "ip"

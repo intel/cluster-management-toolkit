@@ -3,13 +3,13 @@ kind: "ClusterPolicy"
 api_family: "nvidia.com"
 default_command: "clusterpolicies.nvidia"
 command:
-- "clusterpolicy.nvidia"
-- "nvclusterpolicies"
-- "nvclusterpolicy"
-- "nvclusterpols"
-- "nvclusterpol"
-- "nvclrpols"
-- "nvclrpol"
+  - "clusterpolicy.nvidia"
+  - "nvclusterpolicies"
+  - "nvclusterpolicy"
+  - "nvclusterpols"
+  - "nvclusterpol"
+  - "nvclrpols"
+  - "nvclrpol"
 listview:
   name: "Cluster Policies"
   group: "Accelerators"
@@ -27,40 +27,44 @@ listview:
           mappings:
             ignored:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             notReady:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             ready:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
 infoview:
   name: "Cluster Policy Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["daemon_sets_header", "daemon_sets_labels", "priority_class", "state"]
+        fields: ["daemon_sets_header", "daemon_sets_labels",
+                 "priority_class", "state"]
     rows:
       daemon_sets_header:
         header: [["Daemon Sets:", ["main", "infoheader"]]]
       daemon_sets_labels:
-        header: [["La", ["main", "infoheader"]], ["b", ["main", "infoheader_shortcut"]], ["el:", ["main", "infoheader"]]]
+        header: [["La", ["main", "infoheader"]],
+                 ["b", ["main", "infoheader_shortcut"]],
+                 ["el:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#daemonsets#labels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#daemonsets#labels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       priority_class:
-        header: [["P", ["main", "infoheader_shortcut"]], ["riority Class:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["riority Class:", ["main", "infoheader"]]]
         path: "spec#daemonsets#priorityClassName"
         type: "str"
       state:
@@ -73,8 +77,8 @@ infoview:
             mappings:
               notReady:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -88,49 +92,52 @@ infoview:
       api_family: "apps"
     field_indexes:
       Normal:
-        fields: ["namespace", "name", "desired_replicas", "current_replicas", "ready_replicas", "uptodate_replicas", "available_replicas", "misscheduled_replicas", "age"]
+        fields: ["namespace", "name", "desired_replicas", "current_replicas",
+                 "ready_replicas", "uptodate_replicas", "available_replicas",
+                 "misscheduled_replicas", "age"]
         sortcolumn: "namespace"
     fields:
       available_replicas:
         header: "Available:"
         paths:
-        - path: ["status#numberAvailable", "status#currentNumberScheduled"]
-          pathtype: "comparison"
-          default: [0, 0]
+          - path: ["status#numberAvailable", "status#currentNumberScheduled"]
+            pathtype: "comparison"
+            default: [0, 0]
         align: "right"
         formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - default: true
-              field_colors:
-              - context: "main"
-                type: "status_pending"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - default: true
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
       current_replicas:
         header: "Current:"
         paths:
-        - path: ["status#currentNumberScheduled", "status#desiredNumberScheduled"]
-          pathtype: "comparison"
-          default: [0, 0]
+          - path: ["status#currentNumberScheduled",
+                   "status#desiredNumberScheduled"]
+            pathtype: "comparison"
+            default: [0, 0]
         align: "right"
         formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - default: true
-              field_colors:
-              - context: "main"
-                type: "status_not_ok"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - default: true
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
       desired_replicas:
         header: "Desired:"
         path: "status#desiredNumberScheduled"
@@ -147,60 +154,61 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - default: true
-              field_colors:
-              - context: "main"
-                type: "status_warning"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - default: true
+                field_colors:
+                  - context: "main"
+                    type: "status_warning"
         align: "right"
       ready_replicas:
         header: "Ready:"
         paths:
-        - path: ["status#numberReady", "status#currentNumberScheduled"]
-          pathtype: "comparison"
-          default: [0, 0]
+          - path: ["status#numberReady", "status#currentNumberScheduled"]
+            pathtype: "comparison"
+            default: [0, 0]
         formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - min: -1
-              max: 0
-              field_colors:
-              - context: "main"
-                type: "status_pending"
-            - default: true
-              field_colors:
-              - context: "main"
-                type: "status_not_ok"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - min: -1
+                max: 0
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
+              - default: true
+                field_colors:
+                  - context: "main"
+                    type: "status_not_ok"
         align: "right"
       uptodate_replicas:
         header: "Up to Date:"
         paths:
-        - path: ["status#updatedNumberScheduled", "status#currentNumberScheduled"]
-          pathtype: "comparison"
-          default: [0, 0]
+          - path: ["status#updatedNumberScheduled",
+                   "status#currentNumberScheduled"]
+            pathtype: "comparison"
+            default: [0, 0]
         formatter: "value_mapper"
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "main"
-                type: "status_ok"
-            - default: true
-              field_colors:
-              - context: "main"
-                type: "status_pending"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "main"
+                    type: "status_ok"
+              - default: true
+                field_colors:
+                  - context: "main"
+                    type: "status_pending"
         align: "right"
   shortcuts:
     "Priority Class":

@@ -3,7 +3,7 @@ kind: "ClusterNetworkPolicy"
 api_family: "crd.antrea.io"
 default_command: "clusternetworkpolicies"
 command:
-- "acnp"
+  - "acnp"
 listview:
   name: "Cluster Network Policies"
   group: "Antrea"
@@ -14,16 +14,17 @@ listview:
     nodes:
       header: "Nodes:"
       paths:
-      - path: [["status#currentNodesRealized"], ["status#desiredNodesRealized"]]
-        pathtype: "tuple"
-        default: [0, 0]
+        - path: [["status#currentNodesRealized"],
+                 ["status#desiredNodesRealized"]]
+          pathtype: "tuple"
+          default: [0, 0]
       formatter: "list"
       formatting:
         field_colors:
-        - type: "numerical"
-        - type: "numerical"
+          - type: "numerical"
+          - type: "numerical"
         field_separators:
-        - type: "fraction"
+          - type: "fraction"
       align: "right"
     phase:
       header: "Phase:"
@@ -35,8 +36,8 @@ listview:
           mappings:
             Realized:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
     priority:
       header: "Priority:"
       path: "spec#priority"
@@ -57,16 +58,17 @@ infoview:
       nodes:
         header: [["Nodes:", ["main", "infoheader"]]]
         paths:
-        - path: [["status#currentNodesRealized"], ["status#desiredNodesRealized"]]
-          pathtype: "tuple"
-          default: [0, 0]
+          - path: [["status#currentNodesRealized"],
+                   ["status#desiredNodesRealized"]]
+            pathtype: "tuple"
+            default: [0, 0]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "numerical"
+            - type: "numerical"
+            - type: "numerical"
           field_separators:
-          - type: "fraction"
+            - type: "fraction"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -77,15 +79,16 @@ infoview:
             mappings:
               Realized:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       priority:
         header: [["Priority:", ["main", "infoheader"]]]
         path: "spec#priority"
         type: "float"
         formatter: "numerical"
       tier:
-        header: [["T", ["main", "infoheader_shortcut"]], ["ier:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["ier:", ["main", "infoheader"]]]
         path: "spec#tier"
         type: "str"
   shortcuts:

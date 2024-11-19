@@ -3,8 +3,8 @@ kind: "Config"
 api_family: "imageregistry.operator.openshift.io"
 default_command: "configs.imageregistry.operator.openshift.io"
 command:
-- "configs.imageregistry"
-- "config.imageregistry"
+  - "configs.imageregistry"
+  - "config.imageregistry"
 listview:
   name: "Configs"
   group: "OpenShift"
@@ -19,13 +19,18 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
 infoview:
   name: "Config Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["http_secret", "default_route", "proxy_header", "proxy_http_proxy", "proxy_https_proxy", "proxy_no_proxy", "loglevel", "operator_loglevel", "management_state", "storage_header", "storage_managed", "storage_management_state", "storage_pvc_claim", "rollout_strategy", "replicas", "ready_replicas"]
+        fields: ["http_secret", "default_route", "proxy_header",
+                 "proxy_http_proxy", "proxy_https_proxy", "proxy_no_proxy",
+                 "loglevel", "operator_loglevel", "management_state",
+                 "storage_header", "storage_managed",
+                 "storage_management_state", "storage_pvc_claim",
+                 "rollout_strategy", "replicas", "ready_replicas"]
     rows:
       default_route:
         header: [["Default Route:", ["main", "infoheader"]]]
@@ -72,14 +77,14 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         path: "spec#replicas"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       rollout_strategy:
         header: [["Rollout Strategy:", ["main", "infoheader"]]]
         path: "spec#rolloutStrategy"
@@ -95,7 +100,9 @@ infoview:
         path: "status#storage#managementState"
         type: "str"
       storage_pvc_claim:
-        header: [["  ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["ersistent Volume Claim:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["ersistent Volume Claim:", ["main", "infoheader"]]]
         path: "status#storage#pvc#claim"
         type: "str"
   shortcuts:
@@ -111,10 +118,10 @@ infoview:
       itemgetter_args:
         path: "status#generations"
         fields:
-        - "resource"
-        - "group"
-        - "namespace"
-        - "name"
+          - "resource"
+          - "group"
+          - "namespace"
+          - "name"
       # Not supported for now
       sortcolumn: "resource"
       action: "call"

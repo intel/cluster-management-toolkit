@@ -3,7 +3,7 @@ kind: "Config"
 api_family: "samples.operator.openshift.io"
 default_command: "configs.samples.operator.openshift.io"
 command:
-- "config.samples"
+  - "config.samples"
 listview:
   name: "Configs"
   group: "OpenShift"
@@ -15,7 +15,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["configuration_header", "configuration_architectures", "configuration_management_state", "configuration_samples_registry", "configuration_skipped_image_streams", "configuration_skipped_templates", "status_header", "status_architectures", "status_management_state", "status_samples_registry", "status_skipped_image_streams", "status_skipped_templates", "status_version"]
+        fields: ["configuration_header", "configuration_architectures",
+                 "configuration_management_state",
+                 "configuration_samples_registry",
+                 "configuration_skipped_image_streams",
+                 "configuration_skipped_templates", "status_header",
+                 "status_architectures", "status_management_state",
+                 "status_samples_registry", "status_skipped_image_streams",
+                 "status_skipped_templates", "status_version"]
     rows:
       configuration_architectures:
         header: [["  Architectures:", ["main", "infoheader"]]]

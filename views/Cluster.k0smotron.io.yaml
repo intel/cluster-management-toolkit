@@ -3,8 +3,8 @@ kind: "Cluster"
 api_family: "k0smotron.io"
 default_command: "clusters.k0smotron.io"
 command:
-- "k0sclrs"
-- "k0sclr"
+  - "k0sclrs"
+  - "k0sclr"
 listview:
   name: "Clusters"
   group: "Cluster Configuration"
@@ -21,7 +21,11 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["image", "etcd_header", "etcd_image", "etcd_persistence_header", "etcd_persistence_size", "service_header", "service_api_port", "service_konnectivity_port", "service_type", "replicas", "status"]
+        fields: ["image", "etcd_header", "etcd_image",
+                 "etcd_persistence_header", "etcd_persistence_size",
+                 "service_header", "service_api_port",
+                 "service_konnectivity_port", "service_type",
+                 "replicas", "status"]
     rows:
       image:
         header: [["Image:", ["main", "infoheader"]]]
@@ -32,16 +36,16 @@ infoview:
       etcd_image:
         header: [["  Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#etcd#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#etcd#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       etcd_persistence_header:
         header: [["  Persistence:", ["main", "infoheader"]]]
       etcd_persistence_size:
@@ -64,7 +68,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       service_konnectivity_port:
         header: [["  Konnectivity-port:", ["main", "infoheader"]]]
         path: "spec#service#konnectivityPort"
@@ -72,7 +76,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       service_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#service#type"

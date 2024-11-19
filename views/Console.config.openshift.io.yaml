@@ -3,8 +3,8 @@ kind: "Console"
 api_family: "config.openshift.io"
 default_command: "consoles.config.openshift.io"
 command:
-- "consoles.config"
-- "console.config"
+  - "consoles.config"
+  - "console.config"
 listview:
   name: "Consoles"
   group: "OpenShift"
@@ -19,18 +19,22 @@ infoview:
         fields: ["cluster_version", "console_url"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
       console_url:
-        header: [["Console ", ["main", "infoheader"]], ["U", ["main", "infoheader_shortcut"]], ["RL:", ["main", "infoheader"]]]
+        header: [["Console ", ["main", "infoheader"]],
+                 ["U", ["main", "infoheader_shortcut"]],
+                 ["RL:", ["main", "infoheader"]]]
         path: "status#consoleURL"
         type: "str"
   shortcuts:

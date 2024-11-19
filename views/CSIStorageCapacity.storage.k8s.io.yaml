@@ -3,8 +3,8 @@ kind: "CSIStorageCapacity"
 api_family: "storage.k8s.io"
 default_command: "csistoragecapacities"
 command:
-- "csistoragecaps"
-- "csistoragecap"
+  - "csistoragecaps"
+  - "csistoragecap"
 listview:
   name: "CSI Storage Capacities"
   group: "Storage & Backups"
@@ -21,63 +21,67 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "storage_class", "node_topology_header", "node_topology_label_selector", "node_topology_set_based_selector"]
+        fields: ["controller", "storage_class", "node_topology_header",
+                 "node_topology_label_selector",
+                 "node_topology_set_based_selector"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       node_topology_header:
         header: [["Node Topology:", ["main", "infoheader"]]]
       node_topology_label_selector:
         header: [["  Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["nodeTopology#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["nodeTopology#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       node_topology_set_based_selector:
         header: [["  Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "nodeTopology#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "nodeTopology#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       storage_class:
-        header: [["S", ["main", "infoheader_shortcut"]], ["torage Class:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["torage Class:", ["main", "infoheader"]]]
         path: "storageClassName"
         default: "<none>"
         type: "str"

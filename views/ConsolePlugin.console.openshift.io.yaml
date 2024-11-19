@@ -18,19 +18,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "backend_header", "backend_service_header", "backend_service_name", "backend_service_namespace", "backend_service_base_path", "backend_service_port", "backend_type", "i18n_header", "i18n_load_type"]
+        fields: ["controller", "backend_header", "backend_service_header",
+                 "backend_service_name", "backend_service_namespace",
+                 "backend_service_base_path", "backend_service_port",
+                 "backend_type", "i18n_header", "i18n_load_type"]
     rows:
       backend_header:
         header: [["Backend:", ["main", "infoheader"]]]
       backend_service_header:
-        header: [["  ", ["main", "infoheader"]], ["S", ["main", "infoheader_shortcut"]], ["ervice:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["S", ["main", "infoheader_shortcut"]],
+                 ["ervice:", ["main", "infoheader"]]]
       backend_service_base_path:
         header: [["    Base Path:", ["main", "infoheader"]]]
         path: "spec#backend#service#basePath"
         type: "str"
         formatting:
           field_colors:
-          - type: "path"
+            - type: "path"
       backend_service_name:
         header: [["    Name:", ["main", "infoheader"]]]
         path: "spec#backend#service#name"
@@ -41,41 +46,42 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       backend_service_port:
         header: [["    Port:", ["main", "infoheader"]]]
         path: "spec#backend#service#port"
         type: "str"
         formatting:
           field_colors:
-          - type: "port"
+            - type: "port"
       backend_type:
         header: [["  Type:", ["main", "infoheader"]]]
         path: "spec#backend#type"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       i18n_header:
         header: [["Internationalization (i18n):", ["main", "infoheader"]]]
       i18n_load_type:

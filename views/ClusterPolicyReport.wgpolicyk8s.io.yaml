@@ -3,8 +3,8 @@ kind: "ClusterPolicyReport"
 api_family: "wgpolicyk8s.io"
 default_command: "clusterpolicyreports"
 command:
-- "cpolrs"
-- "cpolr"
+  - "cpolrs"
+  - "cpolr"
 listview:
   name: "Cluster Policy Reports"
   group: "Kyverno"
@@ -20,15 +20,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     fail:
       header: "Fail:"
@@ -38,15 +38,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_high"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_high"
       align: "right"
     pass:
       header: "Pass:"
@@ -54,8 +54,8 @@ listview:
       type: "raw"
       formatting:
         field_colors:
-        - context: "types"
-          type: "watermark_low"
+          - context: "types"
+            type: "watermark_low"
       align: "right"
     skip:
       header: "Skip:"
@@ -63,7 +63,7 @@ listview:
       type: "raw"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     warn:
       header: "Warn:"
@@ -73,15 +73,15 @@ listview:
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "types"
-              type: "watermark_low"
-          - default: true
-            field_colors:
-            - context: "types"
-              type: "watermark_medium"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "types"
+                  type: "watermark_low"
+            - default: true
+              field_colors:
+                - context: "types"
+                  type: "watermark_medium"
       align: "right"
 infoview:
   name: "Cluster Policy Report Info"
@@ -98,15 +98,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       fail:
         header: [["   Fail:", ["main", "infoheader"]]]
         path: "summary#fail"
@@ -115,23 +115,23 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_high"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_high"
       pass:
         header: [["   Pass:", ["main", "infoheader"]]]
         path: "summary#pass"
         type: "raw"
         formatting:
           field_colors:
-          - context: "types"
-            type: "watermark_low"
+            - context: "types"
+              type: "watermark_low"
       severity_header:
         header: [["Severity:", ["main", "infoheader"]]]
       skip:
@@ -140,7 +140,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       warn:
         header: [["   Warn:", ["main", "infoheader"]]]
         path: "summary#warn"
@@ -149,15 +149,15 @@ infoview:
         formatting:
           mapping:
             ranges:
-            - min: 0
-              max: 1
-              field_colors:
-              - context: "types"
-                type: "watermark_low"
-            - default: true
-              field_colors:
-              - context: "types"
-                type: "watermark_medium"
+              - min: 0
+                max: 1
+                field_colors:
+                  - context: "types"
+                    type: "watermark_low"
+              - default: true
+                field_colors:
+                  - context: "types"
+                    type: "watermark_medium"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:
@@ -182,24 +182,24 @@ infoview:
             mappings:
               error:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
               fail:
                 field_colors:
-                - context: "types"
-                  type: "watermark_high"
+                  - context: "types"
+                    type: "watermark_high"
               warn:
                 field_colors:
-                - context: "types"
-                  type: "watermark_medium"
+                  - context: "types"
+                    type: "watermark_medium"
               pass:
                 field_colors:
-                - context: "types"
-                  type: "watermark_low"
+                  - context: "types"
+                    type: "watermark_low"
               skip:
                 field_colors:
-                - context: "types"
-                  type: "generic"
+                  - context: "types"
+                    type: "generic"
       rule:
         header: "Rule:"
         path: "rule"

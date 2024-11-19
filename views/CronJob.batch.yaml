@@ -3,14 +3,16 @@ kind: "CronJob"
 api_family: "batch"
 default_command: "cronjobs"
 command:
-- "cjs"
-- "cj"
+  - "cjs"
+  - "cj"
 listview:
   name: "Cron Jobs"
   group: "Workloads"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "schedule", "suspend", "active", "concurrency_policy", "last_scheduled", "last_successful", "age", "containers_jobtemplate"]
+      fields: ["namespace", "name", "schedule", "suspend", "active",
+               "concurrency_policy", "last_scheduled", "last_successful",
+               "age", "containers_jobtemplate"]
       sortcolumn: "namespace"
   fields:
     active:
@@ -19,7 +21,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     concurrency_policy:
       header: "Concurrency:"
@@ -28,14 +30,14 @@ listview:
     containers_jobtemplate:
       header: "Containers:"
       paths:
-      - paths:
-        - "spec#jobTemplate#spec#template#spec#initContainers"
-        - "spec#jobTemplate#spec#template#spec#containers"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        - subpath: "image"
-        type: "raw"
+        - paths:
+            - "spec#jobTemplate#spec#template#spec#initContainers"
+            - "spec#jobTemplate#spec#template#spec#containers"
+          pathtype: "items"
+          subpaths:
+            - "name"
+            - subpath: "image"
+          type: "raw"
       formatter: "list"
     last_scheduled:
       header: "Last Scheduled:"
@@ -67,7 +69,8 @@ listview:
         confirm: true
         action: "execute"
         action_args:
-          command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>", "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
+          command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>",
+                    "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
           iterate: true
       "Delete resource":
         description: "Delete resource"
@@ -79,7 +82,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["concurrency_policy", "restart_policy", "selector", "parallelism", "completions", "starting_deadline", "suspend", "schedule", "last_scheduled", "last_successful", "active"]
+        fields: ["concurrency_policy", "restart_policy", "selector",
+                 "parallelism", "completions", "starting_deadline",
+                 "suspend", "schedule", "last_scheduled", "last_successful",
+                 "active"]
     rows:
       active:
         header: [["Active:", ["main", "infoheader"]]]
@@ -87,7 +93,7 @@ infoview:
         type: "len"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       completions:
         header: [["Completions:", ["main", "infoheader"]]]
         path: "spec#jobTemplate#spec#completions"
@@ -95,7 +101,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       concurrency_policy:
         header: [["Concurrency Policy:", ["main", "infoheader"]]]
         path: "spec#concurrencyPolicy"
@@ -128,15 +134,15 @@ infoview:
       selector:
         header: [["Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector"]
-          pathtype: "key_value"
+          - path: ["spec#selector"]
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       starting_deadline:
         header: [["Starting Deadline:", ["main", "infoheader"]]]
         path: "spec#startingDeadlineSeconds"
@@ -154,7 +160,8 @@ infoview:
       helptext: "Trigger Job"
       action: "execute"
       action_args:
-        command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>", "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
+        command: ["kubectl", "create", "job", "--from=cronjob/<<<item.1>>>",
+                  "job-from-<<<item.1>>>", "--namespace", "<<<item.0>>>"]
     "View Pod Template":
       key: "T"
       modifier: "shift"

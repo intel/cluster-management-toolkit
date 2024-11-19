@@ -7,27 +7,31 @@ listview:
   group: "Kruise"
   field_indexes:
     Wide:
-      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "containers", "images", "age"]
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas",
+               "uptodate_replicas", "uptodate_ready_replicas",
+               "current_replicas", "containers", "images", "age"]
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "uptodate_replicas", "uptodate_ready_replicas", "current_replicas", "age"]
+      fields: ["namespace", "name", "desired_replicas", "ready_replicas",
+               "uptodate_replicas", "uptodate_ready_replicas",
+               "current_replicas", "age"]
   fields:
     containers:
       header: "Containers:"
       paths:
-      - paths:
-        - "spec#template#spec#initContainers"
-        - "spec#template#spec#containers"
-        pathtype: "items"
-        subpaths:
-        - "name"
-        type: "raw"
+        - paths:
+            - "spec#template#spec#initContainers"
+            - "spec#template#spec#containers"
+          pathtype: "items"
+          subpaths:
+            - "name"
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "version"
+          - type: "generic"
+          - type: "version"
         field_separators:
-        - type: "version"
+          - type: "version"
     current_replicas:
       header: "Current:"
       path: "status#replicas"
@@ -35,7 +39,7 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     desired_replicas:
       header: "Desired:"
@@ -44,91 +48,91 @@ listview:
       type: "int"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
     ready_replicas:
       header: "Ready:"
       paths:
-      - path: ["status#readyReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#readyReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
       align: "right"
     images:
       header: "Images:"
       paths:
-      - paths:
-        - "spec#template#spec#initContainers"
-        - "spec#template#spec#containers"
-        pathtype: "items"
-        subpaths:
-        - subpath: "image"
-          regex: ["^([^:]+):(.+)"]
-        type: "raw"
+        - paths:
+            - "spec#template#spec#initContainers"
+            - "spec#template#spec#containers"
+          pathtype: "items"
+          subpaths:
+            - subpath: "image"
+              regex: ["^([^:]+):(.+)"]
+          type: "raw"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "generic"
-        - type: "generic"
+          - type: "generic"
+          - type: "generic"
         field_separators:
-        - type: "field"
-        - type: "field"
+          - type: "field"
+          - type: "field"
     uptodate_replicas:
       header: "Up to Date:"
       paths:
-      - path: ["status#updatedReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#updatedReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
     uptodate_ready_replicas:
       header: "Up to Date Ready:"
       paths:
-      - path: ["status#updatedReadyReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#updatedReadyReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_pending"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
       align: "right"
   actions:
     actionlist:
@@ -156,7 +160,8 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["label_selector", "set_based_selector", "update_strategy", "replicas", "revision_history_limit", "collision_count"]
+        fields: ["label_selector", "set_based_selector", "update_strategy",
+                 "replicas", "revision_history_limit", "collision_count"]
     rows:
       collision_count:
         header: [["Collision Count:", ["main", "infoheader"]]]
@@ -167,45 +172,49 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready", ["status#updatedReplicas"], " Updated", ["status#updatedReadyReplicas"], " Updated Ready"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, ""]
+          - path: [["spec#replicas"], " Desired",
+                   ["status#replicas"], " Current",
+                   ["status#readyReplicas"], " Ready",
+                   ["status#updatedReplicas"], " Updated",
+                   ["status#updatedReadyReplicas"], " Updated Ready"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
       revision_history_limit:
         header: [["Revision History Limit:", ["main", "infoheader"]]]
         path: "spec#revisionHistoryLimit"
@@ -215,68 +224,75 @@ infoview:
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#selector#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
       update_strategy:
         header: [["Update Strategy:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#updateStrategy#type"],
-                 " (", "Partition: ", ["spec#updateStrategy#rollingUpdate#partition"], ", ",
-                 "Max Unavailable: ", ["spec#updateStrategy#rollingUpdate#maxUnavailable"], ", ",
-                 "Min Ready Seconds: ", ["spec#updateStrategy#rollingUpdate#minReadySeconds"], ", ",
-                 "Pod Update Policy: ", ["spec#updateStrategy#rollingUpdate#podUpdatePolicy"],
-                 ")"]
-          pathtype: "tuple"
-          when:
-          - key: "spec#updateStrategy#type"
-            eq: "RollingUpdate"
-          default: ["RollingUpdate", "", "", "1", "", "", "<unset>", "", "", "<unset>", "", "", "<unset>", ""]
-        - path: [["spec#updateStrategy#type"],
-                 " (", "Partition: ", ["spec#updateStrategy#partition"], ", ",
-                 "Max Unavailable: ", ["spec#updateStrategy#maxUnavailable"], ", ",
-                 "Max Surge: ", ["spec#updateStrategy#maxSurge"],
-                 ")"]
-          pathtype: "tuple"
-          when:
-          - key: "spec#updateStrategy#type"
-            eq: "ReCreate"
-        - path: [["spec#updateStrategy#type"]]
-          pathtype: "tuple"
-          when:
-          - key: "spec#updateStrategy#type"
-            eq: "OnDelete"
+          - path: [["spec#updateStrategy#type"],
+                   " (", "Partition: ",
+                   ["spec#updateStrategy#rollingUpdate#partition"],
+                   ", ", "Max Unavailable: ",
+                   ["spec#updateStrategy#rollingUpdate#maxUnavailable"],
+                   ", ", "Min Ready Seconds: ",
+                   ["spec#updateStrategy#rollingUpdate#minReadySeconds"],
+                   ", ", "Pod Update Policy: ",
+                   ["spec#updateStrategy#rollingUpdate#podUpdatePolicy"],
+                   ")"]
+            pathtype: "tuple"
+            when:
+              - key: "spec#updateStrategy#type"
+                eq: "RollingUpdate"
+            default: ["RollingUpdate", "", "", "1", "", "", "<unset>", "", "",
+                      "<unset>", "", "", "<unset>", ""]
+          - path: [["spec#updateStrategy#type"],
+                   " (", "Partition: ",
+                   ["spec#updateStrategy#partition"],
+                   ", ", "Max Unavailable: ",
+                   ["spec#updateStrategy#maxUnavailable"],
+                   ", ", "Max Surge: ",
+                   ["spec#updateStrategy#maxSurge"], ")"]
+            pathtype: "tuple"
+            when:
+              - key: "spec#updateStrategy#type"
+                eq: "ReCreate"
+          - path: [["spec#updateStrategy#type"]]
+            pathtype: "tuple"
+            when:
+              - key: "spec#updateStrategy#type"
+                eq: "OnDelete"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          - type: "numerical"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          - type: "numerical"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          - type: "numerical"
-          - type: "generic"
-          - context: "main"
-            type: "infoheader"
-          - type: "generic"
+            - type: "generic"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            - type: "numerical"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            - type: "numerical"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            - type: "numerical"
+            - type: "generic"
+            - context: "main"
+              type: "infoheader"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
+            - type: "no_pad"
   shortcuts:
     "Volume Claim template":
       key: "v"

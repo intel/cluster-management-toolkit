@@ -3,8 +3,8 @@ kind: "CachedImage"
 api_family: "kuik.enix.io"
 default_command: "cachedimages"
 command:
-- "cimgs"
-- "cimg"
+  - "cimgs"
+  - "cimg"
 listview:
   name: "Cached Images"
   group: "Caches / Mirrors"
@@ -41,7 +41,12 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["expiration", "retain", "pull_secret_namespace", "source_image", "status_header", "status_available_upstream", "status_cached", "status_digest", "status_upstream_digest", "status_up_to_date", "status_last_sync", "status_last_successful_pull", "status_last_seen_upstream", "status_use_count", "phase"]
+        fields: ["expiration", "retain", "pull_secret_namespace",
+                 "source_image", "status_header", "status_available_upstream",
+                 "status_cached", "status_digest", "status_upstream_digest",
+                 "status_up_to_date", "status_last_sync",
+                 "status_last_successful_pull", "status_last_seen_upstream",
+                 "status_use_count", "phase"]
     rows:
       expiration:
         header: [["Expiration:", ["main", "infoheader"]]]
@@ -55,13 +60,15 @@ infoview:
         default: "<unset>"
         type: "str"
       pull_secret_namespace:
-        header: [["Pull Secrets ", ["main", "infoheader"]], ["N", ["main", "infoheader_shortcut"]], ["amespace:", ["main", "infoheader"]]]
+        header: [["Pull Secrets ", ["main", "infoheader"]],
+                 ["N", ["main", "infoheader_shortcut"]],
+                 ["amespace:", ["main", "infoheader"]]]
         path: "spec#pullSecretsNamespace"
         default: "<unset>"
         type: "str"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       retain:
         header: [["Retain:", ["main", "infoheader"]]]
         path: "spec#retain"
@@ -70,16 +77,16 @@ infoview:
       source_image:
         header: [["Source Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#sourceImage"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#sourceImage"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       status_available_upstream:
         header: [["  Available Upstream:", ["main", "infoheader"]]]
         path: "status#availableUpstream"
@@ -145,20 +152,20 @@ infoview:
       namespace:
         header: "Namespace:"
         paths:
-        - path: "namespacedName"
-          pathtype: "regex"
-          regex: "^(.+?)/.+"
+          - path: "namespacedName"
+            pathtype: "regex"
+            regex: "^(.+?)/.+"
         type: "str"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "namespace"
+            - type: "namespace"
       name:
         header: "Name:"
         paths:
-        - path: "namespacedName"
-          pathtype: "regex"
-          regex: "^.+?/(.+)"
+          - path: "namespacedName"
+            pathtype: "regex"
+            regex: "^.+?/(.+)"
         formatter: "list"
   shortcuts:
     "Open info page for Secrets Namespace":

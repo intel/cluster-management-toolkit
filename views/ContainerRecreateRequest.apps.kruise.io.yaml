@@ -3,8 +3,8 @@ kind: "ContainerRecreateRequest"
 api_family: "apps.kruise.io"
 default_command: "containerrecreaterequests"
 command:
-- "containerrecreatereqs"
-- "containerrecreatereq"
+  - "containerrecreatereqs"
+  - "containerrecreatereq"
 listview:
   name: "Container Recreate Requests"
   group: "Kruise"
@@ -20,7 +20,7 @@ listview:
       default: "<none>"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -31,12 +31,12 @@ listview:
           mappings:
             "Completed":
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             "Recreating":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
     pod:
       header: "Pod:"
       path: "spec#podName"
@@ -46,16 +46,22 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name", "pod", "phase", "strategy_header", "strategy_failure_policy", "strategy_min_started_seconds", "strategy_termination_grace_period_seconds", "strategy_unready_grace_period_seconds", "ttl_seconds_after_finished"]
+        fields: ["node_name", "pod", "phase", "strategy_header",
+                 "strategy_failure_policy", "strategy_min_started_seconds",
+                 "strategy_termination_grace_period_seconds",
+                 "strategy_unready_grace_period_seconds",
+                 "ttl_seconds_after_finished"]
     rows:
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "metadata#labels#crr.apps.kruise.io/node-name"
         type: "host"
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -66,26 +72,27 @@ infoview:
             mappings:
               "Completed":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Recreating":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       pod:
-        header: [["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         path: "spec#podName"
         type: "str"
       strategy_header:
@@ -100,28 +107,29 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       strategy_termination_grace_period_seconds:
-        header: [["  Termination Grace Period Seconds:", ["main", "infoheader"]]]
+        header: [["  Termination Grace Period Seconds:",
+                  ["main", "infoheader"]]]
         path: "spec#strategy#terminationGracePeriodSeconds"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       strategy_unready_grace_period_seconds:
         header: [["  Unready Grace Period Seconds:", ["main", "infoheader"]]]
         path: "spec#strategy#unreadyGracePeriodSeconds"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ttl_seconds_after_finished:
         header: [["TTL Seconds After Finished:", ["main", "infoheader"]]]
         path: "spec#ttlSecondsAfterFinished"
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Open Node":
       key: "d"

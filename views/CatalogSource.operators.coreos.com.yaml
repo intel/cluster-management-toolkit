@@ -3,14 +3,15 @@ kind: "CatalogSource"
 api_family: "operators.coreos.com"
 default_command: "catalogsources"
 command:
-- "catsrcs"
-- "catsrc"
+  - "catsrcs"
+  - "catsrc"
 listview:
   name: "Catalog Sources"
   group: "API & Extendability"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "display_name", "source_type", "publisher", "age"]
+      fields: ["namespace", "name", "display_name",
+               "source_type", "publisher", "age"]
       sortcolumn: "namespace"
   fields:
     display_name:
