@@ -3,8 +3,8 @@ kind: "VirtualMachine"
 api_family: "virt.virtink.smartx.com"
 default_command: "virtualmachines.virt.virtink.smartx.com"
 command:
-- "vivms"
-- "vivm"
+  - "vivms"
+  - "vivm"
 listview:
   name: "Virtual Machines"
   group: "Virtualization"
@@ -19,7 +19,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -30,30 +30,31 @@ listview:
           mappings:
             "Failed":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Pending":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Scheduling":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Succeeded":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
 infoview:
   name: "Virtual Machine Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["node_name", "pod", "cores_per_socket", "sockets", "memory", "kernel_image", "run_policy", "phase"]
+        fields: ["node_name", "pod", "cores_per_socket", "sockets",
+                 "memory", "kernel_image", "run_policy", "phase"]
     rows:
       cores_per_socket:
         header: [["CPU cores / Socket:", ["main", "infoheader"]]]
@@ -61,7 +62,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       kernel_image:
         header: [["Kernel Image:", ["main", "infoheader"]]]
         path: "spec#instance#kernel#image"
@@ -72,13 +73,15 @@ infoview:
         type: "str"
         formatter: "numerical_with_units"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "status#nodeName"
         type: "str"
         default: "<unset>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -89,26 +92,28 @@ infoview:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Scheduling":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       pod:
-        header: [["VM ", ["main", "infoheader"]], ["P", ["main", "infoheader_shortcut"]], ["od:", ["main", "infoheader"]]]
+        header: [["VM ", ["main", "infoheader"]],
+                 ["P", ["main", "infoheader_shortcut"]],
+                 ["od:", ["main", "infoheader"]]]
         path: "status#vmPodName"
         type: "str"
         default: "<unset>"
@@ -122,7 +127,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
   shortcuts:
     "Show affinities":
       key: "a"
@@ -130,7 +135,8 @@ infoview:
       read_only: true
       helptext: "Show affinities"
       widget: "windowwidget"
-      headers: ["Type:", "Scheduling:", "Execution:", "Selector:", "Topology:"]
+      headers: ["Type:", "Scheduling:", "Execution:",
+                "Selector:", "Topology:"]
       itemgetter: "get_pod_affinity"
       # This isn't supported for now
       sortcolumn: "type"
@@ -168,96 +174,96 @@ infoview:
       itemgetter: "get_prepopulated_list"
       itemgetter_args:
         items:
-        - columns: ["Pause", "Pause a running VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "Pause"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Power Off", "Power off a running VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "PowerOff"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Power On", "Power on a powered off VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "PowerOn"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Reboot", "Reboot VM a running VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "Reboot"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Reset", "Reset a running VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "Reset"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Resume", "Resume a paused VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "Resume"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
-        - columns: ["Shutdown", "Shutdown a running VM"]
-          action: "call"
-          action_call: "patch_object"
-          action_args:
-            args:
-              patch:
-                status:
-                  powerAction: "Shutdown"
-              subresource: "status"
-            name_path: "metadata#name"
-            namespace_path: "metadata#namespace"
-            kind: "VirtualMachine"
-            api_family: "virt.virtink.smartx.com"
+          - columns: ["Pause", "Pause a running VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "Pause"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Power Off", "Power off a running VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "PowerOff"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Power On", "Power on a powered off VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "PowerOn"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Reboot", "Reboot VM a running VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "Reboot"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Reset", "Reset a running VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "Reset"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Resume", "Resume a paused VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "Resume"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
+          - columns: ["Shutdown", "Shutdown a running VM"]
+            action: "call"
+            action_call: "patch_object"
+            action_args:
+              args:
+                patch:
+                  status:
+                    powerAction: "Shutdown"
+                subresource: "status"
+              name_path: "metadata#name"
+              namespace_path: "metadata#namespace"
+              kind: "VirtualMachine"
+              api_family: "virt.virtink.smartx.com"
       # Not supported for now
       sortcolumn: "action"

@@ -3,8 +3,8 @@ kind: "VerticalPodAutoscalerCheckpoint"
 api_family: "autoscaling.k8s.io"
 default_command: "verticalpodautoscalercheckpoints"
 command:
-- "vpacheckpoints"
-- "vpacheckpoint"
+  - "vpacheckpoints"
+  - "vpacheckpoint"
 listview:
   name: "Vertical Pod Autoscaler Checkpoints"
   group: "Scheduling & Scaling"
@@ -17,7 +17,9 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["container_name", "vpa_object_name", "first_sample_start", "last_sample_start", "last_update_time", "total_samples_count", "version"]
+        fields: ["container_name", "vpa_object_name", "first_sample_start",
+                 "last_sample_start", "last_update_time",
+                 "total_samples_count", "version"]
     rows:
       container_name:
         header: [["Container:", ["main", "infoheader"]]]
@@ -26,23 +28,23 @@ infoview:
       first_sample_start:
         header: [["First Sample Start:", ["main", "infoheader"]]]
         paths:
-        - path: "status#firstSampleStart"
-          type: "timestamp"
-          default: -1
+          - path: "status#firstSampleStart"
+            type: "timestamp"
+            default: -1
         formatter: "timestamp"
       last_sample_start:
         header: [["Last Sample Start:", ["main", "infoheader"]]]
         paths:
-        - path: "status#lastSampleStart"
-          type: "timestamp"
-          default: -1
+          - path: "status#lastSampleStart"
+            type: "timestamp"
+            default: -1
         formatter: "timestamp"
       last_update_time:
         header: [["Last Update Time:", ["main", "infoheader"]]]
         paths:
-        - path: "status#lastUpdateTime"
-          type: "timestamp"
-          default: -1
+          - path: "status#lastUpdateTime"
+            type: "timestamp"
+            default: -1
         formatter: "timestamp"
       total_samples_count:
         header: [["Total Sample Count:", ["main", "infoheader"]]]
@@ -50,45 +52,47 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       version:
         header: [["Version:", ["main", "infoheader"]]]
         path: "status#version"
         type: "str"
         formatting:
           field_colors:
-          - type: "version"
+            - type: "version"
       vpa_object_name:
-        header: [["V", ["main", "infoheader_shortcut"]], ["PA Object:", ["main", "infoheader"]]]
+        header: [["V", ["main", "infoheader_shortcut"]],
+                 ["PA Object:", ["main", "infoheader"]]]
         path: "spec#vpaObjectName"
         type: "str"
   listpad:
     listgetter: "listgetter_join_lists"
     listgetter_args:
       paths:
-      - path: ["status#cpuHistogram"]
-        name_key: "name"
-        name_value: "cpu"
-      - path: ["status#memoryHistogram"]
-        name_key: "name"
-        name_value: "memory"
+        - path: ["status#cpuHistogram"]
+          name_key: "name"
+          name_value: "cpu"
+        - path: ["status#memoryHistogram"]
+          name_key: "name"
+          name_value: "memory"
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["name", "bucket_weights", "total_weight", "reference_timestamp"]
+        fields: ["name", "bucket_weights", "total_weight",
+                 "reference_timestamp"]
     fields:
       bucket_weights:
         header: "Bucket Weights:"
         paths:
-        - path: "bucketWeights"
-          pathtype: "key_value"
+          - path: "bucketWeights"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "numerical"
+            - type: "key"
+            - type: "numerical"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       name:
         header: "Name:"
         path: "name"
@@ -96,9 +100,9 @@ infoview:
       reference_timestamp:
         header: "Reference Timestamp:"
         paths:
-        - path: "referenceTimestamp"
-          type: "timestamp"
-          default: -1
+          - path: "referenceTimestamp"
+            type: "timestamp"
+            default: -1
         formatter: "timestamp"
       total_weight:
         header: "Total Weight:"

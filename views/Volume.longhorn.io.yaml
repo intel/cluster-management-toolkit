@@ -3,10 +3,10 @@ kind: "Volume"
 api_family: "longhorn.io"
 default_command: "volume.longhorn.io"
 command:
-- "lhvolumes"
-- "lhvolume"
-- "lhvols"
-- "lhvol"
+  - "lhvolumes"
+  - "lhvolume"
+  - "lhvols"
+  - "lhvol"
 listview:
   name: "Volumes"
   group: "Storage & Backups"
@@ -24,8 +24,8 @@ listview:
           mappings:
             "degraded":
               field_colors:
-              - context: "main"
-                type: "status_warning"
+                - context: "main"
+                  type: "status_warning"
     state:
       header: "State:"
       path: "status#state"
@@ -36,8 +36,8 @@ listview:
           mappings:
             "attached":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -55,16 +55,16 @@ infoview:
       image:
         header: [["Image:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#image"
-          pathtype: "regex"
-          regex: "^([^:]+):(.*)"
+          - path: "spec#image"
+            pathtype: "regex"
+            regex: "^([^:]+):(.*)"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       robustness:
         header: [["Robustness:", ["main", "infoheader"]]]
         path: "status#robustness"
@@ -75,8 +75,8 @@ infoview:
             mappings:
               "degraded":
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
       state:
         header: [["State:", ["main", "infoheader"]]]
         path: "status#state"
@@ -87,5 +87,5 @@ infoview:
             mappings:
               "attached":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"

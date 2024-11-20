@@ -3,7 +3,7 @@ kind: "VerticalPodAutoscaler"
 api_family: "autoscaling.k8s.io"
 default_command: "verticalpodautoscalers"
 command:
-- "vpa"
+  - "vpa"
 listview:
   name: "Vertical Pod Autoscalers"
   group: "Scheduling & Scaling"
@@ -15,13 +15,13 @@ listview:
     provided:
       header: "Provided:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "RecommendationProvided"
-        default: ["<unknown>"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "RecommendationProvided"
+          default: ["<unknown>"]
       type: "str"
     update_mode:
       header: "Update Mode:"
@@ -44,29 +44,33 @@ infoview:
       provided:
         header: [["Provided:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          subpath: "status"
-          pathtype: "items"
-          when:
-          - key: "type"
-            eq: "RecommendationProvided"
-          default: ["<unknown>"]
+          - path: "status#conditions"
+            subpath: "status"
+            pathtype: "items"
+            when:
+              - key: "type"
+                eq: "RecommendationProvided"
+            default: ["<unknown>"]
         type: "str"
       target_reference:
-        header: [["Target ", ["main", "infoheader"]], ["R", ["main", "infoheader_shortcut"]], ["eference:", ["main", "infoheader"]]]
+        header: [["Target ", ["main", "infoheader"]],
+                 ["R", ["main", "infoheader_shortcut"]],
+                 ["eference:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#targetRef#kind"], ["spec#targetRef#apiVersion"], ["spec#targetRef#name"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group", "name"]
+          - path: [["spec#targetRef#kind"],
+                   ["spec#targetRef#apiVersion"],
+                   ["spec#targetRef#name"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group", "name"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       update_mode:
         header: [["Update Mode:", ["main", "infoheader"]]]
         path: "spec#updatePolicy#updateMode"
@@ -78,7 +82,8 @@ infoview:
     infogetter: "generic_infogetter"
     field_indexes:
       Normal:
-        fields: ["container_name", "controlled_resources", "min_allowed", "max_allowed"]
+        fields: ["container_name", "controlled_resources",
+                 "min_allowed", "max_allowed"]
         sortcolumn: "container_name"
     fields:
       container_name:
@@ -93,27 +98,27 @@ infoview:
       max_allowed:
         header: "Max:"
         paths:
-        - path: "maxAllowed"
-          pathtype: "key_value"
+          - path: "maxAllowed"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
       min_allowed:
         header: "Min:"
         paths:
-        - path: "minAllowed"
-          pathtype: "key_value"
+          - path: "minAllowed"
+            pathtype: "key_value"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "keyvalue"
+            - type: "keyvalue"
   shortcuts:
     "Container Recommendations":
       key: "c"
@@ -122,20 +127,22 @@ infoview:
       helptext: "List container recommendations"
       widget: "windowwidget"
       title: "Container Recommendations:"
-      headers: ["Name:", "Mem Low:", "Mem High:", "Mem Target:", "Mem Uncapped:", "CPU Low:", "CPU High:", "CPU Target:", "CPU Uncapped:"]
+      headers: ["Name:", "Mem Low:", "Mem High:", "Mem Target:",
+                "Mem Uncapped:", "CPU Low:", "CPU High:",
+                "CPU Target:", "CPU Uncapped:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "status#recommendation#containerRecommendations"
         fields:
-        - "containerName"
-        - "lowerBound#memory"
-        - "upperBound#memory"
-        - "target#memory"
-        - "uncappedTarget#memory"
-        - "lowerBound#cpu"
-        - "upperBound#cpu"
-        - "target#cpu"
-        - "uncappedTarget#cpu"
+          - "containerName"
+          - "lowerBound#memory"
+          - "upperBound#memory"
+          - "target#memory"
+          - "uncappedTarget#memory"
+          - "lowerBound#cpu"
+          - "upperBound#cpu"
+          - "target#cpu"
+          - "uncappedTarget#cpu"
       # Not supported for now
       sortcolumn: "cidr"
     "Open target reference":

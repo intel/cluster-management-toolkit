@@ -3,14 +3,15 @@ kind: "VirtualMachineMigration"
 api_family: "virt.virtink.smartx.com"
 default_command: "virtualmachinemigrations"
 command:
-- "vivmms"
-- "vivmm"
+  - "vivmms"
+  - "vivmm"
 listview:
   name: "Virtual Machine Migrations"
   group: "Virtualization"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "phase", "vmname", "source_node_name", "target_node_name", "age"]
+      fields: ["namespace", "name", "phase", "vmname", "source_node_name",
+               "target_node_name", "age"]
       sortcolumn: "phase"
   fields:
     phase:
@@ -23,14 +24,14 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     target_node_name:
       header: "Source:"
       path: "status#targetNodeName"
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     vmname:
       header: "VM:"
       path: "status#vmName"

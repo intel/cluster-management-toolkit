@@ -13,7 +13,11 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_ip", "cluster_domain", "loglevel", "operator_loglevel", "upstream_resolvers_header", "upstream_resolvers_policy", "upstream_resolvers_upstreams", "cache_header", "cache_positive_ttl", "cache_negative_ttl"]
+        fields: ["cluster_ip", "cluster_domain", "loglevel",
+                 "operator_loglevel", "upstream_resolvers_header",
+                 "upstream_resolvers_policy",
+                 "upstream_resolvers_upstreams", "cache_header",
+                 "cache_positive_ttl", "cache_negative_ttl"]
     rows:
       cache_header:
         header: [["Cache:", ["main", "infoheader"]]]
@@ -53,15 +57,15 @@ infoview:
       upstream_resolvers_upstreams:
         header: [["  Upstreams:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#upstreamResolvers#upstreams"
-          pathtype: "items"
-          subpaths:
-          - "type"
-          - "port"
+          - path: "spec#upstreamResolvers#upstreams"
+            pathtype: "items"
+            subpaths:
+              - "type"
+              - "port"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "port"
+            - type: "generic"
+            - type: "port"
           field_separators:
-          - type: "port"
+            - type: "port"

@@ -3,32 +3,33 @@ kind: "VirtualMachineInstance"
 api_family: "kubevirt.io"
 default_command: "virtualmachineinstances"
 command:
-- "kvvmis"
-- "kvvmi"
+  - "kvvmis"
+  - "kvvmi"
 listview:
   name: "Virtual Machine Instances"
   group: "Virtualization"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready", "age"]
+      fields: ["namespace", "name", "ipaddresses", "node_name",
+               "live_migratable", "paused", "phase", "ready", "age"]
       sortcolumn: "phase"
   fields:
     ipaddresses:
       header: "IP-addresses:"
       paths:
-      - path: "status#interfaces"
-        pathtype: "items"
-        subpath: "ipAddress"
+        - path: "status#interfaces"
+          pathtype: "items"
+          subpath: "ipAddress"
       formatter: "address"
     live_migratable:
       header: "Live Migratable:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "LiveMigratable"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "LiveMigratable"
       type: "str"
     node_name:
       header: "Node Name:"
@@ -36,7 +37,7 @@ listview:
       type: "str"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     phase:
       header: "Phase:"
       path: "status#phase"
@@ -47,52 +48,52 @@ listview:
           mappings:
             "Failed":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             "Pending":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Running":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Scheduling":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Scheduled":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "Succeeded":
               field_colors:
-              - context: "main"
-                type: "status_done"
+                - context: "main"
+                  type: "status_done"
             "Unknown":
               field_colors:
-              - context: "main"
-                type: "status_unknown"
+                - context: "main"
+                  type: "status_unknown"
     paused:
       header: "Paused:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Paused"
-        default: ["False"]
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Paused"
+          default: ["False"]
       type: "str"
     ready:
       header: "Ready:"
       paths:
-      - path: "status#conditions"
-        pathtype: "items"
-        subpath: "status"
-        when:
-        - key: "type"
-          eq: "Ready"
+        - path: "status#conditions"
+          pathtype: "items"
+          subpath: "status"
+          when:
+            - key: "type"
+              eq: "Ready"
       type: "str"
       formatter: "value_mapper"
       formatting:
@@ -100,12 +101,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -120,62 +121,68 @@ listview:
       helptext: "SSH to VM"
       action: "command"
       action_args:
-        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts", "-o StrictHostKeyChecking=no", "-n", ["metadata#namespace"], ["metadata#name"]]
+        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts",
+                  "-o StrictHostKeyChecking=no", "-n",
+                  ["metadata#namespace"], ["metadata#name"]]
         _pass_obj: true
 infoview:
   name: "Virtual Machine Instance Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready"]
+        fields: ["controller", "ipaddresses", "node_name",
+                 "live_migratable", "paused", "phase", "ready"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       ipaddresses:
         header: [["IP-addresses:", ["main", "infoheader"]]]
         paths:
-        - path: "status#interfaces"
-          pathtype: "items"
-          subpath: "ipAddress"
+          - path: "status#interfaces"
+            pathtype: "items"
+            subpath: "ipAddress"
         formatter: "address"
       live_migratable:
         header: [["Live Migratable:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "LiveMigratable"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "LiveMigratable"
         type: "str"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "status#nodeName"
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -186,52 +193,52 @@ infoview:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Scheduling":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Scheduled":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       paused:
         header: [["Paused:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Paused"
-          default: ["False"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Paused"
+            default: ["False"]
         type: "str"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -239,12 +246,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -254,60 +261,64 @@ infoview:
         controller:
           enabled: true
           allow:
-          - type: "dictlist"
-            path: "metadata#ownerReferences"
-            fields:
-              kind: "VirtualMachineInstance"
-              api_family: "kubevirt.io"
-              name:
-                source: "caller"
-                path: "metadata#name"
-              controller: true
+            - type: "dictlist"
+              path: "metadata#ownerReferences"
+              fields:
+                kind: "VirtualMachineInstance"
+                api_family: "kubevirt.io"
+                name:
+                  source: "caller"
+                  path: "metadata#name"
+                controller: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "node_name", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "pod_ip", "age", "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "node_name", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "node_name",
+                 "age", "restarts", "last_restart"]
         sortcolumn: "pod_status"
       Compact:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
         header: "Containers:"
         paths:
-        - paths:
-          - "spec#initContainers"
-          - "spec#containers"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          - subpath: "image"
-            regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
-          type: "raw"
+          - paths:
+              - "spec#initContainers"
+              - "spec#containers"
+            pathtype: "items"
+            subpaths:
+              - "name"
+              - subpath: "image"
+                regex: ["^.+/[^:^/]+:(.+?)@.*", "^.+/[^:^/]+:(.+)"]
+            type: "raw"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "generic"
-          - type: "version"
+            - type: "generic"
+            - type: "version"
           field_separators:
-          - type: "version"
+            - type: "version"
       last_restart:
         header: "Latest Restart:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
-          when:
-          - key: "restartCount"
-            gt: 0
-          action: "latest"
-          type: "timestamp"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
+            when:
+              - key: "restartCount"
+                gt: 0
+            action: "latest"
+            type: "timestamp"
         default: -1
         formatter: "age"
         align: "right"
@@ -325,14 +336,14 @@ infoview:
       restarts:
         header: "Restarts:"
         paths:
-        - path: "status#containerStatuses"
-          pathtype: "items"
-          subpath: "restartCount"
-          action: "sum"
-          type: "int"
+          - path: "status#containerStatuses"
+            pathtype: "items"
+            subpath: "restartCount"
+            action: "sum"
+            type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
         align: "right"
         default: 0
   shortcuts:
@@ -364,7 +375,8 @@ infoview:
       helptext: "Open a shell inside virtual machine"
       widget: "command"
       widget_args:
-        command: ["virtctl", "console", "-n", ["metadata#namespace"], ["metadata#name"]]
+        command: ["virtctl", "console", "-n",
+                  ["metadata#namespace"], ["metadata#name"]]
         _pass_obj: true
     "SSH to VM":
       key: "s"
@@ -373,7 +385,9 @@ infoview:
       helptext: "SSH to VM"
       widget: "command"
       widget_args:
-        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts", "-o StrictHostKeyChecking=no", "-n", ["metadata#namespace"], ["metadata#name"]]
+        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts",
+                  "-o StrictHostKeyChecking=no", "-n",
+                  ["metadata#namespace"], ["metadata#name"]]
         _pass_obj: true
     "Show interfaces":
       key: "i"
@@ -387,10 +401,10 @@ infoview:
       itemgetter_args:
         path: "status#interfaces"
         fields:
-        - "name"
-        - "infoSource"
-        - "ipAddresses"
-        - "mac"
+          - "name"
+          - "infoSource"
+          - "ipAddresses"
+          - "mac"
       # Not supported for now
       sortcolumn: "name"
     "Show volume status":
@@ -405,8 +419,8 @@ infoview:
       itemgetter_args:
         path: "status#volumeStatus"
         fields:
-        - "name"
-        - "size"
-        - "target"
+          - "name"
+          - "size"
+          - "target"
       # Not supported for now
       sortcolumn: "name"

@@ -3,10 +3,10 @@ kind: "VolumeAttachment"
 api_family: "storage.k8s.io"
 default_command: "volumeattachments"
 command:
-- "volattachments"
-- "volattachment"
-- "volattachs"
-- "volattach"
+  - "volattachments"
+  - "volattachment"
+  - "volattachs"
+  - "volattach"
 listview:
   name: "Volume Attachments"
   group: "Storage & Backups"
@@ -29,7 +29,7 @@ listview:
       default: "<none>"
       formatting:
         field_colors:
-        - type: "host"
+          - type: "host"
     pv:
       header: "PV:"
       path: "spec#source#persistentVolumeName"
@@ -53,19 +53,23 @@ infoview:
         path: "status#attached"
         type: "bool"
       attacher:
-        header: [["A", ["main", "infoheader_shortcut"]], ["ttacher:", ["main", "infoheader"]]]
+        header: [["A", ["main", "infoheader_shortcut"]],
+                 ["ttacher:", ["main", "infoheader"]]]
         path: "spec#attacher"
         type: "str"
       node_name:
-        header: [["No", ["main", "infoheader"]], ["d", ["main", "infoheader_shortcut"]], ["e Name:", ["main", "infoheader"]]]
+        header: [["No", ["main", "infoheader"]],
+                 ["d", ["main", "infoheader_shortcut"]],
+                 ["e Name:", ["main", "infoheader"]]]
         path: "spec#nodeName"
         type: "host"
         default: "<none>"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       pv:
-        header: [["P", ["main", "infoheader_shortcut"]], ["ersistent Volume:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["ersistent Volume:", ["main", "infoheader"]]]
         path: "spec#source#persistentVolumeName"
         type: "str"
   shortcuts:

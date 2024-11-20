@@ -29,7 +29,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["default", "default_logical_switch", "router", "standby", "tcp_load_balancer", "tcp_session_load_balancer", "udp_load_balancer", "udp_session_load_balancer", "subnets", "namespaces"]
+        fields: ["default", "default_logical_switch", "router", "standby",
+                 "tcp_load_balancer", "tcp_session_load_balancer",
+                 "udp_load_balancer", "udp_session_load_balancer",
+                 "subnets", "namespaces"]
     rows:
       default:
         header: [["Default:", ["main", "infoheader"]]]
@@ -40,7 +43,8 @@ infoview:
         path: "status#defaultLogicalSwitch"
         type: "str"
       namespaces:
-        header: [["N", ["main", "infoheader_shortcut"]], ["amespaces:", ["main", "infoheader"]]]
+        header: [["N", ["main", "infoheader_shortcut"]],
+                 ["amespaces:", ["main", "infoheader"]]]
         path: "spec#namespaces"
         type: "raw"
         default: "<none>"
@@ -54,7 +58,8 @@ infoview:
         path: "status#standby"
         type: "bool"
       subnets:
-        header: [["S", ["main", "infoheader_shortcut"]], ["ubnets:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["ubnets:", ["main", "infoheader"]]]
         path: "status#subnets"
         default: "<none>"
         type: "raw"
@@ -106,9 +111,9 @@ infoview:
       itemgetter_args:
         path: "spec#policyRoutes"
         fields:
-        - "action"
-        - "match"
-        - "priority"
+          - "action"
+          - "match"
+          - "priority"
       # Not supported for now
       sortcolumn: "action"
     "Show Static Route list":
@@ -123,9 +128,9 @@ infoview:
       itemgetter_args:
         path: "spec#staticRoutes"
         fields:
-        - "cidr"
-        - "nextHopIP"
-        - "policy"
+          - "cidr"
+          - "nextHopIP"
+          - "policy"
       # Not supported for now
       sortcolumn: "cidr"
     "Show Subnet list":

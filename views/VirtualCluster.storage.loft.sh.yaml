@@ -3,9 +3,9 @@ kind: "VirtualCluster"
 api_family: "storage.loft.sh"
 default_command: "virtualclusters.storage"
 command:
-- "virtualcluster.storage"
-- "virtclrs.storage"
-- "virtclr.storage"
+  - "virtualcluster.storage"
+  - "virtclrs.storage"
+  - "virtclr.storage"
 listview:
   name: "Virtual Clusters"
   group: "Lôft"
@@ -23,12 +23,12 @@ listview:
           mappings:
             "Deploying":
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             "Deployed":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -53,12 +53,12 @@ infoview:
             mappings:
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       phase:
         header: [["Phase:", ["main", "infoheader"]]]
         path: "status#phase"
@@ -69,9 +69,9 @@ infoview:
             mappings:
               "Deploying":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Deployed":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"

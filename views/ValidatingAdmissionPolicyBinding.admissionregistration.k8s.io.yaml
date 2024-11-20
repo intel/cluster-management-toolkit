@@ -3,10 +3,10 @@ kind: "ValidatingAdmissionPolicyBinding"
 api_family: "admissionregistration.k8s.io"
 default_command: "validatingadmissionpolicybindings"
 command:
-- "vapolbindings"
-- "vapolbinding"
-- "vapolbs"
-- "vapolb"
+  - "vapolbindings"
+  - "vapolbinding"
+  - "vapolbs"
+  - "vapolb"
 listview:
   name: "Validating Admission Policy Bindings"
   group: "API & Extendability"
@@ -36,14 +36,15 @@ infoview:
         type: "str"
         default: "<unset>"
       policy_name:
-        header: [["P", ["main", "infoheader_shortcut"]], ["olicy:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["olicy:", ["main", "infoheader"]]]
         path: "spec#policyName"
         type: "str"
       validation_actions:
         header: [["Validation Actions:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#validationActions"
-          pathtype: "list"
+          - path: "spec#validationActions"
+            pathtype: "list"
         formatter: "list"
   shortcuts:
     "Show ValidatingAdmissionPolicy":

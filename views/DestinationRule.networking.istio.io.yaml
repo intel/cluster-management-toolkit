@@ -3,10 +3,10 @@ kind: "DestinationRule"
 api_family: "networking.istio.io"
 default_command: "destinationrules"
 command:
-- "destrules"
-- "destrule"
-- "dstrules"
-- "dstrule"
+  - "destrules"
+  - "destrule"
+  - "dstrules"
+  - "dstrule"
 listview:
   name: "Destination Rules"
   group: "Istio"
@@ -24,7 +24,44 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["host", "traffic_policy_header", "traffic_policy_load_balancer_header", "traffic_policy_load_balancer_type", "traffic_policy_load_balancer_name", "traffic_policy_load_balancer_path", "traffic_policy_load_balancer_ttl", "traffic_policy_load_balancer_minimum_ring_size", "traffic_policy_tcp_header", "traffic_policy_tcp_max_connections", "traffic_policy_tcp_max_connection_timeout", "traffic_policy_tcp_keepalive_header", "traffic_policy_tcp_keepalive_time", "traffic_policy_tcp_keepalive_interval", "traffic_policy_tcp_keepalive_probes", "traffic_policy_http_header", "traffic_policy_http_max_http1_pending_requests", "traffic_policy_http_max_http2_requests", "traffic_policy_http_max_requests_per_connection", "traffic_policy_http_max_retries", "traffic_policy_http_idle_timeout", "traffic_policy_http_upgrade_http1_1_to_http2", "traffic_policy_outlier_detection_header", "traffic_policy_outlier_detection_consecutive_gateway_errors", "traffic_policy_outlier_detection_consecutive_5xx_errors", "traffic_policy_outlier_ejection_sweep_interval", "traffic_policy_outlier_base_ejection_time", "traffic_policy_outlier_max_ejection_percent", "traffic_policy_outlier_min_health_percent", "traffic_policy_tls_header", "traffic_policy_tls_mode", "traffic_policy_tls_client_certificate", "traffic_policy_tls_private_key", "traffic_policy_tls_ca_certificates", "traffic_policy_tls_credential_name", "traffic_policy_tls_subject_alt_names", "traffic_policy_tls_sni", "traffic_policy_tls_insecure_skip_verify", "export_to"]
+        fields: ["host", "traffic_policy_header",
+                 "traffic_policy_load_balancer_header",
+                 "traffic_policy_load_balancer_type",
+                 "traffic_policy_load_balancer_name",
+                 "traffic_policy_load_balancer_path",
+                 "traffic_policy_load_balancer_ttl",
+                 "traffic_policy_load_balancer_minimum_ring_size",
+                 "traffic_policy_tcp_header",
+                 "traffic_policy_tcp_max_connections",
+                 "traffic_policy_tcp_max_connection_timeout",
+                 "traffic_policy_tcp_keepalive_header",
+                 "traffic_policy_tcp_keepalive_time",
+                 "traffic_policy_tcp_keepalive_interval",
+                 "traffic_policy_tcp_keepalive_probes",
+                 "traffic_policy_http_header",
+                 "traffic_policy_http_max_http1_pending_requests",
+                 "traffic_policy_http_max_http2_requests",
+                 "traffic_policy_http_max_requests_per_connection",
+                 "traffic_policy_http_max_retries",
+                 "traffic_policy_http_idle_timeout",
+                 "traffic_policy_http_upgrade_http1_1_to_http2",
+                 "traffic_policy_outlier_detection_header",
+                 "traffic_policy_outlier_detection_consecutive_gateway_errors",
+                 "traffic_policy_outlier_detection_consecutive_5xx_errors",
+                 "traffic_policy_outlier_ejection_sweep_interval",
+                 "traffic_policy_outlier_base_ejection_time",
+                 "traffic_policy_outlier_max_ejection_percent",
+                 "traffic_policy_outlier_min_health_percent",
+                 "traffic_policy_tls_header",
+                 "traffic_policy_tls_mode",
+                 "traffic_policy_tls_client_certificate",
+                 "traffic_policy_tls_private_key",
+                 "traffic_policy_tls_ca_certificates",
+                 "traffic_policy_tls_credential_name",
+                 "traffic_policy_tls_subject_alt_names",
+                 "traffic_policy_tls_sni",
+                 "traffic_policy_tls_insecure_skip_verify",
+                 "export_to"]
     rows:
       host:
         header: [["Host:", ["main", "infoheader"]]]
@@ -37,46 +74,46 @@ infoview:
       traffic_policy_load_balancer_type:
         header: [["    Type:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#trafficPolicy#loadBalancer"
-          pathtype: "dictfields"
-          subpaths:
-          - "Simple"
-          - ["simple"]
-          when:
-          - key: "simple"
-            notnone: true
-        - path: "spec#trafficPolicy#loadBalancer"
-          pathtype: "dictfields"
-          subpaths:
-          - "Consistent Hash"
-          - "HTTP Cookie"
-          when:
-          - key: "consistentHash"
-            dicthaskey: "httpCookie"
-        - path: "spec#trafficPolicy#loadBalancer"
-          pathtype: "dictfields"
-          subpaths:
-          - "Consistent Hash"
-          - "HTTP Header Name"
-          when:
-          - key: "consistentHash"
-            dicthaskey: "httpHeaderName"
-        - path: "spec#trafficPolicy#loadBalancer"
-          pathtype: "dictfields"
-          subpaths:
-          - "Consistent Hash"
-          - "Use Source IP"
-          when:
-          - key: "consistentHash"
-            dicthaskey: "useSourceIp"
-        - path: "spec#trafficPolicy#loadBalancer"
-          pathtype: "dictfields"
-          subpaths:
-          - "Consistent Hash"
-          - "HTTP Query Parameter Name"
-          when:
-          - key: "consistentHash"
-            dicthaskey: "httpQueryParameterName"
+          - path: "spec#trafficPolicy#loadBalancer"
+            pathtype: "dictfields"
+            subpaths:
+              - "Simple"
+              - ["simple"]
+            when:
+              - key: "simple"
+                notnone: true
+          - path: "spec#trafficPolicy#loadBalancer"
+            pathtype: "dictfields"
+            subpaths:
+              - "Consistent Hash"
+              - "HTTP Cookie"
+            when:
+              - key: "consistentHash"
+                dicthaskey: "httpCookie"
+          - path: "spec#trafficPolicy#loadBalancer"
+            pathtype: "dictfields"
+            subpaths:
+              - "Consistent Hash"
+              - "HTTP Header Name"
+            when:
+              - key: "consistentHash"
+                dicthaskey: "httpHeaderName"
+          - path: "spec#trafficPolicy#loadBalancer"
+            pathtype: "dictfields"
+            subpaths:
+              - "Consistent Hash"
+              - "Use Source IP"
+            when:
+              - key: "consistentHash"
+                dicthaskey: "useSourceIp"
+          - path: "spec#trafficPolicy#loadBalancer"
+            pathtype: "dictfields"
+            subpaths:
+              - "Consistent Hash"
+              - "HTTP Query Parameter Name"
+            when:
+              - key: "consistentHash"
+                dicthaskey: "httpQueryParameterName"
         formatter: "list"
       traffic_policy_load_balancer_name:
         header: [["    Name:", ["main", "infoheader"]]]
@@ -105,15 +142,15 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_tcp_max_connection_timeout:
         header: [["    Connection Timeout:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#trafficPolicy#connectionPool#tcp"
-          pathtype: "dictfields"
-          subpath:
-          - ["connectTimeout"]
-          default: "10s"
+          - path: "spec#trafficPolicy#connectionPool#tcp"
+            pathtype: "dictfields"
+            subpath:
+              - ["connectTimeout"]
+            default: "10s"
         formatter: "numerical_with_units"
       traffic_policy_tcp_keepalive_header:
         header: [["    Keepalive:", ["main", "infoheader"]]]
@@ -133,7 +170,7 @@ infoview:
         type: "int"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_http_header:
         header: [["  HTTP:", ["main", "infoheader"]]]
       traffic_policy_http_max_http1_pending_requests:
@@ -143,7 +180,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_http_max_http2_requests:
         header: [["    Max HTTP2 Requests:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#connectionPool#http#http2MaxRequests"
@@ -151,7 +188,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_http_max_requests_per_connection:
         header: [["    Max Requests Per Connection:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#connectionPool#http#maxRequestsPerConnection"
@@ -159,7 +196,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_http_max_retries:
         header: [["    Max Retries:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#connectionPool#http#maxRetries"
@@ -167,7 +204,7 @@ infoview:
         type: "raw"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       traffic_policy_http_idle_timeout:
         header: [["    Idle Timeout:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#connectionPool#http#idleTimeout"
@@ -192,12 +229,12 @@ infoview:
             mappings:
               Disabled:
                 field_colors:
-                - context: "types"
-                  type: "none"
+                  - context: "types"
+                    type: "none"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "numerical"
+                  - context: "types"
+                    type: "numerical"
       traffic_policy_outlier_detection_consecutive_5xx_errors:
         header: [["    Consecutive 5xx Errors:", ["main", "infoheader"]]]
         path: "spec#trafficPolicy#outlierDetection#consecutive5xxErrors"
@@ -270,25 +307,27 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_warning"
+                  - context: "main"
+                    type: "status_warning"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
       export_to:
         header: [["Export To:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#exportTo"
-          pathtype: "remap"
-          substitutions:
-            "*": "All"
-            ".": "Same"
-          default: "All"
-# Subsets essentially have same kind of DestinationRules as their parent (except they cannot have subsets, TTBOMK)
-# Since we need to list subsets anyway, treat all Traffic Policies for the parent as yet another subset, but
-# with a different (fake) type
+          - path: "spec#exportTo"
+            pathtype: "remap"
+            substitutions:
+              "*": "All"
+              ".": "Same"
+            default: "All"
+# Subsets essentially have same kind of DestinationRules as their parent
+# (except they cannot have subsets, TTBOMK)
+# Since we need to list subsets anyway, treat all Traffic Policies for the
+# parent as yet another subset, but with a different (fake) type
 #
-# Show the information in the logpad, not in the infopad, that way it won't cause crash on resize,
+# Show the information in the logpad, not in the infopad, that way it won't
+# cause crash on resize,
 # especially once we had the remaining information
 # listpad: { "SUBSETS" }

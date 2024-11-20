@@ -3,12 +3,12 @@ kind: "VolumeAttachment"
 api_family: "longhorn.io"
 default_command: "volumeattachments.longhorn.io"
 command:
-- "lhvolumeattachments"
-- "lhvolumeattachment"
-- "lhvolattachments"
-- "lhvolattachment"
-- "lhvolattachs"
-- "lhvolattach"
+  - "lhvolumeattachments"
+  - "lhvolumeattachment"
+  - "lhvolattachments"
+  - "lhvolattachment"
+  - "lhvolattachs"
+  - "lhvolattach"
 listview:
   name: "Volume Attachments"
   group: "Storage & Backups"
@@ -30,7 +30,8 @@ infoview:
         fields: ["volume"]
     rows:
       volume:
-        header: [["V", ["main", "infoheader_shortcut"]], ["olume:", ["main", "infoheader"]]]
+        header: [["V", ["main", "infoheader_shortcut"]],
+                 ["olume:", ["main", "infoheader"]]]
         path: "spec#volume"
         default: "<none>"
         type: "str"

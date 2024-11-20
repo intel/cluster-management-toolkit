@@ -3,8 +3,8 @@ kind: "VirtinkMachineTemplate"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "virtinkmachinetemplates"
 command:
-- "vimachtempls"
-- "vimachtempl"
+  - "vimachtempls"
+  - "vimachtempl"
 listview:
   name: "Virtink Machine Templates"
   group: "Virtualization"
@@ -19,28 +19,30 @@ infoview:
         fields: ["cluster"]
     rows:
       cluster:
-        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "kind"
-            eq: "Cluster"
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "kind"
+                eq: "Cluster"
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
   shortcuts:
     "Open Cluster":
       key: "u"

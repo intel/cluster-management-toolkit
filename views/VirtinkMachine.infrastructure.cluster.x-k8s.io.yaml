@@ -3,8 +3,8 @@ kind: "VirtinkMachine"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "virtinkmachines"
 command:
-- "vimachs"
-- "vimach"
+  - "vimachs"
+  - "vimach"
 listview:
   name: "Virtink Machines"
   group: "Virtualization"
@@ -24,28 +24,29 @@ infoview:
         fields: ["controller", "provider_id"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       provider_id:
         header: [["Provider ID:", ["main", "infoheader"]]]
         path: "spec#providerID"

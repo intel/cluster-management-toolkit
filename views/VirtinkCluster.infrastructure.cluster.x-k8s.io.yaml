@@ -3,8 +3,8 @@ kind: "VirtinkCluster"
 api_family: "infrastructure.cluster.x-k8s.io"
 default_command: "virtinkclusters"
 command:
-- "viclrs"
-- "viclr"
+  - "viclrs"
+  - "viclr"
 listview:
   name: "Virtink Clusters"
   group: "Virtualization"
@@ -15,15 +15,16 @@ listview:
     control_plane_endpoint:
       header: "Control Plane Endpoint:"
       paths:
-      - path: [["spec#controlPlaneEndpoint#host"], ["spec#controlPlaneEndpoint#port"]]
-        pathtype: "tuple"
+        - path: [["spec#controlPlaneEndpoint#host"],
+                 ["spec#controlPlaneEndpoint#port"]]
+          pathtype: "tuple"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "ipaddress"
-        - type: "port"
+          - type: "ipaddress"
+          - type: "port"
         field_separators:
-        - type: "port"
+          - type: "port"
     ready:
       header: "Ready:"
       path: "status#ready"
@@ -34,42 +35,45 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
 infoview:
   name: "Virtink Cluster Info"
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "control_plane_endpoint_header", "control_plane_endpoint_host", "control_plane_endpoint_port", "ready"]
+        fields: ["controller", "control_plane_endpoint_header",
+                 "control_plane_endpoint_host",
+                 "control_plane_endpoint_port", "ready"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       control_plane_endpoint_header:
         header: [["Control Plane Endpoint:", ["main", "infoheader"]]]
       control_plane_endpoint_host:
@@ -83,7 +87,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "numerical"
+            - type: "numerical"
       ready:
         header: [["Ready:", ["main", "infoheader"]]]
         path: "status#ready"
@@ -94,12 +98,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "Open controller":
       key: "c"

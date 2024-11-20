@@ -3,8 +3,8 @@ kind: "VirtualMachine"
 api_family: "kubevirt.io"
 default_command: "virtualmachines.kubevirt.io"
 command:
-- "kvvms"
-- "kvvm"
+  - "kvvms"
+  - "kvvm"
 listview:
   name: "Virtual Machines"
   group: "Virtualization"
@@ -23,12 +23,12 @@ listview:
           mappings:
             "True":
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             "False":
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
     status:
       header: "Status:"
       path: "status#printableStatus"
@@ -39,20 +39,20 @@ listview:
           mappings:
             ErrorUnschedulable:
               field_colors:
-              - context: "main"
-                type: "status_not_ok"
+                - context: "main"
+                  type: "status_not_ok"
             Running:
               field_colors:
-              - context: "main"
-                type: "status_ok"
+                - context: "main"
+                  type: "status_ok"
             Starting:
               field_colors:
-              - context: "main"
-                type: "status_pending"
+                - context: "main"
+                  type: "status_pending"
             __default:
               field_colors:
-              - context: "types"
-                type: "generic"
+                - context: "types"
+                  type: "generic"
     vm_created:
       header: "VM Created:"
       path: "status#created"
@@ -100,12 +100,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
       run_strategy:
         header: [["Run Strategy:", ["main", "infoheader"]]]
         path: "spec#runStrategy"
@@ -120,20 +120,20 @@ infoview:
             mappings:
               ErrorUnschedulable:
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               Running:
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               Starting:
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               __default:
                 field_colors:
-                - context: "types"
-                  type: "generic"
+                  - context: "types"
+                    type: "generic"
       vm_created:
         header: [["VM Created:", ["main", "infoheader"]]]
         path: "status#created"
@@ -148,15 +148,15 @@ infoview:
         controller:
           enabled: true
           allow:
-          - type: "dictlist"
-            path: "metadata#ownerReferences"
-            fields:
-              kind: "VirtualMachine"
-              api_family: "kubevirt.io"
-              name:
-                source: "caller"
-                path: "metadata#name"
-              controller: true
+            - type: "dictlist"
+              path: "metadata#ownerReferences"
+              fields:
+                kind: "VirtualMachine"
+                api_family: "kubevirt.io"
+                name:
+                  source: "caller"
+                  path: "metadata#name"
+                controller: true
     infogetter: "generic_infogetter"
     on_activation:
       call: "resourceinfodispatch"
@@ -164,25 +164,26 @@ infoview:
       api_family: "kubevirt.io"
     field_indexes:
       Normal:
-        fields: ["name", "ipaddresses", "node_name", "live_migratable", "paused", "phase", "ready", "age"]
+        fields: ["name", "ipaddresses", "node_name", "live_migratable",
+                 "paused", "phase", "ready", "age"]
         sortcolumn: "status"
     fields:
       ipaddresses:
         header: "IP-addresses:"
         paths:
-        - path: "status#interfaces"
-          pathtype: "items"
-          subpath: "ipAddress"
+          - path: "status#interfaces"
+            pathtype: "items"
+            subpath: "ipAddress"
         formatter: "address"
       live_migratable:
         header: "Live Migratable:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "LiveMigratable"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "LiveMigratable"
         type: "str"
       node_name:
         header: "Node Name:"
@@ -190,7 +191,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       phase:
         header: "Phase:"
         path: "status#phase"
@@ -201,52 +202,52 @@ infoview:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Scheduling":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Scheduled":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       paused:
         header: "Paused:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Paused"
-          default: ["False"]
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Paused"
+            default: ["False"]
         type: "str"
       ready:
         header: "Ready:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -254,12 +255,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "Show volume snapshot status":
       key: "v"
@@ -273,9 +274,9 @@ infoview:
       itemgetter_args:
         path: "status#volumeSnapshotStatuses"
         fields:
-        - "name"
-        - "enabled"
-        - "reason"
+          - "name"
+          - "enabled"
+          - "reason"
       # Not supported for now
       sortcolumn: "name"
     "VM template":

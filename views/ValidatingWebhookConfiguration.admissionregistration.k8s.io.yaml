@@ -3,8 +3,8 @@ kind: "ValidatingWebhookConfiguration"
 api_family: "admissionregistration.k8s.io"
 default_command: "validatingwebhookconfigurations"
 command:
-- "vwhcs"
-- "vwhc"
+  - "vwhcs"
+  - "vwhc"
 listview:
   name: "Validating Webhook Configurations"
   group: "API & Extendability"
@@ -18,7 +18,7 @@ listview:
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
   actions:
     actionlist:
@@ -40,15 +40,17 @@ infoview:
         fields: ["cluster_version"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "name"
-          when:
-          - key: "kind"
-            eq: "ClusterVersion"
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "name"
+            when:
+              - key: "kind"
+                eq: "ClusterVersion"
         default: "<none>"
   listpad:
     on_activation:

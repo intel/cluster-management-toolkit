@@ -3,36 +3,37 @@ kind: "VirtualMachineInstanceReplicaSet"
 api_family: "kubevirt.io"
 default_command: "virtualmachineinstancereplicasets"
 command:
-- "kvvmirss"
-- "kvvmirs"
+  - "kvvmirss"
+  - "kvvmirs"
 listview:
   name: "Virtual Machine Instance Replica Sets"
   group: "Virtualization"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "desired_replicas", "ready_replicas", "current_replicas", "age"]
+      fields: ["namespace", "name", "desired_replicas",
+               "ready_replicas", "current_replicas", "age"]
       sortcolumn: "namespace"
   fields:
     current_replicas:
       header: "Current:"
       paths:
-      - path: ["status#replicas", "spec#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#replicas", "spec#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       align: "right"
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
     desired_replicas:
       header: "Desired:"
       path: "spec#replicas"
@@ -41,32 +42,32 @@ listview:
       align: "right"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
     ready_replicas:
       header: "Ready:"
       paths:
-      - path: ["status#readyReplicas", "status#replicas"]
-        pathtype: "comparison"
-        default: [0, 0]
+        - path: ["status#readyReplicas", "status#replicas"]
+          pathtype: "comparison"
+          default: [0, 0]
       align: "right"
       formatter: "value_mapper"
       formatting:
         mapping:
           ranges:
-          - min: 0
-            max: 1
-            field_colors:
-            - context: "main"
-              type: "status_ok"
-          - min: -1
-            max: 0
-            field_colors:
-            - context: "main"
-              type: "status_pending"
-          - default: true
-            field_colors:
-            - context: "main"
-              type: "status_not_ok"
+            - min: 0
+              max: 1
+              field_colors:
+                - context: "main"
+                  type: "status_ok"
+            - min: -1
+              max: 0
+              field_colors:
+                - context: "main"
+                  type: "status_pending"
+            - default: true
+              field_colors:
+                - context: "main"
+                  type: "status_not_ok"
   actions:
     actionlist:
       "Delete resource":
@@ -83,56 +84,58 @@ infoview:
       label_selector:
         header: [["Label Selector:", ["main", "infoheader"]]]
         paths:
-        - path: ["spec#selector#matchLabels"]
-          pathtype: "key_value"
-          default: ["<none>"]
+          - path: ["spec#selector#matchLabels"]
+            pathtype: "key_value"
+            default: ["<none>"]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "value"
+            - type: "key"
+            - type: "value"
           field_separators:
-          - type: "selector"
+            - type: "selector"
       replicas:
         header: [["Replicas:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#replicas"], " Desired", ["status#replicas"], " Current", ["status#readyReplicas"], " Ready"]
-          pathtype: "tuple"
-          default: [0, "", 0, "", 0, "", 0, ""]
+          - path: [["spec#replicas"], " Desired",
+                   ["status#replicas"], " Current",
+                   ["status#readyReplicas"], " Ready"]
+            pathtype: "tuple"
+            default: [0, "", 0, "", 0, "", 0, ""]
         formatter: "list"
         formatting:
           field_colors:
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
-          - type: "numerical"
-          - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
+            - type: "numerical"
+            - type: "generic"
           field_separators:
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
-          - type: "fraction_spaced"
-          - type: "no_pad"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
+            - type: "fraction_spaced"
+            - type: "no_pad"
       set_based_selector:
         header: [["Set-based Selector:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#selector#matchExpressions"
-          pathtype: "match_expression"
-          default: "<none>"
+          - path: "spec#selector#matchExpressions"
+            pathtype: "match_expression"
+            default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "key"
-          - type: "operator"
-          - type: "value"
+            - type: "key"
+            - type: "operator"
+            - type: "value"
           field_separators:
-          - type: "space"
-          - type: "no_pad"
+            - type: "space"
+            - type: "no_pad"
   listpad:
     listgetter: "generic_listgetter"
     listgetter_args:
@@ -146,15 +149,16 @@ infoview:
       api_family: "kubevirt.io"
     field_indexes:
       Normal:
-        fields: ["namespace", "name", "ipaddresses", "node_name", "ready", "paused", "phase", "age"]
+        fields: ["namespace", "name", "ipaddresses", "node_name",
+                 "ready", "paused", "phase", "age"]
         sortcolumn: "phase"
     fields:
       ipaddresses:
         header: "IP-addresses:"
         paths:
-        - path: "status#interfaces"
-          pathtype: "items"
-          subpath: "ipAddress"
+          - path: "status#interfaces"
+            pathtype: "items"
+            subpath: "ipAddress"
         formatter: "address"
       node_name:
         header: "Node Name:"
@@ -162,7 +166,7 @@ infoview:
         type: "str"
         formatting:
           field_colors:
-          - type: "host"
+            - type: "host"
       phase:
         header: "Phase:"
         path: "status#phase"
@@ -173,51 +177,51 @@ infoview:
             mappings:
               "Failed":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
               "Pending":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Running":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Scheduling":
                 field_colors:
-                - context: "main"
-                  type: "status_pending"
+                  - context: "main"
+                    type: "status_pending"
               "Scheduled":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "Succeeded":
                 field_colors:
-                - context: "main"
-                  type: "status_done"
+                  - context: "main"
+                    type: "status_done"
               "Unknown":
                 field_colors:
-                - context: "main"
-                  type: "status_unknown"
+                  - context: "main"
+                    type: "status_unknown"
       paused:
         header: "Paused:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Paused"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Paused"
         type: "str"
       ready:
         header: "Ready:"
         paths:
-        - path: "status#conditions"
-          pathtype: "items"
-          subpath: "status"
-          when:
-          - key: "type"
-            eq: "Ready"
+          - path: "status#conditions"
+            pathtype: "items"
+            subpath: "status"
+            when:
+              - key: "type"
+                eq: "Ready"
         type: "str"
         formatter: "value_mapper"
         formatting:
@@ -225,12 +229,12 @@ infoview:
             mappings:
               "True":
                 field_colors:
-                - context: "main"
-                  type: "status_ok"
+                  - context: "main"
+                    type: "status_ok"
               "False":
                 field_colors:
-                - context: "main"
-                  type: "status_not_ok"
+                  - context: "main"
+                    type: "status_not_ok"
   shortcuts:
     "SSH to VM":
       key: "s"
@@ -239,5 +243,7 @@ infoview:
       helptext: "SSH to VM"
       widget: "command"
       widget_args:
-        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts", "-o StrictHostKeyChecking=no", "-n", ["metadata#namespace"], ["metadata#name"]]
+        command: ["virtctl", "ssh", "--local-ssh", "--local-ssh-opts",
+                  "-o StrictHostKeyChecking=no", "-n",
+                  ["metadata#namespace"], ["metadata#name"]]
         _pass_selected_obj: true

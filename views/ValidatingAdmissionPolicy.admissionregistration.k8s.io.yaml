@@ -3,8 +3,8 @@ kind: "ValidatingAdmissionPolicy"
 api_family: "admissionregistration.k8s.io"
 default_command: "validatingadmissionpolicies"
 command:
-- "vapols"
-- "vapol"
+  - "vapols"
+  - "vapol"
 listview:
   name: "Validating Admission Policies"
   group: "API & Extendability"
@@ -15,24 +15,24 @@ listview:
     param_kind:
       header: "Parameter Kind:"
       paths:
-      - path: [["spec#paramKind#kind"], ["spec#paramKind#apiVersion"]]
-        pathtype: "tuple"
-        type: ["kind", "api_group"]
-        default: "<unset>"
+        - path: [["spec#paramKind#kind"], ["spec#paramKind#apiVersion"]]
+          pathtype: "tuple"
+          type: ["kind", "api_group"]
+          default: "<unset>"
       formatter: "list"
       formatting:
         field_colors:
-        - type: "kind"
-        - type: "api_group"
+          - type: "kind"
+          - type: "api_group"
         field_separators:
-        - type: "kind_api_group"
+          - type: "kind_api_group"
     validations:
       header: "Validations:"
       path: "spec#validations"
       type: "len"
       formatting:
         field_colors:
-        - type: "numerical"
+          - type: "numerical"
       align: "right"
 infoview:
   name: "Validating Admission Policy Info"
@@ -46,19 +46,20 @@ infoview:
         path: "spec#failurePolicy"
         type: "str"
       param_kind:
-        header: [["P", ["main", "infoheader_shortcut"]], ["arameter Kind:", ["main", "infoheader"]]]
+        header: [["P", ["main", "infoheader_shortcut"]],
+                 ["arameter Kind:", ["main", "infoheader"]]]
         paths:
-        - path: [["spec#paramKind#kind"], ["spec#paramKind#apiVersion"]]
-          pathtype: "tuple"
-          type: ["kind", "api_group"]
-          default: "<unset>"
+          - path: [["spec#paramKind#kind"], ["spec#paramKind#apiVersion"]]
+            pathtype: "tuple"
+            type: ["kind", "api_group"]
+            default: "<unset>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
+            - type: "kind"
+            - type: "api_group"
           field_separators:
-          - type: "kind_api_group"
+            - type: "kind_api_group"
   listpad:
     listgetter: "listgetter_path"
     listgetter_args:

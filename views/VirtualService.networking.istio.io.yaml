@@ -3,8 +3,8 @@ kind: "VirtualService"
 api_family: "networking.istio.io"
 default_command: "virtualservices"
 command:
-- "virtsvcs"
-- "virtsvc"
+  - "virtsvcs"
+  - "virtsvc"
 listview:
   name: "Virtual Services"
   group: "Istio"
@@ -31,41 +31,43 @@ infoview:
         fields: ["controller", "gateways", "hosts", "export_to"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
-        - path: "metadata#ownerReferences"
-          pathtype: "items"
-          subpaths:
-          - "kind"
-          - "apiVersion"
-          - "name"
-          when:
-          - key: "controller"
-            eq: true
-          type: ["kind", "api_group", "name"]
+          - path: "metadata#ownerReferences"
+            pathtype: "items"
+            subpaths:
+              - "kind"
+              - "apiVersion"
+              - "name"
+            when:
+              - key: "controller"
+                eq: true
+            type: ["kind", "api_group", "name"]
         default: "<none>"
         formatter: "list"
         formatting:
           field_colors:
-          - type: "kind"
-          - type: "api_group"
-          - type: "generic"
+            - type: "kind"
+            - type: "api_group"
+            - type: "generic"
           field_separators:
-          - type: "kind_api_group"
-          - type: "kind"
+            - type: "kind_api_group"
+            - type: "kind"
       export_to:
         header: [["Export To:", ["main", "infoheader"]]]
         paths:
-        - path: "spec#exportTo"
-          pathtype: "remap"
-          substitutions:
-            "*": "All"
-            ".": "Same"
-          default: "All"
+          - path: "spec#exportTo"
+            pathtype: "remap"
+            substitutions:
+              "*": "All"
+              ".": "Same"
+            default: "All"
         type: "raw"
         formatter: "list"
       gateways:
-        header: [["G", ["main", "infoheader_shortcut"]], ["ateways:", ["main", "infoheader"]]]
+        header: [["G", ["main", "infoheader_shortcut"]],
+                 ["ateways:", ["main", "infoheader"]]]
         path: "spec#gateways"
         type: "raw"
         formatter: "list"
@@ -89,12 +91,12 @@ infoview:
         formatter: "list"
         formatting:
           field_colors:
-          - type: "host"
-          - type: "subset"
-          - type: "port"
+            - type: "host"
+            - type: "subset"
+            - type: "port"
           field_separators:
-          - type: "list_start"
-          - type: "list_end_colon"
+            - type: "list_start"
+            - type: "list_end_colon"
       rule_type:
         header: "Rule Type:"
         path: "rule_type"
