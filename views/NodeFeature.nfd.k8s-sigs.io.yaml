@@ -16,10 +16,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "cpu_header", "cpu_vendor", "cpu_family", "cpu_model", "cpu_cstate", "cpu_flags", "cpu_sgx", "pstate_header", "pstate_governor", "pstate_turbo", "pstate_status", "network_devices", "storage"]
+        fields: ["controller", "cpu_header", "cpu_vendor", "cpu_family",
+                 "cpu_model", "cpu_cstate", "cpu_flags", "cpu_sgx",
+                 "pstate_header", "pstate_governor", "pstate_turbo",
+                 "pstate_status", "network_devices", "storage"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -47,7 +51,9 @@ infoview:
         type: "int"
         formatter: "numerical"
       cpu_flags:
-        header: [["  ", ["main", "infoheader"]], ["F", ["main", "infoheader_shortcut"]], ["lags:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["F", ["main", "infoheader_shortcut"]],
+                 ["lags:", ["main", "infoheader"]]]
         paths:
           - path: "spec#features#flags#cpu.cpuid#elements"
             pathtype: "dictlist"
@@ -112,7 +118,9 @@ infoview:
         path: "spec#features#attributes#cpu.model#elements#vendor_id"
         type: "str"
       network_devices:
-        header: [["Net", ["main", "infoheader"]], ["w", ["main", "infoheader_shortcut"]], ["ork Devices:", ["main", "infoheader"]]]
+        header: [["Net", ["main", "infoheader"]],
+                 ["w", ["main", "infoheader_shortcut"]],
+                 ["ork Devices:", ["main", "infoheader"]]]
         paths:
           - path: "spec#features#instances#network.device#elements"
             pathtype: "items"
@@ -149,7 +157,8 @@ infoview:
               - key: "turbo"
                 eq: "false"
       storage:
-        header: [["S", ["main", "infoheader_shortcut"]], ["torage:", ["main", "infoheader"]]]
+        header: [["S", ["main", "infoheader_shortcut"]],
+                 ["torage:", ["main", "infoheader"]]]
         paths:
           - path: "spec#features#instances#storage.block#elements"
             pathtype: "items"
@@ -237,7 +246,8 @@ infoview:
       helptext: "Show PCI devices"
       widget: "windowwidget"
       title: "PCI Devices:"
-      headers: ["Class:", "Vendor:", "Device:", "Subsystem Vendor:", "Subsystem Device:"]
+      headers: ["Class:", "Vendor:", "Device:",
+                "Subsystem Vendor:", "Subsystem Device:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#features#instances#pci.device#elements"

@@ -9,7 +9,8 @@ listview:
   group: "Cluster Configuration"
   field_indexes:
     Normal:
-      fields: ["namespace", "name", "cluster", "instance_state", "ready", "provider_id", "machine", "age"]
+      fields: ["namespace", "name", "cluster", "instance_state",
+               "ready", "provider_id", "machine", "age"]
       sortcolumn: "namespace"
   fields:
     cluster:
@@ -59,18 +60,24 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["controller", "cluster", "instance_state", "ready", "instance_id", "provider_id", "cloud_name", "flavor", "identity", "image", "security_groups", "ssh_key_name", "internal_ips", "external_ips"]
+        fields: ["controller", "cluster", "instance_state", "ready",
+                 "instance_id", "provider_id", "cloud_name", "flavor",
+                 "identity", "image", "security_groups", "ssh_key_name",
+                 "internal_ips", "external_ips"]
     rows:
       cloud_name:
         header: [["Cloud Name:", ["main", "infoheader"]]]
         path: "spec#cloudName"
         type: "str"
       cluster:
-        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster:", ["main", "infoheader"]]]
         path: "metadata#labels#cluster.x-k8s.io/cluster-name"
         type: "str"
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -109,7 +116,8 @@ infoview:
         path: "spec#flavor"
         type: "str"
       identity:
-        header: [["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
+        header: [["I", ["main", "infoheader_shortcut"]],
+                 ["dentity:", ["main", "infoheader"]]]
         paths:
           - path: [["spec#identityRef#kind"], ["spec#identityRef#name"]]
             pathtype: "tuple"

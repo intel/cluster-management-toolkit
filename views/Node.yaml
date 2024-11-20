@@ -8,9 +8,12 @@ listview:
   group: "Core"
   field_indexes:
     Wide:
-      fields: ["name", "status", "roles", "age", "kubelet_version", "internal_ips", "os", "kernel_version", "container_runtime", "cpu", "mem", "taints"]
+      fields: ["name", "status", "roles", "age", "kubelet_version",
+               "internal_ips", "os", "kernel_version", "container_runtime",
+               "cpu", "mem", "taints"]
     Normal:
-      fields: ["name", "status", "roles", "age", "kubelet_version", "internal_ips", "cpu", "mem", "taints"]
+      fields: ["name", "status", "roles", "age", "kubelet_version",
+               "internal_ips", "cpu", "mem", "taints"]
   fields:
     container_runtime:
       header: "Container-Runtime:"
@@ -70,6 +73,7 @@ listview:
             - key_startswith: "node-role.kubernetes.io"
           key:
             transform:
+              # yamllint disable-line rule:line-length
               "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
             regex: ["^[^/]*/(.*)"]
           value:
@@ -109,6 +113,7 @@ listview:
           subpaths:
             - subpath: "key"
               transform:
+                # yamllint disable-line rule:line-length
                 "node-role.kubernetes.io/master": "node-role.kubernetes.io/control-plane"
               regex: ["^[^/]*/(.*)", "(.*)"]
             - "effect"
@@ -173,7 +178,10 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["csi_node", "status", "internal_ips", "external_ips", "architecture", "kernel_version", "kube_proxy_version", "kubelet_version", "kubelet_endpoint", "pod_cidrs", "allocatable_pods", "taints"]
+        fields: ["csi_node", "status", "internal_ips", "external_ips",
+                 "architecture", "kernel_version", "kube_proxy_version",
+                 "kubelet_version", "kubelet_endpoint", "pod_cidrs",
+                 "allocatable_pods", "taints"]
     rows:
       allocatable_pods:
         header: [["Allocatable Pods:", ["main", "infoheader"]]]
@@ -187,7 +195,8 @@ infoview:
         path: "status#nodeInfo#architecture"
         type: "str"
       csi_node:
-        header: [["C", ["main", "infoheader_shortcut"]], ["SI Node:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["SI Node:", ["main", "infoheader"]]]
         paths:
           - path: ["CSINode", "storage.k8s.io", "", ["metadata#name"], ""]
             pathtype: "lookup"
@@ -338,10 +347,12 @@ infoview:
       kind: "Pod"
     field_indexes:
       Wide:
-        fields: ["namespace", "name", "pod_status", "pod_ip", "age", "restarts", "last_restart", "containers"]
+        fields: ["namespace", "name", "pod_status", "pod_ip", "age",
+                 "restarts", "last_restart", "containers"]
         sortcolumn: "pod_status"
       Normal:
-        fields: ["namespace", "name", "pod_status", "age", "restarts", "last_restart"]
+        fields: ["namespace", "name", "pod_status", "age",
+                 "restarts", "last_restart"]
         sortcolumn: "pod_status"
     fields:
       containers:
@@ -368,7 +379,8 @@ infoview:
         paths:
           - path: "status#containerStatuses"
             pathtype: "items"
-            subpath: ["state#running#startedAt", "lastState#terminated#finishedAt"]
+            subpath: ["state#running#startedAt",
+                      "lastState#terminated#finishedAt"]
             when:
               - key: "restartCount"
                 gt: 0
@@ -477,6 +489,8 @@ infoview:
       title: "Resources:"
       itemgetter: "get_resource_list"
       headers: ["Resource:", "Allocatable:", "Capacity:"]
-      formatting: [["windowwidget", "default"], ["windowwidget", "highlight"], ["windowwidget", "highlight"]]
+      formatting: [["windowwidget", "default"],
+                   ["windowwidget", "highlight"],
+                   ["windowwidget", "highlight"]]
       # Not supported for now
       sortcolumn: "resource"

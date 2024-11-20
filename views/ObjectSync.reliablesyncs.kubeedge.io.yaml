@@ -15,7 +15,9 @@ listview:
     object:
       header: "Object:"
       paths:
-        - path: [["spec#objectKind"], ["spec#objectAPIVersion"], ["spec#objectName"]]
+        - path: [["spec#objectKind"],
+                 ["spec#objectAPIVersion"],
+                 ["spec#objectName"]]
           pathtype: "tuple"
           type: ["kind", "api_group", "name"]
       default: "<none>"
@@ -42,9 +44,12 @@ infoview:
         fields: ["object", "object_version"]
     rows:
       object:
-        header: [["O", ["main", "infoheader_shortcut"]], ["bject:", ["main", "infoheader"]]]
+        header: [["O", ["main", "infoheader_shortcut"]],
+                 ["bject:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#objectKind"], ["spec#objectAPIVersion"], ["spec#objectName"]]
+          - path: [["spec#objectKind"],
+                   ["spec#objectAPIVersion"],
+                   ["spec#objectName"]]
             pathtype: "tuple"
             type: ["kind", "api_group", "name"]
         default: "<none>"

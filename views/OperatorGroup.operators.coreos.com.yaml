@@ -16,10 +16,13 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster_version", "target_namespaces", "namespaces", "last_updated"]
+        fields: ["cluster_version", "target_namespaces",
+                 "namespaces", "last_updated"]
     rows:
       cluster_version:
-        header: [["Cluster ", ["main", "infoheader"]], ["V", ["main", "infoheader_shortcut"]], ["ersion:", ["main", "infoheader"]]]
+        header: [["Cluster ", ["main", "infoheader"]],
+                 ["V", ["main", "infoheader_shortcut"]],
+                 ["ersion:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -36,7 +39,9 @@ infoview:
         type: "timestamp"
         formatter: "timestamp"
       namespaces:
-        header: [["Name", ["main", "infoheader"]], ["s", ["main", "infoheader_shortcut"]], ["paces:", ["main", "infoheader"]]]
+        header: [["Name", ["main", "infoheader"]],
+                 ["s", ["main", "infoheader_shortcut"]],
+                 ["paces:", ["main", "infoheader"]]]
         path: "status#namespaces"
         type: "raw"
         formatter: "list"
@@ -44,7 +49,8 @@ infoview:
           field_colors:
             - type: "namespace"
       target_namespaces:
-        header: [["T", ["main", "infoheader_shortcut"]], ["arget Namespaces:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["arget Namespaces:", ["main", "infoheader"]]]
         path: "spec#targetNamespaces"
         type: "raw"
         formatter: "list"

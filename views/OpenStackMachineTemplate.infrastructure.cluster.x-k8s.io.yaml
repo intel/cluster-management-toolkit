@@ -16,10 +16,14 @@ infoview:
   infopad:
     row_indexes:
       Normal:
-        fields: ["cluster", "template_header", "template_cloud_name", "template_flavor", "template_identity", "template_image", "template_security_groups", "template_ssh_key_name"]
+        fields: ["cluster", "template_header", "template_cloud_name",
+                 "template_flavor", "template_identity", "template_image",
+                 "template_security_groups", "template_ssh_key_name"]
     rows:
       cluster:
-        header: [["Cl", ["main", "infoheader"]], ["u", ["main", "infoheader_shortcut"]], ["ster:", ["main", "infoheader"]]]
+        header: [["Cl", ["main", "infoheader"]],
+                 ["u", ["main", "infoheader_shortcut"]],
+                 ["ster:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"
@@ -38,11 +42,15 @@ infoview:
         path: "spec#template#spec#flavor"
         type: "str"
       template_header:
-        header: [["T", ["main", "infoheader_shortcut"]], ["emplate:", ["main", "infoheader"]]]
+        header: [["T", ["main", "infoheader_shortcut"]],
+                 ["emplate:", ["main", "infoheader"]]]
       template_identity:
-        header: [["  ", ["main", "infoheader"]], ["I", ["main", "infoheader_shortcut"]], ["dentity:", ["main", "infoheader"]]]
+        header: [["  ", ["main", "infoheader"]],
+                 ["I", ["main", "infoheader_shortcut"]],
+                 ["dentity:", ["main", "infoheader"]]]
         paths:
-          - path: [["spec#template#spec#identityRef#kind"], ["spec#template#spec#identityRef#name"]]
+          - path: [["spec#template#spec#identityRef#kind"],
+                   ["spec#template#spec#identityRef#name"]]
             pathtype: "tuple"
         formatter: "list"
         formatting:

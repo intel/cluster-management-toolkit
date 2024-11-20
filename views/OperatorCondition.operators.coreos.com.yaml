@@ -2,10 +2,7 @@
 kind: "OperatorCondition"
 api_family: "operators.coreos.com"
 default_command: "operatorconditions"
-# Not sure OperatorCondition deserves something as generic as "condition"
-# even if the CRD thinks so
 command:
-# - "conditions"
   - "opconds"
   - "opcond"
 listview:
@@ -23,7 +20,8 @@ infoview:
         fields: ["controller"]
     rows:
       controller:
-        header: [["C", ["main", "infoheader_shortcut"]], ["ontroller:", ["main", "infoheader"]]]
+        header: [["C", ["main", "infoheader_shortcut"]],
+                 ["ontroller:", ["main", "infoheader"]]]
         paths:
           - path: "metadata#ownerReferences"
             pathtype: "items"

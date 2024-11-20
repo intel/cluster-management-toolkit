@@ -52,7 +52,8 @@ infoview:
         default: "<unset>"
         type: "bool"
       disable_multi_network:
-        header: [["Disable Multiple Pod Network Support:", ["main", "infoheader"]]]
+        header: [["Disable Multiple Pod Network Support:",
+                  ["main", "infoheader"]]]
         path: "spec#disableNetworkDiagnostics"
         default: false
         type: "bool"
@@ -107,7 +108,8 @@ infoview:
       default_network_header:
         header: [["Default Network:", ["main", "infoheader"]]]
       default_network_header_note:
-        header: [["  # Note: currently only SDN config is shown", ["main", "infoheader_note"]]]
+        header: [["  # Note: currently only SDN config is shown",
+                  ["main", "infoheader_note"]]]
       default_network_openshift_sdn_config:
         header: [["  OpenShift SDN Config:", ["main", "infoheader"]]]
       default_network_openshift_sdn_enable_unidling:
@@ -165,7 +167,8 @@ infoview:
       helptext: "List additional networks"
       widget: "windowwidget"
       title: "Additional networks:"
-      headers: ["Namespace:", "Name:", "Type:", "RAW CNI Config:", "Simple MAC VLAN Configuration:"]
+      headers: ["Namespace:", "Name:", "Type:",
+                "RAW CNI Config:", "Simple MAC VLAN Configuration:"]
       itemgetter: "get_list_fields"
       itemgetter_args:
         path: "spec#additionalNetworks"
